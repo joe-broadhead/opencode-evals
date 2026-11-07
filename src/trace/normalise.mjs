@@ -8,17 +8,15 @@
 // answer text is replaced by its digest. The raw file stays in evals-lab/private/ and is named here by
 // digest, so a text-dependent item can be re-checked and a trace can never leak.
 
-import { readFileSync, statSync } from "node:fs"
+import { readFileSync } from "node:fs"
 
 import { summarize } from "./analyse.mjs"
 import { safeArgs, shape } from "./redact.mjs"
 import { extractInnerCalls, dataflow, returnKeyFor } from "./innerArgs.mjs"
 import { resultCounts, knownExtractor, costLineOf, parseFirstJson } from "./resultCounts.mjs"
 import { costOf, emptyTable } from "./pricing.mjs"
-import { sha256, short } from "../util/canonical.mjs"
+import { sha256 } from "../util/canonical.mjs"
 import { harnessVersion } from "../version.mjs"
-
-const FAILURE = ["infra", "provider", "timeout", "domain", "trace", "budget", "regression", "unknown"]
 
 /** Classifies a run before any score is computed, so an infra failure is never a zero. */
 export function failureClass({ exit, tokens, calls, durationMs, timeoutMs = 900_000 }) {
@@ -228,7 +226,3 @@ function safeJson(path) {
     return null
   }
 }
-
-export const shortDigest = (hex) => short(hex, 12)
-export const FAILURE_CLASSES = FAILURE
-export const fileBytes = (path) => statSync(path).size

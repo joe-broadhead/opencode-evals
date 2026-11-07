@@ -58,6 +58,3 @@ export function validateCase(caseObject, file = "<case>") {
   if (caseObject.expect && !["pass", "fail", "na"].includes(caseObject.expect)) bad("expect must be pass, fail or na")
   return caseObject
 }
-
-/** The item areas present, for the scorecard's axis grouping. */
-export const areasOf = (caseObject) => [...new Set(caseObject.items.map((i) => i.id.split("-")[1].slice(0, 2)))].sort()

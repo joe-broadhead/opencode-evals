@@ -10,7 +10,7 @@
 //   evals verify   re-derive every number from the stored inputs and compare
 //   evals selftest run the T-G gold cases over synthetic traces
 
-import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, statSync, chmodSync } from "node:fs"
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs"
 import { join, dirname, resolve, basename } from "node:path"
 import { fileURLToPath } from "node:url"
 import { compileCase, casesDigest, codedShare } from "./case/compile.mjs"
@@ -103,19 +103,6 @@ function writeLock(plugin = "x", epoch = 1) {
   }
   write(path("cases", plugin, "evals.lock"), json(lock))
   return lock
-}
-
-/** The raw answer text for a recorded case, from the private tree only. */
-function textFor(iteration, caseName) {
-  const base = path("..", "private", "raw", iteration, "x", caseName)
-  for (const candidate of [base, `${base}.jsonl`]) {
-    if (existsSync(candidate) && statSync(candidate).isFile()) {
-      const lines = read(candidate).split("\n").filter(Boolean)
-      const last = [...lines].reverse().map((l) => JSON.parse(l)).find((e) => e.type === "text")
-      return last?.part?.text ?? ""
-    }
-  }
-  return null
 }
 
 function stateFor(iteration, caseName) {

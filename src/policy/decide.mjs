@@ -102,5 +102,3 @@ export function numericVerdict(a, b) {
   }
   return { sharedCases: shared.length, caseRegressions, fixes, newForbidden, failedItems, newBlockerFailures, newMajorFailures, passRate, costPerPass, costSource: b.cost?.source ?? "missing" }
 }
-
-export const describe = (verdict) => `${verdict.verdict} (${verdict.basis}): ${verdict.reasons.join("; ")}`
