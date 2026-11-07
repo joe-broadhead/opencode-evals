@@ -25,6 +25,11 @@ import { renderScorecard, compareToHandGrading } from "./report/scorecard.mjs"
 import { goldCases } from "./grade/gold.mjs"
 import { readPack, writePack, PLUGIN_ROOT } from "./pack/from-plugin.mjs"
 import { runT1, coverageTable } from "./t1/run.mjs"
+import { checkPack } from "./t0/generic.mjs"
+import { scan as privacyScan, renderScan } from "./privacy/gate.mjs"
+import { monthToDate, budgetLine, CAPS } from "./cost/budget.mjs"
+import { loadPrices, modelCost, vendorCost } from "./cost/compute.mjs"
+import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "./label/kit.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
 const args = (argv) => {
@@ -44,6 +49,7 @@ const args = (argv) => {
 }
 
 const path = (...parts) => join(ROOT, ...parts)
+const storePath = () => process.env.EVALS_STORE ?? join(ROOT, "..", "private", "store")
 const read = (file) => readFileSync(file, "utf8")
 const write = (file, text) => {
   mkdirSync(dirname(file), { recursive: true })
@@ -112,7 +118,7 @@ function stateFor(iteration, caseName) {
   return existsSync(file) ? JSON.parse(read(file)) : null
 }
 
-function gradeAll(iteration, casesDir = path("cases", "x"), tracesDir = path("traces", iteration), rawDir = process.env.EVALS_RAW ?? path("..", "private", "raw")) {
+function gradeAll(iteration, casesDir = path("cases", "x"), tracesDir = join(storePath(), "traces", iteration), rawDir = process.env.EVALS_RAW ?? join(ROOT, "..", "private", "raw")) {
   const cases = casesDir.endsWith(".json") ? [] : listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
   const results = []
   for (const caseObject of cases) {
@@ -247,7 +253,7 @@ export async function main(argv) {
     case "trace": {
       const iteration = opt.iteration ?? "nx6"
       const from = opt.from ?? process.env.EVALS_RECORDINGS ?? ""
-      const out = opt.out ?? path("traces", iteration)
+      const out = opt.out ?? join(storePath(), "traces", iteration)
       const manifestFile = path("fixtures", "recordings", "manifest.json")
       const manifest = existsSync(manifestFile) ? JSON.parse(read(manifestFile)) : {}
       const entry = manifest[iteration] ?? {}
@@ -280,9 +286,9 @@ export async function main(argv) {
     case "grade": {
       const iteration = opt.iteration ?? "nx6"
       const cases = loadCases(opt.plugin ?? "x")
-      const results = gradeAll(iteration, path("cases", opt.plugin ?? "x"), path("traces", iteration))
+      const results = gradeAll(iteration, path("cases", opt.plugin ?? "x"))
       const summary = batchSummary(iteration, results, cases)
-      const out = opt.out ?? path("results", iteration)
+      const out = opt.out ?? join(storePath(), "results", iteration)
       ensureDir(out)
       write(join(out, "verdicts.json"), json(results))
       write(join(out, "batch.json"), json(summary))
@@ -292,8 +298,8 @@ export async function main(argv) {
     }
     case "scorecard": {
       const iteration = opt.iteration ?? "nx6"
-      const results = JSON.parse(read(opt.results ?? path("results", iteration, "verdicts.json")))
-      const batch = JSON.parse(read(path("results", iteration, "batch.json")))
+      const results = JSON.parse(read(opt.results ?? join(storePath(), "results", iteration, "verdicts.json")))
+      const batch = JSON.parse(read(join(storePath(), "results", iteration, "batch.json")))
       const gradingFile = opt.grading ?? (process.env.EVALS_GRADING ?? "")
       const hand = existsSync(gradingFile) ? JSON.parse(read(gradingFile)) : null
       const comparison = hand ? compareToHandGrading(results, hand) : null
@@ -303,16 +309,16 @@ export async function main(argv) {
         for (const note of caseObject.notes ?? []) if (note.id) notes[note.id] = note.text
       }
       const text = renderScorecard({ batch, results, comparison, iteration, notes })
-      const out = opt.out ?? path("results", iteration, "scorecard.md")
+      const out = opt.out ?? join(storePath(), "results", iteration, "scorecard.md")
       write(out, text)
-      write(path("results", iteration, "scorecard.json"), json({ batch, comparison }))
+      write(join(storePath(), "results", iteration, "scorecard.json"), json({ batch, comparison }))
       console.log(text.split("\n").slice(0, 4).join("\n"))
       console.log(`-> ${out}`)
       return
     }
     case "policy": {
-      const a = JSON.parse(read(path("results", opt.a ?? "nx4", "batch.json")))
-      const b = JSON.parse(read(path("results", opt.b ?? "nx6", "batch.json")))
+      const a = JSON.parse(read(join(storePath(), "results", opt.a ?? "nx4", "batch.json")))
+      const b = JSON.parse(read(join(storePath(), "results", opt.b ?? "nx6", "batch.json")))
       const comparison = comparable(a, b, opt.axis ?? "skill", { assume: opt.assume ?? "refuse" })
       const verdict = decide({ comparison, a, b, noiseFloor: Number(opt["noise-floor"] ?? 0.2) })
       if (opt.json) {
@@ -354,7 +360,7 @@ export async function main(argv) {
     case "verify": {
       const failures = []
       const iteration = opt.iteration ?? "nx6"
-      const summaryFile = path("results", iteration, "batch.json")
+      const summaryFile = join(storePath(), "results", iteration, "batch.json")
       if (!existsSync(summaryFile)) throw new Error(`no batch at ${summaryFile}; run grade first`)
       const previous = JSON.parse(read(summaryFile))
       const cases = loadCases(opt.plugin ?? "x")
@@ -368,7 +374,7 @@ export async function main(argv) {
       const again = batchSummary(iteration, results, cases)
       if (again.batch_sha256 !== previous.batch_sha256) failures.push(`batch digest moved: ${short(previous.batch_sha256)} -> ${short(again.batch_sha256)}`)
       if (canonical(again.coverage) !== canonical(previous.coverage)) failures.push("coverage moved")
-      const verdicts = JSON.parse(read(path("results", iteration, "verdicts.json")))
+      const verdicts = JSON.parse(read(join(storePath(), "results", iteration, "verdicts.json")))
       if (canonical(verdicts) !== canonical(results)) failures.push("verdicts.json is not what the inputs produce")
       console.log(failures.length ? `MISMATCH\n  ${failures.join("\n  ")}` : `reproduced ${iteration}: batch ${short(again.batch_sha256)}, ${again.coverage.items_testable}/${again.coverage.items_executed} testable`)
       if (failures.length) process.exitCode = 1
@@ -410,13 +416,129 @@ export async function main(argv) {
       const table = coverageTable(results)
       const text = [`# T1 coverage`, "", ...table.lines, "", "`p` pass, `f` fail, `u` unsupported, `—` not run."].join("\n")
       console.log(text)
-      write(path("results", "t1", "coverage.md"), text)
-      write(path("results", "t1", "coverage.json"), json(results.map((r) => ({ plugin: r.plugin, version: r.version, summary: r.summary, checks: r.checks.map((c) => [c.id, c.state]) }))))
+      write(join(storePath(), "results", "t1", "coverage.md"), text)
+      write(join(storePath(), "results", "t1", "coverage.json"), json(results.map((r) => ({ plugin: r.plugin, version: r.version, summary: r.summary, checks: r.checks.map((c) => [c.id, c.state]) }))))
       const failures = results.flatMap((r) => r.checks.filter((c) => c.state === "fail").map((c) => `${r.plugin}@${r.version} ${c.id}: ${c.detail}`))
       if (failures.length) {
         console.log(`\n${failures.length} failing check(s):\n  ${failures.join("\n  ")}`)
         process.exitCode = 1
       }
+      return
+    }
+    case "t0-all": {
+      const ids = opt._.length ? opt._ : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear"]
+      let failed = 0
+      for (const id of ids) {
+        const report = checkPack(readPack(id), PLUGIN_ROOT(id))
+        failed += report.failed
+        console.log(`${id.padEnd(10)} ${report.checks.length} checks, ${report.failed} fail, ${report.warned} warn`)
+      }
+      if (failed) process.exitCode = 1
+      return
+    }
+    case "privacy": {
+      const result = privacyScan({ history: opt["history-only"] ? true : true })
+      console.log(opt.json ? json(result) : renderScan(result))
+      if (!result.ok) process.exitCode = 1
+      return
+    }
+    case "budget": {
+      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const mtd = monthToDate(store)
+      console.log(opt.json ? json({ ...mtd, caps: CAPS }) : budgetLine(store))
+      return
+    }
+    case "cost": {
+      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const iteration = opt.iteration ?? "nx6"
+      const prices = loadPrices()
+      const dir = join(store, "traces", iteration)
+      if (!existsSync(dir)) throw new Error(`no traces for ${iteration} in ${store}`)
+      const rows = []
+      for (const file of readdirSync(dir).filter((f) => f.endsWith(".trace.jsonl"))) {
+        const lines = read(join(dir, file)).split("\n").filter(Boolean).map((line) => JSON.parse(line))
+        const head = lines[0]
+        // runView joins each result to its call, which is where the resource counts live.
+        const calls = runView(lines).calls.filter((call) => call.via === "execute")
+        const vendor = vendorCost(calls, opt.plugin ?? "x", prices)
+        const model = modelCost(head.summary?.tokens ?? {}, head.model?.id ?? "unknown", prices)
+        rows.push({ case: head.case, tokens: head.summary?.tokens ?? {}, model, vendor })
+      }
+      const vendorTotal = rows.reduce((sum, row) => sum + (row.vendor.amount_usd ?? 0), 0)
+      const modelTotal = rows.reduce((sum, row) => sum + (row.model.amount_usd ?? 0), 0)
+      const table = [
+        `# Cost, ${iteration}`,
+        "",
+        `Vendor (${opt.plugin ?? "x"}): $${vendorTotal.toFixed(3)} · model: $${modelTotal === 0 ? "missing price" : modelTotal.toFixed(2)} · source: ${prices.vendors?.[opt.plugin ?? "x"]?.source ?? "none"}`,
+        "",
+        "| case | posts | authors | vendor $ | model $ |",
+        "| --- | --- | --- | --- | --- |",
+        ...rows.map((row) => `| ${row.case} | ${row.vendor.resources?.posts ?? 0} | ${row.vendor.resources?.authors ?? 0} | ${row.vendor.amount_usd === null ? "—" : row.vendor.amount_usd.toFixed(3)} | ${row.model.amount_usd === null ? "missing" : row.model.amount_usd.toFixed(3)} |`),
+      ].join("\n")
+      console.log(table)
+      if (opt.write) write(path("..", "private", "store", "results", iteration, "cost.md"), table)
+      return
+    }
+    case "label": {
+      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const plugin = opt.plugin ?? "x"
+      const iteration = opt.iteration ?? "nx6"
+      if (opt.report) {
+        const report = labelReport(store, plugin)
+        console.log(json(report))
+        return
+      }
+      const items = advisoryItems(store, plugin, iteration)
+      if (opt.list) {
+        for (const item of items) console.log(`${item.case}/${item.item} (${item.severity}) ${item.ask.slice(0, 100)}`)
+        console.log(`\n${items.length} advisory item(s) in ${iteration}`)
+        return
+      }
+      const rawDir = join(store, "raw", iteration, plugin)
+      const textFor = (item) => {
+        const file = join(rawDir, `${item.case}.jsonl`)
+        if (!existsSync(file)) return null
+        const last = read(file).split("\n").filter(Boolean).map((line) => JSON.parse(line)).filter((event) => event.type === "text").pop()
+        return last?.part?.text ?? null
+      }
+      if (opt["dry-run"]) {
+        for (const item of items.slice(0, Number(opt.limit ?? 3))) console.log(pageOf(item, textFor(item)))
+        return
+      }
+      const result = await runLabelSession({ store, plugin, iteration, textFor, input: process.stdin, output: process.stdout, limit: opt.limit ? Number(opt.limit) : undefined })
+      console.log(`\nlabelled ${result.labelled}, ${result.remaining} left`)
+      return
+    }
+    case "check": {
+      const plugin = opt.plugin ?? "x"
+      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const repo = PLUGIN_ROOT(plugin)
+      const blockers = []
+      console.log(`# check — ${plugin}`)
+      const t0 = checkPack(readPack(plugin), repo)
+      console.log(`T0: ${t0.checks.length - t0.failed}/${t0.checks.length} pass${t0.failed ? `, ${t0.failed} FAIL` : ""}`)
+      for (const check of t0.checks.filter((c) => !c.ok && c.severity === "error")) blockers.push(`T0 ${check.id}: ${check.detail}`)
+      const gold = goldCases()
+      let goldFailed = 0
+      for (const entry of gold) {
+        const result = gradeCase(entry.case, runView(entry.trace, { text: entry.text ?? null, state: entry.state ?? null }))
+        const ok = result.verdict === entry.expect.verdict && (entry.expect.failed ?? []).every((id) => result.failed.includes(id))
+        if (!ok) goldFailed++
+      }
+      console.log(`T-G: ${gold.length - goldFailed}/${gold.length} gold cases reproduce`)
+      for (let i = 0; i < goldFailed; i++) blockers.push(`T-G: ${gold[i].name}`)
+      if (process.env.EVALS_SDK_DIR) {
+        const packs = [{ ...readPack(plugin), repo }]
+        const results = await runT1({ packs, store, versions: [], log: () => {} })
+        const checks = results.flatMap((r) => r.checks ?? [])
+        const failed = checks.filter((c) => c.state === "fail")
+        console.log(`T1: ${checks.filter((c) => c.state === "pass").length}/${checks.length} pass${failed.length ? `, ${failed.length} FAIL` : ""}${checks.length ? "" : " (not configured)"}`)
+        for (const check of failed) blockers.push(`T1 ${check.id}: ${check.detail}`)
+      } else {
+        console.log("T1: not configured (set EVALS_SDK_DIR)")
+      }
+      console.log(blockers.length ? `\n${blockers.length} blocker(s):\n  ${blockers.join("\n  ")}` : "\nno blockers")
+      if (blockers.length) process.exitCode = 1
       return
     }
     default:

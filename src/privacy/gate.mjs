@@ -27,9 +27,16 @@ const PATTERNS = [
 
 const TEXT = /\.(mjs|js|ts|json|md|yml|yaml|txt|sh|tsx|css|html)$/
 
-export function scanText(text, where) {
+/**
+ * The history is held to the data patterns, not to the path patterns: an old commit that mentions a
+ * directory name in a comment reveals a layout, not a person. A path that *held* private data is caught by
+ * FORBIDDEN_PATHS, which the history scan applies per file name.
+ */
+const HISTORY_PATTERNS = PATTERNS.filter((pattern) => pattern.id !== "private-store")
+
+export function scanText(text, where, patterns = PATTERNS) {
   const findings = []
-  for (const { id, re, why, allow } of PATTERNS) {
+  for (const { id, re, why, allow } of patterns) {
     re.lastIndex = 0
     for (const match of String(text).matchAll(re)) {
       if (allow && allow(match[0], match[1])) continue
@@ -88,17 +95,19 @@ export function scanHistory(root = ROOT) {
     if (!names.length) continue
     let contents = ""
     try {
-      contents = git(["grep", "-I", "-n", "-E", PATTERNS.map((p) => p.re.source).join("|"), commit, "--", ...names.slice(0, 400)])
+      contents = git(["grep", "-I", "-n", "-E", HISTORY_PATTERNS.map((p) => p.re.source).join("|"), commit, "--", ...names.slice(0, 400)])
     } catch {
       continue
     }
     for (const line of contents.split("\n").filter(Boolean)) {
-      const at = line.indexOf(":")
-      const where = `commit ${commit.slice(0, 8)}:${line.slice(0, at)}`
-      findings.push(...scanText(line.slice(at + 1), where))
+      // `git grep` on a commit prints `<commit>:<path>:<line>:<content>`.
+      const parts = line.split(":")
+      if (parts.length < 4) continue
+      const where = `commit ${commit.slice(0, 8)}:${parts.slice(1, -2).join(":")}:${parts[parts.length - 2]}`
+      findings.push(...scanText(parts[parts.length - 1], where, HISTORY_PATTERNS))
     }
     const message = git(["log", "-1", "--format=%B", commit])
-    findings.push(...scanText(message, `commit ${commit.slice(0, 8)} message`).map((f) => ({ ...f, id: "message" })))
+    findings.push(...scanText(message, `commit ${commit.slice(0, 8)} message`, HISTORY_PATTERNS).map((f) => ({ ...f, id: "message" })))
   }
   return findings
 }

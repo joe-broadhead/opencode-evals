@@ -1,120 +1,101 @@
-# opencode-evals — phase 1
+# opencode-evals
 
-Deterministic evals for OpenCode skills, tools and plugins. This is phase 1 of `../EVALS-DESIGN.md` §11:
-the analyser, the trace schema, the compiled case set, the graders, the provenance digest, the policy
-function, the T0 static checks and the retroactive X scorecard — built from recordings we already had, with
-**no live model and no X call**.
+Deterministic evals for OpenCode skills, tools and plugins: one case format, one trace schema, code-decided
+verdicts, and a ledger that refuses to compare two runs that are not comparable.
 
+**Unofficial; not affiliated with OpenCode or Anomaly.**
+
+## Requirements
+
+- Node 22.
+- For the static, case, grading, policy and label tiers: nothing else.
+- For the T1 tier: an OpenCode stock binary per version you test (2.2.3 to 2.2.5), and `bun` for the fake
+  MCP server. Both are configured, not assumed: see [Configuration](#configure).
+- macOS or Linux.
+
+## Install
+
+```sh
+npm install --save-dev @joe-broadhead/opencode-evals
 ```
-node bin/evals <command>       # Node 22, no dependencies, no build step
-node --test test/*.test.mjs    # 62 tests, no model, no network
+
+Or run it from a checkout: `node bin/evals <command>`.
+
+## Use
+
+```sh
+evals compile                      # markdown cases -> oc-case/1 JSON
+evals grade --iteration nx6        # grade a recorded iteration from the private store
+evals scorecard --iteration nx6    # one page, with the comparison against a hand grading
+evals policy --a nx5 --b nx6       # ship, hold or ask, with the reasons
+evals t0  --plugin x               # static checks on a plugin checkout
+evals t1  --plugin x               # what the plugin makes possible, with no model
+evals check --plugin x             # T0 + the gold cases + T1: the CI gate
+evals verify                       # re-derive a batch and refuse if a number moved
+evals label --plugin x             # the hand-label kit for the advisory items
+evals privacy --scan               # the pre-publish gate over the tree and the history
+evals budget                       # month to date against the caps
 ```
 
-## What exists
+`node --test test/*.test.mjs` runs the suite: no model, no network, no vendor API.
 
-| Path | What it is |
+## The tiers
+
+| Tier | What it proves | Runs |
+| --- | --- | --- |
+| T0 | the declaration is consistent: skills parse, descriptions fit, the tool table, the skills and the tools RPC agree, no denied tool is exposed, no handle or machine path in model-facing text | every commit |
+| T1 | what the plugin makes possible: it loads, its default rules guard the agents it claims, a write asks and is refused, a denied tool is refused before dispatch, the tools RPC describes what it claims, a shaper runs | every commit, no model |
+| T2 | the recordings, re-judged by changed code: a rule, a threshold or a grader edit costs seconds | every grader change |
+| T3 | a live smoke test: something is badly broken, or a forbidden action happened | per pull request |
+| T4 | distributions: `pass^k`, cost per passing case, latency percentiles, triggering precision and recall | per release |
+
+The gold cases (T-G) test the graders themselves: a suite that passes everything is measured against
+cases that must fail.
+
+## Permissions
+
+The tool reads plugin checkouts and the private store, and writes results, labels and traces. It starts an
+OpenCode host from a binary you point it at, and a mock model on loopback. It does not sign in to anything,
+does not call a vendor's API, and holds no credentials.
+
+Nothing private is committed: the store — recordings, traces, verdicts, scorecards, labels, holdouts — lives
+outside the repository. A trace reduces a session's content to structure; `evals privacy --scan` checks the
+tree and the whole git history before anything is shared.
+
+## Configure
+
+Options, environment variables, the store layout and the cost rules: [docs/configuration.md](docs/configuration.md).
+CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/ci.md).
+
+## Organisation rollout
+
+1. Add `evals check --plugin <id>` as the last stage of a plugin's `npm run check`.
+2. Give every plugin a pack: `packs/<id>/pack.json`, derived from its own `jelly` declaration.
+3. Keep four holdouts per plugin outside the repository, written by whoever does not tune the skill.
+4. Run the release sweep (T3, then T4 at k=3) under the monthly cap, and attach the scorecard to the release.
+
+## Troubleshooting
+
+| What you see | What it means |
 | --- | --- |
-| `src/trace/analyse.mjs` | The inner-call analyser, promoted from `review/tools/eval-counts.mjs` with its replay test. Code Mode's `execute` reports `completed` whatever happened inside; this reads the declines, the HTTP failures and the thrown errors out of the code and its output. |
-| `src/trace/innerArgs.mjs` | Inner call sites with their literal arguments, a balanced reader for object literals, and a syntactic binding (`const m = await tools.x.f(…)` → `return {m}`) so a result's counts can be attributed to a call. |
-| `src/trace/redact.mjs` | The privacy layer: numbers, booleans and timestamps survive; every other string becomes `{len, shape, tokens}`. A query keeps its operators (`since:`, `from:`) and loses its content. |
-| `src/trace/normalise.mjs` | Recording → `oc-trace/1`: run header (provenance, tokens, cost with its source, failure class) plus events (`tool_call`, `tool_result`, `skill_load`, `permission`, `answer`). |
-| `src/case/` | Markdown → `oc-case/1`. One screen a person can review; strict JSON a runner can trust; every evidence clause parsed at compile time. |
-| `src/grade/` | The evidence grammar, the item grader, the verdict rule, and the T-G gold cases. |
-| `src/policy/` | `comparable()` and `decide()` — pure functions, unit-tested, no I/O. |
-| `src/t0/x.mjs` | 13 static checks for the X plugin. |
-| `src/report/scorecard.mjs` | The scorecard, and the item-by-item comparison with a hand grading. |
-| `cases/x/` | 14 compiled X cases, 95 items, 86% code-decided, plus `evals.lock`. |
-| `traces/nx1…nx7/` | The recorded X runs as `oc-trace/1`, privacy-clean. |
-| `results/<iteration>/` | `verdicts.json`, `batch.json`, `scorecard.md` and `scorecard.json`. |
-| `results/t0/x.json` | The static check report. |
-| `fixtures/recordings/manifest.json` | What the recordings do not carry: model, date, rule set, and an explicit `unrecorded` for every hash that never existed. |
+| `no @opencode/sdk at …` | set `EVALS_SDK_DIR` to a checkout whose `node_modules` holds the SDK and the plugin API |
+| `no stock binary for 2.2.5` | set `OPENCODE_BIN_2_2_5`, or `EVALS_STOCK_DIR` to a directory with one folder per version |
+| `describe answered 400` | the plugin registers no tools RPC without a sign-in or its options; the check reports `unsupported` |
+| `BLOCKED` items | the evidence could not settle the item — a variable argument, a missing recording, a dependency not configured |
+| `not comparable` | the case set, the rules, the model or the grader differ: the tool names the fields |
+| `cost.source: missing` | no price entry; add one with a source and a date rather than a guess |
 
-## The commands
+## Uninstall
 
-```
-evals compile [--plugin x] [--check]     markdown cases -> oc-case/1 JSON
-evals trace --iteration nx6 [--from DIR] [--out DIR]
-evals grade --iteration nx6              grade the iteration's traces
-evals scorecard --iteration nx6          render the scorecard, compare with the hand grading
-evals policy --a nx5 --b nx6 [--assume declared] [--json]
-evals t0 [--root DIR] [--json] [--write]
-evals lock [--epoch N]
-evals selftest                           run the T-G gold cases
-evals verify                             re-derive nx6 and refuse a mismatch
+```sh
+npm uninstall @joe-broadhead/opencode-evals
 ```
 
-`evals verify` is the one to keep: it re-grades from the stored traces, cases and private text and fails if
-any number moved. That is the "the tool reproduces its own numbers" requirement, executable.
+The private store is yours to delete: it is outside the repository.
 
-## The three tiers this phase delivers
+## Links
 
-- **T0, static** (`evals t0`): 13 checks over the plugin checkout — skill frontmatter and size, the tool
-  table against `jelly.tools` and the tools RPC, no denied tool reaching a method, no real handle or
-  machine path in model-facing text, the namespace text's prefix tax, and the triggering surface (does a
-  should-fire prompt share vocabulary with the description; does a should-not-fire prompt look like X).
-  Every check is mutation-tested: `test/t0.test.mjs` breaks a fixture plugin one way per test and requires
-  the matching check to go red.
-- **T2, replay** (`evals grade`): the recorded runs are re-judged by code, with no model. Changing a rule,
-  a threshold or a grader is a re-grade, not a re-run.
-- **T-G, the graders' own suite** (`evals selftest`): six gold cases with known verdicts — must-FAIL with a
-  named failing item, must-PASS, must-BLOCK on missing text, must-BLOCK on a variable argument, must-be-N/A,
-  and an advisory item that must not move a verdict.
+- [Configuration](docs/configuration.md) · [CI](docs/ci.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
+- [Design: how the tiers, cases, traces and policy fit together](docs/design.md)
 
-T1 (scripted transport) and T4 (live statistics) are phase 2 and 3. Nothing here starts a model.
-
-## What the policy says about our own history
-
-```
-$ node bin/evals policy --a nx5 --b nx6
-**HOLD** — basis refused
-- not comparable: the rule set the cases encode changed: price-before-read vs cap-and-tell-after;
-  a: skill is unrecorded; b: skill is unrecorded; description is not recorded on a; …
-- the numeric delta below is advisory and cannot gate a release
-```
-
-That is the nx3r–nx5 lesson, enforced: the runs do not record which case set they used, and the case set
-that encoded "price the read before you make it" is not the case set that encoded "cap the read and state
-the actual cost after". `--assume declared` prints the numbers anyway, labelled, and `decide()` will never
-ship on them. On the declared basis, nx5 → nx6 is still a **hold**: the handle-miss case gained a forbidden
-violation (a guessed cause), which is exactly what the human grader also recorded and the loop shipped over.
-
-## Privacy
-
-The runs read the owner's real X account. No trace in this repository holds post text, a handle, a name, an
-id or a link from X's results:
-
-- arguments go through `safeArgs` (structure only),
-- results are reduced to counts by a per-tool whitelist (`{posts: 10, users: 9}`),
-- the answer is stored as a digest, and only its length and line count,
-- the raw recording stays in `../private/raw/` (mode 700) and is named by digest in each trace header.
-
-`test/trace.test.mjs` enumerates every link, handle and long id in a recording's *content* and asserts none
-appears in its trace. Text-dependent items read the private recording; without it they are `BLOCKED`, never
-passed.
-
-## Deliberate deviations from the design document
-
-- **Plain ESM on Node 22, not TypeScript.** No build step, no transpiler, tests on `node:test`. The module
-  layout follows §11; the file extensions do not. The source is 2,975 lines and the tests 843, under the
-  design's size ceiling.
-- **Price table is empty.** `cost.source` is `missing` for every run rather than a guess, so cost per
-  passing case is reported as not computable until the owner supplies rates (`src/trace/pricing.mjs`).
-- **A failed major is a finding, not a case failure.** The verdict follows oc-factory: a blocker fails the
-  case, an unsettled blocker-or-major blocks it, a minor is a note. Findings are reported and the policy
-  treats a *new* major as `ask`, never `ship`.
-- **`end_time` is often a variable** (`min(now-10s, next midnight)`), and a recording cannot inspect it.
-  Three such items are `BLOCKED` for that reason; phase 2's capture plugin reads the arguments at the
-  server boundary and settles them.
-
-## What phase 2 needs
-
-1. **A capture plugin** (`evals-capture`) that writes `oc-trace/1` events for what the run stream cannot:
-   the resolved permission decision, the tool list offered to the model with description hashes, and the
-   arguments as the MCP server received them.
-2. **T1**: the mock provider (with invalid-argument, 429 and truncated-stream directives), the existing
-   fake MCP, the isolated stock binaries 2.2.3–2.2.5, and `with-slot`.
-3. **A price table**, and the ledger keyed on `(plugin, skills, descriptions, namespace, tools, rules,
-   cases, model, host, grader)` — the schema is already in `batch.json`.
-4. **The nine plugins**: the same pack, with T0 per plugin and four holdouts written by a lane that never
-   tunes.
-5. **Calibration**: ~120 hand labels to move the first judge items off advisory (D2 requires κ ≥ 0.6).
+MIT. Copyright (c) 2026 Joe Broadhead.

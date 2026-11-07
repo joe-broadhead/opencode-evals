@@ -1,3 +1,13 @@
+# The private store: recordings, traces, verdicts, scorecards, labels and holdouts never live here.
+../private/
+private/
+traces/
+results/
+labels/
+holdouts/
+*.jsonl
+*.trace.json
 node_modules/
 .DS_Store
 *.log
+.env

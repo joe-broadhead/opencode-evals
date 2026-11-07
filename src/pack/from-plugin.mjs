@@ -10,11 +10,11 @@ export const PLUGIN_ROOT = (id) => {
   return join(root, `opencode-${id}`)
 }
 
-const classOf = (tool) => (tool.readOnly ? "read" : tool.effect === "deny" ? "destructive" : "write")
+const classOf = (tool) => (tool.effect === "deny" ? "destructive" : tool.readOnly ? "read" : "write")
 
 /** Reads one plugin checkout and returns the derived half of its pack. */
-export function derivePack(id) {
-  const dir = PLUGIN_ROOT(id)
+export function derivePack(id, directory) {
+  const dir = directory ?? PLUGIN_ROOT(id)
   const pkgFile = join(dir, "package.json")
   if (!existsSync(pkgFile)) throw new Error(`no plugin at ${dir} (set EVALS_PLUGIN_ROOT)`)
   const pkg = JSON.parse(readFileSync(pkgFile, "utf8"))
