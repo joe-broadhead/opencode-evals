@@ -5,6 +5,6 @@
   "items": 95,
   "cases_sha256": "bc7ffc8f6e4097f6c31b1177927adbc5bed07057cdccd31cd3b08a0fe4dba7cb",
   "grader_sha256": "65461bce655693840c07aea60a331515ac525b935ff274ab1d4b118658dd59dc",
-  "harness_version": "0.1.0-dev+nogit",
-  "frozen_at": "2026-11-07T11:57:26.445Z"
+  "harness_version": "0.1.0-dev+362edd5efeab",
+  "frozen_at": "2026-11-07T11:58:39.428Z"
 }
