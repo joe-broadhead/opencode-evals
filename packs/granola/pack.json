@@ -1,0 +1,149 @@
+{
+  "pluginId": null,
+  "rpc": "granola.meetings.tools",
+  "t1": [],
+  "id": "granola",
+  "name": "Granola",
+  "package": "@joe-broadhead/opencode-granola",
+  "version": "0.0.8",
+  "private": false,
+  "skills": [
+    "granola",
+    "granola-meeting-brief"
+  ],
+  "tools": [
+    {
+      "name": "get_account_info",
+      "permission": "granola_get_account_info",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_meeting_folders",
+      "permission": "granola_list_meeting_folders",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_meetings",
+      "permission": "granola_list_meetings",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_meetings",
+      "permission": "granola_search_meetings",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_meetings",
+      "permission": "granola_get_meetings",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_meeting_transcript",
+      "permission": "granola_get_meeting_transcript",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "query_granola_meetings",
+      "permission": "granola_query_granola_meetings",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_meeting_attachment",
+      "permission": "granola_get_meeting_attachment",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_templates",
+      "permission": "granola_list_templates",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_transcripts",
+      "permission": "granola_search_transcripts",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "create_folder",
+      "permission": "granola_create_folder",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_folder",
+      "permission": "granola_update_folder",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "add_note_to_folder",
+      "permission": "granola_add_note_to_folder",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "remove_note_from_folder",
+      "permission": "granola_remove_note_from_folder",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_private_notes",
+      "permission": "granola_update_private_notes",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "generate_summary",
+      "permission": "granola_generate_summary",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "give_feedback",
+      "permission": "granola_give_feedback",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "export_markdown",
+      "permission": "granola_export_markdown",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "counts": {
+    "tools": 18,
+    "reads": 10,
+    "writes": 7,
+    "denied": 1,
+    "skills": 2
+  }
+}

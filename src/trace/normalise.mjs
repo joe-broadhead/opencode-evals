@@ -1,11 +1,11 @@
 // Recorded runs -> `oc-trace/1`.
 //
 // Input: one `<case>.jsonl` (`opencode run --format json`) and its `<case>.summary.json`, from
-// ~/opencode-release/review/evalruns/<iteration>/x/. Output: one JSONL file whose first line is the run
+// the private store's recordings/<iteration>/x/. Output: one JSONL file whose first line is the run
 // header and whose remaining lines are events, carrying no text, handles, ids or links from X.
 //
 // The privacy rule is structural: arguments go through `safeArgs`, results are reduced to counts, and the
-// answer text is replaced by its digest. The raw file stays in evals-lab/private/ and is named here by
+// answer text is replaced by its digest. The raw file stays in the private store and is named here by
 // digest, so a text-dependent item can be re-checked and a trace can never leak.
 
 import { readFileSync } from "node:fs"

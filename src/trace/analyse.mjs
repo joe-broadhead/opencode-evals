@@ -6,7 +6,7 @@
 // status, a thrown error). So the outer counts alone report "failed 0" for a run that was declined or hit
 // a 504. These functions read the inner failures from the execute code and its output.
 //
-// Promoted from ~/opencode-release/review/tools/eval-counts.mjs, with its semantics and its replay test
+// Promoted from the review loop's eval-counts.mjs, with its semantics and its replay test
 // kept: see test/analyse-replay.test.mjs. Everything here parses recorded JSON; it never starts a session.
 
 // `opencode run` rejects every permission ask with this text, and the execute call still ends "completed".

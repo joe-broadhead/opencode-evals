@@ -1,0 +1,401 @@
+{
+  "rpc": "jira.issues.tools",
+  "t1": [],
+  "id": "jira",
+  "name": "Jira",
+  "package": "@joe-broadhead/opencode-jira",
+  "version": "0.0.0",
+  "private": true,
+  "pluginId": "jira.issues",
+  "skills": [
+    "jira",
+    "jira-write"
+  ],
+  "tools": [
+    {
+      "name": "atlassianUserInfo",
+      "permission": "jira_atlassianUserInfo",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "downloadJiraIssueAttachment",
+      "permission": "jira_downloadJiraIssueAttachment",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getAccessibleAtlassianResources",
+      "permission": "jira_getAccessibleAtlassianResources",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraBoardConfig",
+      "permission": "jira_getJiraBoardConfig",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraBoardIssueData",
+      "permission": "jira_getJiraBoardIssueData",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraBoardSprintData",
+      "permission": "jira_getJiraBoardSprintData",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraCurrentUser",
+      "permission": "jira_getJiraCurrentUser",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraEntityProperty",
+      "permission": "jira_getJiraEntityProperty",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraIssue",
+      "permission": "jira_getJiraIssue",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraIssueTypeMetaWithFields",
+      "permission": "jira_getJiraIssueTypeMetaWithFields",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraProjectVersionRelatedWork",
+      "permission": "jira_getJiraProjectVersionRelatedWork",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraProjectVersions",
+      "permission": "jira_getJiraProjectVersions",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraScreen",
+      "permission": "jira_getJiraScreen",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraUser",
+      "permission": "jira_getJiraUser",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraWorkflowEditorLink",
+      "permission": "jira_getJiraWorkflowEditorLink",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "getJiraWorkflows",
+      "permission": "jira_getJiraWorkflows",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraBoardSprints",
+      "permission": "jira_listJiraBoardSprints",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraBoards",
+      "permission": "jira_listJiraBoards",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraDashboards",
+      "permission": "jira_listJiraDashboards",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraFilters",
+      "permission": "jira_listJiraFilters",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraIssueAssignableUsers",
+      "permission": "jira_listJiraIssueAssignableUsers",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraIssueChangelogs",
+      "permission": "jira_listJiraIssueChangelogs",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraIssueComments",
+      "permission": "jira_listJiraIssueComments",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraIssueLinkTypes",
+      "permission": "jira_listJiraIssueLinkTypes",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraIssueRemoteIssueLinks",
+      "permission": "jira_listJiraIssueRemoteIssueLinks",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraIssueTransitions",
+      "permission": "jira_listJiraIssueTransitions",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraIssueWorklogs",
+      "permission": "jira_listJiraIssueWorklogs",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraProjectComponents",
+      "permission": "jira_listJiraProjectComponents",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraProjectIssueTypesMetadata",
+      "permission": "jira_listJiraProjectIssueTypesMetadata",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraProjects",
+      "permission": "jira_listJiraProjects",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "listJiraStatuses",
+      "permission": "jira_listJiraStatuses",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "lookupJiraAccountId",
+      "permission": "jira_lookupJiraAccountId",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "searchJiraIssuesUsingJql",
+      "permission": "jira_searchJiraIssuesUsingJql",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "addOrEditJiraIssueComment",
+      "permission": "jira_addOrEditJiraIssueComment",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "addOrEditJiraIssueWorklog",
+      "permission": "jira_addOrEditJiraIssueWorklog",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "convertJiraIssueHierarchy",
+      "permission": "jira_convertJiraIssueHierarchy",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "createJiraBoard",
+      "permission": "jira_createJiraBoard",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "createJiraIssue",
+      "permission": "jira_createJiraIssue",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "createJiraIssueLink",
+      "permission": "jira_createJiraIssueLink",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "createJiraIssueRemoteIssueLink",
+      "permission": "jira_createJiraIssueRemoteIssueLink",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "editJiraIssue",
+      "permission": "jira_editJiraIssue",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "manageJiraProjectVersion",
+      "permission": "jira_manageJiraProjectVersion",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "manageJiraProjectVersionRelatedWork",
+      "permission": "jira_manageJiraProjectVersionRelatedWork",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "manageJiraSprint",
+      "permission": "jira_manageJiraSprint",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "transitionJiraIssue",
+      "permission": "jira_transitionJiraIssue",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "uploadAttachmentToJiraIssue",
+      "permission": "jira_uploadAttachmentToJiraIssue",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "watchJiraIssue",
+      "permission": "jira_watchJiraIssue",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "createJiraProject",
+      "permission": "jira_createJiraProject",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "deleteJiraComment",
+      "permission": "jira_deleteJiraComment",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "deleteJiraIssue",
+      "permission": "jira_deleteJiraIssue",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "deleteJiraIssueAttachment",
+      "permission": "jira_deleteJiraIssueAttachment",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "editJiraEntityProperty",
+      "permission": "jira_editJiraEntityProperty",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "updateJiraProject",
+      "permission": "jira_updateJiraProject",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "updateJiraScreen",
+      "permission": "jira_updateJiraScreen",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    }
+  ],
+  "counts": {
+    "tools": 54,
+    "reads": 33,
+    "writes": 14,
+    "denied": 7,
+    "skills": 2
+  }
+}

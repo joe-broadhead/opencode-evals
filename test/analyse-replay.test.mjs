@@ -8,7 +8,7 @@ import { join } from "node:path"
 import { homedir } from "node:os"
 import { innerCounts, summarize, askedTools, sameTool } from "../src/trace/analyse.mjs"
 
-const runDir = join(homedir(), "opencode-release/review/evalruns/nm4/metaview-live")
+const runDir = process.env.EVALS_REPLAY_DIR ?? join(homedir(), ".evals-replay")
 const hasRun = existsSync(join(runDir, "job-post-rewrite-asks-first.jsonl"))
 
 const replay = (name) => {

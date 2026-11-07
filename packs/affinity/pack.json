@@ -1,0 +1,597 @@
+{
+  "rpc": "affinity.crm.tools",
+  "t1": [],
+  "id": "affinity",
+  "name": "Affinity",
+  "package": "@joe-broadhead/opencode-affinity",
+  "version": "0.0.0",
+  "private": true,
+  "pluginId": "affinity.crm",
+  "skills": [
+    "affinity",
+    "affinity-write"
+  ],
+  "tools": [
+    {
+      "name": "get_current_user",
+      "permission": "affinity_get_current_user",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_companies_top_matches",
+      "permission": "affinity_search_companies_top_matches",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_all_companies",
+      "permission": "affinity_search_all_companies",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_company_info",
+      "permission": "affinity_get_company_info",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_company_list_entries",
+      "permission": "affinity_get_company_list_entries",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_merge_task",
+      "permission": "affinity_get_merge_task",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "render_market_map",
+      "permission": "affinity_render_market_map",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_entity_fields",
+      "permission": "affinity_get_entity_fields",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_list_fields",
+      "permission": "affinity_get_list_fields",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_list_field_dropdown_options",
+      "permission": "affinity_get_list_field_dropdown_options",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_entity_field_dropdown_options",
+      "permission": "affinity_get_entity_field_dropdown_options",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_field_value_changes",
+      "permission": "affinity_get_field_value_changes",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_investor_executive_connections",
+      "permission": "affinity_get_investor_executive_connections",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_coworker_connections",
+      "permission": "affinity_get_coworker_connections",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_lists",
+      "permission": "affinity_get_lists",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_single_list_entry",
+      "permission": "affinity_get_single_list_entry",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_list_info",
+      "permission": "affinity_get_list_info",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_list_entries",
+      "permission": "affinity_search_list_entries",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_meetings",
+      "permission": "affinity_get_meetings",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_meetings_for_entity",
+      "permission": "affinity_get_meetings_for_entity",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "query_notes",
+      "permission": "affinity_query_notes",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_notes_for_entity",
+      "permission": "affinity_get_notes_for_entity",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_entities_attached_to_note",
+      "permission": "affinity_get_entities_attached_to_note",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_notes",
+      "permission": "affinity_search_notes",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_entity_files",
+      "permission": "affinity_get_entity_files",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_entity_file_metadata",
+      "permission": "affinity_get_entity_file_metadata",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_files",
+      "permission": "affinity_search_files",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_opportunities",
+      "permission": "affinity_search_opportunities",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_persons",
+      "permission": "affinity_search_persons",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_person_info",
+      "permission": "affinity_get_person_info",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_persons_info",
+      "permission": "affinity_get_persons_info",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_person_list_entries",
+      "permission": "affinity_get_person_list_entries",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_person_relationships",
+      "permission": "affinity_get_person_relationships",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_company_relationships",
+      "permission": "affinity_get_company_relationships",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_reminders",
+      "permission": "affinity_get_reminders",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_saved_views",
+      "permission": "affinity_get_saved_views",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_saved_view_list_entries",
+      "permission": "affinity_get_saved_view_list_entries",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_transcript_fragments",
+      "permission": "affinity_get_transcript_fragments",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_users",
+      "permission": "affinity_get_users",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "render_warm_intro_graph",
+      "permission": "affinity_render_warm_intro_graph",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "affinity_data_migration",
+      "permission": "affinity_affinity_data_migration",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "affinity_event_setup",
+      "permission": "affinity_affinity_event_setup",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "affinity_lp_pipeline_brief",
+      "permission": "affinity_affinity_lp_pipeline_brief",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "affinity_meeting_prep",
+      "permission": "affinity_affinity_meeting_prep",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "affinity_missed_deal_review",
+      "permission": "affinity_affinity_missed_deal_review",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "affinity_reference_check",
+      "permission": "affinity_affinity_reference_check",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "company_signals",
+      "permission": "affinity_company_signals",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "crm_audit",
+      "permission": "affinity_crm_audit",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "customer_ready_to_raise",
+      "permission": "affinity_customer_ready_to_raise",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "market_map_generator",
+      "permission": "affinity_market_map_generator",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "portfolio_attention_score",
+      "permission": "affinity_portfolio_attention_score",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "warm_intro",
+      "permission": "affinity_warm_intro",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "create_company",
+      "permission": "affinity_create_company",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_field",
+      "permission": "affinity_create_field",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_list_field_dropdown_option",
+      "permission": "affinity_create_list_field_dropdown_option",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_interaction",
+      "permission": "affinity_create_interaction",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_list",
+      "permission": "affinity_create_list",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_list_entry",
+      "permission": "affinity_create_list_entry",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_note",
+      "permission": "affinity_create_note",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_opportunity",
+      "permission": "affinity_create_opportunity",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_person",
+      "permission": "affinity_create_person",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_reminder",
+      "permission": "affinity_create_reminder",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "issue_entity_files_upload_token",
+      "permission": "affinity_issue_entity_files_upload_token",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "issue_entity_files_download_token",
+      "permission": "affinity_issue_entity_files_download_token",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_company",
+      "permission": "affinity_update_company",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_list_field_dropdown_option",
+      "permission": "affinity_update_list_field_dropdown_option",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "upsert_entity_field_values",
+      "permission": "affinity_upsert_entity_field_values",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "upsert_list_entry_field_values",
+      "permission": "affinity_upsert_list_entry_field_values",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_note",
+      "permission": "affinity_update_note",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_opportunity",
+      "permission": "affinity_update_opportunity",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_person",
+      "permission": "affinity_update_person",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_reminder",
+      "permission": "affinity_update_reminder",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "delete_company",
+      "permission": "affinity_delete_company",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "delete_person",
+      "permission": "affinity_delete_person",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "delete_opportunity",
+      "permission": "affinity_delete_opportunity",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "delete_note",
+      "permission": "affinity_delete_note",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "delete_list_entries",
+      "permission": "affinity_delete_list_entries",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "delete_list_field_dropdown_option",
+      "permission": "affinity_delete_list_field_dropdown_option",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "delete_reminder",
+      "permission": "affinity_delete_reminder",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "merge_companies",
+      "permission": "affinity_merge_companies",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "merge_persons",
+      "permission": "affinity_merge_persons",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "send_feedback",
+      "permission": "affinity_send_feedback",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    }
+  ],
+  "counts": {
+    "tools": 82,
+    "reads": 52,
+    "writes": 20,
+    "denied": 10,
+    "skills": 2
+  }
+}

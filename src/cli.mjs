@@ -23,6 +23,8 @@ import { comparable } from "./policy/comparable.mjs"
 import { checkX } from "./t0/x.mjs"
 import { renderScorecard, compareToHandGrading } from "./report/scorecard.mjs"
 import { goldCases } from "./grade/gold.mjs"
+import { readPack, writePack, PLUGIN_ROOT } from "./pack/from-plugin.mjs"
+import { runT1, coverageTable } from "./t1/run.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
 const args = (argv) => {
@@ -110,7 +112,7 @@ function stateFor(iteration, caseName) {
   return existsSync(file) ? JSON.parse(read(file)) : null
 }
 
-function gradeAll(iteration, casesDir = path("cases", "x"), tracesDir = path("traces", iteration), rawDir = path("..", "private", "raw")) {
+function gradeAll(iteration, casesDir = path("cases", "x"), tracesDir = path("traces", iteration), rawDir = process.env.EVALS_RAW ?? path("..", "private", "raw")) {
   const cases = casesDir.endsWith(".json") ? [] : listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
   const results = []
   for (const caseObject of cases) {
@@ -244,7 +246,7 @@ export async function main(argv) {
     }
     case "trace": {
       const iteration = opt.iteration ?? "nx6"
-      const from = opt.from ?? process.env.HOME + `/opencode-release/review/evalruns/${iteration}/x`
+      const from = opt.from ?? process.env.EVALS_RECORDINGS ?? ""
       const out = opt.out ?? path("traces", iteration)
       const manifestFile = path("fixtures", "recordings", "manifest.json")
       const manifest = existsSync(manifestFile) ? JSON.parse(read(manifestFile)) : {}
@@ -292,7 +294,7 @@ export async function main(argv) {
       const iteration = opt.iteration ?? "nx6"
       const results = JSON.parse(read(opt.results ?? path("results", iteration, "verdicts.json")))
       const batch = JSON.parse(read(path("results", iteration, "batch.json")))
-      const gradingFile = opt.grading ?? process.env.HOME + `/opencode-release/review/evalruns/${iteration}/x/grading.json`
+      const gradingFile = opt.grading ?? (process.env.EVALS_GRADING ?? "")
       const hand = existsSync(gradingFile) ? JSON.parse(read(gradingFile)) : null
       const comparison = hand ? compareToHandGrading(results, hand) : null
       // Every disagreement must carry an authored explanation; the note lives in the case's `## Notes`.
@@ -384,6 +386,37 @@ export async function main(argv) {
       }
       console.log(`${gold.length - failed}/${gold.length} gold cases reproduce their known verdict`)
       if (failed) process.exitCode = 1
+      return
+    }
+    case "pack": {
+      const ids = opt._.length ? opt._ : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear"]
+      for (const id of ids) {
+        if (opt.sync) {
+          const pack = writePack(id)
+          console.log(`${id.padEnd(10)} synced  tools ${pack.counts.tools} (${pack.counts.reads} read, ${pack.counts.writes} write, ${pack.counts.denied} denied)  skills ${pack.counts.skills}`)
+        } else {
+          const pack = readPack(id)
+          console.log(`${id.padEnd(10)} ${pack.pluginId}  tools ${pack.counts.tools}  t1 ${(pack.t1 ?? []).length}  rpc ${pack.rpc ?? "-"}`)
+        }
+      }
+      return
+    }
+    case "t1": {
+      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const ids = opt.plugin ? [opt.plugin] : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear"]
+      const versions = opt.versions ? String(opt.versions).split(",") : undefined
+      const packs = ids.map((id) => ({ ...readPack(id), repo: PLUGIN_ROOT(id) }))
+      const results = await runT1({ packs, store, versions, fakeModule: process.env.EVALS_X_FAKE, log: (line) => console.error(line) })
+      const table = coverageTable(results)
+      const text = [`# T1 coverage`, "", ...table.lines, "", "`p` pass, `f` fail, `u` unsupported, `—` not run."].join("\n")
+      console.log(text)
+      write(path("results", "t1", "coverage.md"), text)
+      write(path("results", "t1", "coverage.json"), json(results.map((r) => ({ plugin: r.plugin, version: r.version, summary: r.summary, checks: r.checks.map((c) => [c.id, c.state]) }))))
+      const failures = results.flatMap((r) => r.checks.filter((c) => c.state === "fail").map((c) => `${r.plugin}@${r.version} ${c.id}: ${c.detail}`))
+      if (failures.length) {
+        console.log(`\n${failures.length} failing check(s):\n  ${failures.join("\n  ")}`)
+        process.exitCode = 1
+      }
       return
     }
     default:

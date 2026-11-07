@@ -1,0 +1,142 @@
+{
+  "rpc": "ashby.recruiting.tools",
+  "t1": [],
+  "id": "ashby",
+  "name": "Ashby",
+  "package": "@joe-broadhead/opencode-ashby",
+  "version": "0.0.0",
+  "private": true,
+  "pluginId": "ashby.recruiting",
+  "skills": [
+    "ashby",
+    "ashby-write"
+  ],
+  "tools": [
+    {
+      "name": "describe_object_fields",
+      "permission": "ashby_describe_object_fields",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "filter_records",
+      "permission": "ashby_filter_records",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_candidate",
+      "permission": "ashby_get_candidate",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_interview_details",
+      "permission": "ashby_get_interview_details",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_interview_plan",
+      "permission": "ashby_get_interview_plan",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_job_pipeline",
+      "permission": "ashby_get_job_pipeline",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_pending_tasks",
+      "permission": "ashby_get_pending_tasks",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_record_details",
+      "permission": "ashby_get_record_details",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_submitted_feedback",
+      "permission": "ashby_get_submitted_feedback",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_upcoming_interviews",
+      "permission": "ashby_get_upcoming_interviews",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_product_docs",
+      "permission": "ashby_search_product_docs",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_records_by_name",
+      "permission": "ashby_search_records_by_name",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "add_note_to_candidate",
+      "permission": "ashby_add_note_to_candidate",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "consider_candidate_for_job",
+      "permission": "ashby_consider_candidate_for_job",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_candidate",
+      "permission": "ashby_create_candidate",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "change_application_stage",
+      "permission": "ashby_change_application_stage",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "submit_mcp_feedback",
+      "permission": "ashby_submit_mcp_feedback",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    }
+  ],
+  "counts": {
+    "tools": 17,
+    "reads": 12,
+    "writes": 3,
+    "denied": 2,
+    "skills": 2
+  }
+}

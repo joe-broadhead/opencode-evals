@@ -67,13 +67,13 @@
     "date": "2026-11-06",
     "quality": "declared",
     "plugin_commit": "d8f6426",
-    "plugin_source": "review/evalruns/nx6/x/grading.md",
+    "plugin_source": "the nx6 hand-grading note",
     "plugin_version": null,
     "skill_sha256": null,
     "case_set_sha256": null,
     "cases": 12,
     "rule_set": "cap-and-tell-after",
-    "rule_set_note": "review/evalruns/nx6/x/grading.md: graded against evals/x as updated for the owner's read rule of 2026-11-06"
+    "rule_set_note": "the nx6 hand-grading note: graded against evals/x as updated for the owner's read rule of 2026-11-06"
   },
   "nx7": {
     "date": "2026-11-06",
@@ -84,6 +84,6 @@
     "case_set_sha256": null,
     "cases": 4,
     "rule_set": "cap-and-tell-after",
-    "rule_set_note": "review/evalruns/nx6/x/grading.md: graded against evals/x as updated for the owner's read rule of 2026-11-06"
+    "rule_set_note": "the nx6 hand-grading note: graded against evals/x as updated for the owner's read rule of 2026-11-06"
   }
 }

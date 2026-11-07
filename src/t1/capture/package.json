@@ -1,0 +1,10 @@
+{
+  "name": "opencode-evals-capture",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "An eval-only OpenCode plugin: records the resolved permission decisions, the offered tool list and the MCP boundary, and changes nothing.",
+  "exports": {
+    ".": "./plugin.ts"
+  }
+}

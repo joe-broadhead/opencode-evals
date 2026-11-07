@@ -56,7 +56,7 @@ test("nx6 keeps the verdicts the hand grading also reached", { skip: SKIP }, () 
 })
 
 test("against the hand grading: every pair agrees but one, and the one has an explanation", { skip: SKIP }, () => {
-  const gradingFile = join(process.env.HOME, "opencode-release/review/evalruns/nx6/x/grading.json")
+  const gradingFile = process.env.EVALS_GRADING ?? ""
   if (!existsSync(gradingFile)) return
   const hand = JSON.parse(readFileSync(gradingFile, "utf8"))
   const comparison = compareToHandGrading(replay(), hand)

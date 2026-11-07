@@ -3,7 +3,7 @@
 // trace is either provably structural (a timestamp, a number, a known parameter value) or is replaced by
 // {len, shape, tokens}: a punctuation skeleton plus the words that belong to the tool's own grammar.
 //
-// The raw recording stays under evals-lab/private/ (mode 700) and is referenced by digest.
+// The raw recording stays under the private store (mode 700) and is referenced by digest.
 
 /** Values that are part of a tool's own language: never a user's content. */
 export const VOCAB = new Set([

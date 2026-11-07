@@ -1,0 +1,135 @@
+{
+  "rpc": "wisprflow.meetings.tools",
+  "t1": [],
+  "id": "wisprflow",
+  "name": "Wispr Flow",
+  "package": "@joe-broadhead/opencode-wisprflow",
+  "version": "0.0.2",
+  "private": false,
+  "pluginId": "wisprflow.meetings",
+  "skills": [
+    "wisprflow",
+    "wisprflow-meeting-brief"
+  ],
+  "tools": [
+    {
+      "name": "get_calendar_event",
+      "permission": "wisprflow_get_calendar_event",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_meeting",
+      "permission": "wisprflow_get_meeting",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_meeting_by_calendar_id",
+      "permission": "wisprflow_get_meeting_by_calendar_id",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_meeting_participants_enriched",
+      "permission": "wisprflow_get_meeting_participants_enriched",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_scratchpad_note",
+      "permission": "wisprflow_get_scratchpad_note",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_upcoming_meeting",
+      "permission": "wisprflow_get_upcoming_meeting",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_folder_meetings",
+      "permission": "wisprflow_list_folder_meetings",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_folders",
+      "permission": "wisprflow_list_folders",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_meeting_series",
+      "permission": "wisprflow_list_meeting_series",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_upcoming_meetings",
+      "permission": "wisprflow_list_upcoming_meetings",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "resolve_calendar_link",
+      "permission": "wisprflow_resolve_calendar_link",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "resolve_share_link",
+      "permission": "wisprflow_resolve_share_link",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_calendar_events",
+      "permission": "wisprflow_search_calendar_events",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_meetings",
+      "permission": "wisprflow_search_meetings",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_scratchpad_notes",
+      "permission": "wisprflow_search_scratchpad_notes",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_participant_contacts",
+      "permission": "wisprflow_get_participant_contacts",
+      "effect": "ask",
+      "readOnly": true,
+      "class": "read"
+    }
+  ],
+  "counts": {
+    "tools": 16,
+    "reads": 16,
+    "writes": 0,
+    "denied": 0,
+    "skills": 2
+  }
+}

@@ -1,0 +1,500 @@
+{
+  "rpc": "metaview.workspace.tools",
+  "t1": [],
+  "id": "metaview",
+  "name": "Metaview",
+  "package": "@joe-broadhead/opencode-metaview",
+  "version": "0.0.2",
+  "private": false,
+  "pluginId": "metaview.workspace",
+  "skills": [
+    "metaview",
+    "metaview-candidate-brief",
+    "metaview-write"
+  ],
+  "tools": [
+    {
+      "name": "fetch_candidates",
+      "permission": "metaview_fetch_candidates",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "find_candidate_in_sequences",
+      "permission": "metaview_find_candidate_in_sequences",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_application_review_details",
+      "permission": "metaview_get_application_review_details",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_application_review_rules",
+      "permission": "metaview_get_application_review_rules",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_chart_data",
+      "permission": "metaview_get_chart_data",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_enrichment_status",
+      "permission": "metaview_get_enrichment_status",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_job_post",
+      "permission": "metaview_get_job_post",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_job_post_template",
+      "permission": "metaview_get_job_post_template",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_job_post_thread",
+      "permission": "metaview_get_job_post_thread",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_note_template",
+      "permission": "metaview_get_note_template",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_platform_credits",
+      "permission": "metaview_get_platform_credits",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_screen_details",
+      "permission": "metaview_get_screen_details",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_screen_interview",
+      "permission": "metaview_get_screen_interview",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_search_details",
+      "permission": "metaview_get_search_details",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_sourcing_analytics",
+      "permission": "metaview_get_sourcing_analytics",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_sourcing_messages",
+      "permission": "metaview_get_sourcing_messages",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_user_context",
+      "permission": "metaview_get_user_context",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "group_conversations",
+      "permission": "metaview_group_conversations",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_application_review_candidates",
+      "permission": "metaview_list_application_review_candidates",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_application_review_rejection_options",
+      "permission": "metaview_list_application_review_rejection_options",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_application_reviews",
+      "permission": "metaview_list_application_reviews",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_ats_jobs",
+      "permission": "metaview_list_ats_jobs",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_ats_stages",
+      "permission": "metaview_list_ats_stages",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_connectors",
+      "permission": "metaview_list_connectors",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_field_values",
+      "permission": "metaview_list_field_values",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_fields",
+      "permission": "metaview_list_fields",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_job_post_checks",
+      "permission": "metaview_list_job_post_checks",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_job_post_templates",
+      "permission": "metaview_list_job_post_templates",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_job_post_threads",
+      "permission": "metaview_list_job_post_threads",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_job_posts",
+      "permission": "metaview_list_job_posts",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_mailboxes",
+      "permission": "metaview_list_mailboxes",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_note_template_groups",
+      "permission": "metaview_list_note_template_groups",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_note_templates",
+      "permission": "metaview_list_note_templates",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_screen_candidates",
+      "permission": "metaview_list_screen_candidates",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_screens",
+      "permission": "metaview_list_screens",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_sequence_candidates",
+      "permission": "metaview_list_sequence_candidates",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_sequences",
+      "permission": "metaview_list_sequences",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_sourcing_candidates",
+      "permission": "metaview_list_sourcing_candidates",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_sourcing_knowledge",
+      "permission": "metaview_list_sourcing_knowledge",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_sourcing_searches",
+      "permission": "metaview_list_sourcing_searches",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_conversations",
+      "permission": "metaview_search_conversations",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_reports",
+      "permission": "metaview_search_reports",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_snippets",
+      "permission": "metaview_search_snippets",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "create_ai_field",
+      "permission": "metaview_create_ai_field",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_job_post_check",
+      "permission": "metaview_create_job_post_check",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_report",
+      "permission": "metaview_create_report",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_snippet",
+      "permission": "metaview_create_snippet",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "enrich_candidate_contacts",
+      "permission": "metaview_enrich_candidate_contacts",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "generate_notes",
+      "permission": "metaview_generate_notes",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "give_sourcing_feedback",
+      "permission": "metaview_give_sourcing_feedback",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "manage_note_template",
+      "permission": "metaview_manage_note_template",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "manage_notes_sources",
+      "permission": "metaview_manage_notes_sources",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "manage_sequence",
+      "permission": "metaview_manage_sequence",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "manage_sourcing_knowledge",
+      "permission": "metaview_manage_sourcing_knowledge",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "post_sourcing_candidates_to_ats",
+      "permission": "metaview_post_sourcing_candidates_to_ats",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "resolve_job_post_suggestion",
+      "permission": "metaview_resolve_job_post_suggestion",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "restore_application_review_icp",
+      "permission": "metaview_restore_application_review_icp",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "run_job_post_checks",
+      "permission": "metaview_run_job_post_checks",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "send_job_post_message",
+      "permission": "metaview_send_job_post_message",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "send_sourcing_message",
+      "permission": "metaview_send_sourcing_message",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_application_review_icp",
+      "permission": "metaview_update_application_review_icp",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_application_review_rules",
+      "permission": "metaview_update_application_review_rules",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_screen_outreach",
+      "permission": "metaview_update_screen_outreach",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_screen_plan",
+      "permission": "metaview_update_screen_plan",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "upsert_job_post_template",
+      "permission": "metaview_upsert_job_post_template",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "give_application_review_candidate_feedback",
+      "permission": "metaview_give_application_review_candidate_feedback",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "manage_candidate_sequence",
+      "permission": "metaview_manage_candidate_sequence",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    },
+    {
+      "name": "submit_feedback",
+      "permission": "metaview_submit_feedback",
+      "effect": "deny",
+      "readOnly": false,
+      "class": "destructive"
+    }
+  ],
+  "counts": {
+    "tools": 68,
+    "reads": 43,
+    "writes": 22,
+    "denied": 3,
+    "skills": 3
+  }
+}
