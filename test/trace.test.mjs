@@ -70,7 +70,10 @@ test("the trace has the shape oc-trace/1 promises", { skip: !existsSync(RAW) && 
   const { head, body } = trace(base)
   assert.equal(head.schema, "oc-trace/1")
   assert.equal(head.failure_class, null)
-  assert.equal(head.summary.cost.source, "missing", "no price table means missing, never a guess")
+  // The cost rule: the provider billed zero, and the catalogue (through the alias mapping) prices it.
+  assert.equal(head.summary.cost.billed_usd, 0)
+  assert.ok(["billed", "list-price", "free", "missing"].includes(head.summary.cost.source))
+  assert.match(head.summary.cost.catalog.digest, /^[0-9a-f]{64}$/)
   assert.equal(head.privacy.policy, "no-text-no-ids-no-handles")
   assert.match(head.privacy.raw.sha256, /^[0-9a-f]{64}$/)
   const kinds = new Set(body.map((e) => e.kind))

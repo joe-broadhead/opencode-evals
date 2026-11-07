@@ -1,0 +1,7 @@
+{
+  "claude-agent/opus": {
+    "to": "anthropic/claude-opus-5-5",
+    "asOf": "2026-11-07",
+    "why": "claude-agent's opus alias resolves to the current Opus; update when the alias moves"
+  }
+}

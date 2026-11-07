@@ -29,8 +29,8 @@ import { checkPack } from "./t0/generic.mjs"
 import { scan as privacyScan, renderScan } from "./privacy/gate.mjs"
 import { monthToDate, budgetLine, CAPS } from "./cost/budget.mjs"
 import { loadPrices, vendorCost } from "./cost/compute.mjs"
-import { loadCatalog, loadMapping } from "./cost/catalog.mjs"
-import { runCost, totals } from "./cost/rule.mjs"
+import { loadCatalog, loadMapping, drift } from "./cost/catalog.mjs"
+import { runCost, totals, trustOf } from "./cost/rule.mjs"
 import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "./label/kit.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
@@ -186,6 +186,13 @@ function iterationProvenance(iteration) {
       sources: costs.reduce((acc, c) => ({ ...acc, [c.source]: (acc[c.source] ?? 0) + 1 }), {}),
       missing_runs: costs.filter((c) => c.source === "missing").length,
       catalog: costs[0]?.catalog ?? null,
+      mapping: costs.find((c) => c.resolved?.mapping)?.resolved.mapping ?? null,
+      mapped_to: (() => {
+        const found = costs.find((c) => c.resolved?.via === "mapping")?.resolved
+        return found ? `${found.provider}/${found.model}` : null
+      })(),
+      drift: drift(loadCatalog(), loadMapping()),
+      run_date: (heads[0]?.started_at ?? "").slice(0, 10) || null,
       amount_usd: costs.every((c) => typeof c.billed_usd !== "number") ? null : costs.reduce((n, c) => n + (c.billed_usd ?? 0), 0),
       source: costs.every((c) => c.source === "missing") ? "missing" : costs.some((c) => c.source === "billed" && c.billed_usd > 0) ? "billed" : costs[0].source,
     },
@@ -481,10 +488,12 @@ export async function main(argv) {
       const mapping = loadMapping()
       const dir = join(store, "traces", iteration)
       if (!existsSync(dir)) throw new Error(`no traces for ${iteration} in ${store}`)
+      let runDate = null
       const rows = []
       for (const file of readdirSync(dir).filter((f) => f.endsWith(".trace.jsonl"))) {
         const lines = read(join(dir, file)).split("\n").filter(Boolean).map((line) => JSON.parse(line))
         const head = lines[0]
+        runDate ??= (head.started_at ?? "").slice(0, 10) || null
         const calls = runView(lines).calls.filter((call) => call.via === "execute")
         const vendor = vendorCost(calls, opt.plugin ?? "x", prices)
         const model = runCost({ steps: lines.filter((e) => e.kind === "model_call").map((e) => ({ cost: e.billed_usd, tokens: e.tokens })), model: { provider: head.model?.provider, id: head.model?.id }, catalog, mapping })
@@ -501,6 +510,15 @@ export async function main(argv) {
         `- sources: ${Object.entries(all.sources).map(([k, v]) => `${k} ${v}`).join(", ") || "none"}${all.missing_runs ? `; ${all.missing_runs} missing, never counted as $0` : ""}`,
         `- vendor: **${vendorTotal.toFixed(3)}** — ${prices.vendors?.[opt.plugin ?? "x"]?.source ?? "no source"}`,
         `- catalogue: ${catalog.digest ? catalog.digest.slice(0, 12) : "absent"}, fetched ${catalog.fetched_at ?? "never"}`,
+        ...(() => {
+          const entries = drift(catalog, mapping)
+          if (!entries.length) return ["- mapping: none"]
+          return entries.map((entry) => {
+            const t = trustOf(runDate, entry.asOf)
+            const trust = t.trust === "assumed" ? `assumed: ${t.why}` : t.trust === "verified" ? `verified: ${t.why}` : "unknown: ${t.why}"
+            return `- mapping: \`${entry.alias}\` → \`${entry.to}\` (asOf ${entry.asOf}; ${trust})${entry.stale ? ` — **STALE**: ${entry.note}` : ""}`
+          })
+        })(),
         "",
         "| case | billed $ | list $ | source | posts | authors | vendor $ |",
         "| --- | --- | --- | --- | --- | --- | --- |",

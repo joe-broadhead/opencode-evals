@@ -2,8 +2,8 @@
 // genuinely free, and an unknown model is missing — never zero, never a guess.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { classify, runCost, totals } from "../src/cost/rule.mjs"
-import { resolve, listPrice, loadCatalog, catalogPath, loadMapping } from "../src/cost/catalog.mjs"
+import { classify, runCost, totals, trustOf } from "../src/cost/rule.mjs"
+import { resolve, listPrice, loadCatalog, catalogPath, loadMapping, drift } from "../src/cost/catalog.mjs"
 
 const tokens = { input: 1000, output: 2000, cacheRead: 100_000, cacheWrite: 4000 }
 const price = { input: 5, output: 25, cache_read: 0.5, cache_write: 6.25, per: "mtok" }
@@ -116,4 +116,61 @@ test("the live catalogue is read from OpenCode's own cache, with a digest", () =
   }
   // No price is typed in this repository: the catalogue is the only source.
   assert.equal(listPrice(tokens, null), null)
+})
+
+test("an alias mapping resolves through the catalogue, and carries its own date", () => {
+  const catalog = { providers: { anthropic: { models: { "claude-opus-5-5": { cost: { input: 4, output: 20, cache_read: 0.2, cache_write: 5 }, release_date: "2026-09-22" } } } } }
+  const mapping = { "claude-agent/opus": { to: "anthropic/claude-opus-5-5", asOf: "2026-11-07", why: "the alias resolves to the current Opus" } }
+  const found = resolve(catalog, "claude-agent", "opus#high", mapping)
+  assert.equal(found.via, "mapping")
+  assert.equal(found.model, "claude-opus-5-5")
+  assert.equal(found.price.input, 4)
+  assert.equal(found.mapping.asOf, "2026-11-07")
+})
+
+test("a mapping older than the newest release in the family is stale, and nothing is re-priced", () => {
+  const models = {
+    "claude-opus-5-5": { cost: { input: 4, output: 20 }, release_date: "2026-09-22" },
+    "claude-opus-5": { cost: { input: 5, output: 25 }, release_date: "2026-07-24" },
+  }
+  const catalog = { providers: { anthropic: { models } } }
+  const current = drift(catalog, { "claude-agent/opus": { to: "anthropic/claude-opus-5-5", asOf: "2026-11-07" } })
+  assert.equal(current[0].stale, false)
+  assert.equal(current[0].newest, "anthropic/claude-opus-5-5")
+
+  const older = drift(catalog, { "claude-agent/opus": { to: "anthropic/claude-opus-5", asOf: "2026-08-01" } })
+  assert.equal(older[0].stale, true)
+  assert.match(older[0].note, /released 2026-09-22/)
+  assert.match(older[0].note, /nothing was re-priced/)
+  // The price still comes from the entry the mapping names, not from the newest model.
+  const priced = resolve(catalog, "claude-agent", "opus", { "claude-agent/opus": { to: "anthropic/claude-opus-5", asOf: "2026-08-01" } })
+  assert.equal(priced.price.input, 5)
+})
+
+test("a run before the mapping's date is priced by assumption, and says so", () => {
+  assert.equal(trustOf("2026-11-06", "2026-11-07").trust, "assumed")
+  assert.match(trustOf("2026-11-06", "2026-11-07").why, /before the mapping's/)
+  assert.equal(trustOf("2026-11-07", "2026-11-07").trust, "verified")
+  assert.equal(trustOf(null, "2026-11-07").trust, "unknown")
+})
+
+test("the repository's mapping file names a catalogue id, never a rate", () => {
+  const mapping = loadMapping()
+  const entry = mapping["claude-agent/opus"]
+  assert.ok(entry, "the repository ships the mapping")
+  assert.equal(entry.to, "anthropic/claude-opus-5-5")
+  assert.match(entry.asOf, /^\d{4}-\d{2}-\d{2}$/)
+  assert.equal("price" in entry, false)
+  assert.equal("input" in entry, false)
+})
+
+test("the mapping's model prices the X token mix at the catalogue's rate", () => {
+  const catalog = loadCatalog()
+  const mapping = loadMapping()
+  if (!catalog.digest) return
+  const resolved = resolve(catalog, "claude-agent", "opus#high", mapping)
+  assert.equal(resolved.via, "mapping")
+  const amount = listPrice({ input: 8, output: 1197, cacheRead: 230_266, cacheWrite: 6451 }, resolved.price)
+  // 8×4 + 1197×20 + 230266×0.2 + 6451×5, per million tokens.
+  assert.ok(Math.abs(amount - (8 * 4 + 1197 * 20 + 230_266 * 0.2 + 6451 * 5) / 1_000_000) < 1e-9)
 })

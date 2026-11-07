@@ -51,9 +51,22 @@ export function runCost({ steps, model, catalog = loadCatalog(), mapping = loadM
     billed_steps: billedSteps.length,
     tokens,
     model: `${model.provider}/${model.id}`,
-    resolved: resolved.price ? { provider: resolved.provider, model: resolved.model, via: resolved.via, price: resolved.price } : { source: "missing", why: resolved.why },
+    resolved: resolved.price
+      ? { provider: resolved.provider, model: resolved.model, via: resolved.via, price: resolved.price, ...(resolved.mapping ? { mapping: resolved.mapping } : {}) }
+      : { source: "missing", why: resolved.why },
     catalog: { digest: catalog.digest, fetched_at: catalog.fetched_at },
   }
+}
+
+/**
+ * Whether a run's list cost can be trusted: the mapping is a claim dated `asOf`, and a run made before that
+ * date was priced by assumption. It is shown with the number, never used to hide it.
+ */
+export function trustOf(runDate, asOf) {
+  if (!runDate || !asOf) return { trust: "unknown", why: "no run date or no mapping date" }
+  return runDate < asOf
+    ? { trust: "assumed", why: `the run is dated ${runDate}, before the mapping's ${asOf}` }
+    : { trust: "verified", why: `the run is dated ${runDate}, on or after the mapping's ${asOf}` }
 }
 
 /** Two totals side by side: what the provider charged, and what the catalogue would have charged. */

@@ -72,11 +72,12 @@ export function resolve(catalog, providerID, modelID, mapping = {}) {
   const exact = tryEntry(providerID, bare)
   if (exact) return { ...exact, source: "catalog" }
 
-  const alias = mapping[`${providerID}/${bare}`] ?? mapping[`${providerID}/*`]
-  if (alias) {
-    const [provider, model] = String(alias).split("/")
+  const entry = mapping[`${providerID}/${bare}`] ?? mapping[`${providerID}/*`]
+  const target = targetOf(entry)
+  if (target) {
+    const [provider, model] = target.to.split("/")
     const mapped = tryEntry(provider, model)
-    if (mapped) return { ...mapped, via: "mapping" }
+    if (mapped) return { ...mapped, via: "mapping", mapping: { asOf: target.asOf, why: target.why } }
   }
 
   let match = null
@@ -95,15 +96,62 @@ export function resolve(catalog, providerID, modelID, mapping = {}) {
   }
 }
 
-/** The mapping file: an alias to a catalogue id, never a price. Empty when absent. */
+/**
+ * The mapping file: an alias naming the catalogue id it stands for, never a price. It lives in the
+ * repository (`cost/model-map.json`) and `EVALS_MODEL_MAP` can point elsewhere.
+ *
+ *   { "<provider>/<model>": { "to": "<catalogue provider>/<catalogue model>", "asOf": "YYYY-MM-DD", "why": "…" } }
+ */
+export function mappingPath(env = process.env) {
+  if (env.EVALS_MODEL_MAP) return env.EVALS_MODEL_MAP
+  return join(import.meta.dirname, "..", "..", "cost", "model-map.json")
+}
+
 export function loadMapping(env = process.env) {
-  const path = env.EVALS_MODEL_MAP
-  if (!path || !existsSync(path)) return {}
+  const path = mappingPath(env)
+  if (!existsSync(path)) return {}
   try {
     return JSON.parse(readFileSync(path, "utf8"))
   } catch {
     return {}
   }
+}
+
+const targetOf = (entry) => {
+  if (typeof entry === "string") return { to: entry, asOf: null, why: null }
+  if (entry && typeof entry === "object" && typeof entry.to === "string") return { to: entry.to, asOf: entry.asOf ?? null, why: entry.why ?? null }
+  return null
+}
+
+/**
+ * Alias drift: a mapping is a claim about *which* model an alias meant, made on a date. If the catalogue
+ * has released a newer model in the same family since then, the claim is stale — reported, never silently
+ * re-priced.
+ */
+export function drift(catalog, mapping, { provider = "anthropic", family = /opus/i, familyName = "Opus" } = {}) {
+  const models = catalog.providers?.[provider]?.models ?? {}
+  const released = Object.entries(models)
+    .filter(([id, model]) => family.test(id) && model?.release_date)
+    .map(([id, model]) => ({ id, release_date: model.release_date }))
+    .sort((a, b) => a.release_date.localeCompare(b.release_date))
+  const newest = released[released.length - 1] ?? null
+  const out = []
+  for (const [alias, entry] of Object.entries(mapping ?? {})) {
+    const target = targetOf(entry)
+    if (!target) continue
+    const stale = Boolean(newest && target.asOf && newest.release_date > target.asOf)
+    out.push({
+      alias,
+      to: target.to,
+      asOf: target.asOf,
+      why: target.why,
+      newest: newest ? `${provider}/${newest.id}` : null,
+      newest_release: newest?.release_date ?? null,
+      stale,
+      note: stale ? `the mapping is dated ${target.asOf} but ${provider}/${newest.id} was released ${newest.release_date}: the alias may mean a newer ${familyName}. Re-confirm the mapping; nothing was re-priced.` : null,
+    })
+  }
+  return out
 }
 
 /** What one model call cost at list price: the split counters against the catalogue's rate card. */

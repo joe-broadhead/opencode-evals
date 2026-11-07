@@ -3,6 +3,7 @@
 // UNEXPLAINED, and `verify` fails on it.
 
 import { budgetLine } from "../cost/budget.mjs"
+import { trustOf } from "../cost/rule.mjs"
 
 /** The store a batch was written from: the scorecard is rendered by the CLI, which passes it through. */
 const storeOf = (batch) => batch.store ?? process.env.EVALS_STORE ?? new URL("../../../private/store", import.meta.url).pathname
@@ -141,6 +142,18 @@ export function renderScorecard({ batch, results, comparison, iteration, notes =
   lines.push(`| Vendor | see the cost report | the plugin's own per-resource rates, its own source |`)
   lines.push("")
   lines.push(`Catalogue \`${(cost.catalog?.digest ?? "").slice(0, 12) || "absent"}\`, fetched ${cost.catalog?.fetched_at ?? "never"}. ${cost.missing_runs ? `${cost.missing_runs} run(s) could not be priced: reported, never counted as $0.` : ""}`)
+  const mapping = cost.mapping ?? null
+  if (mapping) {
+    const t = trustOf(cost.run_date, mapping.asOf)
+    const trust = t.trust === "assumed" ? `**assumed** — ${t.why}` : t.trust === "verified" ? `verified — ${t.why}` : `unknown — ${t.why}`
+    lines.push("")
+    lines.push(`Alias mapping: \`claude-agent/opus\` → \`${cost.mapped_to ?? "?"}\` (asOf ${mapping.asOf}; ${trust}).`)
+  }
+  for (const entry of cost.drift ?? []) {
+    if (!entry.stale) continue
+    lines.push("")
+    lines.push(`> **Stale mapping.** ${entry.note}`)
+  }
   lines.push("")
   lines.push(budgetLine(batch.store ?? process.env.EVALS_STORE ?? storeOf(batch)))
   lines.push("")
