@@ -113,6 +113,8 @@ export function summarize(lines, stderr = "") {
   let innerDeclined = 0
   let innerErrored = 0
   const tokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0 }
+  // One entry per model call: the provider's own cost (if it reported one) and the split counters.
+  const stepCosts = []
   let text = ""
   let sessionID
   let steps = 0
@@ -127,6 +129,7 @@ export function summarize(lines, stderr = "") {
     if (e.type === "step_finish") {
       steps++
       const t = e.part?.tokens ?? {}
+      stepCosts.push({ cost: typeof e.part?.cost === "number" ? e.part.cost : null, tokens: { input: t.input ?? 0, output: t.output ?? 0, cache: { read: t.cache?.read ?? 0, write: t.cache?.write ?? 0 } } })
       tokens.input += t.input ?? 0
       tokens.output += t.output ?? 0
       tokens.cacheRead += t.cache?.read ?? 0
@@ -188,6 +191,7 @@ export function summarize(lines, stderr = "") {
     inner: { calls: innerCalls, declined: innerDeclined, errored: innerErrored, failures: innerDeclined + innerErrored, detail: innerDetail },
     calls,
     tokens,
+    stepCosts,
     steps,
     firstAt,
     lastAt,

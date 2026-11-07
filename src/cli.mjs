@@ -28,7 +28,9 @@ import { runT1, coverageTable } from "./t1/run.mjs"
 import { checkPack } from "./t0/generic.mjs"
 import { scan as privacyScan, renderScan } from "./privacy/gate.mjs"
 import { monthToDate, budgetLine, CAPS } from "./cost/budget.mjs"
-import { loadPrices, modelCost, vendorCost } from "./cost/compute.mjs"
+import { loadPrices, vendorCost } from "./cost/compute.mjs"
+import { loadCatalog, loadMapping } from "./cost/catalog.mjs"
+import { runCost, totals } from "./cost/rule.mjs"
 import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "./label/kit.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
@@ -148,7 +150,7 @@ const batchDigest = (results) =>
 
 /** The provenance of one iteration, read from its first trace head. */
 function iterationProvenance(iteration) {
-  const dir = path("traces", iteration)
+  const dir = join(storePath(), "traces", iteration)
   if (!existsSync(dir)) return {}
   const first = readdirSync(dir).filter((f) => f.endsWith(".trace.jsonl")).sort()[0]
   if (!first) return {}
@@ -158,13 +160,34 @@ function iterationProvenance(iteration) {
     const lines = read(join(dir, f)).split("\n").filter(Boolean).map((l) => JSON.parse(l))
     return `${lines[0].case}:${lines[0].summary?.text?.sha256 ?? ""}`
   })
-  const costs = files.map((f) => JSON.parse(read(join(dir, f)).split("\n")[0]).summary?.cost ?? {})
+  const heads = files.map((f) => JSON.parse(read(join(dir, f)).split("\n")[0]))
+  const costs = heads.map((head) => head.summary?.cost ?? {})
+  // The vendor side is a separate wallet, at the plugin's own rates, from the resources each trace recorded.
+  const prices = loadPrices()
+  const vendor = heads.reduce((sum, head) => {
+    const file = files.find((f) => f.startsWith(`${head.case}.trace`))
+    if (!file) return sum
+    const calls = runView(read(join(dir, file)).split("\n").filter(Boolean)).calls.filter((call) => call.via === "execute")
+    return sum + (vendorCost(calls, "x", prices).amount_usd ?? 0)
+  }, 0)
   return {
     head,
     recordings_sha256: digestOf(texts),
+    vendor_cost: { amount_usd: vendor, source: "table" },
     cost: {
-      amount_usd: costs.every((c) => typeof c.amount_usd !== "number") ? null : costs.reduce((n, c) => n + (c.amount_usd ?? 0), 0),
-      source: costs.every((c) => c.source === "missing") ? "missing" : costs[0].source,
+      // Two totals, never merged: what the provider charged, and what the catalogue would have charged.
+      billed_usd: costs.every((c) => typeof c.billed_usd !== "number") ? null : costs.reduce((n, c) => n + (c.billed_usd ?? 0), 0),
+      list_usd: costs.every((c) => !c.resolved?.price) ? null : costs.reduce((n, c) => {
+        if (!c.resolved?.price) return n
+        const price = c.resolved.price
+        const tokens = c.tokens ?? {}
+        return n + ((tokens.input ?? 0) * price.input + (tokens.output ?? 0) * price.output + (tokens.cacheRead ?? 0) * price.cache_read + (tokens.cacheWrite ?? 0) * price.cache_write) / 1_000_000
+      }, 0),
+      sources: costs.reduce((acc, c) => ({ ...acc, [c.source]: (acc[c.source] ?? 0) + 1 }), {}),
+      missing_runs: costs.filter((c) => c.source === "missing").length,
+      catalog: costs[0]?.catalog ?? null,
+      amount_usd: costs.every((c) => typeof c.billed_usd !== "number") ? null : costs.reduce((n, c) => n + (c.billed_usd ?? 0), 0),
+      source: costs.every((c) => c.source === "missing") ? "missing" : costs.some((c) => c.source === "billed" && c.billed_usd > 0) ? "billed" : costs[0].source,
     },
   }
 }
@@ -178,7 +201,9 @@ function batchSummary(iteration, results, caseSet) {
     harness_version: harnessVersion(),
     grader_sha256: graderHash(),
     recordings_sha256: provenance.recordings_sha256 ?? null,
-    cost: provenance.cost ?? { amount_usd: null, source: "missing" },
+    ran_at: new Date().toISOString(),
+    cost: provenance.cost ?? { billed_usd: null, list_usd: null, sources: {}, missing_runs: 0 },
+    vendor_cost: provenance.vendor_cost ?? { amount_usd: null, source: "missing" },
     provenance: {
       model: { value: provenance.head?.model?.id ?? null, source: "declared" },
       opencode: { value: provenance.head?.provenance?.recorded?.opencode ?? null, source: "unrecorded" },
@@ -452,31 +477,37 @@ export async function main(argv) {
       const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
       const iteration = opt.iteration ?? "nx6"
       const prices = loadPrices()
+      const catalog = loadCatalog()
+      const mapping = loadMapping()
       const dir = join(store, "traces", iteration)
       if (!existsSync(dir)) throw new Error(`no traces for ${iteration} in ${store}`)
       const rows = []
       for (const file of readdirSync(dir).filter((f) => f.endsWith(".trace.jsonl"))) {
         const lines = read(join(dir, file)).split("\n").filter(Boolean).map((line) => JSON.parse(line))
         const head = lines[0]
-        // runView joins each result to its call, which is where the resource counts live.
         const calls = runView(lines).calls.filter((call) => call.via === "execute")
         const vendor = vendorCost(calls, opt.plugin ?? "x", prices)
-        const model = modelCost(head.summary?.tokens ?? {}, head.model?.id ?? "unknown", prices)
-        rows.push({ case: head.case, tokens: head.summary?.tokens ?? {}, model, vendor })
+        const model = runCost({ steps: lines.filter((e) => e.kind === "model_call").map((e) => ({ cost: e.billed_usd, tokens: e.tokens })), model: { provider: head.model?.provider, id: head.model?.id }, catalog, mapping })
+        rows.push({ case: head.case, model, vendor })
       }
+      const all = totals(rows.map((row) => row.model))
       const vendorTotal = rows.reduce((sum, row) => sum + (row.vendor.amount_usd ?? 0), 0)
-      const modelTotal = rows.reduce((sum, row) => sum + (row.model.amount_usd ?? 0), 0)
+      const money = (value) => (value === null || value === undefined ? "missing" : `$${value.toFixed(3)}`)
       const table = [
-        `# Cost, ${iteration}`,
+        `# Cost, ${iteration} (${opt.plugin ?? "x"})`,
         "",
-        `Vendor (${opt.plugin ?? "x"}): $${vendorTotal.toFixed(3)} · model: $${modelTotal === 0 ? "missing price" : modelTotal.toFixed(2)} · source: ${prices.vendors?.[opt.plugin ?? "x"]?.source ?? "none"}`,
+        `- model, billed: **${money(all.billed_usd)}** (${all.billed_runs}/${rows.length} runs reported a cost)`,
+        `- model, list: **${money(all.list_usd)}** (${all.list_runs}/${rows.length} resolved in the catalogue)`,
+        `- sources: ${Object.entries(all.sources).map(([k, v]) => `${k} ${v}`).join(", ") || "none"}${all.missing_runs ? `; ${all.missing_runs} missing, never counted as $0` : ""}`,
+        `- vendor: **${vendorTotal.toFixed(3)}** — ${prices.vendors?.[opt.plugin ?? "x"]?.source ?? "no source"}`,
+        `- catalogue: ${catalog.digest ? catalog.digest.slice(0, 12) : "absent"}, fetched ${catalog.fetched_at ?? "never"}`,
         "",
-        "| case | posts | authors | vendor $ | model $ |",
-        "| --- | --- | --- | --- | --- |",
-        ...rows.map((row) => `| ${row.case} | ${row.vendor.resources?.posts ?? 0} | ${row.vendor.resources?.authors ?? 0} | ${row.vendor.amount_usd === null ? "—" : row.vendor.amount_usd.toFixed(3)} | ${row.model.amount_usd === null ? "missing" : row.model.amount_usd.toFixed(3)} |`),
+        "| case | billed $ | list $ | source | posts | authors | vendor $ |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+        ...rows.map((row) => `| ${row.case} | ${row.model.billed_usd === null ? "—" : row.model.billed_usd.toFixed(3)} | ${row.model.amount_usd === null ? "missing" : row.model.amount_usd.toFixed(3)} | ${row.model.source} | ${row.vendor.resources?.posts ?? 0} | ${row.vendor.resources?.authors ?? 0} | ${row.vendor.amount_usd === null ? "—" : row.vendor.amount_usd.toFixed(3)} |`),
       ].join("\n")
       console.log(table)
-      if (opt.write) write(path("..", "private", "store", "results", iteration, "cost.md"), table)
+      if (opt.write) write(join(store, "results", iteration, "cost.md"), table)
       return
     }
     case "label": {

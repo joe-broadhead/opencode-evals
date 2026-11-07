@@ -10,7 +10,8 @@ import { derivePack } from "../src/pack/from-plugin.mjs"
 import { checkPack } from "../src/t0/generic.mjs"
 import { scanText, scanTree, FORBIDDEN_PATHS } from "../src/privacy/gate.mjs"
 import { monthToDate, assertWithinBudget, CAPS } from "../src/cost/budget.mjs"
-import { loadPrices, vendorCost, modelCost } from "../src/cost/compute.mjs"
+import { loadPrices, vendorCost } from "../src/cost/compute.mjs"
+import { classify } from "../src/cost/rule.mjs"
 import { runLabelSession, readLabels, labelReport, advisoryItems } from "../src/label/kit.mjs"
 
 const temp = () => mkdtempSync(join(tmpdir(), "evals-p2-"))
@@ -125,10 +126,16 @@ test("the budget sums the ledger and refuses a run that would cross a cap", () =
   const store = temp()
   const results = join(store, "results", "nx1")
   mkdirSync(results, { recursive: true })
-  writeFileSync(join(results, "batch.json"), JSON.stringify({ iteration: "nx1", ran_at: `${new Date().toISOString()}`, cost: { amount_usd: 2.5, source: "table" } }))
+  writeFileSync(
+    join(results, "batch.json"),
+    JSON.stringify({ iteration: "nx1", ran_at: new Date().toISOString(), cost: { billed_usd: 2.5, list_usd: 9.1, sources: { billed: 1 } }, vendor_cost: { amount_usd: 0.4 } }),
+  )
   const mtd = monthToDate(store)
   assert.equal(mtd.runs, 1)
+  // Only billed spend consumes the cap; the list price is a shadow.
   assert.equal(mtd.model_usd, 2.5)
+  assert.equal(mtd.shadow_list_usd, 9.1)
+  assert.equal(mtd.vendor_usd, 0.4)
   assertWithinBudget(store, { model_usd: 1 })
   assert.throws(() => assertWithinBudget(store, { model_usd: CAPS.model_usd }), /D4 budget/)
   rmSync(store, { recursive: true, force: true })
@@ -144,7 +151,7 @@ test("cost comes from the resources the trace recorded, at the plugin's own rate
   assert.equal(post.amount_usd, 0.015)
   const withLink = vendorCost([{ tool: "create_posts", counts: {}, args: { text: "see https://example.com" } }], "x", prices)
   assert.equal(withLink.amount_usd, 0.2)
-  assert.equal(modelCost({ input: 1, output: 1 }, "no-such-model", prices).source, "missing")
+  assert.equal(classify({ billed: null, tokens: { input: 1, output: 1 }, price: null }).source, "missing")
 })
 
 test("the label kit shows one item, records a keypress, and never labels twice", async () => {

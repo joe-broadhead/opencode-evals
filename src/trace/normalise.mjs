@@ -14,7 +14,9 @@ import { summarize } from "./analyse.mjs"
 import { safeArgs, shape } from "./redact.mjs"
 import { extractInnerCalls, dataflow, returnKeyFor } from "./innerArgs.mjs"
 import { resultCounts, knownExtractor, costLineOf, parseFirstJson } from "./resultCounts.mjs"
-import { costOf, emptyTable } from "./pricing.mjs"
+import { loadCatalog, loadMapping } from "../cost/catalog.mjs"
+import { runCost } from "../cost/rule.mjs"
+import { listPrice } from "../cost/catalog.mjs"
 import { sha256 } from "../util/canonical.mjs"
 import { harnessVersion } from "../version.mjs"
 
@@ -29,11 +31,24 @@ export function failureClass({ exit, tokens, calls, durationMs, timeoutMs = 900_
   return "unknown"
 }
 
+/** Splits a recorded model id into the provider and the model, dropping the reasoning variant. */
+export function splitModel(model) {
+  const [provider, ...rest] = String(model ?? "").split("/")
+  const id = rest.join("/").replace(/#.*$/, "")
+  return { provider: provider ?? "unknown", id: id || "unknown" }
+}
+
 /** The run header: everything a comparison needs, and nothing about the account. */
-export function header({ iteration, caseName, rawLines, summary, stderr, manifest, pricing = emptyTable(), model }) {
+export function header({ iteration, caseName, rawLines, summary, stderr, manifest, catalog, mapping, model }) {
   const s = summarize(rawLines, stderr)
   const tokens = s.tokens
-  const cost = costOf(tokens, model, pricing)
+  const split = splitModel(model)
+  const cost = runCost({
+    steps: s.stepCosts ?? [],
+    model: split,
+    catalog: catalog ?? loadCatalog(),
+    mapping: mapping ?? loadMapping(),
+  })
   const duration = summary?.durationMs ?? (s.firstAt && s.lastAt ? s.lastAt - s.firstAt : null)
   const exit = summary?.exit ?? 0
   const text = s.finalText ?? ""
@@ -50,7 +65,7 @@ export function header({ iteration, caseName, rawLines, summary, stderr, manifes
     duration_ms: duration,
     exit,
     failure_class: failureClass({ exit, tokens, calls: s.toolCalls, durationMs: duration ?? 0 }),
-    model: { id: model, params: {} },
+    model: { id: model, ...split, params: {} },
     provenance: {
       ...manifest,
       harness: { version: harnessVersion() },
@@ -86,7 +101,7 @@ function rawDescriptor(iteration, caseName, rawLines, text) {
 }
 
 /** The event stream: one line per event, in recorded order, with content replaced by structure. */
-export function events({ rawLines, stderr, caseName, iteration }) {
+export function events({ rawLines, stderr, caseName, iteration, price = null }) {
   const s = summarize(rawLines, stderr)
   const out = []
   let seq = 0
@@ -170,6 +185,18 @@ export function events({ rawLines, stderr, caseName, iteration }) {
       push("note", call.at, { note: "inner-counts-not-attributable", sites: sites.length })
     }
   }
+  // Every model call records both numbers: what the provider billed, and what the catalogue would charge.
+  for (const [index, step] of (s.stepCosts ?? []).entries()) {
+    const tokens = { input: step.tokens.input, output: step.tokens.output, cacheRead: step.tokens.cache.read, cacheWrite: step.tokens.cache.write }
+    push("model_call", null, {
+      n: index + 1,
+      billed_usd: step.cost,
+      tokens,
+      list_usd: price ? listPrice(tokens, price) : null,
+      source: typeof step.cost === "number" && step.cost > 0 ? "billed" : price ? "list-price" : "missing",
+    })
+  }
+
   // Declines: the analyser already reconciled the result text against stderr.
   for (const detail of s.inner.detail) {
     if (detail.kind !== "declined") continue
@@ -211,11 +238,11 @@ export function classifyError(message) {
 }
 
 /** Reads one recorded case and returns the whole trace file as text (header line + events). */
-export function traceFromFiles({ caseName, iteration, base, manifest, pricing, model, stderr }) {
+export function traceFromFiles({ caseName, iteration, base, manifest, catalog, mapping, model, stderr }) {
   const rawLines = readFileSync(`${base}.jsonl`, "utf8").split("\n").filter(Boolean)
   const summary = safeJson(`${base}.summary.json`)
-  const head = header({ iteration, caseName, rawLines, summary: summary ? { ...summary, stderr: stderr ?? summary.stderr } : null, stderr, manifest, pricing, model })
-  const body = events({ rawLines, stderr, caseName, iteration })
+  const head = header({ iteration, caseName, rawLines, summary: summary ? { ...summary, stderr: stderr ?? summary.stderr } : null, stderr, manifest, catalog, mapping, model })
+  const body = events({ rawLines, stderr, caseName, iteration, price: head.summary?.cost?.resolved?.price ?? null })
   return { head, body, lines: [JSON.stringify(head), ...body.map((e) => JSON.stringify(e))] }
 }
 

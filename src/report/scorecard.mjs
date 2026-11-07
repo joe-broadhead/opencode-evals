@@ -2,6 +2,11 @@
 // hand grading named item by item. A disagreement without an authored explanation is printed as
 // UNEXPLAINED, and `verify` fails on it.
 
+import { budgetLine } from "../cost/budget.mjs"
+
+/** The store a batch was written from: the scorecard is rendered by the CLI, which passes it through. */
+const storeOf = (batch) => batch.store ?? process.env.EVALS_STORE ?? new URL("../../../private/store", import.meta.url).pathname
+
 const pct = (value) => (value === null || value === undefined ? "—" : `${Math.round(value * 100)}%`)
 const list = (values) => (values && values.length ? values.join(", ") : "—")
 
@@ -121,9 +126,23 @@ export function renderScorecard({ batch, results, comparison, iteration, notes =
       lines.push("")
     }
   }
-  lines.push("## Efficiency")
+  lines.push("## Cost")
   lines.push("")
-  lines.push(`Model tokens in this batch: **${batch.tokens.total.toLocaleString()}** across ${batch.tokens.calls} tool calls. Cost: **${batch.cost?.amount_usd === null || batch.cost?.amount_usd === undefined ? "missing price table (reported, not guessed)" : `$${batch.cost.amount_usd}`}**.`)
+  const cost = batch.cost ?? {}
+  const money = (value) => (typeof value === "number" ? `$${value.toFixed(3)}` : "missing")
+  const mix = Object.entries(cost.sources ?? {}).map(([source, runs]) => `${source} ${runs}`).join(", ") || "none"
+  lines.push(`**${batch.tokens.total.toLocaleString()}** tokens across ${batch.tokens.calls} tool calls.`)
+  lines.push("")
+  lines.push("| What | Amount | How it was decided |")
+  lines.push("| --- | --- | --- |")
+  lines.push(`| The provider billed | ${money(cost.billed_usd)} | summed from each model call's own \`cost\` field |`)
+  lines.push(`| The catalogue would charge | ${money(cost.list_usd)} | tokens × models.dev, resolved per model |`)
+  lines.push(`| Classified as | ${mix} | billed > 0 wins; else list-price; zero is free; unknown is missing |`)
+  lines.push(`| Vendor | see the cost report | the plugin's own per-resource rates, its own source |`)
+  lines.push("")
+  lines.push(`Catalogue \`${(cost.catalog?.digest ?? "").slice(0, 12) || "absent"}\`, fetched ${cost.catalog?.fetched_at ?? "never"}. ${cost.missing_runs ? `${cost.missing_runs} run(s) could not be priced: reported, never counted as $0.` : ""}`)
+  lines.push("")
+  lines.push(budgetLine(batch.store ?? process.env.EVALS_STORE ?? storeOf(batch)))
   lines.push("")
   return lines.join("\n")
 }

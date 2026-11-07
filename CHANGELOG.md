@@ -25,8 +25,11 @@ Keep a Changelog. This project adheres to Semantic Versioning.
   before dispatch — plus the tools RPC and a stock-binary run for the shaper case.
 - Packs for nine plugins, derived from each plugin's own declaration, with T0 static checks and live
   checklists.
-- A price table with a source and a date for every rate, and a cost per passing case that is reported as
-  missing rather than guessed.
+- The cost rule: every model call records what the provider billed and what OpenCode's own models.dev
+  catalogue would charge; billed wins, a subscription falls back to list price, a catalogue zero is free, and
+  an unknown model is `missing` rather than zero. No model price is typed into the repository.
+- A vendor price table with a source and a date for every rate, reported beside the model spend, and a cost
+  per passing case that is reported as missing rather than guessed.
 - A monthly budget cap, enforced in the runner and printed on every scorecard.
 - A hand-label kit for calibrating judges: one screen per advisory item, one key per label.
 - `evals privacy`: a pre-publish gate over the working tree and the whole git history.

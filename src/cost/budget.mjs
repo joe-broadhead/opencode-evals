@@ -43,10 +43,12 @@ export function ledger(store) {
 
 export function monthToDate(store, month = new Date().toISOString().slice(0, 7)) {
   const rows = ledger(store).filter((row) => monthOf(row.at ?? "") === month)
-  const model = rows.reduce((sum, row) => sum + (typeof row.cost?.amount_usd === "number" ? row.cost.amount_usd : 0), 0)
+  // Only billed spend consumes the cap; a list-price shadow is reported, never charged.
+  const model = rows.reduce((sum, row) => sum + (typeof row.cost?.billed_usd === "number" ? row.cost.billed_usd : 0), 0)
+  const shadow = rows.reduce((sum, row) => sum + (typeof row.cost?.list_usd === "number" ? row.cost.list_usd : 0), 0)
   const vendor = rows.reduce((sum, row) => sum + (typeof row.vendor?.amount_usd === "number" ? row.vendor.amount_usd : 0), 0)
   const unknown = rows.filter((row) => row.cost?.amount_usd === null || row.cost?.source === "missing").length
-  return { month, runs: rows.length, model_usd: model, vendor_usd: vendor, unknown_cost_runs: unknown }
+  return { month, runs: rows.length, model_usd: model, vendor_usd: vendor, shadow_list_usd: shadow, unknown_cost_runs: unknown }
 }
 
 /** Throws when a proposed run would cross a cap. A run with unknown prices is allowed but reported. */
@@ -60,5 +62,5 @@ export function assertWithinBudget(store, { model_usd = 0, vendor_usd = 0 } = {}
 
 export const budgetLine = (store) => {
   const mtd = monthToDate(store)
-  return `Month to date (${mtd.month}): $${mtd.model_usd.toFixed(2)} of $${CAPS.model_usd} models, $${mtd.vendor_usd.toFixed(2)} of $${CAPS.vendor_usd} vendor APIs, ${mtd.runs} run(s)${mtd.unknown_cost_runs ? `, ${mtd.unknown_cost_runs} with a missing price` : ""}.`
+  return `Month to date (${mtd.month}): $${mtd.model_usd.toFixed(2)} of $${CAPS.model_usd} billed models (a $${mtd.shadow_list_usd.toFixed(2)} list-price shadow is reported and not charged), $${mtd.vendor_usd.toFixed(2)} of $${CAPS.vendor_usd} vendor APIs, ${mtd.runs} run(s)${mtd.unknown_cost_runs ? `, ${mtd.unknown_cost_runs} with a missing price` : ""}.`
 }

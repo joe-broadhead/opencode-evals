@@ -51,11 +51,35 @@ A case is a markdown file in `cases/<plugin>/`, compiled to `cases/<plugin>/<id>
 A case may not be edited inside a comparison: `evals.lock` holds the case-set and grader digests, and
 `evals verify` fails when either moved.
 
-## Prices
+## Cost
 
-`src/cost/prices.json`. Every rate carries `source` and `as_of`. A model with no entry is reported as
-`cost.source: missing`; vendor rates come from the plugin's own published table, which is why the X rates
-are sourced to its skill file.
+Two wallets, never merged.
+
+**Models.** Every model call records two numbers: what the provider billed (`billed`, from the message
+record's own `cost`), and what the catalogue would charge (`list`, the split token counters against
+OpenCode's models.dev data). The classification is one function:
+
+| Situation | Source | Amount |
+| --- | --- | --- |
+| the provider billed more than zero | `billed` | its number |
+| it billed zero or nothing, tokens were used, the catalogue prices the model | `list-price` | tokens × catalogue |
+| the catalogue prices the model at zero | `free` | $0 |
+| nothing can price the model | `missing` | — (never counted as $0) |
+
+No model price is typed into this repository. The catalogue is read from `EVALS_MODELS_CATALOG`, else
+`$XDG_CACHE_HOME/opencode/models.json` (where OpenCode caches models.dev), and its digest and fetch time are
+recorded with every trace. A provider alias that is not a catalogue provider (our eval model is one) stays
+`missing` unless a mapping names the catalogue id it stands for:
+
+```json
+{ "claude-agent/opus": "opencode/claude-opus-4-8" }
+```
+
+`EVALS_MODEL_MAP` points at that file. It is a mapping, never a price: the rate still comes from the catalogue.
+
+**Vendors.** `src/cost/prices.json`, each rate with a `source` and an `as_of`, from the plugin's own
+published table (the X rates are its skill file's). Vendor spend is reported beside the model spend, with
+its own source, and is charged to its own cap.
 
 ## Budget
 
