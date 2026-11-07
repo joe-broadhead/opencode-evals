@@ -1,0 +1,123 @@
+{
+  "schema": "oc-case/1",
+  "id": "x-axis-does-not-trigger",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "review/evals/x/x-axis-does-not-trigger.md",
+  "decision": "the letter x in \"x-axis\" is not X, so no skill loads and no tool is called",
+  "data_check": "none",
+  "prompt": "on our revenue chart, should the x-axis be months or quarters?",
+  "controls": [
+    {
+      "kind": "with-skill",
+      "expect": "fail",
+      "on": [
+        "X-TR01"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 4,
+    "inner_calls": 3,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "expect": "fail",
+  "holdout": false,
+  "items": [
+    {
+      "id": "X-TR01",
+      "severity": "blocker",
+      "ask": "No X skill loads.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "x"
+        },
+        {
+          "kind": "absent-skill",
+          "skill": "x-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A1"
+      ],
+      "line": 16
+    },
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "No X tool call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "x.*",
+          "op": "==",
+          "value": 0
+        },
+        {
+          "kind": "absent",
+          "tool": "x_*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F1"
+      ],
+      "line": 21
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No write of any kind.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "create_posts",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_publish",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F3"
+      ],
+      "line": 26
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The answer addresses the charting question, or asks what the chart shows.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A2"
+      ],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "57ee1d170b80391c3994703937ab9161f96e4a00fa7d0c4c2ee1a14327a534ef"
+  }
+}

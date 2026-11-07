@@ -1,0 +1,19 @@
+{
+  "name": "@joe-broadhead/opencode-evals",
+  "version": "0.1.0-dev",
+  "private": true,
+  "description": "Deterministic evals for OpenCode skills, tools and plugins: cases, traces, graders, ledger.",
+  "type": "module",
+  "bin": { "evals": "./bin/evals" },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "trace": "node bin/evals trace",
+    "compile": "node bin/evals compile",
+    "grade": "node bin/evals grade",
+    "scorecard": "node bin/evals scorecard",
+    "policy": "node bin/evals policy",
+    "t0": "node bin/evals t0",
+    "verify": "node bin/evals verify"
+  },
+  "engines": { "node": ">=22" }
+}

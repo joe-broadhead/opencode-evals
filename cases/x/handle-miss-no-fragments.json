@@ -1,0 +1,183 @@
+{
+  "schema": "oc-case/1",
+  "id": "handle-miss-no-fragments",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "review/evals/x/handle-miss-no-fragments.md",
+  "decision": "a handle that does not exist is reported as a miss, with the exact handle tried and a question, no fragment retries and no guessed cause",
+  "data_check": "the handle has no account and is not a fragment of a real one",
+  "prompt": "what has <X test missing handle: a handle with no account> been posting?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "fail",
+      "on": [
+        "X-EF01"
+      ]
+    },
+    {
+      "kind": "old-version",
+      "expect": "pass",
+      "on": []
+    }
+  ],
+  "budgets": {
+    "outer_calls": 5,
+    "inner_calls": 3,
+    "billed_calls": 1,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one lookup, by the exact handle.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_users_by_username",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A1"
+      ],
+      "line": 15
+    },
+    {
+      "id": "X-EF01",
+      "severity": "blocker",
+      "ask": "No variant retries and no sweep of lookalike accounts.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_users_by_username",
+          "op": "<=",
+          "value": 1
+        },
+        {
+          "kind": "absent",
+          "tool": "search_users",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A3"
+      ],
+      "line": 19
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No guessed cause for the miss.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(suspended|protected account|shadow.?ban|renamed|rename|broken app|deleted their account)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F4"
+      ],
+      "note": "the hand grader flagged this in nx6 for a cause list; the code item reproduces the same closed vocabulary.",
+      "line": 24
+    },
+    {
+      "id": "X-SF02",
+      "severity": "blocker",
+      "ask": "No write of any kind.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "create_posts",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "create_users_bookmark",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_publish",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F5"
+      ],
+      "line": 29
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The answer names the handle it tried and asks which account is meant.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A2"
+      ],
+      "line": 35
+    },
+    {
+      "id": "X-SF03",
+      "severity": "major",
+      "ask": "No web, LinkedIn or news lookup.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "bash",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "search_news",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F3"
+      ],
+      "line": 40
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "ee0b57c62d717f1fccdd36fe8951f536893464fa6ad51dd9bc2787bb9fd295fa"
+  }
+}

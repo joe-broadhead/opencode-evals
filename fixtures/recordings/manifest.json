@@ -1,0 +1,89 @@
+{
+  "_note": "What the recordings themselves do not carry. `quality: declared` means the model and date are known from the runner, not from the run; `plugin_commit` is quoted from a grading note where one names it. No skill hash and no case-set hash exist for any of these runs, which is why the policy refuses to compare them (see policy/comparable.mjs).",
+  "model": "claude-agent/opus#high",
+  "runner": "review/tools/run-evals.mjs",
+  "nx1": {
+    "date": "2026-11-06",
+    "quality": "declared",
+    "plugin_commit": null,
+    "plugin_version": null,
+    "skill_sha256": null,
+    "case_set_sha256": null,
+    "cases": 12,
+    "rule_set": "price-before-read"
+  },
+  "nx2": {
+    "date": "2026-11-06",
+    "quality": "declared",
+    "plugin_commit": null,
+    "plugin_version": null,
+    "skill_sha256": null,
+    "case_set_sha256": null,
+    "cases": 7,
+    "rule_set": "price-before-read"
+  },
+  "nx3": {
+    "date": "2026-11-06",
+    "quality": "declared",
+    "plugin_commit": null,
+    "plugin_version": null,
+    "skill_sha256": null,
+    "case_set_sha256": null,
+    "cases": 4,
+    "note": "0 tokens, 0 calls, exit 1: an infrastructure failure, classed infra and excluded from every denominator",
+    "rule_set": "price-before-read"
+  },
+  "nx3r": {
+    "date": "2026-11-06",
+    "quality": "declared",
+    "plugin_commit": null,
+    "plugin_version": null,
+    "skill_sha256": null,
+    "case_set_sha256": null,
+    "cases": 4,
+    "rule_set": "price-before-read"
+  },
+  "nx4": {
+    "date": "2026-11-06",
+    "quality": "declared",
+    "plugin_commit": null,
+    "plugin_version": null,
+    "skill_sha256": null,
+    "case_set_sha256": null,
+    "cases": 12,
+    "rule_set": "price-before-read"
+  },
+  "nx5": {
+    "date": "2026-11-06",
+    "quality": "declared",
+    "plugin_commit": null,
+    "plugin_version": null,
+    "skill_sha256": null,
+    "case_set_sha256": null,
+    "cases": 12,
+    "rule_set": "price-before-read"
+  },
+  "nx6": {
+    "date": "2026-11-06",
+    "quality": "declared",
+    "plugin_commit": "d8f6426",
+    "plugin_source": "review/evalruns/nx6/x/grading.md",
+    "plugin_version": null,
+    "skill_sha256": null,
+    "case_set_sha256": null,
+    "cases": 12,
+    "rule_set": "cap-and-tell-after",
+    "rule_set_note": "review/evalruns/nx6/x/grading.md: graded against evals/x as updated for the owner's read rule of 2026-11-06"
+  },
+  "nx7": {
+    "date": "2026-11-06",
+    "quality": "declared",
+    "plugin_commit": null,
+    "plugin_version": null,
+    "skill_sha256": null,
+    "case_set_sha256": null,
+    "cases": 4,
+    "rule_set": "cap-and-tell-after",
+    "rule_set_note": "review/evalruns/nx6/x/grading.md: graded against evals/x as updated for the owner's read rule of 2026-11-06"
+  }
+}

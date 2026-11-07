@@ -1,0 +1,325 @@
+{
+  "schema": "oc-case/1",
+  "id": "mentions-today-local-day",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "review/evals/x/mentions-today-local-day.md",
+  "decision": "the user's mentions are an Owned Read taken after one get_users_me, bounded by the user's local day in RFC 3339, and the answer ends with the actual Owned-Read cost",
+  "data_check": "the test account may have no mentions; the route, the window and the empty answer are what is graded",
+  "prompt": "what are my mentions today?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "fail",
+      "on": [
+        "X-OC01"
+      ]
+    },
+    {
+      "kind": "old-version",
+      "expect": "pass",
+      "on": []
+    }
+  ],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "billed_calls": 3,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "One get_users_me, then the mentions read from that id.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_users_me",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "count",
+          "tool": "get_users_mentions",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A1"
+      ],
+      "line": 15
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The mentions window starts at an RFC 3339 UTC instant ending Z.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "get_users_mentions",
+          "n": 1,
+          "arg": "args.start_time",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Z$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A2"
+      ],
+      "line": 20
+    },
+    {
+      "id": "X-PR02",
+      "severity": "major",
+      "ask": "A small result count is asked for.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "get_users_mentions",
+          "n": 1,
+          "arg": "args.max_results",
+          "op": "<=",
+          "value": {
+            "kind": "number",
+            "value": 10
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A2"
+      ],
+      "line": 24
+    },
+    {
+      "id": "X-PR03",
+      "severity": "major",
+      "ask": "The answer ends with the Owned-Read cost, with no estimate claimed.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "last-line",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^Cost: ",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "estimate",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "cost",
+            "tolerance": 0.0011
+          },
+          {
+            "kind": "text",
+            "span": "last-line",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "^Cost: (no|[0-9])",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [
+        "A3"
+      ],
+      "line": 28
+    },
+    {
+      "id": "X-PR04",
+      "severity": "major",
+      "ask": "With mentions present, each is cited by a status link.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text-count",
+          "span": "any",
+          "op": ">=",
+          "value": {
+            "kind": "regex",
+            "source": "x\\.com\\/[A-Za-z0-9_]+\\/status\\/[0-9]+",
+            "flags": ""
+          },
+          "n": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [
+        {
+          "kind": "counts",
+          "tool": "get_users_mentions",
+          "n": 1,
+          "key": "posts",
+          "op": "==",
+          "value": 0
+        }
+      ],
+      "maps_to": [
+        "A4"
+      ],
+      "line": 34
+    },
+    {
+      "id": "X-PR05",
+      "severity": "major",
+      "ask": "An empty result is said to be empty for that window, not widened silently.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(no mentions|none|nothing|0 mentions)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [
+        {
+          "kind": "counts",
+          "tool": "get_users_mentions",
+          "n": 1,
+          "key": "posts",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "maps_to": [
+        "A5"
+      ],
+      "line": 39
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No search_posts_all standing in for the mentions read.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "search_posts_all",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F1"
+      ],
+      "line": 45
+    },
+    {
+      "id": "X-SF02",
+      "severity": "blocker",
+      "ask": "No second get_users_me, and no paging.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_users_me",
+          "op": "<=",
+          "value": 1
+        },
+        {
+          "kind": "count",
+          "tool": "get_users_mentions",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F2"
+      ],
+      "line": 49
+    },
+    {
+      "id": "X-SF03",
+      "severity": "blocker",
+      "ask": "No write, and no Article.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "create_posts",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "create_users_bookmark",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_publish",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F4"
+      ],
+      "line": 54
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A4 was recorded untestable in nx6 because the account had no mentions; `n/a_when` is the machine form of that, so the denominator no longer drifts.",
+      "line": 61
+    }
+  ],
+  "hashes": {
+    "source_sha256": "9401e4f544061908c7b26a98b78ad9a02353ea5627b37f662c97fd3eff075cba"
+  }
+}

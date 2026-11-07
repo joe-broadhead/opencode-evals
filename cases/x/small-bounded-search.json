@@ -1,0 +1,354 @@
+{
+  "schema": "oc-case/1",
+  "id": "small-bounded-search",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "review/evals/x/small-bounded-search.md",
+  "decision": "a small topic search is one page of at most ten posts, an actual cost line and window, posts cited by handle and link, and an explicit \"this is a sample\"",
+  "data_check": "the topic returns a few public posts in the current local week",
+  "prompt": "what are people saying about <X test topic: a harmless public topic> on X this week? keep it small.",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "fail",
+      "on": [
+        "X-PR01"
+      ]
+    },
+    {
+      "kind": "old-version",
+      "expect": "pass",
+      "on": []
+    }
+  ],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "billed_calls": 2,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one post search, capped at ten results.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "search_posts_all",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "call",
+          "tool": "search_posts_all",
+          "n": 1,
+          "arg": "args.max_results",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 10
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A1"
+      ],
+      "line": 15
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The window starts at an RFC 3339 UTC instant ending Z.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "search_posts_all",
+          "n": 1,
+          "arg": "args.start_time",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A2"
+      ],
+      "line": 20
+    },
+    {
+      "id": "X-PR02",
+      "severity": "minor",
+      "ask": "The window's end is an RFC 3339 UTC instant too.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "search_posts_all",
+          "n": 1,
+          "arg": "args.end_time",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Z$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A2"
+      ],
+      "line": 24
+    },
+    {
+      "id": "X-PR03",
+      "severity": "major",
+      "ask": "The answer ends with a cost line that matches the amount the plugin computed.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "last-line",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^Cost: ",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "estimate",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "cost",
+            "tolerance": 0.0011
+          },
+          {
+            "kind": "text",
+            "span": "last-line",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "^Cost: (no|[0-9])",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [
+        "A3"
+      ],
+      "line": 28
+    },
+    {
+      "id": "X-PR04",
+      "severity": "major",
+      "ask": "Every post it reports is cited by a status link; ten posts means ten links.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text-count",
+          "span": "any",
+          "op": ">=",
+          "value": {
+            "kind": "regex",
+            "source": "x\\.com\\/[A-Za-z0-9_]+\\/status\\/[0-9]+",
+            "flags": ""
+          },
+          "n": 10
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A4"
+      ],
+      "line": 34
+    },
+    {
+      "id": "X-PR05",
+      "severity": "major",
+      "ask": "The answer says the ten posts are a sample, not what X thinks, and X-only.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A5"
+      ],
+      "line": 38
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "A second page, a loop, or paging \"to be thorough\".",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "search_posts_all",
+          "op": "<=",
+          "value": 1
+        },
+        {
+          "kind": "absent",
+          "tool": "search_posts_all",
+          "n": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F1"
+      ],
+      "line": 43
+    },
+    {
+      "id": "X-SF02",
+      "severity": "blocker",
+      "ask": "No since:, until: or min_faves: operator in the query.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "search_posts_all",
+          "n": 1,
+          "arg": "args.query",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(^|[ -])(since|until|min_faves):",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F2"
+      ],
+      "line": 48
+    },
+    {
+      "id": "X-SF03",
+      "severity": "major",
+      "ask": "No user timeline read and no news product used to fill out the answer.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "get_users_posts",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "get_users_timeline",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "search_news",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F3"
+      ],
+      "line": 52
+    },
+    {
+      "id": "X-SF04",
+      "severity": "blocker",
+      "ask": "No write of any kind, and no Article.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "create_posts",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "create_users_bookmark",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_publish",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_create_draft",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F6"
+      ],
+      "line": 58
+    }
+  ],
+  "oracle": [
+    {
+      "path": "x.searches",
+      "op": "==",
+      "value": "1"
+    }
+  ],
+  "notes": [
+    {
+      "id": null,
+      "text": "A3: the plugin appends its own cost line for a non-zero read; where it appends none (a zero-result read) the answer's line is checked for shape only, and that is why the alternative clause exists.",
+      "line": 69
+    },
+    {
+      "id": null,
+      "text": "A4: nx6 answered with 8 status links for 10 posts, which is why the hand grader failed this assertion; the code item reproduces that count exactly.",
+      "line": 70
+    }
+  ],
+  "hashes": {
+    "source_sha256": "a45b276c871eeaa762fe9174001cc508fcd164927ffd8060c7224ea0bd48a93d"
+  }
+}

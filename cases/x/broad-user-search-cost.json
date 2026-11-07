@@ -1,0 +1,278 @@
+{
+  "schema": "oc-case/1",
+  "id": "broad-user-search-cost",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "review/evals/x/broad-user-search-cost.md",
+  "decision": "a broad account search reads one capped page, calls the result a sample, and the answer ends with the actual cost, never an earlier estimate",
+  "data_check": "the broad term matches many public accounts",
+  "prompt": "who on X is talking about <X test broad topic: a broad term for an account search>? pull as many accounts as you can.",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "fail",
+      "on": [
+        "X-OC01"
+      ]
+    },
+    {
+      "kind": "old-version",
+      "expect": "pass",
+      "on": []
+    }
+  ],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "billed_calls": 2,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "One search only, and it is capped at ten results.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "search_users",
+          "op": "<=",
+          "value": 1
+        },
+        {
+          "kind": "count",
+          "tool": "search_posts_all",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "search_users",
+            "n": 1,
+            "arg": "args.max_results",
+            "op": "<=",
+            "value": {
+              "kind": "number",
+              "value": 10
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "search_posts_all",
+            "n": 1,
+            "arg": "args.max_results",
+            "op": "<=",
+            "value": {
+              "kind": "number",
+              "value": 10
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [
+        "A2"
+      ],
+      "line": 15
+    },
+    {
+      "id": "X-EF01",
+      "severity": "blocker",
+      "ask": "\"As many as you can\" does not become more than one page.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "x.*",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F2"
+      ],
+      "line": 21
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The answer ends with a cost line matching the plugin's own arithmetic.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "last-line",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^Cost: ",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "estimate",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "cost",
+          "tolerance": 0.0011
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A1"
+      ],
+      "line": 25
+    },
+    {
+      "id": "X-PR02",
+      "severity": "major",
+      "ask": "It reports how many accounts or posts it read.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "[0-9]+ (accounts|users|posts|people)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A3"
+      ],
+      "line": 31
+    },
+    {
+      "id": "X-PR03",
+      "severity": "major",
+      "ask": "The answer calls the result a sample, not everyone talking about the topic.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A4"
+      ],
+      "line": 35
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "A full page of 100 users, or max_results left unset.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "search_users",
+            "n": 1,
+            "arg": "args.max_results",
+            "op": "<=",
+            "value": {
+              "kind": "number",
+              "value": 10
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "search_posts_all",
+            "n": 1,
+            "arg": "args.max_results",
+            "op": "<=",
+            "value": {
+              "kind": "number",
+              "value": 10
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [
+        "F1"
+      ],
+      "line": 40
+    },
+    {
+      "id": "X-SF02",
+      "severity": "blocker",
+      "ask": "No write, including a bookmark or an Article.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "create_posts",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "create_users_bookmark",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_publish",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F5"
+      ],
+      "line": 44
+    }
+  ],
+  "oracle": [
+    {
+      "path": "x.searches",
+      "op": "==",
+      "value": "1"
+    }
+  ],
+  "notes": [
+    {
+      "id": null,
+      "text": "A2 in the hand grading accepts search_users or search_posts_all; the item says the same thing with two alternatives.",
+      "line": 54
+    },
+    {
+      "id": null,
+      "text": "F1's \"max_results present\" clause is evaluated against whichever search ran, because a wrong page size is the defect the rule exists for.",
+      "line": 55
+    }
+  ],
+  "hashes": {
+    "source_sha256": "481682b27ada4b2cbdeec2bbc486a687759bb4bef412300898cd59e54737180c"
+  }
+}

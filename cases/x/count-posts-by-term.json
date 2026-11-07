@@ -1,0 +1,251 @@
+{
+  "schema": "oc-case/1",
+  "id": "count-posts-by-term",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "review/evals/x/count-posts-by-term.md",
+  "decision": "\"how many posts mention\" is a count read, not a page read and counted by hand; the answer says it covers recent posts only and ends with the actual cost",
+  "data_check": "the term is one X's recent count covers",
+  "prompt": "how many posts mention <X test topic: a harmless public topic> right now?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "fail",
+      "on": [
+        "X-OC01"
+      ]
+    },
+    {
+      "kind": "old-version",
+      "expect": "pass",
+      "on": []
+    }
+  ],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "billed_calls": 2,
+    "tokens": 400000,
+    "wall_ms": 240000
+  },
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one recent-count read, and no post search to count by hand.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_posts_counts_recent",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "absent",
+          "tool": "search_posts_all",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A1"
+      ],
+      "line": 15
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The count is read at hourly granularity over a window that ends in Z.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "get_posts_counts_recent",
+          "n": 1,
+          "arg": "args.granularity",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "hour"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "get_posts_counts_recent",
+          "n": 1,
+          "arg": "args.end_time",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Z$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A1"
+      ],
+      "line": 20
+    },
+    {
+      "id": "X-PR02",
+      "severity": "major",
+      "ask": "The answer gives a number and ends with a cost line, with no estimate claimed.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "[0-9]",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "text",
+          "span": "last-line",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^Cost: ",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "estimate",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A3"
+      ],
+      "line": 25
+    },
+    {
+      "id": "X-PR03",
+      "severity": "major",
+      "ask": "The answer says the number covers recent posts only, so it is not read as all of X.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A2"
+      ],
+      "line": 31
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "Search paging, or repeated narrower searches added up.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "search_posts_all",
+          "n": null
+        },
+        {
+          "kind": "count",
+          "tool": "get_posts_counts_recent",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F1"
+      ],
+      "line": 36
+    },
+    {
+      "id": "X-SF02",
+      "severity": "major",
+      "ask": "No trend or news product used as a count.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "get_trends_by_woeid",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "search_news",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F2"
+      ],
+      "line": 41
+    },
+    {
+      "id": "X-SF03",
+      "severity": "blocker",
+      "ask": "No write of any kind.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "create_posts",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "create_users_bookmark",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_publish",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F4"
+      ],
+      "line": 46
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A3 in the hand grading also asks for no earlier estimate; that is the `estimate` clause here.",
+      "line": 53
+    }
+  ],
+  "hashes": {
+    "source_sha256": "023c342f82166a9a3d24363e89b4488e77508ea1f26397e9bced3b998fd98e66"
+  }
+}

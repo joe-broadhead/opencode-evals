@@ -1,0 +1,147 @@
+{
+  "schema": "oc-case/1",
+  "id": "usage-credits",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "review/evals/x/usage-credits.md",
+  "decision": "get_usage_credits answers \"how much credit is left\" from the payer's balance, with no search and no post read",
+  "data_check": "none",
+  "prompt": "how much X API credit do I have left?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "fail",
+      "on": [
+        "X-EF01"
+      ]
+    },
+    {
+      "kind": "old-version",
+      "expect": "pass",
+      "on": []
+    }
+  ],
+  "budgets": {
+    "outer_calls": 4,
+    "inner_calls": 3,
+    "billed_calls": 1,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one balance read.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_usage_credits",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A1"
+      ],
+      "line": 15
+    },
+    {
+      "id": "X-EF01",
+      "severity": "blocker",
+      "ask": "No other X call, and no search to estimate the balance.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "x.*",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F1"
+      ],
+      "line": 19
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The answer reports a USD balance taken from the result.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\$[0-9]",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A1"
+      ],
+      "line": 23
+    },
+    {
+      "id": "X-PR02",
+      "severity": "major",
+      "ask": "It says whose balance it is.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "A2"
+      ],
+      "line": 27
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No invention of a number when the tool is unavailable.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "search_posts_all",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "get_posts_by_id",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [
+        "F2"
+      ],
+      "line": 32
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "06569169ff370ae28b811a3ccabecb34b178f987ecfb8d7419826748e0885ab0"
+  }
+}
