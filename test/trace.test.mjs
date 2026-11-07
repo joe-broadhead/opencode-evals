@@ -84,6 +84,12 @@ test("the trace has the shape oc-trace/1 promises", { skip: !existsSync(RAW) && 
   assert.equal(answer.text, undefined)
 })
 
+test("every stored trace is clean of every recording's links, handles and ids", { skip: !existsSync(join(import.meta.dirname, "..", "..", "private", "raw", "nx6")) && "private recordings absent" }, async () => {
+  const { execFileSync } = await import("node:child_process")
+  const out = execFileSync(process.execPath, [join(import.meta.dirname, "..", "scripts", "privacy-scan.mjs")], { encoding: "utf8" })
+  assert.match(out, /0 leak\(s\)/, out)
+})
+
 test("an exit that did no work is classed infra, not scored as a zero", () => {
   assert.equal(failureClass({ exit: 1, tokens: {}, calls: 0, durationMs: 1000 }), "infra")
   assert.equal(failureClass({ exit: 0, tokens: {}, calls: 0, durationMs: 1000 }), null)

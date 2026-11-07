@@ -67,7 +67,7 @@ export function renderScorecard({ batch, results, comparison, iteration, notes =
   lines.push("")
   lines.push("## Verdicts")
   lines.push("")
-  lines.push("| Case | Verdict | Failed | Blocked | Findings | n/a |")
+  lines.push("| Case | Verdict | Failed items | Blocked | Findings (majors) | n/a |")
   lines.push("| --- | --- | --- | --- | --- | --- |")
   for (const r of results) {
     lines.push(`| ${r.case} | **${r.verdict}** | ${list(r.failed)} | ${list([...(r.blocked ?? []), ...(r.blocked_minor ?? [])])} | ${list(r.findings)} | ${list(r.na)} |`)
@@ -117,7 +117,7 @@ export function renderScorecard({ batch, results, comparison, iteration, notes =
       lines.push("")
     }
     if (comparison.unscored.length) {
-      lines.push(`Unscored: ${comparison.unscored.map((p) => `${p.item} (${p.mine})`).join(", ")}.`)
+      lines.push(`Unscored: ${comparison.unscored.map((p) => `${p.case}/${p.item} (${p.mine})`).join(", ")}.`)
       lines.push("")
     }
   }
