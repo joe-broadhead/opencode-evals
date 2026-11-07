@@ -1,5 +1,5 @@
 {
-  "pluginId": null,
+  "pluginId": "granola.meetings",
   "rpc": "granola.meetings.tools",
   "t1": [],
   "id": "granola",
@@ -145,5 +145,21 @@
     "writes": 7,
     "denied": 1,
     "skills": 2
-  }
+  },
+  "schema": "oc-pack/1",
+  "skill_meta": {
+    "granola": {
+      "name": "granola",
+      "description_sha256": "063b088bd828024db457dc9834ff05f0b62a880540dca06de1c6b6dcff4afa11",
+      "description_chars": 275,
+      "body_lines": 68
+    },
+    "granola-meeting-brief": {
+      "name": "granola-meeting-brief",
+      "description_sha256": "22af1e5806b1608fe8d63077850b0d951bf0b3ed457fa18b069a200fa242a728",
+      "description_chars": 291,
+      "body_lines": 39
+    }
+  },
+  "digest": "2cede6791362603d33a87e6faa1c3fa63e1ecc80bdecaa7bca1a48f52dddc71b"
 }

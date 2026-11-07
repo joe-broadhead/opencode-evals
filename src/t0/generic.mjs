@@ -4,6 +4,7 @@
 
 import { readFileSync, readdirSync, existsSync } from "node:fs"
 import { join } from "node:path"
+import { snapshotChecks } from "../pack/snapshot.mjs"
 
 const PLACEHOLDER_HANDLES = new Set(["handle", "user", "username", "someone", "person", "name", "theirs", "author", "channel", "email", "example"])
 
@@ -20,6 +21,30 @@ const frontmatter = (text) => {
 }
 
 export function checkPack(pack, repo) {
+  // With no checkout (CI), the snapshot's own checks stand: the pack against itself and the family's
+  // invariants. They are weaker than reading the skills, and they say so.
+  if (!repo) {
+    const checks = snapshotChecks(pack)
+    const failed = checks.filter((check) => !check.ok)
+    return {
+      plugin: pack.id,
+      repo: null,
+      source: "snapshot",
+      checks,
+      failed: failed.length,
+      warned: 0,
+      namespaces: pack.namespace_tokens ? { tokens_per_turn: pack.namespace_tokens } : null,
+      text: [
+        `# T0 — ${pack.name ?? pack.id} (snapshot)`,
+        "",
+        `${checks.length - failed.length}/${checks.length} pass. No checkout configured, so the skill files and the tool table were not read.`,
+        "",
+        "| Check | Result | Detail |",
+        "| --- | --- | --- |",
+        ...checks.map((check) => `| ${check.id} ${check.name} | ${check.ok ? "pass" : "**FAIL**"} | ${String(check.detail).replace(/\|/g, "\\|")} |`),
+      ].join("\n"),
+    }
+  }
   const checks = []
   const add = (id, name, severity, ok, detail, data) => checks.push({ id, name, severity, ok, detail, data })
   const pkg = existsSync(join(repo, "package.json")) ? JSON.parse(readFileSync(join(repo, "package.json"), "utf8")) : {}

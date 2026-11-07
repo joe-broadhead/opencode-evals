@@ -190,10 +190,8 @@ export async function startHost({ version, plugin, runDir, fakeModule, fakePlugi
     OPENCODE_DISABLE_MODELS_FETCH: "1",
     OPENCODE_DISABLE_FREE_MODELS: "1",
     OPENCODE_DISABLE_CLAUDE_CODE: "1",
-    HTTP_PROXY: "http://127.0.0.1:9",
-    HTTPS_PROXY: "http://127.0.0.1:9",
-    http_proxy: "http://127.0.0.1:9",
-    https_proxy: "http://127.0.0.1:9",
+    // No proxy at all: a proxy pointed at a dead port also stops the loopback MCP client from reaching the
+    // fake, which made the stock host unable to register the plugin's tools.
     NO_PROXY: "127.0.0.1,localhost",
     no_proxy: "127.0.0.1,localhost",
     EVALS_CAPTURE_OUT: captureOut ?? join(runDir, "capture.jsonl"),

@@ -43,9 +43,24 @@ export async function runOne({ pack, version, store, fakeModule }) {
       detail: loaded ? `loaded in pid ${loaded.pid}, ${tools?.count ?? 0} tools registered` : "the capture plugin never started",
       evidence: { pid: loaded?.pid ?? null, tools: tools?.count ?? null, replaced: host.replaced },
     })
+    // The rules the plugin inserts, read from the host's resolved agents.
+    checks.push(await checkRules(host, pack))
     if (pack.rpc) {
       checks.push(await checkDescribe(host, pack))
       checks.push(await checkStatus(host, pack))
+    }
+    // A scripted turn per case: the model asks for one tool, and the host's answer is the record. Only when
+    // the plugin's own tools are registered in this host: a tool that never arrived cannot be asked for, and
+    // "not asked" would be a statement about the harness, not the plugin.
+    const registered = (captureLines(captureOut).filter((event) => event.kind === "tools").pop()?.tools ?? []).map((tool) => tool.id)
+    const own = registered.filter((id) => (pack.tools ?? []).some((tool) => id.toLowerCase().includes(String(tool.name).toLowerCase())))
+    for (const caseDef of pack.t1 ?? []) {
+      if (!own.length) {
+        checks.push({ id: `${pack.id}-${caseDef.kind}-${caseDef.tool}`, kind: caseDef.kind, state: "unsupported", detail: `the host registered none of this plugin's tools (${registered.length} tools), so a scripted call cannot reach it`, evidence: { tools: registered.length } })
+        continue
+      }
+      const result = await host.turn(caseDef.prompt)
+      checks.push({ ...checkScriptedTurn({ pack, caseDef, result, capture: captureLines(captureOut), fakeCalls: fakeCalls(host.home).calls ?? [] }), turn: { exit: result.exit, lines: result.lines.length } })
     }
     // The shapers: the tools RPC runs them, and a direct executor call does not (the host skips the hooks).
     for (const caseDef of (pack.t1 ?? []).filter((entry) => entry.kind === "capped")) {

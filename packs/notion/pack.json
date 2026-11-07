@@ -516,5 +516,21 @@
     "writes": 23,
     "denied": 9,
     "skills": 2
-  }
+  },
+  "schema": "oc-pack/1",
+  "skill_meta": {
+    "notion": {
+      "name": "notion",
+      "description_sha256": "875f51e2f926ee4059a6dc9be433ab67e3f8202ff9c1f8c935af4cd7953e425a",
+      "description_chars": 587,
+      "body_lines": 95
+    },
+    "notion-write": {
+      "name": "notion-write",
+      "description_sha256": "c743c8571a99de3a61561f7c10a7053d6c7c83db87435999f5ca3f04e2ab86f1",
+      "description_chars": 428,
+      "body_lines": 95
+    }
+  },
+  "digest": "b8708631bf50171f72398c6f15c1e616578172af0ef480e1361f103770ce0c49"
 }

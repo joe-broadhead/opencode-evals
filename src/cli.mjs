@@ -23,7 +23,8 @@ import { comparable } from "./policy/comparable.mjs"
 import { checkX } from "./t0/x.mjs"
 import { renderScorecard, compareToHandGrading } from "./report/scorecard.mjs"
 import { goldCases } from "./grade/gold.mjs"
-import { readPack, writePack, PLUGIN_ROOT } from "./pack/from-plugin.mjs"
+import { readPack, writePack, pluginRepo, repoAvailable, derivePack, readSnapshot, packIds } from "./pack/from-plugin.mjs"
+import { verifyFromRepo, driftReport, renderDrift } from "./pack/snapshot.mjs"
 import { runT1, coverageTable } from "./t1/run.mjs"
 import { checkPack } from "./t0/generic.mjs"
 import { scan as privacyScan, renderScan } from "./privacy/gate.mjs"
@@ -382,7 +383,13 @@ export async function main(argv) {
       return
     }
     case "t0": {
-      const root = opt.root ?? process.env.HOME + "/opencode-x"
+      const root = opt.root ?? pluginRepo("x")
+      if (!root) {
+        const report = checkPack(readPack("x"), null)
+        console.log(opt.json ? json(report) : report.text)
+        if (report.failed) process.exitCode = 1
+        return
+      }
       const report = checkX(root, path("cases", "x"), loadCases("x"))
       console.log(opt.json ? json(report) : report.text)
       if (opt.write) write(path("results", "t0", "x.json"), json(report))
@@ -427,23 +434,61 @@ export async function main(argv) {
       return
     }
     case "pack": {
-      const ids = opt._.length ? opt._ : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear"]
+      // CI has no checkouts: the committed snapshots are verified on their own, which is a real check —
+      // schema, digest, counts and the family's invariants. A machine with checkouts also reports drift.
+      const ids = opt._.length ? opt._ : packIds(ROOT)
+      if (!ids.length) throw new Error("no packs to verify: packs/<id>/pack.json is missing")
+      let failures = 0
+      let drifted = 0
+      const report = []
       for (const id of ids) {
         if (opt.sync) {
+          if (!repoAvailable(id)) {
+            console.log(`${id.padEnd(10)} skipped: no checkout (set EVALS_REPO_${id.toUpperCase()} or EVALS_PLUGIN_ROOT)`)
+            continue
+          }
+          const before = readSnapshot(id, ROOT)
+          const live = derivePack(id)
+          const drift = before ? driftReport(live, before) : null
           const pack = writePack(id)
-          console.log(`${id.padEnd(10)} synced  tools ${pack.counts.tools} (${pack.counts.reads} read, ${pack.counts.writes} write, ${pack.counts.denied} denied)  skills ${pack.counts.skills}`)
+          if (drift?.drift) drift ? console.log(renderDrift(id, drift)) : null
+          console.log(`${id.padEnd(10)} synced  tools ${pack.counts.tools} (${pack.counts.reads} read, ${pack.counts.writes} write, ${pack.counts.denied} denied)  skills ${pack.counts.skills}  ${pack.digest.slice(0, 12)}`)
+          continue
+        }
+        const verified = verifyFromRepo(id, ROOT)
+        failures += verified.ok ? 0 : 1
+        if (verified.ok) {
+          const pack = JSON.parse(read(join(ROOT, "packs", id, "pack.json")))
+          let line = `${id.padEnd(10)} ok  ${String(pack.digest).slice(0, 12)}  tools ${pack.counts?.tools ?? 0}  skills ${pack.counts?.skills ?? 0}  t1 ${(pack.t1 ?? []).length}`
+          if (repoAvailable(id)) {
+            const drift = driftReport(derivePack(id), pack)
+            if (drift.drift) {
+              drifted++
+              line += "\n" + renderDrift(id, drift)
+            }
+          }
+          report.push(line)
         } else {
-          const pack = readPack(id)
-          console.log(`${id.padEnd(10)} ${pack.pluginId}  tools ${pack.counts.tools}  t1 ${(pack.t1 ?? []).length}  rpc ${pack.rpc ?? "-"}`)
+          report.push(`${id.padEnd(10)} FAILED\n  ${verified.problems.join("\n  ")}`)
         }
       }
+      console.log(report.join("\n"))
+      if (!opt.sync && !failures && drifted) {
+        console.log(`\n${drifted} pack(s) differ from their checkout: \`evals pack --sync\` refreshes a snapshot after review.`)
+        if (opt.strict) process.exitCode = 1
+      }
+      if (failures) process.exitCode = 1
       return
     }
     case "t1": {
       const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
       const ids = opt.plugin ? [opt.plugin] : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear"]
       const versions = opt.versions ? String(opt.versions).split(",") : undefined
-      const packs = ids.map((id) => ({ ...readPack(id), repo: PLUGIN_ROOT(id) }))
+      const packs = ids.filter((id) => {
+        if (repoAvailable(id)) return true
+        console.log(`${id}: skipped, no checkout (set EVALS_REPO_${id.toUpperCase()} or EVALS_PLUGIN_ROOT)`)
+        return false
+      }).map((id) => ({ ...readPack(id), repo: pluginRepo(id) }))
       const results = await runT1({ packs, store, versions, fakeModule: process.env.EVALS_X_FAKE, log: (line) => console.error(line) })
       const table = coverageTable(results)
       const text = [`# T1 coverage`, "", ...table.lines, "", "`p` pass, `f` fail, `u` unsupported, `—` not run."].join("\n")
@@ -461,7 +506,7 @@ export async function main(argv) {
       const ids = opt._.length ? opt._ : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear"]
       let failed = 0
       for (const id of ids) {
-        const report = checkPack(readPack(id), PLUGIN_ROOT(id))
+        const report = checkPack(readPack(id), repoAvailable(id) ? pluginRepo(id) : null)
         failed += report.failed
         console.log(`${id.padEnd(10)} ${report.checks.length} checks, ${report.failed} fail, ${report.warned} warn`)
       }
@@ -561,7 +606,7 @@ export async function main(argv) {
     case "check": {
       const plugin = opt.plugin ?? "x"
       const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
-      const repo = PLUGIN_ROOT(plugin)
+      const repo = repoAvailable(plugin) ? pluginRepo(plugin) : null
       const blockers = []
       console.log(`# check — ${plugin}`)
       const t0 = checkPack(readPack(plugin), repo)
@@ -576,7 +621,7 @@ export async function main(argv) {
       }
       console.log(`T-G: ${gold.length - goldFailed}/${gold.length} gold cases reproduce`)
       for (let i = 0; i < goldFailed; i++) blockers.push(`T-G: ${gold[i].name}`)
-      if (process.env.EVALS_SDK_DIR) {
+      if (process.env.EVALS_SDK_DIR && repo) {
         const packs = [{ ...readPack(plugin), repo }]
         const results = await runT1({ packs, store, versions: [], log: () => {} })
         const checks = results.flatMap((r) => r.checks ?? [])
@@ -584,7 +629,7 @@ export async function main(argv) {
         console.log(`T1: ${checks.filter((c) => c.state === "pass").length}/${checks.length} pass${failed.length ? `, ${failed.length} FAIL` : ""}${checks.length ? "" : " (not configured)"}`)
         for (const check of failed) blockers.push(`T1 ${check.id}: ${check.detail}`)
       } else {
-        console.log("T1: not configured (set EVALS_SDK_DIR)")
+        console.log(`T1: not configured (${repo ? "set EVALS_SDK_DIR" : "no checkout for " + plugin})`)
       }
       console.log(blockers.length ? `\n${blockers.length} blocker(s):\n  ${blockers.join("\n  ")}` : "\nno blockers")
       if (blockers.length) process.exitCode = 1

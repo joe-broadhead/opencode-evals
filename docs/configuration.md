@@ -23,7 +23,8 @@ committed, and nothing in the repository may reference a machine path: `evals pr
 | Variable | Default | What it does |
 | --- | --- | --- |
 | `EVALS_STORE` | `../private/store` | the private store |
-| `EVALS_PLUGIN_ROOT` | `$HOME` | where the plugin checkouts live (`$EVALS_PLUGIN_ROOT/opencode-<id>`) |
+| `EVALS_PLUGIN_ROOT` | unset | a directory holding `opencode-<id>` checkouts; unset means no checkout, and the committed pack snapshot is used |
+| `EVALS_REPO_<ID>` | unset | one plugin`s checkout, when they are not side by side |
 | `EVALS_SDK_DIR` | unset | a checkout whose `node_modules` holds `@opencode/sdk` and `@opencode/plugin` |
 | `OPENCODE_BIN_2_2_3`, `_2_2_4`, `_2_2_5` | unset | a stock binary per tested version |
 | `EVALS_STOCK_DIR` | unset | a directory with `<version>/node_modules/@opencode/cli-*/bin/opencode` |

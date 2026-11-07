@@ -35,40 +35,80 @@ export async function describe(host, rpcId, sessionID) {
 }
 
 /**
- * The family's rule invariant: a plugin inserts one block of default rules after each agent's own base
- * allow, so an agent is either fully guarded (every declared tool resolves to its declared effect) or
- * untouched. A half-inserted block is the failure this check exists for.
+ * The family's rule invariant, from a resolved matrix: for every agent, what each declared action resolves
+ * to. A plugin inserts one block of default rules after each agent's base allow, so the agents it guards —
+ * build, general, compaction, plan — must resolve every declared tool exactly. Agents with their own deny
+ * policies (explore, title, summary) deny by their own choice: reported, never counted as a hole.
+ *
+ * A hole is the one direction that matters: a tool declared `deny` resolving `allow`, on any agent.
  */
-export async function checkRules(host, pack) {
-  const list = await agents(host)
-  const guarded = []
-  const unguarded = []
-  const partial = []
-  for (const agent of list) {
+export const MUST_BE_GUARDED = ["build", "general", "compaction", "plan"]
+
+export function rulesFromResolved(resolved, pack, { mustGuard = MUST_BE_GUARDED } = {}) {
+  const tools = pack.tools ?? []
+  const holes = []
+  const mustGuardProblems = []
+  const ownPolicies = []
+  const perAgent = []
+
+  for (const agent of resolved) {
     const mismatches = []
-    for (const tool of pack.tools) {
-      const action = tool.permission ?? `x_${tool.name}`
-      const declared = tool.effect ?? "allow"
-      const resolved = effectOf(agent.permissions, action)
-      if (resolved !== declared) mismatches.push(`${action} declared ${declared} resolved ${resolved}`)
+    for (const tool of tools) {
+      const got = agent.effects[tool.permission]
+      if (got === undefined) continue
+      if (got !== (tool.effect ?? "allow")) mismatches.push(`${tool.name} ${tool.effect ?? "allow"}→${got}`)
+      if ((tool.effect ?? "allow") === "deny" && got === "allow") holes.push(`${agent.id}:${tool.name} deny→allow`)
     }
-    if (mismatches.length === 0) guarded.push(agent.id)
-    else if (mismatches.length === pack.tools.length) unguarded.push(agent.id)
-    else partial.push({ agent: agent.id, mismatches: mismatches.length, first: mismatches.slice(0, 2) })
+    perAgent.push({ agent: agent.id, mismatches: mismatches.length, first: mismatches.slice(0, 4) })
+    if (!mismatches.length) continue
+    const guarded = mustGuard.includes(agent.id) || (!mustGuard.length ? true : pack.guardAgents?.includes?.(agent.id))
+    if (guarded) mustGuardProblems.push(`${agent.id}: ${mismatches.slice(0, 4).join(", ")}${mismatches.length > 4 ? ` (+${mismatches.length - 4})` : ""}`)
+    else ownPolicies.push(agent.id)
   }
-  const state = partial.length || guarded.length === 0 ? "fail" : "pass"
+
+  const guarded = perAgent.filter((entry) => entry.mismatches === 0).map((entry) => entry.agent)
+  const state = holes.length || mustGuardProblems.length ? "fail" : guarded.length ? "pass" : "fail"
+  const detail = holes.length
+    ? `${holes.length} denied tool(s) resolve allow: ${holes.slice(0, 3).join(", ")}`
+    : mustGuardProblems.length
+      ? `a must-be-guarded agent is not exact — ${mustGuardProblems.join("; ")}`
+      : `${perAgent.filter((entry) => mustGuard.includes(entry.agent) && entry.mismatches === 0).length}/${mustGuard.filter((id) => perAgent.some((entry) => entry.agent === id)).length} must-be-guarded agent(s) exact over ${tools.length} tools${ownPolicies.length ? `; ${ownPolicies.length} agent(s) deny by their own policy: ${ownPolicies.join(", ")}` : ""}`
   return {
     id: `${pack.id}-rules`,
     kind: "rules",
     state,
-    detail:
-      state === "fail"
-        ? partial.length
-          ? `half-inserted block on ${partial.map((p) => `${p.agent} (${p.mismatches}/${pack.tools.length})`).join(", ")}; first: ${partial[0].first.join("; ")}`
-          : "no agent is guarded by this plugin's rules"
-        : `${guarded.length} agent(s) fully guarded, ${unguarded.length} untouched, over ${pack.tools.length} declared tools`,
-    evidence: { guarded, unguarded, partial: partial.map((p) => p.agent) },
+    detail,
+    evidence: { mustGuard: mustGuard.filter((id) => perAgent.some((entry) => entry.agent === id)), holes: holes.slice(0, 6), perAgent },
   }
+}
+
+/** The agents a stock host has when it is sealed: the built-ins, and nothing of the machine's. */
+export const SEALED_AGENTS = ["build", "explore", "general", "compaction", "title", "summary", "plan"]
+
+/**
+ * The HTTP form: the agents' resolved rules, evaluated with the host's own last-match order.
+ *
+ * A stock host that reports an agent nobody created for this run is not sealed — the owner's own agents
+ * and Jellies are visible — and grading *their* policies would be grading the machine, not the plugin. That
+ * is reported as a harness limitation, never as a plugin defect.
+ */
+export async function checkRules(host, pack) {
+  const list = await agents(host)
+  const foreign = list.map((agent) => agent.id).filter((id) => !SEALED_AGENTS.includes(id))
+  if (foreign.length) {
+    return {
+      id: `${pack.id}-rules`,
+      kind: "rules",
+      state: "unsupported",
+      detail: `the stock host carried ${foreign.length} agent(s) this run did not create (${foreign.slice(0, 4).join(", ")}); not graded here — the embedded host is sealed`,
+      evidence: { foreign: foreign.slice(0, 8), agents: list.length },
+    }
+  }
+  const resolved = list.map((agent) => ({
+    id: agent.id,
+    effects: Object.fromEntries((pack.tools ?? []).map((tool) => [tool.permission, effectOf(agent.permissions, tool.permission)])),
+  }))
+  return rulesFromResolved(resolved, pack)
 }
 
 /**

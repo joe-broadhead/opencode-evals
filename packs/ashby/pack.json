@@ -138,5 +138,21 @@
     "writes": 3,
     "denied": 2,
     "skills": 2
-  }
+  },
+  "schema": "oc-pack/1",
+  "skill_meta": {
+    "ashby": {
+      "name": "ashby",
+      "description_sha256": "d29b23f71a039c0536250a301c9e2155ed4bcb6aaacd15115e71901055c4baf5",
+      "description_chars": 868,
+      "body_lines": 95
+    },
+    "ashby-write": {
+      "name": "ashby-write",
+      "description_sha256": "4a5318970abafe8c3db02061778629b79526416aa112e7a29b0e87e4093ced27",
+      "description_chars": 390,
+      "body_lines": 63
+    }
+  },
+  "digest": "7cb59d374eafa763ec945466f4cd4891302651294229cde00930c6a68ee89885"
 }

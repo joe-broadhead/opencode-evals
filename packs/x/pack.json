@@ -580,49 +580,49 @@
       "permission": "x_get_chat_conversation",
       "effect": "deny",
       "readOnly": true,
-      "class": "read"
+      "class": "destructive"
     },
     {
       "name": "get_chat_conversation_events",
       "permission": "x_get_chat_conversation_events",
       "effect": "deny",
       "readOnly": true,
-      "class": "read"
+      "class": "destructive"
     },
     {
       "name": "get_chat_conversations",
       "permission": "x_get_chat_conversations",
       "effect": "deny",
       "readOnly": true,
-      "class": "read"
+      "class": "destructive"
     },
     {
       "name": "get_chat_message_request",
       "permission": "x_get_chat_message_request",
       "effect": "deny",
       "readOnly": true,
-      "class": "read"
+      "class": "destructive"
     },
     {
       "name": "get_chat_message_requests",
       "permission": "x_get_chat_message_requests",
       "effect": "deny",
       "readOnly": true,
-      "class": "read"
+      "class": "destructive"
     },
     {
       "name": "get_users_public_key",
       "permission": "x_get_users_public_key",
       "effect": "deny",
       "readOnly": true,
-      "class": "read"
+      "class": "destructive"
     },
     {
       "name": "get_users_public_keys",
       "permission": "x_get_users_public_keys",
       "effect": "deny",
       "readOnly": true,
-      "class": "read"
+      "class": "destructive"
     },
     {
       "name": "go_live_scheduled_broadcast",
@@ -753,9 +753,25 @@
   ],
   "counts": {
     "tools": 100,
-    "reads": 58,
+    "reads": 51,
     "writes": 9,
     "denied": 40,
     "skills": 2
-  }
+  },
+  "schema": "oc-pack/1",
+  "skill_meta": {
+    "x": {
+      "name": "x",
+      "description_sha256": "da609550174e1ce3094ffbb0fcf8ee5d71b320312546b32af13f0aa73e5e9344",
+      "description_chars": 631,
+      "body_lines": 95
+    },
+    "x-write": {
+      "name": "x-write",
+      "description_sha256": "1b8ca5b24bc0ca45393f8ae3fa024ff16e51cf6a62a31b3b4dfabaaedf931ad3",
+      "description_chars": 334,
+      "body_lines": 74
+    }
+  },
+  "digest": "bd9bf006cece173593ac11e7c705030114037480efdd7584bab1fe7019224058"
 }

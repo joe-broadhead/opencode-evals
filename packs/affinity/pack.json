@@ -593,5 +593,21 @@
     "writes": 20,
     "denied": 10,
     "skills": 2
-  }
+  },
+  "schema": "oc-pack/1",
+  "skill_meta": {
+    "affinity": {
+      "name": "affinity",
+      "description_sha256": "3600ee7fb1e0be6e22ee573c74c6a2afacc739fc8c205c75534594e2d394328d",
+      "description_chars": 708,
+      "body_lines": 78
+    },
+    "affinity-write": {
+      "name": "affinity-write",
+      "description_sha256": "8aaf0da663a38875e4135d24c6765818a8b79399f7d7cf6fdd780c1b339a57e8",
+      "description_chars": 431,
+      "body_lines": 79
+    }
+  },
+  "digest": "cf9cbc2eda165233e1afdb49ed81535f52f2f6d945d89e60cedd4db972c802df"
 }

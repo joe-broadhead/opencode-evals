@@ -397,5 +397,21 @@
     "writes": 14,
     "denied": 7,
     "skills": 2
-  }
+  },
+  "schema": "oc-pack/1",
+  "skill_meta": {
+    "jira": {
+      "name": "jira",
+      "description_sha256": "a4b2fce9c69d2d3f1901db03242b2b23679c8811c991f1c45a24d193250b72b5",
+      "description_chars": 531,
+      "body_lines": 93
+    },
+    "jira-write": {
+      "name": "jira-write",
+      "description_sha256": "83848417fae6c1cc62259909d9abf01633051242b718c669413982ad08576c0e",
+      "description_chars": 325,
+      "body_lines": 94
+    }
+  },
+  "digest": "ba313aa40e297fc76dd90ab5031abea64007761f3827a04db250c55fda48ddbc"
 }

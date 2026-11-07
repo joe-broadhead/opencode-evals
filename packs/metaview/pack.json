@@ -496,5 +496,27 @@
     "writes": 22,
     "denied": 3,
     "skills": 3
-  }
+  },
+  "schema": "oc-pack/1",
+  "skill_meta": {
+    "metaview": {
+      "name": "metaview",
+      "description_sha256": "a6872829d01864d4a4bbd347c905e63edebda404a3992b50d4ab66109374ce31",
+      "description_chars": 584,
+      "body_lines": 95
+    },
+    "metaview-candidate-brief": {
+      "name": "metaview-candidate-brief",
+      "description_sha256": "324fa19036594a1df4078246b32f25b1237e0f2072aa31fe4c8dcbcfad50ad58",
+      "description_chars": 434,
+      "body_lines": 68
+    },
+    "metaview-write": {
+      "name": "metaview-write",
+      "description_sha256": "40e013ca70121bd171ca440782a82e4d8d7676b43f84b637df51cb9f2cc94da9",
+      "description_chars": 434,
+      "body_lines": 95
+    }
+  },
+  "digest": "4ada1068de37a5964c2fdc5aa4e0d744c3e174658fc6639f6f02b888159a9fbf"
 }

@@ -60,7 +60,10 @@ const server = Bun.serve({
     const signal = request.signal
     if (!tools.length) return textAnswer("Spike title", signal)
     if (last?.role === "tool") return textAnswer(`after-tool: ${text(last.content).slice(0, 300)}`, signal)
-    const directive = /\[\[mock:(\w+)(?::([^\]]*))?\]\]/.exec(userText)
+    // The prompt can arrive JSON-escaped (`\"query\":\"x\"`), which would break both the directive match and the
+    // arguments the scripted tool call carries. Unescape once, before reading either.
+    const unescaped = userText.replace(/\\"/g, '"').replace(/\\n/g, "\n")
+    const directive = /\[\[mock:(\w+)(?::([^\]]*))?\]\]/.exec(unescaped)
     const kind = directive?.[1] ?? "text"
     const arg = directive?.[2] ?? "hello from mock"
     if (kind === "slow") {

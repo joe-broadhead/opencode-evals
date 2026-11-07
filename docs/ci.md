@@ -27,7 +27,9 @@ Each plugin's `scripts/check.mjs` already runs its stages under the family's slo
   run: () =>
     run("node", ["../opencode-evals/bin/evals", "check", "--plugin", "x"], {
       env: {
-        EVALS_PLUGIN_ROOT: process.env.HOME,
+        // The directory that holds your plugin checkouts, e.g. $HOME. CI sets neither, and the checks that
+        // need a checkout report `unsupported` instead of guessing a path.
+        EVALS_PLUGIN_ROOT: process.env.EVALS_PLUGIN_ROOT,
         EVALS_SDK_DIR: process.env.EVALS_SDK_DIR,
         EVALS_STORE: process.env.EVALS_STORE,
       },
@@ -44,6 +46,11 @@ Run it through the machine-wide slot like the host and pack stages, because T1 s
 
 - **test**: `node --test test/*.test.mjs` on Node 22, plus `evals selftest` and `evals compile --check`.
 - **privacy**: `evals privacy --scan`, which reads the tree and the whole git history.
+
+`evals pack` in CI verifies the committed snapshots in `packs/`: schema, digest, counts, the family's
+invariants and the scripted cases. It does not need a plugin checkout, which is why the four plugins that
+are not on GitHub are still covered. On a machine with checkouts the same command reports drift between a
+plugin's live `jelly` declaration and its snapshot; `evals pack --sync` refreshes a snapshot after review.
 
 Both are deterministic and need no secrets. The T1 tier is not in CI: it needs a stock binary, which is a
 machine-level asset. Run it on the machine that has one, or add a job that downloads it and sets

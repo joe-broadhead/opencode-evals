@@ -565,5 +565,21 @@
     "writes": 36,
     "denied": 0,
     "skills": 2
-  }
+  },
+  "schema": "oc-pack/1",
+  "skill_meta": {
+    "linear": {
+      "name": "linear",
+      "description_sha256": "e5da19d557981428be87bbef2af5455c7c277049970de2c75339175c773722a9",
+      "description_chars": 457,
+      "body_lines": 98
+    },
+    "linear-write": {
+      "name": "linear-write",
+      "description_sha256": "245a69ca7c0b5cb1a36c9b21f66ad6cf87c0fe6ad51a12167f39f268f8fe50a1",
+      "description_chars": 322,
+      "body_lines": 47
+    }
+  },
+  "digest": "ba7e9c7c774c0288367d5d1a5ceef8e2b684d902dae87a59401d74d82639504a"
 }

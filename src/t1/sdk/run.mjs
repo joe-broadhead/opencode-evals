@@ -25,7 +25,15 @@ const flag = (name, fallback) => {
 }
 const pluginId = flag("plugin", "x")
 const sdkDir = flag("sdk", process.env.EVALS_SDK_DIR ?? "")
-const repo = resolve(flag("repo", process.env[`EVALS_REPO_${pluginId.toUpperCase()}`] ?? join(process.env.EVALS_PLUGIN_ROOT ?? process.env.HOME, `opencode-${pluginId}`)))
+// A checkout is configuration, never a guessed home directory.
+const repoFlag = flag("repo", "")
+const repo = repoFlag
+  ? resolve(repoFlag)
+  : process.env[`EVALS_REPO_${pluginId.toUpperCase()}`]
+    ? resolve(process.env[`EVALS_REPO_${pluginId.toUpperCase()}`])
+    : process.env.EVALS_PLUGIN_ROOT
+      ? resolve(join(process.env.EVALS_PLUGIN_ROOT, `opencode-${pluginId}`))
+      : ""
 const captureOn = flag("capture", "on") !== "off"
 const fakeModule = process.env.EVALS_X_FAKE ?? ""
 const root = mkdtempSync(join(process.env.EVALS_TMP ?? tmpdir(), `evals-t1-${pluginId}-`))
@@ -52,6 +60,10 @@ for (const key of Object.keys(process.env)) if (key.startsWith("OPENCODE_") && !
 
 const fail = (checks, id, detail) => checks.push({ id, kind: "harness", state: "fail", detail, evidence: {} })
 
+if (!repo) {
+  console.log(JSON.stringify({ plugin: pluginId, state: "unsupported", detail: "no checkout: set EVALS_REPO_<ID> or EVALS_PLUGIN_ROOT", checks: [] }))
+  process.exit(0)
+}
 const sdkPath = sdkDir ? join(sdkDir, "node_modules", "@opencode", "sdk") : ""
 if (!sdkPath || !existsSync(join(sdkPath, "dist", "index.js"))) {
   console.log(JSON.stringify({ plugin: pluginId, state: "unsupported", detail: `no @opencode/sdk at ${sdkPath || "(unset)"}`, checks: [] }))
@@ -76,15 +88,22 @@ if (fakeModule && existsSync(fakeModule)) {
   endpoint = fake.url
 }
 
-// The plugin under test, from its prebuilt bundle, with its endpoint pointed at the fake when there is one.
+// The plugin under test: a bundle built from the tracked tree, never the checkout's git-ignored dist/ on
+// faith. A stale bundle is not graded — the verdict says so, and the run stops before any check.
+const { bundleFor } = await import(pathToFileURL(join(import.meta.dirname, "..", "bundle.mjs")).href)
+const bundle = bundleFor(repo, join(root, "build"))
+if (!bundle.ok) {
+  console.log(JSON.stringify({ plugin: pluginId, version: process.env.EVALS_VERSION ?? "sdk", state: "unsupported", detail: bundle.why, checks: [{ id: `${pluginId}-bundle`, kind: "harness", state: "unsupported", detail: `stale or unbuildable: ${bundle.why}`, evidence: bundle.stale ?? {} }] }))
+  process.exit(0)
+}
 const built = join(root, "plugin")
 mkdirSync(join(built, "dist"), { recursive: true })
-for (const file of ["index.js", "tui.js"]) if (existsSync(join(repo, "dist", file))) writeFileSync(join(built, "dist", file), readFileSync(join(repo, "dist", file)))
-if (existsSync(join(repo, "skills"))) {
+for (const file of ["index.js", "tui.js"]) if (existsSync(join(bundle.dir, "dist", file))) writeFileSync(join(built, "dist", file), readFileSync(join(bundle.dir, "dist", file)))
+if (existsSync(join(bundle.dir, "skills"))) {
   const { cpSync } = await import("node:fs")
-  cpSync(join(repo, "skills"), join(built, "skills"), { recursive: true })
+  cpSync(join(bundle.dir, "skills"), join(built, "skills"), { recursive: true })
 }
-writeFileSync(join(built, "package.json"), readFileSync(join(repo, "package.json")))
+writeFileSync(join(built, "package.json"), readFileSync(join(bundle.dir, "package.json")))
 if (endpoint) {
   const index = join(built, "dist", "index.js")
   const text = readFileSync(index, "utf8")
@@ -193,33 +212,17 @@ try {
   })
 
   // The rules the plugin inserts, per agent.
-  // The rules the plugin inserts. Two things must hold: at least one agent resolves every declared tool as
-  // declared (the plugin inserted its block), and no agent resolves a denied tool to allow (the one
-  // direction that would widen permission). Agents with their own policies are reported, not failed.
+  // The rules the plugin inserts, resolved per agent by the host itself.
+  const { rulesFromResolved } = await import(pathToFileURL(join(import.meta.dirname, "..", "checks.mjs")).href)
   const agentList = (await client.agent.list({ location })).data
-  const guarded = []
-  const partial = []
-  const holes = []
+  const resolved = []
   for (const entry of agentList) {
-    const mismatches = []
-    for (const tool of toolsCatalogue) {
-      const sessionID = (await client.sessions.create({ agent: entry.id, location })).id
-      const resolved = (await client.permission.create({ sessionID, agent: entry.id, action: tool.permission, resources: ["*"] })).effect
-      if (resolved !== (tool.effect ?? "allow")) mismatches.push(`${tool.permission} ${tool.effect}->${resolved}`)
-      if (tool.effect === "deny" && resolved === "allow") holes.push(`${entry.id}:${tool.permission}`)
-    }
-    if (!mismatches.length) guarded.push(entry.id)
-    else if (mismatches.length < toolsCatalogue.length) partial.push({ agent: entry.id, mismatches: mismatches.length })
+    const sessionID = (await client.sessions.create({ agent: entry.id, location })).id
+    const effects = {}
+    for (const tool of toolsCatalogue) effects[tool.permission] = (await client.permission.create({ sessionID, agent: entry.id, action: tool.permission, resources: ["*"] })).effect
+    resolved.push({ id: entry.id, effects })
   }
-  checks.push({
-    id: `${pluginId}-rules`,
-    kind: "rules",
-    state: holes.length || !guarded.length ? "fail" : "pass",
-    detail: holes.length
-      ? `${holes.length} denied tool(s) resolve allow: ${holes.slice(0, 3).join(", ")}`
-      : `${guarded.length} agent(s) fully guarded over ${toolsCatalogue.length} declared tools; ${partial.length} with their own policies`,
-    evidence: { guarded, partial: partial.map((p) => p.agent), holes: holes.slice(0, 5) },
-  })
+  checks.push(rulesFromResolved(resolved, pack))
 
   // The tools RPC, with a session.
   if (pack.rpc) {

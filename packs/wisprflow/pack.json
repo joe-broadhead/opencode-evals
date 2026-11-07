@@ -131,5 +131,21 @@
     "writes": 0,
     "denied": 0,
     "skills": 2
-  }
+  },
+  "schema": "oc-pack/1",
+  "skill_meta": {
+    "wisprflow": {
+      "name": "wisprflow",
+      "description_sha256": "c73c51599cf3db3e9c8b86df6d36154cf0144efa2523ca0c6163f9d374e43129",
+      "description_chars": 604,
+      "body_lines": 81
+    },
+    "wisprflow-meeting-brief": {
+      "name": "wisprflow-meeting-brief",
+      "description_sha256": "ad77e80d496183fd623132514c1758b7febc7e1b43097bd32914f3cf584ae7bd",
+      "description_chars": 493,
+      "body_lines": 45
+    }
+  },
+  "digest": "60104166e36252a0d458bc41825846145b7805e97708a728144a2c440e08c3f9"
 }
