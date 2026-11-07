@@ -97,7 +97,8 @@ function writeLock(plugin = "x", epoch = 1) {
     items: cases.reduce((n, c) => n + c.items.length, 0),
     cases_sha256: casesDigest(cases),
     grader_sha256: graderHash(),
-    harness_version: harnessVersion(),
+    // No harness version here: the lock freezes the case set and the grader, and the version of the code
+    // that produced a result belongs in that result (every trace head and batch carries it).
     frozen_at: new Date().toISOString(),
   }
   write(path("cases", plugin, "evals.lock"), json(lock))
@@ -368,6 +369,12 @@ export async function main(argv) {
       if (!existsSync(summaryFile)) throw new Error(`no batch at ${summaryFile}; run grade first`)
       const previous = JSON.parse(read(summaryFile))
       const cases = loadCases(opt.plugin ?? "x")
+      const lockFile = path("cases", opt.plugin ?? "x", "evals.lock")
+      if (existsSync(lockFile)) {
+        const lock = JSON.parse(read(lockFile))
+        if (lock.cases_sha256 !== casesDigest(cases)) failures.push(`the case set moved since the lock: ${short(lock.cases_sha256)} -> ${short(casesDigest(cases))}`)
+        if (lock.grader_sha256 !== graderHash()) failures.push(`the grader moved since the lock: ${short(lock.grader_sha256)} -> ${short(graderHash())}`)
+      } else failures.push("no cases/x/evals.lock")
       const results = gradeAll(iteration)
       const again = batchSummary(iteration, results, cases)
       if (again.batch_sha256 !== previous.batch_sha256) failures.push(`batch digest moved: ${short(previous.batch_sha256)} -> ${short(again.batch_sha256)}`)
