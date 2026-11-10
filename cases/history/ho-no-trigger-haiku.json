@@ -1,0 +1,124 @@
+{
+  "schema": "oc-case/1",
+  "id": "ho-no-trigger-haiku",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "triggering control",
+  "decision": "Held out: a task unrelated to history.",
+  "data_check": null,
+  "prompt": "write a four-line poem about relational databases",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "pass",
+      "on": []
+    }
+  ],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 3,
+    "wall_ms": 180000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": true,
+  "items": [
+    {
+      "id": "H-TR02",
+      "severity": "major",
+      "ask": "No history tool was called: the answer is in the code, git or the current conversation.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "H-TR03",
+      "severity": "minor",
+      "ask": "The history-recall skill was not loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It answered the question.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": ".{20,}",
+            "flags": "s"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "apply_patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "0d647c6a807fd412361a982ab06a3c8585d0a7c1399568ba3dce1e64ae059bf2"
+  }
+}

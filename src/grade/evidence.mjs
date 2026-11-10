@@ -118,6 +118,8 @@ const numberish = (v) => typeof v === "number" && Number.isFinite(v)
 
 /** Where a tool argument lives, as the trace stores it. */
 export function argState(args, key) {
+  // A call whose whole argument object is a variable (`events_list(args)`) says nothing about its keys: unverifiable, not "missing".
+  if (args && typeof args === "object" && "$ref" in args) return { state: "opaque", why: "the argument object is a variable" }
   const path = key.replace(/^args\./, "").split(".")
   let value = args
   for (const part of path) {
@@ -175,6 +177,8 @@ export function evaluateClause(clause, view) {
       const resolved = argState(call.args ?? {}, clause.arg)
       if (resolved.state === "missing") return { state: "fail", detail: `${clause.arg} was not passed` }
       const label = clause.arg.replace(/^args\./, "")
+      // The whole argument object is a variable: nothing is known about its keys, `present` included.
+      if (resolved.state === "opaque" && resolved.why === "the argument object is a variable") return { state: "unverifiable", detail: `${clause.tool}#${clause.n} arguments are a variable` }
       // "present" is about the call, not the value: a variable was still passed.
       if (clause.op === "present") return { state: "ok", detail: `${label} present` }
       if (resolved.state === "opaque") return { state: "unverifiable", detail: `${clause.arg} is a variable (${resolved.why})` }

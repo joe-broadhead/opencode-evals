@@ -133,7 +133,7 @@ test("a per-plugin root wins over a shared root, and neither guesses a home dire
 
 test("every committed snapshot verifies — the assertion CI makes", () => {
   const ids = packIds(ROOT)
-  assert.ok(ids.length >= 9, `expected the nine packs, found ${ids.join(",")}`)
+  assert.ok(ids.length >= 10, `expected the ten packs, found ${ids.join(",")}`)
   for (const id of ids) {
     const result = verifyFromRepo(id, ROOT)
     assert.equal(result.ok, true, `${id}: ${result.problems.join("; ")}`)

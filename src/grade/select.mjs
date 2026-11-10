@@ -14,6 +14,8 @@ export function matchesTool(pattern, call) {
     return re.test(call.tool)
   }
   if (call.tool === pattern) return true
+  // An inner Code Mode call is recorded as {ns, tool}: `history.search` names the same call as ns "history", tool "search".
+  if (call.ns && pattern.includes(".") && `${call.ns}.${call.tool}` === pattern) return true
   // A direct plugin tool id (`x_search_posts_all`) names the same thing as the MCP tool it wraps.
   return call.tool.replace(/^[a-z0-9]+_/, "") === pattern.replace(/^x_/, "")
 }

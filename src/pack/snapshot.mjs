@@ -12,7 +12,7 @@ import { join } from "node:path"
 import { canonical, sha256 } from "../util/canonical.mjs"
 
 export const PACK_SCHEMA = "oc-pack/1"
-export const PACK_IDS = ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear"]
+export const PACK_IDS = ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear", "history"]
 
 /** The digest covers everything the snapshot claims, except the digest itself. */
 export const packDigest = (pack) => {
