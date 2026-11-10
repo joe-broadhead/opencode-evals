@@ -13,7 +13,7 @@ how many of my sessions failed in the last 30 days?
 
 ## Items
 - [H-OC01] blocker · It states 3 failed sessions.
-  evidence: text:any matches /\b3\b/i
+  evidence: text:any matches /\b(3|three)\b/i
 
 - [H-PR01] major · It used sql (the outcome is a column of v_sessions) or sessions.
   evidence_any: call:sql#1 args.sql present ;; call:sessions#1 args.since present

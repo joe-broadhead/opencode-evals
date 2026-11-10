@@ -67,7 +67,7 @@
           "op": "not-matches",
           "value": {
             "kind": "regex",
-            "source": "we (decided|chose|went with|picked|settled on) (to use |on )?(GraphQL|REST)",
+            "source": "(^|[.!?:]\\s+|\\n)(we|you) (decided|chose|went with|picked|settled on) (to use |on )?(GraphQL|REST)",
             "flags": "i"
           }
         }
@@ -166,6 +166,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5e10cbaf759832323cee0c7e9ada79073b630c25c7cdaaedb5903ad2c1ecdab0"
+    "source_sha256": "50700b1055166ab544244d491b47485d3b83501ec82f9da723c034860a1ba366"
   }
 }

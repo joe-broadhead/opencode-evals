@@ -44,7 +44,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "\\b3\\b",
+            "source": "\\b(3|three)\\b",
             "flags": "i"
           }
         }
@@ -134,6 +134,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "defc87b4c8e6d62f7d773e77a6bde06ca274a93c71f2b81c92881729f224ff74"
+    "source_sha256": "0ad767a56c23759367efe52d4adc0ecbf2168fb428f121c0559e8815989acf28"
   }
 }
