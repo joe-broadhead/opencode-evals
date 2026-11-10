@@ -1,0 +1,110 @@
+{
+  "schema": "oc-case/1",
+  "id": "ho-yesterday-cost",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "yesterday-1..5",
+  "decision": "Held out: a time window plus a sum.",
+  "data_check": null,
+  "prompt": "how much did yesterday's sessions cost in total?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC09"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 12,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api time=day",
+  "expect": "pass",
+  "holdout": true,
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "The total is $3.40 (this project) or $3.90 (all projects).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "3\\.40|3.4\\b|3\\.90|3.9\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "H-OC08",
+      "severity": "major",
+      "ask": "It used the history tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "apply_patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "4170525647892a7b7a203ee5800115c7ac568f8193a2ea878c4a73b35f044090"
+  }
+}

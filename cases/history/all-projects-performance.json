@@ -1,0 +1,246 @@
+{
+  "schema": "oc-case/1",
+  "id": "all-projects-performance",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "needles billing-index, bundle-size, zsh-startup, ci-cache",
+  "decision": "An explicit 'any project' question: scope all, several sessions.",
+  "data_check": null,
+  "prompt": "across all my projects, which sessions were about fixing something slow? list what was slow and how we sped it up",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC09"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 12,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "major",
+      "ask": "It lists the slow invoices query (index).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "invoice",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "It lists the large frontend bundle.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "bundle",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "H-OC03",
+      "severity": "major",
+      "ask": "It lists the slow zsh startup.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "zsh",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "H-OC04",
+      "severity": "major",
+      "ask": "It lists the slow CI builds (npm cache).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "CI|cache",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "H-PR01",
+      "severity": "major",
+      "ask": "The search used scope: all.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "search",
+            "n": 1,
+            "arg": "args.scope",
+            "op": "==",
+            "value": {
+              "kind": "string",
+              "value": "all"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "recall",
+            "n": 1,
+            "arg": "args.scope",
+            "op": "==",
+            "value": {
+              "kind": "string",
+              "value": "all"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "sql",
+            "n": 1,
+            "arg": "args.sql",
+            "op": "present"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "H-PR02",
+      "severity": "major",
+      "ask": "Citations in the full form (ses_… #seq).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\\)",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "H-OC08",
+      "severity": "major",
+      "ask": "It used the history tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "apply_patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a54887a8281c8ced853fe1f65d8033fd8ec6a4b7b41d0bf540dcebc722599135"
+  }
+}

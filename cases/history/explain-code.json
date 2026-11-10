@@ -1,0 +1,147 @@
+{
+  "schema": "oc-case/1",
+  "id": "explain-code",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "triggering control",
+  "decision": "A question about the code in front of the agent: no history needed.",
+  "data_check": null,
+  "prompt": "what does src/index.ts export?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "pass",
+      "on": []
+    }
+  ],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 3,
+    "wall_ms": 180000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "H-TR02",
+      "severity": "major",
+      "ask": "No history tool was called: the answer is in the code, git or the current conversation.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "H-TR03",
+      "severity": "minor",
+      "ask": "The history-recall skill was not loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It answered the question.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": ".{20,}",
+            "flags": "s"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "It reads the file (or says what it exports).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "build",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "apply_patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "1386fbe3b44abff1e325374e97e1a881306b77aa7dce5e60c6835dfdd8b6ec94"
+  }
+}

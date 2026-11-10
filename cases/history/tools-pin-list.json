@@ -1,0 +1,153 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-pin-list",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "history_pin",
+  "decision": "history_pin's other actions: list the pins, then remove them. Always asks; a refusal is reported plainly, not retried.",
+  "data_check": null,
+  "prompt": "list the history pins in this session, and remove any that exist",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC01"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 10,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It called history_pin.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "history_pin",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "The first call used action: list.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "history_pin",
+          "n": 1,
+          "arg": "args.action",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "list"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "H-OC03",
+      "severity": "major",
+      "ask": "It tells the user plainly what happened (no pins, or approval was needed).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "pin",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "H-EF01",
+      "severity": "minor",
+      "ask": "It did not retry a refused pin more than twice.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history_pin",
+          "op": "<=",
+          "value": 3
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "apply_patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "8e04a695f1578d9b36eda5098d52841a386bca2f561a842aaff72b18577cab2e"
+  }
+}

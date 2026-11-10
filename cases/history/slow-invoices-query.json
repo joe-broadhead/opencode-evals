@@ -1,0 +1,279 @@
+{
+  "schema": "oc-case/1",
+  "id": "slow-invoices-query",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "needle billing-index",
+  "decision": "A performance fix with numbers: the agent reports the composite index and the before/after timings.",
+  "data_check": null,
+  "prompt": "how did we speed up the invoices list query a while back?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC09"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 12,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "The composite index on (customer_id, created_at DESC) is named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "idx_invoices_customer_created|customer_id, ?created_at",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "H-OC02",
+      "severity": "blocker",
+      "ask": "The timings are stated: 840 ms before, 12 ms after.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "840",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b12 ?ms",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "H-OC09",
+      "severity": "major",
+      "ask": "The answer names the session (or sessions) the facts come from: billing-index.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "ses_Ow3jePEfTNML6lyyRoyaNI",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "H-PR01",
+      "severity": "major",
+      "ask": "Every claim is cited in the full form (ses_… #seq), with the session ID written out.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\\)",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "H-PR02",
+      "severity": "major",
+      "ask": "The citation names the right session in full form.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\(ses_Ow3jePEfTNML6lyyRoyaNI #[0-9]+\\)",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "H-PR03",
+      "severity": "minor",
+      "ask": "A search or recall call used at least two phrasings of the topic.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "search",
+            "n": 1,
+            "arg": "args.query.length",
+            "op": ">=",
+            "value": {
+              "kind": "number",
+              "value": 2
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "recall",
+            "n": 1,
+            "arg": "args.queries.length",
+            "op": ">=",
+            "value": {
+              "kind": "number",
+              "value": 2
+            }
+          }
+        ]
+      ],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "search",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "recall",
+          "n": null
+        }
+      ],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "H-TR01",
+      "severity": "minor",
+      "ask": "The history-recall skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    },
+    {
+      "id": "H-OC08",
+      "severity": "major",
+      "ask": "It used the history tools at least once, instead of answering from nothing.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited: a lookup changes nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "apply_patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 43
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "b25e3b8fa4e09fcc0c28c98f401a71f3d2e28a287ae4d7d2b99e13ba36f3d0c0"
+  }
+}

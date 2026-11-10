@@ -1,0 +1,134 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-files-ops",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "hot-file filler (settings.ts edited in 8 sessions, read in more)",
+  "decision": "history_files with ops: only the sessions that CHANGED a file, not those that merely read it.",
+  "data_check": null,
+  "prompt": "which past sessions edited src/config/settings.ts? I only care about sessions that changed it, not ones that just read it",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC01"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 10,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It reports 8 sessions.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b8\\b|eight",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "It used files with ops limited to changes.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "files",
+          "n": 1,
+          "arg": "args.ops",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "H-OC03",
+      "severity": "minor",
+      "ask": "It names a few of the setting changes (timeout, upload size, locale, retry, CORS...).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "timeout|upload size|locale|retry|CORS|log level|feature flag|cache prefix",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "apply_patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c69c4fb56d6805d0026c8c95b6c5003cdfef556b8aa1545749b2b059d0dead2e"
+  }
+}

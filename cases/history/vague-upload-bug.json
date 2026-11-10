@@ -1,0 +1,269 @@
+{
+  "schema": "oc-case/1",
+  "id": "vague-upload-bug",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "needle flaky-upload",
+  "decision": "A vague, time-fuzzy recollection: no error text, no file name.",
+  "data_check": null,
+  "prompt": "there was some bug with the uploads a couple of weeks ago, tests being weird. what was going on there?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC09"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 12,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It identifies the flaky upload test and its cause (the test did not wait for the response stream to finish).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "finished|stream|response",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "It does not describe the unrelated checkout deadlock instead.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "deadlock",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "H-OC09",
+      "severity": "major",
+      "ask": "The answer names the session (or sessions) the facts come from: flaky-upload.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "ses_VWDZco1EmaHgTdmDLV7F7w",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "H-PR01",
+      "severity": "major",
+      "ask": "Every claim is cited in the full form (ses_… #seq), with the session ID written out.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\\)",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "H-PR02",
+      "severity": "major",
+      "ask": "The citation names the right session in full form.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\(ses_VWDZco1EmaHgTdmDLV7F7w #[0-9]+\\)",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "H-PR03",
+      "severity": "minor",
+      "ask": "A search or recall call used at least two phrasings of the topic.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "search",
+            "n": 1,
+            "arg": "args.query.length",
+            "op": ">=",
+            "value": {
+              "kind": "number",
+              "value": 2
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "recall",
+            "n": 1,
+            "arg": "args.queries.length",
+            "op": ">=",
+            "value": {
+              "kind": "number",
+              "value": 2
+            }
+          }
+        ]
+      ],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "search",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "recall",
+          "n": null
+        }
+      ],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "H-TR01",
+      "severity": "minor",
+      "ask": "The history-recall skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    },
+    {
+      "id": "H-OC08",
+      "severity": "major",
+      "ask": "It used the history tools at least once, instead of answering from nothing.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited: a lookup changes nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "apply_patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 42
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "16ed6290eadf394fc1f5134b20f816c271a7a7d2d6095e4ad17a16e1e0a89f6f"
+  }
+}

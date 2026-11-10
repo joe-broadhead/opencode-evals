@@ -1,0 +1,130 @@
+{
+  "id": "history",
+  "pluginId": "history.sessions",
+  "rpc": "history.sessions.tools",
+  "statusRpc": "history.sessions",
+  "t1": [],
+  "schema": "oc-pack/1",
+  "name": "History",
+  "package": "@joe-broadhead/opencode-history",
+  "version": "0.0.6",
+  "private": false,
+  "skills": [
+    "history-recall"
+  ],
+  "skill_meta": {
+    "history-recall": {
+      "name": "history-recall",
+      "description_sha256": "effbb2100e6576926a68283c63088620557d3ece993d2f429c69b0c11c42f5ae",
+      "description_chars": 555,
+      "body_lines": 87
+    }
+  },
+  "tools": [
+    {
+      "name": "search",
+      "permission": "history_search",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "brief",
+      "permission": "history_brief",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "read",
+      "permission": "history_read",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "sessions",
+      "permission": "history_sessions",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "files",
+      "permission": "history_files",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "recall",
+      "permission": "history_recall",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "sql",
+      "permission": "history_sql",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "events_list",
+      "permission": "history_events_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "pin",
+      "permission": "history_pin",
+      "effect": "ask",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "counts": {
+    "tools": 9,
+    "reads": 8,
+    "writes": 1,
+    "denied": 0,
+    "skills": 1
+  },
+  "digest": "492e0f3bfd51f16062ad158f0b9eff5ac07ee7edff3b0c16b87787bcad95a95a",
+  "vocab": [
+    "project",
+    "directory",
+    "all",
+    "session",
+    "words",
+    "substring",
+    "regex",
+    "updated",
+    "created",
+    "cost",
+    "messages",
+    "title",
+    "user",
+    "assistant",
+    "summary",
+    "reasoning",
+    "synthetic",
+    "tool_call",
+    "tool_result",
+    "read",
+    "edit",
+    "write",
+    "patch",
+    "search",
+    "list",
+    "remove",
+    "add",
+    "history",
+    "shell",
+    "bash",
+    "grep",
+    "glob"
+  ]
+}

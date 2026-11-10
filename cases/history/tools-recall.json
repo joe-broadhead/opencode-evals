@@ -1,0 +1,183 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-recall",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "needle flaky-upload via recall",
+  "decision": "history_recall, the one-call evidence tool: asked for by name, it takes phrasings and a question and the agent answers from its evidence.",
+  "data_check": null,
+  "prompt": "use the history recall tool to answer this: how did we fix the flaky upload test?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC01"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 10,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It called history recall.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "recall",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "H-OC02",
+      "severity": "blocker",
+      "ask": "The answer states the fix: await finished(res) and fake timers.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "finished|fake ?timers|useFakeTimers",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "H-PR01",
+      "severity": "major",
+      "ask": "recall got a question and 2-4 phrasings in queries.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "recall",
+          "n": 1,
+          "arg": "args.question",
+          "op": "present"
+        },
+        {
+          "kind": "call",
+          "tool": "recall",
+          "n": 1,
+          "arg": "args.queries.length",
+          "op": ">=",
+          "value": {
+            "kind": "number",
+            "value": 2
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "H-PR02",
+      "severity": "major",
+      "ask": "Cited in the full form (ses_… #seq).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\\)",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "H-EF01",
+      "severity": "minor",
+      "ask": "It did not need more than four history calls.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": "<=",
+          "value": 4
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "apply_patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "eb2ff34250ad70fd927fb4ac2fde0a2be5b54bb3e2cba68ca650253f77cc7419"
+  }
+}

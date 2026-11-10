@@ -1,0 +1,171 @@
+{
+  "schema": "oc-case/1",
+  "id": "not-in-history",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "no GraphQL session exists",
+  "decision": "A topic that was never discussed: the agent must say it found nothing, after genuinely looking, and not invent a decision.",
+  "data_check": null,
+  "prompt": "what did we decide about GraphQL versus REST for the public API?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC09"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 12,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It says nothing was found in the history about GraphQL.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "no (record|session|discussion|mention|decision)|did not find|didn't find|couldn't find|could not find|nothing|not (find|found)|never (discussed|came up)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "H-OC02",
+      "severity": "blocker",
+      "ask": "It does not state a decision as fact.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "we (decided|chose|went with|picked|settled on) (to use |on )?(GraphQL|REST)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "H-OC08",
+      "severity": "major",
+      "ask": "It actually searched before concluding nothing exists.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "H-PR01",
+      "severity": "major",
+      "ask": "It tried more than one phrasing or widened the scope before giving up.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "search",
+            "n": 1,
+            "arg": "args.query.length",
+            "op": ">=",
+            "value": {
+              "kind": "number",
+              "value": 2
+            }
+          },
+          {
+            "kind": "count",
+            "tool": "search",
+            "op": ">=",
+            "value": 2
+          },
+          {
+            "kind": "count",
+            "tool": "history.*",
+            "op": ">=",
+            "value": 2
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "apply_patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "5e10cbaf759832323cee0c7e9ada79073b630c25c7cdaaedb5903ad2c1ecdab0"
+  }
+}

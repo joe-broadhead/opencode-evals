@@ -6,6 +6,25 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Added
 
+- A pack and 66 cases for the History plugin (`packs/history`, `cases/history`): lookups, listings, aggregates, safety
+  and "never happened" questions, a holdout of ten, and nine tool-forced cases that make every tool and parameter
+  family necessary once. Every item is code-decided. See `docs/history.md`.
+- `pack.vocab`: a plugin declares the values that belong to its own grammar (enum values, tool names) and the trace
+  keeps them verbatim instead of reducing them to a shape, so `args.scope == all` can be asserted.
+- `Seed:` in a case header (for example `cwd=api time=day`) is carried into the compiled case, for a runner.
+- The tool selector accepts `ns.name` for an inner Code Mode call (`history.search`).
+- A trace written by a runner that records its own provenance (`summary.provenance`: the plugin build, skill,
+  descriptions, result text and rules, each by hash) is trusted over the hand-kept manifest, and the batch exposes every
+  axis, so `evals policy --axis skill` and `--axis description` compare two arms that differ in exactly one.
+
+### Changed
+
+- `trace`, `grade`, `verify` and `lock` take `--plugin`; they assumed `x`.
+- A call whose whole argument object is a variable (`events_list(args)`) is unverifiable, not "key missing".
+- The host version is `recorded` when a trace carries it.
+- T1 links the SDK checkout's `node_modules` into the plugin's temp directory, so a bundle that leaves
+  `@opencode/plugin` external (as History's does) loads.
+
 - `oc-trace/1`: a normalised trace of a run — permissions, tool calls with their arguments at the MCP
   boundary, Code Mode inner calls, skill loads, split token counters, cost with its source, timings, and a
   failure class. Content is reduced to structure: no text, handle, id or link.
