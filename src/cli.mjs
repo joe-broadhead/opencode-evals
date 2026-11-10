@@ -30,6 +30,7 @@ import { checkPack } from "./t0/generic.mjs"
 import { scan as privacyScan, renderScan } from "./privacy/gate.mjs"
 import { monthToDate, budgetLine, CAPS } from "./cost/budget.mjs"
 import { loadPrices, vendorCost } from "./cost/compute.mjs"
+import { extendVocab } from "./trace/redact.mjs"
 import { loadCatalog, loadMapping, drift } from "./cost/catalog.mjs"
 import { runCost, totals, trustOf } from "./cost/rule.mjs"
 import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "./label/kit.mjs"
@@ -121,7 +122,7 @@ function stateFor(iteration, caseName) {
   return existsSync(file) ? JSON.parse(read(file)) : null
 }
 
-function gradeAll(iteration, casesDir = path("cases", "x"), tracesDir = join(storePath(), "traces", iteration), rawDir = process.env.EVALS_RAW ?? join(ROOT, "..", "private", "raw")) {
+function gradeAll(iteration, casesDir = path("cases", "x"), tracesDir = join(storePath(), "traces", iteration), rawDir = process.env.EVALS_RAW ?? join(ROOT, "..", "private", "raw"), plugin = "x") {
   const cases = casesDir.endsWith(".json") ? [] : listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
   const results = []
   for (const caseObject of cases) {
@@ -131,7 +132,7 @@ function gradeAll(iteration, casesDir = path("cases", "x"), tracesDir = join(sto
       continue
     }
     const lines = read(traceFile).split("\n").filter(Boolean)
-    const rawBase = join(rawDir, iteration, "x", caseObject.id)
+    const rawBase = join(rawDir, iteration, plugin, caseObject.id)
     let text = null
     if (existsSync(`${rawBase}.jsonl`)) {
       const last = [...read(`${rawBase}.jsonl`).split("\n").filter(Boolean)]
@@ -214,18 +215,19 @@ function batchSummary(iteration, results, caseSet) {
     vendor_cost: provenance.vendor_cost ?? { amount_usd: null, source: "missing" },
     provenance: {
       model: { value: provenance.head?.model?.id ?? null, source: "declared" },
-      opencode: { value: provenance.head?.provenance?.recorded?.opencode ?? null, source: "unrecorded" },
+      opencode: { value: provenance.head?.provenance?.recorded?.opencode ?? null, source: provenance.head?.provenance?.recorded?.opencode ? "recorded" : "unrecorded" },
       cases: {
         sha256: provenance.head?.provenance?.cases?.sha256 ?? null,
         source: provenance.head?.provenance?.cases?.source ?? "unrecorded",
         rule_set: provenance.head?.provenance?.cases?.rule_set ?? null,
       },
       skills: { sha256: provenance.head?.provenance?.skills?.sha256 ?? null, source: provenance.head?.provenance?.skills?.source ?? "unrecorded" },
+      ...Object.fromEntries(["descriptions", "namespace", "tools", "rules"].map((axis) => [axis, { sha256: provenance.head?.provenance?.[axis]?.sha256 ?? null, source: provenance.head?.provenance?.[axis]?.source ?? "unrecorded" }])),
       plugin: { ...(provenance.head?.provenance?.plugin ?? {}), source: provenance.head?.provenance?.plugin?.source ?? "unrecorded" },
       quality: provenance.head?.provenance?.quality ?? "unrecorded",
     },
     case_set: {
-      plugin: "x",
+      plugin: caseSet[0]?.plugin ?? "x",
       cases: caseSet.length,
       cases_sha256: casesDigest(caseSet),
       items: caseSet.reduce((n, c) => n + c.items.length, 0),
@@ -287,6 +289,7 @@ export async function main(argv) {
       const iteration = opt.iteration ?? "nx6"
       const from = opt.from ?? process.env.EVALS_RECORDINGS ?? ""
       const out = opt.out ?? join(storePath(), "traces", iteration)
+      if (opt.plugin) extendVocab(readPack(opt.plugin).vocab)
       const manifestFile = path("fixtures", "recordings", "manifest.json")
       const manifest = existsSync(manifestFile) ? JSON.parse(read(manifestFile)) : {}
       const entry = manifest[iteration] ?? {}
@@ -296,19 +299,35 @@ export async function main(argv) {
         const caseName = basename(file, ".jsonl")
         const summaryPath = join(from, `${caseName}.summary.json`)
         const summary = existsSync(summaryPath) ? JSON.parse(read(summaryPath)) : {}
+        // A runner that records its own provenance (summary.provenance) is trusted over the hand-kept manifest.
+        const prov = summary.provenance ?? null
+        const caseDigest = opt.plugin ? casesDigest(loadCases(opt.plugin)) : null
+        const axis = (value) => (value ? { sha256: value, source: "recorded" } : { sha256: null, source: "unrecorded" })
         const trace = traceFromFiles({
           caseName,
           iteration,
           base: join(from, caseName),
-          manifest: {
-            recorded: { iteration, date: entry.date ?? null, runner: "review/tools/run-evals.mjs", model: entry.model ?? "claude-agent/opus#high" },
-            plugin: { version: entry.plugin_version ?? null, commit: entry.plugin_commit ?? null, source: entry.plugin_source ?? "unrecorded" },
-            skills: { sha256: entry.skill_sha256 ?? null, source: "unrecorded" },
-            cases: { sha256: entry.case_set_sha256 ?? null, source: "unrecorded", rule_set: entry.rule_set ?? null },
-            quality: entry.quality ?? "unrecorded",
-          },
+          manifest: prov
+            ? {
+                recorded: { iteration, date: summary.started_at ?? entry.date ?? null, runner: summary.runner ?? "lab/run/run.mjs", model: summary.model, opencode: summary.opencode ?? null },
+                plugin: { version: prov.plugin_version ?? null, commit: prov.plugin_commit ?? null, sha256: prov.plugin ?? null, source: prov.plugin ? "recorded" : "unrecorded" },
+                skills: axis(prov.skills),
+                descriptions: axis(prov.descriptions),
+                namespace: axis(prov.namespace),
+                tools: axis(prov.tools),
+                rules: axis(prov.rules),
+                cases: { sha256: caseDigest, source: caseDigest ? "recorded" : "unrecorded", rule_set: prov.rule_set ?? null },
+                quality: "recorded",
+              }
+            : {
+                recorded: { iteration, date: entry.date ?? null, runner: "review/tools/run-evals.mjs", model: entry.model ?? "claude-agent/opus#high" },
+                plugin: { version: entry.plugin_version ?? null, commit: entry.plugin_commit ?? null, source: entry.plugin_source ?? "unrecorded" },
+                skills: { sha256: entry.skill_sha256 ?? null, source: "unrecorded" },
+                cases: { sha256: entry.case_set_sha256 ?? null, source: "unrecorded", rule_set: entry.rule_set ?? null },
+                quality: entry.quality ?? "unrecorded",
+              },
           pricing: { models: {} },
-          model: entry.model ?? "claude-agent/opus#high",
+          model: summary.model ?? entry.model ?? "claude-agent/opus#high",
           stderr: summary.stderr ?? "",
         })
         writeFileSync(join(out, `${caseName}.trace.jsonl`), `${trace.lines.join("\n")}\n`)
@@ -319,7 +338,7 @@ export async function main(argv) {
     case "grade": {
       const iteration = opt.iteration ?? "nx6"
       const cases = loadCases(opt.plugin ?? "x")
-      const results = gradeAll(iteration, path("cases", opt.plugin ?? "x"))
+      const results = gradeAll(iteration, path("cases", opt.plugin ?? "x"), undefined, undefined, opt.plugin ?? "x")
       const summary = batchSummary(iteration, results, cases)
       const out = opt.out ?? join(storePath(), "results", iteration)
       ensureDir(out)
@@ -409,7 +428,7 @@ export async function main(argv) {
         if (lock.cases_sha256 !== casesDigest(cases)) failures.push(`the case set moved since the lock: ${short(lock.cases_sha256)} -> ${short(casesDigest(cases))}`)
         if (lock.grader_sha256 !== graderHash()) failures.push(`the grader moved since the lock: ${short(lock.grader_sha256)} -> ${short(graderHash())}`)
       } else failures.push("no cases/x/evals.lock")
-      const results = gradeAll(iteration)
+      const results = gradeAll(iteration, path("cases", opt.plugin ?? "x"), undefined, undefined, opt.plugin ?? "x")
       const again = batchSummary(iteration, results, cases)
       if (again.batch_sha256 !== previous.batch_sha256) failures.push(`batch digest moved: ${short(previous.batch_sha256)} -> ${short(again.batch_sha256)}`)
       if (canonical(again.coverage) !== canonical(previous.coverage)) failures.push("coverage moved")
@@ -482,7 +501,7 @@ export async function main(argv) {
     }
     case "t1": {
       const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
-      const ids = opt.plugin ? [opt.plugin] : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear"]
+      const ids = opt.plugin ? [opt.plugin] : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear", "history"]
       const versions = opt.versions ? String(opt.versions).split(",") : undefined
       const packs = ids.filter((id) => {
         if (repoAvailable(id)) return true
@@ -503,7 +522,7 @@ export async function main(argv) {
       return
     }
     case "t0-all": {
-      const ids = opt._.length ? opt._ : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear"]
+      const ids = opt._.length ? opt._ : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear", "history"]
       let failed = 0
       for (const id of ids) {
         const report = checkPack(readPack(id), repoAvailable(id) ? pluginRepo(id) : null)

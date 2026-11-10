@@ -17,6 +17,11 @@ export const VOCAB = new Set([
   "get_users_me", "get_usage_credits", "search_posts_all", "search_users", "get_posts_by_id",
 ])
 
+/** A plugin's own grammar (enum values, tool names, parameter keys): declared in its pack, never user content. */
+export function extendVocab(words) {
+  for (const word of words ?? []) VOCAB.add(String(word))
+}
+
 /** Query operators X's search grammar defines. Kept verbatim so a forbidden-operator check survives. */
 export const QUERY_OPERATORS = new Set([
   "from", "to", "since", "until", "min_faves", "min_likes", "lang", "has", "is", "conversation_id", "url",

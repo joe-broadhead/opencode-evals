@@ -138,6 +138,7 @@ export function writePack(id, root = join(import.meta.dirname, "..", ".."), env 
     ...(declared.fake ? { fake: declared.fake } : {}),
     ...(declared.fakeModuleEnv ? { fakeModuleEnv: declared.fakeModuleEnv } : {}),
     ...(declared.statusRpc ? { statusRpc: declared.statusRpc } : {}),
+    ...(declared.vocab ? { vocab: declared.vocab } : {}),
   }
   return writeSnapshot(root, merged)
 }

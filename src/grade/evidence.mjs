@@ -118,6 +118,8 @@ const numberish = (v) => typeof v === "number" && Number.isFinite(v)
 
 /** Where a tool argument lives, as the trace stores it. */
 export function argState(args, key) {
+  // A call whose whole argument object is a variable (`events_list(args)`) says nothing about its keys: unverifiable, not "missing".
+  if (args && typeof args === "object" && "$ref" in args) return { state: "opaque", why: "the argument object is a variable" }
   const path = key.replace(/^args\./, "").split(".")
   let value = args
   for (const part of path) {

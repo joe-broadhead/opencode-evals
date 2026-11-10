@@ -67,6 +67,7 @@ export function compileCase(file, text) {
     prompt: draft.prompt.trim(),
     controls: parseControls(draft.fields.controls),
     budgets: parseBudget(draft.fields.budget),
+    seed: draft.fields.seed ?? null,
     expect: draft.fields.expect ?? "pass",
     holdout: draft.fields.holdout === "true",
     items,

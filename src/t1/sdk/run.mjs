@@ -104,6 +104,12 @@ if (existsSync(join(bundle.dir, "skills"))) {
   cpSync(join(bundle.dir, "skills"), join(built, "skills"), { recursive: true })
 }
 writeFileSync(join(built, "package.json"), readFileSync(join(bundle.dir, "package.json")))
+// A bundle that leaves the host's own modules external (`@opencode/plugin`, `@opentui/*`) resolves them from the SDK
+// checkout, as it would from the host's node_modules.
+{
+  const { symlinkSync } = await import("node:fs")
+  try { symlinkSync(join(sdkDir, "node_modules"), join(built, "node_modules"), "dir") } catch {}
+}
 if (endpoint) {
   const index = join(built, "dist", "index.js")
   const text = readFileSync(index, "utf8")
