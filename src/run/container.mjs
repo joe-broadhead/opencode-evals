@@ -319,12 +319,14 @@ export function containerBackend(config = containerConfig()) {
         watchdog: null,
       }
       trials.add(trial)
-      const leave = async ({ reason = "end" } = {}) => {
-        if (trial.left) return
+      // Idempotent: a second call (the watchdog's, then the runner's) waits for the first to finish.
+      const leave = ({ reason = "end" } = {}) => (trial.leaving ??= leaveOnce(reason))
+      const leaveOnce = async (reason) => {
         trial.left = true
         if (trial.watchdog) clearInterval(trial.watchdog)
         const at = Date.now()
-        if (trial.container) await docker(["rm", "-f", "-v", trial.container], { timeoutMs: 60_000 })
+        // By name: a `docker run` that failed half way may have created the container without saying so.
+        await docker(["rm", "-f", "-v", trial.ref], { timeoutMs: 60_000 })
         if (trial.network) {
           await docker(["network", "disconnect", "-f", trial.network, proxyName], { timeoutMs: 30_000 })
           await docker(["network", "rm", trial.network], { timeoutMs: 30_000 })
@@ -335,8 +337,8 @@ export function containerBackend(config = containerConfig()) {
       }
       trial.leave = leave
       try {
-        await must(["network", "create", "--internal", "-o", "com.docker.network.bridge.gateway_mode_ipv4=isolated", "-o", "com.docker.network.bridge.gateway_mode_ipv6=isolated", ...labelArgs({ "evals.role": "trial", "evals.trial": name }), ref], "creating the trial network")
         trial.network = ref
+        await must(["network", "create", "--internal", "-o", "com.docker.network.bridge.gateway_mode_ipv4=isolated", "-o", "com.docker.network.bridge.gateway_mode_ipv6=isolated", ...labelArgs({ "evals.role": "trial", "evals.trial": name }), ref], "creating the trial network")
         await must(["network", "connect", "--alias", "egress", ref, proxyName], "joining the proxy to the trial network")
         const { memory_mb, cpus, pids, tmpfs_mb } = config.limits
         const binds = [
@@ -395,7 +397,7 @@ export function containerBackend(config = containerConfig()) {
         if (bad.length) throw new Error(`refusing to pass ${bad.map((k) => JSON.stringify(k)).join(", ")} into a trial: not a variable name`)
         return {
           command: state.docker,
-          args: ["exec", "-i", "-w", dir ?? cwd ?? root, ...names.flatMap((key) => ["-e", key]), trial.container, inside, ...args],
+          args: ["exec", "-i", "-w", dir ?? cwd ?? root, ...names.flatMap((key) => ["-e", key]), trial.ref, inside, ...args],
           // The docker client runs in the batch directory, outside every sandbox, with its own settings.
           cwd: state.batchRoot ?? undefined,
           env: { ...containerEnv, ...state.dockerEnv, PATH: containerEnv.PATH },
