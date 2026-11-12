@@ -160,6 +160,8 @@ export function rawArgState(args, key) {
   let value = args
   for (const part of key.replace(/^args\./, "").split(".")) {
     if (value === null || value === undefined || typeof value !== "object") return { state: "missing" }
+    // A key not written beside a spread (`{...opts, limit: 5}`) may have come from it: unseen, not missing.
+    if (value[part] === undefined && value.$spread === true) return { state: "opaque", why: `${part} may come from a spread` }
     value = value[part]
   }
   if (value === undefined || value === null) return { state: "missing" }
@@ -183,9 +185,10 @@ export function argState(args, key) {
     if (depth > 0 && !Array.isArray(value) && WRAPPERS.has(value.kind)) {
       if (value.kind !== "object") return { state: "missing", under: value.kind }
       const keys = Array.isArray(value.keys) ? value.keys : null
-      if (keys && !keys.includes("$ref") && !keys.includes(part)) return { state: "missing" }
+      if (keys && !keys.includes("$ref") && !keys.includes("$spread") && !keys.includes(part)) return { state: "missing" }
       return { state: "opaque", why: `${path.slice(0, depth).join(".")} is kept as ${keys?.includes("$ref") ? "a variable" : `an object with keys ${(keys ?? []).join(",")}`}, not its value` }
     }
+    if (value[part] === undefined && value.$spread === true) return { state: "opaque", why: `${part} may come from a spread` }
     value = value[part]
   }
   if (value === undefined || value === null) return { state: "missing" }

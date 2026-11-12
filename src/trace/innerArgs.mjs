@@ -3,8 +3,10 @@
 // The outer `execute` event carries `code`; the calls the code makes are `tools.<ns>.<name>(…)`. A regex
 // finds the call sites (a lower bound: a loop counts once), and this module then reads the argument
 // object literal beside each site. Only literals are understood — a string, a number, a boolean, an
-// object, an array, or a reference to a local variable. Anything else is reported as unparsed, and the
-// item that needed it becomes BLOCKED rather than guessed at. Nothing is executed.
+// object, an array, or a reference to a local variable. Inside an object or an array, any other value (a call, a
+// ternary, `new Date(…)`) is kept as an unseen variable and a spread (`...opts`) as `$spread: true`, so the literal
+// keys beside them still count; a spread means a key not written may still have been passed. Anything else is
+// reported as unparsed, and the item that needed it becomes BLOCKED rather than guessed at. Nothing is executed.
 
 const CALL = /tools(?:\.([A-Za-z_$][\w$]*)|\[["']([^"']+)["']\])+?\s*\(/g
 
@@ -94,6 +96,38 @@ export function readLiteral(text) {
     while (i < text.length && /[A-Za-z0-9_$]/.test(text[i])) i++
     return text.slice(start, i)
   }
+  // Skips one expression we do not read (a call, a ternary, an operator chain), up to the `,` or the closing
+  // bracket that ends it at this depth. Returns false when the text ends first.
+  const skipExpression = () => {
+    let depth = 0
+    let quote = null
+    for (; i < text.length; i++) {
+      const c = text[i]
+      if (quote) {
+        if (c === "\\") i++
+        else if (c === quote) quote = null
+        continue
+      }
+      if (c === '"' || c === "'" || c === "`") quote = c
+      else if (c === "(" || c === "{" || c === "[") depth++
+      else if (c === ")" || c === "}" || c === "]") {
+        if (depth === 0) return true
+        depth--
+      } else if (c === "," && depth === 0) return true
+    }
+    return false
+  }
+  // One element of an object or an array: a literal, or an unseen expression kept as a variable.
+  const readElement = () => {
+    skip()
+    const start = i
+    const value = readValue()
+    skip()
+    if (value.ok && (text[i] === "," || text[i] === "}" || text[i] === "]")) return value
+    i = start
+    if (!skipExpression()) return fail(`unterminated expression at ${start}`)
+    return { ok: true, value: { $ref: "(expression)" }, literal: "ref" }
+  }
   const readValue = () => {
     skip()
     const ch = text[i]
@@ -107,6 +141,14 @@ export function readLiteral(text) {
           return { ok: true, value: obj }
         }
         if (i >= text.length) return fail("unterminated object")
+        if (text.startsWith("...", i)) {
+          // A spread: any key may come from it. The literal keys beside it are still read.
+          i += 3
+          if (!skipExpression()) return fail("unterminated spread")
+          obj.$spread = true
+          if (text[i] === ",") i++
+          continue
+        }
         const key = readKey()
         if (!key) return fail(`unreadable key at ${i}`)
         skip()
@@ -124,7 +166,7 @@ export function readLiteral(text) {
           return fail(`expected ":" after ${key}`)
         }
         i++
-        const value = readValue()
+        const value = readElement()
         if (!value.ok) return value
         obj[key] = value.value
         skip()
@@ -148,7 +190,15 @@ export function readLiteral(text) {
           i++
           return { ok: true, value: arr }
         }
-        const value = readValue()
+        if (text.startsWith("...", i)) {
+          // A spread into a list: its elements are unseen.
+          i += 3
+          if (!skipExpression()) return fail("unterminated spread")
+          arr.push({ $ref: "(spread)" })
+          if (text[i] === ",") i++
+          continue
+        }
+        const value = readElement()
         if (!value.ok) return value
         arr.push(value.value)
         skip()
