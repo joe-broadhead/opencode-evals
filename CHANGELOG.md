@@ -6,6 +6,19 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Added
 
+- `evals run`: the live runner, ported from the History lab into the harness and made plugin-generic. One sandbox per
+  (case, trial), isolated like T1 (its own HOME, XDG tree, TMPDIR and database, a sealed `OPENCODE_CONFIG_CONTENT`, an
+  environment built from nothing), its own `opencode serve` on a free port, and its own recording
+  (`raw/<it>/<plugin>/<case>.t<k>.jsonl` + `.summary.json`): trials no longer overwrite each other or share a sandbox,
+  and two runners no longer need hand-picked ports. Cases come from this repository's `cases/<plugin>` and the sets
+  are the case metadata's. An existing recording is never overwritten (`--append` adds trials). The credential source
+  is a required `--auth` profile (`none`, `env:<VARS>`, `claude-agent`); `claude-agent` pipes the stored "Claude
+  Agent" credential into each sandbox and removes the `claude` transcripts each run leaves. A world (`--world`, a
+  directory with `world.json` or a module) seeds each sandbox; a stale world, or one built by another build, is rebuilt
+  with the build under test or refused. The dollar budget and the run caps are checked, and the whole batch
+  reserved, before anything launches. Summaries record the runner, its version, the host, the world and the build's
+  provenance. See `docs/running.md`.
+
 - `docs/design.md`, which the README and `docs/configuration.md` linked to and nobody had written: the pipeline,
   the case format and its clauses, traces, grading and the policy. A test now fails on a doc link to a missing file
   or heading.

@@ -7,6 +7,8 @@
 //   evals scorecard --iteration nx6 [--grading FILE] [--out FILE]
 //   evals policy   --a nx5 --b nx6 [--strict]
 //   evals report   <label>=<it>[,<it>...] ... [--plugin x] [--set all] [--cases ids] [--all-cases] [--detail] [--json]
+//   evals run      --plugin x --iteration it --model p/m --auth none|env:VAR|claude-agent [--cases ids] [--set tune]
+//                  [--trials K] [--parallel N] [--arm DIR|none] [--world DIR|FILE] [--host 2.2.6] [--dry-run]
 //   evals t0       [--root DIR] [--json]
 //   evals verify   re-derive every number from the stored inputs and compare
 //   evals selftest run the T-G gold cases over synthetic traces
@@ -40,6 +42,7 @@ import { storeRoot, rawRoot, tracesDir } from "./store.mjs"
 import { splitTrial, trialName, caseEntry, byCase, trialStats } from "./grade/trials.mjs"
 import { selectCases } from "./case/sets.mjs"
 import { compare as compareArms, renderReport } from "./report/arms.mjs"
+import { runBatch } from "./run/runner.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
 const args = (argv) => {
@@ -414,6 +417,30 @@ export async function main(argv) {
         `Comparability: ${comparison.why.length ? comparison.why.join("; ") : "every axis but the one under test matches"}.`,
       ]
       console.log(lines.join("\n"))
+      return
+    }
+    case "run": {
+      const result = await runBatch({
+        plugin: opt.plugin,
+        iteration: opt.iteration,
+        model: opt.model,
+        auth: opt.auth,
+        cases: opt.cases,
+        set: opt.set,
+        trials: opt.trials,
+        parallel: opt.parallel,
+        arm: opt.arm,
+        world: opt.world,
+        host: opt.host,
+        timeout: opt.timeout,
+        options: opt.options,
+        stale: opt.stale,
+        casesDir: opt["cases-dir"],
+        dryRun: Boolean(opt["dry-run"]),
+        keep: Boolean(opt.keep),
+        append: Boolean(opt.append),
+      })
+      if (result.results?.some((r) => r.error)) process.exitCode = 1
       return
     }
     case "report": {

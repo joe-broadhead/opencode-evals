@@ -25,6 +25,9 @@ Or run it from a checkout: `node bin/evals <command>`.
 
 ```sh
 evals compile                      # markdown cases -> oc-case/1 JSON
+evals run --plugin history --iteration v1-a --model claude-agent/haiku --auth claude-agent --trials 3
+                                   # one sandboxed live run per case and trial, under the run caps
+evals trace --iteration v1-a --plugin history   # recordings -> oc-trace/1
 evals grade --iteration nx6        # grade a recorded iteration from the private store
 evals scorecard --iteration nx6    # one page, with the comparison against a hand grading
 evals policy --a nx5 --b nx6       # ship, hold or ask, with the reasons
@@ -57,7 +60,9 @@ cases that must fail.
 
 The tool reads plugin checkouts and the private store, and writes results, labels and traces. It starts an
 OpenCode host from a binary you point it at, and a mock model on loopback. It does not sign in to anything,
-does not call a vendor's API, and holds no credentials.
+does not call a vendor's API, and holds no credentials. The one exception is `evals run`, which runs a real model:
+it passes the credential you name with `--auth` into each run's sandbox, and deletes it with the sandbox
+([docs/running.md](docs/running.md)).
 
 Nothing private is committed: the store — recordings, traces, verdicts, scorecards, labels, holdouts — lives
 outside the repository. A trace reduces a session's content to structure; `evals privacy --scan` checks the
@@ -66,6 +71,7 @@ tree and the whole git history before anything is shared.
 ## Configure
 
 Options, environment variables, the store layout and the cost rules: [docs/configuration.md](docs/configuration.md).
+Live runs, their sandbox, credentials, worlds and caps: [docs/running.md](docs/running.md).
 CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/ci.md).
 
 ## Organisation rollout
@@ -73,7 +79,7 @@ CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/
 1. Add `evals check --plugin <id>` as the last stage of a plugin's `npm run check`.
 2. Give every plugin a pack: `packs/<id>/pack.json`, derived from its own `jelly` declaration.
 3. Keep four holdouts per plugin outside the repository, written by whoever does not tune the skill.
-4. Run the release sweep (T3, then T4 at k=3) under the monthly cap, and attach the scorecard to the release.
+4. Run the release sweep (`evals run`: T3, then T4 at k=3) under the monthly caps, and attach the scorecard to the release.
 
 ## Troubleshooting
 
@@ -85,6 +91,9 @@ CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/
 | `BLOCKED` items | the evidence could not settle the item — a variable argument, a missing recording, a dependency not configured |
 | `not comparable` | the case set, the rules, the model or the grader differ: the tool names the fields |
 | `cost.source: missing` | no price entry; add one with a source and a date rather than a guess |
+| `run cap: … would reach …` | the batch does not fit this month's run caps; nothing ran. `evals budget` shows what is reserved |
+| `world … is stale` | the world's day has passed or another build indexed it; give it a `build`, or rebuild it |
+| `already have recordings` | the iteration has those cases; use a new `--iteration`, or `--append` for more trials |
 
 ## Uninstall
 
@@ -96,7 +105,7 @@ The private store is yours to delete: it is outside the repository.
 
 ## Links
 
-- [Configuration](docs/configuration.md) · [CI](docs/ci.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
+- [Configuration](docs/configuration.md) · [Running](docs/running.md) · [CI](docs/ci.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
 - [Design: how the tiers, cases, traces and policy fit together](docs/design.md)
 
 MIT. Copyright (c) 2026 Joe Broadhead.

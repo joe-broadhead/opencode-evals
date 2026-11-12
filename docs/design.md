@@ -7,7 +7,7 @@ only when they differ in the one axis under test.
 ```
 cases/<plugin>/<id>.md ──compile──▶ <id>.json (oc-case/1)
                                          │
-a runner ──▶ $EVALS_STORE/raw/<it>/<plugin>/<id>[.t<k>].jsonl + .summary.json
+evals run ──▶ $EVALS_STORE/raw/<it>/<plugin>/<id>.t<k>.jsonl + .summary.json
                                          │
 evals trace ──▶ $EVALS_STORE/traces/<it>/<plugin>/<id>[.t<k>].trace.jsonl (oc-trace/1)
                                          │
@@ -135,6 +135,12 @@ every arm ran; `--all-cases` lifts that.
 `--set tune|holdout|tools|all` selects cases by their own metadata, the same sets the runner uses: `holdout` is a case
 with `Holdout: true`, `tools` an id starting `tools-`, `tune` the rest. A run of a `Seed: time=day` case recorded on
 another UTC day than its world's is dropped, and the report says how many.
+
+## Running
+
+`evals run` launches one sandboxed OpenCode run per (case, trial) and writes the recordings the trace step reads:
+[running.md](running.md) has the sandbox, the credential profiles, worlds and their freshness, and the checks made
+before a batch starts.
 
 ## The store
 

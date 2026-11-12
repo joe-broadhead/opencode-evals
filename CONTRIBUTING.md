@@ -21,7 +21,9 @@ The tiers that need more than Node are configured, never assumed:
 | `EVALS_REPO_<ID>` | one plugin`s checkout, e.g. `EVALS_REPO_X` |
 | `EVALS_STORE` | the private store: traces, verdicts, scorecards, labels |
 | `EVALS_WITH_SLOT` | the family's `with-slot.sh`, so nine plugins do not start nine servers |
-| `EVALS_BUDGET_MODEL_USD`, `EVALS_BUDGET_VENDOR_USD` | the monthly caps |
+| `EVALS_BUDGET_MODEL_USD`, `EVALS_BUDGET_VENDOR_USD` | the monthly dollar caps |
+| `EVALS_MAX_RUNS_PER_PLUGIN`, `EVALS_MAX_RUNS_TOTAL` | the monthly run caps (800, 13000) |
+| `EVALS_OPENCODE_BIN`, `EVALS_AUTH`, `EVALS_WORLD_<ID>` | the host, credential profile and world `evals run` uses ([running.md](docs/running.md)) |
 
 ## What to run before a commit
 
