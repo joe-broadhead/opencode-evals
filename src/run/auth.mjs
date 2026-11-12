@@ -56,15 +56,20 @@ export function readCredential(file) {
       if (n === 0) break
       read += n
     }
+    // The whole file is parsed (JSON has no partial parse), so the refresh token passes through memory while it is: the
+    // reviver drops it from the parsed object, only the access token and its expiry are returned, and the bytes read are
+    // zeroed.
     let data
     try {
-      data = JSON.parse(bytes.subarray(0, read).toString("utf8"))
+      data = JSON.parse(bytes.subarray(0, read).toString("utf8"), (key, value) => (key === "refreshToken" ? undefined : value))
     } catch {
       throw new Error(`${file} is not JSON`)
+    } finally {
+      bytes.fill(0)
     }
     const oauth = data?.claudeAiOauth
     // An expiry that is null or absent is unknown (a sign-in something outside keeps fresh, as boxd does); any other
-    // non-number is not a sign-in. The refresh token is never read.
+    // non-number is not a sign-in. The refresh token is parsed with the file but never kept, returned or passed on.
     const expiry = oauth?.expiresAt
     if (!oauth || typeof oauth !== "object" || typeof oauth.accessToken !== "string" || !oauth.accessToken || (expiry !== null && expiry !== undefined && typeof expiry !== "number")) {
       throw new Error(`${file} does not hold a Claude sign-in (claudeAiOauth with an access token and its expiry)`)
