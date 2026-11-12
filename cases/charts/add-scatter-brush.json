@@ -105,8 +105,8 @@
           "path": "charts.rows.count",
           "op": "==",
           "value": {
-            "kind": "number",
-            "value": 12
+            "kind": "string",
+            "value": "12"
           }
         },
         {
@@ -134,6 +134,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "1b9511df09e508c79b90333a847d248da1193748b4b868d52602917e79562808"
+    "source_sha256": "7db77df4587b5a96679ec376f1113db580f2dbc939ed3fe66a8e41dede955f7a"
   }
 }

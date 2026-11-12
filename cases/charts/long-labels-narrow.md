@@ -15,12 +15,12 @@ I need a chart of ticket volume per category from data/support_tickets.csv for a
 ## Items
 - [C-OC01] blocker · A chart was saved at exactly 360 × 480 outer pixels.
   evidence: state:charts.count != 0
-  evidence: state:charts.width == 360
-  evidence: state:charts.height == 480
+  evidence: state:charts.width == "360"
+  evidence: state:charts.height == "480"
 
 - [C-OC02] blocker · Every one of the eight categories is in the saved chart.
   evidence: state:charts.count != 0
-  evidence: state:charts.rows.count == 8
+  evidence: state:charts.rows.count == "8"
 
 - [C-OC03] major · It is a bar chart (horizontal or vertical) of tickets per category.
   evidence: state:charts.count != 0

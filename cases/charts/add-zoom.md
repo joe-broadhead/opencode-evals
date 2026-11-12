@@ -24,7 +24,7 @@ Let me zoom into the time axis of the daily active users chart in outputs/charts
 
 - [C-OC03] major · The data is unchanged: 60 daily rows.
   evidence: state:charts.count != 0
-  evidence: state:charts.rows.count == 60
+  evidence: state:charts.rows.count == "60"
 
 - [C-OC04] minor · The answer points to the HTML file.
   evidence: text:any matches /\.html/

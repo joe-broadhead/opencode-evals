@@ -24,7 +24,7 @@ On the spend vs conversions scatter in outputs/charts/, I want to drag a box to 
 
 - [C-OC03] major · The data and series are unchanged: 12 campaigns, coloured by channel.
   evidence: state:charts.count != 0
-  evidence: state:charts.rows.count == 12
+  evidence: state:charts.rows.count == "12"
   evidence: state:charts.binding.series == channel
 
 ## Notes
