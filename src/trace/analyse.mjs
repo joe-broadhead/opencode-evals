@@ -175,7 +175,7 @@ export function summarize(lines, stderr = "") {
     innerDetail.push({ call: null, tool, kind: "declined", source: "stderr", message: "permission requested, auto-rejecting" })
   }
   const skills = calls
-    .filter((c) => c.tool === "skill")
+    .filter((c) => c.tool === "skill" && c.status !== "error")
     .map((c) => {
       try {
         return JSON.parse(c.input).id ?? JSON.parse(c.input).name

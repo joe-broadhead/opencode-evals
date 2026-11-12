@@ -99,3 +99,22 @@ test("an exit that did no work is classed infra, not scored as a zero", () => {
   assert.equal(failureClass({ exit: 0, tokens: {}, calls: 0, durationMs: 1000 }), null)
   assert.equal(failureClass({ exit: 1, tokens: { output: 10 }, calls: 0, durationMs: 1000 }), "provider")
 })
+
+test("a skill call that failed is not a skill load", async () => {
+  const { mkdtempSync, writeFileSync: write, rmSync } = await import("node:fs")
+  const { tmpdir } = await import("node:os")
+  const { runView } = await import("../src/grade/grade.mjs")
+  const { parseClause, evaluateClause } = await import("../src/grade/evidence.mjs")
+  const dir = mkdtempSync(join(tmpdir(), "evals-skill-"))
+  const skill = (status, at) => ({ type: "tool_use", timestamp: at, sessionID: "ses_run", part: { tool: "skill", state: { status, input: { id: "history-recall" }, ...(status === "error" ? { error: "Unable to load skill history-recall" } : { output: "# skill" }) } } })
+  const graded = (status) => {
+    write(join(dir, "c.jsonl"), [skill(status, 1000), { type: "text", timestamp: 2000, sessionID: "ses_run", part: { text: "ok" } }].map((l) => JSON.stringify(l)).join("\n"))
+    const lines = traceFromFiles({ caseName: "c", iteration: "it", plugin: "history", base: join(dir, "c"), manifest: {}, model: "mock/m1", catalog: { providers: {} }, mapping: {} }).lines
+    return { lines, skill: evaluateClause(parseClause("skill:history-recall").clause, runView(lines)).state }
+  }
+  assert.equal(graded("completed").skill, "ok")
+  const failed = graded("error")
+  assert.equal(failed.skill, "fail")
+  assert.ok(failed.lines.some((l) => JSON.parse(l).kind === "skill_failed"))
+  rmSync(dir, { recursive: true, force: true })
+})

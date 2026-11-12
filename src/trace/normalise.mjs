@@ -133,8 +133,9 @@ export function events({ rawLines, stderr, caseName, iteration, price = null }) 
       error_class: call.error ? classifyError(call.error) : null,
       http_status: call.error ? ((call.error.match(/\(HTTP (\d{3})\)/) ?? [])[1] ?? null) : null,
     })
+    // A skill call that failed ("Unable to load skill …", a plugin without its skills) loaded nothing.
     if (call.tool === "skill") {
-      push("skill_load", call.at, { skill: typeof args.id === "string" ? args.id : null, bytes: call.outputBytes })
+      push(call.status === "error" ? "skill_failed" : "skill_load", call.at, { skill: typeof args.id === "string" ? args.id : null, bytes: call.outputBytes })
     }
     if (!isExecute) continue
     // The calls the code makes, with the arguments beside each site.
