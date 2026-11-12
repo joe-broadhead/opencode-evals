@@ -271,6 +271,7 @@ const line = args.join(" ")
 const fail = ${JSON.stringify(fail)}
 if (fail && line.includes(fail)) { process.stderr.write("refused by the stand-in\\n"); process.exit(1) }
 if (args[0] === "version") { console.log(${JSON.stringify(version)}); process.exit(0) }
+if (args[0] === "inspect" && fs.existsSync(${JSON.stringify(join(dir, "gone"))})) { process.stderr.write("Error: No such object\\n"); process.exit(1) }
 if (args[0] === "image") { if (${image}) { console.log("sha256:fake"); process.exit(0) } process.stderr.write("No such image\\n"); process.exit(1) }
 if (args[0] === "logs") { console.log('{"ev":"listening","port":3128}\\n{"ev":"refused","host":"example.com","why":"not-allowed"}\\n{"ev":"refused","host":"example.com","why":"not-allowed"}\\n{"ev":"allowed","host":"api.anthropic.com"}'); process.exit(0) }
 if (args[0] === "run") { console.log("c0ffee"); process.exit(0) }
@@ -340,8 +341,12 @@ test("offline: a trial is confined by its flags, and no secret reaches an argv",
   assert.match(curl.input, /user = "opencode:pw-123456789"/)
   assert.ok(f.docker.calls().every((c) => !c.args.join(" ").includes(secret)), "no argv the backend ran holds the token")
 
+  // The stand-in answers `docker inspect`, so the container is not confirmed gone: nothing may be removed yet.
+  assert.equal(await trial.gone(), false)
   await trial.leave()
   await trial.leave()
+  writeFileSync(join(f.root, "gone"), "")
+  assert.equal(await trial.gone(), true, "gone once Docker says there is no such container")
   const after = f.docker.calls().map((c) => c.args.join(" "))
   assert.equal(after.filter((a) => a === `rm -f -v ${trial.ref}`).length, 1, "leave is idempotent")
   assert.ok(after.includes(`network rm ${trial.ref}`))
@@ -382,8 +387,18 @@ test("the runner removes a sandbox a run made unremovable, and a sign-in file on
   const sandbox = makeSandbox(join(root, "sb"))
   rmSync(join(sandbox.home, ".claude"), { recursive: true, force: true })
   symlinkSync(join(outside, ".claude"), join(sandbox.home, ".claude"))
-  assert.equal(removeInside(sandbox.root, join(sandbox.home, ".claude", ".credentials.json")), false)
+  assert.equal(removeInside(sandbox.root, join(sandbox.home, ".claude", ".credentials.json"), { gone: true }), false)
   assert.equal(readFileSync(join(outside, ".claude", ".credentials.json"), "utf8"), "owner's", "the owner's file is untouched")
+  // Nothing is removed from a sandbox until the caller has confirmed its run is gone: not on a "maybe", not by default.
+  rmSync(join(sandbox.home, ".claude"), { force: true })
+  mkdirSync(join(sandbox.home, ".claude"))
+  const file = join(sandbox.home, ".claude", ".credentials.json")
+  writeFileSync(file, "a sign-in the run made")
+  assert.equal(removeInside(sandbox.root, file), false)
+  assert.equal(removeInside(sandbox.root, file, { gone: "probably" }), false)
+  assert.equal(existsSync(file), true)
+  assert.equal(removeInside(sandbox.root, file, { gone: true }), true)
+  assert.equal(existsSync(file), false)
   mkdirSync(join(sandbox.root, "locked", "deeper"), { recursive: true })
   writeFileSync(join(sandbox.root, "locked", "deeper", "f"), "x")
   chmodSync(join(sandbox.root, "locked", "deeper"), 0o000)

@@ -295,10 +295,13 @@ export const removeSandbox = (root) => {
 }
 
 /**
- * Removes one file of a sandbox the run may have tampered with: only when the path, every link in it resolved, is still
+ * Removes one file of a sandbox the run may have tampered with: only once nothing of the run is left (`gone`, which
+ * the caller confirms: under `container`, `docker inspect` of the trial says there is no such container), so nothing
+ * can swap a link in between the check and the removal; and only when the path, every link in it resolved, is still
  * inside the sandbox, so a run that turned `home/.claude` into a link cannot have the runner delete a file outside it.
  */
-export function removeInside(root, path) {
+export function removeInside(root, path, { gone = false } = {}) {
+  if (gone !== true) return false
   // The file's directory, every link in it resolved (a dangling one followed), must still be inside the sandbox.
   if (!inside(root, dirname(path))) return false
   try {

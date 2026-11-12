@@ -57,10 +57,17 @@ const none = () => ({
         return null
       },
       async leave() {},
+      // Unconfined, a run's processes are its process groups, ended before anything is removed.
+      async gone() {
+        return true
+      },
       describe: () => null,
     }
   },
   async teardown() {},
+  async allGone() {
+    return true
+  },
   describe: () => ({ backend: "none" }),
   egress: () => null,
 })

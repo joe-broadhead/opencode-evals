@@ -449,6 +449,12 @@ export function containerBackend(config = containerConfig()) {
         return { ok: false, last: trial.left ? `the trial was stopped (${trial.leftFor ?? "left"})` : exited() ? "the server exited" : `no answer in ${timeoutMs} ms (${last})` }
       }
 
+      /** Is the trial's container gone? Only when Docker says there is no such container: an error says nothing. */
+      trial.gone = async () => {
+        const result = await docker(["inspect", "--format", "{{.Id}}", trial.ref], { timeoutMs: 20_000 })
+        return result.code !== 0 && /no such/i.test(result.stderr)
+      }
+
       /** How many processes the memory limit killed (cgroup v2 memory.events), or null when it cannot be read. */
       trial.oomKills = async () => {
         if (trial.left) return null
@@ -471,6 +477,13 @@ export function containerBackend(config = containerConfig()) {
       await docker(["rm", "-f", "-v", proxyName], { timeoutMs: 60_000 })
       await docker(["network", "rm", egressNet], { timeoutMs: 30_000 })
       await sweep({ own: true })
+    },
+
+    /** Is every container of this batch gone? Only when Docker lists none: an error says nothing. */
+    async allGone() {
+      if (!state.docker) return true
+      const result = await docker(["ps", "-aq", "--filter", `label=evals.batch=${id}`], { timeoutMs: 20_000 })
+      return result.code === 0 && result.stdout.trim() === ""
     },
 
     /** What the proxy allowed and refused, by host name: after teardown. */

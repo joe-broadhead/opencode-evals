@@ -183,10 +183,10 @@ async function startMock({ batchRoot, caller }) {
 }
 
 /** Removes every sandbox's copy of the sign-in under a batch directory, through no link a run may have planted. */
-function scrubCredentials(batchRoot) {
+function scrubCredentials(batchRoot, gone) {
   const runs = join(batchRoot, "runs")
   if (!existsSync(runs)) return
-  for (const name of readdirSync(runs)) removeInside(join(runs, name), join(runs, name, "home", ".claude", ".credentials.json"))
+  for (const name of readdirSync(runs)) removeInside(join(runs, name), join(runs, name, "home", ".claude", ".credentials.json"), { gone })
 }
 
 /** `Seed: utc-hours=9-15`: a case whose truth depends on the UTC hour runs only inside its window (9 <= h < 15). */
@@ -218,6 +218,7 @@ async function runJob(job, ctx) {
   const redact = redactor([...(ctx.auth.secrets ?? []), password])
   registerSecrets([password])
   let trial = null
+  let gone = false
   try {
     // The trial: under `container`, its own container and network, with the sandbox mounted at its own path.
     trial = await ctx.isolation.enter({ name, sandbox, mounts: ctx.mounts, cwd })
@@ -296,7 +297,10 @@ async function runJob(job, ctx) {
     writeAtomic(out(".jsonl"), redact(result.stdout ?? ""))
     writeAtomic(out(".summary.json"), redact(`${JSON.stringify(summary, null, 1)}\n`))
     writeAtomic(out(".files.json"), redact(`${JSON.stringify(files, null, 1)}\n`))
-    if (!ctx.keep) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
+    // Only once the trial is confirmed gone is its sandbox touched: removed, or kept and scrubbed.
+    gone = await trial.gone()
+    if (!gone) ctx.log(`  ${name}: the trial's container is still there: its sandbox is kept, not removed`)
+    if (!ctx.keep && gone) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
     const cost = billedOf(result.stdout ?? "")
     recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
     return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(killed ? { killed: killed.reason } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
@@ -304,8 +308,9 @@ async function runJob(job, ctx) {
     // The trial ends on every path (idempotent); a credentials file goes on every path, a run that failed, threw or was
     // interrupted included; a kept sandbox keeps no secret.
     await trial?.leave({ reason: "finally" })
-    ctx.auth.cleanup({ sandbox })
-    if (ctx.keep) scrubTree(root, redact)
+    if (trial && !gone) gone = await trial.gone()
+    ctx.auth.cleanup({ sandbox, gone: trial ? gone : true })
+    if (ctx.keep && (gone || !trial)) scrubTree(root, redact)
   }
 }
 
@@ -412,13 +417,19 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const facts = {}
   let mock = null
   let redact = redactor([])
-  const finish = (facts = {}) => {
+  const finish = (facts = {}, { gone = true } = {}) => {
     if (finished) return
     finished = true
     if (reservation) release(store, reservation.batch, jobs.length - launched)
-    // No sign-in file outlives the batch, and a kept batch directory holds no secret, whatever path ended the batch.
-    scrubCredentials(batchRoot)
-    if (keepRoot) scrubTree(batchRoot, redact)
+    // No sign-in file outlives the batch, and a kept batch directory holds no secret, whatever path ended the batch;
+    // but nothing in it is touched while a container of the batch may still be running.
+    if (!gone) {
+      keepRoot = true
+      facts.containers_left = true
+      log(`evals run: a container of this batch is still there: ${batchRoot} is kept untouched; \`evals isolation sweep\`, then delete it`)
+    }
+    scrubCredentials(batchRoot, gone)
+    if (keepRoot && gone) scrubTree(batchRoot, redact)
     if (!keepRoot) removeSandbox(within(tmpRoot, batchRoot, "the batch directory"))
     if (reservation) {
       const record = { batch: reservation.batch, iteration, plugin, model: options.model, runner: RUNNER, runner_version: harnessVersion(), ...facts, trials, cases: selected.map((c) => c.id), planned: jobs.length, launched, stopped, ran_at: new Date().toISOString(), results }
@@ -436,8 +447,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // proxy are removed before the batch is written up.
     await isolation.teardown().catch((error) => log(`evals run: isolation teardown: ${error.message ?? error}`))
     if (isolation.egress?.()) facts.egress = isolation.egress()
+    const gone = await isolation.allGone().catch(() => false)
     try {
-      finish(facts)
+      finish(facts, { gone })
     } finally {
       process.exit(code)
     }
@@ -604,7 +616,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       await stop(mock?.proc)
       await isolation.teardown()
       if (isolation.egress?.()) facts.egress = isolation.egress()
-      finish(facts)
+      finish(facts, { gone: await isolation.allGone().catch(() => false) })
     }
   }
   const bad = results.filter((r) => r.error || (r.exit !== 0 && r.exit !== undefined))

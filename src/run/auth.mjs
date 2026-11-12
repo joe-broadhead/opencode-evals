@@ -141,10 +141,9 @@ export async function prepareAuth(profile, { binary, caller = process.env, horiz
       if (imported.code !== 0) throw new Error(`the credential import into the sandbox failed (exit ${imported.code})`)
     },
     /** Nothing of the sign-in is on disk; a credentials file a run made for itself goes anyway. */
-    cleanup({ sandbox }) {
+    cleanup({ sandbox, gone = false }) {
       // Through no link: a run that made home/.claude a link out of the sandbox cannot aim this removal elsewhere.
-      removeInside(sandbox.root, join(sandbox.home, ".claude", ".credentials.json"))
-      return "removed"
+      return removeInside(sandbox.root, join(sandbox.home, ".claude", ".credentials.json"), { gone }) ? "removed" : "kept: the run may still be running"
     },
   }
 }
