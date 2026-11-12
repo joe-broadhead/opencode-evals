@@ -74,7 +74,7 @@ export function containerConfig({ store, env = process.env } = {}) {
   }
   if (env.EVALS_EGRESS_ALLOW !== undefined && env.EVALS_EGRESS_ALLOW !== "") allow = env.EVALS_EGRESS_ALLOW.split(",")
   const hosts = [...parseAllow(allow.join(","))].sort()
-  return { allow: hosts, limits, image: env.EVALS_CONTAINER_IMAGE ?? fromFile.image ?? null, docker: env.EVALS_DOCKER ?? "docker", source: Object.keys(fromFile).length ? file : null }
+  return { allow: hosts, limits, image: env.EVALS_CONTAINER_IMAGE ?? fromFile.image ?? null, docker: env.EVALS_DOCKER ?? "docker", proxyNode: env.EVALS_PROXY_NODE ?? null, source: Object.keys(fromFile).length ? file : null }
 }
 
 /** A command on a PATH, as its real absolute path, or null. */
@@ -303,10 +303,14 @@ export function containerBackend(config = containerConfig()) {
       }
       const swept = await sweep()
       if (swept.containers || swept.networks) log(`isolation: removed ${swept.containers} container(s) and ${swept.networks} network(s) left by a batch whose runner is gone`)
+      // The proxy runs on the harness's own Node, mounted read-only: the image has none (Ubuntu's is past its end of life).
+      const node = findBinary(config.proxyNode ?? process.execPath, caller.PATH)
+      if (!node) throw new Error(`--isolation container: no Node for the egress proxy (${config.proxyNode ?? process.execPath})`)
+      state.shas.proxy_node = await sha256File(node)
       state.prepared = true
       await must(["network", "create", "--driver", "bridge", ...labelArgs({ "evals.role": "egress" }), egressNet], "creating the egress network")
       await must(
-        ["run", "-d", "--name", proxyName, ...labelArgs({ "evals.role": "proxy" }), "--network", egressNet, "--user", "65534:65534", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "128", "--memory", "256m", "--cpus", "1", "-e", `EVALS_EGRESS_ALLOW=${config.allow.join(",")}`, "-e", `EVALS_EGRESS_MAX_PER_CLIENT=${config.limits.tunnels_per_trial}`, "-e", `EVALS_EGRESS_MAX_TOTAL=${config.limits.tunnels_total}`, state.image, "node", "/opt/evals/egress-proxy.mjs", String(PROXY_PORT)],
+        ["run", "-d", "--name", proxyName, ...labelArgs({ "evals.role": "proxy" }), "--network", egressNet, "--user", "65534:65534", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "128", "--memory", "256m", "--cpus", "1", "--mount", `type=bind,src=${node},dst=${CONTAINER_BIN}/node,readonly`, "-e", `EVALS_EGRESS_ALLOW=${config.allow.join(",")}`, "-e", `EVALS_EGRESS_MAX_PER_CLIENT=${config.limits.tunnels_per_trial}`, "-e", `EVALS_EGRESS_MAX_TOTAL=${config.limits.tunnels_total}`, state.image, `${CONTAINER_BIN}/node`, "/opt/evals/egress-proxy.mjs", String(PROXY_PORT)],
         "starting the egress proxy",
       )
       const deadline = Date.now() + 15_000

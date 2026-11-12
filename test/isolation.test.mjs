@@ -212,6 +212,16 @@ test("the proxy caps open tunnels per client and in all", async () => {
   }
 })
 
+test("the image pins every package it installs, and carries no Node", () => {
+  const dockerfile = readFileSync(join(import.meta.dirname, "..", "docker", "Dockerfile"), "utf8")
+  assert.match(dockerfile, /^FROM ubuntu:24\.04@sha256:[0-9a-f]{64}$/m, "the base is pinned by digest")
+  const install = /apt-get install -y --no-install-recommends \\\n([\s\S]*?)\n &&/.exec(dockerfile)[1]
+  const packages = install.split(/\s+/).filter((word) => word && word !== "\\")
+  assert.ok(packages.length >= 8)
+  for (const pkg of packages) assert.match(pkg, /^[a-z0-9.+-]+=[0-9][^\s]*$/, `${pkg} is pinned`)
+  assert.equal(packages.some((pkg) => /^nodejs=/.test(pkg)), false, "no Node in the image: the proxy runs on the harness's own")
+})
+
 // ---------------------------------------------------------------- settings
 
 test("the allow-list and limits come from caps.json and the environment only, never wider by default", () => {
@@ -294,8 +304,11 @@ test("offline: a trial is confined by its flags, and no secret reaches an argv",
   await f.backend.prepare({ batchRoot: f.batchRoot, caller: f.caller, binaries: { opencode: f.opencode } })
   const trial = await f.backend.enter({ name: "case.t1", sandbox: f.sandbox, mounts: [{ host: f.arm, ro: true }], cwd: f.sandbox.project })
   const calls = f.docker.calls()
-  const proxy = calls.find((c) => c.args[0] === "run" && c.args.includes("node")).args
+  const proxy = calls.find((c) => c.args[0] === "run" && c.args.includes("/opt/evals/egress-proxy.mjs")).args
   for (const flag of ["--read-only", "--cap-drop", "ALL", "no-new-privileges", "65534:65534"]) assert.ok(proxy.includes(flag), `proxy: ${flag}`)
+  assert.ok(proxy.includes(`type=bind,src=${findBinary(process.execPath)},dst=/opt/evals/bin/node,readonly`), "the proxy runs on the harness's own Node, read-only")
+  assert.ok(proxy.includes("EVALS_EGRESS_MAX_PER_CLIENT=16") && proxy.includes("EVALS_EGRESS_MAX_TOTAL=64"))
+  assert.match(f.backend.describe().binaries.proxy_node, /^[0-9a-f]{64}$/)
   const net = calls.find((c) => c.args[0] === "network" && c.args[1] === "create" && c.args.includes("--internal")).args
   assert.ok(net.includes("com.docker.network.bridge.gateway_mode_ipv4=isolated"), "the trial network has no host gateway")
   assert.ok(calls.some((c) => c.args.join(" ") === `network connect --alias egress ${trial.ref} evals-${f.backend.batchLabel}-proxy`))
