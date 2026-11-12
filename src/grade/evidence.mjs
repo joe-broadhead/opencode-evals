@@ -136,6 +136,9 @@ const numberish = (v) => typeof v === "number" && Number.isFinite(v)
 /** A path glob: `*` within a directory, `**` across them. */
 const globRe = (glob) => new RegExp(`^${glob.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\u0000").replace(/\*/g, "[^/]*").replace(/\u0000/g, ".*")}$`)
 
+/** The shapes the trace stores in place of a value (redact.mjs). */
+const WRAPPERS = new Set(["object", "redacted", "code", "id", "timestamp"])
+
 /** The operators a value that was never passed satisfies. */
 const NEGATIVE = new Set(["!=", "not-matches", "excludes"])
 
@@ -158,8 +161,18 @@ export function argState(args, key) {
   if (args && typeof args === "object" && "$ref" in args) return { state: "opaque", why: "the argument object is a variable" }
   const path = key.replace(/^args\./, "").split(".")
   let value = args
-  for (const part of path) {
+  for (const [depth, part] of path.entries()) {
     if (value === null || value === undefined || typeof value !== "object") return { state: "missing" }
+    // Below the top level the trace keeps a wrapper, not the value. A nested object is `{kind: "object", keys}`: a key it
+    // lists is there but unseen, so it is opaque, never missing, and so is anything under a variable (`keys: ["$ref"]`);
+    // only a key the wrapper says is absent is missing. A string, an id or a time reduced to its shape is a scalar:
+    // it has no keys at all, so a path under it is missing (a single query string has no `.length` of phrasings).
+    if (depth > 0 && !Array.isArray(value) && WRAPPERS.has(value.kind)) {
+      if (value.kind !== "object") return { state: "missing" }
+      const keys = Array.isArray(value.keys) ? value.keys : null
+      if (keys && !keys.includes("$ref") && !keys.includes(part)) return { state: "missing" }
+      return { state: "opaque", why: `${path.slice(0, depth).join(".")} is kept as ${keys?.includes("$ref") ? "a variable" : `an object with keys ${(keys ?? []).join(",")}`}, not its value` }
+    }
     value = value[part]
   }
   if (value === undefined || value === null) return { state: "missing" }

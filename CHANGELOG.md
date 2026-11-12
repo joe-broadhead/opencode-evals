@@ -109,6 +109,10 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- The missing-argument rule passed values it could not see: a key inside a nested object, which a trace keeps as
+  `{kind: "object", keys}`, read as "not passed", so `args.filter.lang != "en"` held although the call passed `"en"`.
+  A key the wrapper lists, or anything under a variable, is now unverifiable; only a key it does not list is missing.
+
 - `evals run` launched live runs with only environment isolation, and an agent under test reached a file outside its
   sandbox by absolute path. A live run now needs a filesystem-isolation backend (`--isolation`, a pluggable
   `src/run/isolation.mjs`); `none` is refused for a live run unless `--unsafe-no-isolation` is given, and the
