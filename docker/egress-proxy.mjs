@@ -1,6 +1,7 @@
 // The batch's egress proxy: the one way out of a trial's network. CONNECT only, to port 443 only, of a host name on
-// the allow-list only (exact, case-insensitive; no wildcard, no IP literal), and only when the name resolves to a
-// public address. Everything else is answered 403 (405 for a method other than CONNECT) and logged.
+// the allow-list only (exact, case-insensitive; no wildcard, no IP literal), only when the name resolves to a public
+// address, and only for a TLS session whose ClientHello names that same host. Everything else is answered 403 (405 for
+// a method other than CONNECT, 429 past the tunnel caps) or closed, and logged.
 //
 // It never sees a request body or a header beyond the CONNECT line (the tunnel is TLS end to end) and logs host
 // names only, one JSON line per decision on stdout: {"ev":"allowed"|"refused"|"failed","host":"…","why":"…"}.
@@ -74,18 +75,113 @@ export function parseAllow(text) {
   return new Set(hosts)
 }
 
+const HELLO_LIMIT = 64 * 1024
+
+/** The server name of a TLS ClientHello's SNI extension: { sni } (null when it has none), { incomplete }, or { error }. */
+function helloName(body) {
+  let p = 0
+  const need = (n) => {
+    if (p + n > body.length) throw new Error("short")
+  }
+  try {
+    need(34)
+    p += 34 // client_version, random
+    need(1)
+    p += 1 + body[p] // session id
+    need(2)
+    p += 2 + body.readUInt16BE(p) // cipher suites
+    need(1)
+    p += 1 + body[p] // compression methods
+    if (p === body.length) return { sni: null }
+    need(2)
+    const end = p + 2 + body.readUInt16BE(p)
+    p += 2
+    if (end > body.length) return { error: "malformed" }
+    while (p + 4 <= end) {
+      const type = body.readUInt16BE(p)
+      const length = body.readUInt16BE(p + 2)
+      p += 4
+      if (p + length > end) return { error: "malformed" }
+      if (type === 0) {
+        if (length < 2) return { error: "malformed" }
+        const listEnd = p + 2 + body.readUInt16BE(p)
+        if (listEnd > p + length) return { error: "malformed" }
+        let q = p + 2
+        while (q + 3 <= listEnd) {
+          const nameType = body[q]
+          const nameLength = body.readUInt16BE(q + 1)
+          q += 3
+          if (q + nameLength > listEnd) return { error: "malformed" }
+          if (nameType === 0) return { sni: body.subarray(q, q + nameLength).toString("latin1").toLowerCase().replace(/\.$/, "") }
+          q += nameLength
+        }
+        return { sni: null }
+      }
+      p += length
+    }
+    return { sni: null }
+  } catch {
+    return { error: "malformed" }
+  }
+}
+
+/** Reads the first TLS handshake message from the bytes a client sent, across records, and names its SNI. */
+export function clientHelloSni(buffer) {
+  const parts = []
+  let pos = 0
+  if (buffer.length && buffer[0] !== 22) return { error: "not-tls" }
+  while (pos + 5 <= buffer.length) {
+    if (buffer[pos] !== 22) return { error: "not-tls" }
+    const length = buffer.readUInt16BE(pos + 3)
+    if (length === 0 || length > 18432) return { error: "malformed" }
+    if (pos + 5 + length > buffer.length) break
+    parts.push(buffer.subarray(pos + 5, pos + 5 + length))
+    pos += 5 + length
+    const handshake = Buffer.concat(parts)
+    if (handshake.length >= 4) {
+      if (handshake[0] !== 1) return { error: "not-client-hello" }
+      const total = handshake.readUIntBE(1, 3) + 4
+      if (total > HELLO_LIMIT) return { error: "malformed" }
+      if (handshake.length >= total) return helloName(handshake.subarray(4, total))
+    }
+  }
+  return buffer.length > HELLO_LIMIT + 1024 ? { error: "malformed" } : { incomplete: true }
+}
+
 /**
  * The proxy. `lookup(host)` resolves a name to [{ address, family }] (DNS by default); `log(entry)` receives each
  * decision; `dial(address, port)` opens the upstream socket (a test can point it at a local server).
+ *
+ * After `200 Connection Established` nothing goes through the tunnel until the client's first TLS message, its
+ * ClientHello, names the very host it asked to CONNECT to (SNI, compared exactly): a tunnel to an allowed name cannot
+ * carry a TLS session to another one behind the same address. No SNI, anything that is not a ClientHello, or nothing
+ * within `helloTimeoutMs`, and the tunnel is closed. At most `maxPerClient` connections per client address (one trial
+ * is one address) and `maxTotal` in all are open at once; another is answered 429.
  */
-export function createProxy({ allow, lookup = (host) => dnsLookup(host, { all: true, verbatim: true }), log = (entry) => process.stdout.write(`${JSON.stringify(entry)}\n`), dial = (address, port) => connect({ host: address, port }) } = {}) {
+export function createProxy({ allow, lookup = (host) => dnsLookup(host, { all: true, verbatim: true }), log = (entry) => process.stdout.write(`${JSON.stringify(entry)}\n`), dial = (address, port) => connect({ host: address, port }), helloTimeoutMs = 10_000, maxPerClient = 16, maxTotal = 64 } = {}) {
   const allowed = allow instanceof Set ? allow : parseAllow(allow)
+  const active = new Map()
+  let total = 0
   return createServer((client) => {
+    const from = client.remoteAddress ?? ""
+    client.on("error", () => {})
+    if ((active.get(from) ?? 0) >= maxPerClient || total >= maxTotal) {
+      log({ ev: "refused", host: "", why: "too-many-tunnels" })
+      client.end("HTTP/1.1 429 Too Many Requests\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+      return
+    }
+    active.set(from, (active.get(from) ?? 0) + 1)
+    total++
+    client.on("close", () => {
+      total--
+      const left = (active.get(from) ?? 1) - 1
+      if (left > 0) active.set(from, left)
+      else active.delete(from)
+    })
     let head = Buffer.alloc(0)
     let decided = false
     client.setTimeout(10_000)
     client.on("timeout", () => client.destroy())
-    client.on("error", () => {})
     const refuse = (status, host, why) => {
       decided = true
       log({ ev: "refused", host: clean(host), why })
@@ -140,19 +236,50 @@ export function createProxy({ allow, lookup = (host) => dnsLookup(host, { all: t
         log({ ev: "failed", host, why: "connect" })
         client.end("HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
       })
+      client.on("close", () => upstream.destroy())
+      upstream.on("close", () => client.destroy())
       upstream.on("connect", () => {
         open = true
-        log({ ev: "allowed", host })
-        // A long model stream is quiet for a while; a tunnel idle for fifteen minutes is closed.
-        upstream.setTimeout(15 * 60_000)
-        client.setTimeout(15 * 60_000)
         client.write("HTTP/1.1 200 Connection Established\r\n\r\n")
-        if (rest.length) upstream.write(rest)
-        client.pipe(upstream)
-        upstream.pipe(client)
+        let hello = rest
+        let settled = false
+        const stopReading = () => {
+          settled = true
+          clearTimeout(timer)
+          client.off("data", onHello)
+        }
+        const reject = (why) => {
+          stopReading()
+          log({ ev: "refused", host, why })
+          client.destroy()
+          upstream.destroy()
+        }
+        const check = () => {
+          if (settled) return
+          const read = clientHelloSni(hello)
+          if (read.incomplete) return
+          if (read.error) return reject("bad-client-hello")
+          if (!read.sni) return reject("no-sni")
+          if (read.sni !== host) return reject("sni-mismatch")
+          stopReading()
+          log({ ev: "allowed", host })
+          // A long model stream is quiet for a while; a tunnel idle for fifteen minutes is closed.
+          upstream.setTimeout(15 * 60_000)
+          client.setTimeout(15 * 60_000)
+          upstream.write(hello)
+          client.pipe(upstream)
+          upstream.pipe(client)
+        }
+        const onHello = (chunk) => {
+          hello = Buffer.concat([hello, chunk])
+          check()
+        }
+        const timer = setTimeout(() => reject("no-client-hello"), helloTimeoutMs)
+        // A client that closes before saying anything has not been refused anything.
+        client.once("close", stopReading)
+        client.on("data", onHello)
         client.resume()
-        client.on("close", () => upstream.destroy())
-        upstream.on("close", () => client.destroy())
+        check()
       })
     }
     client.on("data", onData)
@@ -161,7 +288,7 @@ export function createProxy({ allow, lookup = (host) => dnsLookup(host, { all: t
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const port = Number(process.argv[2] ?? 3128)
-  const server = createProxy({ allow: process.env.EVALS_EGRESS_ALLOW })
+  const server = createProxy({ allow: process.env.EVALS_EGRESS_ALLOW, maxPerClient: Number(process.env.EVALS_EGRESS_MAX_PER_CLIENT) || 16, maxTotal: Number(process.env.EVALS_EGRESS_MAX_TOTAL) || 64 })
   server.listen(port, "0.0.0.0", () => process.stdout.write(`${JSON.stringify({ ev: "listening", port })}\n`))
   process.on("SIGTERM", () => process.exit(0))
 }

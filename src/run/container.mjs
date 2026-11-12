@@ -306,7 +306,7 @@ export function containerBackend(config = containerConfig()) {
       state.prepared = true
       await must(["network", "create", "--driver", "bridge", ...labelArgs({ "evals.role": "egress" }), egressNet], "creating the egress network")
       await must(
-        ["run", "-d", "--name", proxyName, ...labelArgs({ "evals.role": "proxy" }), "--network", egressNet, "--user", "65534:65534", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "128", "--memory", "256m", "--cpus", "1", "-e", `EVALS_EGRESS_ALLOW=${config.allow.join(",")}`, state.image, "node", "/opt/evals/egress-proxy.mjs", String(PROXY_PORT)],
+        ["run", "-d", "--name", proxyName, ...labelArgs({ "evals.role": "proxy" }), "--network", egressNet, "--user", "65534:65534", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "128", "--memory", "256m", "--cpus", "1", "-e", `EVALS_EGRESS_ALLOW=${config.allow.join(",")}`, "-e", `EVALS_EGRESS_MAX_PER_CLIENT=${config.limits.tunnels_per_trial}`, "-e", `EVALS_EGRESS_MAX_TOTAL=${config.limits.tunnels_total}`, state.image, "node", "/opt/evals/egress-proxy.mjs", String(PROXY_PORT)],
         "starting the egress proxy",
       )
       const deadline = Date.now() + 15_000

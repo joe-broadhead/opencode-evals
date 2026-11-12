@@ -14,7 +14,7 @@ import { homedir, networkInterfaces, tmpdir } from "node:os"
 import { connect } from "node:net"
 import { spawn, spawnSync } from "node:child_process"
 import { randomBytes } from "node:crypto"
-import { clean, createProxy, parseAllow, privateAddress } from "../docker/egress-proxy.mjs"
+import { clean, clientHelloSni, createProxy, parseAllow, privateAddress } from "../docker/egress-proxy.mjs"
 import { containerBackend, containerConfig, trialEnv, imageTag, findBinary, CONTAINER_PATH, DEFAULT_ALLOW, EGRESS_URL } from "../src/run/container.mjs"
 import { selectIsolation } from "../src/run/isolation.mjs"
 import { makeSandbox, removeSandbox, removeInside, repairPermissions, runToEnd } from "../src/run/sandbox.mjs"
@@ -100,6 +100,116 @@ test("the proxy refuses an allow-listed name that resolves to a private address"
   assert.equal(clean("ex\u0000ample.com/\n"), "ex?ample.com??")
   assert.deepEqual([...parseAllow("API.anthropic.com, claude.ai.")], ["api.anthropic.com", "claude.ai"])
   for (const bad of ["*.anthropic.com", "10.0.0.1", "http://x.com", "a b/c"]) assert.throws(() => parseAllow(bad), /not a host name/, bad)
+})
+
+/** A minimal TLS 1.3-shaped ClientHello, with an SNI extension naming `sni` (none when null), in `records` records. */
+function clientHello(sni, { records = 1 } = {}) {
+  const ext = sni === null ? Buffer.alloc(0) : (() => {
+    const name = Buffer.from(sni, "latin1")
+    const entry = Buffer.concat([Buffer.from([0]), Buffer.from([name.length >> 8, name.length & 255]), name])
+    const list = Buffer.concat([Buffer.from([entry.length >> 8, entry.length & 255]), entry])
+    return Buffer.concat([Buffer.from([0, 0, list.length >> 8, list.length & 255]), list])
+  })()
+  const body = Buffer.concat([Buffer.from([3, 3]), Buffer.alloc(32, 7), Buffer.from([0]), Buffer.from([0, 2, 0x13, 0x01]), Buffer.from([1, 0]), Buffer.from([ext.length >> 8, ext.length & 255]), ext])
+  const handshake = Buffer.concat([Buffer.from([1, 0, body.length >> 8, body.length & 255]), body])
+  const size = Math.ceil(handshake.length / records)
+  const out = []
+  for (let at = 0; at < handshake.length; at += size) {
+    const part = handshake.subarray(at, at + size)
+    out.push(Buffer.from([22, 3, 1, part.length >> 8, part.length & 255]), part)
+  }
+  return Buffer.concat(out)
+}
+
+/** CONNECT, read the 200, send `bytes` (in pieces), and report what the upstream stand-in received and the proxy logged. */
+async function tunnel(line, chunks, { helloTimeoutMs = 2000, wait = 300 } = {}) {
+  const { createServer } = await import("node:net")
+  const received = []
+  const upstream = createServer((socket) => socket.on("data", (d) => received.push(d)))
+  await new Promise((done) => upstream.listen(0, "127.0.0.1", done))
+  const log = []
+  const server = createProxy({ allow: "api.anthropic.com", log: (e) => log.push(e), lookup: async () => [{ address: "93.184.215.14" }], dial: () => connect({ host: "127.0.0.1", port: upstream.address().port }), helloTimeoutMs })
+  await new Promise((done) => server.listen(0, "127.0.0.1", done))
+  const socket = connect({ host: "127.0.0.1", port: server.address().port })
+  let status = ""
+  let closed = false
+  socket.on("data", (d) => (status += d))
+  socket.on("close", () => (closed = true))
+  socket.on("error", () => {})
+  socket.write(`${line}\r\nHost: x\r\n\r\n`)
+  while (!status.includes("\r\n\r\n") && !closed) await new Promise((done) => setTimeout(done, 10))
+  for (const chunk of chunks) {
+    socket.write(chunk)
+    await new Promise((done) => setTimeout(done, 20))
+  }
+  await new Promise((done) => setTimeout(done, wait))
+  const result = { status: status.split("\r\n")[0], closed, received: Buffer.concat(received), log }
+  socket.destroy()
+  await new Promise((done) => server.close(done))
+  upstream.close()
+  return result
+}
+
+test("a tunnel carries nothing until the ClientHello names the CONNECT host: other, missing or no SNI is refused", async () => {
+  const good = clientHello("api.anthropic.com")
+  const ok = await tunnel("CONNECT api.anthropic.com:443 HTTP/1.1", [good])
+  assert.match(ok.status, / 200 /)
+  assert.deepEqual(ok.received, good, "the ClientHello went upstream, byte for byte")
+  assert.deepEqual(ok.log, [{ ev: "allowed", host: "api.anthropic.com" }])
+  // Split across two records and three writes, and a trailing dot or upper case in the name: the same host.
+  const split = clientHello("API.anthropic.com.", { records: 2 })
+  const pieces = await tunnel("CONNECT api.anthropic.com:443 HTTP/1.1", [split.subarray(0, 7), split.subarray(7, 40), split.subarray(40)])
+  assert.deepEqual(pieces.received, split)
+  assert.equal(pieces.log[0].ev, "allowed")
+  for (const [label, chunks, why] of [
+    ["another host behind the same address", [clientHello("evil.example.com")], "sni-mismatch"],
+    ["no SNI", [clientHello(null)], "no-sni"],
+    ["not TLS at all", [Buffer.from("GET / HTTP/1.1\r\nHost: api.anthropic.com\r\n\r\n")], "bad-client-hello"],
+    ["a malformed hello", [Buffer.from([22, 3, 1, 0, 6, 1, 0, 0, 2, 3, 3])], "bad-client-hello"],
+    ["nothing at all", [], "no-client-hello"],
+  ]) {
+    const refused = await tunnel("CONNECT api.anthropic.com:443 HTTP/1.1", chunks, { helloTimeoutMs: 200, wait: 400 })
+    assert.equal(refused.received.length, 0, `${label}: nothing reached the upstream`)
+    assert.equal(refused.closed, true, `${label}: the tunnel was closed`)
+    assert.deepEqual(refused.log, [{ ev: "refused", host: "api.anthropic.com", why }], label)
+  }
+  assert.deepEqual(clientHelloSni(clientHello("claude.ai").subarray(0, 20)), { incomplete: true })
+})
+
+test("the proxy caps open tunnels per client and in all", async () => {
+  for (const [options, label] of [[{ maxPerClient: 2, maxTotal: 10 }, "per client"], [{ maxPerClient: 10, maxTotal: 2 }, "in all"]]) {
+    const log = []
+    const server = createProxy({ allow: "api.anthropic.com", log: (e) => log.push(e), ...options })
+    await new Promise((done) => server.listen(0, "127.0.0.1", done))
+    const open = []
+    const answers = []
+    try {
+      for (let i = 0; i < 3; i++) {
+        const socket = connect({ host: "127.0.0.1", port: server.address().port })
+        socket.on("error", () => {})
+        let data = ""
+        socket.on("data", (d) => (data += d))
+        open.push(socket)
+        answers.push(() => data)
+        await new Promise((done) => socket.on("connect", done))
+        await new Promise((done) => setTimeout(done, 50))
+      }
+      assert.deepEqual(answers.map((a) => a().split("\r\n")[0]), ["", "", "HTTP/1.1 429 Too Many Requests"], label)
+      assert.deepEqual(log, [{ ev: "refused", host: "", why: "too-many-tunnels" }])
+      // A closed tunnel frees its place.
+      open[0].destroy()
+      await new Promise((done) => setTimeout(done, 50))
+      const again = connect({ host: "127.0.0.1", port: server.address().port })
+      let data = ""
+      again.on("data", (d) => (data += d))
+      await new Promise((done) => setTimeout(done, 100))
+      open.push(again)
+      assert.equal(data, "", `${label}: a place came free`)
+    } finally {
+      for (const socket of open) socket.destroy()
+      await new Promise((done) => server.close(done))
+    }
+  }
 })
 
 // ---------------------------------------------------------------- settings
@@ -524,18 +634,25 @@ test("docker: the proxy refuses a host off the allow-list and allows one on it (
       "other port": "CONNECT api.anthropic.com:8443 HTTP/1.1",
       get: "GET http://10.31.0.1:9002/ HTTP/1.1",
       allowed: "CONNECT api.anthropic.com:443 HTTP/1.1",
+      mismatch: "CONNECT api.anthropic.com:443 HTTP/1.1",
     }
-    const script = Object.entries(lines).map(([label, line]) => `exec 3<>/dev/tcp/egress/3128 && printf '%s\\r\\nHost: x\\r\\n\\r\\n' '${line}' >&3 && read -t 15 -r status <&3; echo "${label}|\${status%$'\\r'}"; exec 3>&- 3<&-`).join("\n")
+    // After the 200, the allowed tunnel gets a ClientHello naming its host (nothing more: no request goes through it),
+    // and the mismatched one a ClientHello naming another host.
+    const hex = (buffer) => [...buffer].map((b) => `\\x${b.toString(16).padStart(2, "0")}`).join("")
+    const hellos = { allowed: hex(clientHello("api.anthropic.com")), mismatch: hex(clientHello("example.com")) }
+    const script = Object.entries(lines).map(([label, line]) => `exec 3<>/dev/tcp/egress/3128 && printf '%s\\r\\nHost: x\\r\\n\\r\\n' '${line}' >&3 && read -t 15 -r status <&3; echo "${label}|\${status%$'\\r'}"; ${hellos[label] ? `read -t 5 -r blank <&3; printf '${hellos[label]}' >&3; sleep 1;` : ""} exec 3>&- 3<&-`).join("\n")
     const out = await f.sh(script)
     const got = Object.fromEntries(out.stdout.trim().split("\n").map((l) => l.split("|")))
     for (const label of ["example.com", "metadata", "cloud", "loopback", "other port"]) assert.match(got[label] ?? "", /^HTTP\/1\.1 403/, label)
     assert.match(got.get ?? "", /^HTTP\/1\.1 405/)
     // 200 when this machine has internet; 502 when the upstream is unreachable, never 403.
     assert.match(got.allowed ?? "", /^HTTP\/1\.1 (200|502)/)
+    assert.match(got.mismatch ?? "", /^HTTP\/1\.1 (200|502)/)
     await f.backend.teardown()
     const egress = f.backend.egress()
     assert.deepEqual(Object.keys(egress.refused).sort(), ["10.31.0.1", "169.254.169.254", "api.anthropic.com", "example.com", "localhost"].sort())
     assert.ok(egress.allowed["api.anthropic.com"] === 1 || egress.failed["api.anthropic.com"], JSON.stringify(egress))
+    assert.ok(egress.refused["api.anthropic.com"].why.includes("sni-mismatch") || egress.failed["api.anthropic.com"], JSON.stringify(egress))
     assert.deepEqual(leftovers(`label=evals.batch=${f.backend.batchLabel}`), { containers: "", networks: "" })
   } finally {
     await f.cleanup()
