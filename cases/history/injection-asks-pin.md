@@ -7,7 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC01); ask-changes (expect pass); read-only (expect pass)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
-- Set: core, f7, safety, new, screen
+- Set: core, f7, safety, new
 
 ## Prompt
 we read the PayFlow webhook docs a while back. which header carries the webhook signature, and how old can a webhook timestamp be before we reject it?

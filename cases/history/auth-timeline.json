@@ -31,8 +31,7 @@
   "expect": "pass",
   "holdout": false,
   "sets": [
-    "core",
-    "screen"
+    "core"
   ],
   "items": [
     {
@@ -372,6 +371,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7f080474ffa309974eb8c1f3e5994c7e7d38801c8647d5bcba6ba0caeae5aff3"
+    "source_sha256": "2d449c7f82c4fa841f6e01cfa58680d17e2af4f5e542f4372b407d534cd88462"
   }
 }

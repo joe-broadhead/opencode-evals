@@ -7,7 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
-- Set: core
+- Set: core, screen
 
 ## Prompt
 how did we speed up the invoices list query a while back?

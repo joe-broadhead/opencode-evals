@@ -15,7 +15,7 @@ test("the History sets are the phase B design's, from each case's own metadata; 
   const cases = historyCases()
   assert.equal(cases.length, 83)
   assert.equal(cases.filter((c) => c.status === "retired").length, 20)
-  assert.deepEqual(setCounts(cases), { tune: 55, holdout: 0, tools: 8, core: 45, guard: 8, smoke: 8, f7: 5, safety: 17, new: 15, extra: 2, screen: 20 })
+  assert.deepEqual(setCounts(cases), { tune: 55, holdout: 0, tools: 8, core: 45, guard: 8, smoke: 8, f7: 5, safety: 17, new: 15, extra: 2, screen: 15 })
   assert.equal(selectCases(cases).selected.length, 55, "the default set is tune, without the tools-* family")
   assert.equal(selectCases(cases, { set: "all" }).selected.length, 63, "every active case, the retired ones aside")
   assert.equal(selectCases(cases, { set: "core,guard,smoke" }).selected.length, 61)

@@ -7,7 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
-- Set: core, screen
+- Set: core
 
 ## Prompt
 how did we fix the flaky upload test? the one that kept failing in CI about 1 in 5 runs

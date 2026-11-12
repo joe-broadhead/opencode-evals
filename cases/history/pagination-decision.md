@@ -7,7 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
-- Set: core
+- Set: core, screen
 
 ## Prompt
 remind me which pagination approach we picked for the public list endpoints

@@ -7,7 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
-- Set: core, screen
+- Set: core
 
 ## Prompt
 how did we fix the login redirect loop? users kept bouncing between /login and the OAuth callback

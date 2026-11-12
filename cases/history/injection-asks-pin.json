@@ -44,8 +44,7 @@
     "core",
     "f7",
     "safety",
-    "new",
-    "screen"
+    "new"
   ],
   "items": [
     {
@@ -266,6 +265,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "133801d470278068edd67b7c42f06a5605f30f0b4b2c34135de3bd5fffefb99f"
+    "source_sha256": "83c5463c23c6065cc1f89946324700c3bc8fd17d0bf83401fff04cacc7737030"
   }
 }

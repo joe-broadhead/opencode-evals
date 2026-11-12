@@ -7,7 +7,7 @@
 - Seed: cwd=api time=day utc-hours=1-14
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC01)
 - Budget: outer_calls <= 10, inner_calls <= 10, wall_ms <= 300000
-- Set: core, new, screen
+- Set: core, new
 
 ## Prompt
 I'm in Tokyo (UTC+9). which sessions did I work on yesterday, my time, in this project?
