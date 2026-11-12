@@ -4,7 +4,7 @@
   "id": "metaview",
   "name": "Metaview",
   "package": "@joe-broadhead/opencode-metaview",
-  "version": "0.0.2",
+  "version": "0.0.0",
   "private": false,
   "pluginId": "metaview.workspace",
   "skills": [
@@ -317,184 +317,184 @@
     {
       "name": "create_ai_field",
       "permission": "metaview_create_ai_field",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_job_post_check",
       "permission": "metaview_create_job_post_check",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_report",
       "permission": "metaview_create_report",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_snippet",
       "permission": "metaview_create_snippet",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "enrich_candidate_contacts",
       "permission": "metaview_enrich_candidate_contacts",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "generate_notes",
       "permission": "metaview_generate_notes",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "give_sourcing_feedback",
       "permission": "metaview_give_sourcing_feedback",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "manage_note_template",
       "permission": "metaview_manage_note_template",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "manage_notes_sources",
       "permission": "metaview_manage_notes_sources",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "manage_sequence",
       "permission": "metaview_manage_sequence",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "manage_sourcing_knowledge",
       "permission": "metaview_manage_sourcing_knowledge",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "post_sourcing_candidates_to_ats",
       "permission": "metaview_post_sourcing_candidates_to_ats",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "resolve_job_post_suggestion",
       "permission": "metaview_resolve_job_post_suggestion",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "restore_application_review_icp",
       "permission": "metaview_restore_application_review_icp",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "run_job_post_checks",
       "permission": "metaview_run_job_post_checks",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "send_job_post_message",
       "permission": "metaview_send_job_post_message",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "send_sourcing_message",
       "permission": "metaview_send_sourcing_message",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_application_review_icp",
       "permission": "metaview_update_application_review_icp",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_application_review_rules",
       "permission": "metaview_update_application_review_rules",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_screen_outreach",
       "permission": "metaview_update_screen_outreach",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_screen_plan",
       "permission": "metaview_update_screen_plan",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "upsert_job_post_template",
       "permission": "metaview_upsert_job_post_template",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "give_application_review_candidate_feedback",
       "permission": "metaview_give_application_review_candidate_feedback",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "manage_candidate_sequence",
       "permission": "metaview_manage_candidate_sequence",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "submit_feedback",
       "permission": "metaview_submit_feedback",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     }
   ],
   "counts": {
     "tools": 68,
     "reads": 43,
-    "writes": 22,
-    "denied": 3,
+    "writes": 25,
+    "denied": 0,
     "skills": 3
   },
   "schema": "oc-pack/1",
@@ -509,7 +509,7 @@
       "name": "metaview-candidate-brief",
       "description_sha256": "324fa19036594a1df4078246b32f25b1237e0f2072aa31fe4c8dcbcfad50ad58",
       "description_chars": 434,
-      "body_lines": 68
+      "body_lines": 70
     },
     "metaview-write": {
       "name": "metaview-write",
@@ -518,5 +518,9 @@
       "body_lines": 95
     }
   },
-  "digest": "4ada1068de37a5964c2fdc5aa4e0d744c3e174658fc6639f6f02b888159a9fbf"
+  "digest": "f5c0ae68d6e76580de05da5a175c61add91b641116d01e1be52f33e0e2a57991",
+  "access": {
+    "key": "access",
+    "default": "all"
+  }
 }

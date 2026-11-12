@@ -26,7 +26,7 @@ import { comparable } from "./policy/comparable.mjs"
 import { checkX } from "./t0/x.mjs"
 import { renderScorecard, compareToHandGrading } from "./report/scorecard.mjs"
 import { goldCases } from "./grade/gold.mjs"
-import { readPack, writePack, pluginRepo, repoAvailable, derivePack, readSnapshot, packIds } from "./pack/from-plugin.mjs"
+import { readPack, writePack, pluginRepo, repoAvailable, derivePack, readSnapshot, allPackIds, familyProblems } from "./pack/from-plugin.mjs"
 import { verifyFromRepo, driftReport, renderDrift } from "./pack/snapshot.mjs"
 import { runT1, coverageTable } from "./t1/run.mjs"
 import { checkPack } from "./t0/generic.mjs"
@@ -576,7 +576,8 @@ export async function main(argv) {
     case "pack": {
       // CI has no checkouts: the committed snapshots are verified on their own, which is a real check —
       // schema, digest, counts and the family's invariants. A machine with checkouts also reports drift.
-      const ids = opt._.length ? opt._ : packIds(ROOT)
+      // Every committed snapshot, and every plugin checkout configuration points at (EVALS_PLUGIN_ROOT, EVALS_REPO_<ID>).
+      const ids = opt._.length ? opt._ : allPackIds(ROOT)
       if (!ids.length) throw new Error("no packs to verify: packs/<id>/pack.json is missing")
       let failures = 0
       let drifted = 0
@@ -589,10 +590,21 @@ export async function main(argv) {
           }
           const before = readSnapshot(id, ROOT)
           const live = derivePack(id)
+          const problems = familyProblems(live)
+          if (problems.length && !before) {
+            console.log(`${id.padEnd(10)} skipped: not a family pack — ${problems.join("; ")}`)
+            continue
+          }
           const drift = before ? driftReport(live, before) : null
           const pack = writePack(id)
-          if (drift?.drift) drift ? console.log(renderDrift(id, drift)) : null
-          console.log(`${id.padEnd(10)} synced  tools ${pack.counts.tools} (${pack.counts.reads} read, ${pack.counts.writes} write, ${pack.counts.denied} denied)  skills ${pack.counts.skills}  ${pack.digest.slice(0, 12)}`)
+          if (drift?.drift) console.log(renderDrift(id, drift))
+          console.log(`${id.padEnd(10)} ${before ? "synced " : "created"}  tools ${pack.counts.tools} (${pack.counts.reads} read, ${pack.counts.writes} write, ${pack.counts.denied} denied)  skills ${pack.counts.skills}  access ${pack.access?.default ?? "—"}  ${pack.digest.slice(0, 12)}`)
+          continue
+        }
+        if (!readSnapshot(id, ROOT) && repoAvailable(id)) {
+          drifted++
+          const problems = familyProblems(derivePack(id))
+          report.push(`${id.padEnd(10)} no snapshot: ${problems.length ? `not a family pack — ${problems.join("; ")}` : "`evals pack --sync " + id + "` creates one"}`)
           continue
         }
         const verified = verifyFromRepo(id, ROOT)
@@ -622,7 +634,7 @@ export async function main(argv) {
     }
     case "t1": {
       const store = opt.store ?? storePath()
-      const ids = opt.plugin ? [opt.plugin] : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear", "history"]
+      const ids = opt.plugin ? [opt.plugin] : allPackIds(ROOT).filter((id) => readSnapshot(id, ROOT))
       const versions = opt.versions ? String(opt.versions).split(",") : undefined
       const packs = ids.filter((id) => {
         if (repoAvailable(id)) return true
@@ -643,7 +655,7 @@ export async function main(argv) {
       return
     }
     case "t0-all": {
-      const ids = opt._.length ? opt._ : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear", "history"]
+      const ids = opt._.length ? opt._ : allPackIds(ROOT).filter((id) => readSnapshot(id, ROOT))
       let failed = 0
       for (const id of ids) {
         const report = checkPack(readPack(id), repoAvailable(id) ? pluginRepo(id) : null)

@@ -1,0 +1,99 @@
+{
+  "schema": "oc-pack/1",
+  "id": "boxd",
+  "name": "boxd",
+  "package": "@joe-broadhead/opencode-boxd",
+  "version": "0.0.0",
+  "private": false,
+  "pluginId": "boxd.machines",
+  "rpc": "boxd.machines.tools",
+  "skills": [
+    "boxd"
+  ],
+  "skill_meta": {
+    "boxd": {
+      "name": "boxd",
+      "description_sha256": "1ff72f3273a17e135d781c0b0c93cd55fb907bbe058e97dfe7ee629554475010",
+      "description_chars": 203,
+      "body_lines": 62
+    }
+  },
+  "tools": [
+    {
+      "name": "status",
+      "permission": "boxd_status",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "job",
+      "permission": "boxd_job",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "ensure",
+      "permission": "boxd_ensure",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "submit",
+      "permission": "boxd_submit",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "harvest",
+      "permission": "boxd_harvest",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "sleep",
+      "permission": "boxd_sleep",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "resume",
+      "permission": "boxd_resume",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "image",
+      "permission": "boxd_image",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "drop",
+      "permission": "boxd_drop",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 9,
+    "reads": 2,
+    "writes": 7,
+    "denied": 0,
+    "skills": 1
+  },
+  "digest": "3f0b592d268df2e6348c6b87d6ec276d52f91f638aadbfd373b3dec722caa5e4",
+  "t1": []
+}

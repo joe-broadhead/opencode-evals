@@ -5,7 +5,7 @@
   "id": "granola",
   "name": "Granola",
   "package": "@joe-broadhead/opencode-granola",
-  "version": "0.0.8",
+  "version": "0.0.0",
   "private": false,
   "skills": [
     "granola",
@@ -83,67 +83,74 @@
       "class": "read"
     },
     {
+      "name": "events_list",
+      "permission": "granola_events_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
       "name": "create_folder",
       "permission": "granola_create_folder",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_folder",
       "permission": "granola_update_folder",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "add_note_to_folder",
       "permission": "granola_add_note_to_folder",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "remove_note_from_folder",
       "permission": "granola_remove_note_from_folder",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_private_notes",
       "permission": "granola_update_private_notes",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "generate_summary",
       "permission": "granola_generate_summary",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "give_feedback",
       "permission": "granola_give_feedback",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "export_markdown",
       "permission": "granola_export_markdown",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     }
   ],
   "counts": {
-    "tools": 18,
-    "reads": 10,
-    "writes": 7,
-    "denied": 1,
+    "tools": 19,
+    "reads": 11,
+    "writes": 8,
+    "denied": 0,
     "skills": 2
   },
   "schema": "oc-pack/1",
@@ -152,14 +159,18 @@
       "name": "granola",
       "description_sha256": "063b088bd828024db457dc9834ff05f0b62a880540dca06de1c6b6dcff4afa11",
       "description_chars": 275,
-      "body_lines": 68
+      "body_lines": 70
     },
     "granola-meeting-brief": {
       "name": "granola-meeting-brief",
       "description_sha256": "22af1e5806b1608fe8d63077850b0d951bf0b3ed457fa18b069a200fa242a728",
       "description_chars": 291,
-      "body_lines": 39
+      "body_lines": 41
     }
   },
-  "digest": "2cede6791362603d33a87e6faa1c3fa63e1ecc80bdecaa7bca1a48f52dddc71b"
+  "digest": "0d5c7cc54314d0101164116fa00141afb2090f70fd9750c8cab948071ce9d964",
+  "access": {
+    "key": "access",
+    "default": "all"
+  }
 }

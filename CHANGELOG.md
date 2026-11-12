@@ -45,7 +45,21 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 - `evals verify --all` lists every graded iteration whose grader or case set has moved since it was graded, and the
   scorecard and `evals verify` say so too: a batch graded by an older grader no longer goes stale silently.
 
+- Packs for twelve more plugins (boxd, browse, charts, elevenlabs, github, gws, jobs, plaud, slack, tavily,
+  utilities, voice): 22 in all.
+
 ### Changed
+
+- `evals pack` derives its plugin list from configuration instead of a list of ten in the code: every committed
+  snapshot, and every plugin checkout under `EVALS_PLUGIN_ROOT` or named by `EVALS_REPO_<ID>`. `evals t1` and
+  `evals t0-all` use the same list. A pack records the plugin's `access` option and its default.
+- Every pack was regenerated: each plugin now declares its tools `allow` at its default access, `all`, so 207 tools
+  that were `ask` (135) or `deny` (72) are `allow`, and two tools' `readOnly` flags changed. Tools added: x, granola, linear and
+  wisprflow `events_list`, jira `getContentFormatGuide`, ashby `list_interviews`, and nine notion tools; removed:
+  ashby `get_upcoming_interviews`, notion `notion-update-enabled-skills`. History's pack is at its v0.0.0 checkout.
+- T1's describe check judges a method against the tool's declared effect: a write that resolves `allow` at access
+  `all` is the declaration, not a defect; a tool declared `ask` or `deny` that resolves `allow` still fails.
+- Pack drift prints a changed version or id old -> new, like the tool changes; it printed new -> old.
 
 - The scorecard is titled by the plugin (its pack name), not "X plugin"; it lists the runs an iteration made, one row
   per trial, and counts the declared cases it did not run instead of listing each as `NOT_RUN`. It reports strict pass

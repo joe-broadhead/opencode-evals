@@ -1,0 +1,50 @@
+{
+  "schema": "oc-pack/1",
+  "id": "voice",
+  "name": "Voice",
+  "package": "@joe-broadhead/opencode-voice",
+  "version": "0.0.0",
+  "private": false,
+  "pluginId": "voice.dictation",
+  "rpc": "voice.dictation.tools",
+  "skills": [
+    "voice"
+  ],
+  "skill_meta": {
+    "voice": {
+      "name": "voice",
+      "description_sha256": "cbc39ba0a23c4d7ee4889f375559d5b923487ddbedcf6e8dfbb525bfa9cbb9be",
+      "description_chars": 331,
+      "body_lines": 43
+    }
+  },
+  "tools": [
+    {
+      "name": "status",
+      "permission": "voice_status",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "speak",
+      "permission": "voice_speak",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 2,
+    "reads": 1,
+    "writes": 1,
+    "denied": 0,
+    "skills": 1
+  },
+  "digest": "f605e424c39f52f42a480ddb3a8d9878a56e202ab998c60c4714c8480efcb77d",
+  "t1": []
+}

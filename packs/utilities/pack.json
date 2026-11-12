@@ -1,0 +1,225 @@
+{
+  "schema": "oc-pack/1",
+  "id": "utilities",
+  "name": "Utilities",
+  "package": "@joe-broadhead/opencode-utilities",
+  "version": "0.0.0",
+  "private": false,
+  "pluginId": "utilities.local",
+  "rpc": "utilities.local.tools",
+  "skills": [
+    "utilities-time",
+    "utilities-weather",
+    "utilities-speech"
+  ],
+  "skill_meta": {
+    "utilities-time": {
+      "name": "utilities-time",
+      "description_sha256": "8bef41c52191eb9be50b97a23dd99c2cced3b274a6b9f9912b83d5083bf9f997",
+      "description_chars": 485,
+      "body_lines": 48
+    },
+    "utilities-weather": {
+      "name": "utilities-weather",
+      "description_sha256": "66e623e64434f0f28dec44f6168b9f7e3655e664f35c3b3e95129091b5f01a1d",
+      "description_chars": 382,
+      "body_lines": 43
+    },
+    "utilities-speech": {
+      "name": "utilities-speech",
+      "description_sha256": "631e674ddd8ef0c26026a29827dab2ccb83630e1f46e387d7715e10e13ffc9a2",
+      "description_chars": 376,
+      "body_lines": 46
+    }
+  },
+  "tools": [
+    {
+      "name": "status",
+      "permission": "utilities_status",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "time_now",
+      "permission": "utilities_time_now",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "time_zones",
+      "permission": "utilities_time_zones",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "time_zone_info",
+      "permission": "utilities_time_zone_info",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "time_convert",
+      "permission": "utilities_time_convert",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "time_calendar",
+      "permission": "utilities_time_calendar",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "time_add",
+      "permission": "utilities_time_add",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "time_between",
+      "permission": "utilities_time_between",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "time_format",
+      "permission": "utilities_time_format",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "time_holidays",
+      "permission": "utilities_time_holidays",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "time_business_days",
+      "permission": "utilities_time_business_days",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "timer_set",
+      "permission": "utilities_timer_set",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "timer_get",
+      "permission": "utilities_timer_get",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "timer_list",
+      "permission": "utilities_timer_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "timer_check",
+      "permission": "utilities_timer_check",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "timer_delete",
+      "permission": "utilities_timer_delete",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "weather_geocode",
+      "permission": "utilities_weather_geocode",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "weather_current",
+      "permission": "utilities_weather_current",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "weather_daily",
+      "permission": "utilities_weather_daily",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "weather_hourly",
+      "permission": "utilities_weather_hourly",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "weather_demand_signal",
+      "permission": "utilities_weather_demand_signal",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "weather_summary",
+      "permission": "utilities_weather_summary",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "speech_transcribe",
+      "permission": "utilities_speech_transcribe",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "speech_synthesize",
+      "permission": "utilities_speech_synthesize",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "speech_download",
+      "permission": "utilities_speech_download",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 25,
+    "reads": 21,
+    "writes": 4,
+    "denied": 0,
+    "skills": 3
+  },
+  "digest": "99828ccb43ff24eeecce12235644ff5accca80df69b24018801bbe8f8b0a6c30",
+  "t1": []
+}

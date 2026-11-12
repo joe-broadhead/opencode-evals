@@ -4,7 +4,7 @@
   "id": "linear",
   "name": "Linear",
   "package": "@joe-broadhead/opencode-linear",
-  "version": "0.0.8",
+  "version": "0.0.0",
   "private": false,
   "pluginId": "linear.workspace",
   "skills": [
@@ -15,6 +15,13 @@
     {
       "name": "issues",
       "permission": "linear_issues",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "events_list",
+      "permission": "linear_events_list",
       "effect": "allow",
       "readOnly": true,
       "class": "read"
@@ -309,259 +316,259 @@
     {
       "name": "create_attachment",
       "permission": "linear_create_attachment",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_attachment_from_upload",
       "permission": "linear_create_attachment_from_upload",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_initiative_label",
       "permission": "linear_create_initiative_label",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_issue_label",
       "permission": "linear_create_issue_label",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "delete_attachment",
       "permission": "linear_delete_attachment",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "delete_comment",
       "permission": "linear_delete_comment",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "delete_diff_comment",
       "permission": "linear_delete_diff_comment",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "delete_status_update",
       "permission": "linear_delete_status_update",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "mark_notification",
       "permission": "linear_mark_notification",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "merge_diff",
       "permission": "linear_merge_diff",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "prepare_attachment_upload",
       "permission": "linear_prepare_attachment_upload",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "prepare_file_upload",
       "permission": "linear_prepare_file_upload",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "resolve_diff_thread",
       "permission": "linear_resolve_diff_thread",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "restore_initiative_label",
       "permission": "linear_restore_initiative_label",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "restore_issue_label",
       "permission": "linear_restore_issue_label",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "restore_project_label",
       "permission": "linear_restore_project_label",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "retire_initiative_label",
       "permission": "linear_retire_initiative_label",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "retire_issue_label",
       "permission": "linear_retire_issue_label",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "retire_project_label",
       "permission": "linear_retire_project_label",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_comment",
       "permission": "linear_save_comment",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_diff_comment",
       "permission": "linear_save_diff_comment",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_document",
       "permission": "linear_save_document",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_initiative",
       "permission": "linear_save_initiative",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_initiative_label",
       "permission": "linear_save_initiative_label",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_issue",
       "permission": "linear_save_issue",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_issue_label",
       "permission": "linear_save_issue_label",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_milestone",
       "permission": "linear_save_milestone",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_project",
       "permission": "linear_save_project",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_project_label",
       "permission": "linear_save_project_label",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_release",
       "permission": "linear_save_release",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_release_note",
       "permission": "linear_save_release_note",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "save_status_update",
       "permission": "linear_save_status_update",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "share_issue",
       "permission": "linear_share_issue",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "submit_diff_review",
       "permission": "linear_submit_diff_review",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "unshare_issue",
       "permission": "linear_unshare_issue",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_diff",
       "permission": "linear_update_diff",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     }
   ],
   "counts": {
-    "tools": 78,
-    "reads": 42,
+    "tools": 79,
+    "reads": 43,
     "writes": 36,
     "denied": 0,
     "skills": 2
@@ -572,14 +579,18 @@
       "name": "linear",
       "description_sha256": "e5da19d557981428be87bbef2af5455c7c277049970de2c75339175c773722a9",
       "description_chars": 457,
-      "body_lines": 98
+      "body_lines": 102
     },
     "linear-write": {
       "name": "linear-write",
       "description_sha256": "245a69ca7c0b5cb1a36c9b21f66ad6cf87c0fe6ad51a12167f39f268f8fe50a1",
       "description_chars": 322,
-      "body_lines": 47
+      "body_lines": 50
     }
   },
-  "digest": "ba7e9c7c774c0288367d5d1a5ceef8e2b684d902dae87a59401d74d82639504a"
+  "digest": "8149921dff9a27962377eb544d29add9dc581de0bb94390fa8cc1c85141afb7e",
+  "access": {
+    "key": "access",
+    "default": "all"
+  }
 }

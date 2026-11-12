@@ -1,0 +1,78 @@
+{
+  "schema": "oc-pack/1",
+  "id": "tavily",
+  "name": "Tavily",
+  "package": "@joe-broadhead/opencode-tavily",
+  "version": "0.0.0",
+  "private": false,
+  "pluginId": "tavily.web",
+  "rpc": "tavily.web.tools",
+  "skills": [
+    "tavily",
+    "tavily-research"
+  ],
+  "skill_meta": {
+    "tavily": {
+      "name": "tavily",
+      "description_sha256": "368ba555c12abe5ed43866fc0fedaa053629001a86a4d7a09dbcc39f592d645a",
+      "description_chars": 471,
+      "body_lines": 65
+    },
+    "tavily-research": {
+      "name": "tavily-research",
+      "description_sha256": "bd3369e09be6852649fedda9e6b9aa9d5f2d3c1dd7c1cca830cdaa203db98f48",
+      "description_chars": 339,
+      "body_lines": 41
+    }
+  },
+  "tools": [
+    {
+      "name": "tavily_search",
+      "permission": "tavily_tavily_search",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "tavily_extract",
+      "permission": "tavily_tavily_extract",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "tavily_map",
+      "permission": "tavily_tavily_map",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "tavily_crawl",
+      "permission": "tavily_tavily_crawl",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "tavily_research",
+      "permission": "tavily_tavily_research",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 5,
+    "reads": 5,
+    "writes": 0,
+    "denied": 0,
+    "skills": 2
+  },
+  "digest": "02abb6287ae6f7fe2336cc3ff9ba173bbc657c29e243303a958c3ce4b670b93d",
+  "t1": []
+}

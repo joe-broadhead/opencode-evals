@@ -52,8 +52,14 @@ committed, and nothing in the repository may reference a machine path: `evals pr
 ## Packs
 
 `packs/<id>/pack.json` has two halves. The **derived** half comes from the plugin's own `package.json`
-`jelly` section (`tools` with their permission action and effect, `skills`, `pluginId`, counts) and is
-refreshed with `evals pack --sync`. The **declared** half is written by hand and reviewed: the tools RPC
+`jelly` section (`tools` with their permission action and effect, `skills`, `pluginId`, the `access` option and its
+default, counts) and is refreshed with `evals pack --sync`. The effects are the default access's: at `all`, every
+tool, a write included, is `allow`; `ask-changes` and `read-only` are the plugin's options, not the pack's.
+
+Which plugins have packs is not a list in the code: `evals pack` covers every committed snapshot and every checkout
+configuration points at (each `opencode-<id>` under `EVALS_PLUGIN_ROOT` whose `jelly` declares tools, and each
+`EVALS_REPO_<ID>`). A new checkout is reported as having no snapshot, and `--sync` creates one; a checkout that breaks
+the family's invariants (no plugin id, two tools sharing a permission action) is named and left without a pack. The **declared** half is written by hand and reviewed: the tools RPC
 id, the options the plugin needs in a test host, the fake, and the T1 cases.
 
 A pack with no `fake` has no MCP server in a test host, so its MCP-dependent checks are not attempted — the

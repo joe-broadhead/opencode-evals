@@ -7,7 +7,7 @@
   "schema": "oc-pack/1",
   "name": "History",
   "package": "@joe-broadhead/opencode-history",
-  "version": "0.0.6",
+  "version": "0.0.0",
   "private": false,
   "skills": [
     "history-recall"
@@ -15,9 +15,9 @@
   "skill_meta": {
     "history-recall": {
       "name": "history-recall",
-      "description_sha256": "effbb2100e6576926a68283c63088620557d3ece993d2f429c69b0c11c42f5ae",
-      "description_chars": 555,
-      "body_lines": 87
+      "description_sha256": "23e2378d1e9d250d8ea09bfe5826f1d01184c4d591297e52274638577fee4443",
+      "description_chars": 744,
+      "body_lines": 97
     }
   },
   "tools": [
@@ -80,7 +80,7 @@
     {
       "name": "pin",
       "permission": "history_pin",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     }
@@ -92,7 +92,7 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "492e0f3bfd51f16062ad158f0b9eff5ac07ee7edff3b0c16b87787bcad95a95a",
+  "digest": "c7519b99bc60d00f9f3084a6f0fdac025c714e3743e7b66891e83d2a5b2a743d",
   "vocab": [
     "project",
     "directory",
@@ -126,5 +126,9 @@
     "bash",
     "grep",
     "glob"
-  ]
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  }
 }

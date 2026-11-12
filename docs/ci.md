@@ -47,9 +47,9 @@ Run it through the machine-wide slot like the host and pack stages, because T1 s
 - **test**: `node --test test/*.test.mjs` on Node 22, plus `evals selftest` and `evals compile --check`.
 - **privacy**: `evals privacy --scan`, which reads the tree and the whole git history.
 
-`evals pack` in CI verifies the committed snapshots in `packs/`: schema, digest, counts, the family's
-invariants and the scripted cases. It does not need a plugin checkout, which is why the four plugins that
-are not on GitHub are still covered. On a machine with checkouts the same command reports drift between a
+`evals pack` in CI verifies the committed snapshots in `packs/` (22 plugins): schema, digest, counts, the family's
+invariants and the scripted cases. It does not need a plugin checkout, which is why a plugin that is not on GitHub
+is still covered. On a machine with checkouts the same command reports drift between a
 plugin's live `jelly` declaration and its snapshot; `evals pack --sync` refreshes a snapshot after review.
 
 Both are deterministic and need no secrets. The T1 tier is not in CI: it needs a stock binary, which is a

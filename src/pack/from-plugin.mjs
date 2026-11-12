@@ -4,7 +4,7 @@
 import { readFileSync, existsSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import { sha256 } from "../util/canonical.mjs"
-import { PACK_SCHEMA, packDigest, recomputeCounts, writeSnapshot } from "./snapshot.mjs"
+import { PACK_SCHEMA, packDigest, recomputeCounts, writeSnapshot, snapshotChecks } from "./snapshot.mjs"
 
 /**
  * Where one plugin's checkout is, or null. `EVALS_REPO_<ID>` names one plugin; `EVALS_PLUGIN_ROOT`
@@ -73,6 +73,10 @@ export function derivePack(id, directory = pluginRepo(id)) {
     readOnly: Boolean(tool.readOnly),
     class: classOf(tool),
   }))
+  // The family's one access option: `all` (the default) allows every tool, `ask-changes` asks for the changes,
+  // `read-only` denies them. The tools' declared effects are the default's; the option is recorded beside them.
+  const accessSetting = (jelly.contributes?.settings ?? []).find((setting) => setting?.key === "access")
+  const access = accessSetting ? { key: "access", default: accessSetting.default ?? null } : null
   const skills = (jelly.skills ?? []).map(String)
   const skill_meta = {}
   for (const name of skills) {
@@ -91,6 +95,7 @@ export function derivePack(id, directory = pluginRepo(id)) {
     skills,
     skill_meta,
     tools,
+    ...(access ? { access } : {}),
     counts: recomputeCounts({ tools, skills }),
   }
   return { ...pack, digest: packDigest(pack) }
@@ -134,6 +139,7 @@ export function writePack(id, root = join(import.meta.dirname, "..", ".."), env 
     skills: live.skills,
     skill_meta: live.skill_meta,
     counts: live.counts,
+    ...(live.access ? { access: live.access } : {}),
     ...(declared.options ? { options: declared.options } : {}),
     ...(declared.fake ? { fake: declared.fake } : {}),
     ...(declared.fakeModuleEnv ? { fakeModuleEnv: declared.fakeModuleEnv } : {}),
@@ -145,3 +151,47 @@ export function writePack(id, root = join(import.meta.dirname, "..", ".."), env 
 
 export const packIds = (root) =>
   existsSync(join(root, "packs")) ? readdirSync(join(root, "packs")).filter((name) => existsSync(join(root, "packs", name, "pack.json"))).sort() : []
+
+/**
+ * The plugin checkouts configuration points at: every `opencode-<id>` under EVALS_PLUGIN_ROOT, and every
+ * EVALS_REPO_<ID>, whose package.json declares tools in its `jelly` section. Nothing is assumed about which plugins
+ * exist: a new checkout is found, and one that declares no tools (a library, the harness itself) is not a plugin.
+ */
+export function discoverPlugins(env = process.env) {
+  const found = new Map()
+  const consider = (id, dir) => {
+    const file = join(dir, "package.json")
+    if (!existsSync(file)) return
+    try {
+      const tools = JSON.parse(readFileSync(file, "utf8")).jelly?.tools
+      if (Array.isArray(tools) && tools.length) found.set(id, dir)
+    } catch {
+      // not a readable package.json: not a plugin
+    }
+  }
+  const root = env.EVALS_PLUGIN_ROOT
+  if (root && existsSync(root)) {
+    for (const entry of readdirSync(root, { withFileTypes: true })) {
+      const match = /^opencode-([a-z0-9-]+)$/.exec(entry.name)
+      if (match && entry.isDirectory()) consider(match[1], join(root, entry.name))
+    }
+  }
+  for (const [key, dir] of Object.entries(env)) {
+    const match = /^EVALS_REPO_([A-Z0-9_]+)$/.exec(key)
+    if (match && dir) consider(match[1].toLowerCase().replaceAll("_", "-"), dir)
+  }
+  return [...found.keys()].sort()
+}
+
+/**
+ * Whether a checkout's derived declaration can be a pack: the family's invariants that need nothing but the
+ * declaration (an id, one permission action per tool, ...). The checks about the declared half, and the digest a write recomputes, are left out.
+ */
+export function familyProblems(pack) {
+  return snapshotChecks({ ...pack, rpc: pack.rpc ?? `${pack.pluginId}.tools`, t1: [] })
+    .filter((check) => !check.ok && !["P-06", "P-08", "P-09"].includes(check.id))
+    .map((check) => `${check.id} ${check.name}: ${check.detail}`)
+}
+
+/** Every pack id there is: the committed snapshots and the configured checkouts. */
+export const allPackIds = (root, env = process.env) => [...new Set([...packIds(root), ...discoverPlugins(env)])].sort()

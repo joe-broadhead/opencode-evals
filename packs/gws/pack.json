@@ -1,0 +1,127 @@
+{
+  "schema": "oc-pack/1",
+  "id": "gws",
+  "name": "Google Workspace",
+  "package": "@joe-broadhead/opencode-gws",
+  "version": "0.0.0",
+  "private": false,
+  "pluginId": "google-workspace.gws",
+  "rpc": "google-workspace.gws.tools",
+  "skills": [
+    "opencode-gws",
+    "opencode-gws-recipes"
+  ],
+  "skill_meta": {
+    "opencode-gws": {
+      "name": "opencode-gws",
+      "description_sha256": "da12aa27f3ad276e03b64406afe33c198933ef1e6f244d7c7b707f66146350bc",
+      "description_chars": 428,
+      "body_lines": 81
+    },
+    "opencode-gws-recipes": {
+      "name": "opencode-gws-recipes",
+      "description_sha256": "346795873387c337fab462c8a2dbe60ec5394f2fd539382a683cb8ae9fe6210e",
+      "description_chars": 425,
+      "body_lines": 91
+    }
+  },
+  "tools": [
+    {
+      "name": "status",
+      "permission": "gws.status",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "catalog",
+      "permission": "gws.catalog",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "schema",
+      "permission": "gws.schema",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "read",
+      "permission": "gws.read",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "plan",
+      "permission": "gws.plan",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "events_list",
+      "permission": "gws.events_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "write",
+      "permission": "gws.write",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "export",
+      "permission": "gws.export",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "send",
+      "permission": "gws.send",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "share",
+      "permission": "gws.share",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "delete",
+      "permission": "gws.delete",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "admin",
+      "permission": "gws.admin",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 12,
+    "reads": 6,
+    "writes": 6,
+    "denied": 0,
+    "skills": 2
+  },
+  "digest": "7392986448478b248c87bdf9b939bf46d80ae7f620c3ec21388a77ce08939be2",
+  "t1": []
+}
