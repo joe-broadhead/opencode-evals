@@ -1,0 +1,153 @@
+{
+  "schema": "oc-case/1",
+  "id": "add-zoom",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: add x zoom to a saved temporal line chart",
+  "decision": "Zoom is the x zoom preset on the saved line chart, added with charts_update, with an HTML page (the only format that carries it).",
+  "data_check": null,
+  "prompt": "Let me zoom into the time axis of the daily active users chart in outputs/charts/ in the browser.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "wall_ms": 420000
+  },
+  "seed": "cwd=saved-line",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "patch",
+    "formats"
+  ],
+  "sets": [
+    "corpus",
+    "revise"
+  ],
+  "items": [
+    {
+      "id": "C-PR01",
+      "severity": "blocker",
+      "ask": "It changed the saved chart with charts_update.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.update",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "The new generation asks for x zoom.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.has.zoom.x",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "C-OC02",
+      "severity": "blocker",
+      "ask": "An HTML page was written for it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "outputs/charts/**/*.html",
+          "op": "exists"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "C-OC03",
+      "severity": "major",
+      "ask": "The data is unchanged: 60 daily rows.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.rows.count",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 60
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "C-OC04",
+      "severity": "minor",
+      "ask": "The answer points to the HTML file.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\.html",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The zoom itself is verified by the plugin's browser suite (recipe-x-zoom), not per run: this case grades that the agent asked for the supported preset and the format that carries it.",
+      "line": 33
+    }
+  ],
+  "hashes": {
+    "source_sha256": "81d239ab9fff937ed52173dc91a13132f1beec33e2c13ca8eea772d35be8feda"
+  }
+}

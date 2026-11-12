@@ -1,0 +1,246 @@
+{
+  "schema": "oc-case/1",
+  "id": "explicit-aggregation",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: explicit aggregation over repeated groups (data/sales.csv has 6 rows per region)",
+  "decision": "Repeated groups are combined with an explicit aggregate the request implies (total = sum), never by an implicit default; the chart's values are the true totals.",
+  "data_check": null,
+  "prompt": "Using data/sales.csv, chart total Q1 revenue by region as a bar chart, and save it so I can restyle it later.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 16,
+    "wall_ms": 420000
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "document"
+  ],
+  "sets": [
+    "corpus",
+    "create"
+  ],
+  "items": [
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "A chart document was saved.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC02",
+      "severity": "blocker",
+      "ask": "Revenue is summed per region: the saved chart's own rows give North 510, South 390, East 300 and West 192.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.North",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 510
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.South",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 390
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.East",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 300
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.West",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 192
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "C-OC03",
+      "severity": "major",
+      "ask": "The chart binds region as the category and revenue_eur as the measure.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.binding.category",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "region"
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.binding.value",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "revenue_eur"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "C-PR01",
+      "severity": "major",
+      "ask": "It drew through a typed recipe document (charts_quick with document), not a raw spec.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.quick",
+          "n": 1,
+          "arg": "args.document",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "C-EF01",
+      "severity": "minor",
+      "ask": "Drawn on the first attempt: one charts_quick call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.quick",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    },
+    {
+      "id": "C-TR01",
+      "severity": "minor",
+      "ask": "The charts skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "charts"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    },
+    {
+      "id": "C-SF01",
+      "severity": "blocker",
+      "ask": "No saved chart sums anything other than revenue per region with sum: no mean, count or unaggregated rows.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.has.aggregate.mean",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": false
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.has.aggregate.count",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": false
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The expected totals are worked out by hand from fixtures/data/sales.csv (three months by two channels per region); the adapter recomputes them from the rows the saved chart captured.",
+      "line": 46
+    }
+  ],
+  "hashes": {
+    "source_sha256": "619e37fdda11fbab8155d06948d8ce488247c643c36a2b7e8603ba0083674656"
+  }
+}

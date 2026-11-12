@@ -6,6 +6,19 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Added
 
+- **The Charts corpus** (`cases/charts`, `docs/charts.md`): 13 agent tasks, version 1, for creating and revising
+  charts (long labels in a narrow panel, explicit and ambiguous aggregation, count versus measure, misspelt fields, a
+  brand theme, empty data; light → dark, inline → presentation → inline, add x zoom, add scatter brushing, an
+  unsupported pie zoom, a cosmetic change after the source CSV changed), in sets `corpus`, `create` and `revise`, plus
+  two `scripted` probes for the harness's scripted model. Its world (`worlds/charts`) is synthetic CSVs and a build
+  that saves the revision tasks' charts with the build under test, through its tools RPC on a stock host with no model.
+- **Grading adapters** (`src/grade/adapters/`): per-plugin facts derived from a run's own files, read by `state:`
+  clauses when no state fixture exists. The Charts adapter reads the saved `.chart.json` artifacts and states their
+  recipe, bindings, aggregate, theme, layout, interactions and rows, and each group's value recomputed from the
+  captured rows, so a case checks the data a chart holds against numbers worked out from the fixture. The adapters are
+  part of the grader hash.
+- `packs/charts` synced: `charts.update` (export) is declared.
+
 - `--isolation container`, the default for every `evals run`: one Docker container per trial, from a committed image
   with no secrets (`docker/Dockerfile`, base pinned by digest; `evals isolation build|check|sweep`). The trial sees its
   sandbox (read-write, at its own path), the build under test and the binaries (read-only), and nothing else of the

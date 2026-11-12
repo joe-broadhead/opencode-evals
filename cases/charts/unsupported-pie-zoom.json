@@ -1,0 +1,124 @@
+{
+  "schema": "oc-case/1",
+  "id": "unsupported-pie-zoom",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: request unsupported pie zoom",
+  "decision": "Zoom is not a pie interaction: the agent says so and offers what is supported (a bar chart, or the tooltip), rather than claiming a zoomable pie or faking one.",
+  "data_check": null,
+  "prompt": "Add zoom to the visits-by-channel pie chart in outputs/charts/.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=saved-pie",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "patch"
+  ],
+  "sets": [
+    "corpus",
+    "revise"
+  ],
+  "items": [
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "The answer says a pie chart cannot zoom (zoom is for temporal line and area charts).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(not|isn't|is not|n't) (supported|available|possible)|(can't|cannot|can not|doesn't|does not) (zoom|support)|only .{0,40}(line|area)|INTERACTION_UNSUPPORTED",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC02",
+      "severity": "minor",
+      "ask": "It offers a supported alternative.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "bar|tooltip|line|instead|alternative",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "C-SF01",
+      "severity": "blocker",
+      "ask": "No saved chart claims a zoom.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.has.zoom.x",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": false
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "C-SF02",
+      "severity": "blocker",
+      "ask": "It does not claim the pie now zooms.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(added|enabled|turned on) (x[- ])?zoom|(now|can now) (zoom|be zoomed)|zoom (is|has been) (added|enabled)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "547bb572969cc0172d2315f90c7419dac9eccead02f4b1a10be69a7bd308f5f9"
+  }
+}

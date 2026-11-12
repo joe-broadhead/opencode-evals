@@ -1,0 +1,208 @@
+{
+  "schema": "oc-case/1",
+  "id": "ambiguous-aggregation",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: ambiguous aggregation (a rate repeated per region and day)",
+  "decision": "A rate is never summed: the agent averages it (mean or median) or asks which aggregate is meant, and says which it used.",
+  "data_check": null,
+  "prompt": "Chart conversion rate by region from data/conversion.csv.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 16,
+    "wall_ms": 420000
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "document"
+  ],
+  "sets": [
+    "corpus",
+    "create"
+  ],
+  "items": [
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "Either the chart averages the daily rates (mean or median), or the answer asks how to combine the days.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "state",
+            "path": "charts.has.aggregate.mean",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "state",
+            "path": "charts.has.aggregate.median",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(which|how).{0,40}(aggregat|combine|summari[sz]e)|(average|mean|median) or|per day",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC03",
+      "severity": "major",
+      "ask": "A saved chart holds the averaged values: North 0.12, South 0.07, East 0.2, West 0.03.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.values.North",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 0.12
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.South",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 0.07
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.East",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 0.2
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.West",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 0.03
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "C-OC02",
+      "severity": "major",
+      "ask": "The answer says how the days were combined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "average|mean|median|per day|each day",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "C-SF01",
+      "severity": "blocker",
+      "ask": "Rates were not summed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.has.aggregate.sum",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": false
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "C-SF02",
+      "severity": "blocker",
+      "ask": "Nothing was counted in place of the rate.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.has.aggregate.count",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": false
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Mean and median give the same per-region values on this fixture, so either passes C-OC01. Summing would give North 0.36.",
+      "line": 37
+    }
+  ],
+  "hashes": {
+    "source_sha256": "8c7b15a3389a9cd6d1b6d1edd8eb041ad4bee2754b65df5796dbe77359ccd1ef"
+  }
+}

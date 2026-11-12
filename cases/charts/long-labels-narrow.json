@@ -1,0 +1,194 @@
+{
+  "schema": "oc-case/1",
+  "id": "long-labels-narrow",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: long labels in a narrow panel (eight categories of 50–60 characters)",
+  "decision": "The chart is drawn at the panel's exact outer size with every category kept; fitting is the layout planner's job (wrapping, a horizontal bar), never dropping categories or shrinking the size request.",
+  "data_check": null,
+  "prompt": "I need a chart of ticket volume per category from data/support_tickets.csv for a narrow sidebar panel: 360 px wide and 480 px tall. Keep every category and keep the labels readable.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 16,
+    "wall_ms": 420000
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "document",
+    "data"
+  ],
+  "sets": [
+    "corpus",
+    "create"
+  ],
+  "items": [
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "A chart was saved at exactly 360 × 480 outer pixels.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.width",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 360
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.height",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 480
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC02",
+      "severity": "blocker",
+      "ask": "Every one of the eight categories is in the saved chart.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.rows.count",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 8
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "C-OC03",
+      "severity": "major",
+      "ask": "It is a bar chart (horizontal or vertical) of tickets per category.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.binding.value",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "tickets"
+          }
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "state",
+            "path": "charts.has.recipe.horizontal_bar",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "state",
+            "path": "charts.has.recipe.bar",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "C-SF01",
+      "severity": "blocker",
+      "ask": "No category was filtered out to make it fit: no data.transform in a charts_quick or charts_render call (document or raw spec).",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-arg",
+          "tool": "charts.quick",
+          "arg": "args.document.chart.data.transform",
+          "op": "present"
+        },
+        {
+          "kind": "absent-arg",
+          "tool": "charts.render",
+          "arg": "args.document.chart.data.transform",
+          "op": "present"
+        },
+        {
+          "kind": "absent-arg",
+          "tool": "charts.render",
+          "arg": "args.data.transform",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A saved artifact at 360 × 480 means the planner met the inline profile's 11 px label floor: an unsatisfiable layout is refused with LAYOUT_UNSATISFIABLE and saves nothing.",
+      "line": 37
+    }
+  ],
+  "hashes": {
+    "source_sha256": "67b7f65a079830cfc064ba816bc7d6dc1dd9c354e9c8f7c9c6bd968a99381b3d"
+  }
+}

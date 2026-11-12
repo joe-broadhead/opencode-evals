@@ -1,0 +1,9 @@
+{
+  "plugin": "charts",
+  "epoch": 2,
+  "cases": 15,
+  "items": 64,
+  "cases_sha256": "790c0946ce9311fce0c7e06227e1786fe11ef35db31450cb9fe2352508cd6c84",
+  "grader_sha256": "b9d87f748169287832f9c65c0c36a742b6647e8d2c979e7c30c7dd0dd5a4fb9e",
+  "frozen_at": "2026-11-12T06:25:57.575Z"
+}

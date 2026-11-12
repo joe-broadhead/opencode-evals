@@ -1,0 +1,139 @@
+{
+  "schema": "oc-case/1",
+  "id": "add-scatter-brush",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: add interval brushing to a saved scatter plot",
+  "decision": "Selecting points by dragging is the interval brush preset on the scatter, added with charts_update, with an HTML page.",
+  "data_check": null,
+  "prompt": "On the spend vs conversions scatter in outputs/charts/, I want to drag a box to select a group of campaigns.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "wall_ms": 420000
+  },
+  "seed": "cwd=saved-scatter",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "patch",
+    "formats"
+  ],
+  "sets": [
+    "corpus",
+    "revise"
+  ],
+  "items": [
+    {
+      "id": "C-PR01",
+      "severity": "blocker",
+      "ask": "It changed the saved chart with charts_update.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.update",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "The new generation asks for the interval brush.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.has.brush.interval",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "C-OC02",
+      "severity": "blocker",
+      "ask": "An HTML page was written for it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "outputs/charts/**/*.html",
+          "op": "exists"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "C-OC03",
+      "severity": "major",
+      "ask": "The data and series are unchanged: 12 campaigns, coloured by channel.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.rows.count",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 12
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.binding.series",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "channel"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The brush itself is verified by the plugin's browser suite (recipe-interval-brush), not per run.",
+      "line": 31
+    }
+  ],
+  "hashes": {
+    "source_sha256": "1b9511df09e508c79b90333a847d248da1193748b4b868d52602917e79562808"
+  }
+}

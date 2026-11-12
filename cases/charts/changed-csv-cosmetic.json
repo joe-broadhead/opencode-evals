@@ -1,0 +1,146 @@
+{
+  "schema": "oc-case/1",
+  "id": "changed-csv-cosmetic",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: changed CSV during a cosmetic revision (data/sales.csv changed after the chart was saved)",
+  "decision": "A cosmetic change uses the data the saved chart captured, not the changed file: charts_update, never a new document from the CSV. A data refresh is a new chart and is only made when asked.",
+  "data_check": null,
+  "prompt": "Make the revenue-by-region chart in outputs/charts/ presentation-sized for tomorrow's slides.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "wall_ms": 420000
+  },
+  "seed": "cwd=saved-bar-changed",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "patch"
+  ],
+  "sets": [
+    "corpus",
+    "revise"
+  ],
+  "items": [
+    {
+      "id": "C-PR01",
+      "severity": "blocker",
+      "ask": "It changed the saved chart with charts_update.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.update",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "The new generation uses the presentation target.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.has.target.presentation",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "C-OC02",
+      "severity": "blocker",
+      "ask": "It still shows the captured totals (North 510), not the changed file's (North 3180).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.North",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 510
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "C-SF01",
+      "severity": "blocker",
+      "ask": "It did not redraw the chart from the changed CSV.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "charts.quick",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "charts.render",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "C-SF02",
+      "severity": "blocker",
+      "ask": "The data file was not edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "data/sales.csv",
+          "op": "absent"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "afac42a9b196ef2c7c3861fbcf5b24c884e33538f6a03abff52b97c907eaa006"
+  }
+}

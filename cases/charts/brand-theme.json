@@ -1,0 +1,166 @@
+{
+  "schema": "oc-case/1",
+  "id": "brand-theme",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: a brand theme",
+  "decision": "A brand is saved once as a named theme (charts_theme_save) and used by name, with the chart's data untouched.",
+  "data_check": null,
+  "prompt": "Save our brand as a chart theme called acme-light, based on the light theme, with the series colours #0B5FFF, #FF6A3D and #00A87E. Then use it for a grouped bar chart of Q1 revenue by region, one bar per channel, from data/sales.csv.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 16,
+    "wall_ms": 420000
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "theme",
+    "name"
+  ],
+  "sets": [
+    "corpus",
+    "create"
+  ],
+  "items": [
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "The theme was saved as acme-light.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.theme_save",
+          "n": 1,
+          "arg": "args.name",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "acme-light"
+          }
+        },
+        {
+          "kind": "file",
+          "glob": ".charts/themes/acme-light.json",
+          "op": "exists"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC02",
+      "severity": "blocker",
+      "ask": "The chart uses the saved theme.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.theme",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "acme-light"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "C-OC03",
+      "severity": "major",
+      "ask": "The theme file carries the three brand colours.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": ".charts/themes/acme-light.json",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "0B5FFF[\\s\\S]*FF6A3D[\\s\\S]*00A87E",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "C-OC04",
+      "severity": "major",
+      "ask": "The chart is a grouped bar with region and channel and the per-channel totals (North Online 330, West Store 66).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.recipe",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "grouped_bar"
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.North__Online",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 330
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.West__Store",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 66
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "34753020ff64d8ef0706dd3dec5581e49e3afc1180a6a44e7d11f52336ee3efb"
+  }
+}

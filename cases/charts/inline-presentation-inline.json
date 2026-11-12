@@ -1,0 +1,172 @@
+{
+  "schema": "oc-case/1",
+  "id": "inline-presentation-inline",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: inline → presentation → inline on a saved chart",
+  "decision": "Two layout updates in a row: a presentation version (1280 × 720, the presentation profile), then the inline size again from that one; neither changes the data.",
+  "data_check": null,
+  "prompt": "I'm putting the revenue-by-region chart (outputs/charts/) on a slide: make a presentation-sized version. Then make a version back at the normal inline size for the written report, starting from the slide version.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 18,
+    "wall_ms": 420000
+  },
+  "seed": "cwd=saved-bar",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "patch"
+  ],
+  "sets": [
+    "corpus",
+    "revise"
+  ],
+  "items": [
+    {
+      "id": "C-PR01",
+      "severity": "blocker",
+      "ask": "Two updates were made.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.update",
+          "op": ">=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "One new generation uses the presentation target and one the inline target.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.has.target.presentation",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.has.target.inline",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "C-OC02",
+      "severity": "blocker",
+      "ask": "The two new generations are exactly 1280 wide (presentation) and 720 wide (inline), and nothing else.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.width",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "1280,720"
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.height",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "420,720"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "C-OC03",
+      "severity": "blocker",
+      "ask": "Every generation keeps the same rows and totals.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.rows.same",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.North",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 510
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "C-SF01",
+      "severity": "major",
+      "ask": "It did not redraw the chart from scratch with a new document.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "charts.quick",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "9aae80b47726cf52b17ffaa6a733994f360e93eb0b7da8b61729da6079bb17f8"
+  }
+}

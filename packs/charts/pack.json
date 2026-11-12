@@ -14,15 +14,15 @@
   "skill_meta": {
     "charts": {
       "name": "charts",
-      "description_sha256": "dad9a8b72a97d85ba6f885726e417724e6dddcc0c5995c451de89aa071cc9c72",
-      "description_chars": 272,
-      "body_lines": 47
+      "description_sha256": "5884a6c987807ecabd813b54b741567974eb3465678a1e9d30302af6199f9dbd",
+      "description_chars": 340,
+      "body_lines": 44
     },
     "charts-cookbook": {
       "name": "charts-cookbook",
-      "description_sha256": "151b92ea7cd229d08e198aec8bff195e535a7941d769a070ed73a2fb3bede97b",
-      "description_chars": 181,
-      "body_lines": 539
+      "description_sha256": "b50ad3dc61013e06e2843b4235084aa486c73129874d1731fb9fcc5b18a687a5",
+      "description_chars": 278,
+      "body_lines": 771
     }
   },
   "tools": [
@@ -46,6 +46,13 @@
       "effect": "allow",
       "readOnly": true,
       "class": "read"
+    },
+    {
+      "name": "update",
+      "permission": "charts_update",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
     },
     {
       "name": "recommend",
@@ -88,12 +95,12 @@
     "default": "all"
   },
   "counts": {
-    "tools": 8,
+    "tools": 9,
     "reads": 5,
-    "writes": 3,
+    "writes": 4,
     "denied": 0,
     "skills": 2
   },
-  "digest": "ba6295f8e42303edf46f95c27b6f3d5b8fa4bb824feb4b5262475b53c522d9ec",
+  "digest": "fb4eca6fd7db13b1ee6212916e575039f17c1d49831d283b9bd30ea2cf76408f",
   "t1": []
 }
