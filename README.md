@@ -24,7 +24,7 @@ Or run it from a checkout: `node bin/evals <command>`.
 ## Use
 
 ```sh
-evals compile                      # markdown cases -> oc-case/1 JSON
+evals compile --plugin history     # markdown cases -> oc-case/1 JSON (--all for every plugin, --check to write nothing)
 evals run --plugin history --iteration v1-a --model claude-agent/haiku --auth claude-agent --trials 3
                                    # one sandboxed live run per case and trial, under the run caps
 evals trace --iteration v1-a --plugin history   # recordings -> oc-trace/1

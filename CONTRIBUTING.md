@@ -6,7 +6,7 @@ Requires Node 22. The tool has no runtime dependencies.
 
 ```sh
 npm test                     # 70-odd deterministic tests: no model, no network
-node bin/evals compile       # compile the case set
+node bin/evals compile --all # compile every case set (--check writes nothing and fails on a change)
 node bin/evals selftest      # the gold cases that test the graders
 ```
 

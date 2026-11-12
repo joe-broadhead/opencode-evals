@@ -15,7 +15,7 @@ jobs:
           node-version: "22"
       - run: npm test
       - run: node bin/evals selftest
-      - run: node bin/evals compile --check
+      - run: node bin/evals compile --all --check
       - run: node bin/evals pack
 
   privacy:

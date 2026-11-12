@@ -44,7 +44,8 @@ Run it through the machine-wide slot like the host and pack stages, because T1 s
 
 `.github/workflows/ci.yml` runs two jobs:
 
-- **test**: `node --test test/*.test.mjs` on Node 22, plus `evals selftest` and `evals compile --check`.
+- **test**: `node --test test/*.test.mjs` on Node 22, plus `evals selftest` and `evals compile --all --check`, which
+  fails when a committed case JSON is not what its markdown compiles to.
 - **privacy**: `evals privacy --scan`, which reads the tree and the whole git history.
 
 `evals pack` in CI verifies the committed snapshots in `packs/` (22 plugins): schema, digest, counts, the family's

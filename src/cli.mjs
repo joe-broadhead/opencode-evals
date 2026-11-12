@@ -1,6 +1,6 @@
 // The CLI. Every subcommand is deterministic: it reads files, computes, and writes files.
 //
-//   evals compile  [--plugin x] [--check]     markdown cases -> oc-case/1 JSON
+//   evals compile  --plugin x | --all [--check]   markdown cases -> oc-case/1 JSON; --check writes nothing, fails on a change
 //   evals trace    --iteration nx6 [--plugin x] [--from DIR] [--out DIR]
 //   evals grade    --iteration nx6 [--plugin x] [--cases DIR] [--traces DIR] [--raw DIR] [--out DIR]
 //   evals lock     [--plugin x] [--epoch N]
@@ -293,19 +293,39 @@ function batchSummary(iteration, results, caseSet, plugin = caseSet[0]?.plugin ?
   }
 }
 
+const usage = () => {
+  const lines = read(fileURLToPath(import.meta.url)).split("\n")
+  const end = lines.findIndex((line) => !line.startsWith("//"))
+  return lines.slice(0, end).map((line) => line.replace(/^\/\/ ?/, "")).join("\n")
+}
+
 export async function main(argv) {
   const command = argv[0]
   const opt = args(argv.slice(1))
+  // `--help` never runs a command: `compile --help` used to compile and rewrite the x cases.
+  if (!command || opt.help || argv.includes("-h") || command === "help") {
+    console.log(usage())
+    return
+  }
   switch (command) {
     case "compile": {
-      const plugin = opt.plugin ?? "x"
-      const compiled = compileAll(plugin, { check: Boolean(opt.check) })
-      const cases = compiled.map((c) => c.caseObject)
-      const share = codedShare(cases)
-      for (const { caseObject, changed, file } of compiled) {
-        console.log(`${changed ? "wrote" : "same "} ${file.replace(/\.md$/, ".json")}  items ${caseObject.items.length}`)
+      if (!opt.plugin && !opt.all) throw new Error("evals compile --plugin <id>, or --all for every cases/<id>; add --check to write nothing")
+      const plugins = opt.all ? readdirSync(path("cases")).filter((name) => listCases(path("cases", name)).length).sort() : [opt.plugin]
+      let changes = 0
+      for (const plugin of plugins) {
+        const compiled = compileAll(plugin, { check: Boolean(opt.check) })
+        const cases = compiled.map((c) => c.caseObject)
+        const share = codedShare(cases)
+        for (const { caseObject, changed, file } of compiled) {
+          if (changed) changes++
+          if (changed || !opt.check) console.log(`${changed ? (opt.check ? "stale" : "wrote") : "same "} ${plugin}/${file.replace(/\.md$/, ".json")}  items ${caseObject.items.length}`)
+        }
+        console.log(`${plugin}: cases ${cases.length}  items ${share.total}  coded ${share.coded} (${Math.round(share.share * 100)}%)  digest ${short(casesDigest(cases))}`)
       }
-      console.log(`cases ${cases.length}  items ${share.total}  coded ${share.coded} (${Math.round(share.share * 100)}%)  digest ${short(casesDigest(cases))}`)
+      if (opt.check && changes) {
+        console.log(`${changes} compiled case(s) differ from their markdown: run \`evals compile --plugin <id>\` and commit the JSON`)
+        process.exitCode = 1
+      }
       return
     }
     case "lock": {
@@ -797,6 +817,7 @@ export async function main(argv) {
       return
     }
     default:
-      console.log(read(path("README.md")).split("\n").slice(0, 30).join("\n"))
+      console.log(`unknown command ${JSON.stringify(command)}\n\n${usage()}`)
+      process.exitCode = 2
   }
 }

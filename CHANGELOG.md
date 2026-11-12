@@ -56,6 +56,11 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Changed
 
+- `evals compile` needs `--plugin <id>` or `--all`: without them it compiled `x` and rewrote its JSON, and
+  `compile --help` did the same. `--help` (and `-h`) on any command prints the usage and runs nothing; an unknown
+  command is an error. `compile --check` writes nothing and exits non-zero when a committed JSON is stale; CI runs
+  `compile --all --check`. The x case JSON is recompiled: it lacked the `seed` field the compiler emits.
+
 - An argument that was not passed now satisfies `!=`, `not-matches` and `excludes` instead of failing them.
 
 - The tool selector: `history.*` also selects the direct `history_*` tools (`history_pin`, or every tool when Code
