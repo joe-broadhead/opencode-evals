@@ -15,9 +15,61 @@ const summaryOf = (checks) => ({
   unsupported: checks.filter((c) => c.state === "unsupported").length,
 })
 
-/** One (plugin, version) run. */
+/**
+ * The scripted cases in groups, one per plugin options value: a case with its own `options` (an access mode) needs a
+ * host started with them. The pack's own options come first, and their group also runs the host-level checks.
+ */
+export function optionGroups(pack) {
+  const groups = new Map()
+  const keyOf = (options) => JSON.stringify(options ?? null)
+  groups.set(keyOf(pack.options), { options: pack.options ?? null, label: null, cases: [] })
+  for (const caseDef of pack.t1 ?? []) {
+    const options = caseDef.options ?? pack.options ?? null
+    const key = keyOf(options)
+    if (!groups.has(key)) groups.set(key, { options, label: options?.access ?? `options-${groups.size}`, cases: [] })
+    groups.get(key).cases.push(caseDef)
+  }
+  return [...groups.values()]
+}
+
+/**
+ * The effect each tool should resolve to under an access value (the family's one option): `all` keeps the declared
+ * effects, `ask-changes` asks for every change, `read-only` denies them. Reads are never touched, and a tool declared
+ * deny stays denied.
+ */
+export function toolsAt(pack, options) {
+  const access = options?.access ?? pack.access?.default ?? "all"
+  if (!pack.access || access === "all") return pack.tools
+  const change = (tool) => tool.class === "write" || tool.class === "destructive"
+  return (pack.tools ?? []).map((tool) => (!change(tool) || tool.effect === "deny" ? tool : { ...tool, effect: access === "read-only" ? "deny" : "ask" }))
+}
+
+/** One (plugin, version) run: a host per options group. */
 export async function runOne({ pack, version, store, fakeModule }) {
-  const runDir = join(store, "t1", pack.id, version)
+  const checks = []
+  for (const group of optionGroups(pack)) {
+    if (group.label && !group.cases.length) continue
+    const found = await runGroup({ pack: { ...pack, tools: toolsAt(pack, group.options), options: group.options ?? undefined, t1: group.cases }, version, store, fakeModule, label: group.label })
+    checks.push(...(group.label ? found.map((check) => ({ ...check, id: `${check.id}@${group.label}` })) : found))
+  }
+  const result = {
+    plugin: pack.id,
+    version,
+    harness: "0.1.0-dev",
+    host: { version, binary: stockBinary(version) },
+    counts: pack.counts,
+    summary: summaryOf(checks),
+    checks,
+    ran_at: new Date().toISOString(),
+  }
+  const out = join(store, "results", "t1", pack.id)
+  mkdirSync(out, { recursive: true })
+  writeFileSync(join(out, `${version}.json`), `${JSON.stringify(result, null, 2)}\n`)
+  return result
+}
+
+async function runGroup({ pack, version, store, fakeModule, label }) {
+  const runDir = join(store, "t1", pack.id, label ? `${version}-${label}` : version)
   mkdirSync(runDir, { recursive: true })
   const captureOut = join(runDir, "capture.jsonl")
   writeFileSync(captureOut, "")
@@ -71,20 +123,7 @@ export async function runOne({ pack, version, store, fakeModule }) {
   } finally {
     await stopAll()
   }
-  const result = {
-    plugin: pack.id,
-    version,
-    harness: "0.1.0-dev",
-    host: { version, binary: stockBinary(version) },
-    counts: pack.counts,
-    summary: summaryOf(checks),
-    checks,
-    ran_at: new Date().toISOString(),
-  }
-  const out = join(store, "results", "t1", pack.id)
-  mkdirSync(out, { recursive: true })
-  writeFileSync(join(out, `${version}.json`), `${JSON.stringify(result, null, 2)}\n`)
-  return result
+  return checks
 }
 
 /** The in-process SDK run: the checks a direct executor call can settle, with no model. */

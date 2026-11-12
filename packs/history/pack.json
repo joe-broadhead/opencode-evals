@@ -3,7 +3,59 @@
   "pluginId": "history.sessions",
   "rpc": "history.sessions.tools",
   "statusRpc": "history.sessions",
-  "t1": [],
+  "t1": [
+    {
+      "kind": "allowed",
+      "tool": "pin",
+      "permission": "history_pin",
+      "prompt": "[[mock:tool:history_pin:{\"action\":\"list\"}]] list my pins",
+      "args": {
+        "action": "list"
+      }
+    },
+    {
+      "kind": "allowed",
+      "tool": "sessions",
+      "permission": "history_sessions",
+      "prompt": "[[mock:tool:history_sessions:{\"limit\":1}]] list one session",
+      "args": {
+        "limit": 1
+      }
+    },
+    {
+      "kind": "allowed",
+      "tool": "sql",
+      "permission": "history_sql",
+      "prompt": "[[mock:tool:history_sql:{\"sql\":\"select count(*) from v_sessions\"}]] count the sessions",
+      "args": {
+        "sql": "select count(*) from v_sessions"
+      }
+    },
+    {
+      "kind": "asked",
+      "tool": "pin",
+      "permission": "history_pin",
+      "options": {
+        "access": "ask-changes"
+      },
+      "prompt": "[[mock:tool:history_pin:{\"action\":\"list\"}]] list my pins",
+      "args": {
+        "action": "list"
+      }
+    },
+    {
+      "kind": "refused",
+      "tool": "pin",
+      "permission": "history_pin",
+      "options": {
+        "access": "read-only"
+      },
+      "prompt": "[[mock:tool:history_pin:{\"action\":\"list\"}]] list my pins",
+      "args": {
+        "action": "list"
+      }
+    }
+  ],
   "schema": "oc-pack/1",
   "name": "History",
   "package": "@joe-broadhead/opencode-history",
@@ -92,7 +144,7 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "c7519b99bc60d00f9f3084a6f0fdac025c714e3743e7b66891e83d2a5b2a743d",
+  "digest": "16701fa9264dfc2ae0145305dea1fdf9df9a44da5b50f7331907ad65dbbfb6c3",
   "vocab": [
     "project",
     "directory",

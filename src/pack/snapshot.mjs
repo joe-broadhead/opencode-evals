@@ -32,7 +32,7 @@ export function recomputeCounts(pack) {
   }
 }
 
-const T1_KINDS = new Set(["asked", "refused", "capped"])
+const T1_KINDS = new Set(["asked", "refused", "capped", "allowed"])
 
 /**
  * The checks that need no checkout: the snapshot against itself and against the family's invariants.
@@ -58,7 +58,7 @@ export function snapshotChecks(pack) {
   add(
     "P-08",
     "every scripted case names a declared tool and a known kind",
-    (pack.t1 ?? []).every((entry) => T1_KINDS.has(entry.kind) && resolves(String(entry.tool)) && (entry.args === undefined || (typeof entry.args === "object" && entry.args !== null))),
+    (pack.t1 ?? []).every((entry) => T1_KINDS.has(entry.kind) && resolves(String(entry.tool)) && [entry.args, entry.options].every((value) => value === undefined || (typeof value === "object" && value !== null && !Array.isArray(value)))),
     `${(pack.t1 ?? []).length} case(s)`,
   )
   add("P-09", "the tools RPC is named and belongs to this plugin", typeof pack.rpc === "string" && pack.rpc.startsWith(String(pack.pluginId ?? "").split(".").slice(0, 1)[0]), pack.rpc ?? "none")
