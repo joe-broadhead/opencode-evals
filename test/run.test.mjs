@@ -1101,3 +1101,60 @@ test("a sign-in that cannot be re-read before a trial makes it infra: auth, and 
   assert.notEqual(cli.status, 0, cli.stdout + cli.stderr)
   f.cleanup()
 })
+
+test("a kept sandbox is scrubbed of the token and its run's password as soon as its trial ends, so a SIGKILLed runner leaves none", async () => {
+  const f = fixture()
+  addCase(f.casesDir, "sleepy", "")
+  const sleepy = JSON.parse(readFileSync(join(f.casesDir, "sleepy.json"), "utf8"))
+  writeFileSync(join(f.casesDir, "sleepy.json"), JSON.stringify({ ...sleepy, prompt: "please sleep" }))
+  const { spawn } = await import("node:child_process")
+  const env = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const cli = spawn(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "kill9", "--auth", "claude-agent", "--model", "claude-agent/haiku", "--isolation", "none", "--unsafe-no-isolation", "--keep", "--keep-credentials", "--arm", f.arm, "--cases-dir", f.casesDir, "--cases", "sleepy,demo-b", "--parallel", "1"], { env, stdio: ["ignore", "pipe", "pipe"] })
+  const exited = new Promise((done) => cli.on("exit", (status, signal) => done(signal ?? status)))
+  // demo-b runs first and ends; sleepy then hangs, so the batch has not ended when demo-b's sandbox is read.
+  const batchDir = await until("the sleeping run", () => {
+    const batch = readdirSync(f.tmp).find((n) => n.startsWith("evals-run-kill9-"))
+    const home = batch && join(f.tmp, batch, "runs", "sleepy.t1", "home")
+    return home && existsSync(join(home, "run-child.pid")) && existsSync(join(home, "run.json")) ? join(f.tmp, batch) : null
+  })
+  const sleepHome = join(batchDir, "runs", "sleepy.t1", "home")
+  const pids = [JSON.parse(readFileSync(join(sleepHome, "run.json"), "utf8")).pid, Number(readFileSync(join(sleepHome, "run-child.pid"), "utf8")), Number(readFileSync(join(sleepHome, "serve-child.pid"), "utf8")), JSON.parse(readFileSync(join(sleepHome, readdirSync(sleepHome).find((n) => /^serve-\d+\.json$/.test(n))), "utf8")).pid]
+  const kept = join(batchDir, "runs", "demo-b.t1")
+  const contents = () => {
+    const out = []
+    const walk = (dir) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name)
+        if (entry.isDirectory()) walk(path)
+        else if (entry.isFile()) out.push(readFileSync(path, "utf8"))
+      }
+    }
+    walk(kept)
+    return out.join("\n")
+  }
+  const check = (when) => {
+    const run = JSON.parse(readFileSync(join(kept, "home", "run.json"), "utf8"))
+    assert.match(run.env.OPENCODE_PASSWORD, /^\*+$/, `${when}: the run's password is masked`)
+    assert.equal(run.env.CLAUDE_CODE_OAUTH_TOKEN, "*".repeat(TOKEN.length), `${when}: the token is masked`)
+    assert.equal(contents().includes(TOKEN), false, `${when}: no token anywhere in the kept sandbox`)
+  }
+  check("right after its trial, before the batch ends")
+  cli.kill("SIGKILL")
+  assert.equal(await exited, "SIGKILL")
+  check("after the runner was SIGKILLed")
+  for (const pid of pids) {
+    try {
+      process.kill(pid, "SIGKILL")
+    } catch {
+      // already gone
+    }
+  }
+  await until("the test's own processes to end", () => pids.every((pid) => !alive(pid)), 5000)
+  f.cleanup()
+})
+
+test("scrubTree refuses a plain function: it would scrub nothing", async () => {
+  const { scrubTree, redactor } = await import("../src/run/secrets.mjs")
+  assert.throws(() => scrubTree(tmpdir(), (text) => text), /needs a redactor/)
+  assert.deepEqual(scrubTree(tmpdir(), redactor([])), [])
+})

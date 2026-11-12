@@ -328,8 +328,10 @@ async function runJob(job, ctx) {
   writeConfig(sandbox, config)
   const password = newPassword()
   // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
-  // Every token value the batch has read so far, at the moment of each write: a later trial's rotation included.
-  const redact = (text) => redactor([...(ctx.auth.secrets ?? []), password])(text)
+  // Every token value the batch has read so far and this run's password, built at the moment of each write or scrub, so a
+  // rotation since the trial began is covered; a full redactor (with .active and .buffer), so scrubTree can use it.
+  const redactorNow = () => redactor([...(ctx.auth.secrets ?? []), password])
+  const redact = (text) => redactorNow()(text)
   registerSecrets([password])
   let trial = null
   let gone = false
@@ -441,7 +443,7 @@ async function runJob(job, ctx) {
     await trial?.leave({ reason: "finally" })
     if (trial && !gone) gone = await trial.gone()
     ctx.auth.cleanup({ sandbox, gone: trial ? gone : true })
-    if (ctx.keep && (gone || !trial)) scrubTree(root, redact)
+    if (ctx.keep && (gone || !trial)) scrubTree(root, redactorNow())
   }
 }
 

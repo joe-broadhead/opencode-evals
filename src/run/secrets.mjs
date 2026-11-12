@@ -34,6 +34,8 @@ export function redactor(secrets = []) {
 
 /** Masks every secret in every regular file under `root` (links are not followed). Returns the files it changed. */
 export function scrubTree(root, redact) {
+  // Only a redactor() can scrub a file: a plain function would make this a silent no-op.
+  if (typeof redact?.buffer !== "function" || typeof redact.active !== "boolean") throw new TypeError("scrubTree needs a redactor(), not a plain function")
   if (!redact.active) return []
   const changed = []
   const walk = (dir) => {
