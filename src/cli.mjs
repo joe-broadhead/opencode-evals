@@ -134,6 +134,8 @@ function stateFor(iteration, caseName) {
 function gradeAll(iteration, casesDir = path("cases", "x"), traceDir = tracesDir(iteration, "x"), rawDir = rawRoot(), plugin = "x") {
   const cases = casesDir.endsWith(".json") ? [] : listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
   const results = []
+  const pack = readSnapshot(plugin, ROOT)
+  const scope = pack ? { ns: plugin, tools: new Set((pack.tools ?? []).map((tool) => tool.name)) } : null
   // Every trial of a case is graded: `<case>.trace.jsonl` (one trial, recorded before trials were kept per file) and
   // `<case>.t<k>.trace.jsonl`.
   const files = existsSync(traceDir) ? readdirSync(traceDir).filter((f) => f.endsWith(".trace.jsonl")) : []
@@ -159,7 +161,7 @@ function gradeAll(iteration, casesDir = path("cases", "x"), traceDir = tracesDir
           .find((e) => e.type === "text")
         text = last?.part?.text ?? null
       }
-      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) })
+      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id), scope })
       results.push({ ...gradeCase(caseObject, view), ...(trial ? { trial } : {}) })
     }
   }

@@ -71,7 +71,11 @@ The clauses, each one observable in a trace:
 | `cost:matches-appended [tolerance <n>]` | the answer's cost line matches the plugin's appended one |
 | `state:<path> ==\|!= <value>` | the final state, from the case's oracle file |
 
-A tool is a name, a glob (`x.*`), or `ns.name` for a call made inside Code Mode's `execute`.
+A tool is a name, a glob (`x_*`), a namespace (`history.*`) or a qualified name (`history.read`). A plugin tool reaches
+a run two ways, inside Code Mode's `execute` (ns `history`, tool `read`) or as a direct tool (`history_read`); a
+namespace or a qualified name selects both. A bare name the case's own plugin declares is that plugin's tool, so
+`call:read#1` in a History case is History's `read` and never the built-in file `read`; a bare name the plugin does
+not declare (`edit`, `write`, `bash`) is the built-in.
 
 ## Traces
 

@@ -50,6 +50,11 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Changed
 
+- The tool selector: `history.*` also selects the direct `history_*` tools (`history_pin`, or every tool when Code
+  Mode is off), `history.read` also selects a direct `history_read` and never the built-in `read`, and a bare name the
+  case's plugin declares is qualified with its namespace when graded, so `call:read#1` in a History case no longer
+  matches the built-in file `read`.
+
 - `evals pack` derives its plugin list from configuration instead of a list of ten in the code: every committed
   snapshot, and every plugin checkout under `EVALS_PLUGIN_ROOT` or named by `EVALS_REPO_<ID>`. `evals t1` and
   `evals t0-all` use the same list. A pack records the plugin's `access` option and its default.

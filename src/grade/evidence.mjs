@@ -169,7 +169,7 @@ const pathOf = (object, path) => {
 export function evaluateClause(clause, view) {
   switch (clause.kind) {
     case "call": {
-      const calls = selectCalls(view.calls, clause.tool)
+      const calls = selectCalls(view.calls, clause.tool, view.scope)
       const call = calls[clause.n - 1]
       if (!call) return { state: "fail", detail: `${clause.tool}#${clause.n} was not called (${calls.length} total)` }
       if (!clause.arg) return { state: "ok", detail: `${clause.tool}#${clause.n} called via ${call.via}` }
@@ -215,7 +215,7 @@ export function evaluateClause(clause, view) {
       return { state: ok ? "ok" : "fail", detail: `${label} ${JSON.stringify(value)} ${ok ? "satisfies" : "does not satisfy"} ${clause.op} ${JSON.stringify(clause.value.value)}` }
     }
     case "absent": {
-      const count = selectCalls(view.calls, clause.tool).length
+      const count = selectCalls(view.calls, clause.tool, view.scope).length
       if (clause.n === null) {
         return count === 0 ? { state: "ok", detail: `${clause.tool} never called` } : { state: "fail", detail: `${clause.tool} called ${count} time(s)` }
       }
@@ -224,12 +224,12 @@ export function evaluateClause(clause, view) {
         : { state: "fail", detail: `${clause.tool} called ${count} time(s), at least ${clause.n}` }
     }
     case "count": {
-      const count = selectCalls(view.calls, clause.tool).length
+      const count = selectCalls(view.calls, clause.tool, view.scope).length
       const ok = compare(count, clause.value, clause.op)
       return { state: ok ? "ok" : "fail", detail: `${clause.tool} called ${count} time(s) ${ok ? "satisfies" : "violates"} ${clause.op} ${clause.value}` }
     }
     case "counts": {
-      const calls = selectCalls(view.calls, clause.tool)
+      const calls = selectCalls(view.calls, clause.tool, view.scope)
       const call = calls[clause.n - 1]
       if (!call) return { state: "fail", detail: `${clause.tool}#${clause.n} was not called` }
       const value = call.counts?.[clause.key]
