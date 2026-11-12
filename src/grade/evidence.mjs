@@ -77,6 +77,16 @@ export function parseClause(text) {
     return { ok: true, clause: { kind: "text", span: m[1], op: m[2], value } }
   }
 
+  // The files the run wrote, from the recording's files record: exists, absent, or its text matches.
+  m = /^file:(\S+)\s+(exists|absent|changed|deleted)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "file", glob: m[1], op: m[2] } }
+  m = /^file:(\S+)\s+(matches|not-matches)\s+(\/.+\/[a-z]*)$/.exec(line)
+  if (m) {
+    const value = parseValue(m[3])
+    if (value.kind !== "regex") return { ok: false, why: `file clause needs a /regex/ in "${line}"` }
+    return { ok: true, clause: { kind: "file", glob: m[1], op: m[2], value } }
+  }
+
   // Order: the first call (skill loads and the `execute` wrapper aside), and one call before another.
   m = /^first:([a-z0-9_.*-]+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: "first", tool: m[1] } }
@@ -122,6 +132,9 @@ const compare = (a, b, operator) => {
 }
 
 const numberish = (v) => typeof v === "number" && Number.isFinite(v)
+
+/** A path glob: `*` within a directory, `**` across them. */
+const globRe = (glob) => new RegExp(`^${glob.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\u0000").replace(/\*/g, "[^/]*").replace(/\u0000/g, ".*")}$`)
 
 /** The operators a value that was never passed satisfies. */
 const NEGATIVE = new Set(["!=", "not-matches", "excludes"])
@@ -293,6 +306,21 @@ export function evaluateClause(clause, view) {
       const count = [...String(span).matchAll(re)].length
       const ok = compare(count, clause.n, clause.op)
       return { state: ok ? "ok" : "fail", detail: `answer ${clause.span} has ${count} match(es) of /${clause.value.source}/, ${ok ? "satisfying" : "violating"} ${clause.op} ${clause.n}` }
+    }
+    case "file": {
+      if (!Array.isArray(view.files)) return { state: "unverifiable", detail: "no record of the files this run wrote" }
+      const re = globRe(clause.glob)
+      const present = view.files.filter((file) => re.test(file.path) && file.change !== "deleted")
+      if (clause.op === "exists") return present.length ? { state: "ok", detail: `${present.length} file(s) ${clause.glob} written` } : { state: "fail", detail: `no file ${clause.glob} written` }
+      if (clause.op === "absent") return present.length ? { state: "fail", detail: `${present.map((f) => f.path).join(", ")} written` } : { state: "ok", detail: `no file ${clause.glob} written` }
+      if (clause.op === "changed") return present.some((f) => f.change === "modified") ? { state: "ok", detail: `${clause.glob} modified` } : { state: "fail", detail: `${clause.glob} not modified` }
+      if (clause.op === "deleted") return view.files.some((f) => re.test(f.path) && f.change === "deleted") ? { state: "ok", detail: `${clause.glob} deleted` } : { state: "fail", detail: `${clause.glob} not deleted` }
+      if (!present.length) return clause.op === "not-matches" ? { state: "ok", detail: `no file ${clause.glob} written` } : { state: "fail", detail: `no file ${clause.glob} written` }
+      if (present.some((file) => file.text === undefined)) return { state: "unverifiable", detail: `${clause.glob}: a file is too large or not text` }
+      const pattern = new RegExp(clause.value.source, clause.value.flags.replace("g", ""))
+      const hit = present.some((file) => pattern.test(file.text))
+      const ok = clause.op === "matches" ? hit : !hit
+      return { state: ok ? "ok" : "fail", detail: `${clause.glob} ${ok ? "satisfies" : "violates"} ${clause.op} /${clause.value.source}/` }
     }
     case "first": {
       const moves = view.calls.filter((call) => call.tool !== "skill" && call.tool !== "execute")

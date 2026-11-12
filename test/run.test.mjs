@@ -330,3 +330,21 @@ test("a private holdout with a published case's id is refused", async () => {
   assert.throws(() => pluginCases("x", { env: { EVALS_STORE: store } }), /a published holdout is not a holdout/)
   rmSync(store, { recursive: true, force: true })
 })
+
+test("the files a run wrote are recorded beside it and graded with file: clauses", async () => {
+  const f = fixture()
+  const text = caseText("writes-note", "").replace(/how many for writes-note\?/, "how many? write a note").replace("  evidence: text:any matches /\\beight\\b/", "  evidence: file:notes/*.md matches /eight/\n  evidence: file:**/*.sh absent")
+  writeFileSync(join(f.casesDir, "writes-note.md"), text)
+  writeFileSync(join(f.casesDir, "writes-note.json"), JSON.stringify(compileCase("cases/demo/writes-note.md", text)))
+  await runBatch({ plugin: "demo", iteration: "files", model: "mock/m1", auth: "none", cases: "writes-note", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet })
+  const files = JSON.parse(readFileSync(join(f.store, "raw", "files", "demo", "writes-note.t1.files.json"), "utf8"))
+  assert.deepEqual(files.map((file) => [file.path, file.change, file.text]), [["notes/answer.md", "added", "the answer is eight\n"]])
+  const env = { PATH: process.env.PATH, EVALS_STORE: f.store, EVALS_MODELS_CATALOG: join(f.root, "absent.json") }
+  spawnSync(process.execPath, [BIN, "trace", "--iteration", "files", "--plugin", "demo"], { env })
+  const trace = readFileSync(join(f.store, "traces", "files", "demo", "writes-note.t1.trace.jsonl"), "utf8")
+  assert.doesNotMatch(trace, /the answer is eight/, "the file's content is not traced")
+  spawnSync(process.execPath, [BIN, "grade", "--iteration", "files", "--plugin", "demo", "--cases", f.casesDir], { env })
+  const verdicts = JSON.parse(readFileSync(join(f.store, "results", "files", "verdicts.json"), "utf8"))
+  assert.equal(verdicts.find((v) => v.case === "writes-note").verdict, "PASS", JSON.stringify(verdicts.find((v) => v.case === "writes-note").items))
+  f.cleanup()
+})

@@ -75,6 +75,8 @@ The clauses, each one observable in a trace:
 | `budget:<name> <op> <n>` | `outer_calls` (every tool call the model made: skill loads, Code Mode's `execute`, direct tools), `inner_calls` (every call the code inside an `execute` made), `billed_calls`, `tokens`, `wall_ms`, `turns`, `cost_usd` |
 | `cost:matches-appended [tolerance <n>]` | the answer's cost line matches the plugin's appended one |
 | `state:<path> ==\|!= <value>` | the final state, from the case's oracle file |
+| `file:<glob> exists\|absent\|changed\|deleted` | a file the run wrote in its working directory (`*` within a directory, `**` across) |
+| `file:<glob> matches\|not-matches /re/` | the text of the files it wrote (64 KB at most each) |
 
 An argument that was not passed satisfies `!=`, `not-matches` and `excludes` (it equals nothing and matches nothing)
 and fails every other operator, `present` included. On a list (several query phrasings), `matches` and `contains`

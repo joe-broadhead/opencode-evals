@@ -105,6 +105,7 @@ function graderHash() {
     "src/trace/analyse.mjs",
     "src/trace/redact.mjs",
     "src/trace/rawArgs.mjs",
+    "src/grade/trials.mjs",
     "src/grade/gold.mjs",
   ]
   const digests = {}
@@ -167,7 +168,8 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
         // The arguments the case declares checkable are read from the recording here, and kept out of every trace.
         if (caseObject.checkable?.length) rawArgs = rawCallArgs(rawLines)
       }
-      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id), scope, rawArgs, checkable: caseObject.checkable ?? [] })
+      const files = existsSync(`${rawBase}.files.json`) ? JSON.parse(read(`${rawBase}.files.json`)) : null
+      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id), scope, rawArgs, checkable: caseObject.checkable ?? [], files })
       results.push({ ...gradeCase(caseObject, view), ...(trial ? { trial } : {}) })
     }
   }

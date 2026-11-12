@@ -54,6 +54,8 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 - `contains` is implemented (it parsed, and always failed); on a list argument, `matches` and `contains` hold when
   one element does.
 
+- The files a run writes: `evals run` records what changed in the working directory (`<case>.t<k>.files.json`,
+  private, never traced), and `file:<glob> exists|absent|changed|deleted|matches|not-matches` grades it.
 - Order clauses: `first:<tool>` (the first call, skill loads and the `execute` wrapper aside) and `before:<a>,<b>`
   (the first `a` came before the first `b`, or `b` never happened), so "History before git or grep" can be graded.
 - Private holdouts: `$EVALS_STORE/holdouts/<plugin>/` joins the repository's cases in `run`, `grade`, `report` and the

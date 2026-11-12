@@ -146,7 +146,9 @@ provenance()? }`; `prepare` returns `{ cwd, env? }`.
 `$EVALS_STORE/raw/<iteration>/<plugin>/<case>.t<k>.jsonl` is what `opencode run --format json` printed, and
 `<case>.t<k>.summary.json` holds the exit (124 on a timeout), the time, the trial, the model, the host version, the
 runner and its version, the credential profile's name, the world's name and clock, the batch id and the build's
-provenance per axis. `batch-<id>.json` is the plan and every run's outcome. The ledger
+provenance per axis. `<case>.t<k>.files.json` lists the files the run added, modified or deleted in its working directory (`.git` aside),
+each with its digest and, for a text file of 64 KB or less, its content: `file:` clauses grade them, and no trace
+holds them. `batch-<id>.json` is the plan and every run's outcome. The ledger
 (`$EVALS_STORE/ledger/runs.jsonl`) has the reservation and one line per run with what it billed.
 
 Not verified end to end by this repository's tests, which use a stand-in binary: a live model, the Claude Agent

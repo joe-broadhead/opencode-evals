@@ -25,6 +25,7 @@ import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start,
 import { parseAuth, prepareAuth } from "./auth.mjs"
 import { loadWorld, parseSeed } from "./world.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
+import { snapshotFiles, changedFiles } from "./files.mjs"
 import { splitTrial } from "../grade/trials.mjs"
 import { digestOf } from "../util/canonical.mjs"
 import { dirname } from "node:path"
@@ -138,6 +139,7 @@ async function runJob(job, ctx) {
   const password = newPassword()
   const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, extra: { ...ctx.auth.env, ...(prepared.env ?? {}) } })
   await ctx.auth.apply({ sandbox, env })
+  const before = snapshotFiles(cwd)
   const started = Date.now()
   let server = null
   let result
@@ -176,6 +178,7 @@ async function runJob(job, ctx) {
   }
   writeAtomic(join(ctx.rawDir, `${name}.jsonl`), result.stdout ?? "")
   writeAtomic(join(ctx.rawDir, `${name}.summary.json`), `${JSON.stringify(summary, null, 1)}\n`)
+  writeAtomic(join(ctx.rawDir, `${name}.files.json`), `${JSON.stringify(changedFiles(before, cwd), null, 1)}\n`)
   ctx.auth.cleanup({ cwd })
   if (!ctx.keep) removeSandbox(root)
   const cost = billedOf(result.stdout ?? "")

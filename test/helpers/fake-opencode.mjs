@@ -45,6 +45,10 @@ if (args[0] === "run") {
     mkdirSync(dir, { recursive: true })
     writeFileSync(join(dir, "transcript.jsonl"), "{}\\n")
   }
+  if (prompt.includes("write a note")) {
+    mkdirSync(join(process.cwd(), "notes"), { recursive: true })
+    writeFileSync(join(process.cwd(), "notes", "answer.md"), "the answer is eight\\n")
+  }
   const at = Date.now()
   const event = (type, part, dt = 0) => console.log(JSON.stringify({ type, timestamp: at + dt, sessionID: "ses_fake", part }))
   event("step_start", { type: "step-start" })

@@ -13,7 +13,7 @@ const BILLED_EXCEPTIONS = new Set(["get_usage_credits"])
 export const isInner = (call) => call.via === "execute" && call.tool !== "execute"
 
 /** A run view: the one shape every grader reads. Built from a trace file's lines. */
-export function runView(traceLines, { text = null, state = null, scope = null, rawArgs = null, checkable = [] } = {}) {
+export function runView(traceLines, { text = null, state = null, scope = null, rawArgs = null, checkable = [], files = null } = {}) {
   const parsed = traceLines.map((line) => (typeof line === "string" ? JSON.parse(line) : line))
   const head = parsed.find((event) => event.schema === "oc-trace/1") ?? parsed[0]
   const events = parsed.filter((event) => event.kind)
@@ -51,6 +51,8 @@ export function runView(traceLines, { text = null, state = null, scope = null, r
     // The case's plugin and the tools it declares: a bare tool name in a clause is that plugin's tool (select.mjs).
     scope,
     checkable: new Set(checkable),
+    // The files the run wrote (path, change, digest, a small text file's content), from the private recording.
+    files,
     calls,
     permissions,
     skills,
