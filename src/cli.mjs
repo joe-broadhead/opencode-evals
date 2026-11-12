@@ -4,7 +4,7 @@
 //                  and fails on a change; --holdouts compiles $EVALS_STORE/holdouts/<plugin>/ in the store
 //   evals trace    --iteration nx6 [--plugin x] [--from DIR] [--out DIR]
 //   evals grade    --iteration nx6 [--plugin x] [--cases DIR] [--traces DIR] [--raw DIR] [--out DIR]
-//   evals lock     [--plugin x] [--epoch N]
+//   evals lock     --plugin x [--epoch N]
 //   evals scorecard --iteration nx6 [--grading FILE] [--out FILE]
 //   evals policy   --a nx5 --b nx6 [--strict]
 //   evals report   <label>=<it>[,<it>...] ... [--plugin x] [--set all] [--cases ids] [--all-cases] [--detail] [--json]
@@ -351,7 +351,9 @@ export async function main(argv) {
       return
     }
     case "lock": {
-      const lock = writeLock(opt.plugin ?? "x", Number(opt.epoch ?? 1))
+      // A lock is a tracked file: no plugin is assumed, as for compile (HG-10).
+      if (!opt.plugin || opt.plugin === true) throw new Error("evals lock --plugin <id> [--epoch N]")
+      const lock = writeLock(opt.plugin, Number(opt.epoch ?? 1))
       console.log(json(lock))
       return
     }
