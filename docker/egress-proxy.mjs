@@ -20,20 +20,51 @@ const HOST = /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(\.[a-z0-9](?:
 /** A host name as logged: lower case, only the characters a name or an address can have, at most 253. */
 export const clean = (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9.:[\]-]/g, "?").slice(0, 253)
 
-/** Is an address one a trial must never reach through the proxy: private, loopback, link-local, CGNAT, multicast…? */
+/** An IPv6 address as eight 16-bit groups (an embedded dotted IPv4 tail included), or null. */
+export function groups6(address) {
+  let text = String(address).toLowerCase().replace(/%.*$/, "")
+  const v4 = /(\d+\.\d+\.\d+\.\d+)$/.exec(text)
+  if (v4) {
+    if (isIP(v4[1]) !== 4) return null
+    const [a, b, c, d] = v4[1].split(".").map(Number)
+    text = `${text.slice(0, -v4[1].length)}${((a << 8) | b).toString(16)}:${((c << 8) | d).toString(16)}`
+  }
+  const halves = text.split("::")
+  if (halves.length > 2) return null
+  const head = halves[0] ? halves[0].split(":") : []
+  const tail = halves.length === 2 && halves[1] ? halves[1].split(":") : []
+  const fill = halves.length === 2 ? 8 - head.length - tail.length : 0
+  const all = [...head, ...Array(Math.max(fill, 0)).fill("0"), ...tail]
+  if (all.length !== 8 || all.some((g) => !/^[0-9a-f]{1,4}$/.test(g))) return null
+  return all.map((g) => parseInt(g, 16))
+}
+
+/**
+ * Is an address one a trial must never reach through the proxy: private, loopback, link-local, CGNAT, multicast,
+ * documentation, or an IPv6 form that carries or tunnels an IPv4 address (IPv4-mapped, IPv4-compatible, NAT64 64:ff9b::/96
+ * and 64:ff9b:1::/48, 6to4 2002::/16, Teredo 2001::/32), whatever the IPv4 inside it?
+ */
 export function privateAddress(address) {
   const kind = isIP(address)
   if (kind === 4) {
-    const [a, b] = address.split(".").map(Number)
-    return a === 0 || a === 10 || a === 127 || a >= 224 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 192 && b === 0) || (a === 198 && (b === 18 || b === 19))
+    const [a, b, c] = address.split(".").map(Number)
+    return a === 0 || a === 10 || a === 127 || a >= 224 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 192 && b === 0) || (a === 198 && (b === 18 || b === 19)) || (a === 198 && b === 51 && c === 100) || (a === 203 && b === 0 && c === 113)
   }
-  if (kind === 6) {
-    const text = address.toLowerCase()
-    const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(text)
-    if (mapped) return privateAddress(mapped[1])
-    return text === "::" || text === "::1" || /^f[cd]/.test(text) || /^fe[89ab]/.test(text) || /^ff/.test(text) || text.startsWith("64:ff9b:") || text.startsWith("::ffff:")
-  }
-  return true
+  if (kind !== 6) return true
+  const g = groups6(address)
+  if (!g) return true
+  const zero = (n) => g.slice(0, n).every((x) => x === 0)
+  if (zero(5) && g[5] === 0xffff) return true // IPv4-mapped, whatever the IPv4 inside
+  if (zero(6)) return true // ::, ::1 and IPv4-compatible ::a.b.c.d
+  if (g[0] === 0x64 && g[1] === 0xff9b) return true // NAT64, well-known and local-use
+  if (g[0] === 0x2002) return true // 6to4
+  if (g[0] === 0x2001 && g[1] === 0) return true // Teredo
+  if (g[0] === 0x2001 && g[1] === 0xdb8) return true // documentation
+  if (g[0] === 0x100 && g[1] === 0 && g[2] === 0 && g[3] === 0) return true // discard-only 100::/64
+  if ((g[0] & 0xfe00) === 0xfc00) return true // unique local fc00::/7
+  if ((g[0] & 0xffc0) === 0xfe80 || (g[0] & 0xffc0) === 0xfec0) return true // link-local, site-local
+  if ((g[0] & 0xff00) === 0xff00) return true // multicast
+  return false
 }
 
 /** Parses an allow-list: host names only, exact. Throws on a wildcard, an address or anything else. */

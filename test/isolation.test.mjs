@@ -94,7 +94,9 @@ test("the proxy refuses an allow-listed name that resolves to a private address"
     assert.equal(proxy.log[0].why, "private-address")
     await proxy.close()
   }
-  for (const address of ["160.79.104.10", "2607:6bc0::10"]) assert.equal(privateAddress(address), false, address)
+  for (const address of ["160.79.104.10", "2607:6bc0::10", "2606:4700::6810:84e5"]) assert.equal(privateAddress(address), false, address)
+  // IPv6 forms that carry or tunnel an IPv4 address, and the other special ranges, are refused whatever is inside.
+  for (const address of ["::ffff:160.79.104.10", "::ffff:a00:1", "0:0:0:0:0:ffff:7f00:1", "::10.31.0.1", "::a1f:1", "::", "::1", "64:ff9b::a1f:1", "64:ff9b::160.79.104.10", "64:ff9b:1::1", "2002:a1f:1::1", "2002:a04f:680a::1", "2001:0:4136:e378::1", "2001::1", "2001:db8::1", "100::1", "fc00::1", "fd12::1", "fe80::1%eth0", "fec0::1", "ff02::1", "fe80:0000:0000:0000:0000:0000:0000:0001"]) assert.equal(privateAddress(address), true, address)
   assert.equal(clean("ex\u0000ample.com/\n"), "ex?ample.com??")
   assert.deepEqual([...parseAllow("API.anthropic.com, claude.ai.")], ["api.anthropic.com", "claude.ai"])
   for (const bad of ["*.anthropic.com", "10.0.0.1", "http://x.com", "a b/c"]) assert.throws(() => parseAllow(bad), /not a host name/, bad)
