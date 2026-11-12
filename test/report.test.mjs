@@ -89,3 +89,16 @@ test("a plugin's own sets come from Set: headers, and a retired or deferred case
   assert.throws(() => selectCases(cases, { set: "nightly" }), /unknown case set nightly/)
   assert.deepEqual(setCounts(cases), { tune: 3, holdout: 1, tools: 0, core: 3, smoke: 1 })
 })
+
+test("each comparison's seed is derived from its own arms and cases, and pinned", () => {
+  const base = arm("base", "b1", [0, 1, 1, 2, 0, 3, 1, 0])
+  const next = arm("next", "n1", [2, 3, 1, 3, 2, 3, 3, 1])
+  const other = arm("other", "o1", [3, 3, 3, 3, 3, 3, 3, 3])
+  const c = compare([base, next]).comparisons[0]
+  // The seed is sha256("<a iterations>|<b iterations>|<shared case ids>"), first 32 bits.
+  assert.equal(c.seed, seedOf("b1|n1|c0,c1,c2,c3,c4,c5,c6,c7"))
+  assert.equal(c.seed, 3499925043)
+  assert.equal(compare([base, other]).comparisons[0].seed, 3542987912, "another comparison, another stream")
+  // And what the stream gives: a fixed seed shared by every comparison would not give this interval.
+  assert.deepEqual([c.mean, c.lo, c.hi], [0.4166666666666667, 0.20833333333333334, 0.5833333333333334])
+})
