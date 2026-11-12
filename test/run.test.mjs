@@ -382,6 +382,26 @@ test("a world can continue its own session, rewrite paths per sandbox, and be bu
   f.cleanup()
 })
 
+test("a run can start in a folder of its repository, and continue a session the build derived", async () => {
+  const f = fixture()
+  addCase(f.casesDir, "in-sub", "- Seed: cwd=api subdir=services/worker continue=stripe")
+  addCase(f.casesDir, "bad-sub", "- Seed: cwd=api subdir=services/nowhere")
+  addCase(f.casesDir, "up-sub", "- Seed: cwd=api subdir=../escape")
+  const world = join(f.root, "world")
+  mkdirSync(join(world, "repos", "api-repo", "services", "worker"), { recursive: true })
+  writeFileSync(join(world, "truth.json"), JSON.stringify({ ids: { stripe: "ses_from_truth" } }))
+  writeFileSync(join(world, "world.json"), JSON.stringify({ repos: "repos", cwd: { api: "api-repo" }, sessions: "truth.json#ids" }))
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "sub", model: "mock/m1", auth: "none", scripted: true, cases: "*-sub", arm: f.arm, casesDir: f.casesDir, world, keep: true }, { caller: f.caller, ...quiet })
+  const by = Object.fromEntries(result.results.map((r) => [r.case, r]))
+  assert.equal(by["in-sub"].exit, 0, JSON.stringify(by["in-sub"]))
+  const run = JSON.parse(readFileSync(join(result.keptAt, "runs", "in-sub.t1", "home", "run.json"), "utf8"))
+  assert.equal(run.cwd, join(result.keptAt, "runs", "in-sub.t1", "work", "api-repo", "services", "worker"))
+  assert.deepEqual(run.argv.slice(run.argv.indexOf("--session"), run.argv.indexOf("--session") + 2), ["--session", "ses_from_truth"])
+  assert.match(by["bad-sub"].error, /nowhere is not a folder/)
+  assert.match(by["up-sub"].error, /not a safe name/)
+  f.cleanup()
+})
+
 test("a private holdout with a published case's id is refused", async () => {
   const { pluginCases } = await import("../src/case/load.mjs")
   const store = mkdtempSync(join(tmpdir(), "evals-clash-"))
