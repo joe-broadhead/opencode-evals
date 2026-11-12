@@ -501,6 +501,7 @@ export async function main(argv) {
         keep: Boolean(opt.keep),
         keepCredentials: Boolean(opt["keep-credentials"]),
         isolation: opt.isolation,
+        scripted: Boolean(opt.scripted),
         unsafeNoIsolation: Boolean(opt["unsafe-no-isolation"]),
         append: Boolean(opt.append),
       })

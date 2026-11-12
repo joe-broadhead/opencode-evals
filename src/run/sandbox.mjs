@@ -16,10 +16,17 @@ export function makeSandbox(root) {
   return { root, home, tmp, project: join(root, "project") }
 }
 
-/** The run's config, as the host reads it: the plugin under test (or none) and the model. Nothing else. */
-export function sealedConfig({ armDir, options, model }) {
+/** The harness's own scripted model: T1's mock provider plugin, which serves `mock/m1` from a loopback server. */
+export const SCRIPTED_PROVIDER = resolve(import.meta.dirname, "..", "t1", "mock", "provider")
+export const SCRIPTED_MODEL = "mock/m1"
+
+/**
+ * The run's config, as the host reads it: the harness's scripted model when asked for, the plugin under test (or
+ * none), and the model. Nothing else.
+ */
+export function sealedConfig({ armDir, options, model, scripted = false }) {
   return {
-    plugins: armDir ? [{ package: armDir, ...(options ? { options } : {}) }] : [],
+    plugins: [...(scripted ? [{ package: SCRIPTED_PROVIDER }] : []), ...(armDir ? [{ package: armDir, ...(options ? { options } : {}) }] : [])],
     model,
   }
 }

@@ -10,7 +10,8 @@ import { readLedger, usage } from "../src/cost/ledger.mjs"
 import { compileCase } from "../src/case/compile.mjs"
 import { readCredential, assertTokenLasts, CREDENTIAL_LIMIT } from "../src/run/auth.mjs"
 import { freshness, parseSeed } from "../src/run/world.mjs"
-import { installFakeOpencode } from "./helpers/fake-opencode.mjs"
+import { SCRIPTED_PROVIDER } from "../src/run/sandbox.mjs"
+import { installFakeOpencode, installFakeBun } from "./helpers/fake-opencode.mjs"
 
 const BIN = join(import.meta.dirname, "..", "bin", "evals")
 
@@ -54,10 +55,11 @@ function fixture({ cases = [["demo-a", "- Seed: cwd=api"], ["demo-b", ""], ["ho-
   const bin = join(root, "bin")
   mkdirSync(bin)
   const fake = installFakeOpencode(bin)
+  const bun = installFakeBun(bin)
   const store = join(root, "store")
   const tmp = join(root, "tmp")
   mkdirSync(tmp)
-  const caller = { PATH: process.env.PATH, HOME: home, EVALS_STORE: store, EVALS_OPENCODE_BIN: fake, EVALS_TMP: tmp, EVALS_SECRET_PROBE: "leak", OPENCODE_SERVER_PASSWORD: "the-real-one", ANTHROPIC_API_KEY: "sk-not-for-the-run" }
+  const caller = { PATH: process.env.PATH, HOME: home, EVALS_STORE: store, EVALS_OPENCODE_BIN: fake, EVALS_BUN: bun, EVALS_TMP: tmp, EVALS_SECRET_PROBE: "leak", OPENCODE_SERVER_PASSWORD: "the-real-one", ANTHROPIC_API_KEY: "sk-not-for-the-run" }
   return { root, casesDir, arm, home, store, tmp, caller, cleanup: () => rmSync(root, { recursive: true, force: true }) }
 }
 
@@ -73,7 +75,7 @@ test("a plan is one job per case and trial, and never overwrites a recorded tria
 
 test("every trial is its own sandbox and its own file, in parallel, on its own port", async () => {
   const f = fixture()
-  const result = await runBatch({ plugin: "demo", iteration: "it1", model: "mock/m1", auth: "none", trials: 3, parallel: 3, arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet })
+  const result = await runBatch({ plugin: "demo", iteration: "it1", model: "mock/m1", auth: "none", scripted: true, trials: 3, parallel: 3, arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet })
   assert.equal(result.planned, 6, "the tune set: demo-a and demo-b, not the holdout")
   assert.equal(result.launched, 6)
   assert.equal(result.bad, 0, JSON.stringify(result.results))
@@ -110,7 +112,7 @@ test("every trial is its own sandbox and its own file, in parallel, on its own p
 
 test("the sandbox is sealed: its own home, XDG tree and config, and nothing of the caller's environment", async () => {
   const f = fixture()
-  const result = await runBatch({ plugin: "demo", iteration: "seal", model: "mock/m1", auth: "none", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true }, { caller: f.caller, ...quiet })
+  const result = await runBatch({ plugin: "demo", iteration: "seal", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true }, { caller: f.caller, ...quiet })
   const kept = result.keptAt
   const home = join(kept, "runs", "demo-b.t1", "home")
   const run = JSON.parse(readFileSync(join(home, "run.json"), "utf8"))
@@ -119,7 +121,7 @@ test("the sandbox is sealed: its own home, XDG tree and config, and nothing of t
   for (const key of ["XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME", "TMPDIR"]) assert.ok(run.env[key].startsWith(join(kept, "runs", "demo-b.t1")), key)
   for (const key of ["EVALS_SECRET_PROBE", "OPENCODE_SERVER_PASSWORD", "ANTHROPIC_API_KEY", "EVALS_STORE"]) assert.equal(run.env[key], undefined, `${key} leaked into the run`)
   const config = JSON.parse(run.env.OPENCODE_CONFIG_CONTENT)
-  assert.deepEqual(config, { plugins: [{ package: join(kept, "arm") }], model: "mock/m1" })
+  assert.deepEqual(config, { plugins: [{ package: SCRIPTED_PROVIDER }, { package: join(kept, "arm") }], model: "mock/m1" })
   assert.deepEqual(JSON.parse(readFileSync(join(home, ".config", "opencode", "opencode.json"), "utf8")), config)
   assert.equal(run.argv[0], "run")
   assert.ok(run.argv.includes("--server") && run.argv.includes("json"))
@@ -136,19 +138,19 @@ test("the sandbox is sealed: its own home, XDG tree and config, and nothing of t
 test("the caps refuse a batch before anything launches, and nothing is reserved", async () => {
   const f = fixture()
   const caller = { ...f.caller, EVALS_MAX_RUNS_PER_PLUGIN: "3" }
-  await assert.rejects(runBatch({ plugin: "demo", iteration: "capped", model: "mock/m1", auth: "none", trials: 2, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /demo would reach 4 of 3 runs/)
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "capped", model: "mock/m1", auth: "none", scripted: true, trials: 2, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /demo would reach 4 of 3 runs/)
   assert.equal(existsSync(join(f.store, "raw", "capped")), false, "no recording")
   assert.deepEqual(readLedger(f.store), [])
   // Three fit; then the month is full, across invocations.
-  await runBatch({ plugin: "demo", iteration: "fits", model: "mock/m1", auth: "none", cases: "demo-a", trials: 3, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
-  await assert.rejects(runBatch({ plugin: "demo", iteration: "next", model: "mock/m1", auth: "none", cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /run cap/)
+  await runBatch({ plugin: "demo", iteration: "fits", model: "mock/m1", auth: "none", scripted: true, cases: "demo-a", trials: 3, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "next", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /run cap/)
   assert.equal(usage(readLedger(f.store), { month: new Date().toISOString().slice(0, 7), plugin: "demo", iteration: "fits" }).per_plugin_month, 3)
   f.cleanup()
 })
 
 test("a second run into the same iteration refuses to overwrite; --append adds trials after the last", async () => {
   const f = fixture()
-  const options = { plugin: "demo", iteration: "again", model: "mock/m1", auth: "none", cases: "demo-b", arm: f.arm, casesDir: f.casesDir }
+  const options = { plugin: "demo", iteration: "again", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir }
   await runBatch(options, { caller: f.caller, ...quiet })
   await assert.rejects(runBatch(options, { caller: f.caller, ...quiet }), /already have recordings/)
   await runBatch({ ...options, append: true, trials: 2 }, { caller: f.caller, ...quiet })
@@ -166,7 +168,7 @@ test("a stale world is rebuilt with the build under test, or refused", async () 
   writeFileSync(join(world, "truth.json"), JSON.stringify({ now: yesterday }))
   const spec = { home: "home", repos: "repos", cwd: { api: "api-repo" }, now: "truth.json#now", fresh: "utc-day" }
   writeFileSync(join(world, "world.json"), JSON.stringify(spec))
-  const options = { plugin: "demo", iteration: "w1", model: "mock/m1", auth: "none", cases: "demo-a", arm: f.arm, casesDir: f.casesDir, world }
+  const options = { plugin: "demo", iteration: "w1", model: "mock/m1", auth: "none", scripted: true, cases: "demo-a", arm: f.arm, casesDir: f.casesDir, world }
   await assert.rejects(runBatch(options, { caller: f.caller, ...quiet }), /stale and was not rebuilt: the world was built for/)
   assert.deepEqual(readLedger(f.store), [], "a refused world reserves nothing")
   // With a build command, the runner rebuilds it, hands it the copied build, and stamps the build's digest.
@@ -262,14 +264,14 @@ test("a world's home that links to the caller's ~/.claude is cut off from it", a
 test("an unknown or missing --auth is refused before anything runs", async () => {
   const f = fixture()
   await assert.rejects(runBatch({ plugin: "demo", iteration: "a1", model: "mock/m1", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet }), /--auth is required/)
-  await assert.rejects(runBatch({ plugin: "demo", iteration: "a2", model: "mock/m1", auth: "env:NOT_SET_ANYWHERE", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet }), /NOT_SET_ANYWHERE not set/)
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "a2", model: "mock/m1", auth: "env:NOT_SET_ANYWHERE", unsafeNoIsolation: true, arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet }), /NOT_SET_ANYWHERE not set/)
   assert.deepEqual(readLedger(f.store), [])
   f.cleanup()
 })
 
 test("the CLI's dry run lists the plan and the caps, and launches nothing", () => {
   const f = fixture()
-  const out = spawnSync(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "dry", "--model", "mock/m1", "--auth", "none", "--arm", f.arm, "--cases-dir", f.casesDir, "--set", "all", "--trials", "2", "--dry-run"], { env: f.caller, encoding: "utf8" })
+  const out = spawnSync(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "dry", "--model", "mock/m1", "--auth", "none", "--scripted", "--arm", f.arm, "--cases-dir", f.casesDir, "--set", "all", "--trials", "2", "--dry-run"], { env: f.caller, encoding: "utf8" })
   assert.equal(out.status, 0, out.stderr)
   assert.match(out.stdout, /3 case\(s\) x 2 trial\(s\) = 6 run\(s\)/)
   assert.match(out.stdout, /ho-demo-c\.t2/)
@@ -282,14 +284,14 @@ test("an arm file sets the plugin's options; they reach the run, and their diges
   const f = fixture()
   const armFile = join(f.root, "ask-changes.json")
   writeFileSync(armFile, JSON.stringify({ package: "plugin", options: { access: "ask-changes" } }))
-  const result = await runBatch({ plugin: "demo", iteration: "opt", model: "mock/m1", auth: "none", cases: "demo-b", arm: armFile, casesDir: f.casesDir, keep: true }, { caller: f.caller, ...quiet })
+  const result = await runBatch({ plugin: "demo", iteration: "opt", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: armFile, casesDir: f.casesDir, keep: true }, { caller: f.caller, ...quiet })
   const run = JSON.parse(readFileSync(join(result.keptAt, "runs", "demo-b.t1", "home", "run.json"), "utf8"))
-  assert.deepEqual(JSON.parse(run.env.OPENCODE_CONFIG_CONTENT).plugins[0].options, { access: "ask-changes" })
+  assert.deepEqual(JSON.parse(run.env.OPENCODE_CONFIG_CONTENT).plugins.find((p) => p.package === join(result.keptAt, "arm")).options, { access: "ask-changes" })
   const summary = JSON.parse(readFileSync(join(f.store, "raw", "opt", "demo", "demo-b.t1.summary.json"), "utf8"))
   assert.equal(summary.provenance.access, "ask-changes")
   assert.match(summary.provenance.options, /^[0-9a-f]{64}$/)
   assert.doesNotMatch(JSON.stringify(summary), /"options":\{/, "the option values are not written, only their digest")
-  await assert.rejects(runBatch({ plugin: "demo", iteration: "opt2", model: "mock/m1", auth: "none", cases: "demo-b", arm: armFile, options: "{}", casesDir: f.casesDir }, { caller: f.caller, ...quiet }), /pass one/)
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "opt2", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: armFile, options: "{}", casesDir: f.casesDir }, { caller: f.caller, ...quiet }), /pass one/)
   f.cleanup()
 })
 
@@ -313,7 +315,7 @@ test("private holdouts come from the store, are holdouts whatever they say, and 
   // A run selects it with --set holdout, from the store, with no --cases-dir.
   const repoCases = join(import.meta.dirname, "..", "cases", "demo")
   assert.equal(existsSync(repoCases), false)
-  const result = await runBatch({ plugin: "demo", iteration: "priv", model: "mock/m1", auth: "none", set: "holdout", arm: f.arm }, { caller: f.caller, ...quiet })
+  const result = await runBatch({ plugin: "demo", iteration: "priv", model: "mock/m1", auth: "none", scripted: true, set: "holdout", arm: f.arm }, { caller: f.caller, ...quiet })
   assert.deepEqual(result.cases, ["priv-one"])
   f.cleanup()
 })
@@ -329,7 +331,7 @@ test("utc-hours keeps a time-of-day case inside its window, and the summary reco
   const hour = new Date().getUTCHours()
   addCase(f.casesDir, "timed-out", `- Seed: utc-hours=${(hour + 2) % 24}-${(hour + 3) % 24}`)
   addCase(f.casesDir, "timed-in", `- Seed: utc-hours=0-24`)
-  const result = await runBatch({ plugin: "demo", iteration: "hours", model: "mock/m1", auth: "none", cases: "timed-*", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet })
+  const result = await runBatch({ plugin: "demo", iteration: "hours", model: "mock/m1", auth: "none", scripted: true, cases: "timed-*", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet })
   assert.equal(result.launched, 1)
   assert.match(result.results.find((r) => r.case === "timed-out").skipped, /runs between/)
   assert.equal(JSON.parse(readFileSync(join(f.store, "raw", "hours", "demo", "timed-in.t1.summary.json"), "utf8")).utc_hour, hour)
@@ -358,7 +360,7 @@ test("a world can continue its own session, rewrite paths per sandbox, and be bu
       sessions: { earlier: "ses_world_earlier" },
     }),
   )
-  const result = await runBatch({ plugin: "demo", iteration: "cont", model: "mock/m1", auth: "none", cases: "continues", arm: f.arm, casesDir: f.casesDir, world, keep: true }, { caller: f.caller, ...quiet })
+  const result = await runBatch({ plugin: "demo", iteration: "cont", model: "mock/m1", auth: "none", scripted: true, cases: "continues", arm: f.arm, casesDir: f.casesDir, world, keep: true }, { caller: f.caller, ...quiet })
   assert.equal(result.bad, 0, JSON.stringify(result.results))
   assert.equal(readFileSync(join(world, "overlay.txt"), "utf8"), overlay)
   assert.match(JSON.parse(readFileSync(join(world, ".evals-world.json"), "utf8")).overlay_sha256, /^[0-9a-f]{64}$/)
@@ -385,7 +387,7 @@ test("the files a run wrote are recorded beside it and graded with file: clauses
   const text = caseText("writes-note", "").replace(/how many for writes-note\?/, "how many? write a note").replace("  evidence: text:any matches /\\beight\\b/", "  evidence: file:notes/*.md matches /eight/\n  evidence: file:**/*.sh absent")
   writeFileSync(join(f.casesDir, "writes-note.md"), text)
   writeFileSync(join(f.casesDir, "writes-note.json"), JSON.stringify(compileCase("cases/demo/writes-note.md", text)))
-  await runBatch({ plugin: "demo", iteration: "files", model: "mock/m1", auth: "none", cases: "writes-note", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet })
+  await runBatch({ plugin: "demo", iteration: "files", model: "mock/m1", auth: "none", scripted: true, cases: "writes-note", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet })
   const files = JSON.parse(readFileSync(join(f.store, "raw", "files", "demo", "writes-note.t1.files.json"), "utf8"))
   assert.deepEqual(files.map((file) => [file.path, file.change, file.text]), [["notes/answer.md", "added", "the answer is eight\n"]])
   const env = { PATH: process.env.PATH, EVALS_STORE: f.store, EVALS_MODELS_CATALOG: join(f.root, "absent.json") }
@@ -418,7 +420,7 @@ const until = async (what, probe, ms = 15000) => {
 
 test("a finished run leaves nothing running: the server's own children go with its group", async () => {
   const f = fixture()
-  const result = await runBatch({ plugin: "demo", iteration: "reap", model: "mock/m1", auth: "none", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true }, { caller: f.caller, ...quiet })
+  const result = await runBatch({ plugin: "demo", iteration: "reap", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true }, { caller: f.caller, ...quiet })
   const home = join(result.keptAt, "runs", "demo-b.t1", "home")
   const child = Number(readFileSync(join(home, "serve-child.pid"), "utf8"))
   const serve = JSON.parse(readFileSync(join(home, readdirSync(home).find((n) => /^serve-\d+\.json$/.test(n))), "utf8")).pid
@@ -433,7 +435,7 @@ async function interrupted(signal, code, { claude = false } = {}) {
   const sleepy = JSON.parse(readFileSync(join(f.casesDir, "sleepy.json"), "utf8"))
   writeFileSync(join(f.casesDir, "sleepy.json"), JSON.stringify({ ...sleepy, prompt: "please sleep" }))
   const { spawn } = await import("node:child_process")
-  const auth = claude ? ["--auth", "claude-agent", "--model", "claude-agent/haiku", "--unsafe-no-isolation"] : ["--auth", "none", "--model", "mock/m1"]
+  const auth = claude ? ["--auth", "claude-agent", "--model", "claude-agent/haiku", "--unsafe-no-isolation"] : ["--auth", "none", "--model", "mock/m1", "--scripted"]
   const env = claude ? { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" } : f.caller
   const cli = spawn(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "int", ...auth, "--arm", f.arm, "--cases-dir", f.casesDir, "--cases", "sleepy,demo-b,zz-after", "--parallel", "1"], { env, stdio: ["ignore", "pipe", "pipe"] })
   let out = ""
@@ -482,7 +484,7 @@ test("a seed's cwd is a repository of the world, never a path out of it", async 
   writeFileSync(join(world, "world.json"), JSON.stringify({ repos: "repos", cwd: { api: "api-repo", sneaky: "../../secret" } }))
   for (const [id, seed, why] of [["climbs", "cwd=../../secret", /Seed cwd "..\/..\/secret" is not a safe name/], ["absolute", "cwd=/etc", /Seed cwd "\/etc" is not a safe name/], ["aliased", "cwd=sneaky", /repository for cwd=sneaky/]]) {
     addCase(f.casesDir, id, `- Seed: ${seed}`)
-    const result = await runBatch({ plugin: "demo", iteration: `cwd-${id}`, model: "mock/m1", auth: "none", cases: id, arm: f.arm, casesDir: f.casesDir, world }, { caller: f.caller, ...quiet })
+    const result = await runBatch({ plugin: "demo", iteration: `cwd-${id}`, model: "mock/m1", auth: "none", scripted: true, cases: id, arm: f.arm, casesDir: f.casesDir, world }, { caller: f.caller, ...quiet })
     assert.match(result.results[0].error ?? "", why, id)
     assert.equal(existsSync(join(f.store, "raw", `cwd-${id}`, "demo", `${id}.t1.jsonl`)), false)
   }
@@ -502,12 +504,12 @@ test("a batch stops before the next run would cross the dollar cap, counting the
   const caller = { ...f.caller, EVALS_BUDGET_MODEL_USD: "6.5" }
   // Reserved: $2 spent + 3 runs x $1 = $5, within $6.50. After the first run bills $3: $5 spent, and the next run is
   // expected to bill $1.67, which would make $6.67: the batch stops there, before crossing.
-  const result = await runBatch({ plugin: "demo", iteration: "spend", model: "mock/m1", auth: "none", cases: "pricey", trials: 3, parallel: 1, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
+  const result = await runBatch({ plugin: "demo", iteration: "spend", model: "mock/m1", auth: "none", scripted: true, cases: "pricey", trials: 3, parallel: 1, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
   assert.equal(result.launched, 1)
   assert.match(result.stopped, /would take the month's model spend to \$6\.67, over \$6\.5/)
   assert.equal(readLedger(f.store).find((e) => e.kind === "release").runs, 2)
   // A batch whose projection is already over the cap is refused at the reservation.
-  await assert.rejects(runBatch({ plugin: "demo", iteration: "spend2", model: "mock/m1", auth: "none", cases: "pricey", trials: 3, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /D4 budget/)
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "spend2", model: "mock/m1", auth: "none", scripted: true, cases: "pricey", trials: 3, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /D4 budget/)
   f.cleanup()
 })
 
@@ -527,9 +529,14 @@ test("a live run is refused without filesystem isolation, before anything is cre
   const summary = JSON.parse(readFileSync(join(f.store, "raw", "live", "demo", "demo-b.t1.summary.json"), "utf8"))
   assert.equal(summary.isolation, "none")
   assert.equal(summary.unsafe_no_isolation, true)
-  // The scripted mock model drives no real tools: it is not a live run.
-  const mock = await runBatch({ ...live, iteration: "mocked", model: "mock/m1" }, { caller: f.caller, ...quiet })
+  // Only the harness's own scripted model, with no credential, is not a live run.
+  const mock = await runBatch({ ...live, iteration: "mocked", model: "mock/m1", scripted: true }, { caller: f.caller, ...quiet })
   assert.equal(mock.unsafe_no_isolation, undefined)
+  // A model merely named mock (the plugin under test can register one, backed by anything) is live.
+  await assert.rejects(runBatch({ ...live, iteration: "named-mock", model: "mock/m1" }, { caller: f.caller, ...quiet }), /refusing a live run/)
+  // The scripted model with a credential is live too: a real model can be reached.
+  await assert.rejects(runBatch({ ...live, iteration: "cred-mock", model: "mock/m1", scripted: true, auth: "env:EVALS_SECRET_PROBE" }, { caller: f.caller, ...quiet }), /refusing a live run/)
+  await assert.rejects(runBatch({ ...live, iteration: "scripted-other", model: "claude-agent/haiku", scripted: true }, { caller: f.caller, ...quiet }), /--scripted runs the harness's scripted model/)
   const dry = spawnSync(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "dry2", "--model", "claude-agent/haiku", "--auth", "none", "--arm", f.arm, "--cases-dir", f.casesDir, "--dry-run"], { env: f.caller, encoding: "utf8" })
   assert.match(dry.stdout, /the batch would be refused: refusing a live run/)
   f.cleanup()
@@ -603,4 +610,27 @@ test("a batch that could outlive its sign-in is refused, with the step that fixe
   const ok = await runBatch({ plugin: "demo", iteration: "exp2", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "demo-b", timeout: 60, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
   assert.equal(ok.launched, 1)
   f.cleanup()
+})
+
+test("the isolation refusal comes before a world module is imported", async () => {
+  const f = fixture()
+  const marker = join(f.root, "imported")
+  const module = join(f.root, "world.mjs")
+  writeFileSync(module, `import { writeFileSync } from "node:fs"\nwriteFileSync(${JSON.stringify(marker)}, "ran")\nexport default { name: "w", status: () => ({ fresh: true }), prepare: async ({ sandbox }) => ({ cwd: sandbox.root }) }\n`)
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "wm", model: "claude-agent/haiku", auth: "none", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, world: module }, { caller: f.caller, ...quiet }), /refusing a live run/)
+  assert.equal(existsSync(marker), false, "the world module's code never ran")
+  f.cleanup()
+})
+
+test("isLive: only no credential and the harness's own scripted model, in the sealed config, is not live", async () => {
+  const { isLive } = await import("../src/run/isolation.mjs")
+  const { sealedConfig } = await import("../src/run/sandbox.mjs")
+  const scripted = sealedConfig({ armDir: "/tmp/arm", model: "mock/m1", scripted: true })
+  const plain = sealedConfig({ armDir: "/tmp/arm", model: "mock/m1" })
+  assert.equal(isLive({ auth: "none", model: "mock/m1", config: scripted }), false)
+  assert.equal(isLive({ auth: "claude-agent", model: "mock/m1", config: scripted }), true)
+  assert.equal(isLive({ auth: "env", model: "mock/m1", config: scripted }), true)
+  assert.equal(isLive({ auth: "none", model: "mock/m1", config: plain }), true, "a mock the harness did not register")
+  assert.equal(isLive({ auth: "none", model: "mock/m2", config: scripted }), true)
+  assert.equal(isLive({ auth: "none", model: "mock/m1", config: { plugins: [{ package: "/elsewhere/mock-provider" }] } }), true)
 })

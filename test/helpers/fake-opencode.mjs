@@ -85,3 +85,18 @@ export function installFakeOpencode(dir) {
   chmodSync(file, 0o755)
   return file
 }
+
+/** A stand-in for bun running T1's mock server: answers /v1/models on the port it is given. */
+export function installFakeBun(dir) {
+  const file = join(dir, "bun")
+  writeFileSync(
+    file,
+    `#!/usr/bin/env node
+const port = Number(process.argv[3])
+require("node:http").createServer((req, res) => { res.setHeader("content-type", "application/json"); res.end('{"data":[{"id":"m1"}]}') }).listen(port, "127.0.0.1")
+process.on("SIGTERM", () => process.exit(0))
+`,
+  )
+  chmodSync(file, 0o755)
+  return file
+}

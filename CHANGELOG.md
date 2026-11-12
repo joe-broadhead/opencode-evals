@@ -112,6 +112,11 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- The live check trusted the model's name: a `mock` provider can come from the plugin under test, and `--auth
+  claude-agent` with a mock model still reached the credential with no isolation. A run is now not live only with
+  `--auth none` and the harness's own scripted model, registered by the harness in the sealed config (`--scripted`);
+  and the refusal comes before a world module is imported.
+
 - `evals pack` counted a checkout that is not a family plugin (mem, messaging) as a pack that differs, and did not name
   the packs it counted. It now names them, and lists a non-family checkout as skipped.
 

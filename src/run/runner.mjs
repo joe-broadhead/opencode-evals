@@ -21,13 +21,13 @@ import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf }
 import { assertWithinBudget, projectedSpend, monthToDate, budgetCaps } from "../cost/budget.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
-import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, killAll, stripForeignLinks } from "./sandbox.mjs"
+import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
 import { parseAuth, prepareAuth } from "./auth.mjs"
 import { loadWorld, parseSeed } from "./world.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
 import { segment, within } from "./paths.mjs"
-import { selectIsolation } from "./isolation.mjs"
+import { selectIsolation, isLive } from "./isolation.mjs"
 import { splitTrial } from "../grade/trials.mjs"
 import { digestOf } from "../util/canonical.mjs"
 import { dirname } from "node:path"
@@ -117,6 +117,27 @@ async function startServer({ binary, cwd, env, password, wrap = (spec) => spec, 
   throw new Error(`the host server did not start: ${last}`)
 }
 
+/** T1's scripted model server, started for a batch: the harness's own mock, never a model. */
+async function startMock({ batchRoot, caller }) {
+  const port = await freePort()
+  const home = join(batchRoot, "mock")
+  mkdirSync(home, { recursive: true, mode: 0o700 })
+  const proc = start(caller.EVALS_BUN ?? "bun", [resolve(import.meta.dirname, "..", "t1", "mock", "server.ts"), String(port), join(home, "mock.jsonl")], { cwd: home, env: { PATH: caller.PATH ?? "/usr/bin:/bin", HOME: home, TMPDIR: home } })
+  const deadline = Date.now() + 15_000
+  for (;;) {
+    try {
+      if ((await fetch(`http://127.0.0.1:${port}/v1/models`, { signal: AbortSignal.timeout(1000) })).ok) return { proc, url: `http://127.0.0.1:${port}/v1` }
+    } catch {
+      // not up yet
+    }
+    if (Date.now() > deadline) {
+      await stop(proc)
+      throw new Error("the scripted model did not start (is bun installed, or EVALS_BUN set?)")
+    }
+    await new Promise((done) => setTimeout(done, 100))
+  }
+}
+
 /** Removes every sandbox's copy of the sign-in under a batch directory. */
 function scrubCredentials(batchRoot) {
   const runs = join(batchRoot, "runs")
@@ -146,10 +167,10 @@ async function runJob(job, ctx) {
   const cwd = within(root, prepared.cwd, "the working directory")
   const cut = stripForeignLinks(sandbox)
   if (cut.length) ctx.log(`  ${name}: removed ${cut.length} link(s) out of the sandbox that the world's home carried (${cut.slice(0, 3).join(", ")})`)
-  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model })
+  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.mockUrl) })
   writeConfig(sandbox, config)
   const password = newPassword()
-  const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, extra: { ...ctx.auth.env, ...(prepared.env ?? {}) } })
+  const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, extra: { ...ctx.auth.env, ...(prepared.env ?? {}), ...(ctx.mockUrl ? { SPIKE_MOCK_URL: ctx.mockUrl } : {}) } })
   // Every host command of the run goes through the isolation backend.
   const wrap = (spec) => ctx.isolation.wrap({ ...spec, sandbox })
   const exec = (args, options = {}) => {
@@ -249,19 +270,28 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const armSource = armSpec === "none" ? null : armSpec ?? pluginRepo(plugin, caller)
   if (armSpec !== "none" && !armSource) throw new Error(`no build for ${plugin}: pass --arm <built plugin dir> (or none), or set EVALS_REPO_${plugin.toUpperCase()} or EVALS_PLUGIN_ROOT`)
   const binary = hostBinary({ host: options.host, env: caller })
-  const world = await loadWorld(options.world ?? caller[`EVALS_WORLD_${plugin.toUpperCase()}`] ?? null)
   const caps = loadCaps(store, caller)
   const month = monthOf()
 
-  log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}  world ${world.name}`)
-  const isolationSpec = { name: options.isolation ?? caller.EVALS_ISOLATION ?? "none", model: options.model, unsafe: Boolean(options.unsafeNoIsolation) }
+  // Live or not is decided by what the run would be given: a credential, and the config the harness seals. Only the
+  // harness's own scripted model with no credential is not live. Decided, and refused, before a world module is
+  // imported: importing one runs its code.
+  const profile = parseAuth(options.auth ?? caller.EVALS_AUTH)
+  const scripted = Boolean(options.scripted)
+  if (scripted && options.model !== SCRIPTED_MODEL) throw new Error(`--scripted runs the harness's scripted model, ${SCRIPTED_MODEL}: --model ${options.model} is not it`)
+  const live = isLive({ auth: profile.kind, model: options.model, config: sealedConfig({ armDir: null, model: options.model, scripted }) })
+  const isolationSpec = { name: options.isolation ?? caller.EVALS_ISOLATION ?? "none", live, unsafe: Boolean(options.unsafeNoIsolation) }
   if (options.dryRun) {
+    log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}`)
+    let refused = false
     try {
       const isolation = selectIsolation(isolationSpec)
-      log(`isolation: ${isolation.name}${isolation.unsafe ? " (UNSAFE: the filesystem is not confined)" : ""}`)
+      log(`isolation: ${isolation.name}${isolation.unsafe ? " (UNSAFE: the filesystem is not confined)" : ""}${live ? "" : " (not live: the scripted model, no credential)"}`)
     } catch (error) {
+      refused = true
       log(`dry run: the batch would be refused: ${error.message}`)
     }
+    if (!refused) log(`world: ${(await loadWorld(options.world ?? caller[`EVALS_WORLD_${plugin.toUpperCase()}`] ?? null)).name}`)
     const used = checkCaps(readLedger(store), caps, { month, plugin, iteration, runs: 0 })
     for (const job of jobs) log(`  ${job.case.id}.t${job.trial}`)
     log(`runs reserved: ${plugin} ${used.per_plugin_month}/${caps.per_plugin_month} this month, all plugins ${used.total_month}/${caps.total_month}; this batch would add ${jobs.length}`)
@@ -277,7 +307,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // No live run without a backend that confines the filesystem, unless the caller says so in so many words.
   const isolation = selectIsolation(isolationSpec)
   if (isolation.unsafe) log("WARNING: --unsafe-no-isolation: the agent under test can read and write anything this user can, by absolute path")
-  const profile = parseAuth(options.auth ?? caller.EVALS_AUTH)
+  const world = await loadWorld(options.world ?? caller[`EVALS_WORLD_${plugin.toUpperCase()}`] ?? null)
+  log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}  world ${world.name}`)
   // A kept sandbox keeps the credential imported into it: only when asked for in so many words.
   if (options.keep && profile.kind === "claude-agent" && !options.keepCredentials) throw new Error("--keep with --auth claude-agent keeps the imported credential in the sandboxes: add --keep-credentials to mean it")
 
@@ -295,6 +326,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   let finished = false
   let keepRoot = Boolean(options.keep)
   const facts = {}
+  let mock = null
   const finish = (facts = {}) => {
     if (finished) return
     finished = true
@@ -341,6 +373,11 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const probe = makeSandbox(join(batchRoot, "probe"))
     const probeEnv = sandboxEnv({ sandbox: probe, config: sealedConfig({ armDir: null, model: options.model }), password: newPassword(), caller })
     await isolation.prepare({ batchRoot, caller })
+    // The harness's scripted model, when asked for: T1's mock server on loopback, for the whole batch.
+    if (scripted) {
+      mock = await startMock({ batchRoot, caller })
+      facts.scripted = true
+    }
     const probeSpec = isolation.wrap({ command: binary, args: ["--version"], cwd: probe.home, env: probeEnv, sandbox: probe })
     const version = await runToEnd(probeSpec.command, probeSpec.args, { cwd: probeSpec.cwd, env: probeSpec.env, timeoutMs: 30_000 })
     if (version.code !== 0) throw new Error(`${binary} --version failed: is the host installed?`)
@@ -386,6 +423,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       interrupted: () => interrupted,
       log,
       isolation,
+      mockUrl: mock?.url ?? null,
     }
     Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo })
     let next = 0
@@ -428,6 +466,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   } finally {
     if (!interrupted) {
       unhook()
+      await stop(mock?.proc)
       await isolation.teardown()
       finish(facts)
     }

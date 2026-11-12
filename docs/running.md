@@ -38,6 +38,7 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--stale rebuild\|refuse` | `rebuild` | what to do with a stale world |
 | `--append` | off | add trials after the ones the iteration already has; without it, a case with recordings is refused |
 | `--isolation <backend>` | `none` (or `EVALS_ISOLATION`) | what confines the run's processes: `container` (not implemented yet) or `none`, which is refused for a live run |
+| `--scripted` | off | run the harness's own scripted model, `mock/m1` (T1's mock provider and server; needs `bun` or `EVALS_BUN`): with `--auth none`, the one run that is not live |
 | `--unsafe-no-isolation` | off | launch a live run with `--isolation none` anyway: the agent can reach the whole filesystem |
 | `--dry-run` | off | print the plan, the caps and the isolation; launch and reserve nothing |
 | `--keep` | off | keep the sandboxes (for debugging the runner); with `--auth claude-agent` it is refused unless `--keep-credentials` is given too, because a kept sandbox holds the imported credential |
@@ -60,8 +61,11 @@ a comparison on any other axis. A batch from before options were recorded ran wi
 
 A backend (`src/run/isolation.mjs`) is `{ name, confines, prepare, wrap, teardown }`: `wrap` turns each host command of
 a run (`opencode serve`, `opencode run`, the credential import, `--version`) into the command that runs it confined,
-and `confines` says whether the run's processes are kept off the host filesystem. A live run (any model but the
-scripted `mock` model) on a backend that does not confine is refused before anything is created or reserved, unless
+and `confines` says whether the run's processes are kept off the host filesystem. A run is live unless it has no
+credential (`--auth none`) and runs the harness's own scripted model (`--scripted`, which registers T1's mock
+provider in the sealed config and starts its loopback server, serving `mock/m1`); a model that is merely named
+`mock` can come from the plugin under test and be backed by anything, so it is live. A live run on a backend that does
+not confine is refused before anything is created, reserved or imported (a world module included), unless
 `--unsafe-no-isolation` is given; the summary and the batch record name the backend, and `unsafe_no_isolation: true`
 when the override was used. World `build` and `prepare` steps are the operator's own scripts and run on the host.
 
