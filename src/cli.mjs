@@ -27,6 +27,7 @@ import { digestOf, sha256, short, canonical } from "./util/canonical.mjs"
 import { harnessVersion } from "./version.mjs"
 import { traceFromFiles } from "./trace/normalise.mjs"
 import { gradeCase, runView } from "./grade/grade.mjs"
+import { adapterState, ADAPTER_FILES } from "./grade/adapters/index.mjs"
 import { decide, numericVerdict } from "./policy/decide.mjs"
 import { comparable, DEFAULT_OPTIONS } from "./policy/comparable.mjs"
 import { checkX } from "./t0/x.mjs"
@@ -117,6 +118,7 @@ function graderHash() {
     "src/trace/rawArgs.mjs",
     "src/grade/trials.mjs",
     "src/grade/gold.mjs",
+    ...ADAPTER_FILES,
   ]
   const digests = {}
   for (const file of files) digests[file] = sha256(read(path(file)))
@@ -179,7 +181,7 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
         if (caseObject.checkable?.length) rawArgs = rawCallArgs(rawLines)
       }
       const files = existsSync(`${rawBase}.files.json`) ? JSON.parse(read(`${rawBase}.files.json`)) : null
-      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id), scope, rawArgs, checkable: caseObject.checkable ?? [], files })
+      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) ?? adapterState(plugin, files), scope, rawArgs, checkable: caseObject.checkable ?? [], files })
       results.push({ ...gradeCase(caseObject, view), ...(trial ? { trial } : {}) })
     }
   }
