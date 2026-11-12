@@ -16,7 +16,7 @@ import { stockBinary, TESTED } from "../t1/harness.mjs"
 import { selectCases } from "../case/sets.mjs"
 import { pluginCases } from "../case/load.mjs"
 import { harnessVersion } from "../version.mjs"
-import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf, outstanding } from "../cost/ledger.mjs"
+import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf, outstanding, capsFile } from "../cost/ledger.mjs"
 import { assertBatchWithinBudget, projectedRunUsd, monthToDate, budgetCaps } from "../cost/budget.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
@@ -35,6 +35,21 @@ import { dirname } from "node:path"
 
 
 export const RUNNER = "evals run"
+
+/**
+ * What one run costs beyond its own timeout, for the credential's horizon: the world's prepare step, a container's
+ * setup and teardown (about a second, measured), the credential import and the server's start (seconds each). Two
+ * minutes by default, which covers a slow world prepare; EVALS_RUN_OVERHEAD_S or caps.json's run_overhead_s changes it.
+ */
+export const DEFAULT_RUN_OVERHEAD_S = 120
+export function runOverheadMs(store, env = process.env) {
+  const file = capsFile(store, env)
+  const fromFile = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")).run_overhead_s : undefined
+  const value = env.EVALS_RUN_OVERHEAD_S !== undefined && env.EVALS_RUN_OVERHEAD_S !== "" ? env.EVALS_RUN_OVERHEAD_S : fromFile ?? DEFAULT_RUN_OVERHEAD_S
+  const seconds = Number(value)
+  if (!Number.isFinite(seconds) || seconds < 0) throw new Error(`the per-run overhead must be a number of seconds, not ${JSON.stringify(value)} (EVALS_RUN_OVERHEAD_S or caps.json run_overhead_s)`)
+  return seconds * 1000
+}
 
 /** Where a batch's sandboxes go: EVALS_TMP, else /var/tmp/evals (on disk), made private to this user if missing. */
 export const DEFAULT_TMP = "/var/tmp/evals"
@@ -496,9 +511,13 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       if (!status.fresh) throw new Error(`world ${world.name} is stale and was not rebuilt: ${status.why}`)
     }
 
-    // A batch must not outlive its sign-in: the worst case is every round of runs hitting the timeout.
+    // A batch must not outlive its sign-in: the worst case is every round of runs hitting the timeout, plus what each
+    // run costs around it (world prepare, container setup and teardown, the credential import, the server's start).
     const timeoutMs = Number(options.timeout ?? 420) * 1000
-    const horizonMs = timeoutMs * Math.ceil(jobs.length / parallel)
+    const overheadMs = runOverheadMs(store, caller)
+    const rounds = Math.ceil(jobs.length / parallel)
+    const horizonMs = (timeoutMs + overheadMs) * rounds
+    facts.horizon = { timeout_s: timeoutMs / 1000, run_overhead_s: overheadMs / 1000, rounds }
     const auth = await prepareAuth(profile, { binary, caller, horizonMs })
     // From here on, a run's secret (the access token, a key passed through) is scrubbed, by exact value, from every
     // line logged and every file written.

@@ -623,9 +623,18 @@ test("a batch that could outlive its sign-in is refused, with the step that fixe
   // 3 runs, 1 at a time, 420 s each in the worst case: 21 minutes, plus 10 of margin, is more than the 20 left.
   await assert.rejects(runBatch({ ...UNCONFINED, plugin: "demo", iteration: "exp", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", trials: 3, parallel: 1, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /expires at .*refresh it first/)
   assert.deepEqual(readLedger(f.store), [])
-  // One quick run fits: 1 x 60 s + 10 minutes.
+  // One quick run fits: 1 x (60 s + 120 s of overhead) + 10 minutes.
   const ok = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "exp2", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", timeout: 60, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
   assert.equal(ok.launched, 1)
+  assert.deepEqual(ok.horizon, { timeout_s: 60, run_overhead_s: 120, rounds: 1 })
+  // Each run's overhead counts, round by round: two 60 s runs one at a time need 2 x 3 minutes + 10, more than the 14
+  // left, though their timeouts alone (2 + 10) would fit.
+  writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: TOKEN, refreshToken: "r1", expiresAt: Date.now() + 14 * 60_000 } }))
+  const two = { ...UNCONFINED, plugin: "demo", iteration: "exp3", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", trials: 2, parallel: 1, timeout: 60, arm: f.arm, casesDir: f.casesDir }
+  await assert.rejects(runBatch(two, { caller, ...quiet }), /expires at .*within the 16 minutes/)
+  const measured = await runBatch(two, { caller: { ...caller, EVALS_RUN_OVERHEAD_S: "0" }, ...quiet })
+  assert.equal(measured.launched, 2, "with the overhead configured to nothing, the timeouts alone decide")
+  await assert.rejects(runBatch({ ...two, iteration: "exp4" }, { caller: { ...caller, EVALS_RUN_OVERHEAD_S: "soon" }, ...quiet }), /per-run overhead must be a number of seconds/)
   f.cleanup()
 })
 
