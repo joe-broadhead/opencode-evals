@@ -43,4 +43,4 @@ I want to add rate limiting to /v1/signup the same way we did for login. what se
 - [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

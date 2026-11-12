@@ -42,4 +42,4 @@ in lumen-web, how did we fix the login redirect loop?
 - [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

@@ -33,4 +33,4 @@ what did the most recent nightly PR digest say?
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

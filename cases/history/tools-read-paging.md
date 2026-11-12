@@ -28,4 +28,4 @@ in the Stripe v2 migration session, what was my very first message, and what was
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

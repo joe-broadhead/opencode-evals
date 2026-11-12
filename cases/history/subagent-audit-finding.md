@@ -42,4 +42,4 @@ what did the catalog audit subagent find? it wrote to AUDIT.md but I never read 
 - [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

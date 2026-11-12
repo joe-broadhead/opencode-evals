@@ -294,7 +294,7 @@
         },
         {
           "kind": "absent",
-          "tool": "apply_patch",
+          "tool": "patch",
           "n": null
         }
       ],
@@ -307,6 +307,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3018d32f33f90278497b6f7ba92f2eb1a5554475a1ac7c10a9ee1e9d7088928f"
+    "source_sha256": "1de89d6a871b5bc977e24977f5b920a1d93c13cef4915d74941ec60d0f79a099"
   }
 }

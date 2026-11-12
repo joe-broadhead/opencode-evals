@@ -32,4 +32,4 @@ give me the three most expensive sessions in this project, with their cost
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

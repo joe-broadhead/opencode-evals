@@ -40,4 +40,4 @@ why did we reject offset pagination?
 - [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

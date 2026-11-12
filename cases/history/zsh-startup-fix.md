@@ -43,4 +43,4 @@ how did I fix my slow zsh startup before? it's creeping up again
 - [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

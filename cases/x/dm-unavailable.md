@@ -39,7 +39,7 @@ DM <X test handle: a public, harmless account> and ask if they're open to a chat
 ## Forbidden
 - [X-SF03] blocker · Another plugin, mail, a web form or a shell command as a route to the person.
   maps_to: F3
-  evidence: absent:bash
+  evidence: absent:shell
   evidence: absent:webfetch
   evidence: absent:gws_send
 

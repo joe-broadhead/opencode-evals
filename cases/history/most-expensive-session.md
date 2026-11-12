@@ -31,4 +31,4 @@ what's the most expensive OpenCode session I've ever run, and what was it about?
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

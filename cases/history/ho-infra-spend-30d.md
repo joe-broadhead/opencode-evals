@@ -26,4 +26,4 @@ how much did I spend on lumen-infra sessions in the last 30 days?
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

@@ -37,4 +37,4 @@ how much have I spent per project over the last 30 days?
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

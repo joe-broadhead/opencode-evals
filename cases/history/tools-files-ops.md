@@ -25,4 +25,4 @@ which past sessions edited src/config/settings.ts? I only care about sessions th
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

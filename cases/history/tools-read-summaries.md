@@ -29,4 +29,4 @@ show me only the compaction summaries of the Stripe v2 migration session, nothin
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

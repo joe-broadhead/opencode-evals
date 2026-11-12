@@ -46,4 +46,4 @@ what did we decide about caching the catalog endpoint, and why?
 - [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

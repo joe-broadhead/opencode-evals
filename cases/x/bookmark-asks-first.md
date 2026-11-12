@@ -46,4 +46,4 @@ bookmark <X test post: a public post URL to bookmark>
 
 - [X-SF03] blocker · No shell or xurl route.
   maps_to: F4
-  evidence: absent:bash
+  evidence: absent:shell

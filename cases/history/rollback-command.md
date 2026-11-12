@@ -39,4 +39,4 @@ what exact command did we use to roll back the last bad lumen-api deploy?
 - [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

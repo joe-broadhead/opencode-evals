@@ -274,7 +274,7 @@
         },
         {
           "kind": "absent",
-          "tool": "apply_patch",
+          "tool": "patch",
           "n": null
         }
       ],
@@ -290,11 +290,6 @@
       "forbidden": true,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent",
-          "tool": "bash",
-          "n": null
-        },
         {
           "kind": "absent",
           "tool": "shell",
@@ -332,12 +327,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 55
+      "line": 54
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1cea375d7c8a96954a80a2f5b2d7dfb6e30e971c820ad5fc63f107af49691785"
+    "source_sha256": "f1fcb1063d01424d395b2f19867cbf959987e3de81d9cd07438595796b1ab3ee"
   }
 }

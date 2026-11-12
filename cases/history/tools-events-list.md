@@ -25,4 +25,4 @@ I want the raw change feed of my sessions over the last 7 days, as events. use t
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

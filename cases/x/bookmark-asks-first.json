@@ -196,7 +196,7 @@
       "evidence": [
         {
           "kind": "absent",
-          "tool": "bash",
+          "tool": "shell",
           "n": null
         }
       ],
@@ -211,6 +211,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "693adf9e9b3229b949ab05f977de5e89994786d260d3ab4e5c16b017dd24468e"
+    "source_sha256": "9184c99804d2cff45a6fdc65da2988dbbcb6565f9e533b043a14f6eda44d2071"
   }
 }
