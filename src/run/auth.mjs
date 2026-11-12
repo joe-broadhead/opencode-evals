@@ -94,7 +94,7 @@ export async function prepareAuth(profile, { binary, caller = process.env }) {
     profile: "claude-agent",
     env: { CLAUDE_AGENT_SDK_VERSION: caller.CLAUDE_AGENT_SDK_VERSION, DISABLE_AUTOUPDATER: "1" },
     holdsCredential: true,
-    async apply({ sandbox, env }) {
+    async apply({ sandbox, env, exec = (args, options) => runToEnd(binary, args, { cwd: sandbox.home, env, ...options }) }) {
       // The sandbox's own ~/.claude, with the sign-in and nothing else: whatever a world's home brought is replaced.
       const dir = join(sandbox.home, ".claude")
       rmSync(dir, { recursive: true, force: true })
@@ -102,7 +102,7 @@ export async function prepareAuth(profile, { binary, caller = process.env }) {
       mkdirSync(dir, { recursive: true, mode: 0o700 })
       symlinkSync(realCredentials, join(dir, ".credentials.json"))
       env.CLAUDE_CONFIG_DIR = dir
-      const imported = await runToEnd(binary, ["auth", "import", "--standalone"], { cwd: sandbox.home, env, input: credential, timeoutMs: 60_000 })
+      const imported = await exec(["auth", "import", "--standalone"], { cwd: sandbox.home, input: credential, timeoutMs: 60_000 })
       if (imported.code !== 0) throw new Error(`the credential import into the sandbox failed (exit ${imported.code})`)
     },
     /** A token the run refreshed goes back to the caller's file; nothing else of the sandbox leaves it. */

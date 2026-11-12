@@ -10,6 +10,7 @@
 //   evals report   <label>=<it>[,<it>...] ... [--plugin x] [--set all] [--cases ids] [--all-cases] [--detail] [--json]
 //   evals run      --plugin x --iteration it --model p/m --auth none|env:VAR|claude-agent [--cases ids] [--set tune]
 //                  [--trials K] [--parallel N] [--arm DIR|none] [--world DIR|FILE] [--host 2.2.6] [--dry-run]
+//                  [--isolation container|none] [--unsafe-no-isolation]   (a live run needs filesystem isolation)
 //   evals t0       [--root DIR] [--json]
 //   evals verify   [--iteration it --plugin x | --all]  re-derive every number, or list the stale iterations
 //   evals selftest run the T-G gold cases over synthetic traces
@@ -491,6 +492,8 @@ export async function main(argv) {
         dryRun: Boolean(opt["dry-run"]),
         keep: Boolean(opt.keep),
         keepCredentials: Boolean(opt["keep-credentials"]),
+        isolation: opt.isolation,
+        unsafeNoIsolation: Boolean(opt["unsafe-no-isolation"]),
         append: Boolean(opt.append),
       })
       if (result.results?.some((r) => r.error)) process.exitCode = 1

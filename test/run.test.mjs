@@ -199,10 +199,10 @@ test("freshness rules: a UTC day, a number of hours, or always", () => {
 
 test("claude-agent: the credential is piped in, and the run's ~/.claude is its own, holding only the sign-in", async () => {
   const f = fixture()
-  await assert.rejects(runBatch({ plugin: "demo", iteration: "ca0", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet }), /CLAUDE_AGENT_SDK_VERSION/)
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "ca0", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet }), /CLAUDE_AGENT_SDK_VERSION/)
   const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
   const before = readdirSync(join(f.home, ".claude")).sort()
-  const result = await runBatch({ plugin: "demo", iteration: "ca1", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true, keepCredentials: true }, { caller, ...quiet })
+  const result = await runBatch({ plugin: "demo", iteration: "ca1", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true, keepCredentials: true }, { caller, ...quiet })
   assert.equal(result.bad, 0, JSON.stringify(result.results))
   const home = join(result.keptAt, "runs", "demo-b.t1", "home")
   const imported = JSON.parse(readFileSync(join(home, "imported.json"), "utf8"))
@@ -229,11 +229,11 @@ test("claude-agent: the credential is piped in, and the run's ~/.claude is its o
 test("--keep with claude-agent is refused unless --keep-credentials says so", async () => {
   const f = fixture()
   const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
-  await assert.rejects(runBatch({ plugin: "demo", iteration: "kc", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true }, { caller, ...quiet }), /--keep-credentials/)
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "kc", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true }, { caller, ...quiet }), /--keep-credentials/)
   assert.deepEqual(readLedger(f.store), [], "refused before anything was reserved")
   assert.deepEqual(readdirSync(f.tmp), [], "and nothing was kept")
   const lines = []
-  await runBatch({ plugin: "demo", iteration: "kc2", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true, keepCredentials: true }, { caller, log: (line) => lines.push(line) })
+  await runBatch({ plugin: "demo", iteration: "kc2", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true, keepCredentials: true }, { caller, log: (line) => lines.push(line) })
   assert.ok(lines.some((line) => /hold the imported credential/.test(line)))
   f.cleanup()
 })
@@ -247,7 +247,7 @@ test("a world's home that links to the caller's ~/.claude is cut off from it", a
   writeFileSync(join(world, "home", ".claude.json"), JSON.stringify({ oauthAccount: { id: "a" } }))
   writeFileSync(join(world, "world.json"), JSON.stringify({ home: "home" }))
   const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
-  const result = await runBatch({ plugin: "demo", iteration: "wl", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, world, keep: true, keepCredentials: true }, { caller, ...quiet })
+  const result = await runBatch({ plugin: "demo", iteration: "wl", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir, world, keep: true, keepCredentials: true }, { caller, ...quiet })
   const home = join(result.keptAt, "runs", "demo-b.t1", "home")
   assert.equal(lstatSync(join(home, ".claude")).isSymbolicLink(), false)
   assert.equal(existsSync(join(home, ".local", "bin")), false)
@@ -518,5 +518,29 @@ test("a batch stops before the next run would cross the dollar cap, counting the
   assert.equal(readLedger(f.store).find((e) => e.kind === "release").runs, 2)
   // A batch whose projection is already over the cap is refused at the reservation.
   await assert.rejects(runBatch({ plugin: "demo", iteration: "spend2", model: "mock/m1", auth: "none", cases: "pricey", trials: 3, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /D4 budget/)
+  f.cleanup()
+})
+
+test("a live run is refused without filesystem isolation, before anything is created or reserved", async () => {
+  const f = fixture()
+  const live = { plugin: "demo", iteration: "live", model: "claude-agent/haiku", auth: "none", cases: "demo-b", arm: f.arm, casesDir: f.casesDir }
+  await assert.rejects(runBatch(live, { caller: f.caller, ...quiet }), /refusing a live run with --isolation none: the sandbox isolates the environment, not the filesystem/)
+  await assert.rejects(runBatch({ ...live, isolation: "container" }, { caller: f.caller, ...quiet }), /--isolation container is not implemented yet/)
+  await assert.rejects(runBatch({ ...live, isolation: "chroot" }, { caller: f.caller, ...quiet }), /unknown --isolation "chroot"/)
+  assert.deepEqual(readLedger(f.store), [])
+  assert.deepEqual(readdirSync(f.tmp), [])
+  assert.equal(existsSync(join(f.store, "raw", "live")), false)
+  // The caller can take the risk in so many words; the recording says it was taken.
+  const lines = []
+  await runBatch({ ...live, unsafeNoIsolation: true }, { caller: f.caller, log: (line) => lines.push(line) })
+  assert.ok(lines.some((line) => /WARNING: --unsafe-no-isolation/.test(line)))
+  const summary = JSON.parse(readFileSync(join(f.store, "raw", "live", "demo", "demo-b.t1.summary.json"), "utf8"))
+  assert.equal(summary.isolation, "none")
+  assert.equal(summary.unsafe_no_isolation, true)
+  // The scripted mock model drives no real tools: it is not a live run.
+  const mock = await runBatch({ ...live, iteration: "mocked", model: "mock/m1" }, { caller: f.caller, ...quiet })
+  assert.equal(mock.unsafe_no_isolation, undefined)
+  const dry = spawnSync(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "dry2", "--model", "claude-agent/haiku", "--auth", "none", "--arm", f.arm, "--cases-dir", f.casesDir, "--dry-run"], { env: f.caller, encoding: "utf8" })
+  assert.match(dry.stdout, /the batch would be refused: refusing a live run/)
   f.cleanup()
 })

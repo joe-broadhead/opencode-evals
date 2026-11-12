@@ -4,6 +4,14 @@
 private store where `evals trace` reads it. It is the only command that spends model time, so everything that can
 refuse a batch does so before the first run starts.
 
+> **A live run needs filesystem isolation, and none is implemented yet.** The sandbox below isolates the
+> environment (HOME, the XDG tree, TMPDIR, the config and the database), not the filesystem: an agent under test with a
+> shell or a write tool can read and write anything the user running the harness can, by absolute path. An eval run
+> has done exactly that and overwritten a real file outside its sandbox. So `evals run` refuses a live run unless a
+> filesystem-isolation backend is configured (`--isolation`, below). The `container` backend is being designed and is
+> not implemented; until it exists, no live run should be launched. `--unsafe-no-isolation` overrides the refusal,
+> for a machine that is itself disposable and holds nothing you would mind losing; the recording says it was used.
+
 ```sh
 evals run --plugin history --iteration v1-a --model claude-agent/haiku --auth claude-agent \
   --set tune --trials 3 --parallel 4 --arm ../opencode-history --world ../history-world
@@ -29,7 +37,9 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--timeout <s>` | `420` | a run is killed after this |
 | `--stale rebuild\|refuse` | `rebuild` | what to do with a stale world |
 | `--append` | off | add trials after the ones the iteration already has; without it, a case with recordings is refused |
-| `--dry-run` | off | print the plan and the caps; launch and reserve nothing |
+| `--isolation <backend>` | `none` (or `EVALS_ISOLATION`) | what confines the run's processes: `container` (not implemented yet) or `none`, which is refused for a live run |
+| `--unsafe-no-isolation` | off | launch a live run with `--isolation none` anyway: the agent can reach the whole filesystem |
+| `--dry-run` | off | print the plan, the caps and the isolation; launch and reserve nothing |
 | `--keep` | off | keep the sandboxes (for debugging the runner); with `--auth claude-agent` it is refused unless `--keep-credentials` is given too, because a kept sandbox holds the imported credential |
 
 ## Arms
@@ -46,17 +56,27 @@ option can be a secret), with the `access` value beside it. They are a provenanc
 two arms that differ only in access compare with `evals policy --axis options`, and an options difference refuses
 a comparison on any other axis. A batch from before options were recorded ran with none.
 
+## Isolation
+
+A backend (`src/run/isolation.mjs`) is `{ name, confines, prepare, wrap, teardown }`: `wrap` turns each host command of
+a run (`opencode serve`, `opencode run`, the credential import, `--version`) into the command that runs it confined,
+and `confines` says whether the run's processes are kept off the host filesystem. A live run (any model but the
+scripted `mock` model) on a backend that does not confine is refused before anything is created or reserved, unless
+`--unsafe-no-isolation` is given; the summary and the batch record name the backend, and `unsafe_no_isolation: true`
+when the override was used. World `build` and `prepare` steps are the operator's own scripts and run on the host.
+
 ## Before the first run
 
 In this order, and a failure stops the batch with nothing launched:
 
-1. the cases are selected; a named case outside `--set` is an error, not an empty run;
-2. a recording that already exists in the iteration is never overwritten (`--append` numbers new trials after it);
-3. the build is copied into the batch directory, so a later edit to the checkout cannot reach a running batch;
-4. the world is checked, and rebuilt with the build under test when it is stale (below);
-5. the credential profile is prepared;
-6. the dollar budget: the projected spend must fit the month's cap ([configuration.md](configuration.md#budget));
-7. the run caps: the whole batch is reserved in the run ledger, or refused whole.
+1. the isolation: a live run without filesystem isolation is refused;
+2. the cases are selected; a named case outside `--set` is an error, not an empty run;
+3. a recording that already exists in the iteration is never overwritten (`--append` numbers new trials after it);
+4. the build is copied into the batch directory, so a later edit to the checkout cannot reach a running batch;
+5. the world is checked, and rebuilt with the build under test when it is stale (below);
+6. the credential profile is prepared;
+7. the dollar budget: the projected spend must fit the month's cap ([configuration.md](configuration.md#budget));
+8. the run caps: the whole batch is reserved in the run ledger, or refused whole.
 
 During the batch, a run is not launched when the world has gone stale since the batch started (a batch that crosses
 midnight UTC on a day-bound world) or when the month's billed spend has crossed its cap; its reservation is

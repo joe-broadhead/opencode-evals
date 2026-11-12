@@ -48,6 +48,7 @@ committed, and nothing in the repository may reference a machine path: `evals pr
 | `EVALS_AUTH` | unset | `evals run`'s credential profile when `--auth` is not given ([running.md](running.md#credentials)) |
 | `EVALS_AUTH_CREDENTIAL` | `Claude Agent` | the stored OpenCode credential the `claude-agent` profile exports |
 | `CLAUDE_AGENT_SDK_VERSION` | unset | required by the `claude-agent` profile, and passed to its runs |
+| `EVALS_ISOLATION` | `none` | `evals run`'s isolation backend when `--isolation` is not given; `none` is refused for a live run ([running.md](running.md#isolation)) |
 | `EVALS_WORLD_<ID>` | unset | a plugin's world, a directory with `world.json` or a module ([running.md](running.md#worlds)) |
 
 ## Packs

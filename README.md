@@ -63,8 +63,9 @@ cases that must fail.
 The tool reads plugin checkouts and the private store, and writes results, labels and traces. It starts an
 OpenCode host from a binary you point it at, and a mock model on loopback. It does not sign in to anything,
 does not call a vendor's API, and holds no credentials. The one exception is `evals run`, which runs a real model:
-it passes the credential you name with `--auth` into each run's sandbox, and deletes it with the sandbox
-([docs/running.md](docs/running.md)).
+it passes the credential you name with `--auth` into each run's sandbox, and deletes it with the sandbox. That sandbox
+isolates the environment, not the filesystem, so `evals run` refuses a live run until a filesystem-isolation backend
+is configured ([docs/running.md](docs/running.md)).
 
 Nothing private is committed: the store — recordings, traces, verdicts, scorecards, labels, holdouts — lives
 outside the repository. A trace reduces a session's content to structure; `evals privacy --scan` checks the
@@ -93,6 +94,7 @@ CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/
 | `BLOCKED` items | the evidence could not settle the item — a variable argument, a missing recording, a dependency not configured |
 | `not comparable` | the case set, the rules, the model or the grader differ: the tool names the fields |
 | `cost.source: missing` | no price entry; add one with a source and a date rather than a guess |
+| `refusing a live run with --isolation none` | a live run needs a filesystem-isolation backend, and none is implemented yet: see [docs/running.md](docs/running.md) |
 | `run cap: … would reach …` | the batch does not fit this month's run caps; nothing ran. `evals budget` shows what is reserved |
 | `world … is stale` | the world's day has passed or another build indexed it; give it a `build`, or rebuild it |
 | `already have recordings` | the iteration has those cases; use a new `--iteration`, or `--append` for more trials |

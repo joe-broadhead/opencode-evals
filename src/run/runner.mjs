@@ -27,6 +27,7 @@ import { loadWorld, parseSeed } from "./world.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
 import { segment, within } from "./paths.mjs"
+import { selectIsolation } from "./isolation.mjs"
 import { splitTrial } from "../grade/trials.mjs"
 import { digestOf } from "../util/canonical.mjs"
 import { dirname } from "node:path"
@@ -90,12 +91,13 @@ const writeAtomic = (file, text) => {
 }
 
 /** Starts one host server on a free port, and retries on another when the port was taken in between. */
-async function startServer({ binary, cwd, env, password, timeoutMs = 60_000 }) {
+async function startServer({ binary, cwd, env, password, wrap = (spec) => spec, timeoutMs = 60_000 }) {
   const auth = `Basic ${Buffer.from(`opencode:${password}`).toString("base64")}`
   let last = ""
   for (let attempt = 0; attempt < 3; attempt++) {
     const port = await freePort()
-    const proc = start(binary, ["serve", "--hostname", "127.0.0.1", "--port", String(port)], { cwd, env })
+    const spec = wrap({ command: binary, args: ["serve", "--hostname", "127.0.0.1", "--port", String(port)], cwd, env })
+    const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
     let exited = false
     proc.exited.then(() => (exited = true))
     const deadline = Date.now() + timeoutMs
@@ -141,16 +143,22 @@ async function runJob(job, ctx) {
   writeConfig(sandbox, config)
   const password = newPassword()
   const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, extra: { ...ctx.auth.env, ...(prepared.env ?? {}) } })
-  await ctx.auth.apply({ sandbox, env })
+  // Every host command of the run goes through the isolation backend.
+  const wrap = (spec) => ctx.isolation.wrap({ ...spec, sandbox })
+  const exec = (args, options = {}) => {
+    const spec = wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env })
+    return runToEnd(spec.command, spec.args, { ...options, cwd: spec.cwd, env: spec.env })
+  }
+  await ctx.auth.apply({ sandbox, env, exec })
   const before = snapshotFiles(cwd)
   const started = Date.now()
   let server = null
   let result
   try {
-    server = await startServer({ binary: ctx.binary, cwd, env, password })
+    server = await startServer({ binary: ctx.binary, cwd, env, password, wrap })
     // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
     const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
-    result = await runToEnd(ctx.binary, ["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, job.case.prompt], { cwd, env, timeoutMs: ctx.timeoutMs })
+    result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, job.case.prompt], { timeoutMs: ctx.timeoutMs })
   } catch (error) {
     result = { code: null, stdout: "", stderr: String(error.message ?? error), timedOut: false, error: String(error.message ?? error) }
   } finally {
@@ -176,6 +184,8 @@ async function runJob(job, ctx) {
     opencode: ctx.opencode,
     host: ctx.hostVersion,
     auth: ctx.auth.profile,
+    isolation: ctx.isolation.name,
+    ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
     world: ctx.worldInfo,
     batch: ctx.batch,
     provenance: ctx.arm.provenance,
@@ -235,7 +245,14 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const month = monthOf()
 
   log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}  world ${world.name}`)
+  const isolationSpec = { name: options.isolation ?? caller.EVALS_ISOLATION ?? "none", model: options.model, unsafe: Boolean(options.unsafeNoIsolation) }
   if (options.dryRun) {
+    try {
+      const isolation = selectIsolation(isolationSpec)
+      log(`isolation: ${isolation.name}${isolation.unsafe ? " (UNSAFE: the filesystem is not confined)" : ""}`)
+    } catch (error) {
+      log(`dry run: the batch would be refused: ${error.message}`)
+    }
     const used = checkCaps(readLedger(store), caps, { month, plugin, iteration, runs: 0 })
     for (const job of jobs) log(`  ${job.case.id}.t${job.trial}`)
     log(`runs reserved: ${plugin} ${used.per_plugin_month}/${caps.per_plugin_month} this month, all plugins ${used.total_month}/${caps.total_month}; this batch would add ${jobs.length}`)
@@ -248,6 +265,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     return { planned: jobs.length, launched: 0, dryRun: true }
   }
 
+  // No live run without a backend that confines the filesystem, unless the caller says so in so many words.
+  const isolation = selectIsolation(isolationSpec)
+  if (isolation.unsafe) log("WARNING: --unsafe-no-isolation: the agent under test can read and write anything this user can, by absolute path")
   const profile = parseAuth(options.auth ?? caller.EVALS_AUTH)
   // A kept sandbox keeps the credential imported into it: only when asked for in so many words.
   if (options.keep && profile.kind === "claude-agent" && !options.keepCredentials) throw new Error("--keep with --auth claude-agent keeps the imported credential in the sandboxes: add --keep-credentials to mean it")
@@ -309,7 +329,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // The host's version, asked in a sandbox of its own: even `--version` reads nothing of the caller's install.
     const probe = makeSandbox(join(batchRoot, "probe"))
     const probeEnv = sandboxEnv({ sandbox: probe, config: sealedConfig({ armDir: null, model: options.model }), password: newPassword(), caller })
-    const version = await runToEnd(binary, ["--version"], { cwd: probe.home, env: probeEnv, timeoutMs: 30_000 })
+    await isolation.prepare({ batchRoot, caller })
+    const probeSpec = isolation.wrap({ command: binary, args: ["--version"], cwd: probe.home, env: probeEnv, sandbox: probe })
+    const version = await runToEnd(probeSpec.command, probeSpec.args, { cwd: probeSpec.cwd, env: probeSpec.env, timeoutMs: 30_000 })
     if (version.code !== 0) throw new Error(`${binary} --version failed: is the host installed?`)
     const opencode = version.stdout.trim()
     const hostVersion = (/(\d+\.\d+\.\d+)/.exec(opencode) ?? [])[1] ?? null
@@ -319,7 +341,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // The options are an axis of their own: an access mode changes what the plugin allows. Recorded by digest (an
     // option can be a secret), with the access value beside it.
     const arm = { ...built, provenance: { ...built.provenance, options: digestOf(pluginOptions ?? {}), ...(pluginOptions?.access ? { access: pluginOptions.access } : {}) } }
-    Object.assign(facts, { opencode, arm: { arm: arm.arm, sha256: arm.sha256, version: arm.version } })
+    Object.assign(facts, { opencode, isolation: isolation.name, ...(isolation.unsafe ? { unsafe_no_isolation: true } : {}), arm: { arm: arm.arm, sha256: arm.sha256, version: arm.version } })
 
     // The world must be current, and built by the build under test.
     let status = world.status({ arm: armDir ? { dir: armDir, sha256: arm.sha256 } : null })
@@ -349,6 +371,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       worldInfo: { ...(world.provenance?.() ?? { name: world.name }), now: status.now ?? null },
       interrupted: () => interrupted,
       log,
+      isolation,
     }
     Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo })
     let next = 0
@@ -391,6 +414,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   } finally {
     if (!interrupted) {
       unhook()
+      await isolation.teardown()
       finish(facts)
     }
   }

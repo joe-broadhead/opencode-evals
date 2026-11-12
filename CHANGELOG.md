@@ -110,6 +110,11 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- `evals run` launched live runs with only environment isolation, and an agent under test reached a file outside its
+  sandbox by absolute path. A live run now needs a filesystem-isolation backend (`--isolation`, a pluggable
+  `src/run/isolation.mjs`); `none` is refused for a live run unless `--unsafe-no-isolation` is given, and the
+  `container` backend is not implemented yet, so no live run can be launched safely until it is.
+
 - `evals run` asked the host for its version with the caller's `HOME`; it now asks in a sandbox of its own. The
   credential export is the one command left with the caller's environment, and the docs say why.
 
