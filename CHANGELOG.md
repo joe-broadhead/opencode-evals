@@ -110,6 +110,9 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- `Seed: cwd=../../x` (or an alias to one) copied a directory from outside the world into the sandbox: a seed key and
+  the repository it names must be single names inside the world's `repos`.
+
 - `evals run` handled no signal: after Ctrl-C the `opencode serve` groups and any `claude` under them kept running, and
   the batch directory, with the imported credential, stayed in tmp. An interrupt or an uncaught error now kills every
   process group the batch started, removes its sandboxes unless `--keep`, releases the runs that never launched,

@@ -29,6 +29,7 @@ import { pathToFileURL } from "node:url"
 import { runToEnd } from "./sandbox.mjs"
 import { sha256 } from "../util/canonical.mjs"
 import { treeDigest } from "./arm.mjs"
+import { segment, within } from "./paths.mjs"
 
 /** A digest of a file or a directory tree: what records which private overlay a world was built with. */
 const digestOfPath = (path) => (statSync(path).isDirectory() ? treeDigest(path) : sha256(readFileSync(path)))
@@ -124,11 +125,13 @@ export function dirWorld(dir) {
       let source = null
       if (!key || !s.repos) mkdirSync(join(sandbox.project, ".git"), { recursive: true })
       else {
-        const name = s.cwd?.[key] ?? key
-        source = join(at(s.repos), name)
+        // A seed key and the repository it names are single names inside the world's repos: never a path.
+        segment("Seed cwd", key)
+        const name = segment(`the world's repository for cwd=${key}`, s.cwd?.[key] ?? key)
+        source = within(at(s.repos), join(at(s.repos), name), "the seeded repository")
         if (!existsSync(source)) throw new Error(`the world has no repository ${name} (seed cwd=${key})`)
         // The agent works in its own copy, with the same .git (so the same project id): one run cannot touch another's.
-        cwd = join(sandbox.root, "work", name)
+        cwd = within(sandbox.root, join(sandbox.root, "work", name), "the working directory")
         cpSync(source, cwd, { recursive: true, verbatimSymlinks: true })
       }
       // A world whose sessions record directories rewrites them to this run's own, so `scope: directory` still means
@@ -139,6 +142,7 @@ export function dirWorld(dir) {
       }
       let session = null
       if (seeds.continue) {
+        segment("Seed continue", seeds.continue)
         session = s.sessions?.[seeds.continue] ?? null
         if (!session) throw new Error(`the world has no session ${JSON.stringify(seeds.continue)} to continue (world.json "sessions")`)
       }

@@ -416,3 +416,20 @@ test("Ctrl-C stops every process the batch started, removes its sandboxes, relea
   assert.match(out, /interrupted by SIGINT/)
   f.cleanup()
 })
+
+test("a seed's cwd is a repository of the world, never a path out of it", async () => {
+  const f = fixture()
+  const world = join(f.root, "world")
+  mkdirSync(join(world, "repos", "api-repo"), { recursive: true })
+  mkdirSync(join(f.root, "secret"), { recursive: true })
+  writeFileSync(join(f.root, "secret", "token"), "x")
+  writeFileSync(join(world, "world.json"), JSON.stringify({ repos: "repos", cwd: { api: "api-repo", sneaky: "../../secret" } }))
+  for (const [id, seed, why] of [["climbs", "cwd=../../secret", /Seed cwd "..\/..\/secret" is not a safe name/], ["absolute", "cwd=/etc", /Seed cwd "\/etc" is not a safe name/], ["aliased", "cwd=sneaky", /repository for cwd=sneaky/]]) {
+    addCase(f.casesDir, id, `- Seed: ${seed}`)
+    const result = await runBatch({ plugin: "demo", iteration: `cwd-${id}`, model: "mock/m1", auth: "none", cases: id, arm: f.arm, casesDir: f.casesDir, world }, { caller: f.caller, ...quiet })
+    assert.match(result.results[0].error ?? "", why, id)
+    assert.equal(existsSync(join(f.store, "raw", `cwd-${id}`, "demo", `${id}.t1.jsonl`)), false)
+  }
+  assert.ok(existsSync(join(f.root, "secret", "token")), "nothing outside the world was copied or touched")
+  f.cleanup()
+})
