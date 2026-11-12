@@ -2,7 +2,7 @@
 //
 //   evals compile  [--plugin x] [--check]     markdown cases -> oc-case/1 JSON
 //   evals trace    --iteration nx6 [--from DIR] [--out DIR]
-//   evals grade    --iteration nx6 [--cases DIR] [--traces DIR] [--raw DIR] [--state DIR] [--out DIR]
+//   evals grade    --iteration nx6 [--plugin x] [--cases DIR] [--traces DIR] [--raw DIR] [--out DIR]
 //   evals lock     [--plugin x] [--epoch N]
 //   evals scorecard --iteration nx6 [--grading FILE] [--out FILE]
 //   evals policy   --a nx5 --b nx6 [--strict]
@@ -34,6 +34,7 @@ import { extendVocab } from "./trace/redact.mjs"
 import { loadCatalog, loadMapping, drift } from "./cost/catalog.mjs"
 import { runCost, totals, trustOf } from "./cost/rule.mjs"
 import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "./label/kit.mjs"
+import { storeRoot, rawRoot } from "./store.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
 const args = (argv) => {
@@ -53,7 +54,7 @@ const args = (argv) => {
 }
 
 const path = (...parts) => join(ROOT, ...parts)
-const storePath = () => process.env.EVALS_STORE ?? join(ROOT, "..", "private", "store")
+const storePath = () => storeRoot()
 const read = (file) => readFileSync(file, "utf8")
 const write = (file, text) => {
   mkdirSync(dirname(file), { recursive: true })
@@ -122,7 +123,7 @@ function stateFor(iteration, caseName) {
   return existsSync(file) ? JSON.parse(read(file)) : null
 }
 
-function gradeAll(iteration, casesDir = path("cases", "x"), tracesDir = join(storePath(), "traces", iteration), rawDir = process.env.EVALS_RAW ?? join(ROOT, "..", "private", "raw"), plugin = "x") {
+function gradeAll(iteration, casesDir = path("cases", "x"), tracesDir = join(storePath(), "traces", iteration), rawDir = rawRoot(), plugin = "x") {
   const cases = casesDir.endsWith(".json") ? [] : listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
   const results = []
   for (const caseObject of cases) {
@@ -337,8 +338,10 @@ export async function main(argv) {
     }
     case "grade": {
       const iteration = opt.iteration ?? "nx6"
-      const cases = loadCases(opt.plugin ?? "x")
-      const results = gradeAll(iteration, path("cases", opt.plugin ?? "x"), undefined, undefined, opt.plugin ?? "x")
+      const plugin = opt.plugin ?? "x"
+      const casesDir = opt.cases ?? path("cases", plugin)
+      const cases = listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
+      const results = gradeAll(iteration, casesDir, opt.traces ?? join(storePath(), "traces", iteration), opt.raw ?? rawRoot(), plugin)
       const summary = batchSummary(iteration, results, cases)
       const out = opt.out ?? join(storePath(), "results", iteration)
       ensureDir(out)
@@ -500,7 +503,7 @@ export async function main(argv) {
       return
     }
     case "t1": {
-      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const store = opt.store ?? storePath()
       const ids = opt.plugin ? [opt.plugin] : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear", "history"]
       const versions = opt.versions ? String(opt.versions).split(",") : undefined
       const packs = ids.filter((id) => {
@@ -539,13 +542,13 @@ export async function main(argv) {
       return
     }
     case "budget": {
-      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const store = opt.store ?? storePath()
       const mtd = monthToDate(store)
       console.log(opt.json ? json({ ...mtd, caps: CAPS }) : budgetLine(store))
       return
     }
     case "cost": {
-      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const store = opt.store ?? storePath()
       const iteration = opt.iteration ?? "nx6"
       const prices = loadPrices()
       const catalog = loadCatalog()
@@ -593,7 +596,7 @@ export async function main(argv) {
       return
     }
     case "label": {
-      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const store = opt.store ?? storePath()
       const plugin = opt.plugin ?? "x"
       const iteration = opt.iteration ?? "nx6"
       if (opt.report) {
@@ -624,7 +627,7 @@ export async function main(argv) {
     }
     case "check": {
       const plugin = opt.plugin ?? "x"
-      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const store = opt.store ?? storePath()
       const repo = repoAvailable(plugin) ? pluginRepo(plugin) : null
       const blockers = []
       console.log(`# check — ${plugin}`)

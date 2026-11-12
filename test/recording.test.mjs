@@ -7,13 +7,14 @@ import { join } from "node:path"
 import { gradeCase, runView } from "../src/grade/grade.mjs"
 import { compareToHandGrading } from "../src/report/scorecard.mjs"
 import { digestOf } from "../src/util/canonical.mjs"
+import { storeRoot, rawRoot } from "../src/store.mjs"
 
 const root = join(import.meta.dirname, "..")
-const store = process.env.EVALS_STORE ?? join(root, "..", "private", "store")
+const store = storeRoot()
 const traces = join(store, "traces", "nx6")
 const results = join(store, "results", "nx6")
 const casesDir = join(root, "cases", "x")
-const raw = process.env.EVALS_RAW ?? join(root, "..", "private", "raw", "nx6", "x")
+const raw = join(rawRoot(), "nx6", "x")
 const ready = existsSync(traces) && existsSync(results)
 const SKIP = ready ? false : "run `evals grade --iteration nx6` first"
 

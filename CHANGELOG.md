@@ -2,6 +2,14 @@
 
 Keep a Changelog. This project adheres to Semantic Versioning.
 
+## [Unreleased]
+
+### Fixed
+
+- `grade` read recordings from `../private/raw`, beside the repository, while the docs and the runner put them in
+  `$EVALS_STORE/raw`. Every command now resolves the store in one place (`src/store.mjs`); `EVALS_RAW` and
+  `grade --raw DIR` still point elsewhere, and `grade --cases DIR` and `--traces DIR` do what the usage line said.
+
 ## [0.1.0] - Unreleased
 
 ### Added
