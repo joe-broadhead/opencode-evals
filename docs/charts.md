@@ -91,3 +91,7 @@ Only scripted runs: the two probes pass (a saved chart graded through the adapte
 call that saves nothing), and the 13 corpus tasks run, trace and grade with every item testable and every task
 failing, as a model that makes no tool call should. **No live model has run this corpus**: agent success rates,
 first-attempt rates, repairs and cost are unmeasured, and no target is set before a baseline exists.
+
+The joined facts (`recipe`, `width`, `height`, `rows.count` and the rest) are strings, even for one value: a clause
+compares `state:charts.width == "360"`, never `== 360`, which would compare a string with a number and fail. The
+counts `count`, `html`, `svg`, `png` and the recomputed `values.<group>` are numbers.

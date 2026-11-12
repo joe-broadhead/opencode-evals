@@ -141,3 +141,18 @@ test("long-labels-narrow: a filtering transform fails C-SF01 through charts_quic
   ]) assert.ok(gradeCase(c, run({ calls: [call], files })).failed.includes("C-SF01"), call.tool)
   assert.ok(!gradeCase(c, run({ calls: [{ tool: "quick", args: { document: { chart: { data: { path: "data/support_tickets.csv" } } } } }], files })).failed.includes("C-SF01"))
 })
+
+test("joined facts are strings: good runs of add-zoom, add-scatter-brush and long-labels-narrow pass", () => {
+  const line = { recipe: "line", rows: Array.from({ length: 60 }, (_, i) => ({ date: `2024-01-${String((i % 28) + 1).padStart(2, "0")}`, active_users: i })), bindings: { x: "date", y: "active_users" }, options: { xType: "temporal" }, interactions: { zoom: "x" } }
+  const zoom = run({ calls: [{ tool: "update" }], text: "Open outputs/charts/d-2/d.html", files: [saved("outputs/charts/d-2/d.chart.json", artifact(line)), { path: "outputs/charts/d-2/d.html", change: "added" }] })
+  assert.equal(gradeCase(byId("add-zoom"), zoom).verdict, "PASS")
+  assert.deepEqual(gradeCase(byId("add-zoom"), zoom).failed, [])
+  const scatter = { recipe: "scatter", rows: Array.from({ length: 12 }, (_, i) => ({ spend_k: i, conversions: i, channel: "Search" })), bindings: { x: "spend_k", y: "conversions", series: "channel" }, options: {}, interactions: { brush: "interval" } }
+  const brush = run({ calls: [{ tool: "update" }], files: [saved("outputs/charts/s-2/s.chart.json", artifact(scatter)), { path: "outputs/charts/s-2/s.html", change: "added" }] })
+  assert.deepEqual(gradeCase(byId("add-scatter-brush"), brush).failed, [])
+  const tickets = Array.from({ length: 8 }, (_, i) => ({ category: `c${i}`, tickets: i }))
+  const narrow = run({ calls: [{ tool: "quick", args: { document: { chart: { data: { path: "data/support_tickets.csv" } } } } }], files: [saved("outputs/charts/t-1/t.chart.json", artifact({ rows: tickets, bindings: { category: "category", value: "tickets" }, options: {}, layout: { width: 360, height: 480 }, width: 360, height: 480 }))] })
+  assert.deepEqual(gradeCase(byId("long-labels-narrow"), narrow).failed, [])
+  const wider = run({ calls: [{ tool: "quick" }], files: [saved("outputs/charts/t-1/t.chart.json", artifact({ rows: tickets, bindings: { category: "category", value: "tickets" }, options: {}, layout: { width: 380, height: 480 }, width: 380, height: 480 }))] })
+  assert.deepEqual(gradeCase(byId("long-labels-narrow"), wider).failed, ["C-OC01"])
+})

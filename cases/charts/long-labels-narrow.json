@@ -46,8 +46,8 @@
           "path": "charts.width",
           "op": "==",
           "value": {
-            "kind": "number",
-            "value": 360
+            "kind": "string",
+            "value": "360"
           }
         },
         {
@@ -55,8 +55,8 @@
           "path": "charts.height",
           "op": "==",
           "value": {
-            "kind": "number",
-            "value": 480
+            "kind": "string",
+            "value": "480"
           }
         }
       ],
@@ -86,8 +86,8 @@
           "path": "charts.rows.count",
           "op": "==",
           "value": {
-            "kind": "number",
-            "value": 8
+            "kind": "string",
+            "value": "8"
           }
         }
       ],
@@ -189,6 +189,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "67b7f65a079830cfc064ba816bc7d6dc1dd9c354e9c8f7c9c6bd968a99381b3d"
+    "source_sha256": "0f0b47e2f44f77d7c355245752be8fc7b45a3ccde2691665437eb74ba2b7ae91"
   }
 }
