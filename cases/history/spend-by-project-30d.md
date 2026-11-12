@@ -7,6 +7,8 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: guard
+- Truth: sql.spend30dByProject[project=lumen-api].usd == 80.84; sql.spend30dByProjectIncl[project=lumen-api].usd == 87.7; sql.spend30dByProject[project=lumen-web].usd == 16.57; sql.spend30dByProject[project=lumen-infra].usd == 14.18; sql.spend30dByProject[project=data-pipeline].usd == 9.54; sql.spend30dByProject[project=recipe-box].usd == 6.84; sql.spend30dByProject[project=dotfiles].usd == 5.83
 
 ## Prompt
 how much have I spent per project over the last 30 days?
@@ -38,3 +40,6 @@ how much have I spent per project over the last 30 days?
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

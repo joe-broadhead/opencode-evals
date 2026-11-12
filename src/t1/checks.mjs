@@ -213,6 +213,16 @@ export function checkScriptedTurn({ pack, caseDef, result, capture, fakeCalls })
       evidence: { calls: calls.length, effects: resolved },
     }
   }
+  if (caseDef.kind === "allowed") {
+    // The tool ran on its own: no permission asked or denied it, and the host completed the call.
+    const asked = permissions.filter((event) => event.effect_in === "ask" || event.effect_in === "deny")
+    const completed = after.some((event) => event.status === "completed")
+    return {
+      id, kind: "allowed", state: completed && !asked.length ? "pass" : "fail",
+      detail: `${completed ? "completed" : "not completed"}; ${asked.length ? `permission ${asked.map((p) => p.effect_in).join(",")}` : "no permission asked"}`,
+      evidence: { completed, effects: permissions.map((p) => p.effect_in) },
+    }
+  }
   if (caseDef.kind === "capped") {
     const sent = before[0]?.args ?? {}
     const appended = /Cost:/.test(JSON.stringify(after.map((event) => event.result_keys ?? []))) || after.some((event) => event.result_bytes > 0)

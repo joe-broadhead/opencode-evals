@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC01)
 - Budget: outer_calls <= 10, inner_calls <= 10, wall_ms <= 300000
+- Status: retired
 
 ## Prompt
 which past sessions edited src/config/settings.ts? I only care about sessions that changed it, not ones that just read it

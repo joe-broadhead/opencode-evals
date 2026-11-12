@@ -1,0 +1,263 @@
+{
+  "schema": "oc-case/1",
+  "id": "directory-scope",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "needles worker-dir-1 and worker-dir-2 (world change W2: lumen-api sessions started in services/worker) and worker-root-control (started at the repo root, touches services/worker/README.md only by reading it)",
+  "decision": "(runnable since W2, HG-5 and Seed subdir=) scope \"directory\" is this folder and below; \"project\" would also list every root session. The user asks about this folder only.",
+  "data_check": null,
+  "prompt": "what have we done in this folder specifically? not the rest of the repo",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC01"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 10,
+    "wall_ms": 240000
+  },
+  "seed": "cwd=api subdir=services/worker",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "extra"
+  ],
+  "truth": [
+    {
+      "path": "ids.worker-dir-1",
+      "value": "ses_d2pXWGJgWmpGQpGDxWm9XC"
+    },
+    {
+      "path": "ids.worker-dir-2",
+      "value": "ses_Y2OzUfeLSxgM7HESZX6BDM"
+    },
+    {
+      "path": "ids.worker-root-control",
+      "value": "ses_dXEXNpJCKPrjdra6g5P4ZR"
+    }
+  ],
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "major",
+      "ask": "It lists the queue consumer concurrency change (worker-dir-1).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "concurrency",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "It lists the poison-message handling (worker-dir-2).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "poison",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "H-OC03",
+      "severity": "major",
+      "ask": "It does not list the root-level session that only read a worker file.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "ses_dXEXNpJCKPrjdra6g5P4ZR",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "H-PR05",
+      "severity": "major",
+      "ask": "It narrowed to the folder: scope directory, or a path filter on services/worker.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": "args.scope",
+            "op": "==",
+            "value": {
+              "kind": "string",
+              "value": "directory"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.search",
+            "n": 1,
+            "arg": "args.scope",
+            "op": "==",
+            "value": {
+              "kind": "string",
+              "value": "directory"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": "args.path",
+            "op": "present"
+          },
+          {
+            "kind": "call",
+            "tool": "history.files",
+            "n": 1,
+            "arg": "args.path",
+            "op": "present"
+          },
+          {
+            "kind": "call",
+            "tool": "history.sql",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "H-PR06",
+      "severity": "minor",
+      "ask": "It names the sessions by ID.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "ses_d2pXWGJgWmpGQpGDxWm9XC|ses_Y2OzUfeLSxgM7HESZX6BDM",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Not runnable today: the lab runner copies each repo into the sandbox, so the run's directory never equals a recorded session directory and scope \"directory\" finds nothing (HG-5). The runner must run in the world's own paths (or the world must record the sandbox paths), and must start in the subdir.",
+      "line": 42
+    },
+    {
+      "id": null,
+      "text": "Families: F5 (scope). World: W2.",
+      "line": 43
+    }
+  ],
+  "hashes": {
+    "source_sha256": "2943c4aa2f0239041d152cd0f69cc4cda21aeef38012b3472b5cf1e702c3f593"
+  }
+}

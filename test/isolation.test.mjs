@@ -628,8 +628,20 @@ test("docker: a trial cannot read the owner's files, the Docker socket or anothe
   try {
     const home = homedir()
     const secretPaths = [join(home, ".config"), join(home, ".claude"), join(home, ".local", "share", "opencode"), join(home, "work"), home, "/var/run/docker.sock", "/run/docker.sock", f.sibling.root, join(f.batchRoot, "runs", "other.t1", "secret.txt")]
-    const read = await f.sh(secretPaths.map((p) => `if [ -e '${p}' ]; then echo "present ${p}"; fi`).join("\n"))
-    assert.equal(read.stdout, "", `nothing of the host is visible:\n${read.stdout}`)
+    // A host folder that is a parent of what the trial mounts (its sandbox, the arm) exists inside as an empty mount
+    // parent, holding only the way down to the mount: true when the scratch root is under the home (TMPDIR=/home/…).
+    // Anything else of it, and every other path here, must be absent.
+    const mounted = [f.sandbox.root, f.arm]
+    const wayDown = (p) => [...new Set(mounted.filter((m) => m.startsWith(`${p}/`)).map((m) => m.slice(p.length + 1).split("/")[0]))].sort()
+    const read = await f.sh(secretPaths.map((p) => `if [ -e '${p}' ]; then echo "present ${p}: $(ls -A '${p}' 2>/dev/null | tr '\\n' ' ')"; fi`).join("\n"))
+    const seen = read.stdout.split("\n").filter(Boolean)
+    for (const line of seen) {
+      const [, path, entries] = /^present (.+?): ?(.*)$/.exec(line)
+      const parentOf = wayDown(path)
+      assert.ok(parentOf.length, `nothing of the host is visible: ${line}`)
+      assert.deepEqual(entries.trim().split(/\s+/).filter(Boolean).sort(), parentOf, `${path} holds only the way down to the mounts`)
+    }
+    assert.equal(seen.filter((line) => !wayDown(/^present (.+?):/.exec(line)[1]).length).length, 0)
     const targets = [join(home, "x"), "/etc/evals-x", "/usr/local/bin/evals-x", "/opt/evals/bin/evals-x", "/root/x", "/x", "/var/tmp/evals-x", join(f.arm, "evals-x"), join(f.batchRoot, "evals-x"), join(f.batchRoot, "runs", "evals-x")]
     const write = await f.sh(`${targets.map((p) => `( echo x > '${p}' ) 2>/dev/null && echo "wrote ${p}"`).join("\n")}\necho inside > '${join(f.sandbox.project, "from-container.txt")}' && echo ok`)
     assert.equal(write.stdout.trim(), "ok", `only the sandbox is writable:\n${write.stdout}`)

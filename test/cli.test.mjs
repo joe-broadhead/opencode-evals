@@ -19,6 +19,14 @@ test("compile without --plugin or --all is refused, and --help on it prints the 
   assert.equal(tracked(), before, "nothing under cases/ was touched")
 })
 
+test("lock without --plugin is refused and writes nothing (HG-10)", () => {
+  const before = tracked()
+  const bare = evals("lock")
+  assert.notEqual(bare.status, 0)
+  assert.match(bare.stderr, /evals lock --plugin <id>/)
+  assert.equal(tracked(), before, "no evals.lock was rewritten")
+})
+
 test("every committed case JSON is what its markdown compiles to (the CI check)", () => {
   const check = evals("compile", "--all", "--check")
   assert.equal(check.status, 0, check.stdout)

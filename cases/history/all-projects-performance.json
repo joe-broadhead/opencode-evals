@@ -30,6 +30,10 @@
   "seed": "cwd=api",
   "expect": "pass",
   "holdout": false,
+  "sets": [
+    "core",
+    "screen"
+  ],
   "items": [
     {
       "id": "H-OC01",
@@ -52,7 +56,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "H-OC02",
@@ -75,7 +79,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "H-OC03",
@@ -98,7 +102,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "H-OC04",
@@ -113,7 +117,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "CI|cache",
+            "source": "npm cache|cache (key|hit|miss)|package-lock|hit rate|\\b11 ?m(in)?\\b",
             "flags": "i"
           }
         }
@@ -121,12 +125,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "H-PR01",
       "severity": "major",
-      "ask": "The search used scope: all.",
+      "ask": "A search, recall, list or files call used scope: all (or one sql statement, which sees every project).",
       "forbidden": false,
       "grader": "code",
       "evidence": [],
@@ -136,6 +140,28 @@
             "kind": "call",
             "tool": "history.search",
             "n": 1,
+            "arg": "args.scope",
+            "op": "==",
+            "value": {
+              "kind": "string",
+              "value": "all"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.search",
+            "n": 2,
+            "arg": "args.scope",
+            "op": "==",
+            "value": {
+              "kind": "string",
+              "value": "all"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.search",
+            "n": 3,
             "arg": "args.scope",
             "op": "==",
             "value": {
@@ -156,16 +182,48 @@
           },
           {
             "kind": "call",
+            "tool": "history.recall",
+            "n": 2,
+            "arg": "args.scope",
+            "op": "==",
+            "value": {
+              "kind": "string",
+              "value": "all"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": "args.scope",
+            "op": "==",
+            "value": {
+              "kind": "string",
+              "value": "all"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.files",
+            "n": 1,
+            "arg": "args.scope",
+            "op": "==",
+            "value": {
+              "kind": "string",
+              "value": "all"
+            }
+          },
+          {
+            "kind": "call",
             "tool": "history.sql",
             "n": 1,
-            "arg": "args.sql",
-            "op": "present"
+            "arg": null
           }
         ]
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "H-PR02",
@@ -188,7 +246,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "H-OC08",
@@ -207,7 +265,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     },
     {
       "id": "H-SF01",
@@ -235,12 +293,30 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 38
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access \"all\").",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 43
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8d467cb0079ef85c3b7c1ad7c99981e6fa45704c3ecfb6a1d1de87a7152c09ae"
+    "source_sha256": "c23a1fb47d02f617c7d55919b8f45f86ec2a1be799a031e29b99d2beb63718d8"
   }
 }

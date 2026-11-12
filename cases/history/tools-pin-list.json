@@ -5,7 +5,7 @@
   "skill": "history-recall",
   "tier": "T3",
   "source": "history_pin",
-  "decision": "history_pin's other actions: list the pins, then remove them. Always asks; a refusal is reported plainly, not retried.",
+  "decision": "history_pin's other actions: list the pins, then remove any. At v0.0.0's default access (all) it runs without a prompt; under the ask-changes arm a refusal is reported plainly and not retried.",
   "data_check": null,
   "prompt": "list the history pins in this session, and remove any that exist",
   "controls": [
@@ -30,6 +30,10 @@
   "seed": "cwd=api",
   "expect": "pass",
   "holdout": false,
+  "sets": [
+    "smoke",
+    "f7"
+  ],
   "items": [
     {
       "id": "H-OC01",
@@ -48,7 +52,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "H-OC02",
@@ -72,12 +76,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "H-OC03",
       "severity": "major",
-      "ask": "It tells the user plainly what happened (no pins, or approval was needed).",
+      "ask": "It tells the user plainly what happened: there are no pins (a fresh session has none), or approval was needed.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -87,7 +91,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "pin",
+            "source": "no (history )?pins|(0|zero|none) pins?|nothing (is |was )?pinned|no pinned|not (any|find any) pins|declined|denied|needs? (your )?approval|permission",
             "flags": "i"
           }
         }
@@ -95,7 +99,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "H-EF01",
@@ -108,13 +112,13 @@
           "kind": "count",
           "tool": "history_pin",
           "op": "<=",
-          "value": 3
+          "value": 2
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "H-SF01",
@@ -142,12 +146,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "69903b393bd9fd567bf62dab4db30f2ebfa1c9409923a738b42b938fb1708646"
+    "source_sha256": "1211a182808614e76a5961318206ad49322032422807050f22211e373aaf0484"
   }
 }

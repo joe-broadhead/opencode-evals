@@ -4,7 +4,7 @@
   "plugin": "history",
   "skill": "history-recall",
   "tier": "T3",
-  "source": "truth.sql.avgCostByAgent [[\"build\",1.09],[\"plan\",0.93],[\"explore\",1.13]]",
+  "source": "truth.sql.avgCostByAgent [[\"build\",1.07],[\"plan\",0.93],[\"explore\",1.13]]",
   "decision": "A GROUP BY over v_sessions with rounding: the average cost per session by agent.",
   "data_check": null,
   "prompt": "what's the average cost of a session for each agent (build, plan, explore) across everything I've run?",
@@ -30,11 +30,28 @@
   "seed": "cwd=api",
   "expect": "pass",
   "holdout": false,
+  "sets": [
+    "smoke"
+  ],
+  "truth": [
+    {
+      "path": "sql.avgCostByAgent[agent=build].avg_usd",
+      "value": 1.07
+    },
+    {
+      "path": "sql.avgCostByAgent[agent=plan].avg_usd",
+      "value": 0.93
+    },
+    {
+      "path": "sql.avgCostByAgent[agent=explore].avg_usd",
+      "value": 1.13
+    }
+  ],
   "items": [
     {
       "id": "H-OC01",
       "severity": "blocker",
-      "ask": "build averages $1.09 per session.",
+      "ask": "build averages $1.07 per session (W1 and W2 included).",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -44,7 +61,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "1\\.09",
+            "source": "1\\.07",
             "flags": "i"
           }
         }
@@ -52,7 +69,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "H-OC02",
@@ -75,7 +92,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 20
     },
     {
       "id": "H-OC03",
@@ -98,7 +115,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 23
     },
     {
       "id": "H-PR01",
@@ -118,7 +135,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 26
     },
     {
       "id": "H-SF01",
@@ -146,12 +163,30 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 30
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access \"all\").",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7c9deeb84f530bed5fe2d3295290e5fd514cab03dd046af1f47998f3625eceac"
+    "source_sha256": "bcbf8584d511a390fce16e9399277f01b1bb99238ef1d3b5081ff71e8e7e0e65"
   }
 }

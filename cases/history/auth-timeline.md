@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: core
 
 ## Prompt
 walk me through everything we've done on login security in this project, oldest first
@@ -19,10 +20,10 @@ walk me through everything we've done on login security in this project, oldest 
   evidence: text:any matches /rate[- ]?limit/i
 
 - [H-OC03] blocker · It covers the OAuth state validation.
-  evidence: text:any matches /state/i
+  evidence: text:any matches /invalid_state|state (param(eter)?|validation|check)|validat\w* (the )?(oauth )?state|oauth callback/i
 
 - [H-OC04] major · It is in order: argon2 first, then rate limiting, then state validation.
-  evidence: text:any matches /argon2[\s\S]*rate[- ]?limit[\s\S]*state/is
+  evidence: text:any matches /argon2[\s\S]*rate[- ]?limit[\s\S]*(invalid_state|state (param(eter)?|validation|check)|oauth callback)/is
 
 - [H-OC09] major · The answer names the session (or sessions) the facts come from: login-argon2, login-rate-limit, login-api-state.
   evidence: text:any matches /ses_2s2uP2Xy50fF7VQlXXE4Qn/
@@ -51,3 +52,6 @@ walk me through everything we've done on login security in this project, oldest 
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

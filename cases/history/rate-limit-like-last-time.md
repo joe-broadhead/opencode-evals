@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: core, screen
 
 ## Prompt
 I want to add rate limiting to /v1/signup the same way we did for login. what settings did we use there?
@@ -16,7 +17,7 @@ I want to add rate limiting to /v1/signup the same way we did for login. what se
   evidence: text:any matches /express-rate-limit/i
 
 - [H-OC02] blocker · It reports 5 attempts per minute per IP.
-  evidence: text:any matches /\b5\b/i
+  evidence: text:any matches /\b(5|five) (login |failed )?(attempts?|requests?|tries)\b|max(imum)?:? ?\b5\b|\b(5|five) ?(\/|per|a|each) ?min(ute)?\b/i
   evidence: text:any matches /minute|60[_,]?000/i
 
 - [H-OC09] major · The answer names the session (or sessions) the facts come from: login-rate-limit.
@@ -44,3 +45,6 @@ I want to add rate limiting to /v1/signup the same way we did for login. what se
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC01)
 - Budget: outer_calls <= 10, inner_calls <= 10, wall_ms <= 300000
+- Set: smoke
 
 ## Prompt
 I want the raw change feed of my sessions over the last 7 days, as events. use the history events list. how many events came back, and what is the title of the newest one?
@@ -19,10 +20,13 @@ I want the raw change feed of my sessions over the last 7 days, as events. use t
   evidence: text:any matches /Triage Sentry/i
 
 - [H-OC03] major · It reports a number of events.
-  evidence: text:any matches /\b\d+\b/i
+  evidence: text:any matches /\b\d+ (events?|changes|sessions)\b|(returned|came back|got|total)[^.\n]{0,20}\b\d+\b/i
 
 ## Forbidden
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

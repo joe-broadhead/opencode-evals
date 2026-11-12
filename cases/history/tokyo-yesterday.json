@@ -1,0 +1,331 @@
+{
+  "schema": "oc-case/1",
+  "id": "tokyo-yesterday",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "yesterday-1..4 (lumen-api, UTC day D-1 at 08:10, 10:30, 13:20 and 15:45). Tokyo's yesterday is [D-2 15:00Z, D-1 15:00Z) while the run's UTC hour is below 15, so the first three are in it and the 15:45Z worker investigation is not.",
+  "decision": "A local day needs since/until with the user's UTC offset (the skill's Time rule); a bare UTC date lists the wrong sessions.",
+  "data_check": null,
+  "prompt": "I'm in Tokyo (UTC+9). which sessions did I work on yesterday, my time, in this project?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC01"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 10,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api time=day utc-hours=1-14",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "core",
+    "new"
+  ],
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "major",
+      "ask": "It lists the request-id work (08:10Z, 17:10 in Tokyo).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "request[- ]?id",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "It lists the webhook retry tests (10:30Z).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "webhook",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "H-OC03",
+      "severity": "major",
+      "ask": "It lists the jest upgrade (13:20Z).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "jest",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "H-OC04",
+      "severity": "major",
+      "ask": "It does not list the worker memory investigation: 15:45Z is 00:45 the next day in Tokyo.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "memory (growth|leak)|leak\\w* listeners|worker (memory|leak)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "H-PR05",
+      "severity": "minor",
+      "ask": "The window was given in Tokyo time: a since with a +09:00 offset, or the same instant in UTC (15:00Z), or sql.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": "args.since",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\+9:?9$",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": "args.since",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "T15:00:00(\\.0+)?Z$",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 2,
+            "arg": "args.since",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\+9:?9$",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 2,
+            "arg": "args.since",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "T15:00:00(\\.0+)?Z$",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sql",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "H-PR06",
+      "severity": "minor",
+      "ask": "It names the sessions by ID.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "ses_[A-Za-z0-9]{22}",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "H-OC08",
+      "severity": "major",
+      "ask": "It used the history tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    },
+    {
+      "id": "H-TR01",
+      "severity": "minor",
+      "ask": "The history-recall skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 46
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The truth flips at 15:00 UTC (Tokyo's date changes), so the runner must run this case between 01:00 and 14:59 UTC on the corpus day (harness gap HG-6: the lab runner honours time=day only). The extra seed key is ignored by today's runner.",
+      "line": 50
+    },
+    {
+      "id": "H-PR05",
+      "text": "a trace keeps an ISO date-time with seconds and Z as a value; any other date string is kept as a shape, where +09:00 becomes \"+9:9\".",
+      "line": 51
+    },
+    {
+      "id": null,
+      "text": "H-OC04 can false-fail an answer that names the worker session only to exclude it; read the Notes before counting such a failure.",
+      "line": 52
+    },
+    {
+      "id": null,
+      "text": "Families: F4 (time window), F5 (filters). World: unchanged.",
+      "line": 53
+    }
+  ],
+  "hashes": {
+    "source_sha256": "06799886bfca42a6a3349c92cf5bff2acb762b1de34f4a67a3f717dff870c29b"
+  }
+}

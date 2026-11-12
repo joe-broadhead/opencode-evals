@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Status: retired
 
 ## Prompt
 we're seeing 'read ECONNRESET' from the S3 client again. didn't we fix this before? what did we do?

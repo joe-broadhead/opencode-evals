@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC01)
 - Budget: outer_calls <= 10, inner_calls <= 10, wall_ms <= 300000
+- Set: smoke
 
 ## Prompt
 brief the session where I asked for a quick audit of the auth, billing and catalog modules, and include what each of its subagent sessions did
@@ -28,3 +29,6 @@ brief the session where I asked for a quick audit of the auth, billing and catal
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

@@ -23,6 +23,8 @@ import { rawRoot, storeRoot } from "../store.mjs"
 import { makeSandbox, sealedConfig, sandboxEnv, worldEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, removeInside, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
 import { parseAuth, prepareAuth, readCredential, unknownExpiry } from "./auth.mjs"
 import { loadWorld, parseSeed } from "./world.mjs"
+import { checkTruth, renderTruthProblem } from "../case/truth.mjs"
+import { AUTH_ERROR, endedOnAuth } from "./authError.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
 import { segment, within, inside } from "./paths.mjs"
@@ -99,8 +101,9 @@ export function plan({ cases, trials, recorded, append }) {
  * and the host's own error output, or an error event, says so: HTTP 401 or 403 from the provider (a proxy's refusal
  * of a tunnel aside), an authentication or permission error, an expired or invalid token, or the sign-in prompt.
  */
-const AUTH_ERROR = /\b(?:status|code|http|error)[ :=\-"]*40[13]\b|\b40[13]\s+(?:unauthori[sz]ed|forbidden)|unauthori[sz]ed|authentication[_ ]error|permission[_ ]error|invalid[_ ](?:x-api-key|api[_ ]key|bearer|token|grant)|invalid (?:x-api-key|api key|bearer token|token)|oauth token (?:has )?expired|token (?:has )?expired|not logged in|please run \/login|login required/i
+export { AUTH_ERROR, endedOnAuth }
 export function authFailed({ stdout = "", stderr = "" } = {}) {
+  if (endedOnAuth(stdout)) return true
   const tokens = billedOf(stdout).tokens
   if (tokens.input + tokens.output + tokens.cacheRead + tokens.cacheWrite > 0) return false
   const said = [String(stderr)]
@@ -302,6 +305,15 @@ export function hourWindow(seed, at = new Date()) {
   return inside ? { ok: true, hour } : { ok: false, hour, why: `the case runs between ${from}:00 and ${to}:00 UTC, and it is ${hour}:xx` }
 }
 
+/** The selected cases' `Truth:` claims against the world's truth file; null when no case declares one. */
+export function truthCheck(cases, world) {
+  const claiming = cases.filter((c) => c.truth?.length)
+  if (!claiming.length) return null
+  const data = typeof world.truth === "function" ? world.truth() : null
+  if (!data) throw new Error(`${claiming.length} case(s) declare a Truth: (${claiming.slice(0, 3).map((c) => c.id).join(", ")}) and the world ${world.name} names no truth file (world.json "truth")`)
+  return checkTruth(claiming, data)
+}
+
 async function runJob(job, ctx) {
   const id = segment("case id", job.case.id)
   const name = `${id}.t${job.trial}`
@@ -316,7 +328,10 @@ async function runJob(job, ctx) {
   writeConfig(sandbox, config)
   const password = newPassword()
   // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
-  const redact = redactor([...(ctx.auth.secrets ?? []), password])
+  // Every token value the batch has read so far and this run's password, built at the moment of each write or scrub, so a
+  // rotation since the trial began is covered; a full redactor (with .active and .buffer), so scrubTree can use it.
+  const redactorNow = () => redactor([...(ctx.auth.secrets ?? []), password])
+  const redact = (text) => redactorNow()(text)
   registerSecrets([password])
   let trial = null
   let gone = false
@@ -329,7 +344,7 @@ async function runJob(job, ctx) {
     // A world's own variables go in first and never the sealed ones; the harness's (credential, endpoint) go in last.
     const fromWorld = worldEnv(prepared.env)
     if (fromWorld.dropped.length) ctx.log(`  ${name}: the world's env may not set ${fromWorld.dropped.join(", ")}: ignored`)
-    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...ctx.auth.env, ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
+    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
     // Every host command of the run goes through the trial.
     const exec = (args, options = {}) => {
       const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env })
@@ -416,9 +431,13 @@ async function runJob(job, ctx) {
     if (!ctx.keep && gone) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
     const cost = billedOf(result.stdout ?? "")
     if (summary.infra) {
-      // Not a run of the model: its reservation goes back, so it can be rerun from the reserve.
-      release(ctx.store, ctx.batch, 1)
-      return { case: id, trial: job.trial, exit: summary.exit, durationMs, infra: summary.infra, ...(result.error ? { error: redact(result.error) } : {}) }
+      // Never graded. A failure before the model did any work spent nothing: its reservation goes back, so it can be
+      // rerun from the reserve. A run cut short after the model worked (its sign-in revoked mid-run) did spend: it is
+      // recorded with what it billed, marked infra, and counts against the run and dollar caps like any other run.
+      const worked = cost.billed_usd > 0 || Object.values(cost.tokens ?? {}).some((n) => n > 0)
+      if (worked) recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, infra: summary.infra, ...cost })
+      else release(ctx.store, ctx.batch, 1)
+      return { case: id, trial: job.trial, exit: summary.exit, durationMs, infra: summary.infra, ...(worked ? { spent: true } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
     }
     recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
     return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(killed ? { killed: killed.reason } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
@@ -428,7 +447,7 @@ async function runJob(job, ctx) {
     await trial?.leave({ reason: "finally" })
     if (trial && !gone) gone = await trial.gone()
     ctx.auth.cleanup({ sandbox, gone: trial ? gone : true })
-    if (ctx.keep && (gone || !trial)) scrubTree(root, redact)
+    if (ctx.keep && (gone || !trial)) scrubTree(root, redactorNow())
   }
 }
 
@@ -495,7 +514,17 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       refused = true
       log(`dry run: the batch would be refused: ${error.message}`)
     }
-    if (!refused) log(`world: ${(await loadWorld(options.world ?? caller[`EVALS_WORLD_${plugin.toUpperCase()}`] ?? null)).name}`)
+    if (!refused) {
+      const world = await loadWorld(options.world ?? caller[`EVALS_WORLD_${plugin.toUpperCase()}`] ?? null)
+      log(`world: ${world.name}`)
+      // What the cases were written from, against the world as it is now (a rebuild may still change it).
+      try {
+        const truth = truthCheck(selected, world)
+        if (truth) log(truth.bad.length ? `dry run: the batch would be refused unless a rebuild fixes it: ${truth.bad.map(renderTruthProblem).join("; ")}` : `truth: ${truth.rows.length} claim(s) of ${new Set(truth.rows.map((r) => r.case)).size} case(s) hold in the world as built`)
+      } catch (error) {
+        log(`dry run: the batch would be refused: ${error.message}`)
+      }
+    }
     // The sign-in's expiry, read as a real batch would read it (its content never shown).
     if (profile.kind === "claude-agent" && caller.HOME) {
       try {
@@ -655,6 +684,10 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       }
       if (!status.fresh) throw new Error(`world ${world.name} is stale and was not rebuilt: ${status.why}`)
     }
+    // Every number a selected case was written from must hold in this world, before anything is reserved (HG-14).
+    const truth = truthCheck(selected, world)
+    if (truth?.bad.length) throw new Error(`the world's truth does not match ${truth.bad.length} claim(s) the cases were written from, so no run was reserved:\n  ${truth.bad.map(renderTruthProblem).join("\n  ")}`)
+    if (truth) facts.truth = { claims: truth.rows.length, cases: new Set(truth.rows.map((r) => r.case)).size }
 
     // A batch must not outlive its sign-in: the worst case is every round of runs hitting the timeout, plus what each
     // run costs around it (world prepare, container setup and teardown, the credential import, the server's start).
@@ -746,9 +779,27 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
             return
           }
         }
+        // The sign-in as it is now: something outside may have rotated it since the last trial. A sign-in that cannot be
+        // read is this trial's infra: auth, and no further trial launches; its run goes back to the reserve.
+        let trialAuth
+        try {
+          trialAuth = ctx.auth.forTrial ? ctx.auth.forTrial() : { env: ctx.auth.env, rotated: false }
+        } catch (error) {
+          results.push({ case: job.case.id, trial: job.trial, infra: "auth", error: redact(String(error.message ?? error)) })
+          log(`  ${job.case.id}.t${job.trial} NOT LAUNCHED: infra auth: ${redact(String(error.message ?? error))}`)
+          if (!stopped) stopped = `${job.case.id}.t${job.trial}: ${redact(String(error.message ?? error))}; no further trial launched`
+          return
+        }
+        if (trialAuth.rotated) {
+          // A new value: scrubbed from here on, from every line logged and every file written.
+          registerSecrets([trialAuth.secret])
+          redact = redactor(ctx.auth.secrets)
+          facts.token_rotations = (facts.token_rotations ?? 0) + 1
+          log(`  ${job.case.id}.t${job.trial}: the sign-in was rotated since the last trial; this trial runs on the new one`)
+        }
         launched++
         running++
-        const outcome = await runJob(job, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: redact(String(error.message ?? error)) }))
+        const outcome = await runJob({ ...job, authEnv: trialAuth.env }, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: redact(String(error.message ?? error)) }))
         running--
         results.push(outcome)
         log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.infra ? ` INFRA ${outcome.infra}` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)

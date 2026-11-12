@@ -54,6 +54,18 @@ export function parseClause(text) {
     return { ok: true, clause }
   }
 
+  // absent-arg:<tool> args.<key> <op> <value>: no call of the tool passed an argument that satisfies the comparison.
+  m = /^absent-arg:([a-z0-9_.*]+)\s+(args\.[A-Za-z0-9_.]+)\s+(\S+)(?:\s+(.+))?$/.exec(line)
+  if (m) {
+    const operator = op(m[3])
+    if (!operator) return { ok: false, why: `unknown operator ${JSON.stringify(m[3])} in "${line}"` }
+    if (operator === "present") return { ok: true, clause: { kind: "absent-arg", tool: m[1], arg: m[2], op: operator } }
+    if (!m[4]) return { ok: false, why: `operator ${operator} needs a value in "${line}"` }
+    // A negative comparison is true of every call that did not pass the key: "no call had args.k != v" says nothing useful.
+    if (NEGATIVE.has(operator)) return { ok: false, why: `absent-arg takes a positive comparison (==, <, >, matches, contains, present), not ${operator}: "${line}"` }
+    return { ok: true, clause: { kind: "absent-arg", tool: m[1], arg: m[2], op: operator, value: parseValue(m[4]) } }
+  }
+
   m = /^absent:([a-z0-9_.*]+)(?:#(\d+))?$/.exec(line)
   if (m) return { ok: true, clause: { kind: "absent", tool: m[1], n: m[2] ? Number(m[2]) : null } }
 
@@ -148,6 +160,8 @@ export function rawArgState(args, key) {
   let value = args
   for (const part of key.replace(/^args\./, "").split(".")) {
     if (value === null || value === undefined || typeof value !== "object") return { state: "missing" }
+    // A key not written beside a spread (`{...opts, limit: 5}`) may have come from it: unseen, not missing.
+    if (value[part] === undefined && value.$spread === true) return { state: "opaque", why: `${part} may come from a spread` }
     value = value[part]
   }
   if (value === undefined || value === null) return { state: "missing" }
@@ -171,9 +185,10 @@ export function argState(args, key) {
     if (depth > 0 && !Array.isArray(value) && WRAPPERS.has(value.kind)) {
       if (value.kind !== "object") return { state: "missing", under: value.kind }
       const keys = Array.isArray(value.keys) ? value.keys : null
-      if (keys && !keys.includes("$ref") && !keys.includes(part)) return { state: "missing" }
+      if (keys && !keys.includes("$ref") && !keys.includes("$spread") && !keys.includes(part)) return { state: "missing" }
       return { state: "opaque", why: `${path.slice(0, depth).join(".")} is kept as ${keys?.includes("$ref") ? "a variable" : `an object with keys ${(keys ?? []).join(",")}`}, not its value` }
     }
+    if (value[part] === undefined && value.$spread === true) return { state: "opaque", why: `${part} may come from a spread` }
     value = value[part]
   }
   if (value === undefined || value === null) return { state: "missing" }
@@ -186,6 +201,70 @@ export function argState(args, key) {
     return { state: "opaque", why: "object" }
   }
   return { state: "value", value }
+}
+
+/** One call's argument against a clause's comparison (`call:` and `absent-arg:` share it). */
+function argCheck(call, clause, view) {
+  const where = clause.n ? `${clause.tool}#${clause.n}` : clause.tool
+  if (call.args_parsed === false) return { state: "unverifiable", detail: `${where} arguments could not be parsed` }
+  const label = clause.arg.replace(/^args\./, "")
+  // A key the case declares checkable is compared with the recording's own value, never the trace's shape.
+  const checkable = view.checkable?.has(label.split(".")[0]) ?? false
+  if (checkable && call.raw_args === undefined) return { state: "unverifiable", detail: `${label} is checkable, and the recording is not available` }
+  const resolved = checkable ? rawArgState(call.raw_args, clause.arg) : argState(call.args ?? {}, clause.arg)
+  // An argument that was not passed is not equal to anything and matches nothing: !=, not-matches and excludes hold.
+  if (resolved.state === "missing") {
+    if (NEGATIVE.has(clause.op) && resolved.under) return { state: "unverifiable", detail: `${label} is a path under a ${resolved.under} value the trace keeps only as a shape` }
+    return NEGATIVE.has(clause.op) ? { state: "ok", detail: `${label} was not passed, so it satisfies ${clause.op}` } : { state: "fail", detail: `${clause.arg} was not passed` }
+  }
+  // The whole argument object is a variable: nothing is known about its keys, `present` included.
+  if (resolved.state === "opaque" && resolved.why === "the argument object is a variable") return { state: "unverifiable", detail: `${where} arguments are a variable` }
+  // "present" is about the call, not the value: a variable was still passed.
+  if (clause.op === "present") return { state: "ok", detail: `${label} present` }
+  if (resolved.state === "opaque") return { state: "unverifiable", detail: `${clause.arg} is a variable (${resolved.why})` }
+  if (resolved.state === "text") {
+    if (clause.op === "excludes") {
+      const haystack = new Set([...resolved.tokens, ...String(resolved.shape).toLowerCase().split(/[^a-z0-9_-]+/)])
+      const hit = clause.value.values.filter((v) => haystack.has(String(v).toLowerCase()))
+      return hit.length
+        ? { state: "fail", detail: `${label} contains ${hit.join(", ")}` }
+        : { state: "ok", detail: `${label} (${resolved.len} chars) contains none of ${clause.value.values.join(", ")}` }
+    }
+    const shape = String(resolved.shape)
+    if (clause.value.kind !== "regex") {
+      return { state: "unverifiable", detail: `${label} is redacted; only a /regex/ can be tested against its shape` }
+    }
+    const re = new RegExp(clause.value.source, clause.value.flags.replace("g", ""))
+    const matched = re.test(shape)
+    const ok = clause.op === "matches" ? matched : !matched
+    return { state: ok ? "ok" : "fail", shape: true, detail: `${label} shape ${ok ? "matches" : "does not match"} /${clause.value.source}/` }
+  }
+  const value = resolved.value
+  // A list (several query phrasings) matches when one element does, and excludes when none does.
+  const elements = Array.isArray(value) ? value.map((v) => (typeof v === "string" ? v : JSON.stringify(v))) : [typeof value === "string" ? value : String(value)]
+  const shown = checkable ? `(${elements.reduce((n, e) => n + e.length, 0)} chars, from the recording)` : JSON.stringify(value)
+  if (clause.value.kind === "regex") {
+    const re = new RegExp(clause.value.source, clause.value.flags.replace("g", ""))
+    const matched = elements.some((element) => re.test(element))
+    const ok = clause.op === "matches" ? matched : !matched
+    return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "matches" : "does not match"} /${clause.value.source}/` }
+  }
+  if (clause.op === "excludes") {
+    const hit = clause.value.values.filter((v) => elements.some((element) => element.toLowerCase().includes(String(v).toLowerCase())))
+    return hit.length ? { state: "fail", detail: `${label} contains ${hit.join(", ")}` } : { state: "ok", detail: `${label} excludes ${clause.value.values.join(", ")}` }
+  }
+  if (clause.op === "contains") {
+    const ok = elements.some((element) => element.toLowerCase().includes(String(clause.value.value).toLowerCase()))
+    return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "contains" : "does not contain"} ${JSON.stringify(clause.value.value)}` }
+  }
+  if (checkable && Array.isArray(value)) {
+    const same = JSON.stringify(value) === JSON.stringify(clause.value.value)
+    const ok = clause.op === "!=" ? !same : clause.op === "==" ? same : false
+    return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "satisfies" : "does not satisfy"} ${clause.op}` }
+  }
+  const ok = compare(value, clause.value.value, clause.op)
+  if (checkable) return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "satisfies" : "does not satisfy"} ${clause.op} ${JSON.stringify(clause.value.value)}` }
+  return { state: ok ? "ok" : "fail", detail: `${label} ${JSON.stringify(value)} ${ok ? "satisfies" : "does not satisfy"} ${clause.op} ${JSON.stringify(clause.value.value)}` }
 }
 
 const textSpan = (text, span) => {
@@ -223,65 +302,18 @@ export function evaluateClause(clause, view) {
       const call = calls[clause.n - 1]
       if (!call) return { state: "fail", detail: `${clause.tool}#${clause.n} was not called (${calls.length} total)` }
       if (!clause.arg) return { state: "ok", detail: `${clause.tool}#${clause.n} called via ${call.via}` }
-      if (call.args_parsed === false) return { state: "unverifiable", detail: `${clause.tool}#${clause.n} arguments could not be parsed` }
-      const label = clause.arg.replace(/^args\./, "")
-      // A key the case declares checkable is compared with the recording's own value, never the trace's shape.
-      const checkable = view.checkable?.has(label.split(".")[0]) ?? false
-      if (checkable && call.raw_args === undefined) return { state: "unverifiable", detail: `${label} is checkable, and the recording is not available` }
-      const resolved = checkable ? rawArgState(call.raw_args, clause.arg) : argState(call.args ?? {}, clause.arg)
-      // An argument that was not passed is not equal to anything and matches nothing: !=, not-matches and excludes hold.
-      if (resolved.state === "missing") {
-        if (NEGATIVE.has(clause.op) && resolved.under) return { state: "unverifiable", detail: `${label} is a path under a ${resolved.under} value the trace keeps only as a shape` }
-        return NEGATIVE.has(clause.op) ? { state: "ok", detail: `${label} was not passed, so it satisfies ${clause.op}` } : { state: "fail", detail: `${clause.arg} was not passed` }
-      }
-      // The whole argument object is a variable: nothing is known about its keys, `present` included.
-      if (resolved.state === "opaque" && resolved.why === "the argument object is a variable") return { state: "unverifiable", detail: `${clause.tool}#${clause.n} arguments are a variable` }
-      // "present" is about the call, not the value: a variable was still passed.
-      if (clause.op === "present") return { state: "ok", detail: `${label} present` }
-      if (resolved.state === "opaque") return { state: "unverifiable", detail: `${clause.arg} is a variable (${resolved.why})` }
-      if (resolved.state === "text") {
-        if (clause.op === "excludes") {
-          const haystack = new Set([...resolved.tokens, ...String(resolved.shape).toLowerCase().split(/[^a-z0-9_-]+/)])
-          const hit = clause.value.values.filter((v) => haystack.has(String(v).toLowerCase()))
-          return hit.length
-            ? { state: "fail", detail: `${label} contains ${hit.join(", ")}` }
-            : { state: "ok", detail: `${label} (${resolved.len} chars) contains none of ${clause.value.values.join(", ")}` }
-        }
-        const shape = String(resolved.shape)
-        if (clause.value.kind !== "regex") {
-          return { state: "unverifiable", detail: `${label} is redacted; only a /regex/ can be tested against its shape` }
-        }
-        const re = new RegExp(clause.value.source, clause.value.flags.replace("g", ""))
-        const matched = re.test(shape)
-        const ok = clause.op === "matches" ? matched : !matched
-        return { state: ok ? "ok" : "fail", detail: `${label} shape ${ok ? "matches" : "does not match"} /${clause.value.source}/` }
-      }
-      const value = resolved.value
-      // A list (several query phrasings) matches when one element does, and excludes when none does.
-      const elements = Array.isArray(value) ? value.map((v) => (typeof v === "string" ? v : JSON.stringify(v))) : [typeof value === "string" ? value : String(value)]
-      const shown = checkable ? `(${elements.reduce((n, e) => n + e.length, 0)} chars, from the recording)` : JSON.stringify(value)
-      if (clause.value.kind === "regex") {
-        const re = new RegExp(clause.value.source, clause.value.flags.replace("g", ""))
-        const matched = elements.some((element) => re.test(element))
-        const ok = clause.op === "matches" ? matched : !matched
-        return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "matches" : "does not match"} /${clause.value.source}/` }
-      }
-      if (clause.op === "excludes") {
-        const hit = clause.value.values.filter((v) => elements.some((element) => element.toLowerCase().includes(String(v).toLowerCase())))
-        return hit.length ? { state: "fail", detail: `${label} contains ${hit.join(", ")}` } : { state: "ok", detail: `${label} excludes ${clause.value.values.join(", ")}` }
-      }
-      if (clause.op === "contains") {
-        const ok = elements.some((element) => element.toLowerCase().includes(String(clause.value.value).toLowerCase()))
-        return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "contains" : "does not contain"} ${JSON.stringify(clause.value.value)}` }
-      }
-      if (checkable && Array.isArray(value)) {
-        const same = JSON.stringify(value) === JSON.stringify(clause.value.value)
-        const ok = clause.op === "!=" ? !same : clause.op === "==" ? same : false
-        return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "satisfies" : "does not satisfy"} ${clause.op}` }
-      }
-      const ok = compare(value, clause.value.value, clause.op)
-      if (checkable) return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "satisfies" : "does not satisfy"} ${clause.op} ${JSON.stringify(clause.value.value)}` }
-      return { state: ok ? "ok" : "fail", detail: `${label} ${JSON.stringify(value)} ${ok ? "satisfies" : "does not satisfy"} ${clause.op} ${JSON.stringify(clause.value.value)}` }
+      return argCheck(call, clause, view)
+    }
+    case "absent-arg": {
+      const calls = selectCalls(view.calls, clause.tool, view.scope)
+      if (!calls.length) return { state: "ok", detail: `${clause.tool} never called` }
+      const checks = calls.map((call) => argCheck(call, clause, view))
+      const hit = checks.findIndex((c) => c.state === "ok")
+      if (hit >= 0) return { state: "fail", detail: `${clause.tool}#${hit + 1}: ${checks[hit].detail}` }
+      // A value the trace keeps only as its shape, and whose shape does not match, may still have matched: unseen, not absent.
+      const unseen = checks.findIndex((c) => c.state === "unverifiable" || c.shape)
+      if (unseen >= 0) return { state: "unverifiable", detail: `${clause.tool}#${unseen + 1}: ${checks[unseen].detail}` }
+      return { state: "ok", detail: `none of ${calls.length} ${clause.tool} call(s) had ${clause.arg.replace(/^args\./, "")} ${clause.op}${clause.value ? ` ${clause.value.kind === "regex" ? `/${clause.value.source}/` : JSON.stringify(clause.value.value)}` : ""}` }
     }
     case "absent": {
       const count = selectCalls(view.calls, clause.tool, view.scope).length

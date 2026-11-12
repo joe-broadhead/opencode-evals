@@ -17,8 +17,13 @@
 //     "overlay": "$EVALS_STORE/holdouts/history/world",   a private add-on the build receives as EVALS_WORLD_OVERLAY
 //     "prepare": "./fix-paths.sh",          run per sandbox after the copy (EVALS_SANDBOX_HOME, EVALS_RUN_CWD,
 //                                           EVALS_REPO_SOURCE): rewrite recorded directories to the run's own
-//     "sessions": { "earlier": "ses_…" }    sessions a case continues with `Seed: continue=earlier`
+//     "truth": "world/truth.json",          what the build derived; a case's `Truth:` claims are checked against it
+//     "sessions": { "earlier": "ses_…" }    sessions a case continues with `Seed: continue=earlier`; or a reference to a
+//                                           map the build writes, "world/truth.json#ids"
 //   }
+//
+// A case's Seed picks within the world: `cwd=<key>` the repository, `subdir=<a/b>` a folder inside its copy (it must
+// exist once the world's prepare has run, and is never a link), `continue=<key>` a session to continue.
 //
 // A world with a build command must have been built by the build under test: the runner stamps each build with that
 // build's digest (.evals-world.json) and a world built by another build, or by hand, is stale.
@@ -102,6 +107,8 @@ export function dirWorld(dir) {
     if (typeof value === "number") return value
     if (typeof value === "string" && value.includes("#")) {
       const [path, key] = value.split("#")
+      // A world whose build writes its clock and has not been built yet has no clock: stale, so a batch builds it.
+      if (!existsSync(at(path))) return null
       const data = JSON.parse(readFileSync(at(path), "utf8"))
       const found = key.split(".").reduce((node, part) => node?.[part], data)
       return typeof found === "number" ? found : Date.parse(found)
@@ -112,6 +119,15 @@ export function dirWorld(dir) {
   // `$VAR` in a path is the caller's variable: an overlay lives in the private store, never beside the world.
   const expand = (path, env) => String(path).replace(/\$([A-Z_][A-Z0-9_]*)/g, (_, name) => env[name] ?? "")
   const overlayOf = (s, env = process.env) => (s.overlay ? at(expand(s.overlay, env)) : null)
+  // The world's sessions: a map in world.json, or "file#path" naming one the build wrote (session ids it derives).
+  const sessionsOf = (s) => {
+    if (typeof s.sessions !== "string") return s.sessions ?? {}
+    const [path, key = ""] = s.sessions.split("#")
+    const data = JSON.parse(readFileSync(at(path), "utf8"))
+    const found = key ? key.split(".").reduce((node, part) => node?.[part], data) : data
+    if (!found || typeof found !== "object") throw new Error(`the world's sessions ${s.sessions} name no map`)
+    return found
+  }
   return {
     name: dir.split(/[\\/]/).filter(Boolean).pop(),
     status({ arm, at: now = Date.now() } = {}) {
@@ -164,13 +180,30 @@ export function dirWorld(dir) {
         const result = await runToEnd("bash", ["-c", s.prepare], { cwd: dir, env: { ...caller, EVALS_WORLD_DIR: dir, EVALS_SANDBOX_ROOT: sandbox.root, EVALS_SANDBOX_HOME: sandbox.home, EVALS_RUN_CWD: cwd, EVALS_REPO_SOURCE: source ?? "" }, timeoutMs: 5 * 60_000 })
         if (result.code !== 0) throw new Error(`the world's prepare step failed (exit ${result.code}): ${tail(result.stderr, 300)}`)
       }
+      // `subdir=<a/b>`: the run starts in a folder of its copy, each part a safe name, nothing on the way a link.
+      if (seeds.subdir) {
+        if (!source) throw new Error(`Seed subdir=${seeds.subdir} needs a repository (cwd=<key>)`)
+        let at = cwd
+        for (const part of seeds.subdir.split("/").filter(Boolean)) {
+          at = within(sandbox.root, join(at, segment("Seed subdir part", part)), "the working directory")
+          if (!existsSync(at) || lstatSync(at).isSymbolicLink() || !lstatSync(at).isDirectory()) throw new Error(`Seed subdir=${seeds.subdir}: ${part} is not a folder of the repository's copy`)
+        }
+        cwd = at
+      }
       let session = null
       if (seeds.continue) {
         segment("Seed continue", seeds.continue)
-        session = s.sessions?.[seeds.continue] ?? null
+        session = sessionsOf(s)[seeds.continue] ?? null
         if (!session) throw new Error(`the world has no session ${JSON.stringify(seeds.continue)} to continue (world.json "sessions")`)
       }
       return { cwd, session }
+    },
+    /** The world's truth file, parsed, or null when it names none. */
+    truth() {
+      const s = spec()
+      if (!s.truth) return null
+      if (!existsSync(at(s.truth))) throw new Error(`the world's truth ${s.truth} is not there: build the world first`)
+      return JSON.parse(readFileSync(at(s.truth), "utf8"))
     },
     provenance() {
       const s = spec()

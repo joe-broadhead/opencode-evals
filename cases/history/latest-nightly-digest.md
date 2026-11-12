@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: core, screen
 
 ## Prompt
 what did the most recent nightly PR digest say?
@@ -23,8 +24,8 @@ what did the most recent nightly PR digest say?
 - [H-PR01] major · A citation in the full form (ses_… #seq).
   evidence: text:any matches /\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\)/
 
-- [H-PR02] major · It listed sessions by title and recency, or read the newest nightly session.
-  evidence_any: call:history.sessions#1 args.title present ;; call:history.sql#1 args.sql present ;; call:history.search#1 args.query present
+- [H-PR02] minor · It listed the runs by title (sessions with title) or with one sql statement, rather than trusting the folded search hit.
+  evidence_any: call:history.sessions#1 args.title present ;; call:history.sessions#2 args.title present ;; call:history.sql#1
 
 - [H-OC08] major · It used the history tools.
   evidence: count:history.* >= 1
@@ -34,3 +35,6 @@ what did the most recent nightly PR digest say?
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

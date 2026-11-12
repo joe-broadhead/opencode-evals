@@ -1,0 +1,265 @@
+{
+  "schema": "oc-case/1",
+  "id": "list-all-14d-pagination",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "truth (lumen-api, created in the last 14 days): 40 top-level unarchived, 42 with archived, 44 with subagents, 46 with both; fillers avoid the 13.4-14.6 day band, so the count does not move with the build hour",
+  "decision": "F5 pagination. history_sessions returns 20 rows by default; a complete list needs `next` as `cursor`, a larger limit, or one sql count. \"Tax region\" (13 days old) is on the second page by recency.",
+  "data_check": null,
+  "prompt": "list every session I've had in this project over the last 14 days, the complete list, not just the first page, and tell me how many there are",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC01"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 10,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "core",
+    "new"
+  ],
+  "truth": [
+    {
+      "path": "sql.list14dApi.top",
+      "value": 40
+    },
+    {
+      "path": "sql.list14dApi.withArchived",
+      "value": 42
+    },
+    {
+      "path": "sql.list14dApi.withSubagents",
+      "value": 44
+    },
+    {
+      "path": "sql.list14dApi.all",
+      "value": 46
+    }
+  ],
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It gives the total: 40 (or 42 with archived, 44 with subagents, 46 with both).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(40|42|44|46)\\b (sessions|in total|total)|total[^.\\n]{0,25}\\b(40|42|44|46)\\b|\\b(40|42|44|46)\\b[^.\\n]{0,15}sessions",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "The list reaches past the first page: it includes the 13-day-old tax_region migration.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "tax[_ ]region",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "H-PR05",
+      "severity": "major",
+      "ask": "It went past the first page: a second sessions call with cursor, a limit of 40 or more, or one sql statement.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 2,
+            "arg": "args.cursor",
+            "op": "present"
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 3,
+            "arg": "args.cursor",
+            "op": "present"
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": "args.limit",
+            "op": ">=",
+            "value": {
+              "kind": "number",
+              "value": 40
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 2,
+            "arg": "args.limit",
+            "op": ">=",
+            "value": {
+              "kind": "number",
+              "value": 40
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sql",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "H-PR06",
+      "severity": "minor",
+      "ask": "The list names the sessions by ID (a sessions list has no seq), at least 30 of them.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text-count",
+          "span": "any",
+          "op": ">=",
+          "value": {
+            "kind": "regex",
+            "source": "ses_[A-Za-z0-9]{22}",
+            "flags": ""
+          },
+          "n": 30
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "H-OC08",
+      "severity": "major",
+      "ask": "It used the history tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Truth is derived from the world (lab/gold, read-only): created >= now - 14 days in lumen-api, by parent and archived. Regenerate it with the world (W1-W3 add no session inside 14 days).",
+      "line": 42
+    },
+    {
+      "id": null,
+      "text": "Families: F5 (pagination, hidden results). World: unchanged.",
+      "line": 43
+    }
+  ],
+  "hashes": {
+    "source_sha256": "b7599a7ee04917cc47803864f2360c3b34bb610a8508a1c8c6436f5bd25f310c"
+  }
+}

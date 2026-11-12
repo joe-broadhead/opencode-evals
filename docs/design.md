@@ -64,6 +64,7 @@ The clauses, each one observable in a trace:
 | `call:<tool>#<n>` | the n-th call of the tool happened |
 | `call:<tool>#<n> args.<key> <op> <value>` | its argument compares; ops `==`, `!=`, `<`, `<=`, `>`, `>=`, `matches`, `not-matches`, `contains`, `excludes`, `present` |
 | `absent:<tool>[#<n>]` | the tool (or its n-th call) did not happen |
+| `absent-arg:<tool> args.<key> <op> <value>` | no call of the tool passed an argument that compares (`absent-arg:history.read args.full == true`); positive ops only; a value the trace keeps only as a shape, or a variable, makes it unverifiable unless a call is seen to match |
 | `count:<tool> <op> <n>` | the number of calls compares |
 | `counts:<tool>#<n>.<key> <op> <n>` | a count read from that call's result compares |
 | `text:<span> matches\|not-matches /re/` | the answer's `any`, `first-line`, `first-paragraph` or `last-line` matches |
@@ -84,6 +85,13 @@ kept as its list of keys, so a key it lists (`args.filter.lang`) was passed with
 and a clause on it is unverifiable, never satisfied; so is anything under a variable. A path under a string reduced to
 its shape names nothing that was passed: a positive clause on it fails, and a negative one is unverifiable. On a list (several query phrasings), `matches` and `contains`
 hold when one element does, `not-matches` and `excludes` when none does. `contains` and `excludes` ignore case.
+
+A case whose clauses were written from numbers the world derives (a count, a cost, a session id) declares them:
+`Truth: sql.avgCostByAgent[agent=build].avg_usd == 1.08; ids.stripe-v2 == ses_…`. A path is dotted keys, a list index
+(`.0`) or a list element picked by a field (`[agent=build]`). The world names its truth file (world.json `"truth"`);
+`evals run` checks every selected case's claims after the world is current and before anything is reserved, and
+refuses the batch on a claim that no longer holds, so a world change cannot silently move a case's answer.
+`evals truth --plugin <id> --world <dir>` prints the check on its own.
 
 A trace reduces every free-text argument to a shape, so a session id, a query, an SQL statement or a shell command
 cannot be compared from it. A case that needs to compare one declares its key: `Checkable: sessionID, query`. For

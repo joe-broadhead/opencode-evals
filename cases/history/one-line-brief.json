@@ -1,0 +1,208 @@
+{
+  "schema": "oc-case/1",
+  "id": "one-line-brief",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "needle stripe-v2 (56 messages, 2 compactions; a brief carries the outcome and the last reply)",
+  "decision": "F13 size discipline. A one-sentence answer about a long session needs a search hit and a brief, not a full read of 56 messages.",
+  "data_check": null,
+  "prompt": "in one sentence, what did the Stripe v2 migration session achieve?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC09"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "wall_ms": 240000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "core",
+    "new"
+  ],
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It says what was achieved: payments moved to v2 payment intents (all 38 tests pass, legacy client deleted).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "payment ?intents?|38 tests|legacy client",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "H-OC09",
+      "severity": "major",
+      "ask": "It names the session: stripe-v2.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "ses_5F3vJAwkf9zXff2PL3aPow",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "H-EF01",
+      "severity": "major",
+      "ask": "Four History calls at most.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": "<=",
+          "value": 4
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "H-EF02",
+      "severity": "minor",
+      "ask": "It did not page through the session (at most one read).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.read",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "H-EF03",
+      "severity": "minor",
+      "ask": "The answer stays short (under about 1,200 characters).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "^[\\s\\S]{1200,}$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A token budget would be the direct measure, but tokens per run are dominated by cache reads of the system prompt and vary by host; add `budget:tokens <=` once the baseline gives a distribution (T4).",
+      "line": 41
+    },
+    {
+      "id": null,
+      "text": "Families: F13 (size discipline). World: unchanged.",
+      "line": 42
+    }
+  ],
+  "hashes": {
+    "source_sha256": "f30ab9dd130507e8e8a018ad94874e5fab1f87c0d5f648583c14744c718e57c6"
+  }
+}

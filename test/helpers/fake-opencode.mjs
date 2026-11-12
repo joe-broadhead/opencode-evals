@@ -92,6 +92,13 @@ if (args[0] === "run") {
     process.stderr.write('Error: 401 {"type":"error","error":{"type":"authentication_error","message":"OAuth token has expired"}}' + String.fromCharCode(10))
     process.exit(1)
   }
+  // The sign-in is revoked mid-run: one billed step, then the provider's refusal as the run's last event.
+  if (prompt.includes("revoke-mid")) {
+    const billedMid = /cost=([0-9]+(?:[.][0-9]+)?)/.exec(prompt)
+    console.log(JSON.stringify({ type: "step_finish", timestamp: Date.now(), sessionID: "ses_fake", part: { cost: billedMid ? Number(billedMid[1]) : 0, tokens: { input: 900, output: 40, cache: { read: 1000, write: 0 } } } }))
+    console.log(JSON.stringify({ type: "error", timestamp: Date.now(), sessionID: "ses_fake", error: { type: "provider.unknown", message: "Failed to authenticate: OAuth token revoked. Please log in again." } }))
+    process.exit(1)
+  }
   // A token that straddles the summary's 4000-character cut of stderr.
   if (prompt.includes("straddle")) process.stderr.write(token + "y".repeat(3990))
   const at = Date.now()

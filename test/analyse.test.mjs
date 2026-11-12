@@ -15,13 +15,16 @@ test("inner call sites carry their literal arguments", () => {
   assert.equal(calls[0].args.max_results, 10)
 })
 
-test("a loop counts once, and an unreadable argument is reported, never guessed", () => {
+test("a loop counts once, a computed value is an unseen variable, and an unreadable argument is reported, never guessed", () => {
   const looped = extractInnerCalls("for (const id of ids) await tools.x.get_posts_by_id({ id });")
   assert.equal(looped.length, 1)
-  const expression = extractInnerCalls("await tools.x.search_posts_all({ query: makeQuery(a, b) })")
+  const expression = extractInnerCalls("await tools.x.search_posts_all({ query: makeQuery(a, b), max_results: 10 })")
   assert.equal(expression.length, 1)
-  assert.equal(expression[0].parsed, false)
-  assert.match(expression[0].why, /unreadable|expected/)
+  assert.equal(expression[0].parsed, true)
+  assert.deepEqual(expression[0].args, { query: { $ref: "(expression)" }, max_results: 10 })
+  const broken = extractInnerCalls("await tools.x.search_posts_all({ query: [1, 2 })")
+  assert.equal(broken[0].parsed, false)
+  assert.match(broken[0].why, /unreadable|expected|unterminated|unbalanced/)
 })
 
 test("shorthand properties become references, not literals", () => {
@@ -86,4 +89,41 @@ test("arguments are made safe: numbers and timestamps survive, content does not"
   assert.equal(args.code.kind, "code")
   assert.equal(JSON.stringify(args).includes("someone_real"), false)
   assert.equal(JSON.stringify(args).includes("electric cars"), false)
+})
+
+test("a spread or a computed value inside an argument object keeps the literal keys beside it", () => {
+  const code = `do { const r = await tools.history.sessions({ since: "14d", scope: "project", limit: 100, ...(cursor ? { cursor } : {}) }) } while (cursor)
+const s = await tools.history.sql({ sql: "select 1", params: [new Date(Date.now() - 30*864e5).toISOString()], limit: 200 })
+const t = await tools.history.search({ query: ["a", "b"], since: cutoff ? "7d" : "30d", ...opts })`
+  const [sessions, sql, search] = extractInnerCalls(code)
+  assert.equal(sessions.parsed, true)
+  assert.deepEqual(sessions.args, { since: "14d", scope: "project", limit: 100, $spread: true })
+  assert.equal(sql.parsed, true)
+  assert.deepEqual(sql.args.params, [{ $ref: "(expression)" }])
+  assert.equal(sql.args.limit, 200)
+  assert.deepEqual(search.args, { query: ["a", "b"], since: { $ref: "(expression)" }, $spread: true })
+  assert.equal(readLiteral("{ a: 1, ...rest }").value.$spread, true)
+  assert.equal(readLiteral("{ a: (1 + ").ok, false, "an unterminated expression is still unparsed")
+})
+
+test("beside a spread, a written key is seen and an unwritten one is unverifiable, never missing", async () => {
+  const { argState } = await import("../src/grade/evidence.mjs")
+  const args = safeArgs({ since: "14d", limit: 100, $spread: true })
+  assert.equal(argState(args, "args.limit").state, "value")
+  assert.equal(argState(args, "args.cursor").state, "opaque")
+  assert.equal(argState(safeArgs({ since: "14d" }), "args.cursor").state, "missing")
+  assert.equal(argState({ filter: { kind: "object", keys: ["$spread", "lang"] } }, "args.filter.tag").state, "opaque")
+})
+
+test("arguments passed as a local variable bound once to an object literal are read from it", () => {
+  const paged = `do {
+  const input = { since: "14d", limit: 100 };
+  if (cursor) input.cursor = cursor;
+  last = await tools.history.sessions(input);
+} while (cursor)`
+  assert.deepEqual(extractInnerCalls(paged)[0].args, { since: "14d", limit: 100, $spread: true }, "a mutated binding may carry more keys")
+  assert.deepEqual(extractInnerCalls(`const q = { query: ["a", "b"], scope: "all" }\nreturn await tools.history.search(q)`)[0].args, { query: ["a", "b"], scope: "all" })
+  assert.deepEqual(extractInnerCalls(`let q = { scope: "all" }\nq = make()\nawait tools.history.search(q)`)[0].args, { $ref: "q" }, "reassigned: still the variable")
+  assert.deepEqual(extractInnerCalls(`await tools.history.search(opts)`)[0].args, { $ref: "opts" }, "never declared here: still the variable")
+  assert.deepEqual(extractInnerCalls(`const q = { a: 1 }; const r = q == null; await tools.history.search(q)`)[0].args, { a: 1 }, "a comparison is not an assignment")
 })

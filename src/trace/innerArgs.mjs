@@ -3,8 +3,10 @@
 // The outer `execute` event carries `code`; the calls the code makes are `tools.<ns>.<name>(…)`. A regex
 // finds the call sites (a lower bound: a loop counts once), and this module then reads the argument
 // object literal beside each site. Only literals are understood — a string, a number, a boolean, an
-// object, an array, or a reference to a local variable. Anything else is reported as unparsed, and the
-// item that needed it becomes BLOCKED rather than guessed at. Nothing is executed.
+// object, an array, or a reference to a local variable. Inside an object or an array, any other value (a call, a
+// ternary, `new Date(…)`) is kept as an unseen variable and a spread (`...opts`) as `$spread: true`, so the literal
+// keys beside them still count; a spread means a key not written may still have been passed. Anything else is
+// reported as unparsed, and the item that needed it becomes BLOCKED rather than guessed at. Nothing is executed.
 
 const CALL = /tools(?:\.([A-Za-z_$][\w$]*)|\[["']([^"']+)["']\])+?\s*\(/g
 
@@ -94,6 +96,38 @@ export function readLiteral(text) {
     while (i < text.length && /[A-Za-z0-9_$]/.test(text[i])) i++
     return text.slice(start, i)
   }
+  // Skips one expression we do not read (a call, a ternary, an operator chain), up to the `,` or the closing
+  // bracket that ends it at this depth. Returns false when the text ends first.
+  const skipExpression = () => {
+    let depth = 0
+    let quote = null
+    for (; i < text.length; i++) {
+      const c = text[i]
+      if (quote) {
+        if (c === "\\") i++
+        else if (c === quote) quote = null
+        continue
+      }
+      if (c === '"' || c === "'" || c === "`") quote = c
+      else if (c === "(" || c === "{" || c === "[") depth++
+      else if (c === ")" || c === "}" || c === "]") {
+        if (depth === 0) return true
+        depth--
+      } else if (c === "," && depth === 0) return true
+    }
+    return false
+  }
+  // One element of an object or an array: a literal, or an unseen expression kept as a variable.
+  const readElement = () => {
+    skip()
+    const start = i
+    const value = readValue()
+    skip()
+    if (value.ok && (text[i] === "," || text[i] === "}" || text[i] === "]")) return value
+    i = start
+    if (!skipExpression()) return fail(`unterminated expression at ${start}`)
+    return { ok: true, value: { $ref: "(expression)" }, literal: "ref" }
+  }
   const readValue = () => {
     skip()
     const ch = text[i]
@@ -107,6 +141,14 @@ export function readLiteral(text) {
           return { ok: true, value: obj }
         }
         if (i >= text.length) return fail("unterminated object")
+        if (text.startsWith("...", i)) {
+          // A spread: any key may come from it. The literal keys beside it are still read.
+          i += 3
+          if (!skipExpression()) return fail("unterminated spread")
+          obj.$spread = true
+          if (text[i] === ",") i++
+          continue
+        }
         const key = readKey()
         if (!key) return fail(`unreadable key at ${i}`)
         skip()
@@ -124,7 +166,7 @@ export function readLiteral(text) {
           return fail(`expected ":" after ${key}`)
         }
         i++
-        const value = readValue()
+        const value = readElement()
         if (!value.ok) return value
         obj[key] = value.value
         skip()
@@ -148,7 +190,15 @@ export function readLiteral(text) {
           i++
           return { ok: true, value: arr }
         }
-        const value = readValue()
+        if (text.startsWith("...", i)) {
+          // A spread into a list: its elements are unseen.
+          i += 3
+          if (!skipExpression()) return fail("unterminated spread")
+          arr.push({ $ref: "(spread)" })
+          if (text[i] === ",") i++
+          continue
+        }
+        const value = readElement()
         if (!value.ok) return value
         arr.push(value.value)
         skip()
@@ -197,6 +247,30 @@ export function readLiteral(text) {
 }
 
 /**
+ * Arguments passed as a local variable (`const input = { since: "14d" }; tools.history.sessions(input)`): the object
+ * literal the variable is declared with, when it is declared exactly once and never reassigned. A later
+ * `input.cursor = …` or `input[…] = …` may add keys, so the result carries `$spread: true` (an unwritten key is unseen,
+ * not missing). Anything else stays the variable it was.
+ */
+export function boundLiteral(code, value) {
+  const ref = value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 1 ? value.$ref : null
+  if (typeof ref !== "string" || !/^[A-Za-z_$][\w$]*$/.test(ref)) return null
+  const esc = ref.replace(/\$/g, "\\$")
+  const declarations = [...code.matchAll(new RegExp(`(?:const|let|var)\\s+${esc}\\s*=\\s*(?=\\{)`, "g"))]
+  if (declarations.length !== 1) return null
+  // Reassigned (`input = …`, not `==`) anywhere: the call may see another object.
+  const reassigned = [...code.matchAll(new RegExp(`(^|[^.\\w$])${esc}\\s*=(?!=)`, "g"))].length > 1
+  if (reassigned) return null
+  const at = declarations[0].index + declarations[0][0].length
+  const inside = balanced(code, at)
+  if (inside === null) return null
+  const literal = readLiteral(`{${inside}}`)
+  if (!literal.ok || typeof literal.value !== "object" || Array.isArray(literal.value)) return null
+  const mutated = new RegExp(`(^|[^.\\w$])${esc}\\s*(\\.[A-Za-z_$][\\w$]*|\\[[^\\]]*\\])\\s*=(?!=)|Object\\.assign\\(\\s*${esc}\\b|delete\\s+${esc}\\b`).test(code)
+  return mutated ? { ...literal.value, $spread: true } : literal.value
+}
+
+/**
  * Every `tools.<ns>.<name>(…)` site in one execute call.
  * @returns {Array<{ns: string|null, name: string, args: unknown|undefined, parsed: boolean, why?: string}>}
  */
@@ -225,7 +299,7 @@ export function extractInnerCalls(code) {
       out.push({ ns, name, args: undefined, parsed: false, why: literal.why })
       continue
     }
-    out.push({ ns, name, args: literal.value, parsed: true })
+    out.push({ ns, name, args: boundLiteral(code, literal.value) ?? literal.value, parsed: true })
   }
   return out
 }

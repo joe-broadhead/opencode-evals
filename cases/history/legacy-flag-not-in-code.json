@@ -1,0 +1,278 @@
+{
+  "schema": "oc-case/1",
+  "id": "legacy-flag-not-in-code",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "needle stripe-v2 (compaction summaries name STRIPE_LEGACY=1; the last message deletes the legacy client)",
+  "decision": "Rule 1 of the skill and the namespace text: the user says \"we added X\" and the repo has no trace of it; the agent must look in History before saying it does not exist, and report that it existed and was removed.",
+  "data_check": null,
+  "prompt": "we put the old Stripe client behind a STRIPE_LEGACY flag at some point. I can't find it anywhere in the code now. did we ever actually add it?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC08"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 12,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "core",
+    "new",
+    "screen"
+  ],
+  "items": [
+    {
+      "id": "H-OC08",
+      "severity": "blocker",
+      "ask": "It checked History instead of stopping at an empty grep (the repo has no trace of the flag).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It says the flag existed and went away when the legacy client was deleted at the end of the Stripe v2 migration.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(legacy (stripe )?(v1 )?(client|flag|code)|STRIPE_LEGACY(=1)?)[^.\\n]{0,80}\\b(was|were|got|been|is|are) (later |then |finally )?(deleted|removed|dropped)|(deleted|removed|dropped|deleting|removing|dropping) the (legacy|v1|old)[^.\\n]{0,30}(client|flag|code)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "H-OC02",
+      "severity": "blocker",
+      "ask": "It does not tell the user the flag never existed.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(never|did not|didn't) (actually )?(add|added|exist|existed|introduce|introduced) (it|the flag|STRIPE_LEGACY|a STRIPE_LEGACY flag)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "H-OC03",
+      "severity": "minor",
+      "ask": "It says why the flag was temporary: it kept the v1 client until the in-flight invoices drained.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "in-?flight|drain",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "H-OC09",
+      "severity": "major",
+      "ask": "The answer names the session the facts come from: stripe-v2.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "ses_5F3vJAwkf9zXff2PL3aPow",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "H-PR01",
+      "severity": "major",
+      "ask": "At least one citation in the full form (ses_… #seq).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\\)",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "H-PR02",
+      "severity": "major",
+      "ask": "The citation names the right session in full form.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\(ses_5F3vJAwkf9zXff2PL3aPow #[0-9]+\\)",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    },
+    {
+      "id": "H-TR01",
+      "severity": "minor",
+      "ask": "The history-recall skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited: a lookup changes nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access \"all\").",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 46
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": "H-OC02",
+      "text": "a sentence such as \"there's no sign of it in the current code\" is allowed; only \"never added/existed\" fails.",
+      "line": 50
+    },
+    {
+      "id": null,
+      "text": "Families: F1 (first move), F6 (not-found honesty). World: unchanged.",
+      "line": 51
+    }
+  ],
+  "hashes": {
+    "source_sha256": "a80d49377c17554e5e9edcadc026984bf2baa1ed3d5a41cbe9ffd90d9f01501f"
+  }
+}

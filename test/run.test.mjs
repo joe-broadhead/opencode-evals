@@ -1,7 +1,7 @@
 // `evals run` with a stand-in OpenCode binary: no model, no network beyond loopback, deterministic outcomes.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync, lstatSync, symlinkSync } from "node:fs"
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync, lstatSync, symlinkSync, renameSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { spawn, spawnSync } from "node:child_process"
@@ -382,6 +382,26 @@ test("a world can continue its own session, rewrite paths per sandbox, and be bu
   f.cleanup()
 })
 
+test("a run can start in a folder of its repository, and continue a session the build derived", async () => {
+  const f = fixture()
+  addCase(f.casesDir, "in-sub", "- Seed: cwd=api subdir=services/worker continue=stripe")
+  addCase(f.casesDir, "bad-sub", "- Seed: cwd=api subdir=services/nowhere")
+  addCase(f.casesDir, "up-sub", "- Seed: cwd=api subdir=../escape")
+  const world = join(f.root, "world")
+  mkdirSync(join(world, "repos", "api-repo", "services", "worker"), { recursive: true })
+  writeFileSync(join(world, "truth.json"), JSON.stringify({ ids: { stripe: "ses_from_truth" } }))
+  writeFileSync(join(world, "world.json"), JSON.stringify({ repos: "repos", cwd: { api: "api-repo" }, sessions: "truth.json#ids" }))
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "sub", model: "mock/m1", auth: "none", scripted: true, cases: "*-sub", arm: f.arm, casesDir: f.casesDir, world, keep: true }, { caller: f.caller, ...quiet })
+  const by = Object.fromEntries(result.results.map((r) => [r.case, r]))
+  assert.equal(by["in-sub"].exit, 0, JSON.stringify(by["in-sub"]))
+  const run = JSON.parse(readFileSync(join(result.keptAt, "runs", "in-sub.t1", "home", "run.json"), "utf8"))
+  assert.equal(run.cwd, join(result.keptAt, "runs", "in-sub.t1", "work", "api-repo", "services", "worker"))
+  assert.deepEqual(run.argv.slice(run.argv.indexOf("--session"), run.argv.indexOf("--session") + 2), ["--session", "ses_from_truth"])
+  assert.match(by["bad-sub"].error, /nowhere is not a folder/)
+  assert.match(by["up-sub"].error, /not a safe name/)
+  f.cleanup()
+})
+
 test("a private holdout with a published case's id is refused", async () => {
   const { pluginCases } = await import("../src/case/load.mjs")
   const store = mkdtempSync(join(tmpdir(), "evals-clash-"))
@@ -688,6 +708,10 @@ test("a trial refused authentication is infra: auth, released, not graded, and s
   const worked = [JSON.stringify({ type: "tool_use", part: { state: { output: "HTTP 401 from the API under test" } } }), JSON.stringify({ type: "step_finish", part: { tokens: { input: 10, output: 5 } } })].join("\n")
   assert.equal(authFailed({ stdout: worked, stderr: "status 401" }), false, "a run the model worked in is the model's")
   assert.equal(authFailed({ stderr: "the server exited" }), false)
+  const revoked = JSON.stringify({ type: "error", error: { type: "provider.unknown", message: "Failed to authenticate: OAuth token revoked. Please log in again or contact your administrator." } })
+  assert.equal(authFailed({ stdout: revoked }), true, "a revoked token before any work")
+  assert.equal(authFailed({ stdout: `${worked}\n${revoked}` }), true, "a run that ended on a revoked token was cut short, not the model's")
+  assert.equal(authFailed({ stdout: `${revoked}\n${worked}` }), false, "a run that went on after the error is the model's")
   f.cleanup()
 })
 
@@ -979,5 +1003,185 @@ test("links out of the sandbox are cut anywhere in it, and a world repository th
   symlinkSync(join(f.root, "elsewhere-repo"), join(world, "repos", "api-repo"))
   const linked = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "dl3", model: "mock/m1", auth: "none", scripted: true, cases: "deep", arm: f.arm, casesDir: f.casesDir, world }, { caller: f.caller, ...quiet })
   assert.match(linked.results[0].error, /outside|is a symbolic link/)
+  f.cleanup()
+})
+
+test("a batch whose world contradicts a case's Truth: is refused before anything is reserved", async () => {
+  const f = fixture()
+  addCase(f.casesDir, "claims", "- Truth: counts.top == 40")
+  const world = join(f.root, "truthworld")
+  mkdirSync(world, { recursive: true })
+  writeFileSync(join(world, "truth.json"), JSON.stringify({ counts: { top: 42 } }))
+  writeFileSync(join(world, "world.json"), JSON.stringify({ truth: "truth.json" }))
+  await assert.rejects(runBatch({ ...UNCONFINED, plugin: "demo", iteration: "truthy", model: "mock/m1", auth: "none", scripted: true, cases: "claims", arm: f.arm, casesDir: f.casesDir, world }, { caller: f.caller, ...quiet }), /counts\.top is 42, the case was written for 40/)
+  assert.equal(readLedger(f.store).filter((e) => e.kind === "reserve").length, 0, "nothing reserved")
+  writeFileSync(join(world, "truth.json"), JSON.stringify({ counts: { top: 40 } }))
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "truthy", model: "mock/m1", auth: "none", scripted: true, cases: "claims", arm: f.arm, casesDir: f.casesDir, world }, { caller: f.caller, ...quiet })
+  assert.equal(result.launched, 1)
+  assert.deepEqual(result.truth, { claims: 1, cases: 1 })
+  f.cleanup()
+})
+
+test("a world never built (its clock file absent) is stale and rebuilt, not an error", async () => {
+  const f = fixture()
+  addCase(f.casesDir, "fresh-world", "")
+  const world = join(f.root, "unbuilt")
+  mkdirSync(world, { recursive: true })
+  writeFileSync(join(world, "world.json"), JSON.stringify({ now: "out/truth.json#now", fresh: "utc-day", build: `mkdir -p out && node -e 'require("fs").writeFileSync("out/truth.json", JSON.stringify({ now: Date.now() }))'` }))
+  const { dirWorld } = await import("../src/run/world.mjs")
+  const before = dirWorld(world).status({})
+  assert.equal(before.fresh, false)
+  assert.equal(before.rebuildable, true)
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "unbuilt", model: "mock/m1", auth: "none", scripted: true, cases: "fresh-world", arm: f.arm, casesDir: f.casesDir, world }, { caller: f.caller, ...quiet })
+  assert.equal(result.launched, 1)
+  assert.equal(existsSync(join(world, "out", "truth.json")), true)
+  f.cleanup()
+})
+
+test("the sign-in is re-read before each trial: a rotated token reaches the next trial, and no value is written anywhere", async () => {
+  const f = fixture({ cases: [["leak-one", ""], ["leak-two", ""]] })
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const real = join(f.home, ".claude", ".credentials.json")
+  const first = "tok-first-0123456789-abcdefghij-ABCDEFGH"
+  const second = "tok-second-rotated-0123456789-abcdefghij-ABCDEFGHIJK"
+  writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: first, refreshToken: "refresh-never-r1", expiresAt: null } }))
+  const lines = []
+  const log = (line) => {
+    lines.push(line)
+    // Between the trials, something outside rotates the sign-in (write elsewhere, rename over it, as claude does).
+    if (/\[1\/2\]/.test(line)) {
+      writeFileSync(`${real}.tmp`, JSON.stringify({ claudeAiOauth: { accessToken: second, refreshToken: "refresh-never-r2", expiresAt: null } }))
+      renameSync(`${real}.tmp`, real)
+    }
+  }
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "rot", model: "claude-agent/haiku", auth: "claude-agent", acceptUnknownTokenExpiry: true, cases: "leak-*", set: "all", parallel: 1, arm: f.arm, casesDir: f.casesDir, keep: true, keepCredentials: true }, { caller, log })
+  assert.equal(result.launched, 2, JSON.stringify(result.results))
+  assert.equal(result.token_rotations, 1)
+  // Each trial got the value current at its launch: the kept sandboxes hold them masked, so their lengths tell them apart.
+  const tokenOf = (name) => JSON.parse(readFileSync(join(result.keptAt, "runs", `${name}.t1`, "home", "run.json"), "utf8")).env.CLAUDE_CODE_OAUTH_TOKEN
+  assert.equal(tokenOf("leak-one"), "*".repeat(first.length))
+  assert.equal(tokenOf("leak-two"), "*".repeat(second.length))
+  // Neither value, nor any refresh token, in anything written: recordings, summaries, files records, batch record, log.
+  const written = []
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name)
+      if (entry.isDirectory()) walk(path)
+      else if (entry.isFile()) written.push(readFileSync(path, "utf8"))
+    }
+  }
+  walk(f.store)
+  walk(result.keptAt)
+  const all = [...written, ...lines].join("\n")
+  for (const value of [first, second, "refresh-never-r1", "refresh-never-r2"]) assert.equal(all.includes(value), false, `${value.slice(0, 10)}… was written`)
+  assert.ok(written.some((text) => text.includes("*".repeat(second.length))), "the leaked new token is there only masked")
+  f.cleanup()
+})
+
+test("a sign-in that cannot be re-read before a trial makes it infra: auth, and the batch stops and exits non-zero", async () => {
+  const f = fixture({ cases: [["gone-one", ""], ["gone-two", ""], ["gone-three", ""]] })
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const real = join(f.home, ".claude", ".credentials.json")
+  writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: "tok-still-here-0123456789", expiresAt: null } }))
+  const log = (line) => {
+    if (/\[1\/3\]/.test(line)) writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: "", expiresAt: null } }))
+  }
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "gone", model: "claude-agent/haiku", auth: "claude-agent", acceptUnknownTokenExpiry: true, cases: "gone-*", set: "all", parallel: 1, arm: f.arm, casesDir: f.casesDir }, { caller, log })
+  assert.equal(result.launched, 1)
+  const refused = result.results.find((r) => r.infra === "auth")
+  assert.match(refused.error, /could not be re-read before the trial/)
+  assert.match(result.stopped, /no further trial launched/)
+  // The two trials never launched go back to the reserve; only the first is a recorded run.
+  const ledger = readLedger(f.store)
+  assert.equal(ledger.filter((e) => e.kind === "run").length, 1)
+  assert.equal(ledger.filter((e) => e.kind === "release").reduce((n, e) => n + e.runs, 0), 2)
+  // And the CLI says so in its exit status.
+  writeFileSync(real, "not json")
+  const cli = spawnSync(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "gone2", "--model", "claude-agent/haiku", "--auth", "claude-agent", "--accept-unknown-token-expiry", "--isolation", "none", "--unsafe-no-isolation", "--cases-dir", f.casesDir, "--set", "all", "--cases", "gone-one", "--arm", f.arm], { env: caller, encoding: "utf8" })
+  assert.notEqual(cli.status, 0, cli.stdout + cli.stderr)
+  f.cleanup()
+})
+
+test("a kept sandbox is scrubbed of the token and its run's password as soon as its trial ends, so a SIGKILLed runner leaves none", async () => {
+  const f = fixture()
+  addCase(f.casesDir, "sleepy", "")
+  const sleepy = JSON.parse(readFileSync(join(f.casesDir, "sleepy.json"), "utf8"))
+  writeFileSync(join(f.casesDir, "sleepy.json"), JSON.stringify({ ...sleepy, prompt: "please sleep" }))
+  const { spawn } = await import("node:child_process")
+  const env = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const cli = spawn(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "kill9", "--auth", "claude-agent", "--model", "claude-agent/haiku", "--isolation", "none", "--unsafe-no-isolation", "--keep", "--keep-credentials", "--arm", f.arm, "--cases-dir", f.casesDir, "--cases", "sleepy,demo-b", "--parallel", "1"], { env, stdio: ["ignore", "pipe", "pipe"] })
+  const exited = new Promise((done) => cli.on("exit", (status, signal) => done(signal ?? status)))
+  // demo-b runs first and ends; sleepy then hangs, so the batch has not ended when demo-b's sandbox is read.
+  const batchDir = await until("the sleeping run", () => {
+    const batch = readdirSync(f.tmp).find((n) => n.startsWith("evals-run-kill9-"))
+    const home = batch && join(f.tmp, batch, "runs", "sleepy.t1", "home")
+    return home && existsSync(join(home, "run-child.pid")) && existsSync(join(home, "run.json")) ? join(f.tmp, batch) : null
+  })
+  const sleepHome = join(batchDir, "runs", "sleepy.t1", "home")
+  const pids = [JSON.parse(readFileSync(join(sleepHome, "run.json"), "utf8")).pid, Number(readFileSync(join(sleepHome, "run-child.pid"), "utf8")), Number(readFileSync(join(sleepHome, "serve-child.pid"), "utf8")), JSON.parse(readFileSync(join(sleepHome, readdirSync(sleepHome).find((n) => /^serve-\d+\.json$/.test(n))), "utf8")).pid]
+  const kept = join(batchDir, "runs", "demo-b.t1")
+  const contents = () => {
+    const out = []
+    const walk = (dir) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name)
+        if (entry.isDirectory()) walk(path)
+        else if (entry.isFile()) out.push(readFileSync(path, "utf8"))
+      }
+    }
+    walk(kept)
+    return out.join("\n")
+  }
+  const check = (when) => {
+    const run = JSON.parse(readFileSync(join(kept, "home", "run.json"), "utf8"))
+    assert.match(run.env.OPENCODE_PASSWORD, /^\*+$/, `${when}: the run's password is masked`)
+    assert.equal(run.env.CLAUDE_CODE_OAUTH_TOKEN, "*".repeat(TOKEN.length), `${when}: the token is masked`)
+    assert.equal(contents().includes(TOKEN), false, `${when}: no token anywhere in the kept sandbox`)
+  }
+  check("right after its trial, before the batch ends")
+  cli.kill("SIGKILL")
+  assert.equal(await exited, "SIGKILL")
+  check("after the runner was SIGKILLed")
+  for (const pid of pids) {
+    try {
+      process.kill(pid, "SIGKILL")
+    } catch {
+      // already gone
+    }
+  }
+  await until("the test's own processes to end", () => pids.every((pid) => !alive(pid)), 5000)
+  f.cleanup()
+})
+
+test("scrubTree refuses a plain function: it would scrub nothing", async () => {
+  const { scrubTree, redactor } = await import("../src/run/secrets.mjs")
+  assert.throws(() => scrubTree(tmpdir(), (text) => text), /needs a redactor/)
+  assert.deepEqual(scrubTree(tmpdir(), redactor([])), [])
+})
+
+test("a run whose sign-in is revoked after the model worked is infra: auth and not graded, but its spend is in the ledger", async () => {
+  const f = fixture({ cases: [["a-revoked", ""], ["b-after", ""]] })
+  const c = JSON.parse(readFileSync(join(f.casesDir, "a-revoked.json"), "utf8"))
+  writeFileSync(join(f.casesDir, "a-revoked.json"), JSON.stringify({ ...c, prompt: "revoke-mid cost=0.05" }))
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "midrev", model: "claude-agent/haiku", auth: "claude-agent", set: "all", parallel: 1, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
+  assert.equal(result.results[0].infra, "auth")
+  assert.equal(result.results[0].spent, true)
+  assert.match(result.stopped, /refused authentication/)
+  const ledger = readLedger(f.store)
+  const runs = ledger.filter((e) => e.kind === "run")
+  assert.equal(runs.length, 1, "the cut-short run is recorded")
+  assert.equal(runs[0].infra, "auth")
+  assert.equal(runs[0].billed_usd, 0.05)
+  assert.equal(runs[0].tokens.input, 900)
+  assert.equal(ledger.filter((e) => e.kind === "release").reduce((n, e) => n + e.runs, 0), 1, "only b-after, never launched, goes back")
+  const { monthToDate } = await import("../src/cost/budget.mjs")
+  assert.ok(monthToDate(f.store).model_usd >= 0.05, "the spend counts against the month's dollar cap")
+  const env = { PATH: process.env.PATH, EVALS_STORE: f.store, EVALS_MODELS_CATALOG: join(f.root, "absent.json") }
+  spawnSync(process.execPath, [BIN, "trace", "--iteration", "midrev", "--plugin", "demo"], { env })
+  spawnSync(process.execPath, [BIN, "grade", "--iteration", "midrev", "--plugin", "demo", "--cases", f.casesDir], { env })
+  const graded = JSON.parse(readFileSync(join(f.store, "results", "midrev", "verdicts.json"), "utf8")).find((v) => v.case === "a-revoked")
+  assert.equal(graded.verdict, "NOT_RUN")
+  assert.equal(graded.infra, "auth")
   f.cleanup()
 })

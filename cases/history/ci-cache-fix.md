@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: guard
 
 ## Prompt
 our CI used to take forever because the npm cache never hit. how did we fix that?
@@ -17,7 +18,7 @@ our CI used to take forever because the npm cache never hit. how did we fix that
 
 - [H-OC02] blocker · The results are stated: 0% to 94% hit rate, 11m to 4m.
   evidence: text:any matches /94/i
-  evidence: text:any matches /\b4 ?m|4 minutes/i
+  evidence: text:any matches /\b4 ?m(in)?\b|4 minutes|\bto 4\b|→ ?4\b/i
 
 - [H-OC09] major · The answer names the session (or sessions) the facts come from: ci-cache.
   evidence: text:any matches /ses_JSwEG9AUkpYr3Ijuh8tFFr/
@@ -44,3 +45,6 @@ our CI used to take forever because the npm cache never hit. how did we fix that
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

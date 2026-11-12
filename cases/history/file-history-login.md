@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: core
 
 ## Prompt
 which past sessions changed src/auth/login.ts, and what was each change for?
@@ -19,7 +20,7 @@ which past sessions changed src/auth/login.ts, and what was each change for?
   evidence: text:any matches /rate[- ]?limit/i
 
 - [H-OC03] blocker · The OAuth callback state validation is listed.
-  evidence: text:any matches /state/i
+  evidence: text:any matches /invalid_state|state (param(eter)?|validation|check)|validat\w* (the )?(oauth )?state|oauth callback/i
 
 - [H-OC09] major · The answer names the session (or sessions) the facts come from: login-argon2, login-rate-limit, login-api-state.
   evidence: text:any matches /ses_2s2uP2Xy50fF7VQlXXE4Qn/
@@ -51,3 +52,6 @@ which past sessions changed src/auth/login.ts, and what was each change for?
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

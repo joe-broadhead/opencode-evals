@@ -243,8 +243,12 @@ caller's own environment: it has to read the caller's stored credential from the
 output goes straight into the sandbox, never to disk.
 
 The secret is `claude`'s own sign-in, `~/.claude/.credentials.json`: an access token and a long-lived refresh token.
-The runner reads it once per batch (never through a link, never from a FIFO, at most 64 KB, and only when it parses
-as a Claude sign-in) and keeps only the access token and its expiry, in memory; its content is never logged.
+The runner reads it at the batch's start and again immediately before each trial (never through a link, never from a
+FIFO, at most 64 KB, and only when it parses as a Claude sign-in) and keeps only the access token and its expiry, in
+memory; its content is never logged. Something outside can rotate the sign-in (boxd keeps it fresh), which revokes the
+value read earlier: each trial runs on the value current at its launch, and every value the batch has read is scrubbed
+from everything it writes. A sign-in that cannot be re-read, or holds no access token, makes that trial `infra: auth`,
+and no further trial launches; `evals run` then exits 1.
 **Nothing of it is copied into a sandbox, the refresh token is never passed on, and a sandboxed run never writes to
 the caller's `~/.claude`.** Each run's processes get the access token alone, as `CLAUDE_CODE_OAUTH_TOKEN`, which
 `claude` uses for the whole session and never refreshes or writes. So a batch must not outlive the token: it is
@@ -259,7 +263,7 @@ themselves (boxd injects it, and refreshes it outside every run). Such a batch c
 `--auth claude-agent` refuses it unless `--accept-unknown-token-expiry` is given; then the horizon check is skipped,
 the log warns, and the batch record's `horizon` says `expires: "unknown", accepted_by_flag: true` (`--dry-run` shows
 the same). A known expiry is checked as above, flag or not. The access token must still be a non-empty string, and the
-refresh token is never read.
+refresh token is parsed with the file but never kept or passed on.
 
 A provider can fill its model list only after the server answers: the Claude Agent provider caches its catalog in
 OpenCode's plugin storage and, in a fresh sandbox, fills it by probing `claude` (about a second; no model call). So
@@ -272,7 +276,9 @@ A trial whose model call is refused its credential (HTTP 401 or 403 from the pro
 permission error, an expired or invalid token, the sign-in prompt), with no model work done, is recorded as an
 infrastructure failure, `infra: "auth"` in its summary and trace. It is never graded (`evals grade` marks it
 `NOT_RUN`, with the reason), its run goes back to the reserve, and no new trial is launched after it: the batch
-record's `stopped` says why. Refresh the sign-in and rerun with `--append`.
+record's `stopped` says why. Refresh the sign-in and rerun with `--append`. A run that ends on such a refusal after
+the model already worked (the token was revoked mid-run) is `infra: "auth"` too, and not graded; but it spent, so it
+is recorded in the ledger with what it billed (marked `infra`) and counts against the run and dollar caps.
 
 Each sandbox has its own empty `~/.claude` (`CLAUDE_CONFIG_DIR`): no `.credentials.json`, no `~/.claude.json`, none of
 the caller's settings, hooks, global `CLAUDE.md`, MCP servers or agents; `CLAUDE_CODE_SKIP_PROMPT_HISTORY=1` and
