@@ -141,6 +141,10 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- `evals isolation sweep`, and the sweep at a batch's start, also remove a dead runner's batch directory under
+  `EVALS_TMP`: only one holding the marker its runner wrote at creation, naming that directory, whose runner is gone
+  and whose containers are gone, removed without following links.
+
 - The live canary's trial failed in 2 s with `provider.no-route` for `claude-agent/haiku`: the Claude Agent provider
   lists its models from a catalog in OpenCode's plugin storage, which a fresh sandbox lacks (phase A's lab base had
   it cached) and fills by probing `claude` about a second after the server answers; the run was sent before that.

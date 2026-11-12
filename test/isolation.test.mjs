@@ -983,6 +983,57 @@ test("docker: the Claude Agent provider fills its models only after the server a
   f.cleanup()
 })
 
+test("docker: a sweep removes a dead runner's batch directory and nothing else", needsBinaries, async () => {
+  const f = batchFixture([["slow-a", "[[mock:slow:60]]"], ["slow-b", "[[mock:slow:15]]"]])
+  const cli = (iteration, cases) => {
+    const proc = spawn(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", iteration, "--model", "mock/m1", "--auth", "none", "--scripted", "--isolation", "container", "--arm", "none", "--cases-dir", f.casesDir, "--cases", cases, "--set", "all"], { env: f.caller, stdio: ["ignore", "pipe", "pipe"] })
+    let out = ""
+    proc.stdout.on("data", (d) => (out += d))
+    proc.stderr.on("data", (d) => (out += d))
+    return { proc, out: () => out, exited: new Promise((done) => proc.on("exit", (code, signal) => done(code ?? signal))) }
+  }
+  const trialUp = async (pid, trial) => {
+    const deadline = Date.now() + 90_000
+    while (Date.now() < deadline) {
+      if (spawnSync("docker", ["ps", "-q", "--filter", `label=evals.pid=${pid}`, "--filter", `label=evals.trial=${trial}`], { encoding: "utf8" }).stdout.trim()) return true
+      await new Promise((done) => setTimeout(done, 250))
+    }
+    return false
+  }
+  const dirOf = (iteration) => readdirSync(f.tmp).find((name) => name.startsWith(`evals-run-${iteration}-`))
+  const a = cli("dead", "slow-a")
+  const b = cli("live", "slow-b")
+  try {
+    assert.ok(await trialUp(a.proc.pid, "slow-a.t1"), a.out())
+    assert.ok(await trialUp(b.proc.pid, "slow-b.t1"), b.out())
+    const deadDir = dirOf("dead")
+    const liveDir = dirOf("live")
+    assert.ok(deadDir && liveDir)
+    a.proc.kill("SIGKILL")
+    assert.equal(await a.exited, "SIGKILL")
+    // Look-alikes: a directory named like a batch's with no marker, one holding a copy of the dead batch's marker (its
+    // recorded path is elsewhere), and one whose marker names a live runner.
+    const marker = readFileSync(join(f.tmp, deadDir, ".evals-batch.json"), "utf8")
+    for (const [name, body] of [["evals-run-lookalike-000001", null], ["evals-run-copied-000002", marker], ["evals-run-alive-000003", JSON.stringify({ ...JSON.parse(marker), dir: join(f.tmp, "evals-run-alive-000003"), pid: process.pid, pidstart: "" })]]) {
+      mkdirSync(join(f.tmp, name, "runs"), { recursive: true })
+      writeFileSync(join(f.tmp, name, "runs", "keep.txt"), "mine")
+      if (body) writeFileSync(join(f.tmp, name, ".evals-batch.json"), body)
+    }
+    const sweep = spawnSync(process.execPath, [BIN, "isolation", "sweep"], { env: f.caller, encoding: "utf8" })
+    assert.match(sweep.stdout, /removed 2 container\(s\), 2 network\(s\) and 1 batch directory left by batches whose runner is gone/, sweep.stdout + sweep.stderr)
+    assert.equal(existsSync(join(f.tmp, deadDir)), false, "the dead runner's directory is gone")
+    for (const name of [liveDir, "evals-run-lookalike-000001", "evals-run-copied-000002", "evals-run-alive-000003"]) assert.ok(existsSync(join(f.tmp, name)), `${name} survives`)
+    assert.equal(await b.exited, 0, b.out())
+    assert.equal(existsSync(join(f.tmp, liveDir)), false, "the live batch removed its own directory when it finished")
+    assert.deepEqual(readdirSync(f.tmp).sort(), ["evals-run-alive-000003", "evals-run-copied-000002", "evals-run-lookalike-000001"])
+  } finally {
+    for (const run of [a, b]) if (run.proc.exitCode === null && run.proc.signalCode === null) run.proc.kill("SIGKILL")
+    await Promise.all([a.exited, b.exited])
+    spawnSync(process.execPath, [BIN, "isolation", "sweep"], { env: f.caller, encoding: "utf8" })
+    f.cleanup()
+  }
+})
+
 test("selectIsolation: container is the default for every run, and none is refused for every run unless unsafe", () => {
   for (const live of [true, false]) {
     assert.equal(selectIsolation({ live }).name, "container")

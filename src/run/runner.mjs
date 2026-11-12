@@ -27,7 +27,7 @@ import { materialiseArm, armProvenance } from "./arm.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
 import { segment, within, inside } from "./paths.mjs"
 import { selectIsolation, isLive, defaultIsolation } from "./isolation.mjs"
-import { containerConfig, findBinary } from "./container.mjs"
+import { containerConfig, findBinary, markBatchDir } from "./container.mjs"
 import { redactor, scrubTree, registerSecrets, tail } from "./secrets.mjs"
 import { splitTrial } from "../grade/trials.mjs"
 import { digestOf } from "../util/canonical.mjs"
@@ -534,6 +534,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // On disk, not in a memory-backed /tmp: a trial that fills its sandbox would otherwise fill the machine's memory.
   const tmpRoot = batchTmp(caller)
   const batchRoot = within(tmpRoot, mkdtempSync(join(tmpRoot, `evals-run-${iteration}-`)), "the batch directory")
+  // The marker that lets a later sweep remove this directory if this runner dies without cleaning up (container only).
+  if (isolation.batchLabel) markBatchDir(batchRoot, isolation.batchLabel)
 
   // From here on, an interrupt (Ctrl-C, SIGTERM) or an uncaught error stops every process group this batch started,
   // removes the sandboxes (and the credential imported into them) unless --keep, releases the runs that never

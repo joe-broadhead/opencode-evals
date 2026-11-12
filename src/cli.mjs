@@ -50,7 +50,7 @@ import { builtinCollisions } from "./grade/select.mjs"
 import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
 import { rawCallArgs } from "./trace/rawArgs.mjs"
 import { compare as compareArms, renderReport } from "./report/arms.mjs"
-import { runBatch } from "./run/runner.mjs"
+import { runBatch, batchTmp } from "./run/runner.mjs"
 import { buildImage, checkIsolation, containerBackend, containerConfig } from "./run/container.mjs"
 import { segment } from "./run/paths.mjs"
 
@@ -533,8 +533,8 @@ export async function main(argv) {
       if (action === "sweep") {
         const backend = containerBackend(config)
         backend.client(process.env)
-        const removed = await backend.sweep()
-        console.log(`removed ${removed.containers} container(s) and ${removed.networks} network(s) left by batches whose runner is gone`)
+        const removed = await backend.sweep({ tmpRoot: batchTmp(process.env) })
+        console.log(`removed ${removed.containers} container(s), ${removed.networks} network(s) and ${removed.dirs} batch director${removed.dirs === 1 ? "y" : "ies"} left by batches whose runner is gone`)
         return
       }
       throw new Error("evals isolation build|check|sweep")

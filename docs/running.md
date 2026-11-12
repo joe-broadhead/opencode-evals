@@ -114,8 +114,12 @@ outside every sandbox, with your own Docker settings, never ones a run could pla
 A trial ends with `docker rm -f`, which ends everything in it: killing a `docker exec` client does not stop what it
 started inside, so the runner removes the container after every run (success, failure, timeout), on Ctrl-C and
 `SIGTERM` (the interrupt handler tears the whole batch down: every trial, the proxy and its network), and after an
-uncaught error. A runner killed outright leaves its containers and networks labelled with its pid: the next batch's
-start, or `evals isolation sweep`, removes everything whose runner is gone.
+uncaught error. A runner killed outright leaves its containers and networks labelled with its pid, and its batch
+directory under `EVALS_TMP`: the next batch's start, or `evals isolation sweep`, removes everything whose runner is
+gone. A directory goes only if it holds the marker its runner wrote when it created it (`.evals-batch.json`: its own
+path, the batch's label, the runner's pid and start time), that runner is dead, and Docker lists none of its
+containers; it is removed the way the runner removes a sandbox (contained in `EVALS_TMP`, links not followed). A name
+alone never qualifies a directory.
 
 The sandbox lives on disk (`EVALS_TMP`, by default `/var/tmp/evals`), not in a memory-backed `/tmp`. Docker cannot put
 a quota on a bind mount without root, so the disk is watched instead: every two seconds the trial's sandbox is walked

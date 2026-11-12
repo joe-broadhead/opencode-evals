@@ -18,9 +18,11 @@
 
 import { spawn } from "node:child_process"
 import { createHash, randomBytes } from "node:crypto"
-import { createReadStream, existsSync, readFileSync, realpathSync, statSync, accessSync, constants } from "node:fs"
+import { createReadStream, existsSync, readFileSync, realpathSync, statSync, accessSync, constants, writeFileSync, openSync, fstatSync, closeSync, readdirSync } from "node:fs"
 import { lstat, opendir, statfs } from "node:fs/promises"
-import { delimiter, isAbsolute, join, resolve } from "node:path"
+import { delimiter, dirname, isAbsolute, join, resolve } from "node:path"
+import { removeSandbox } from "./sandbox.mjs"
+import { within } from "./paths.mjs"
 import { parseAllow } from "../../docker/egress-proxy.mjs"
 import { tail } from "./secrets.mjs"
 
@@ -119,6 +121,56 @@ const alive = (pid, start) => {
   return !start || processStart(pid) === null || processStart(pid) === start
 }
 
+/** The marker a runner writes into the batch directory it creates: what lets a sweep tell its own directories apart. */
+export const BATCH_MARKER = ".evals-batch.json"
+
+/** Writes the marker: the directory's own path, the batch's label, and the runner's pid and start time. */
+export function markBatchDir(dir, label) {
+  writeFileSync(join(dir, BATCH_MARKER), `${JSON.stringify({ dir: resolve(dir), batch_label: label, pid: process.pid, pidstart: processStart(process.pid) ?? "" })}\n`, { mode: 0o600, flag: "wx" })
+}
+
+/** Reads a marker without following a link and without reading more than a small file; null when it is not one. */
+function readMarker(file) {
+  let fd
+  try {
+    fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
+    const stat = fstatSync(fd)
+    if (!stat.isFile() || stat.size > 4096 || (typeof process.getuid === "function" && stat.uid !== process.getuid())) return null
+    return JSON.parse(readFileSync(fd, "utf8"))
+  } catch {
+    return null
+  } finally {
+    if (fd !== undefined) closeSync(fd)
+  }
+}
+
+/**
+ * Removes, under `tmpRoot`, each batch directory a dead runner created: only a real directory (not a link) holding the
+ * marker its runner wrote at creation, whose recorded path is that very directory, whose runner (pid and start time) is
+ * gone, and whose batch has no container left (`containersOf(label)` returns 0; null, an unanswered question, keeps it).
+ * A name alone never qualifies a directory. Removal is the runner's own: contained in `tmpRoot`, links not followed.
+ */
+export async function sweepBatchDirs(tmpRoot, { containersOf }) {
+  let removed = 0
+  let entries
+  try {
+    entries = readdirSync(tmpRoot, { withFileTypes: true })
+  } catch {
+    return 0
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue
+    const dir = join(tmpRoot, entry.name)
+    const marker = readMarker(join(dir, BATCH_MARKER))
+    if (!marker || marker.dir !== resolve(dir) || !/^b[0-9a-f]{10}$/.test(String(marker.batch_label))) continue
+    if (alive(Number(marker.pid), marker.pidstart || null)) continue
+    if ((await containersOf(marker.batch_label)) !== 0) continue
+    removeSandbox(within(tmpRoot, dir, "a dead batch's directory"))
+    removed++
+  }
+  return removed
+}
+
 /** Runs the docker client. Resolves { code, stdout, stderr }; never rejects. */
 export function dockerRun(docker, args, { env, input = null, timeoutMs = 120_000 } = {}) {
   return new Promise((done) => {
@@ -206,9 +258,12 @@ export function containerBackend(config = containerConfig()) {
     return result.stdout.trim()
   }
 
-  /** Removes everything a batch whose runner is gone left behind, and everything labelled with this batch when `own`. */
-  async function sweep({ own = false } = {}) {
-    const removed = { containers: 0, networks: 0 }
+  /**
+   * Removes everything a batch whose runner is gone left behind, and everything labelled with this batch when `own`:
+   * its containers and networks, then, under `tmpRoot`, the batch directory it created (sweepBatchDirs).
+   */
+  async function sweep({ own = false, tmpRoot = null } = {}) {
+    const removed = { containers: 0, networks: 0, dirs: 0 }
     for (const kind of ["container", "network"]) {
       const listed = kind === "container" ? ["ps", "-a"] : ["network", "ls"]
       const out = await docker([...listed, "--filter", "label=evals.batch", "--format", '{{.ID}}\t{{.Label "evals.batch"}}\t{{.Label "evals.pid"}}\t{{.Label "evals.pidstart"}}'])
@@ -221,6 +276,10 @@ export function containerBackend(config = containerConfig()) {
         if (result.code === 0) removed[`${kind}s`]++
       }
     }
+    if (tmpRoot && !own) removed.dirs = await sweepBatchDirs(tmpRoot, { containersOf: async (label) => {
+      const out = await docker(["ps", "-aq", "--filter", `label=evals.batch=${label}`])
+      return out.code === 0 ? out.stdout.trim().split("\n").filter(Boolean).length : null
+    } })
     return removed
   }
 
@@ -272,7 +331,7 @@ export function containerBackend(config = containerConfig()) {
     },
 
     /** Removes what batches whose runner is gone left behind (`evals isolation sweep`, and every prepare). */
-    sweep: () => sweep(),
+    sweep: ({ tmpRoot = null } = {}) => sweep({ tmpRoot }),
 
     /**
      * Checks Docker and the image, sweeps what dead batches left, records the binaries, and starts the egress proxy.
@@ -301,8 +360,8 @@ export function containerBackend(config = containerConfig()) {
         state.binaries.set(name, { host: real, command, inside: `${CONTAINER_BIN}/${name}` })
         state.shas[name] = await sha256File(real)
       }
-      const swept = await sweep()
-      if (swept.containers || swept.networks) log(`isolation: removed ${swept.containers} container(s) and ${swept.networks} network(s) left by a batch whose runner is gone`)
+      const swept = await sweep({ tmpRoot: dirname(resolve(batchRoot)) })
+      if (swept.containers || swept.networks || swept.dirs) log(`isolation: removed ${swept.containers} container(s), ${swept.networks} network(s) and ${swept.dirs} batch director${swept.dirs === 1 ? "y" : "ies"} left by a batch whose runner is gone`)
       // The proxy runs on the harness's own Node, mounted read-only: the image has none (Ubuntu's is past its end of life).
       const node = findBinary(config.proxyNode ?? process.execPath, caller.PATH)
       if (!node) throw new Error(`--isolation container: no Node for the egress proxy (${config.proxyNode ?? process.execPath})`)
