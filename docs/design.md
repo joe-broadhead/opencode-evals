@@ -172,9 +172,11 @@ another UTC day than its world's is dropped, and the report says how many.
 
 ## Running
 
-`evals run` launches one sandboxed OpenCode run per (case, trial) and writes the recordings the trace step reads:
-[running.md](running.md) has the sandbox, the credential profiles, worlds and their freshness, and the checks made
-before a batch starts.
+`evals run` launches one sandboxed OpenCode run per (case, trial) and writes the recordings the trace step reads. Every
+run is confined in its own Docker container, on a network whose only way out is a proxy allowing HTTPS to the model
+provider's hosts, because a run's agent can execute tools and the sandbox alone isolates the environment, not the
+filesystem: [running.md](running.md) has the isolation, the sandbox, the credential profiles, worlds and their
+freshness, and the checks made before a batch starts.
 
 ## The store
 

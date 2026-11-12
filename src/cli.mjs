@@ -10,7 +10,7 @@
 //   evals report   <label>=<it>[,<it>...] ... [--plugin x] [--set all] [--cases ids] [--all-cases] [--detail] [--json]
 //   evals run      --plugin x --iteration it --model p/m --auth none|env:VAR|claude-agent [--cases ids] [--set tune]
 //                  [--trials K] [--parallel N] [--arm DIR|none] [--world DIR|FILE] [--host 2.2.6] [--dry-run]
-//                  [--isolation container|none] [--unsafe-no-isolation]   (a live run needs filesystem isolation)
+//                  [--isolation container|none] [--unsafe-no-isolation]   (container by default; none needs the flag)
 //   evals isolation build|check|sweep   the container backend's image (docker/Dockerfile), its checks, and the removal
 //                  of what a crashed batch left behind
 //   evals t0       [--root DIR] [--json]

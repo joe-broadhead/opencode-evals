@@ -44,13 +44,44 @@ committed, and nothing in the repository may reference a machine path: `evals pr
 | `EVALS_CAPS` | `$EVALS_STORE/caps.json` | a JSON file with `per_plugin_month`, `total_month`, `per_plugin_iteration`, `total_iteration`; the environment wins over it |
 | `EVALS_MODEL_MAP` | `cost/model-map.json` | the alias-to-catalogue mapping |
 | `EVALS_MODELS_CATALOG` | `$XDG_CACHE_HOME/opencode/models.json` | OpenCode's models.dev cache, the only source of a model price |
-| `EVALS_TMP` | the system temp | where a T1 run's scratch tree and a live run's sandboxes are made |
+| `EVALS_TMP` | `/var/tmp/evals` for `evals run`, the system temp for T1 | where a live run's sandboxes (on disk, not a memory-backed `/tmp`) and a T1 run's scratch tree are made |
 | `EVALS_OPENCODE_BIN` | `opencode` on `PATH` | the host `evals run` uses when `--host` names no stock version |
 | `EVALS_AUTH` | unset | `evals run`'s credential profile when `--auth` is not given ([running.md](running.md#credentials)) |
 | `EVALS_AUTH_CREDENTIAL` | `Claude Agent` | the stored OpenCode credential the `claude-agent` profile exports |
 | `CLAUDE_AGENT_SDK_VERSION` | unset | required by the `claude-agent` profile, and passed to its runs |
-| `EVALS_ISOLATION` | `none` | `evals run`'s isolation backend when `--isolation` is not given; `none` is refused for a live run ([running.md](running.md#isolation)) |
+| `EVALS_ISOLATION` | `container` | `evals run`'s isolation backend when `--isolation` is not given; `none` is refused for every run without `--unsafe-no-isolation` ([running.md](running.md#isolation)) |
+| `EVALS_EGRESS_ALLOW` | the four Anthropic hosts | the egress proxy's allow-list, comma separated host names (below) |
+| `EVALS_CONTAINER_MEMORY_MB`, `_CPUS`, `_PIDS`, `_TMPFS_MB`, `_DISK_MB`, `_MAX_PARALLEL` | 4096, 2, 512, 256, 2048, 8 | a trial container's limits (below) |
+| `EVALS_DISK_FLOOR_MB` | 2048 | a trial is stopped when the filesystem under the sandboxes has less free |
+| `EVALS_CONTAINER_IMAGE` | `opencode-evals-sandbox:<digest of docker/>` | the sandbox image, when not the one `evals isolation build` makes |
+| `EVALS_DOCKER` | `docker` on `PATH` | the docker client |
+| `EVALS_CLAUDE_BIN` | `claude` on `PATH` | the `claude` mounted into a trial for the Claude Agent provider |
+| `EVALS_RUN_OVERHEAD_S` | `120` | what one run costs beyond its timeout, for the credential's horizon ([running.md](running.md#credentials)) |
+| `EVALS_OPENCODE_CORE` | unset | a pinned `@opencode/core` whose tool registry a test compares the built-in tool list with |
 | `EVALS_WORLD_<ID>` | unset | a plugin's world, a directory with `world.json` or a module ([running.md](running.md#worlds)) |
+
+## The container backend
+
+`evals run --isolation container`, the default, runs each trial in its own Docker container behind an egress proxy
+([running.md](running.md#the-container-backend)). Its settings are the owner's: the store's `caps.json` (or the file
+`EVALS_CAPS` names) and the environment, which wins. A case, an arm or a world cannot change them.
+
+```json
+{
+  "container": {
+    "egress_allow": ["api.anthropic.com", "platform.claude.com", "console.anthropic.com", "claude.ai"],
+    "memory_mb": 4096, "cpus": 2, "pids": 512, "tmpfs_mb": 256,
+    "disk_mb": 2048, "disk_floor_mb": 2048, "max_parallel": 8,
+    "image": "opencode-evals-sandbox:<tag>"
+  },
+  "run_overhead_s": 120
+}
+```
+
+`egress_allow` lists host names, exactly: no wildcard, no address; the proxy allows `CONNECT` to port 443 of these and
+nothing else. `max_parallel` bounds `--parallel`, since each trial takes one of Docker's network address pools.
+`disk_mb` is the per-trial sandbox limit and `disk_floor_mb` the free space below which a trial is stopped; both are
+enforced by a watchdog, not a quota. The image is built from `docker/` with `evals isolation build`.
 
 ## Packs
 

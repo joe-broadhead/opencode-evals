@@ -6,6 +6,20 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Added
 
+- `--isolation container`, the default for every `evals run`: one Docker container per trial, from a committed image
+  with no secrets (`docker/Dockerfile`, base pinned by digest; `evals isolation build|check|sweep`). The trial sees its
+  sandbox (read-write, at its own path), the build under test and the binaries (read-only), and nothing else of the
+  host: no home, no other trial, no Docker socket. It runs as the caller's uid with a read-only root, a small tmpfs
+  `/tmp`, `--cap-drop ALL`, `no-new-privileges`, and pids, memory and CPU limits; its network is `--internal` with an
+  isolated gateway, so it reaches no host address, no metadata service and no OpenCode server; its one way out is the
+  batch's egress proxy (`docker/egress-proxy.mjs`), which allows `CONNECT` to port 443 of an owner-set allow-list
+  (the four Anthropic hosts by default) and records every refused host name in the batch record. `opencode serve`,
+  `opencode run` and the scripted model all run inside; every command's environment goes by name through
+  `docker exec`, never in an argv or at `docker run`. A trial ends with `docker rm -f` on every path, Ctrl-C and
+  `SIGTERM` tear the batch down, and the next batch sweeps what a killed runner left. A disk watchdog stops a trial
+  past its sandbox limit or when the disk runs short. Tests run a scripted trial end to end in a container and check
+  what a trial can read, write and reach (skipped, with the reason, without Docker or the image).
+
 - `evals run`: the live runner, ported from the History lab into the harness and made plugin-generic. One sandbox per
   (case, trial), isolated like T1 (its own HOME, XDG tree, TMPDIR and database, a sealed `OPENCODE_CONFIG_CONTENT`, an
   environment built from nothing), its own `opencode serve` on a free port, and its own recording
@@ -70,6 +84,20 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Changed
 
+- Every `evals run` is confined by default, the scripted model's included: "not live" is not "confined", since the
+  scripted model can call a shell tool. `--isolation none` is refused for any run unless `--unsafe-no-isolation`, which
+  now means `--isolation none` only. Sandboxes moved from the memory-backed `/tmp` to `/var/tmp/evals` (`EVALS_TMP`).
+- A world's `env` is applied before the harness's own variables and may not set them (`HOME`, `PATH`, `TMPDIR`,
+  `XDG_*`, `OPENCODE_*`, `CLAUDE_*`, `ANTHROPIC_*`, the proxy, the scripted endpoint, `NODE_OPTIONS`, `LD_PRELOAD`…);
+  the names it tried are recorded as `world_env_ignored`.
+- The scripted provider is listed after the plugin under test and reads its endpoint from a file beside the batch's
+  own copy of it: a plugin that registered its own `mock` provider, or rewrote `SPIKE_MOCK_URL`, took the scripted
+  model over (reproduced on the host; now refused by a test with a hostile plugin).
+- The credential's horizon counts a per-run overhead (120 s by default, `EVALS_RUN_OVERHEAD_S`), not only the timeout.
+- The built-in tool list holds every tool the tested hosts register, the host tools included (`list_mcp_resources`,
+  `read_mcp_resource`, `models`, `session_*`, `worktree_*`, `schedule_*`, and `artifact_*` from 2.2.5), checked against
+  a pinned `@opencode/core` registry when one is configured. The grader moved; history and x are re-locked at epoch 3.
+
 - `cases/history/evals.lock` and `cases/x/evals.lock` are re-frozen at epoch 3 for the grader as it now is, and for
   History's case set, whose items now name History's tools `history.<tool>`. Batches graded under an earlier epoch
   are stale (`evals verify --all` lists them) and re-grade for free.
@@ -112,6 +140,15 @@ Keep a Changelog. This project adheres to Semantic Versioning.
   (glibc before `-baseline`, the `-musl` pair on musl) instead of only `cli-darwin-arm64`.
 
 ### Fixed
+
+- A summary's stderr was cut to its last 4000 characters before the token was scrubbed, so a token straddling the cut
+  left its tail behind; every cut now scrubs first.
+- Containment followed links with `existsSync`, so a dangling link counted as inside its root wherever it pointed; it
+  now follows the link to its target, and a loop is nowhere.
+- The runner no longer walks a working directory that a run replaced with a link out of the sandbox, removes a sign-in
+  file only through no link, and removes a sandbox whose directories a run locked.
+- New tests guard the dollar check inside the ledger's lock (eight processes racing for a cap), link cutting outside a
+  world's home, and the batch record's scrub as a whole.
 
 - The bundle tests left their checkouts and builds in the system temp on every run; they are removed after the tests,
   however they end.

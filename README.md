@@ -12,6 +12,8 @@ verdicts, and a ledger that refuses to compare two runs that are not comparable.
 - For the T1 tier: an OpenCode stock binary per version you test (2.2.3 to 2.2.6), and `bun` for the fake
   MCP server. Both are configured, not assumed: see [Configuration](#configure).
 - macOS or Linux.
+- For `evals run`: Docker 28 or later, usable by your user, and the sandbox image (`evals isolation build`): every
+  run is confined in a container ([docs/running.md](docs/running.md#running-live-evals-safely)).
 
 ## Install
 
@@ -25,8 +27,9 @@ Or run it from a checkout: `node bin/evals <command>`.
 
 ```sh
 evals compile --plugin history     # markdown cases -> oc-case/1 JSON (--all for every plugin, --check to write nothing)
+evals isolation build              # the sandbox image every run's container uses (once; docker/Dockerfile, no secrets)
 evals run --plugin history --iteration v1-a --model claude-agent/haiku --auth claude-agent --trials 3
-                                   # one sandboxed live run per case and trial, under the run caps
+                                   # one live run per case and trial, each in its own container, under the run caps
 evals trace --iteration v1-a --plugin history   # recordings -> oc-trace/1
 evals grade --iteration nx6        # grade a recorded iteration from the private store
 evals scorecard --iteration nx6    # one page, with the comparison against a hand grading
@@ -63,9 +66,9 @@ cases that must fail.
 The tool reads plugin checkouts and the private store, and writes results, labels and traces. It starts an
 OpenCode host from a binary you point it at, and a mock model on loopback. It does not sign in to anything,
 does not call a vendor's API, and holds no credentials. The one exception is `evals run`, which runs a real model:
-it passes the credential you name with `--auth` into each run's sandbox, and deletes it with the sandbox. That sandbox
-isolates the environment, not the filesystem, so `evals run` refuses a live run until a filesystem-isolation backend
-is configured ([docs/running.md](docs/running.md)).
+it passes the credential you name with `--auth` into each run's sandbox, and deletes it with the sandbox. Each run is
+confined in a Docker container of its own that sees only its sandbox, reaches nothing on the host, and can reach the
+internet only through a proxy that allows HTTPS to the model provider's hosts ([docs/running.md](docs/running.md#isolation)).
 
 Nothing private is committed: the store — recordings, traces, verdicts, scorecards, labels, holdouts — lives
 outside the repository. A trace reduces a session's content to structure; `evals privacy --scan` checks the
@@ -94,7 +97,10 @@ CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/
 | `BLOCKED` items | the evidence could not settle the item — a variable argument, a missing recording, a dependency not configured |
 | `not comparable` | the case set, the rules, the model or the grader differ: the tool names the fields |
 | `cost.source: missing` | no price entry; add one with a source and a date rather than a guess |
-| `refusing a live run with --isolation none` | a live run needs a filesystem-isolation backend, and none is implemented yet: see [docs/running.md](docs/running.md) |
+| `refusing a run with --isolation none` | every run is confined in a container; `--isolation none` needs `--unsafe-no-isolation` as well: see [docs/running.md](docs/running.md#isolation) |
+| `no image opencode-evals-sandbox:…` | build the sandbox image once: `evals isolation build` |
+| `Docker is not usable by this user` | start Docker, and add your user to the `docker` group (root-equivalent: see [docs/running.md](docs/running.md#running-live-evals-safely)) |
+| `cannot make /var/tmp/evals` | `sudo install -d -m 700 -o "$USER" -g "$USER" /var/tmp/evals`, or set `EVALS_TMP` to a directory on disk |
 | `run cap: … would reach …` | the batch does not fit this month's run caps; nothing ran. `evals budget` shows what is reserved |
 | `world … is stale` | the world's day has passed or another build indexed it; give it a `build`, or rebuild it |
 | `already have recordings` | the iteration has those cases; use a new `--iteration`, or `--append` for more trials |

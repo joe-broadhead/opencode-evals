@@ -4,13 +4,14 @@
 private store where `evals trace` reads it. It is the only command that spends model time, so everything that can
 refuse a batch does so before the first run starts.
 
-> **A live run needs filesystem isolation, and none is implemented yet.** The sandbox below isolates the
-> environment (HOME, the XDG tree, TMPDIR, the config and the database), not the filesystem: an agent under test with a
-> shell or a write tool can read and write anything the user running the harness can, by absolute path. An eval run
-> has done exactly that and overwritten a real file outside its sandbox. So `evals run` refuses a live run unless a
-> filesystem-isolation backend is configured (`--isolation`, below). The `container` backend is being designed and is
-> not implemented; until it exists, no live run should be launched. `--unsafe-no-isolation` overrides the refusal,
-> for a machine that is itself disposable and holds nothing you would mind losing; the recording says it was used.
+> **Every run is confined in a container.** The sandbox below isolates the environment (HOME, the XDG tree, TMPDIR,
+> the config and the database), not the filesystem: an agent under test with a shell or a write tool could otherwise
+> read and write anything the user running the harness can, by absolute path, and an eval run has done exactly that.
+> So every run, the harness's own scripted model included (it can call a shell tool too), runs under
+> `--isolation container` by default: one Docker container per trial, on a network whose only way out is an
+> allow-listing proxy ([Isolation](#isolation)). `--isolation none` is refused unless `--unsafe-no-isolation` is given
+> as well, for a machine that is itself disposable and holds nothing you would mind losing; the recording says so.
+> Read [Running live evals safely](#running-live-evals-safely) before the first live batch.
 
 ```sh
 evals run --plugin history --iteration v1-a --model claude-agent/haiku --auth claude-agent \
@@ -29,7 +30,7 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--cases <ids>` | `*` | ids and `prefix*` globs, comma separated |
 | `--set <sets>` | `tune` | `tune`, `holdout`, `tools`, `all`, or a comma list (see [design.md](design.md#reports-over-arms)) |
 | `--trials <k>` | `1` | runs per case; each is `<case>.t<k>`, and one trial never ships |
-| `--parallel <n>` | `4` | runs at once; each gets its own server on a free port |
+| `--parallel <n>` | `4` | runs at once; each gets its own server (and, under `container`, its own container and network: at most 8) |
 | `--arm <dir>` \| `<file>.json` \| `none` | the plugin's checkout | a built plugin (`dist/`, `skills/`, `package.json`), copied once per batch; a JSON arm file names one and its options; `none` is the no-plugin control |
 | `--world <dir\|file.mjs>` | `EVALS_WORLD_<ID>`, else an empty project | what each sandbox starts with: below |
 | `--host <version>` | `EVALS_OPENCODE_BIN`, else `opencode` on `PATH` | a tested stock binary (`OPENCODE_BIN_<version>` or `EVALS_STOCK_DIR`) |
@@ -37,9 +38,9 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--timeout <s>` | `420` | a run is killed after this |
 | `--stale rebuild\|refuse` | `rebuild` | what to do with a stale world |
 | `--append` | off | add trials after the ones the iteration already has; without it, a case with recordings is refused |
-| `--isolation <backend>` | `none` (or `EVALS_ISOLATION`) | what confines the run's processes: `container` (not implemented yet) or `none`, which is refused for a live run |
-| `--scripted` | off | run the harness's own scripted model, `mock/m1` (T1's mock provider and server; needs `bun` or `EVALS_BUN`): with `--auth none`, the one run that is not live |
-| `--unsafe-no-isolation` | off | launch a live run with `--isolation none` anyway: the agent can reach the whole filesystem |
+| `--isolation <backend>` | `container` (or `EVALS_ISOLATION`) | what confines the run's processes: `container`, or `none`, which is refused without `--unsafe-no-isolation` |
+| `--scripted` | off | run the harness's own scripted model, `mock/m1` (T1's mock provider and server; needs `bun` or `EVALS_BUN`): with `--auth none`, the one run that is not live, though still confined, since it can call tools |
+| `--unsafe-no-isolation` | off | with `--isolation none`, launch anyway: the agent can reach the whole filesystem. It means nothing with `container`, and is refused there |
 | `--dry-run` | off | print the plan, the caps and the isolation; launch and reserve nothing |
 | `--keep` | off | keep the sandboxes (for debugging the runner); with `--auth claude-agent` it is refused unless `--keep-credentials` is given too, because a kept sandbox holds the imported OpenCode credential (a marker; the access token is scrubbed from every kept file) |
 
@@ -59,21 +60,99 @@ a comparison on any other axis. A batch from before options were recorded ran wi
 
 ## Isolation
 
-A backend (`src/run/isolation.mjs`) is `{ name, confines, prepare, wrap, teardown }`: `wrap` turns each host command of
-a run (`opencode serve`, `opencode run`, the credential import, `--version`) into the command that runs it confined,
-and `confines` says whether the run's processes are kept off the host filesystem. A run is live unless it has no
-credential (`--auth none`) and runs the harness's own scripted model (`--scripted`, which registers T1's mock
-provider in the sealed config and starts its loopback server, serving `mock/m1`); a model that is merely named
-`mock` can come from the plugin under test and be backed by anything, so it is live. A live run on a backend that does
-not confine is refused before anything is created, reserved or imported (a world module included), unless
-`--unsafe-no-isolation` is given; the summary and the batch record name the backend, and `unsafe_no_isolation: true`
-when the override was used. World `build` and `prepare` steps are the operator's own scripts and run on the host.
+A backend (`src/run/isolation.mjs`) prepares once per batch and enters once per trial: the trial's `wrap` turns each
+host command of a run (`opencode serve`, `opencode run`, the credential import, `--version`) into the command that
+runs it confined, `ready` checks a server of the trial from wherever its loopback is, and `leave` ends everything
+the trial started. `confines` says whether the run's processes are kept off the host filesystem. A run is live unless
+it has no credential (`--auth none`) and runs the harness's own scripted model (`--scripted`); live or not is
+recorded, but it no longer decides whether a run may go unconfined: every run can execute tools, so `--isolation
+none` is refused for every run, before anything is created, reserved or imported (a world module included), unless
+`--unsafe-no-isolation` is given; the summary and the batch record then say `unsafe_no_isolation: true`. World
+`build` and `prepare` steps are the operator's own scripts and run on the host.
+
+### The container backend
+
+`--isolation container` (`src/run/container.mjs`) gives every trial:
+
+- **its own container**, from the sandbox image (`docker/Dockerfile`: Ubuntu 24.04 pinned by digest, with curl, git,
+  ripgrep, sqlite3, jq, tini, procps and Node; no OpenCode, no claude, no plugin, no credential). It runs as your own
+  uid (never root), with a read-only root filesystem, a small tmpfs `/tmp` (256 MB), `--cap-drop ALL`,
+  `no-new-privileges`, Docker's default seccomp and AppArmor profiles, its own pid namespace, and pids (512), memory
+  (4 GB, no swap) and CPU (2) limits;
+- **only its own files**: the trial's sandbox bind-mounted read-write at the same absolute path it has on the host (so
+  HOME, the XDG tree, the working directory, the world's rewritten session paths and the sealed config stay valid);
+  the build under test and the harness's scripted-model files read-only at theirs; and the host's `opencode`,
+  `claude` (for the Claude Agent provider) and `bun` (for the scripted model) read-only under `/opt/evals/bin`, their
+  sha256 recorded. Nothing else of the host: no home directory, no other trial, no Docker socket;
+- **its own network**, `--internal` with the bridge gateway in Docker's `isolated` mode (Docker 28 or later): the bridge
+  has no host address and the container has no route anywhere, so neither the host's services (an OpenCode server on
+  loopback, a metadata service, anything on the host's addresses) nor the internet can be reached, and names do not
+  resolve. A plain `--internal` network is not enough: its bridge address reaches the host;
+- **one way out**: the batch's egress proxy (`docker/egress-proxy.mjs`), joined to every trial network as `egress`
+  and set as `HTTPS_PROXY`. It allows `CONNECT` to port 443 of a host name on the allow-list, exactly (no wildcard, no
+  IP literal, and only when the name resolves to a public address), and refuses everything else: another host,
+  another port, a plain HTTP request. It runs as `nobody`, read-only, with no capabilities, on a network of its own.
+  The default allow-list is `api.anthropic.com`, `platform.claude.com`, `console.anthropic.com` and `claude.ai`;
+  only the owner sets it (`caps.json` or `EVALS_EGRESS_ALLOW`, [configuration.md](configuration.md#the-container-backend)),
+  never a case, an arm or a world. Every decision is logged by host name only, and the batch record's `egress` lists
+  what was allowed and what was refused (at most 200 names, scrubbed like everything else).
+
+Both `opencode serve` and `opencode run`, and under `--scripted` the mock model's server, run inside the trial's
+container and talk over its loopback; the runner reaches them with `docker exec`. Every command's environment is passed
+by name only (`docker exec -e NAME`, the value in the docker client's own environment): no secret is ever in an argv,
+and nothing is set at `docker run`, so `docker inspect` of a trial shows no credential. The docker client itself runs
+outside every sandbox, with your own Docker settings, never ones a run could plant in its HOME.
+
+A trial ends with `docker rm -f`, which ends everything in it: killing a `docker exec` client does not stop what it
+started inside, so the runner removes the container after every run (success, failure, timeout), on Ctrl-C and
+`SIGTERM` (the interrupt handler tears the whole batch down: every trial, the proxy and its network), and after an
+uncaught error. A runner killed outright leaves its containers and networks labelled with its pid: the next batch's
+start, or `evals isolation sweep`, removes everything whose runner is gone.
+
+The sandbox lives on disk (`EVALS_TMP`, by default `/var/tmp/evals`), not in a memory-backed `/tmp`. Docker cannot put
+a quota on a bind mount without root, so the disk is watched instead: every two seconds the trial's sandbox is
+measured, and a trial past its limit (2 GB), or one running while the filesystem under the sandboxes has less than
+2 GB free, is removed and recorded as `killed: disk` (or `disk-floor`). This is a watchdog, not a quota: a trial can
+write for up to two seconds past its limit before it is stopped, so the floor is what protects the machine.
+
+Startup checks, before any run is reserved: Docker is usable by this user, is version 28 or later, and the image is
+built; the binaries exist; the proxy starts; and the version probe runs as a trial of its own, so a container that
+cannot start stops the batch before it costs anything. Per trial the container costs about 0.3 s to set up and 0.5 s
+to remove (measured here: two scripted trials in parallel in under 5 s, end to end).
+
+`evals isolation build` builds the image (its tag is a digest of `docker/`, so an edit makes a new one; its build
+context is that directory alone), `evals isolation check` reports Docker, the image and the settings, and
+`evals isolation sweep` removes what dead batches left.
+
+### Running live evals safely
+
+1. **Docker**, version 28 or later, usable by your user without `sudo` (the `docker` group). Note that membership of
+   the `docker` group is root-equivalent on the host: the Docker API can read any container's environment, the
+   credential included (`docker inspect` of a trial does not show it, because it is passed per command, but the
+   daemon holds it, and `/proc/<pid>/environ` of a trial's process shows it to root). Only the owner should have it.
+2. **The image**: `evals isolation build`, once (and again after `docker/` changes); `evals isolation check` should
+   report it.
+3. **A disk for the sandboxes**: `/var/tmp/evals` is made, private to you, on first use. Where `/var/tmp` does not let
+   you, create it once: `sudo install -d -m 700 -o "$USER" -g "$USER" /var/tmp/evals`, or set `EVALS_TMP` to a
+   directory on disk.
+4. **A credential that can only reach Anthropic**: the access token reaches a trial's processes as
+   `CLAUDE_CODE_OAUTH_TOKEN` and nothing else of your sign-in ([Credentials](#credentials)); the agent can read it, and
+   can send it only to the allow-listed hosts.
+5. **Start small**: a dry run (`--dry-run` prints the isolation and the allow-list), then a supervised batch of a few
+   cases. Its batch record's `egress.refused` names the hosts `claude` or OpenCode tried and could not reach: widen
+   the allow-list deliberately, in `caps.json`, only for a host that is needed.
+6. **What isolation does not stop**: a run can still spend your plan's model time while it lives, and can send data
+   to Anthropic itself (the allow-list cannot tell a model request from an upload to an Anthropic host); it can hide
+   an encoded copy of the token in its output, which no scrub of the exact value finds; and it shares the host's
+   kernel (a kernel or container-runtime exploit is out of scope). The plugin under test runs inside the container
+   with the agent, so it is confined too, but it is trusted to measure itself honestly.
 
 ## Before the first run
 
 In this order, and a failure stops the batch with nothing launched:
 
-1. the isolation: a live run without filesystem isolation is refused;
+1. the isolation: a run without filesystem isolation is refused (unless `--unsafe-no-isolation`), and under
+   `container` Docker, the image, the binaries and the proxy are checked and a probe container is started;
 2. the cases are selected; a named case outside `--set` is an error, not an empty run;
 3. a recording that already exists in the iteration is never overwritten (`--append` numbers new trials after it);
 4. the build is copied into the batch directory, so a later edit to the checkout cannot reach a running batch;
@@ -88,20 +167,34 @@ released, and the batch record says why.
 
 ## The sandbox
 
-Every run has its own directory under `EVALS_TMP` (else the system temp): `home/` is `HOME`, `OPENCODE_TEST_HOME` and
+Every run has its own directory under `EVALS_TMP` (else `/var/tmp/evals`, on disk): `home/` is `HOME`, `OPENCODE_TEST_HOME` and
 the whole XDG tree, so the database, config, cache, logs and any plugin data are the run's own; `tmp/` is `TMPDIR`.
 The config is sealed in `OPENCODE_CONFIG_CONTENT` (and written to the sandbox's own config file): the build under
 test, its options and the model, nothing else, so the machine's plugins, MCP servers and agents never load. The
 environment is built from nothing: `PATH`, the locale, proxy and CA settings if the machine has them, the sandbox's
 directories, a password only this run knows, and auto-update, file watching and Claude Code import off. A caller's
-`OPENCODE_*` variables and provider keys are not passed unless a profile passes them.
+`OPENCODE_*` variables and provider keys are not passed unless a profile passes them. A world's `env` is applied
+first and may not set the harness's own variables (`HOME`, `PATH`, `TMPDIR`, `XDG_*`, `OPENCODE_*`, `CLAUDE_*`,
+`ANTHROPIC_*`, the proxy settings, the scripted model's endpoint, `NODE_OPTIONS`, `LD_PRELOAD` and the like): those
+are applied after it, so the sealed config cannot be replaced after the checks that read it, and the names a world
+tried are recorded as `world_env_ignored`. Under `--scripted` the harness's provider is listed after the plugin under
+test, so a `mock` provider the plugin registers is overridden by the harness's, and it reads its endpoint from a file
+beside the batch's own copy of it (read-only in a container), not from the environment the plugin shares.
 
-The host is `opencode serve` on a free loopback port, and the run is `opencode run --server <url> --format json` in
-the case's working directory. Both are started in their own process group and stopped with it, so a provider's own
-CLI cannot outlive its run. The sandbox is deleted after the run.
+The host is `opencode serve` on a loopback port (inside the trial's container under `container`), and the run is
+`opencode run --server <url> --format json` in the case's working directory. Both are started in their own process
+group and stopped with it, and under `container` the trial's container is removed, so a provider's own CLI cannot
+outlive its run. The sandbox is deleted after the run.
+
+Links out of the sandbox are removed once, after the world is copied in and before the run starts. A run can make new
+ones while it runs; only the container keeps them from reaching anything (inside it, a link to a host path points at
+nothing that exists). After a run the runner treats the sandbox as hostile: it never follows a link out of it (a
+working directory replaced by a link is not walked for the files record, and a sign-in file is removed only through
+no link), and it removes the sandbox without following links, giving itself back access to any directory the run
+locked first.
 
 An interrupt (Ctrl-C, `SIGTERM`) or an uncaught error stops the batch the same way: every process group it started
-gets `SIGTERM`, then `SIGKILL`; the run that was interrupted is not recorded; the sandboxes, with the credential
+gets `SIGTERM`, then `SIGKILL`, and every trial container, its network and the egress proxy are removed; the run that was interrupted is not recorded; the sandboxes, with the credential
 imported into them, are removed (unless `--keep`); the runs that never launched are released from the ledger; the
 batch record says `interrupted by SIGINT`; and the runner exits 130 (143 on `SIGTERM`, 1 on an error).
 
@@ -129,7 +222,10 @@ as a Claude sign-in) and keeps only the access token and its expiry, in memory; 
 the caller's `~/.claude`.** Each run's processes get the access token alone, as `CLAUDE_CODE_OAUTH_TOKEN`, which
 `claude` uses for the whole session and never refreshes or writes. So a batch must not outlive the token: it is
 refused when the access token expires within its worst case (the run timeout times the rounds of runs,
-`ceil(runs / parallel)`, plus ten minutes), with the next step: use `claude` normally once so it refreshes, then retry.
+`ceil(runs / parallel)`, each round also counting a per-run overhead for the world's prepare step, the container's
+setup and teardown, the credential import and the server's start, 120 s by default, `EVALS_RUN_OVERHEAD_S` or
+`run_overhead_s` in `caps.json`; plus ten minutes), with the next step: use `claude` normally once so it refreshes,
+then retry. The batch record's `horizon` says what was assumed.
 
 Each sandbox has its own empty `~/.claude` (`CLAUDE_CONFIG_DIR`): no `.credentials.json`, no `~/.claude.json`, none of
 the caller's settings, hooks, global `CLAUDE.md`, MCP servers or agents; `CLAUDE_CODE_SKIP_PROMPT_HISTORY=1` and
@@ -140,9 +236,9 @@ links `~/.claude` and `~/.local/bin`) has them removed. `CLAUDE_AGENT_SDK_VERSIO
 The token is readable by the agent under test, from its environment. The runner scrubs it, by its exact value, from
 every recording, summary, files record, batch record and log line before writing them, and from every file of a kept
 sandbox (masked with as many `*`, so a database keeps its layout); a key passed with `env:` is scrubbed the same
-way. Keeping the token from leaving a run is the filesystem-isolation design's job (in progress), which is why a live
-run needs an isolation backend. Whether the Claude Agent provider's own `claude` inherits the variable is to be
-confirmed by one supervised run once isolation exists.
+way, scrubbed before any output is cut (a value straddling a cut would otherwise leave its tail). The container keeps it
+from leaving a run except to the allow-listed hosts. Whether the Claude Agent provider's own `claude` inherits the
+variable, and which hosts a real turn needs, is to be confirmed by one supervised run.
 
 ## Worlds
 
@@ -198,11 +294,16 @@ provenance()? }`; `prepare` returns `{ cwd, env? }`.
 
 `$EVALS_STORE/raw/<iteration>/<plugin>/<case>.t<k>.jsonl` is what `opencode run --format json` printed, and
 `<case>.t<k>.summary.json` holds the exit (124 on a timeout), the time, the trial, the model, the host version, the
-runner and its version, the credential profile's name, the world's name and clock, the batch id and the build's
-provenance per axis. `<case>.t<k>.files.json` lists the files the run added, modified or deleted in its working directory (`.git` aside),
+runner and its version, the credential profile's name, the isolation (and under `container`, `isolation_detail`: the
+trial's container, its setup and teardown time, any processes the memory limit killed), `killed` when the disk
+watchdog stopped it, `world_env_ignored` when a world tried to set a sealed variable, the world's name and clock, the
+batch id and the build's provenance per axis. `<case>.t<k>.files.json` lists the files the run added, modified or deleted in its working directory (`.git` aside),
 each with its digest and, for a text file of 64 KB or less, its content: `file:` clauses grade them, and no trace
-holds them. `batch-<id>.json` is the plan and every run's outcome. The ledger
+holds them. `batch-<id>.json` is the plan and every run's outcome, with the isolation (image and its id, Docker version, limits,
+allow-list, the binaries' sha256), `egress` (the proxy's allowed and refused host names) and `horizon`. The ledger
 (`$EVALS_STORE/ledger/runs.jsonl`) has the reservation and one line per run with what it billed.
 
-Not verified end to end by this repository's tests, which use a stand-in binary: a live model, the Claude Agent
-provider, and a real History world. Those are exercised by a pilot, never by `npm test`.
+Not verified end to end by this repository's tests: a live model, the Claude Agent provider, and a real History world.
+Those are exercised by a pilot, never by `npm test`. The container backend is: with Docker and the image present, the
+tests run a scripted-model trial end to end inside a container and grade it, and check what a trial can read, write
+and reach (they skip, with the reason, where Docker or the image is missing, as in CI).
