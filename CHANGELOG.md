@@ -112,6 +112,9 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- The bundle tests left their checkouts and builds in the system temp on every run; they are removed after the tests,
+  however they end.
+
 - Containment: paths are compared by their real paths (a link inside a root that leaves it is outside); links out of
   the sandbox are removed anywhere in it, not only near the top of its home; a world repository that is a link, or
   holds one out of the world, is refused; and breaking a stale ledger lock takes a second lock and removes only the
