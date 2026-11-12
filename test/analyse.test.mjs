@@ -114,3 +114,16 @@ test("beside a spread, a written key is seen and an unwritten one is unverifiabl
   assert.equal(argState(safeArgs({ since: "14d" }), "args.cursor").state, "missing")
   assert.equal(argState({ filter: { kind: "object", keys: ["$spread", "lang"] } }, "args.filter.tag").state, "opaque")
 })
+
+test("arguments passed as a local variable bound once to an object literal are read from it", () => {
+  const paged = `do {
+  const input = { since: "14d", limit: 100 };
+  if (cursor) input.cursor = cursor;
+  last = await tools.history.sessions(input);
+} while (cursor)`
+  assert.deepEqual(extractInnerCalls(paged)[0].args, { since: "14d", limit: 100, $spread: true }, "a mutated binding may carry more keys")
+  assert.deepEqual(extractInnerCalls(`const q = { query: ["a", "b"], scope: "all" }\nreturn await tools.history.search(q)`)[0].args, { query: ["a", "b"], scope: "all" })
+  assert.deepEqual(extractInnerCalls(`let q = { scope: "all" }\nq = make()\nawait tools.history.search(q)`)[0].args, { $ref: "q" }, "reassigned: still the variable")
+  assert.deepEqual(extractInnerCalls(`await tools.history.search(opts)`)[0].args, { $ref: "opts" }, "never declared here: still the variable")
+  assert.deepEqual(extractInnerCalls(`const q = { a: 1 }; const r = q == null; await tools.history.search(q)`)[0].args, { a: 1 }, "a comparison is not an assignment")
+})

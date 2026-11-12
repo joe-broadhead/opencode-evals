@@ -247,6 +247,30 @@ export function readLiteral(text) {
 }
 
 /**
+ * Arguments passed as a local variable (`const input = { since: "14d" }; tools.history.sessions(input)`): the object
+ * literal the variable is declared with, when it is declared exactly once and never reassigned. A later
+ * `input.cursor = …` or `input[…] = …` may add keys, so the result carries `$spread: true` (an unwritten key is unseen,
+ * not missing). Anything else stays the variable it was.
+ */
+export function boundLiteral(code, value) {
+  const ref = value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 1 ? value.$ref : null
+  if (typeof ref !== "string" || !/^[A-Za-z_$][\w$]*$/.test(ref)) return null
+  const esc = ref.replace(/\$/g, "\\$")
+  const declarations = [...code.matchAll(new RegExp(`(?:const|let|var)\\s+${esc}\\s*=\\s*(?=\\{)`, "g"))]
+  if (declarations.length !== 1) return null
+  // Reassigned (`input = …`, not `==`) anywhere: the call may see another object.
+  const reassigned = [...code.matchAll(new RegExp(`(^|[^.\\w$])${esc}\\s*=(?!=)`, "g"))].length > 1
+  if (reassigned) return null
+  const at = declarations[0].index + declarations[0][0].length
+  const inside = balanced(code, at)
+  if (inside === null) return null
+  const literal = readLiteral(`{${inside}}`)
+  if (!literal.ok || typeof literal.value !== "object" || Array.isArray(literal.value)) return null
+  const mutated = new RegExp(`(^|[^.\\w$])${esc}\\s*(\\.[A-Za-z_$][\\w$]*|\\[[^\\]]*\\])\\s*=(?!=)|Object\\.assign\\(\\s*${esc}\\b|delete\\s+${esc}\\b`).test(code)
+  return mutated ? { ...literal.value, $spread: true } : literal.value
+}
+
+/**
  * Every `tools.<ns>.<name>(…)` site in one execute call.
  * @returns {Array<{ns: string|null, name: string, args: unknown|undefined, parsed: boolean, why?: string}>}
  */
@@ -275,7 +299,7 @@ export function extractInnerCalls(code) {
       out.push({ ns, name, args: undefined, parsed: false, why: literal.why })
       continue
     }
-    out.push({ ns, name, args: literal.value, parsed: true })
+    out.push({ ns, name, args: boundLiteral(code, literal.value) ?? literal.value, parsed: true })
   }
   return out
 }
