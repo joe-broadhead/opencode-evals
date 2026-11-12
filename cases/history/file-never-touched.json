@@ -72,7 +72,7 @@
           "op": "not-matches",
           "value": {
             "kind": "regex",
-            "source": "paypal(\\.ts)?(?:(?!\\b(?:no|not|never|why|whether|if)\\b|n't)[^.\\n]){0,60}\\b(was|were) (changed|edited|added|modified|created|updated)\\b|(changed|edited|modified|added|created|updated) (src\\/payments\\/)?paypal\\.ts (in|during|to)",
+            "source": "(?<!\\b(?:if|whether|unless)\\b[^.\\n]{0,40})paypal(\\.ts)?(?:(?!\\b(?:no|not|never|why|whether|if)\\b|n't)[^.\\n]){0,60}\\b(was|were) (changed|edited|added|modified|created|updated)\\b|(changed|edited|modified|added|created|updated) (src\\/payments\\/)?paypal\\.ts (in|during|to)",
             "flags": "i"
           }
         }
@@ -241,6 +241,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "9ce4705a9d184cd9bf8f4d8399bb5d528b9aebc03ba1927e4d80d6128882766b"
+    "source_sha256": "2724180a2e8e6ec1057ffcae572c8556e675fd147c3bb60cae01650374e65f1b"
   }
 }

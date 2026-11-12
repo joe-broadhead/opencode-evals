@@ -17,7 +17,7 @@ which past sessions changed src/payments/paypal.ts, and why?
   evidence: text:any matches /no (past )?sessions?|none of (the|your) (past )?sessions|never (been )?(changed|touched|edited|modified)|no (record|history|changes|edits|touches)|(didn't|did not|couldn't|could not|can't|cannot) find|not (been )?(changed|touched|found)|(doesn't|does not) appear/i
 
 - [H-OC02] blocker · It does not attribute a change to paypal.ts.
-  evidence: text:any not-matches /paypal(\.ts)?(?:(?!\b(?:no|not|never|why|whether|if)\b|n't)[^.\n]){0,60}\b(was|were) (changed|edited|added|modified|created|updated)\b|(changed|edited|modified|added|created|updated) (src\/payments\/)?paypal\.ts (in|during|to)/i
+  evidence: text:any not-matches /(?<!\b(?:if|whether|unless)\b[^.\n]{0,40})paypal(\.ts)?(?:(?!\b(?:no|not|never|why|whether|if)\b|n't)[^.\n]){0,60}\b(was|were) (changed|edited|added|modified|created|updated)\b|(changed|edited|modified|added|created|updated) (src\/payments\/)?paypal\.ts (in|during|to)/i
 
 - [H-PR05] major · It used history_files (or one sql statement over v_files).
   evidence_any: call:history.files#1 ;; call:history.sql#1
