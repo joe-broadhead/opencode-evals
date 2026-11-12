@@ -4,26 +4,28 @@
 //   none            nothing: a mock model, or a provider that needs no sign-in
 //   env:A,B         these variables of the caller's environment, passed to the run as they are (an API key)
 //   claude-agent    OpenCode's Claude Agent provider, the way the History lab ran it:
-//                   - the credential OpenCode stores as "Claude Agent" (EVALS_AUTH_CREDENTIAL to name another) is
-//                     exported from the caller's own OpenCode once, held in memory, and piped into each sandbox's
-//                     `opencode auth import --standalone`; it lands in the sandbox's database and is deleted with it.
+//                   - the credential OpenCode stores as "Claude Agent" (EVALS_AUTH_CREDENTIAL to name another) is a
+//                     marker, with no secret in it. It is exported from the caller's own OpenCode once, held in memory,
+//                     and piped into each sandbox's `opencode auth import --standalone`, and is deleted with the sandbox.
 //                     The export is the one command run with the caller's own environment: it must read the caller's
 //                     stored credential from the caller's own OpenCode, and its output goes to the sandbox, never to disk;
-//                   - the provider spawns `claude`, which reads its own sign-in. Each sandbox has its own ~/.claude
-//                     holding one thing: a copy of the caller's ~/.claude/.credentials.json (a regular file, mode 0600),
-//                     read once per batch with O_NOFOLLOW, size-capped and checked for its shape, and never logged.
-//                     Nothing else of the caller's ~/.claude (settings, hooks, CLAUDE.md, MCP servers, agents,
-//                     plugins) is visible to the run, there is no ~/.claude.json, and everything `claude` writes
-//                     (projects/, history.jsonl, todos/, shell-snapshots/, file-history/, a refreshed token) lands
-//                     in the sandbox and is deleted with it. A sandboxed run never writes to the caller's ~/.claude;
+//                   - the secret is `claude`'s own sign-in, ~/.claude/.credentials.json: an access token and a long-lived
+//                     refresh token. The runner reads it once per batch (O_NOFOLLOW, a regular file, at most 64 KB, the
+//                     shape `claude` writes) and keeps only the access token and its expiry, in memory. No file of it is
+//                     copied anywhere, and the refresh token is never passed on: each run's processes get the access
+//                     token alone, as CLAUDE_CODE_OAUTH_TOKEN, which `claude` uses for the whole session and never
+//                     refreshes or writes. The caller's ~/.claude is never written;
 //                   - so a batch must not outlive the token: it is refused when the access token expires within the
 //                     batch's worst case (the run timeout times the rounds of runs, plus ten minutes);
-//                   - the copy is readable by the agent under test: the filesystem isolation design covers what a
-//                     run can send out. The copy is deleted on every exit path, and --keep keeps it only with
-//                     --keep-credentials;
+//                   - each sandbox has an empty private ~/.claude (CLAUDE_CONFIG_DIR): no .credentials.json, no
+//                     ~/.claude.json, nothing of the caller's settings, hooks, CLAUDE.md or MCP servers; prompt history
+//                     and nonessential traffic are off (CLAUDE_CODE_SKIP_PROMPT_HISTORY, ..._DISABLE_NONESSENTIAL_TRAFFIC);
+//                   - the token is a secret the agent under test can read from its environment; the runner scrubs it,
+//                     by exact value, from every recording, summary, files record, batch record and log line it
+//                     writes, and from a kept sandbox. Keeping it from leaving a run is the isolation design's job;
 //                   - CLAUDE_AGENT_SDK_VERSION must be set, and is passed on; claude's auto-updater is off.
 
-import { closeSync, constants, existsSync, fstatSync, mkdirSync, openSync, readSync, rmSync, writeFileSync } from "node:fs"
+import { closeSync, constants, existsSync, fstatSync, mkdirSync, openSync, readSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { runToEnd } from "./sandbox.mjs"
 
@@ -63,7 +65,7 @@ export function readCredential(file) {
     if (!oauth || typeof oauth !== "object" || typeof oauth.accessToken !== "string" || !oauth.accessToken || typeof oauth.expiresAt !== "number") {
       throw new Error(`${file} does not hold a Claude sign-in (claudeAiOauth with an access token and its expiry)`)
     }
-    return { bytes: bytes.subarray(0, read), expiresAt: oauth.expiresAt }
+    return { accessToken: oauth.accessToken, expiresAt: oauth.expiresAt }
   } finally {
     closeSync(fd)
   }
@@ -98,12 +100,13 @@ export function parseAuth(spec) {
  * with; `caller` is the caller's environment.
  */
 export async function prepareAuth(profile, { binary, caller = process.env, horizonMs = 0 }) {
-  if (profile.kind === "none") return { profile: "none", env: {}, async apply() {}, cleanup() {} }
+  if (profile.kind === "none") return { profile: "none", env: {}, secrets: [], async apply() {}, cleanup() {} }
   if (profile.kind === "env") {
     const missing = profile.names.filter((name) => !caller[name])
     if (missing.length) throw new Error(`--auth env: ${missing.join(", ")} not set`)
     const env = Object.fromEntries(profile.names.map((name) => [name, caller[name]]))
-    return { profile: `env:${profile.names.join(",")}`, env, async apply() {}, cleanup() {} }
+    // A key passed through is a secret too: scrubbed from everything the runner writes.
+    return { profile: `env:${profile.names.join(",")}`, env, secrets: Object.values(env), async apply() {}, cleanup() {} }
   }
   // claude-agent
   const realHome = caller.HOME
@@ -113,25 +116,31 @@ export async function prepareAuth(profile, { binary, caller = process.env, horiz
   const exported = await runToEnd(binary, ["auth", "export", name], { env: caller, timeoutMs: 30_000 })
   if (exported.code !== 0 || !exported.stdout.trim()) throw new Error(`--auth claude-agent: \`opencode auth export ${JSON.stringify(name)}\` failed (exit ${exported.code}); is the credential stored?`)
   const credential = exported.stdout
-  // The sign-in, read once and held in memory: each sandbox gets its own copy, and the caller's file is never written.
+  // The access token alone, read once and held in memory; the caller's file is never written, and nothing of it copied.
   const signIn = readCredential(join(realHome, ".claude", ".credentials.json"))
   assertTokenLasts(signIn.expiresAt, horizonMs)
   return {
     profile: "claude-agent",
-    env: { CLAUDE_AGENT_SDK_VERSION: caller.CLAUDE_AGENT_SDK_VERSION, DISABLE_AUTOUPDATER: "1" },
+    env: {
+      CLAUDE_AGENT_SDK_VERSION: caller.CLAUDE_AGENT_SDK_VERSION,
+      CLAUDE_CODE_OAUTH_TOKEN: signIn.accessToken,
+      CLAUDE_CODE_SKIP_PROMPT_HISTORY: "1",
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
+      DISABLE_AUTOUPDATER: "1",
+    },
+    secrets: [signIn.accessToken],
     holdsCredential: true,
     async apply({ sandbox, env, exec = (args, options) => runToEnd(binary, args, { cwd: sandbox.home, env, ...options }) }) {
-      // The sandbox's own ~/.claude, with the sign-in and nothing else: whatever a world's home brought is replaced.
+      // The sandbox's own ~/.claude, empty: whatever a world's home brought is replaced, and no sign-in file is made.
       const dir = join(sandbox.home, ".claude")
       rmSync(dir, { recursive: true, force: true })
       rmSync(join(sandbox.home, ".claude.json"), { force: true })
       mkdirSync(dir, { recursive: true, mode: 0o700 })
-      writeFileSync(join(dir, ".credentials.json"), signIn.bytes, { mode: 0o600, flag: "wx" })
       env.CLAUDE_CONFIG_DIR = dir
       const imported = await exec(["auth", "import", "--standalone"], { cwd: sandbox.home, input: credential, timeoutMs: 60_000 })
       if (imported.code !== 0) throw new Error(`the credential import into the sandbox failed (exit ${imported.code})`)
     },
-    /** The sandbox's copy goes, whatever the run did to it; nothing of it reaches the caller's ~/.claude. */
+    /** Nothing of the sign-in is on disk; a credentials file a run made for itself goes anyway. */
     cleanup({ sandbox }) {
       rmSync(join(sandbox.home, ".claude", ".credentials.json"), { force: true })
       return "removed"

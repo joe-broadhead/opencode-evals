@@ -14,6 +14,7 @@ import { SCRIPTED_PROVIDER } from "../src/run/sandbox.mjs"
 import { installFakeOpencode, installFakeBun } from "./helpers/fake-opencode.mjs"
 
 const BIN = join(import.meta.dirname, "..", "bin", "evals")
+const TOKEN = "access-token-value-0123456789abcdef"
 
 const caseText = (id, extra = "") => `# ${id}
 - Plugin: demo
@@ -48,7 +49,7 @@ function fixture({ cases = [["demo-a", "- Seed: cwd=api"], ["demo-b", ""], ["ho-
   writeFileSync(join(arm, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo\n---\nbody\n")
   const home = join(root, "user")
   mkdirSync(join(home, ".claude"), { recursive: true })
-  writeFileSync(join(home, ".claude", ".credentials.json"), JSON.stringify({ claudeAiOauth: { accessToken: "a1", refreshToken: "r1", expiresAt: Date.now() + 10 * 3_600_000 } }), { mode: 0o600 })
+  writeFileSync(join(home, ".claude", ".credentials.json"), JSON.stringify({ claudeAiOauth: { accessToken: TOKEN, refreshToken: "refresh-token-value-zz", expiresAt: Date.now() + 10 * 3_600_000 } }), { mode: 0o600 })
   writeFileSync(join(home, ".claude", "settings.json"), JSON.stringify({ hooks: { PreToolUse: [] } }))
   writeFileSync(join(home, ".claude", "CLAUDE.md"), "global instructions\n")
   writeFileSync(join(home, ".claude.json"), JSON.stringify({ hasCompletedOnboarding: true, userID: "u1", oauthAccount: { id: "a" }, projects: { secret: true }, cachedThings: [1, 2] }))
@@ -211,19 +212,21 @@ test("claude-agent: the credential is piped in, and the run's ~/.claude is its o
   assert.deepEqual(JSON.parse(imported.input), { integration: "Claude Agent", kind: "external" })
   assert.deepEqual(imported.argv, ["auth", "import", "--standalone"])
   assert.equal(imported.env.HOME, home, "imported into the sandbox, not the caller's install")
-  // Its own directory: the sign-in is a copy, a regular file of its own, and nothing else of the caller's ~/.claude.
+  // Its own, empty ~/.claude: no sign-in file of any kind, and nothing else of the caller's.
   const dir = join(home, ".claude")
   assert.equal(lstatSync(dir).isSymbolicLink(), false)
-  const copy = lstatSync(join(dir, ".credentials.json"))
-  assert.equal(copy.isSymbolicLink(), false, "no symlink to the caller's file")
-  assert.equal(copy.isFile(), true)
-  assert.equal(copy.mode & 0o777, 0o600)
+  assert.equal(existsSync(join(dir, ".credentials.json")), false, "the sign-in is not copied")
   assert.equal(existsSync(join(dir, "settings.json")) || existsSync(join(dir, "CLAUDE.md")), false)
   assert.equal(existsSync(join(home, ".claude.json")), false, "no ~/.claude.json in the sandbox")
   const run = JSON.parse(readFileSync(join(home, "run.json"), "utf8"))
   assert.equal(run.env.CLAUDE_AGENT_SDK_VERSION, "0.0.1-test")
   assert.equal(run.env.CLAUDE_CONFIG_DIR, dir)
   assert.equal(run.env.DISABLE_AUTOUPDATER, "1")
+  assert.equal(run.env.CLAUDE_CODE_SKIP_PROMPT_HISTORY, "1")
+  assert.equal(run.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC, "1")
+  // The access token reached the run as CLAUDE_CODE_OAUTH_TOKEN, and the kept sandbox holds it only masked.
+  assert.equal(run.env.CLAUDE_CODE_OAUTH_TOKEN, "*".repeat(TOKEN.length))
+  assert.doesNotMatch(JSON.stringify(run.env), /refresh-token-value/, "never the refresh token")
   assert.equal(run.env.ANTHROPIC_API_KEY, undefined)
   // What `claude` writes stays in the sandbox: the caller's ~/.claude is as it was.
   assert.ok(readdirSync(join(dir, "projects")).length > 0)
@@ -448,7 +451,7 @@ async function interrupted(signal, code, { claude = false } = {}) {
     const dir = batch && join(f.tmp, batch, "runs", "sleepy.t1", "home")
     return dir && existsSync(join(dir, "run-child.pid")) && existsSync(join(dir, "run.json")) ? dir : null
   })
-  if (claude) assert.ok(existsSync(join(home, ".claude", ".credentials.json")), "the copy is there while the run runs")
+  if (claude) assert.equal(existsSync(join(home, ".claude", ".credentials.json")), false, "no sign-in file, even while the run runs")
   const pids = [
     JSON.parse(readFileSync(join(home, "run.json"), "utf8")).pid,
     Number(readFileSync(join(home, "run-child.pid"), "utf8")),
@@ -542,7 +545,7 @@ test("a live run is refused without filesystem isolation, before anything is cre
   f.cleanup()
 })
 
-test("a run that rewrites its copy of the sign-in leaves the caller's file byte for byte, mtime included", async () => {
+test("a run that writes a sign-in file of its own leaves the caller's file byte for byte, mtime included", async () => {
   const f = fixture()
   const real = join(f.home, ".claude", ".credentials.json")
   const before = { bytes: readFileSync(real), mtime: lstatSync(real).mtimeMs }
@@ -554,7 +557,7 @@ test("a run that rewrites its copy of the sign-in leaves the caller's file byte 
   assert.equal(result.bad, 0, JSON.stringify(result.results))
   assert.deepEqual(readFileSync(real), before.bytes)
   assert.equal(lstatSync(real).mtimeMs, before.mtime)
-  assert.deepEqual(readdirSync(f.tmp), [], "the sandbox, and its copy, are gone")
+  assert.deepEqual(readdirSync(f.tmp), [], "the sandbox, and the file the run wrote, are gone")
   f.cleanup()
 })
 
@@ -601,7 +604,7 @@ test("a batch that could outlive its sign-in is refused, with the step that fixe
   assert.throws(() => assertTokenLasts(now + 25 * 60_000, 20 * 60_000, now), /expires at 2026-11-11T12:25:00.000Z, within the 30 minutes .*start `claude` once interactively/)
   const f = fixture()
   const real = join(f.home, ".claude", ".credentials.json")
-  writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: "a1", refreshToken: "r1", expiresAt: Date.now() + 20 * 60_000 } }))
+  writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: TOKEN, refreshToken: "r1", expiresAt: Date.now() + 20 * 60_000 } }))
   const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
   // 3 runs, 1 at a time, 420 s each in the worst case: 21 minutes, plus 10 of margin, is more than the 20 left.
   await assert.rejects(runBatch({ plugin: "demo", iteration: "exp", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "demo-b", trials: 3, parallel: 1, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /expires at .*refresh it first/)
@@ -633,4 +636,50 @@ test("isLive: only no credential and the harness's own scripted model, in the se
   assert.equal(isLive({ auth: "none", model: "mock/m1", config: plain }), true, "a mock the harness did not register")
   assert.equal(isLive({ auth: "none", model: "mock/m2", config: scripted }), true)
   assert.equal(isLive({ auth: "none", model: "mock/m1", config: { plugins: [{ package: "/elsewhere/mock-provider" }] } }), true)
+})
+
+test("the access token is scrubbed from every recording, summary, files record and log line, and from a kept sandbox", async () => {
+  const f = fixture()
+  addCase(f.casesDir, "leaky", "")
+  const leaky = JSON.parse(readFileSync(join(f.casesDir, "leaky.json"), "utf8"))
+  writeFileSync(join(f.casesDir, "leaky.json"), JSON.stringify({ ...leaky, prompt: "leak the token" }))
+  const real = join(f.home, ".claude")
+  const before = Object.fromEntries(readdirSync(real).map((n) => [n, { bytes: readFileSync(join(real, n)), mtime: lstatSync(join(real, n)).mtimeMs }]))
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const lines = []
+  const result = await runBatch({ plugin: "demo", iteration: "lk", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "leaky", arm: f.arm, casesDir: f.casesDir, keep: true, keepCredentials: true }, { caller, log: (line) => lines.push(line) })
+  assert.equal(result.bad, 0, JSON.stringify(result.results))
+  const files = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(join(dir, e.name)) : e.isFile() ? [join(dir, e.name)] : []))
+  const holding = (dir) => files(dir).filter((file) => readFileSync(file).includes(TOKEN))
+  assert.deepEqual(holding(join(f.store, "raw", "lk")), [], "no recording, summary, files record or batch record holds it")
+  assert.deepEqual(holding(result.keptAt), [], "no file under the kept sandbox holds it")
+  assert.ok(lines.every((line) => !line.includes(TOKEN)))
+  // It was there to be scrubbed: masked where the agent printed it.
+  const recording = readFileSync(join(f.store, "raw", "lk", "demo", "leaky.t1.jsonl"), "utf8")
+  assert.ok(recording.includes("*".repeat(TOKEN.length)))
+  assert.match(readFileSync(join(f.store, "raw", "lk", "demo", "leaky.t1.summary.json"), "utf8"), /debug token \*+/)
+  // The caller's ~/.claude is byte for byte, and mtime for mtime, what it was.
+  assert.deepEqual(readdirSync(real).sort(), Object.keys(before).sort())
+  for (const [name, was] of Object.entries(before)) {
+    assert.deepEqual(readFileSync(join(real, name)), was.bytes, name)
+    assert.equal(lstatSync(join(real, name)).mtimeMs, was.mtime, name)
+  }
+  f.cleanup()
+})
+
+test("the scrubber masks a secret by its exact value, in text and in files, keeping their size", async () => {
+  const { redactor, scrubTree } = await import("../src/run/secrets.mjs")
+  const redact = redactor([TOKEN, "short"])
+  assert.equal(redact(`a ${TOKEN} b ${TOKEN}`), `a ${"*".repeat(TOKEN.length)} b ${"*".repeat(TOKEN.length)}`)
+  assert.equal(redact("short stays"), "short stays", "a value under 8 characters is not a secret worth masking everywhere")
+  const dir = mkdtempSync(join(tmpdir(), "evals-scrub-"))
+  writeFileSync(join(dir, "db"), Buffer.concat([Buffer.from([0, 1, 2]), Buffer.from(TOKEN), Buffer.from([3])]))
+  mkdirSync(join(dir, "deep", "er"), { recursive: true })
+  writeFileSync(join(dir, "deep", "er", "log"), `x ${TOKEN}\n`)
+  writeFileSync(join(dir, "clean"), "nothing")
+  assert.equal(scrubTree(dir, redact).length, 2)
+  assert.equal(readFileSync(join(dir, "db")).length, 3 + TOKEN.length + 1)
+  assert.equal(readFileSync(join(dir, "db")).includes(TOKEN), false)
+  assert.equal(readFileSync(join(dir, "deep", "er", "log"), "utf8"), `x ${"*".repeat(TOKEN.length)}\n`)
+  rmSync(dir, { recursive: true, force: true })
 })

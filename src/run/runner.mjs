@@ -28,6 +28,7 @@ import { materialiseArm, armProvenance } from "./arm.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
 import { segment, within } from "./paths.mjs"
 import { selectIsolation, isLive } from "./isolation.mjs"
+import { redactor, scrubTree } from "./secrets.mjs"
 import { splitTrial } from "../grade/trials.mjs"
 import { digestOf } from "../util/canonical.mjs"
 import { dirname } from "node:path"
@@ -220,17 +221,20 @@ async function runJob(job, ctx) {
       provenance: ctx.arm.provenance,
       ...(result.error ? { error: result.error } : {}),
     }
+    // Every file written for the run is scrubbed of its secrets first: the recording, the summary, the files record.
     const out = (suffix) => within(ctx.rawDir, join(ctx.rawDir, `${name}${suffix}`), "a recording")
-    writeAtomic(out(".jsonl"), result.stdout ?? "")
-    writeAtomic(out(".summary.json"), `${JSON.stringify(summary, null, 1)}\n`)
-    writeAtomic(out(".files.json"), `${JSON.stringify(changedFiles(before, cwd), null, 1)}\n`)
+    writeAtomic(out(".jsonl"), ctx.redact(result.stdout ?? ""))
+    writeAtomic(out(".summary.json"), ctx.redact(`${JSON.stringify(summary, null, 1)}\n`))
+    writeAtomic(out(".files.json"), ctx.redact(`${JSON.stringify(changedFiles(before, cwd), null, 1)}\n`))
     if (!ctx.keep) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
     const cost = billedOf(result.stdout ?? "")
     recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
-    return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(result.error ? { error: result.error } : {}) }
+    return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(result.error ? { error: ctx.redact(result.error) } : {}) }
   } finally {
-    // The sign-in copy goes on every path, a run that failed, threw or was interrupted included, unless kept on purpose.
-    if (!ctx.keepCredentials) ctx.auth.cleanup({ sandbox })
+    // A credentials file goes on every path, a run that failed, threw or was interrupted included; a kept sandbox
+    // keeps no secret.
+    ctx.auth.cleanup({ sandbox })
+    if (ctx.keep) scrubTree(root, ctx.redact)
   }
 }
 
@@ -327,17 +331,19 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   let keepRoot = Boolean(options.keep)
   const facts = {}
   let mock = null
+  let redact = redactor([])
   const finish = (facts = {}) => {
     if (finished) return
     finished = true
     if (reservation) release(store, reservation.batch, jobs.length - launched)
-    // No sign-in copy outlives the batch unless --keep-credentials asked for it, whatever path ended the batch.
-    if (!(keepRoot && options.keepCredentials)) scrubCredentials(batchRoot)
+    // No sign-in file outlives the batch, and a kept batch directory holds no secret, whatever path ended the batch.
+    scrubCredentials(batchRoot)
+    if (keepRoot) scrubTree(batchRoot, redact)
     if (!keepRoot) removeSandbox(within(tmpRoot, batchRoot, "the batch directory"))
     if (reservation) {
       const record = { batch: reservation.batch, iteration, plugin, model: options.model, runner: RUNNER, runner_version: harnessVersion(), ...facts, trials, cases: selected.map((c) => c.id), planned: jobs.length, launched, stopped, ran_at: new Date().toISOString(), results }
       mkdirSync(rawDir, { recursive: true, mode: 0o700 })
-      writeAtomic(within(rawDir, join(rawDir, `batch-${segment("batch id", reservation.batch)}.json`), "the batch record"), `${JSON.stringify(record, null, 1)}\n`)
+      writeAtomic(within(rawDir, join(rawDir, `batch-${segment("batch id", reservation.batch)}.json`), "the batch record"), redact(`${JSON.stringify(record, null, 1)}\n`))
     }
   }
   const onInterrupt = async (reason, code) => {
@@ -406,6 +412,11 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const timeoutMs = Number(options.timeout ?? 420) * 1000
     const horizonMs = timeoutMs * Math.ceil(jobs.length / parallel)
     const auth = await prepareAuth(profile, { binary, caller, horizonMs })
+    // From here on, a run's secret (the access token, a key passed through) is scrubbed, by exact value, from every
+    // line logged and every file written.
+    redact = redactor(auth.secrets)
+    const unscrubbed = log
+    log = (line) => unscrubbed(redact(line))
     if (keepRoot && auth.holdsCredential) log(`warning: --keep-credentials: the kept sandboxes under ${batchRoot} hold the imported credential; delete them when you are done`)
     // Money, then runs: both checked under the ledger's lock before anything launches, and the whole batch reserved in
     // the same step. The dollar caps are the caller's.
@@ -424,6 +435,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       log,
       isolation,
       mockUrl: mock?.url ?? null,
+      redact,
     }
     Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo })
     let next = 0
@@ -456,7 +468,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
         }
         launched++
         running++
-        const outcome = await runJob(job, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: String(error.message ?? error) }))
+        const outcome = await runJob(job, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: redact(String(error.message ?? error)) }))
         running--
         results.push(outcome)
         log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)

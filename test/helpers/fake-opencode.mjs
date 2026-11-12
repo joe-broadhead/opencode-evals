@@ -57,8 +57,8 @@ if (args[0] === "run") {
     mkdirSync(dir, { recursive: true })
     writeFileSync(join(dir, "transcript.jsonl"), "{}\\n")
   }
-  // A token refresh: claude replaces its credentials file (write elsewhere, rename over it).
-  if (prompt.includes("refresh") && existsSync(join(home, ".claude", ".credentials.json"))) {
+  // A token refresh: claude writes its credentials file (write elsewhere, rename over it).
+  if (prompt.includes("refresh") && existsSync(join(home, ".claude"))) {
     const target = join(home, ".claude", ".credentials.json")
     writeFileSync(target + ".tmp", JSON.stringify({ claudeAiOauth: { accessToken: "a2", refreshToken: "r2", expiresAt: Date.now() + 36000000 } }))
     require("node:fs").renameSync(target + ".tmp", target)
@@ -67,11 +67,18 @@ if (args[0] === "run") {
     mkdirSync(join(process.cwd(), "notes"), { recursive: true })
     writeFileSync(join(process.cwd(), "notes", "answer.md"), "the answer is eight\\n")
   }
+  // An agent that prints the token it was given: in a tool's output, in its answer, on stderr and into a file.
+  const token = process.env.CLAUDE_CODE_OAUTH_TOKEN ?? ""
+  const leak = prompt.includes("leak") ? " " + token : ""
+  if (leak) {
+    process.stderr.write("debug token" + leak + String.fromCharCode(10))
+    writeFileSync(join(process.cwd(), "leaked.txt"), "token" + leak + String.fromCharCode(10))
+  }
   const at = Date.now()
   const event = (type, part, dt = 0) => console.log(JSON.stringify({ type, timestamp: at + dt, sessionID: "ses_fake", part }))
   event("step_start", { type: "step-start" })
-  event("tool_use", { tool: "skill", state: { status: "completed", input: { id: "demo" }, output: "<skill_content/>" } }, 1)
-  event("text", { text: "the answer is eight (" + prompt.length + " chars asked)" }, 2)
+  event("tool_use", { tool: "skill", state: { status: "completed", input: { id: "demo" }, output: "<skill_content/>" + leak } }, 1)
+  event("text", { text: "the answer is eight (" + prompt.length + " chars asked)" + leak }, 2)
   const billed = /cost=([0-9]+(?:[.][0-9]+)?)/.exec(prompt)
   event("step_finish", { cost: billed ? Number(billed[1]) : 0, tokens: { input: 10, output: 5, cache: { read: 100, write: 0 } } }, 3)
   process.exit(0)

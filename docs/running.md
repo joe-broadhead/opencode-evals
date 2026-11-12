@@ -41,7 +41,7 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--scripted` | off | run the harness's own scripted model, `mock/m1` (T1's mock provider and server; needs `bun` or `EVALS_BUN`): with `--auth none`, the one run that is not live |
 | `--unsafe-no-isolation` | off | launch a live run with `--isolation none` anyway: the agent can reach the whole filesystem |
 | `--dry-run` | off | print the plan, the caps and the isolation; launch and reserve nothing |
-| `--keep` | off | keep the sandboxes (for debugging the runner); with `--auth claude-agent` it is refused unless `--keep-credentials` is given too, because a kept sandbox holds the imported credential |
+| `--keep` | off | keep the sandboxes (for debugging the runner); with `--auth claude-agent` it is refused unless `--keep-credentials` is given too, because a kept sandbox holds the imported OpenCode credential (a marker; the access token is scrubbed from every kept file) |
 
 ## Arms
 
@@ -116,26 +116,33 @@ the store; a credential reaches a sandbox and is deleted with it.
 | `env:A,B` | the caller's `A` and `B`, as they are (an API key) |
 | `claude-agent` | OpenCode's Claude Agent provider, as the History lab ran it |
 
-`claude-agent`: the credential OpenCode stores as "Claude Agent" (`EVALS_AUTH_CREDENTIAL` names another) is exported
-once from the caller's own OpenCode (`opencode auth export`), held in memory, and piped into each sandbox's `opencode
-auth import --standalone`. The export is the one command run with the caller's own environment: it has to read the
-caller's stored credential from the caller's own OpenCode, and its output goes straight into the sandbox, never to
-disk. The provider spawns `claude`, which reads its own sign-in. Each sandbox has its own `~/.claude`
-(`CLAUDE_CONFIG_DIR`), holding one thing: a copy of the caller's `~/.claude/.credentials.json`, a regular file with
-mode 0600. The caller's file is read once per batch, never through a link, never from a FIFO, at most 64 KB, and
-only when it parses as a Claude sign-in; its content is never logged. None of the caller's settings, hooks, global
-`CLAUDE.md`, MCP servers or agents reach the run, there is no `~/.claude.json`, and everything `claude` writes
-(`projects/`, `history.jsonl`, `todos/`, `shell-snapshots/`, `file-history/`, a refreshed token) stays in the sandbox
-and is deleted with it. **A sandboxed run never writes to the caller's `~/.claude`.** So a batch must not outlive the
-token: it is refused when the access token expires within its worst case (the run timeout times the rounds of runs,
-`ceil(runs / parallel)`, plus ten minutes), with the next step: start `claude` once interactively to refresh the
-sign-in, then retry. The copy is deleted on every exit path (a run that succeeded, failed or threw, an interrupt, a
-crash); `--keep` keeps it only with `--keep-credentials`, and says so.
+`claude-agent`: the credential OpenCode stores as "Claude Agent" (`EVALS_AUTH_CREDENTIAL` names another) is a marker
+with no secret in it. It is exported once from the caller's own OpenCode (`opencode auth export`), held in memory,
+and piped into each sandbox's `opencode auth import --standalone`. The export is the one command run with the
+caller's own environment: it has to read the caller's stored credential from the caller's own OpenCode, and its
+output goes straight into the sandbox, never to disk.
 
-The copy is readable by the agent under test, as anything in its sandbox is. Keeping it from leaving the run is the
-filesystem-isolation design's job (in progress), which is why a live run needs an isolation backend. A world's home
-that carries links out of the sandbox (a lab sandbox links `~/.claude` and `~/.local/bin`) has them removed.
-`CLAUDE_AGENT_SDK_VERSION` must be set and is passed on; claude's auto-updater is off in the run.
+The secret is `claude`'s own sign-in, `~/.claude/.credentials.json`: an access token and a long-lived refresh token.
+The runner reads it once per batch (never through a link, never from a FIFO, at most 64 KB, and only when it parses
+as a Claude sign-in) and keeps only the access token and its expiry, in memory; its content is never logged.
+**Nothing of it is copied into a sandbox, the refresh token is never passed on, and a sandboxed run never writes to
+the caller's `~/.claude`.** Each run's processes get the access token alone, as `CLAUDE_CODE_OAUTH_TOKEN`, which
+`claude` uses for the whole session and never refreshes or writes. So a batch must not outlive the token: it is
+refused when the access token expires within its worst case (the run timeout times the rounds of runs,
+`ceil(runs / parallel)`, plus ten minutes), with the next step: use `claude` normally once so it refreshes, then retry.
+
+Each sandbox has its own empty `~/.claude` (`CLAUDE_CONFIG_DIR`): no `.credentials.json`, no `~/.claude.json`, none of
+the caller's settings, hooks, global `CLAUDE.md`, MCP servers or agents; `CLAUDE_CODE_SKIP_PROMPT_HISTORY=1` and
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` are set, and claude's auto-updater is off. Everything `claude` writes
+stays in the sandbox and is deleted with it. A world's home that carries links out of the sandbox (a lab sandbox
+links `~/.claude` and `~/.local/bin`) has them removed. `CLAUDE_AGENT_SDK_VERSION` must be set and is passed on.
+
+The token is readable by the agent under test, from its environment. The runner scrubs it, by its exact value, from
+every recording, summary, files record, batch record and log line before writing them, and from every file of a kept
+sandbox (masked with as many `*`, so a database keeps its layout); a key passed with `env:` is scrubbed the same
+way. Keeping the token from leaving a run is the filesystem-isolation design's job (in progress), which is why a live
+run needs an isolation backend. Whether the Claude Agent provider's own `claude` inherits the variable is to be
+confirmed by one supervised run once isolation exists.
 
 ## Worlds
 
