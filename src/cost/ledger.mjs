@@ -143,11 +143,13 @@ const append = (store, entry) => appendFileSync(ledgerFile(store), `${JSON.strin
 
 /**
  * Checks every cap and reserves `runs` runs, in one locked step, before anything is launched. Returns the batch id.
+ * `check` (the dollar budget) runs inside the same lock, so two runners cannot both spend the last dollars.
  */
-export function reserve(store, { plugin, iteration, runs, model = null, now = new Date(), env = process.env }) {
+export function reserve(store, { plugin, iteration, runs, model = null, now = new Date(), env = process.env, check = null }) {
   const caps = loadCaps(store, env)
   const month = monthOf(now)
   return withLock(store, () => {
+    check?.()
     const used = checkCaps(readLedger(store), caps, { month, plugin, iteration, runs })
     const batch = `${iteration}-${now.toISOString().replace(/[^0-9]/g, "").slice(0, 14)}-${randomBytes(3).toString("hex")}`
     append(store, { kind: "reserve", batch, at: now.toISOString(), month, iteration, plugin, runs, model })

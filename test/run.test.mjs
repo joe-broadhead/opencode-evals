@@ -494,3 +494,24 @@ test("a seed's cwd is a repository of the world, never a path out of it", async 
   assert.ok(existsSync(join(f.root, "secret", "token")), "nothing outside the world was copied or touched")
   f.cleanup()
 })
+
+test("a batch stops before the next run would cross the dollar cap, counting the runs still in flight", async () => {
+  const f = fixture()
+  const { recordRun: record } = await import("../src/cost/ledger.mjs")
+  const month = new Date().toISOString().slice(0, 7)
+  // Two priced runs this month at $1: the projection is $1 a run.
+  for (const trial of [1, 2]) record(f.store, { batch: "seed", month, iteration: "old", plugin: "demo", case: "c", trial, billed_usd: 1, cost_source: "billed" })
+  addCase(f.casesDir, "pricey", "")
+  const pricey = JSON.parse(readFileSync(join(f.casesDir, "pricey.json"), "utf8"))
+  writeFileSync(join(f.casesDir, "pricey.json"), JSON.stringify({ ...pricey, prompt: "answer at cost=3" }))
+  const caller = { ...f.caller, EVALS_BUDGET_MODEL_USD: "6.5" }
+  // Reserved: $2 spent + 3 runs x $1 = $5, within $6.50. After the first run bills $3: $5 spent, and the next run is
+  // expected to bill $1.67, which would make $6.67: the batch stops there, before crossing.
+  const result = await runBatch({ plugin: "demo", iteration: "spend", model: "mock/m1", auth: "none", cases: "pricey", trials: 3, parallel: 1, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
+  assert.equal(result.launched, 1)
+  assert.match(result.stopped, /would take the month's model spend to \$6\.67, over \$6\.5/)
+  assert.equal(readLedger(f.store).find((e) => e.kind === "release").runs, 2)
+  // A batch whose projection is already over the cap is refused at the reservation.
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "spend2", model: "mock/m1", auth: "none", cases: "pricey", trials: 3, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /D4 budget/)
+  f.cleanup()
+})

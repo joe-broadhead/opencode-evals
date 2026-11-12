@@ -97,3 +97,22 @@ test("claude-agent/haiku maps to a catalogue model, so a list price can be found
   assert.equal(entries.find((e) => e.alias === "claude-agent/opus").stale, true)
   assert.deepEqual(loadCatalog({ EVALS_MODELS_CATALOG: "/nonexistent" }).providers, {})
 })
+
+test("the dollar caps are the caller's, and a cap that is not a number is an error, not NaN", async () => {
+  const { budgetCaps } = await import("../src/cost/budget.mjs")
+  assert.deepEqual(budgetCaps({}), { model_usd: 25, vendor_usd: 10 })
+  assert.deepEqual(budgetCaps({ EVALS_BUDGET_MODEL_USD: "3.5", EVALS_BUDGET_VENDOR_USD: "" }), { model_usd: 3.5, vendor_usd: 10 })
+  assert.throws(() => budgetCaps({ EVALS_BUDGET_MODEL_USD: "lots" }), /EVALS_BUDGET_MODEL_USD must be a number of dollars/)
+  assert.throws(() => budgetCaps({ EVALS_BUDGET_VENDOR_USD: "-1" }), /EVALS_BUDGET_VENDOR_USD/)
+  const store = temp()
+  assert.throws(() => assertWithinBudget(store, { model_usd: 2 }, { EVALS_BUDGET_MODEL_USD: "1" }), /would reach \$2\.00 of \$1/)
+  assert.doesNotThrow(() => assertWithinBudget(store, { model_usd: 2 }, { EVALS_BUDGET_MODEL_USD: "5" }))
+  rmSync(store, { recursive: true, force: true })
+})
+
+test("the dollar check runs inside the ledger lock: a batch it refuses reserves nothing", () => {
+  const store = temp()
+  assert.throws(() => reserve(store, { plugin: "x", iteration: "i", runs: 1, env: {}, check: () => { throw new Error("D4 budget: no") } }), /D4 budget/)
+  assert.deepEqual(readLedger(store), [])
+  rmSync(store, { recursive: true, force: true })
+})

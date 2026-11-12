@@ -18,7 +18,7 @@ import { selectCases } from "../case/sets.mjs"
 import { pluginCases } from "../case/load.mjs"
 import { harnessVersion } from "../version.mjs"
 import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf } from "../cost/ledger.mjs"
-import { assertWithinBudget, projectedSpend, monthToDate, CAPS } from "../cost/budget.mjs"
+import { assertWithinBudget, projectedSpend, monthToDate, budgetCaps } from "../cost/budget.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
 import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, killAll, stripForeignLinks } from "./sandbox.mjs"
@@ -332,10 +332,11 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
 
     const auth = await prepareAuth(profile, { binary, caller })
     if (keepRoot && auth.holdsCredential) log(`warning: --keep-credentials: the kept sandboxes under ${batchRoot} hold the imported credential; delete them when you are done`)
-    // Money, then runs: both checked before anything launches, and the whole batch reserved in one locked step.
+    // Money, then runs: both checked under the ledger's lock before anything launches, and the whole batch reserved in
+    // the same step. The dollar caps are the caller's.
+    const dollarCaps = budgetCaps(caller)
     const projected = projectedSpend(store, jobs.length)
-    assertWithinBudget(store, { model_usd: projected.model_usd })
-    reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller })
+    reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller, check: () => assertWithinBudget(store, { model_usd: projectedSpend(store, jobs.length).model_usd }, caller) })
     log(`reserved ${jobs.length} run(s) as ${reservation.batch}: ${plugin} at ${reservation.used.per_plugin_month + jobs.length}/${caps.per_plugin_month} this month; projected spend $${projected.model_usd.toFixed(2)} (${projected.basis})`)
 
     mkdirSync(rawDir, { recursive: true, mode: 0o700 })
@@ -349,6 +350,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     }
     Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo })
     let next = 0
+    let running = 0
     const worker = async () => {
       for (;;) {
         if (stopped) return
@@ -367,12 +369,18 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
           log(`  ${job.case.id}.t${job.trial} SKIPPED: ${window.why}`)
           continue
         }
-        if (monthToDate(store).model_usd > CAPS.model_usd) {
-          stopped = `the month's model spend crossed $${CAPS.model_usd}`
+        // Before each launch: what the month has billed, plus what this run and the ones still running are expected
+        // to bill, must stay within the cap. A batch stops before it crosses the cap, not after.
+        const perRun = projectedSpend(store, 1).model_usd
+        const expected = monthToDate(store).model_usd + perRun * (running + 1)
+        if (expected > dollarCaps.model_usd) {
+          stopped = `the next run would take the month's model spend to $${expected.toFixed(2)}, over $${dollarCaps.model_usd}`
           return
         }
         launched++
+        running++
         const outcome = await runJob(job, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: String(error.message ?? error) }))
+        running--
         results.push(outcome)
         log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)
       }

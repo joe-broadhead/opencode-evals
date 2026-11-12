@@ -110,6 +110,10 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- The dollar budget: the check before a batch now runs inside the ledger's lock with the reservation, with the caller's
+  caps; a run is launched only when the projected spend, counting the runs in flight, stays within the cap (the
+  batch could overshoot by `--parallel` runs); and a non-numeric `EVALS_BUDGET_*_USD` is an error instead of `NaN`.
+
 - `--auth claude-agent` linked the whole `~/.claude` into each sandbox, so `claude` could load the caller's settings,
   hooks, global `CLAUDE.md` and MCP servers, and wrote `history.jsonl`, `todos/`, `shell-snapshots/` and
   `file-history/` into the caller's own directory. Each sandbox now has its own `~/.claude` holding only a symlink to

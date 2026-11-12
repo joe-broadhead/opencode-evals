@@ -8,9 +8,30 @@ import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { ledgerMonth, loadCaps, readLedger, usage } from "./ledger.mjs"
 
+const dollars = (env, name, fallback) => {
+  const raw = env[name]
+  if (raw === undefined || raw === "") return fallback
+  const value = Number(raw)
+  if (!Number.isFinite(value) || value < 0) throw new Error(`${name} must be a number of dollars, not ${JSON.stringify(raw)}`)
+  return value
+}
+
+/** The monthly dollar caps, from the environment given (the caller's), strictly: a cap that is not a number is an error. */
+export function budgetCaps(env = process.env) {
+  return { model_usd: dollars(env, "EVALS_BUDGET_MODEL_USD", 25), vendor_usd: dollars(env, "EVALS_BUDGET_VENDOR_USD", 10) }
+}
+
+/** The caps from this process's environment, read when they are used. */
 export const CAPS = {
-  model_usd: Number(process.env.EVALS_BUDGET_MODEL_USD ?? 25),
-  vendor_usd: Number(process.env.EVALS_BUDGET_VENDOR_USD ?? 10),
+  get model_usd() {
+    return budgetCaps().model_usd
+  },
+  get vendor_usd() {
+    return budgetCaps().vendor_usd
+  },
+  toJSON() {
+    return budgetCaps()
+  },
 }
 
 const monthOf = (iso) => String(iso ?? "").slice(0, 7)
@@ -70,12 +91,13 @@ export function projectedSpend(store, runs, month = new Date().toISOString().sli
 }
 
 /** Throws when a proposed run would cross a cap. A run with unknown prices is allowed but reported. */
-export function assertWithinBudget(store, { model_usd = 0, vendor_usd = 0 } = {}) {
+export function assertWithinBudget(store, { model_usd = 0, vendor_usd = 0 } = {}, env = process.env) {
+  const caps = budgetCaps(env)
   const mtd = monthToDate(store)
   const next = { model_usd: mtd.model_usd + model_usd, vendor_usd: mtd.vendor_usd + vendor_usd }
-  if (next.model_usd > CAPS.model_usd) throw new Error(`D4 budget: model spend would reach $${next.model_usd.toFixed(2)} of $${CAPS.model_usd} this month`)
-  if (next.vendor_usd > CAPS.vendor_usd) throw new Error(`D4 budget: vendor spend would reach $${next.vendor_usd.toFixed(2)} of $${CAPS.vendor_usd} this month`)
-  return { ...mtd, projected: next, caps: CAPS }
+  if (next.model_usd > caps.model_usd) throw new Error(`D4 budget: model spend would reach $${next.model_usd.toFixed(2)} of $${caps.model_usd} this month`)
+  if (next.vendor_usd > caps.vendor_usd) throw new Error(`D4 budget: vendor spend would reach $${next.vendor_usd.toFixed(2)} of $${caps.vendor_usd} this month`)
+  return { ...mtd, projected: next, caps }
 }
 
 export const budgetLine = (store) => {

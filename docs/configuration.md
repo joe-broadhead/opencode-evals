@@ -117,7 +117,10 @@ under one lock file, so two runners cannot both take the last runs, and the ledg
 caps hold across invocations. A run counts whatever it cost: a subscription run bills $0 and only the run cap can
 stop it. A reservation counts until its unused runs are released; a batch that crashed keeps its runs counted.
 
-**Dollars.** `assertWithinBudget` refuses a batch whose projected spend would cross either monthly cap. The month's
+**Dollars.** `assertWithinBudget` refuses a batch whose projected spend would cross either monthly cap; the check runs
+inside the ledger's lock, with the reservation, and with the caller's caps. During a batch, each run is launched only
+if the month's billed spend plus what it and the runs still in flight are expected to bill stays within the cap, so a
+batch stops before it crosses the cap rather than after. A cap that is not a number is an error. The month's
 model spend is what the providers billed: the ledger's runs, plus any graded batch the ledger does not cover. The
 projection is the month's mean billed cost per priced run times the runs planned, and $0 when no run this month was
 priced. A run whose price is unknown is allowed and counted as `unknown_cost_runs`, because refusing to run on a

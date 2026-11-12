@@ -66,7 +66,8 @@ if (args[0] === "run") {
   event("step_start", { type: "step-start" })
   event("tool_use", { tool: "skill", state: { status: "completed", input: { id: "demo" }, output: "<skill_content/>" } }, 1)
   event("text", { text: "the answer is eight (" + prompt.length + " chars asked)" }, 2)
-  event("step_finish", { cost: 0, tokens: { input: 10, output: 5, cache: { read: 100, write: 0 } } }, 3)
+  const billed = /cost=([0-9]+(?:[.][0-9]+)?)/.exec(prompt)
+  event("step_finish", { cost: billed ? Number(billed[1]) : 0, tokens: { input: 10, output: 5, cache: { read: 100, write: 0 } } }, 3)
   process.exit(0)
 }
 process.exit(2)
