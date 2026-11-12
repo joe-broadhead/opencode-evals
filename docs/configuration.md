@@ -7,7 +7,7 @@ Everything a run produces lives in the **private store**, outside this repositor
 ```
 $EVALS_STORE/
   raw/<iteration>/<plugin>/<case>.jsonl   a recording, exactly as the runner wrote it
-  traces/<iteration>/<plugin>/*.trace.jsonl   oc-trace/1, structure only
+  traces/<iteration>/<plugin>/*.trace.jsonl   oc-trace/1, structure only (a store with traces/<iteration>/*.trace.jsonl is still read)
   t1/<plugin>/<version>/                  a T1 run's logs, capture events and fake-MCP call log
   results/<iteration>/                    verdicts.json, batch.json, scorecard.md
   results/t1/                             the coverage table

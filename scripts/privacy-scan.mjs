@@ -2,11 +2,10 @@
 // *content* (tool arguments, tool results, answer text) must be absent from that recording's trace.
 // Run: node scripts/privacy-scan.mjs
 import { readFileSync, readdirSync, existsSync } from "node:fs"
-import { join } from "node:path"
-import { storeRoot, rawRoot as rawRootOf } from "../src/store.mjs"
+import { basename, join } from "node:path"
+import { rawRoot as rawRootOf, tracesDir } from "../src/store.mjs"
 
 const rawRoot = rawRootOf()
-const traces = join(storeRoot(), "traces")
 
 const contentOf = (raw) => {
   const parts = []
@@ -36,7 +35,7 @@ const recordings = existsSync(rawRoot) ? readdirSync(rawRoot).flatMap((iteration
 for (const { iteration, dir } of recordings) {
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".jsonl"))) {
     const caseName = file.replace(/\.jsonl$/, "")
-    const traceFile = join(traces, iteration, `${caseName}.trace.jsonl`)
+    const traceFile = join(tracesDir(iteration, basename(dir)), `${caseName}.trace.jsonl`)
     if (!existsSync(traceFile)) continue
     files++
     const text = contentOf(readFileSync(join(dir, file), "utf8"))

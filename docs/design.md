@@ -9,7 +9,7 @@ cases/<plugin>/<id>.md ──compile──▶ <id>.json (oc-case/1)
                                          │
 a runner ──▶ $EVALS_STORE/raw/<it>/<plugin>/<id>.jsonl + <id>.summary.json
                                          │
-evals trace ──▶ $EVALS_STORE/traces/<it>/<id>.trace.jsonl (oc-trace/1)
+evals trace ──▶ $EVALS_STORE/traces/<it>/<plugin>/<id>.trace.jsonl (oc-trace/1)
                                          │
 evals grade ──▶ $EVALS_STORE/results/<it>/verdicts.json, batch.json
                                          │

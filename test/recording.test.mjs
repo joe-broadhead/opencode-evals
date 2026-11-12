@@ -7,11 +7,11 @@ import { join } from "node:path"
 import { gradeCase, runView } from "../src/grade/grade.mjs"
 import { compareToHandGrading } from "../src/report/scorecard.mjs"
 import { digestOf } from "../src/util/canonical.mjs"
-import { storeRoot, rawRoot } from "../src/store.mjs"
+import { storeRoot, rawRoot, tracesDir } from "../src/store.mjs"
 
 const root = join(import.meta.dirname, "..")
 const store = storeRoot()
-const traces = join(store, "traces", "nx6")
+const traces = tracesDir("nx6", "x")
 const results = join(store, "results", "nx6")
 const casesDir = join(root, "cases", "x")
 const raw = join(rawRoot(), "nx6", "x")

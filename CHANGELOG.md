@@ -18,6 +18,12 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- `trace` wrote `traces/<iteration>/` while the docs said `traces/<iteration>/<plugin>/`: it now writes per plugin,
+  reads `raw/<iteration>/<plugin>/` when `--from` is not given, and every reader falls back to the old layout.
+- A trace header named `review/tools/run-evals.mjs` as its runner whatever made the recording; it now carries the
+  runner and version the recording's summary names (`unrecorded` when it names none), and its raw reference names the
+  plugin instead of `x`.
+
 - `grade` read recordings from `../private/raw`, beside the repository, while the docs and the runner put them in
   `$EVALS_STORE/raw`. Every command now resolves the store in one place (`src/store.mjs`); `EVALS_RAW` and
   `grade --raw DIR` still point elsewhere, and `grade --cases DIR` and `--traces DIR` do what the usage line said.

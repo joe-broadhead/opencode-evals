@@ -1,7 +1,7 @@
 // The CLI. Every subcommand is deterministic: it reads files, computes, and writes files.
 //
 //   evals compile  [--plugin x] [--check]     markdown cases -> oc-case/1 JSON
-//   evals trace    --iteration nx6 [--from DIR] [--out DIR]
+//   evals trace    --iteration nx6 [--plugin x] [--from DIR] [--out DIR]
 //   evals grade    --iteration nx6 [--plugin x] [--cases DIR] [--traces DIR] [--raw DIR] [--out DIR]
 //   evals lock     [--plugin x] [--epoch N]
 //   evals scorecard --iteration nx6 [--grading FILE] [--out FILE]
@@ -34,7 +34,7 @@ import { extendVocab } from "./trace/redact.mjs"
 import { loadCatalog, loadMapping, drift } from "./cost/catalog.mjs"
 import { runCost, totals, trustOf } from "./cost/rule.mjs"
 import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "./label/kit.mjs"
-import { storeRoot, rawRoot } from "./store.mjs"
+import { storeRoot, rawRoot, tracesDir } from "./store.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
 const args = (argv) => {
@@ -123,11 +123,11 @@ function stateFor(iteration, caseName) {
   return existsSync(file) ? JSON.parse(read(file)) : null
 }
 
-function gradeAll(iteration, casesDir = path("cases", "x"), tracesDir = join(storePath(), "traces", iteration), rawDir = rawRoot(), plugin = "x") {
+function gradeAll(iteration, casesDir = path("cases", "x"), traceDir = tracesDir(iteration, "x"), rawDir = rawRoot(), plugin = "x") {
   const cases = casesDir.endsWith(".json") ? [] : listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
   const results = []
   for (const caseObject of cases) {
-    const traceFile = join(tracesDir, `${caseObject.id}.trace.jsonl`)
+    const traceFile = join(traceDir, `${caseObject.id}.trace.jsonl`)
     if (!existsSync(traceFile)) {
       results.push({ case: caseObject.id, plugin: caseObject.plugin, verdict: "NOT_RUN", items: [], coverage: { declared: caseObject.items.length }, note: "no trace for this case in the iteration" })
       continue
@@ -152,8 +152,8 @@ const batchDigest = (results) =>
   digestOf(results.map((r) => ({ case: r.case, verdict: r.verdict, items: (r.items ?? []).map((i) => [i.id, i.state]) })))
 
 /** The provenance of one iteration, read from its first trace head. */
-function iterationProvenance(iteration) {
-  const dir = join(storePath(), "traces", iteration)
+function iterationProvenance(iteration, plugin = "x") {
+  const dir = tracesDir(iteration, plugin)
   if (!existsSync(dir)) return {}
   const first = readdirSync(dir).filter((f) => f.endsWith(".trace.jsonl")).sort()[0]
   if (!first) return {}
@@ -171,7 +171,7 @@ function iterationProvenance(iteration) {
     const file = files.find((f) => f.startsWith(`${head.case}.trace`))
     if (!file) return sum
     const calls = runView(read(join(dir, file)).split("\n").filter(Boolean)).calls.filter((call) => call.via === "execute")
-    return sum + (vendorCost(calls, "x", prices).amount_usd ?? 0)
+    return sum + (vendorCost(calls, plugin, prices).amount_usd ?? 0)
   }, 0)
   return {
     head,
@@ -202,10 +202,10 @@ function iterationProvenance(iteration) {
   }
 }
 
-function batchSummary(iteration, results, caseSet) {
+function batchSummary(iteration, results, caseSet, plugin = caseSet[0]?.plugin ?? "x") {
   const graded = results.filter((r) => r.verdict !== "NOT_RUN")
   const pairs = graded.flatMap((r) => r.pairs ?? [])
-  const provenance = iterationProvenance(iteration)
+  const provenance = iterationProvenance(iteration, plugin)
   return {
     iteration,
     harness_version: harnessVersion(),
@@ -288,9 +288,10 @@ export async function main(argv) {
     }
     case "trace": {
       const iteration = opt.iteration ?? "nx6"
-      const from = opt.from ?? process.env.EVALS_RECORDINGS ?? ""
-      const out = opt.out ?? join(storePath(), "traces", iteration)
-      if (opt.plugin) extendVocab(readPack(opt.plugin).vocab)
+      const plugin = opt.plugin ?? "x"
+      const from = opt.from ?? process.env.EVALS_RECORDINGS ?? join(rawRoot(), iteration, plugin)
+      const out = opt.out ?? join(storePath(), "traces", iteration, plugin)
+      if (opt.plugin && (readSnapshot(opt.plugin, ROOT) || repoAvailable(opt.plugin))) extendVocab(readPack(opt.plugin).vocab)
       const manifestFile = path("fixtures", "recordings", "manifest.json")
       const manifest = existsSync(manifestFile) ? JSON.parse(read(manifestFile)) : {}
       const entry = manifest[iteration] ?? {}
@@ -307,10 +308,11 @@ export async function main(argv) {
         const trace = traceFromFiles({
           caseName,
           iteration,
+          plugin,
           base: join(from, caseName),
           manifest: prov
             ? {
-                recorded: { iteration, date: summary.started_at ?? entry.date ?? null, runner: summary.runner ?? "lab/run/run.mjs", model: summary.model, opencode: summary.opencode ?? null },
+                recorded: { iteration, date: summary.started_at ?? entry.date ?? null, runner: summary.runner ?? "unrecorded", runner_version: summary.runner_version ?? null, model: summary.model, opencode: summary.opencode ?? null },
                 plugin: { version: prov.plugin_version ?? null, commit: prov.plugin_commit ?? null, sha256: prov.plugin ?? null, source: prov.plugin ? "recorded" : "unrecorded" },
                 skills: axis(prov.skills),
                 descriptions: axis(prov.descriptions),
@@ -341,8 +343,8 @@ export async function main(argv) {
       const plugin = opt.plugin ?? "x"
       const casesDir = opt.cases ?? path("cases", plugin)
       const cases = listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
-      const results = gradeAll(iteration, casesDir, opt.traces ?? join(storePath(), "traces", iteration), opt.raw ?? rawRoot(), plugin)
-      const summary = batchSummary(iteration, results, cases)
+      const results = gradeAll(iteration, casesDir, opt.traces ?? tracesDir(iteration, plugin), opt.raw ?? rawRoot(), plugin)
+      const summary = batchSummary(iteration, results, cases, plugin)
       const out = opt.out ?? join(storePath(), "results", iteration)
       ensureDir(out)
       write(join(out, "verdicts.json"), json(results))
@@ -431,8 +433,8 @@ export async function main(argv) {
         if (lock.cases_sha256 !== casesDigest(cases)) failures.push(`the case set moved since the lock: ${short(lock.cases_sha256)} -> ${short(casesDigest(cases))}`)
         if (lock.grader_sha256 !== graderHash()) failures.push(`the grader moved since the lock: ${short(lock.grader_sha256)} -> ${short(graderHash())}`)
       } else failures.push("no cases/x/evals.lock")
-      const results = gradeAll(iteration, path("cases", opt.plugin ?? "x"), undefined, undefined, opt.plugin ?? "x")
-      const again = batchSummary(iteration, results, cases)
+      const results = gradeAll(iteration, path("cases", opt.plugin ?? "x"), tracesDir(iteration, opt.plugin ?? "x"), undefined, opt.plugin ?? "x")
+      const again = batchSummary(iteration, results, cases, opt.plugin ?? "x")
       if (again.batch_sha256 !== previous.batch_sha256) failures.push(`batch digest moved: ${short(previous.batch_sha256)} -> ${short(again.batch_sha256)}`)
       if (canonical(again.coverage) !== canonical(previous.coverage)) failures.push("coverage moved")
       const verdicts = JSON.parse(read(join(storePath(), "results", iteration, "verdicts.json")))
@@ -553,7 +555,7 @@ export async function main(argv) {
       const prices = loadPrices()
       const catalog = loadCatalog()
       const mapping = loadMapping()
-      const dir = join(store, "traces", iteration)
+      const dir = tracesDir(iteration, opt.plugin ?? "x")
       if (!existsSync(dir)) throw new Error(`no traces for ${iteration} in ${store}`)
       let runDate = null
       const rows = []
