@@ -243,8 +243,12 @@ caller's own environment: it has to read the caller's stored credential from the
 output goes straight into the sandbox, never to disk.
 
 The secret is `claude`'s own sign-in, `~/.claude/.credentials.json`: an access token and a long-lived refresh token.
-The runner reads it once per batch (never through a link, never from a FIFO, at most 64 KB, and only when it parses
-as a Claude sign-in) and keeps only the access token and its expiry, in memory; its content is never logged.
+The runner reads it at the batch's start and again immediately before each trial (never through a link, never from a
+FIFO, at most 64 KB, and only when it parses as a Claude sign-in) and keeps only the access token and its expiry, in
+memory; its content is never logged. Something outside can rotate the sign-in (boxd keeps it fresh), which revokes the
+value read earlier: each trial runs on the value current at its launch, and every value the batch has read is scrubbed
+from everything it writes. A sign-in that cannot be re-read, or holds no access token, makes that trial `infra: auth`,
+and no further trial launches; `evals run` then exits 1.
 **Nothing of it is copied into a sandbox, the refresh token is never passed on, and a sandboxed run never writes to
 the caller's `~/.claude`.** Each run's processes get the access token alone, as `CLAUDE_CODE_OAUTH_TOKEN`, which
 `claude` uses for the whole session and never refreshes or writes. So a batch must not outlive the token: it is

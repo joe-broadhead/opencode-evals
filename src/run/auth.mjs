@@ -10,8 +10,9 @@
 //                     The export is the one command run with the caller's own environment: it must read the caller's
 //                     stored credential from the caller's own OpenCode, and its output goes to the sandbox, never to disk;
 //                   - the secret is `claude`'s own sign-in, ~/.claude/.credentials.json: an access token and a long-lived
-//                     refresh token. The runner reads it once per batch (O_NOFOLLOW, a regular file, at most 64 KB, the
-//                     shape `claude` writes) and keeps only the access token and its expiry, in memory. No file of it is
+//                     refresh token. The runner reads it at the batch's start and again before each trial (O_NOFOLLOW, a regular
+//                     file, at most 64 KB, the shape `claude` writes: the sign-in is rotated outside the run) and keeps only
+//                     the access token and its expiry, in memory; every value it saw is scrubbed. No file of it is
 //                     copied anywhere, and the refresh token is never passed on: each run's processes get the access
 //                     token alone, as CLAUDE_CODE_OAUTH_TOKEN, which `claude` uses for the whole session and never
 //                     refreshes or writes. The caller's ~/.claude is never written;
@@ -74,6 +75,14 @@ export function readCredential(file) {
   }
 }
 
+/** The sign-in could not be re-read before a trial: the trial is infra: auth and the batch stops launching. */
+export class AuthRefreshError extends Error {
+  constructor(message) {
+    super(`the sign-in could not be re-read before the trial: ${message}`)
+    this.name = "AuthRefreshError"
+  }
+}
+
 /** What to do with a sign-in whose expiry is unknown: refuse, unless --accept-unknown-token-expiry. */
 export function unknownExpiry(accept) {
   if (accept) return { expires: "unknown", accepted_by_flag: true }
@@ -111,13 +120,13 @@ export function parseAuth(spec) {
  * with; `caller` is the caller's environment.
  */
 export async function prepareAuth(profile, { binary, caller = process.env, horizonMs = 0, acceptUnknownExpiry = false }) {
-  if (profile.kind === "none") return { profile: "none", env: {}, secrets: [], async apply() {}, cleanup() {} }
+  if (profile.kind === "none") return { profile: "none", env: {}, secrets: [], forTrial() { return { env: {}, rotated: false } }, async apply() {}, cleanup() {} }
   if (profile.kind === "env") {
     const missing = profile.names.filter((name) => !caller[name])
     if (missing.length) throw new Error(`--auth env: ${missing.join(", ")} not set`)
     const env = Object.fromEntries(profile.names.map((name) => [name, caller[name]]))
     // A key passed through is a secret too: scrubbed from everything the runner writes.
-    return { profile: `env:${profile.names.join(",")}`, env, secrets: Object.values(env), async apply() {}, cleanup() {} }
+    return { profile: `env:${profile.names.join(",")}`, env, secrets: Object.values(env), forTrial() { return { env, rotated: false } }, async apply() {}, cleanup() {} }
   }
   // claude-agent
   const realHome = caller.HOME
@@ -127,8 +136,12 @@ export async function prepareAuth(profile, { binary, caller = process.env, horiz
   const exported = await runToEnd(binary, ["auth", "export", name], { env: caller, timeoutMs: 30_000 })
   if (exported.code !== 0 || !exported.stdout.trim()) throw new Error(`--auth claude-agent: \`opencode auth export ${JSON.stringify(name)}\` failed (exit ${exported.code}); is the credential stored?`)
   const credential = exported.stdout
-  // The access token alone, read once and held in memory; the caller's file is never written, and nothing of it copied.
-  const signIn = readCredential(join(realHome, ".claude", ".credentials.json"))
+  // The access token alone, held in memory; the caller's file is never written, and nothing of it copied. It is read
+  // here for the batch's checks, and again before each trial (forTrial): the sign-in can be rotated by something
+  // outside (boxd keeps it fresh), which revokes the value read earlier.
+  const credentialFile = join(realHome, ".claude", ".credentials.json")
+  const signIn = readCredential(credentialFile)
+  const seen = [signIn.accessToken]
   // A known expiry is checked against the batch's horizon; an unknown one is refused unless the caller accepts it.
   const expiry = signIn.expiresAt === null ? unknownExpiry(acceptUnknownExpiry) : (assertTokenLasts(signIn.expiresAt, horizonMs), null)
   return {
@@ -141,7 +154,26 @@ export async function prepareAuth(profile, { binary, caller = process.env, horiz
       CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",
       DISABLE_AUTOUPDATER: "1",
     },
-    secrets: [signIn.accessToken],
+    /** Every access-token value this batch has read: each is scrubbed from everything the runner writes. */
+    get secrets() {
+      return [...seen]
+    },
+    /**
+     * The token for the next trial, read again with the same guarded read. Throws AuthRefreshError when the file can
+     * no longer be read or holds no access token; the error names the problem, never the content.
+     */
+    forTrial() {
+      let token
+      try {
+        token = readCredential(credentialFile).accessToken
+      } catch (error) {
+        throw new AuthRefreshError(error.message)
+      }
+      if (!token) throw new AuthRefreshError(`${credentialFile} holds an empty access token`)
+      const fresh = !seen.includes(token)
+      if (fresh) seen.push(token)
+      return { env: { ...this.env, CLAUDE_CODE_OAUTH_TOKEN: token }, rotated: fresh, secret: token }
+    },
     holdsCredential: true,
     async apply({ sandbox, env, exec = (args, options) => runToEnd(binary, args, { cwd: sandbox.home, env, ...options }) }) {
       // The sandbox's own ~/.claude, empty: whatever a world's home brought is replaced, and no sign-in file is made.

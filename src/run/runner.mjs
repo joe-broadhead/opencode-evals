@@ -328,7 +328,8 @@ async function runJob(job, ctx) {
   writeConfig(sandbox, config)
   const password = newPassword()
   // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
-  const redact = redactor([...(ctx.auth.secrets ?? []), password])
+  // Every token value the batch has read so far, at the moment of each write: a later trial's rotation included.
+  const redact = (text) => redactor([...(ctx.auth.secrets ?? []), password])(text)
   registerSecrets([password])
   let trial = null
   let gone = false
@@ -341,7 +342,7 @@ async function runJob(job, ctx) {
     // A world's own variables go in first and never the sealed ones; the harness's (credential, endpoint) go in last.
     const fromWorld = worldEnv(prepared.env)
     if (fromWorld.dropped.length) ctx.log(`  ${name}: the world's env may not set ${fromWorld.dropped.join(", ")}: ignored`)
-    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...ctx.auth.env, ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
+    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
     // Every host command of the run goes through the trial.
     const exec = (args, options = {}) => {
       const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env })
@@ -772,9 +773,27 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
             return
           }
         }
+        // The sign-in as it is now: something outside may have rotated it since the last trial. A sign-in that cannot be
+        // read is this trial's infra: auth, and no further trial launches; its run goes back to the reserve.
+        let trialAuth
+        try {
+          trialAuth = ctx.auth.forTrial ? ctx.auth.forTrial() : { env: ctx.auth.env, rotated: false }
+        } catch (error) {
+          results.push({ case: job.case.id, trial: job.trial, infra: "auth", error: redact(String(error.message ?? error)) })
+          log(`  ${job.case.id}.t${job.trial} NOT LAUNCHED: infra auth: ${redact(String(error.message ?? error))}`)
+          if (!stopped) stopped = `${job.case.id}.t${job.trial}: ${redact(String(error.message ?? error))}; no further trial launched`
+          return
+        }
+        if (trialAuth.rotated) {
+          // A new value: scrubbed from here on, from every line logged and every file written.
+          registerSecrets([trialAuth.secret])
+          redact = redactor(ctx.auth.secrets)
+          facts.token_rotations = (facts.token_rotations ?? 0) + 1
+          log(`  ${job.case.id}.t${job.trial}: the sign-in was rotated since the last trial; this trial runs on the new one`)
+        }
         launched++
         running++
-        const outcome = await runJob(job, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: redact(String(error.message ?? error)) }))
+        const outcome = await runJob({ ...job, authEnv: trialAuth.env }, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: redact(String(error.message ?? error)) }))
         running--
         results.push(outcome)
         log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.infra ? ` INFRA ${outcome.infra}` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)

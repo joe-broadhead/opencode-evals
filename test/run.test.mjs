@@ -1,7 +1,7 @@
 // `evals run` with a stand-in OpenCode binary: no model, no network beyond loopback, deterministic outcomes.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync, lstatSync, symlinkSync } from "node:fs"
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync, lstatSync, symlinkSync, renameSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { spawn, spawnSync } from "node:child_process"
@@ -1035,5 +1035,69 @@ test("a world never built (its clock file absent) is stale and rebuilt, not an e
   const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "unbuilt", model: "mock/m1", auth: "none", scripted: true, cases: "fresh-world", arm: f.arm, casesDir: f.casesDir, world }, { caller: f.caller, ...quiet })
   assert.equal(result.launched, 1)
   assert.equal(existsSync(join(world, "out", "truth.json")), true)
+  f.cleanup()
+})
+
+test("the sign-in is re-read before each trial: a rotated token reaches the next trial, and no value is written anywhere", async () => {
+  const f = fixture({ cases: [["leak-one", ""], ["leak-two", ""]] })
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const real = join(f.home, ".claude", ".credentials.json")
+  const first = "tok-first-0123456789-abcdefghij-ABCDEFGH"
+  const second = "tok-second-rotated-0123456789-abcdefghij-ABCDEFGHIJK"
+  writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: first, refreshToken: "refresh-never-r1", expiresAt: null } }))
+  const lines = []
+  const log = (line) => {
+    lines.push(line)
+    // Between the trials, something outside rotates the sign-in (write elsewhere, rename over it, as claude does).
+    if (/\[1\/2\]/.test(line)) {
+      writeFileSync(`${real}.tmp`, JSON.stringify({ claudeAiOauth: { accessToken: second, refreshToken: "refresh-never-r2", expiresAt: null } }))
+      renameSync(`${real}.tmp`, real)
+    }
+  }
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "rot", model: "claude-agent/haiku", auth: "claude-agent", acceptUnknownTokenExpiry: true, cases: "leak-*", set: "all", parallel: 1, arm: f.arm, casesDir: f.casesDir, keep: true, keepCredentials: true }, { caller, log })
+  assert.equal(result.launched, 2, JSON.stringify(result.results))
+  assert.equal(result.token_rotations, 1)
+  // Each trial got the value current at its launch: the kept sandboxes hold them masked, so their lengths tell them apart.
+  const tokenOf = (name) => JSON.parse(readFileSync(join(result.keptAt, "runs", `${name}.t1`, "home", "run.json"), "utf8")).env.CLAUDE_CODE_OAUTH_TOKEN
+  assert.equal(tokenOf("leak-one"), "*".repeat(first.length))
+  assert.equal(tokenOf("leak-two"), "*".repeat(second.length))
+  // Neither value, nor any refresh token, in anything written: recordings, summaries, files records, batch record, log.
+  const written = []
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name)
+      if (entry.isDirectory()) walk(path)
+      else if (entry.isFile()) written.push(readFileSync(path, "utf8"))
+    }
+  }
+  walk(f.store)
+  walk(result.keptAt)
+  const all = [...written, ...lines].join("\n")
+  for (const value of [first, second, "refresh-never-r1", "refresh-never-r2"]) assert.equal(all.includes(value), false, `${value.slice(0, 10)}… was written`)
+  assert.ok(written.some((text) => text.includes("*".repeat(second.length))), "the leaked new token is there only masked")
+  f.cleanup()
+})
+
+test("a sign-in that cannot be re-read before a trial makes it infra: auth, and the batch stops and exits non-zero", async () => {
+  const f = fixture({ cases: [["gone-one", ""], ["gone-two", ""], ["gone-three", ""]] })
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const real = join(f.home, ".claude", ".credentials.json")
+  writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: "tok-still-here-0123456789", expiresAt: null } }))
+  const log = (line) => {
+    if (/\[1\/3\]/.test(line)) writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: "", expiresAt: null } }))
+  }
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "gone", model: "claude-agent/haiku", auth: "claude-agent", acceptUnknownTokenExpiry: true, cases: "gone-*", set: "all", parallel: 1, arm: f.arm, casesDir: f.casesDir }, { caller, log })
+  assert.equal(result.launched, 1)
+  const refused = result.results.find((r) => r.infra === "auth")
+  assert.match(refused.error, /could not be re-read before the trial/)
+  assert.match(result.stopped, /no further trial launched/)
+  // The two trials never launched go back to the reserve; only the first is a recorded run.
+  const ledger = readLedger(f.store)
+  assert.equal(ledger.filter((e) => e.kind === "run").length, 1)
+  assert.equal(ledger.filter((e) => e.kind === "release").reduce((n, e) => n + e.runs, 0), 2)
+  // And the CLI says so in its exit status.
+  writeFileSync(real, "not json")
+  const cli = spawnSync(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "gone2", "--model", "claude-agent/haiku", "--auth", "claude-agent", "--accept-unknown-token-expiry", "--isolation", "none", "--unsafe-no-isolation", "--cases-dir", f.casesDir, "--set", "all", "--cases", "gone-one", "--arm", f.arm], { env: caller, encoding: "utf8" })
+  assert.notEqual(cli.status, 0, cli.stdout + cli.stderr)
   f.cleanup()
 })
