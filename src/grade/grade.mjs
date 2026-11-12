@@ -9,6 +9,9 @@ import { sha256 } from "../util/canonical.mjs"
 
 const BILLED_EXCEPTIONS = new Set(["get_usage_credits"])
 
+/** A call made by the code inside Code Mode's `execute`, as opposed to the `execute` call that ran it. */
+export const isInner = (call) => call.via === "execute" && call.tool !== "execute"
+
 /** A run view: the one shape every grader reads. Built from a trace file's lines. */
 export function runView(traceLines, { text = null, state = null } = {}) {
   const parsed = traceLines.map((line) => (typeof line === "string" ? JSON.parse(line) : line))
@@ -30,8 +33,10 @@ export function runView(traceLines, { text = null, state = null } = {}) {
   const permissions = events.filter((event) => event.kind === "permission").map((event) => ({ action: event.action, decision: event.decision }))
   const skills = events.filter((event) => event.kind === "skill_load").map((event) => event.skill).filter(Boolean)
   const tokens = head?.summary?.tokens ?? { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
-  const direct = calls.filter((call) => call.via !== "execute")
-  const inner = calls.filter((call) => call.via === "execute")
+  // Two counts, the same as the trace head's: outer is every call the model made (a skill load, Code Mode's
+  // `execute` and a direct tool alike), inner is every call the code inside an `execute` made.
+  const inner = calls.filter(isInner)
+  const direct = calls.filter((call) => !isInner(call))
   const billed = [...calls].filter((call) => {
     const ns = call.ns ?? (call.via === "execute" ? call.ns : call.tool.startsWith("x_") ? "x" : null)
     if (ns !== "x") return false

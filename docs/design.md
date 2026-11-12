@@ -67,7 +67,7 @@ The clauses, each one observable in a trace:
 | `text:<span> count /re/ <op> <n>` | the number of matches compares |
 | `skill:<name>`, `absent-skill:<name>` | the skill was, or was not, loaded |
 | `declined:<tool>`, `absent-declined:<tool>` | a call was, or was not, declined by a permission |
-| `budget:<name> <op> <n>` | `outer_calls`, `inner_calls`, `tokens`, `wall_ms` and the other budget counters |
+| `budget:<name> <op> <n>` | `outer_calls` (every tool call the model made: skill loads, Code Mode's `execute`, direct tools), `inner_calls` (every call the code inside an `execute` made), `billed_calls`, `tokens`, `wall_ms`, `turns`, `cost_usd` |
 | `cost:matches-appended [tolerance <n>]` | the answer's cost line matches the plugin's appended one |
 | `state:<path> ==\|!= <value>` | the final state, from the case's oracle file |
 

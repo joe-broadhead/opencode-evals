@@ -18,6 +18,11 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- `outer_calls` meant two things: the trace head counted every call the model made, while a grade budget left out
+  Code Mode's `execute` itself and counted it as an inner call instead. Both now count the same: outer is every call
+  the model made (a skill load included), inner is every call made by the code inside an `execute`. Budgets graded
+  before this change can move by the number of `execute` calls, and the grader digest moves with them.
+
 - `trace` wrote `traces/<iteration>/` while the docs said `traces/<iteration>/<plugin>/`: it now writes per plugin,
   reads `raw/<iteration>/<plugin>/` when `--from` is not given, and every reader falls back to the old layout.
 - A trace header named `review/tools/run-evals.mjs` as its runner whatever made the recording; it now carries the
