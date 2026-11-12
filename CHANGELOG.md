@@ -70,6 +70,9 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Changed
 
+- `cases/history/evals.lock` and `cases/x/evals.lock` are re-frozen at epoch 2 for the grader as it now is; the case
+  sets did not move. Batches graded under epoch 1 are stale (`evals verify --all` lists them) and re-grade for free.
+
 
 - `evals compile` needs `--plugin <id>` or `--all`: without them it compiled `x` and rewrote its JSON, and
   `compile --help` did the same. `--help` (and `-h`) on any command prints the usage and runs nothing; an unknown
