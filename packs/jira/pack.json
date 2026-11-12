@@ -5,7 +5,7 @@
   "name": "Jira",
   "package": "@joe-broadhead/opencode-jira",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "pluginId": "jira.issues",
   "skills": [
     "jira",
@@ -20,15 +20,15 @@
       "class": "read"
     },
     {
-      "name": "downloadJiraIssueAttachment",
-      "permission": "jira_downloadJiraIssueAttachment",
+      "name": "getAccessibleAtlassianResources",
+      "permission": "jira_getAccessibleAtlassianResources",
       "effect": "allow",
       "readOnly": true,
       "class": "read"
     },
     {
-      "name": "getAccessibleAtlassianResources",
-      "permission": "jira_getAccessibleAtlassianResources",
+      "name": "getContentFormatGuide",
+      "permission": "jira_getContentFormatGuide",
       "effect": "allow",
       "readOnly": true,
       "class": "read"
@@ -244,158 +244,165 @@
       "class": "read"
     },
     {
+      "name": "downloadJiraIssueAttachment",
+      "permission": "jira_downloadJiraIssueAttachment",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
       "name": "addOrEditJiraIssueComment",
       "permission": "jira_addOrEditJiraIssueComment",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "addOrEditJiraIssueWorklog",
       "permission": "jira_addOrEditJiraIssueWorklog",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "convertJiraIssueHierarchy",
       "permission": "jira_convertJiraIssueHierarchy",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "createJiraBoard",
       "permission": "jira_createJiraBoard",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "createJiraIssue",
       "permission": "jira_createJiraIssue",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "createJiraIssueLink",
       "permission": "jira_createJiraIssueLink",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "createJiraIssueRemoteIssueLink",
       "permission": "jira_createJiraIssueRemoteIssueLink",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "editJiraIssue",
       "permission": "jira_editJiraIssue",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "manageJiraProjectVersion",
       "permission": "jira_manageJiraProjectVersion",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "manageJiraProjectVersionRelatedWork",
       "permission": "jira_manageJiraProjectVersionRelatedWork",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "manageJiraSprint",
       "permission": "jira_manageJiraSprint",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "transitionJiraIssue",
       "permission": "jira_transitionJiraIssue",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "uploadAttachmentToJiraIssue",
       "permission": "jira_uploadAttachmentToJiraIssue",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "watchJiraIssue",
       "permission": "jira_watchJiraIssue",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "createJiraProject",
       "permission": "jira_createJiraProject",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "deleteJiraComment",
       "permission": "jira_deleteJiraComment",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "deleteJiraIssue",
       "permission": "jira_deleteJiraIssue",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "deleteJiraIssueAttachment",
       "permission": "jira_deleteJiraIssueAttachment",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "editJiraEntityProperty",
       "permission": "jira_editJiraEntityProperty",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "updateJiraProject",
       "permission": "jira_updateJiraProject",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "updateJiraScreen",
       "permission": "jira_updateJiraScreen",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     }
   ],
   "counts": {
-    "tools": 54,
+    "tools": 55,
     "reads": 33,
-    "writes": 14,
-    "denied": 7,
+    "writes": 22,
+    "denied": 0,
     "skills": 2
   },
   "schema": "oc-pack/1",
@@ -404,14 +411,18 @@
       "name": "jira",
       "description_sha256": "a4b2fce9c69d2d3f1901db03242b2b23679c8811c991f1c45a24d193250b72b5",
       "description_chars": 531,
-      "body_lines": 93
+      "body_lines": 95
     },
     "jira-write": {
       "name": "jira-write",
       "description_sha256": "83848417fae6c1cc62259909d9abf01633051242b718c669413982ad08576c0e",
       "description_chars": 325,
-      "body_lines": 94
+      "body_lines": 95
     }
   },
-  "digest": "ba313aa40e297fc76dd90ab5031abea64007761f3827a04db250c55fda48ddbc"
+  "digest": "fb263c5497440af86ad8a664e259f8dc1a97fbb537e26591b1c0ea10ae4a6ddd",
+  "access": {
+    "key": "access",
+    "default": "all"
+  }
 }

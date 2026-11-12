@@ -1,0 +1,106 @@
+{
+  "schema": "oc-pack/1",
+  "id": "plaud",
+  "name": "Plaud",
+  "package": "@joe-broadhead/opencode-plaud",
+  "version": "0.0.0",
+  "private": false,
+  "pluginId": "plaud.recordings",
+  "rpc": "plaud.recordings.tools",
+  "skills": [
+    "opencode-plaud",
+    "opencode-plaud-export",
+    "opencode-plaud-digest"
+  ],
+  "skill_meta": {
+    "opencode-plaud": {
+      "name": "opencode-plaud",
+      "description_sha256": "84802fe4eb05a4f4ad4e0a32e4cb865c133af5e49bc9c8498f7973f7a0f9e72d",
+      "description_chars": 330,
+      "body_lines": 101
+    },
+    "opencode-plaud-export": {
+      "name": "opencode-plaud-export",
+      "description_sha256": "16698216f757d862ba20d8a2d6c56435e2bfbe916c97b3cb0e897e0eed4f13f1",
+      "description_chars": 259,
+      "body_lines": 81
+    },
+    "opencode-plaud-digest": {
+      "name": "opencode-plaud-digest",
+      "description_sha256": "f52f9fdb7ed79e52402223918828610bd6dac51a0a60f66cf5c262c35a62238b",
+      "description_chars": 263,
+      "body_lines": 38
+    }
+  },
+  "tools": [
+    {
+      "name": "recent",
+      "permission": "plaud_recent",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "events_list",
+      "permission": "plaud_events_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_files",
+      "permission": "plaud_list_files",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_file",
+      "permission": "plaud_get_file",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_note",
+      "permission": "plaud_get_note",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_transcript",
+      "permission": "plaud_get_transcript",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_current_user",
+      "permission": "plaud_get_current_user",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "export",
+      "permission": "plaud_export",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 8,
+    "reads": 7,
+    "writes": 1,
+    "denied": 0,
+    "skills": 3
+  },
+  "digest": "946aef0eb84e3eb23b3fce713650f5ae1c07639d690299d005a52814e4c445db",
+  "t1": []
+}

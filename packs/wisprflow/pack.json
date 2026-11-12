@@ -4,7 +4,7 @@
   "id": "wisprflow",
   "name": "Wispr Flow",
   "package": "@joe-broadhead/opencode-wisprflow",
-  "version": "0.0.2",
+  "version": "0.0.0",
   "private": false,
   "pluginId": "wisprflow.meetings",
   "skills": [
@@ -118,16 +118,23 @@
       "class": "read"
     },
     {
+      "name": "events_list",
+      "permission": "wisprflow_events_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
       "name": "get_participant_contacts",
       "permission": "wisprflow_get_participant_contacts",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": true,
       "class": "read"
     }
   ],
   "counts": {
-    "tools": 16,
-    "reads": 16,
+    "tools": 17,
+    "reads": 17,
     "writes": 0,
     "denied": 0,
     "skills": 2
@@ -138,14 +145,18 @@
       "name": "wisprflow",
       "description_sha256": "c73c51599cf3db3e9c8b86df6d36154cf0144efa2523ca0c6163f9d374e43129",
       "description_chars": 604,
-      "body_lines": 81
+      "body_lines": 83
     },
     "wisprflow-meeting-brief": {
       "name": "wisprflow-meeting-brief",
       "description_sha256": "ad77e80d496183fd623132514c1758b7febc7e1b43097bd32914f3cf584ae7bd",
       "description_chars": 493,
-      "body_lines": 45
+      "body_lines": 47
     }
   },
-  "digest": "60104166e36252a0d458bc41825846145b7805e97708a728144a2c440e08c3f9"
+  "digest": "7234ed61f868235350515ea2cf52743002161d66c7c9c60db662741828933afa",
+  "access": {
+    "key": "access",
+    "default": "all"
+  }
 }

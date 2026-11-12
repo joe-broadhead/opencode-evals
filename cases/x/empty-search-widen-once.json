@@ -29,6 +29,7 @@
     "tokens": 450000,
     "wall_ms": 300000
   },
+  "seed": null,
   "expect": "pass",
   "holdout": false,
   "items": [

@@ -2,11 +2,10 @@
 // *content* (tool arguments, tool results, answer text) must be absent from that recording's trace.
 // Run: node scripts/privacy-scan.mjs
 import { readFileSync, readdirSync, existsSync } from "node:fs"
-import { join } from "node:path"
+import { basename, join } from "node:path"
+import { rawRoot as rawRootOf, tracesDir } from "../src/store.mjs"
 
-const root = join(import.meta.dirname, "..")
-const rawRoot = join(root, "..", "private", "raw")
-const traces = join(root, "traces")
+const rawRoot = rawRootOf()
 
 const contentOf = (raw) => {
   const parts = []
@@ -28,12 +27,15 @@ const isEpoch = (digits) => {
 let checked = 0
 let leaks = 0
 let files = 0
-for (const iteration of readdirSync(rawRoot)) {
-  const dir = join(rawRoot, iteration, "x")
-  if (!existsSync(dir)) continue
+const recordings = existsSync(rawRoot) ? readdirSync(rawRoot).flatMap((iteration) => {
+  const top = join(rawRoot, iteration)
+  if (!existsSync(top)) return []
+  return readdirSync(top, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => ({ iteration, dir: join(top, entry.name) }))
+}) : []
+for (const { iteration, dir } of recordings) {
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".jsonl"))) {
     const caseName = file.replace(/\.jsonl$/, "")
-    const traceFile = join(traces, iteration, `${caseName}.trace.jsonl`)
+    const traceFile = join(tracesDir(iteration, basename(dir)), `${caseName}.trace.jsonl`)
     if (!existsSync(traceFile)) continue
     files++
     const text = contentOf(readFileSync(join(dir, file), "utf8"))

@@ -1,0 +1,99 @@
+{
+  "schema": "oc-pack/1",
+  "id": "charts",
+  "name": "Charts",
+  "package": "@joe-broadhead/opencode-charts",
+  "version": "0.0.0",
+  "private": false,
+  "pluginId": "charts",
+  "rpc": "charts.tools",
+  "skills": [
+    "charts",
+    "charts-cookbook"
+  ],
+  "skill_meta": {
+    "charts": {
+      "name": "charts",
+      "description_sha256": "dad9a8b72a97d85ba6f885726e417724e6dddcc0c5995c451de89aa071cc9c72",
+      "description_chars": 272,
+      "body_lines": 47
+    },
+    "charts-cookbook": {
+      "name": "charts-cookbook",
+      "description_sha256": "151b92ea7cd229d08e198aec8bff195e535a7941d769a070ed73a2fb3bede97b",
+      "description_chars": 181,
+      "body_lines": 539
+    }
+  },
+  "tools": [
+    {
+      "name": "render",
+      "permission": "charts_render",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "quick",
+      "permission": "charts_quick",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "validate",
+      "permission": "charts_validate",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "recommend",
+      "permission": "charts_recommend",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "capabilities",
+      "permission": "charts_capabilities",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "catalogue",
+      "permission": "charts_catalogue",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "themes",
+      "permission": "charts_themes",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "theme_save",
+      "permission": "charts_theme_save",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 8,
+    "reads": 5,
+    "writes": 3,
+    "denied": 0,
+    "skills": 2
+  },
+  "digest": "ba6295f8e42303edf46f95c27b6f3d5b8fa4bb824feb4b5262475b53c522d9ec",
+  "t1": []
+}

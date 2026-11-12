@@ -11,6 +11,11 @@ export const LIMITS = {
   forbidden: "hold",
   /** Fewer than this many executed cases and the batch cannot support a claim. */
   minCoverage: 0.8,
+  /**
+   * Fewer trials per case than this and a model-driven comparison cannot ship: the same arm against itself flips a
+   * case or two between trials. A grader comparison re-judges the same recordings and is exempt.
+   */
+  minTrials: 2,
 }
 
 const rate = (passed, total) => (total ? passed / total : null)
@@ -44,10 +49,12 @@ export function decide({ comparison, a, b, noiseFloor = LIMITS.costRegression })
   }
   if (thin) reasons.push(`coverage ${coverage.cases_run}/${coverage.cases_declared} cases`)
   if (coverage.items_blocked > 0) reasons.push(`${coverage.items_blocked} item(s) unsettled (BLOCKED)`)
+  const fewTrials = comparison.axis !== "grader" && numeric.trials < LIMITS.minTrials
+  if (fewTrials) reasons.push(`${numeric.trials} trial(s) per case: a model-driven comparison needs at least ${LIMITS.minTrials}, and one trial never ships`)
 
   let verdict
   if (blocking.length || reasons.some((r) => r.startsWith("cost per"))) verdict = "hold"
-  else if (numeric.newMajorFailures.length || thin || coverage.items_blocked > 0 || comparison.basis !== "verified") verdict = "ask"
+  else if (numeric.newMajorFailures.length || thin || coverage.items_blocked > 0 || comparison.basis !== "verified" || fewTrials) verdict = "ask"
   else verdict = "ship"
 
   if (verdict === "ship") reasons.push(`no regression; ${numeric.fixes} case(s) improved; ${numeric.passRate.delta === null ? "rates unchanged" : `pass rate ${pct(numeric.passRate.a)} -> ${pct(numeric.passRate.b)}`}`)
@@ -100,5 +107,10 @@ export function numericVerdict(a, b) {
     const right = costB / passB
     costPerPass = { a: left, b: right, delta: left ? (right - left) / left : null }
   }
-  return { sharedCases: shared.length, caseRegressions, fixes, newForbidden, failedItems, newBlockerFailures, newMajorFailures, passRate, costPerPass, costSource: b.cost?.source ?? "missing" }
+  // A batch graded before trials were recorded is one trial per case.
+  const trials = Math.min(a.trials?.min || 1, b.trials?.min || 1)
+  const strict = { a: a.strict?.rate ?? null, b: b.strict?.rate ?? null }
+  strict.delta = strict.a !== null && strict.b !== null ? strict.b - strict.a : null
+  const passK = { a: a.pass_k?.strict ?? null, b: b.pass_k?.strict ?? null }
+  return { sharedCases: shared.length, caseRegressions, fixes, newForbidden, failedItems, newBlockerFailures, newMajorFailures, passRate, strict, passK, trials, costPerPass, costSource: b.cost?.source ?? "missing" }
 }

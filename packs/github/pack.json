@@ -1,0 +1,750 @@
+{
+  "schema": "oc-pack/1",
+  "id": "github",
+  "name": "GitHub",
+  "package": "@joe-broadhead/opencode-github",
+  "version": "0.0.0",
+  "private": false,
+  "pluginId": "github.platform",
+  "rpc": "github.platform.tools",
+  "skills": [
+    "github-pr-review",
+    "github-issue-triage",
+    "github-code-research"
+  ],
+  "skill_meta": {
+    "github-pr-review": {
+      "name": "github-pr-review",
+      "description_sha256": "6ffb87cd9a9d40151b0503035f87e9fe210a4d1564c86d8c7f7207a8da6595b5",
+      "description_chars": 354,
+      "body_lines": 51
+    },
+    "github-issue-triage": {
+      "name": "github-issue-triage",
+      "description_sha256": "5729807ec187724026836cb32e0fe403596be4412dbeacd1eba062f6ade76bf2",
+      "description_chars": 387,
+      "body_lines": 43
+    },
+    "github-code-research": {
+      "name": "github-code-research",
+      "description_sha256": "c64d774ff670dff0dc6e6a3cb22920241a5a206c1fa5df90a5c5c119e3909fbb",
+      "description_chars": 408,
+      "body_lines": 48
+    }
+  },
+  "tools": [
+    {
+      "name": "actions_get",
+      "permission": "github_actions_get",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "actions_list",
+      "permission": "github_actions_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "check_dependency_vulnerabilities",
+      "permission": "github_check_dependency_vulnerabilities",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "custom_properties_read",
+      "permission": "github_custom_properties_read",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_code_quality_finding",
+      "permission": "github_get_code_quality_finding",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_code_scanning_alert",
+      "permission": "github_get_code_scanning_alert",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_commit",
+      "permission": "github_get_commit",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_copilot_space",
+      "permission": "github_get_copilot_space",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_dependabot_alert",
+      "permission": "github_get_dependabot_alert",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_discussion",
+      "permission": "github_get_discussion",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_discussion_comments",
+      "permission": "github_get_discussion_comments",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_file_contents",
+      "permission": "github_get_file_contents",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_gist",
+      "permission": "github_get_gist",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_global_security_advisory",
+      "permission": "github_get_global_security_advisory",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_job_logs",
+      "permission": "github_get_job_logs",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_label",
+      "permission": "github_get_label",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_latest_release",
+      "permission": "github_get_latest_release",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_me",
+      "permission": "github_get_me",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_notification_details",
+      "permission": "github_get_notification_details",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_release_by_tag",
+      "permission": "github_get_release_by_tag",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_repository_tree",
+      "permission": "github_get_repository_tree",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_secret_scanning_alert",
+      "permission": "github_get_secret_scanning_alert",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_tag",
+      "permission": "github_get_tag",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_team_members",
+      "permission": "github_get_team_members",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_teams",
+      "permission": "github_get_teams",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "github_support_docs_search",
+      "permission": "github_github_support_docs_search",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "issue_artifact_read",
+      "permission": "github_issue_artifact_read",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "issue_read",
+      "permission": "github_issue_read",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_branches",
+      "permission": "github_list_branches",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_code_scanning_alerts",
+      "permission": "github_list_code_scanning_alerts",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_commits",
+      "permission": "github_list_commits",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_copilot_spaces",
+      "permission": "github_list_copilot_spaces",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_dependabot_alerts",
+      "permission": "github_list_dependabot_alerts",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_discussion_categories",
+      "permission": "github_list_discussion_categories",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_discussions",
+      "permission": "github_list_discussions",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_gists",
+      "permission": "github_list_gists",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_global_security_advisories",
+      "permission": "github_list_global_security_advisories",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_issue_fields",
+      "permission": "github_list_issue_fields",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_issue_types",
+      "permission": "github_list_issue_types",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_issues",
+      "permission": "github_list_issues",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_label",
+      "permission": "github_list_label",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_notifications",
+      "permission": "github_list_notifications",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_org_repository_security_advisories",
+      "permission": "github_list_org_repository_security_advisories",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_pull_requests",
+      "permission": "github_list_pull_requests",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_releases",
+      "permission": "github_list_releases",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_repository_collaborators",
+      "permission": "github_list_repository_collaborators",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_repository_security_advisories",
+      "permission": "github_list_repository_security_advisories",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_secret_scanning_alerts",
+      "permission": "github_list_secret_scanning_alerts",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_starred_repositories",
+      "permission": "github_list_starred_repositories",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_tags",
+      "permission": "github_list_tags",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "projects_get",
+      "permission": "github_projects_get",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "projects_list",
+      "permission": "github_projects_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "pull_request_read",
+      "permission": "github_pull_request_read",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "repository_ruleset_read",
+      "permission": "github_repository_ruleset_read",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_code",
+      "permission": "github_search_code",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_commits",
+      "permission": "github_search_commits",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_issues",
+      "permission": "github_search_issues",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_orgs",
+      "permission": "github_search_orgs",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_pull_requests",
+      "permission": "github_search_pull_requests",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_repositories",
+      "permission": "github_search_repositories",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search_users",
+      "permission": "github_search_users",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "actions_run_trigger",
+      "permission": "github_actions_run_trigger",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "add_comment_to_pending_review",
+      "permission": "github_add_comment_to_pending_review",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "add_issue_comment",
+      "permission": "github_add_issue_comment",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "add_reply_to_pull_request_comment",
+      "permission": "github_add_reply_to_pull_request_comment",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "assign_copilot_to_issue",
+      "permission": "github_assign_copilot_to_issue",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "assign_copilot_to_issue_with_intent",
+      "permission": "github_assign_copilot_to_issue_with_intent",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_branch",
+      "permission": "github_create_branch",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_gist",
+      "permission": "github_create_gist",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_or_update_file",
+      "permission": "github_create_or_update_file",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_pull_request",
+      "permission": "github_create_pull_request",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_pull_request_with_copilot",
+      "permission": "github_create_pull_request_with_copilot",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_repository",
+      "permission": "github_create_repository",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_repository_ruleset",
+      "permission": "github_create_repository_ruleset",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "custom_properties_write",
+      "permission": "github_custom_properties_write",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "delete_file",
+      "permission": "github_delete_file",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "delete_repository",
+      "permission": "github_delete_repository",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "discussion_comment_write",
+      "permission": "github_discussion_comment_write",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "dismiss_notification",
+      "permission": "github_dismiss_notification",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "fork_repository",
+      "permission": "github_fork_repository",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "issue_artifact_write",
+      "permission": "github_issue_artifact_write",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "issue_write",
+      "permission": "github_issue_write",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "label_write",
+      "permission": "github_label_write",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "manage_notification_subscription",
+      "permission": "github_manage_notification_subscription",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "manage_repository_notification_subscription",
+      "permission": "github_manage_repository_notification_subscription",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "mark_all_notifications_read",
+      "permission": "github_mark_all_notifications_read",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "merge_pull_request",
+      "permission": "github_merge_pull_request",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "projects_write",
+      "permission": "github_projects_write",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "pull_request_review_write",
+      "permission": "github_pull_request_review_write",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "push_files",
+      "permission": "github_push_files",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "request_copilot_review",
+      "permission": "github_request_copilot_review",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "star_repository",
+      "permission": "github_star_repository",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "sub_issue_write",
+      "permission": "github_sub_issue_write",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "unstar_repository",
+      "permission": "github_unstar_repository",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_gist",
+      "permission": "github_update_gist",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_issue_comment",
+      "permission": "github_update_issue_comment",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_pull_request",
+      "permission": "github_update_pull_request",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_pull_request_branch",
+      "permission": "github_update_pull_request_branch",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "events_list",
+      "permission": "github_events_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "api",
+      "permission": "github_api",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 100,
+    "reads": 62,
+    "writes": 38,
+    "denied": 0,
+    "skills": 3
+  },
+  "digest": "b23e18f218d579fac8ac748aee7c00ebfd15df438bcb662db98d3c007a068fef",
+  "t1": []
+}

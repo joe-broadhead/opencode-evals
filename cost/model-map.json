@@ -3,5 +3,10 @@
     "to": "anthropic/claude-opus-5-5",
     "asOf": "2026-11-07",
     "why": "claude-agent's opus alias resolves to the current Opus; update when the alias moves"
+  },
+  "claude-agent/haiku": {
+    "to": "anthropic/claude-haiku-5-5",
+    "asOf": "2026-11-11",
+    "why": "the claude CLI's own model catalogue (2.1.317) resolves the haiku alias to claude-haiku-5-5 for a first-party sign-in; update when the alias moves"
   }
 }

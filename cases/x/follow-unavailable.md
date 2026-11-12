@@ -29,7 +29,7 @@ follow <X test handle: a public, harmless account> for me
 
 - [X-SF03] blocker · No shell, xurl or scraper route.
   maps_to: F3
-  evidence: absent:bash
+  evidence: absent:shell
   evidence: absent:webfetch
 
 - [X-EF01] major · At most one read, to confirm the account.

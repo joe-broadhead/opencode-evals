@@ -131,21 +131,21 @@
         [
           {
             "kind": "call",
-            "tool": "sessions",
+            "tool": "history.sessions",
             "n": 1,
             "arg": "args.title",
             "op": "present"
           },
           {
             "kind": "call",
-            "tool": "sql",
+            "tool": "history.sql",
             "n": 1,
             "arg": "args.sql",
             "op": "present"
           },
           {
             "kind": "call",
-            "tool": "search",
+            "tool": "history.search",
             "n": 1,
             "arg": "args.query",
             "op": "present"
@@ -194,7 +194,7 @@
         },
         {
           "kind": "absent",
-          "tool": "apply_patch",
+          "tool": "patch",
           "n": null
         }
       ],
@@ -207,6 +207,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "00c8296deba6bbb742a8f962a38e124075b5ca2cf47c3ba2a0335cae012372b8"
+    "source_sha256": "700b40cbffdf670f880b446fb1f2cc1302eb3f57f380a9679c9c3250c38c45c9"
   }
 }

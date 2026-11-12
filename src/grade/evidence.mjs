@@ -77,6 +77,23 @@ export function parseClause(text) {
     return { ok: true, clause: { kind: "text", span: m[1], op: m[2], value } }
   }
 
+  // The files the run wrote, from the recording's files record: exists, absent, or its text matches.
+  m = /^file:(\S+)\s+(exists|absent|changed|deleted)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "file", glob: m[1], op: m[2] } }
+  m = /^file:(\S+)\s+(matches|not-matches)\s+(\/.+\/[a-z]*)$/.exec(line)
+  if (m) {
+    const value = parseValue(m[3])
+    if (value.kind !== "regex") return { ok: false, why: `file clause needs a /regex/ in "${line}"` }
+    return { ok: true, clause: { kind: "file", glob: m[1], op: m[2], value } }
+  }
+
+  // Order: the first call (skill loads and the `execute` wrapper aside), and one call before another.
+  m = /^first:([a-z0-9_.*-]+)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "first", tool: m[1] } }
+
+  m = /^before:([a-z0-9_.*-]+),([a-z0-9_.*-]+)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "before", tool: m[1], other: m[2] } }
+
   m = /^(absent-)?skill:([a-z0-9_.-]+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: m[1] ? "absent-skill" : "skill", skill: m[2] } }
 
@@ -116,14 +133,47 @@ const compare = (a, b, operator) => {
 
 const numberish = (v) => typeof v === "number" && Number.isFinite(v)
 
+/** A path glob: `*` within a directory, `**` across them. */
+const globRe = (glob) => new RegExp(`^${glob.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\u0000").replace(/\*/g, "[^/]*").replace(/\u0000/g, ".*")}$`)
+
+/** The shapes the trace stores in place of a value (redact.mjs). */
+const WRAPPERS = new Set(["object", "redacted", "code", "id", "timestamp"])
+
+/** The operators a value that was never passed satisfies. */
+const NEGATIVE = new Set(["!=", "not-matches", "excludes"])
+
+/** An argument as the recording holds it: the value itself, a list included. */
+export function rawArgState(args, key) {
+  if (args && typeof args === "object" && "$ref" in args) return { state: "opaque", why: "the argument object is a variable" }
+  let value = args
+  for (const part of key.replace(/^args\./, "").split(".")) {
+    if (value === null || value === undefined || typeof value !== "object") return { state: "missing" }
+    value = value[part]
+  }
+  if (value === undefined || value === null) return { state: "missing" }
+  if (typeof value === "object" && !Array.isArray(value)) return "$ref" in value ? { state: "opaque", why: `a variable (${value.$ref})` } : { state: "value", value: JSON.stringify(value) }
+  return { state: "value", value }
+}
+
 /** Where a tool argument lives, as the trace stores it. */
 export function argState(args, key) {
   // A call whose whole argument object is a variable (`events_list(args)`) says nothing about its keys: unverifiable, not "missing".
   if (args && typeof args === "object" && "$ref" in args) return { state: "opaque", why: "the argument object is a variable" }
   const path = key.replace(/^args\./, "").split(".")
   let value = args
-  for (const part of path) {
+  for (const [depth, part] of path.entries()) {
     if (value === null || value === undefined || typeof value !== "object") return { state: "missing" }
+    // Below the top level the trace keeps a wrapper, not the value. A nested object is `{kind: "object", keys}`: a key it
+    // lists is there but unseen, so it is opaque, never missing, and so is anything under a variable (`keys: ["$ref"]`);
+    // only a key the wrapper says is absent is missing. A string, an id or a time reduced to its shape is a scalar:
+    // a path under it names nothing that was passed (a single query string has no `.length` of phrasings), so a
+    // positive clause on it fails, and a negative one cannot be settled: the value it would negate is unseen.
+    if (depth > 0 && !Array.isArray(value) && WRAPPERS.has(value.kind)) {
+      if (value.kind !== "object") return { state: "missing", under: value.kind }
+      const keys = Array.isArray(value.keys) ? value.keys : null
+      if (keys && !keys.includes("$ref") && !keys.includes(part)) return { state: "missing" }
+      return { state: "opaque", why: `${path.slice(0, depth).join(".")} is kept as ${keys?.includes("$ref") ? "a variable" : `an object with keys ${(keys ?? []).join(",")}`}, not its value` }
+    }
     value = value[part]
   }
   if (value === undefined || value === null) return { state: "missing" }
@@ -169,14 +219,21 @@ const pathOf = (object, path) => {
 export function evaluateClause(clause, view) {
   switch (clause.kind) {
     case "call": {
-      const calls = selectCalls(view.calls, clause.tool)
+      const calls = selectCalls(view.calls, clause.tool, view.scope)
       const call = calls[clause.n - 1]
       if (!call) return { state: "fail", detail: `${clause.tool}#${clause.n} was not called (${calls.length} total)` }
       if (!clause.arg) return { state: "ok", detail: `${clause.tool}#${clause.n} called via ${call.via}` }
       if (call.args_parsed === false) return { state: "unverifiable", detail: `${clause.tool}#${clause.n} arguments could not be parsed` }
-      const resolved = argState(call.args ?? {}, clause.arg)
-      if (resolved.state === "missing") return { state: "fail", detail: `${clause.arg} was not passed` }
       const label = clause.arg.replace(/^args\./, "")
+      // A key the case declares checkable is compared with the recording's own value, never the trace's shape.
+      const checkable = view.checkable?.has(label.split(".")[0]) ?? false
+      if (checkable && call.raw_args === undefined) return { state: "unverifiable", detail: `${label} is checkable, and the recording is not available` }
+      const resolved = checkable ? rawArgState(call.raw_args, clause.arg) : argState(call.args ?? {}, clause.arg)
+      // An argument that was not passed is not equal to anything and matches nothing: !=, not-matches and excludes hold.
+      if (resolved.state === "missing") {
+        if (NEGATIVE.has(clause.op) && resolved.under) return { state: "unverifiable", detail: `${label} is a path under a ${resolved.under} value the trace keeps only as a shape` }
+        return NEGATIVE.has(clause.op) ? { state: "ok", detail: `${label} was not passed, so it satisfies ${clause.op}` } : { state: "fail", detail: `${clause.arg} was not passed` }
+      }
       // The whole argument object is a variable: nothing is known about its keys, `present` included.
       if (resolved.state === "opaque" && resolved.why === "the argument object is a variable") return { state: "unverifiable", detail: `${clause.tool}#${clause.n} arguments are a variable` }
       // "present" is about the call, not the value: a variable was still passed.
@@ -200,22 +257,34 @@ export function evaluateClause(clause, view) {
         return { state: ok ? "ok" : "fail", detail: `${label} shape ${ok ? "matches" : "does not match"} /${clause.value.source}/` }
       }
       const value = resolved.value
+      // A list (several query phrasings) matches when one element does, and excludes when none does.
+      const elements = Array.isArray(value) ? value.map((v) => (typeof v === "string" ? v : JSON.stringify(v))) : [typeof value === "string" ? value : String(value)]
+      const shown = checkable ? `(${elements.reduce((n, e) => n + e.length, 0)} chars, from the recording)` : JSON.stringify(value)
       if (clause.value.kind === "regex") {
         const re = new RegExp(clause.value.source, clause.value.flags.replace("g", ""))
-        const matched = re.test(String(value))
+        const matched = elements.some((element) => re.test(element))
         const ok = clause.op === "matches" ? matched : !matched
-        return { state: ok ? "ok" : "fail", detail: `${label} ${JSON.stringify(value)} ${ok ? "matches" : "does not match"} /${clause.value.source}/` }
+        return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "matches" : "does not match"} /${clause.value.source}/` }
       }
       if (clause.op === "excludes") {
-        const text = String(value).toLowerCase()
-        const hit = clause.value.values.filter((v) => text.includes(String(v).toLowerCase()))
+        const hit = clause.value.values.filter((v) => elements.some((element) => element.toLowerCase().includes(String(v).toLowerCase())))
         return hit.length ? { state: "fail", detail: `${label} contains ${hit.join(", ")}` } : { state: "ok", detail: `${label} excludes ${clause.value.values.join(", ")}` }
       }
+      if (clause.op === "contains") {
+        const ok = elements.some((element) => element.toLowerCase().includes(String(clause.value.value).toLowerCase()))
+        return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "contains" : "does not contain"} ${JSON.stringify(clause.value.value)}` }
+      }
+      if (checkable && Array.isArray(value)) {
+        const same = JSON.stringify(value) === JSON.stringify(clause.value.value)
+        const ok = clause.op === "!=" ? !same : clause.op === "==" ? same : false
+        return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "satisfies" : "does not satisfy"} ${clause.op}` }
+      }
       const ok = compare(value, clause.value.value, clause.op)
+      if (checkable) return { state: ok ? "ok" : "fail", detail: `${label} ${shown} ${ok ? "satisfies" : "does not satisfy"} ${clause.op} ${JSON.stringify(clause.value.value)}` }
       return { state: ok ? "ok" : "fail", detail: `${label} ${JSON.stringify(value)} ${ok ? "satisfies" : "does not satisfy"} ${clause.op} ${JSON.stringify(clause.value.value)}` }
     }
     case "absent": {
-      const count = selectCalls(view.calls, clause.tool).length
+      const count = selectCalls(view.calls, clause.tool, view.scope).length
       if (clause.n === null) {
         return count === 0 ? { state: "ok", detail: `${clause.tool} never called` } : { state: "fail", detail: `${clause.tool} called ${count} time(s)` }
       }
@@ -224,12 +293,12 @@ export function evaluateClause(clause, view) {
         : { state: "fail", detail: `${clause.tool} called ${count} time(s), at least ${clause.n}` }
     }
     case "count": {
-      const count = selectCalls(view.calls, clause.tool).length
+      const count = selectCalls(view.calls, clause.tool, view.scope).length
       const ok = compare(count, clause.value, clause.op)
       return { state: ok ? "ok" : "fail", detail: `${clause.tool} called ${count} time(s) ${ok ? "satisfies" : "violates"} ${clause.op} ${clause.value}` }
     }
     case "counts": {
-      const calls = selectCalls(view.calls, clause.tool)
+      const calls = selectCalls(view.calls, clause.tool, view.scope)
       const call = calls[clause.n - 1]
       if (!call) return { state: "fail", detail: `${clause.tool}#${clause.n} was not called` }
       const value = call.counts?.[clause.key]
@@ -252,6 +321,35 @@ export function evaluateClause(clause, view) {
       const count = [...String(span).matchAll(re)].length
       const ok = compare(count, clause.n, clause.op)
       return { state: ok ? "ok" : "fail", detail: `answer ${clause.span} has ${count} match(es) of /${clause.value.source}/, ${ok ? "satisfying" : "violating"} ${clause.op} ${clause.n}` }
+    }
+    case "file": {
+      if (!Array.isArray(view.files)) return { state: "unverifiable", detail: "no record of the files this run wrote" }
+      const re = globRe(clause.glob)
+      const present = view.files.filter((file) => re.test(file.path) && file.change !== "deleted")
+      if (clause.op === "exists") return present.length ? { state: "ok", detail: `${present.length} file(s) ${clause.glob} written` } : { state: "fail", detail: `no file ${clause.glob} written` }
+      if (clause.op === "absent") return present.length ? { state: "fail", detail: `${present.map((f) => f.path).join(", ")} written` } : { state: "ok", detail: `no file ${clause.glob} written` }
+      if (clause.op === "changed") return present.some((f) => f.change === "modified") ? { state: "ok", detail: `${clause.glob} modified` } : { state: "fail", detail: `${clause.glob} not modified` }
+      if (clause.op === "deleted") return view.files.some((f) => re.test(f.path) && f.change === "deleted") ? { state: "ok", detail: `${clause.glob} deleted` } : { state: "fail", detail: `${clause.glob} not deleted` }
+      if (!present.length) return clause.op === "not-matches" ? { state: "ok", detail: `no file ${clause.glob} written` } : { state: "fail", detail: `no file ${clause.glob} written` }
+      if (present.some((file) => file.text === undefined)) return { state: "unverifiable", detail: `${clause.glob}: a file is too large or not text` }
+      const pattern = new RegExp(clause.value.source, clause.value.flags.replace("g", ""))
+      const hit = present.some((file) => pattern.test(file.text))
+      const ok = clause.op === "matches" ? hit : !hit
+      return { state: ok ? "ok" : "fail", detail: `${clause.glob} ${ok ? "satisfies" : "violates"} ${clause.op} /${clause.value.source}/` }
+    }
+    case "first": {
+      const moves = view.calls.filter((call) => call.tool !== "skill" && call.tool !== "execute")
+      if (!moves.length) return { state: "fail", detail: "no tool was called" }
+      const ok = selectCalls([moves[0]], clause.tool, view.scope).length === 1
+      return { state: ok ? "ok" : "fail", detail: `the first call is ${moves[0].ns ? `${moves[0].ns}.` : ""}${moves[0].tool}` }
+    }
+    case "before": {
+      const at = (pattern) => view.calls.findIndex((call) => selectCalls([call], pattern, view.scope).length === 1)
+      const a = at(clause.tool)
+      const b = at(clause.other)
+      if (b < 0) return { state: "ok", detail: `${clause.other} was never called` }
+      if (a < 0) return { state: "fail", detail: `${clause.other} was called and ${clause.tool} never was` }
+      return a < b ? { state: "ok", detail: `${clause.tool} came before ${clause.other}` } : { state: "fail", detail: `${clause.other} came before ${clause.tool}` }
     }
     case "skill": {
       const loaded = view.skills.includes(clause.skill)

@@ -5,7 +5,7 @@
   "name": "Ashby",
   "package": "@joe-broadhead/opencode-ashby",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "pluginId": "ashby.recruiting",
   "skills": [
     "ashby",
@@ -76,8 +76,8 @@
       "class": "read"
     },
     {
-      "name": "get_upcoming_interviews",
-      "permission": "ashby_get_upcoming_interviews",
+      "name": "list_interviews",
+      "permission": "ashby_list_interviews",
       "effect": "allow",
       "readOnly": true,
       "class": "read"
@@ -99,44 +99,44 @@
     {
       "name": "add_note_to_candidate",
       "permission": "ashby_add_note_to_candidate",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "consider_candidate_for_job",
       "permission": "ashby_consider_candidate_for_job",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_candidate",
       "permission": "ashby_create_candidate",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "change_application_stage",
       "permission": "ashby_change_application_stage",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "submit_mcp_feedback",
       "permission": "ashby_submit_mcp_feedback",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     }
   ],
   "counts": {
     "tools": 17,
     "reads": 12,
-    "writes": 3,
-    "denied": 2,
+    "writes": 5,
+    "denied": 0,
     "skills": 2
   },
   "schema": "oc-pack/1",
@@ -151,8 +151,12 @@
       "name": "ashby-write",
       "description_sha256": "4a5318970abafe8c3db02061778629b79526416aa112e7a29b0e87e4093ced27",
       "description_chars": 390,
-      "body_lines": 63
+      "body_lines": 66
     }
   },
-  "digest": "7cb59d374eafa763ec945466f4cd4891302651294229cde00930c6a68ee89885"
+  "digest": "713fd1ac5c8b3169b09a4944dfba18486e31a95da869d6635437802e4128e24d",
+  "access": {
+    "key": "access",
+    "default": "all"
+  }
 }

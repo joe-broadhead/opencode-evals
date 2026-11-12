@@ -142,8 +142,9 @@ export async function checkDescribe(host, pack) {
       problems.push(`${method.name} is not a known tool`)
       continue
     }
-    if (v2 && method.permission === "allow" && tool.class !== "read") problems.push(`${method.name} (${tool.class}) would run on allow`)
-    if (v2 && tool.effect === "deny" && method.permission === "allow") problems.push(`${method.name} is denied but resolves allow`)
+    // The declared effect is the plugin's default access (`all` allows every tool, a write included); what must never
+    // happen is a tool declared ask or deny resolving allow.
+    if (v2 && method.permission === "allow" && (tool.effect ?? "allow") !== "allow") problems.push(`${method.name} is declared ${tool.effect} but would run on allow`)
   }
   return {
     id: `${pack.id}-describe`,

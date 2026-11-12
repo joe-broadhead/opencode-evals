@@ -13,7 +13,7 @@ I want the raw change feed of my sessions over the last 7 days, as events. use t
 
 ## Items
 - [H-OC01] blocker · It called history events_list.
-  evidence: call:events_list#1
+  evidence: call:history.events_list#1
 
 - [H-OC02] major · It reports the newest event's title: the Sentry triage session from today.
   evidence: text:any matches /Triage Sentry/i
@@ -25,4 +25,4 @@ I want the raw change feed of my sessions over the last 7 days, as events. use t
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

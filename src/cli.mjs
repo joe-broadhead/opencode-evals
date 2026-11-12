@@ -1,13 +1,21 @@
 // The CLI. Every subcommand is deterministic: it reads files, computes, and writes files.
 //
-//   evals compile  [--plugin x] [--check]     markdown cases -> oc-case/1 JSON
-//   evals trace    --iteration nx6 [--from DIR] [--out DIR]
-//   evals grade    --iteration nx6 [--cases DIR] [--traces DIR] [--raw DIR] [--state DIR] [--out DIR]
+//   evals compile  --plugin x | --all [--check] [--holdouts]   markdown cases -> oc-case/1 JSON; --check writes nothing
+//                  and fails on a change; --holdouts compiles $EVALS_STORE/holdouts/<plugin>/ in the store
+//   evals trace    --iteration nx6 [--plugin x] [--from DIR] [--out DIR]
+//   evals grade    --iteration nx6 [--plugin x] [--cases DIR] [--traces DIR] [--raw DIR] [--out DIR]
 //   evals lock     [--plugin x] [--epoch N]
 //   evals scorecard --iteration nx6 [--grading FILE] [--out FILE]
 //   evals policy   --a nx5 --b nx6 [--strict]
+//   evals report   <label>=<it>[,<it>...] ... [--plugin x] [--set all] [--cases ids] [--all-cases] [--detail] [--json]
+//   evals run      --plugin x --iteration it --model p/m --auth none|env:VAR|claude-agent [--cases ids] [--set tune]
+//                  [--trials K] [--parallel N] [--arm DIR|none] [--world DIR|FILE] [--host 2.2.6] [--dry-run]
+//                  [--isolation container|none] [--unsafe-no-isolation]   (container by default; none needs the flag)
+//                  [--accept-unknown-token-expiry]   (a claude-agent sign-in with no expiry: refused without it)
+//   evals isolation build|check|sweep   the container backend's image (docker/Dockerfile), its checks, and the removal
+//                  of what a crashed batch left behind
 //   evals t0       [--root DIR] [--json]
-//   evals verify   re-derive every number from the stored inputs and compare
+//   evals verify   [--iteration it --plugin x | --all]  re-derive every number, or list the stale iterations
 //   evals selftest run the T-G gold cases over synthetic traces
 
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs"
@@ -19,21 +27,32 @@ import { harnessVersion } from "./version.mjs"
 import { traceFromFiles } from "./trace/normalise.mjs"
 import { gradeCase, runView } from "./grade/grade.mjs"
 import { decide, numericVerdict } from "./policy/decide.mjs"
-import { comparable } from "./policy/comparable.mjs"
+import { comparable, DEFAULT_OPTIONS } from "./policy/comparable.mjs"
 import { checkX } from "./t0/x.mjs"
 import { renderScorecard, compareToHandGrading } from "./report/scorecard.mjs"
 import { goldCases } from "./grade/gold.mjs"
-import { readPack, writePack, pluginRepo, repoAvailable, derivePack, readSnapshot, packIds } from "./pack/from-plugin.mjs"
+import { readPack, writePack, pluginRepo, repoAvailable, derivePack, readSnapshot, allPackIds, familyProblems } from "./pack/from-plugin.mjs"
 import { verifyFromRepo, driftReport, renderDrift } from "./pack/snapshot.mjs"
 import { runT1, coverageTable } from "./t1/run.mjs"
 import { checkPack } from "./t0/generic.mjs"
 import { scan as privacyScan, renderScan } from "./privacy/gate.mjs"
-import { monthToDate, budgetLine, CAPS } from "./cost/budget.mjs"
+import { monthToDate, budgetLine, runCapLines, CAPS } from "./cost/budget.mjs"
+import { loadCaps } from "./cost/ledger.mjs"
 import { loadPrices, vendorCost } from "./cost/compute.mjs"
 import { extendVocab } from "./trace/redact.mjs"
 import { loadCatalog, loadMapping, drift } from "./cost/catalog.mjs"
 import { runCost, totals, trustOf } from "./cost/rule.mjs"
 import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "./label/kit.mjs"
+import { storeRoot, rawRoot, tracesDir } from "./store.mjs"
+import { splitTrial, trialName, caseEntry, byCase, trialStats } from "./grade/trials.mjs"
+import { selectCases } from "./case/sets.mjs"
+import { builtinCollisions } from "./grade/select.mjs"
+import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
+import { rawCallArgs } from "./trace/rawArgs.mjs"
+import { compare as compareArms, renderReport } from "./report/arms.mjs"
+import { runBatch, batchTmp } from "./run/runner.mjs"
+import { buildImage, checkIsolation, containerBackend, containerConfig } from "./run/container.mjs"
+import { segment } from "./run/paths.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
 const args = (argv) => {
@@ -53,7 +72,7 @@ const args = (argv) => {
 }
 
 const path = (...parts) => join(ROOT, ...parts)
-const storePath = () => process.env.EVALS_STORE ?? join(ROOT, "..", "private", "store")
+const storePath = () => storeRoot()
 const read = (file) => readFileSync(file, "utf8")
 const write = (file, text) => {
   mkdirSync(dirname(file), { recursive: true })
@@ -63,14 +82,13 @@ const json = (value) => JSON.stringify(value, null, 2)
 const ensureDir = (dir) => mkdirSync(dir, { recursive: true })
 const listCases = (dir) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".md")).sort() : [])
 
-function compileAll(plugin = "x", { check = false } = {}) {
-  const dir = path("cases", plugin)
+function compileAll(plugin = "x", { check = false, dir = path("cases", plugin) } = {}) {
   const files = listCases(dir)
   if (!files.length) throw new Error(`no cases in ${dir}`)
   // Compile every case before writing any: a broken case must not leave a half-written case set.
   const compiled = files.map((file) => {
     const text = read(join(dir, file))
-    const caseObject = compileCase(join("cases", plugin, file), text)
+    const caseObject = compileCase(dir === path("cases", plugin) ? join("cases", plugin, file) : join("holdouts", plugin, file), text)
     const previous = join(dir, file.replace(/\.md$/, ".json"))
     const next = `${json(caseObject)}\n`
     const changed = !existsSync(previous) || read(previous) !== next
@@ -93,6 +111,8 @@ function graderHash() {
     "src/grade/select.mjs",
     "src/trace/analyse.mjs",
     "src/trace/redact.mjs",
+    "src/trace/rawArgs.mjs",
+    "src/grade/trials.mjs",
     "src/grade/gold.mjs",
   ]
   const digests = {}
@@ -122,37 +142,65 @@ function stateFor(iteration, caseName) {
   return existsSync(file) ? JSON.parse(read(file)) : null
 }
 
-function gradeAll(iteration, casesDir = path("cases", "x"), tracesDir = join(storePath(), "traces", iteration), rawDir = process.env.EVALS_RAW ?? join(ROOT, "..", "private", "raw"), plugin = "x") {
-  const cases = casesDir.endsWith(".json") ? [] : listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
+function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir = rawRoot(), plugin = "x") {
   const results = []
+  const pack = readSnapshot(plugin, ROOT)
+  const scope = pack ? { ns: plugin, tools: new Set((pack.tools ?? []).map((tool) => tool.name)) } : null
+  // Every trial of a case is graded: `<case>.trace.jsonl` (one trial, recorded before trials were kept per file) and
+  // `<case>.t<k>.trace.jsonl`.
+  const files = existsSync(traceDir) ? readdirSync(traceDir).filter((f) => f.endsWith(".trace.jsonl")) : []
+  const trialsOf = (id) =>
+    files
+      .map((file) => ({ file, ...splitTrial(file.replace(/\.trace\.jsonl$/, "")) }))
+      .filter((entry) => entry.case === id)
+      .sort((a, b) => (a.trial ?? 0) - (b.trial ?? 0))
   for (const caseObject of cases) {
-    const traceFile = join(tracesDir, `${caseObject.id}.trace.jsonl`)
-    if (!existsSync(traceFile)) {
+    const found = trialsOf(caseObject.id)
+    if (!found.length) {
       results.push({ case: caseObject.id, plugin: caseObject.plugin, verdict: "NOT_RUN", items: [], coverage: { declared: caseObject.items.length }, note: "no trace for this case in the iteration" })
       continue
     }
-    const lines = read(traceFile).split("\n").filter(Boolean)
-    const rawBase = join(rawDir, iteration, plugin, caseObject.id)
-    let text = null
-    if (existsSync(`${rawBase}.jsonl`)) {
-      const last = [...read(`${rawBase}.jsonl`).split("\n").filter(Boolean)]
-        .reverse()
-        .map((l) => JSON.parse(l))
-        .find((e) => e.type === "text")
-      text = last?.part?.text ?? null
+    for (const { file, trial } of found) {
+      const lines = read(join(traceDir, file)).split("\n").filter(Boolean)
+      const rawBase = join(rawDir, iteration, plugin, trialName(caseObject.id, trial))
+      let text = null
+      let rawArgs = null
+      if (existsSync(`${rawBase}.jsonl`)) {
+        const rawLines = read(`${rawBase}.jsonl`).split("\n").filter(Boolean)
+        const last = [...rawLines]
+          .reverse()
+          .map((l) => JSON.parse(l))
+          .find((e) => e.type === "text")
+        text = last?.part?.text ?? null
+        // The arguments the case declares checkable are read from the recording here, and kept out of every trace.
+        if (caseObject.checkable?.length) rawArgs = rawCallArgs(rawLines)
+      }
+      const files = existsSync(`${rawBase}.files.json`) ? JSON.parse(read(`${rawBase}.files.json`)) : null
+      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id), scope, rawArgs, checkable: caseObject.checkable ?? [], files })
+      results.push({ ...gradeCase(caseObject, view), ...(trial ? { trial } : {}) })
     }
-    const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) })
-    results.push(gradeCase(caseObject, view))
   }
   return results
 }
 
+/**
+ * Why a graded iteration no longer says what the code would say: the grader or the case set moved since it was
+ * graded. A stale batch is reported, never silently trusted; `evals grade` again refreshes it.
+ */
+function staleness(batch, plugin) {
+  const why = []
+  if (batch.grader_sha256 && batch.grader_sha256 !== graderHash()) why.push(`graded by grader \`${short(batch.grader_sha256)}\`; the grader is now \`${short(graderHash())}\`. Re-run \`evals grade --iteration ${batch.iteration} --plugin ${plugin}\`.`)
+  const cases = pluginCases(plugin)
+  if (cases.length && batch.case_set?.cases_sha256 && batch.case_set.cases_sha256 !== casesDigest(cases)) why.push(`graded against case set \`${short(batch.case_set.cases_sha256)}\`; the cases are now \`${short(casesDigest(cases))}\`.`)
+  return why
+}
+
 const batchDigest = (results) =>
-  digestOf(results.map((r) => ({ case: r.case, verdict: r.verdict, items: (r.items ?? []).map((i) => [i.id, i.state]) })))
+  digestOf(results.map((r) => ({ case: r.case, ...(r.trial ? { trial: r.trial } : {}), verdict: r.verdict, items: (r.items ?? []).map((i) => [i.id, i.state]) })))
 
 /** The provenance of one iteration, read from its first trace head. */
-function iterationProvenance(iteration) {
-  const dir = join(storePath(), "traces", iteration)
+function iterationProvenance(iteration, plugin = "x") {
+  const dir = tracesDir(iteration, plugin)
   if (!existsSync(dir)) return {}
   const first = readdirSync(dir).filter((f) => f.endsWith(".trace.jsonl")).sort()[0]
   if (!first) return {}
@@ -160,17 +208,15 @@ function iterationProvenance(iteration) {
   const files = readdirSync(dir).filter((f) => f.endsWith(".trace.jsonl")).sort()
   const texts = files.map((f) => {
     const lines = read(join(dir, f)).split("\n").filter(Boolean).map((l) => JSON.parse(l))
-    return `${lines[0].case}:${lines[0].summary?.text?.sha256 ?? ""}`
+    return `${splitTrial(f.replace(/\.trace\.jsonl$/, "")).trial ? f.replace(/\.trace\.jsonl$/, "") : lines[0].case}:${lines[0].summary?.text?.sha256 ?? ""}`
   })
-  const heads = files.map((f) => JSON.parse(read(join(dir, f)).split("\n")[0]))
+  const heads = files.map((f) => ({ ...JSON.parse(read(join(dir, f)).split("\n")[0]), file: f }))
   const costs = heads.map((head) => head.summary?.cost ?? {})
   // The vendor side is a separate wallet, at the plugin's own rates, from the resources each trace recorded.
   const prices = loadPrices()
   const vendor = heads.reduce((sum, head) => {
-    const file = files.find((f) => f.startsWith(`${head.case}.trace`))
-    if (!file) return sum
-    const calls = runView(read(join(dir, file)).split("\n").filter(Boolean)).calls.filter((call) => call.via === "execute")
-    return sum + (vendorCost(calls, "x", prices).amount_usd ?? 0)
+    const calls = runView(read(join(dir, head.file)).split("\n").filter(Boolean)).calls.filter((call) => call.via === "execute")
+    return sum + (vendorCost(calls, plugin, prices).amount_usd ?? 0)
   }, 0)
   return {
     head,
@@ -201,10 +247,10 @@ function iterationProvenance(iteration) {
   }
 }
 
-function batchSummary(iteration, results, caseSet) {
+function batchSummary(iteration, results, caseSet, plugin = caseSet[0]?.plugin ?? "x") {
   const graded = results.filter((r) => r.verdict !== "NOT_RUN")
   const pairs = graded.flatMap((r) => r.pairs ?? [])
-  const provenance = iterationProvenance(iteration)
+  const provenance = iterationProvenance(iteration, plugin)
   return {
     iteration,
     harness_version: harnessVersion(),
@@ -223,9 +269,12 @@ function batchSummary(iteration, results, caseSet) {
       },
       skills: { sha256: provenance.head?.provenance?.skills?.sha256 ?? null, source: provenance.head?.provenance?.skills?.source ?? "unrecorded" },
       ...Object.fromEntries(["descriptions", "namespace", "tools", "rules"].map((axis) => [axis, { sha256: provenance.head?.provenance?.[axis]?.sha256 ?? null, source: provenance.head?.provenance?.[axis]?.source ?? "unrecorded" }])),
+      options: provenance.head?.provenance?.options ?? { sha256: DEFAULT_OPTIONS, source: "default" },
       plugin: { ...(provenance.head?.provenance?.plugin ?? {}), source: provenance.head?.provenance?.plugin?.source ?? "unrecorded" },
       quality: provenance.head?.provenance?.quality ?? "unrecorded",
     },
+    // Trials per case, strict pass (every blocker and major item) and pass^k: what one PASS cannot say.
+    ...trialStats(results),
     case_set: {
       plugin: caseSet[0]?.plugin ?? "x",
       cases: caseSet.length,
@@ -236,7 +285,7 @@ function batchSummary(iteration, results, caseSet) {
     batch_sha256: batchDigest(results),
     coverage: {
       cases_declared: caseSet.length,
-      cases_run: graded.length,
+      cases_run: byCase(graded).size,
       items_declared: caseSet.reduce((n, c) => n + c.items.length, 0),
       items_executed: graded.reduce((n, r) => n + (r.coverage?.executed ?? 0), 0),
       items_testable: graded.reduce((n, r) => n + (r.coverage?.testable ?? 0), 0),
@@ -245,18 +294,7 @@ function batchSummary(iteration, results, caseSet) {
       items_na: graded.reduce((n, r) => n + (r.coverage?.na ?? 0), 0),
       items_advisory: graded.reduce((n, r) => n + (r.coverage?.advisory ?? 0), 0),
     },
-    cases: graded.map((r) => ({
-      case: r.case,
-      verdict: r.verdict,
-      failed: r.failed,
-      failed_blockers: r.failed_blockers ?? [],
-      failed_majors: r.failed_majors ?? [],
-      blocked: [...(r.blocked ?? []), ...(r.blocked_minor ?? [])],
-      findings: r.findings,
-      na: r.na,
-      forbidden_violations: r.forbidden_violations,
-      budget: r.budget,
-    })),
+    cases: [...byCase(graded).values()].map(caseEntry),
     tokens: graded.reduce(
       (n, r) => ({ total: n.total + (r.budget?.tokens ?? 0), calls: n.calls + (r.budget?.outer_calls ?? 0) + (r.budget?.inner_calls ?? 0) }),
       { total: 0, calls: 0 },
@@ -265,19 +303,51 @@ function batchSummary(iteration, results, caseSet) {
   }
 }
 
+const usage = () => {
+  const lines = read(fileURLToPath(import.meta.url)).split("\n")
+  const end = lines.findIndex((line) => !line.startsWith("//"))
+  return lines.slice(0, end).map((line) => line.replace(/^\/\/ ?/, "")).join("\n")
+}
+
 export async function main(argv) {
   const command = argv[0]
   const opt = args(argv.slice(1))
+  // `--help` never runs a command: `compile --help` used to compile and rewrite the x cases.
+  if (!command || opt.help || argv.includes("-h") || command === "help") {
+    console.log(usage())
+    return
+  }
+  // An iteration or a plugin id is a directory name in the store: one safe segment, never a path.
+  for (const key of ["iteration", "plugin", "a", "b"]) if (typeof opt[key] === "string") segment(`--${key}`, opt[key])
   switch (command) {
     case "compile": {
-      const plugin = opt.plugin ?? "x"
-      const compiled = compileAll(plugin, { check: Boolean(opt.check) })
-      const cases = compiled.map((c) => c.caseObject)
-      const share = codedShare(cases)
-      for (const { caseObject, changed, file } of compiled) {
-        console.log(`${changed ? "wrote" : "same "} ${file.replace(/\.md$/, ".json")}  items ${caseObject.items.length}`)
+      if (!opt.plugin && !opt.all) throw new Error("evals compile --plugin <id>, or --all for every cases/<id>; add --check to write nothing")
+      const plugins = opt.all ? readdirSync(path("cases")).filter((name) => listCases(path("cases", name)).length).sort() : [opt.plugin]
+      let changes = 0
+      for (const plugin of plugins) {
+        // --holdouts compiles the store's private holdouts for the plugin, in the store.
+        const dir = opt.holdouts ? privateHoldoutsDir(plugin) : path("cases", plugin)
+        // Compiled and checked before anything is written: a refused case set leaves the JSON as it was.
+        const compiled = compileAll(plugin, { check: true, dir })
+        const cases = compiled.map((c) => c.caseObject)
+        const share = codedShare(cases)
+        // A bare name that is both an OpenCode built-in and a tool of this plugin means every tool of that name.
+        const pack = readSnapshot(plugin, ROOT)
+        const collisions = pack ? cases.map((c) => [c.id, builtinCollisions(c, (pack.tools ?? []).map((tool) => tool.name))]).filter(([, names]) => names.length) : []
+        if (collisions.length) {
+          throw new Error(`${collisions.length} ${plugin} case(s) name a tool bare that is both OpenCode's built-in and ${plugin}'s: write ${plugin}.<name> for ${plugin}'s, or keep the bare name for every tool of that name only where ${plugin} has none\n  ${collisions.map(([id, n]) => `${id}: ${n.join(", ")}`).join("\n  ")}`)
+        }
+        if (!opt.check) for (const { previous, next, changed } of compiled) if (changed) write(previous, next)
+        for (const { caseObject, changed, file } of compiled) {
+          if (changed) changes++
+          if (changed || !opt.check) console.log(`${changed ? (opt.check ? "stale" : "wrote") : "same "} ${plugin}/${file.replace(/\.md$/, ".json")}  items ${caseObject.items.length}`)
+        }
+        console.log(`${plugin}: cases ${cases.length}  items ${share.total}  coded ${share.coded} (${Math.round(share.share * 100)}%)  digest ${short(casesDigest(cases))}`)
       }
-      console.log(`cases ${cases.length}  items ${share.total}  coded ${share.coded} (${Math.round(share.share * 100)}%)  digest ${short(casesDigest(cases))}`)
+      if (opt.check && changes) {
+        console.log(`${changes} compiled case(s) differ from their markdown: run \`evals compile --plugin <id>\` and commit the JSON`)
+        process.exitCode = 1
+      }
       return
     }
     case "lock": {
@@ -287,35 +357,42 @@ export async function main(argv) {
     }
     case "trace": {
       const iteration = opt.iteration ?? "nx6"
-      const from = opt.from ?? process.env.EVALS_RECORDINGS ?? ""
-      const out = opt.out ?? join(storePath(), "traces", iteration)
-      if (opt.plugin) extendVocab(readPack(opt.plugin).vocab)
+      const plugin = opt.plugin ?? "x"
+      const from = opt.from ?? process.env.EVALS_RECORDINGS ?? join(rawRoot(), iteration, plugin)
+      const out = opt.out ?? join(storePath(), "traces", iteration, plugin)
+      if (opt.plugin && (readSnapshot(opt.plugin, ROOT) || repoAvailable(opt.plugin))) extendVocab(readPack(opt.plugin).vocab)
       const manifestFile = path("fixtures", "recordings", "manifest.json")
       const manifest = existsSync(manifestFile) ? JSON.parse(read(manifestFile)) : {}
       const entry = manifest[iteration] ?? {}
       ensureDir(out)
       const files = readdirSync(from).filter((f) => f.endsWith(".jsonl") && !f.includes("summary"))
       for (const file of files) {
-        const caseName = basename(file, ".jsonl")
-        const summaryPath = join(from, `${caseName}.summary.json`)
+        // `<case>.t<k>.jsonl` is trial k of the case; the trace keeps the index and every trial's file.
+        const fileName = basename(file, ".jsonl")
+        const { case: caseName, trial } = splitTrial(fileName)
+        const summaryPath = join(from, `${fileName}.summary.json`)
         const summary = existsSync(summaryPath) ? JSON.parse(read(summaryPath)) : {}
         // A runner that records its own provenance (summary.provenance) is trusted over the hand-kept manifest.
         const prov = summary.provenance ?? null
-        const caseDigest = opt.plugin ? casesDigest(loadCases(opt.plugin)) : null
+        const caseDigest = opt.plugin ? casesDigest(pluginCases(opt.plugin)) : null
         const axis = (value) => (value ? { sha256: value, source: "recorded" } : { sha256: null, source: "unrecorded" })
         const trace = traceFromFiles({
           caseName,
+          trial,
           iteration,
-          base: join(from, caseName),
+          plugin,
+          base: join(from, fileName),
           manifest: prov
             ? {
-                recorded: { iteration, date: summary.started_at ?? entry.date ?? null, runner: summary.runner ?? "lab/run/run.mjs", model: summary.model, opencode: summary.opencode ?? null },
+                recorded: { iteration, date: summary.started_at ?? entry.date ?? null, runner: summary.runner ?? "unrecorded", runner_version: summary.runner_version ?? null, model: summary.model, opencode: summary.opencode ?? null },
                 plugin: { version: prov.plugin_version ?? null, commit: prov.plugin_commit ?? null, sha256: prov.plugin ?? null, source: prov.plugin ? "recorded" : "unrecorded" },
                 skills: axis(prov.skills),
                 descriptions: axis(prov.descriptions),
                 namespace: axis(prov.namespace),
                 tools: axis(prov.tools),
                 rules: axis(prov.rules),
+                // Options are recorded by digest; a runner that records none ran the plugin with none.
+                options: prov.options ? { sha256: prov.options, source: "recorded", ...(prov.access ? { access: prov.access } : {}) } : { sha256: DEFAULT_OPTIONS, source: "default" },
                 cases: { sha256: caseDigest, source: caseDigest ? "recorded" : "unrecorded", rule_set: prov.rule_set ?? null },
                 quality: "recorded",
               }
@@ -330,22 +407,25 @@ export async function main(argv) {
           model: summary.model ?? entry.model ?? "claude-agent/opus#high",
           stderr: summary.stderr ?? "",
         })
-        writeFileSync(join(out, `${caseName}.trace.jsonl`), `${trace.lines.join("\n")}\n`)
+        writeFileSync(join(out, `${fileName}.trace.jsonl`), `${trace.lines.join("\n")}\n`)
       }
       console.log(`traced ${files.length} runs of ${iteration} -> ${out}`)
       return
     }
     case "grade": {
       const iteration = opt.iteration ?? "nx6"
-      const cases = loadCases(opt.plugin ?? "x")
-      const results = gradeAll(iteration, path("cases", opt.plugin ?? "x"), undefined, undefined, opt.plugin ?? "x")
-      const summary = batchSummary(iteration, results, cases)
+      const plugin = opt.plugin ?? "x"
+      // The repository's cases and the store's private holdouts, or exactly the directory --cases names.
+      const cases = pluginCases(plugin, { dir: opt.cases ?? null })
+      const results = gradeAll(iteration, cases, opt.traces ?? tracesDir(iteration, plugin), opt.raw ?? rawRoot(), plugin)
+      const summary = batchSummary(iteration, results, cases, plugin)
       const out = opt.out ?? join(storePath(), "results", iteration)
       ensureDir(out)
       write(join(out, "verdicts.json"), json(results))
       write(join(out, "batch.json"), json(summary))
       const counts = results.reduce((acc, r) => ({ ...acc, [r.verdict]: (acc[r.verdict] ?? 0) + 1 }), {})
-      console.log(`${iteration}: ${JSON.stringify(counts)}  items ${summary.coverage.items_testable}/${summary.coverage.items_executed} testable, ${summary.coverage.items_blocked} blocked, ${summary.coverage.items_na} n/a  -> ${out}`)
+      const pct = (value) => (value === null ? "n/a" : `${Math.round(value * 100)}%`)
+      console.log(`${iteration}: ${JSON.stringify(counts)}  items ${summary.coverage.items_testable}/${summary.coverage.items_executed} testable, ${summary.coverage.items_blocked} blocked, ${summary.coverage.items_na} n/a  strict ${pct(summary.strict.rate)} of ${summary.strict.runs} run(s), k=${summary.trials.min}${summary.trials.max !== summary.trials.min ? `-${summary.trials.max}` : ""} pass^k ${pct(summary.pass_k.strict)} strict  -> ${out}`)
       return
     }
     case "scorecard": {
@@ -357,10 +437,12 @@ export async function main(argv) {
       const comparison = hand ? compareToHandGrading(results, hand) : null
       // Every disagreement must carry an authored explanation; the note lives in the case's `## Notes`.
       const notes = {}
-      for (const caseObject of loadCases(opt.plugin ?? "x")) {
+      for (const caseObject of pluginCases(opt.plugin ?? batch.case_set?.plugin ?? "x")) {
         for (const note of caseObject.notes ?? []) if (note.id) notes[note.id] = note.text
       }
-      const text = renderScorecard({ batch, results, comparison, iteration, notes })
+      const plugin = opt.plugin ?? batch.case_set?.plugin ?? "x"
+      const title = readSnapshot(plugin, ROOT)?.name ?? plugin
+      const text = renderScorecard({ batch, results, comparison, iteration, notes, title, stale: staleness(batch, plugin) })
       const out = opt.out ?? join(storePath(), "results", iteration, "scorecard.md")
       write(out, text)
       write(join(storePath(), "results", iteration, "scorecard.json"), json({ batch, comparison }))
@@ -389,6 +471,8 @@ export async function main(argv) {
         "| --- | --- |",
         `| shared cases | ${n.sharedCases} |`,
         `| pass rate (items testable/executed) | ${n.passRate.a === null ? "—" : n.passRate.a.toFixed(3)} -> ${n.passRate.b === null ? "—" : n.passRate.b.toFixed(3)} |`,
+        `| strict pass (every blocker and major, per run) | ${n.strict.a === null ? "—" : n.strict.a.toFixed(3)} -> ${n.strict.b === null ? "—" : n.strict.b.toFixed(3)} |`,
+        `| strict pass^k (cases whose every trial passed) | ${n.passK.a === null ? "—" : n.passK.a.toFixed(3)} -> ${n.passK.b === null ? "—" : n.passK.b.toFixed(3)} (k=${n.trials}) |`,
         `| cases fixed | ${n.fixes.length ? n.fixes.join(", ") : "—"} |`,
         `| cases regressed | ${n.caseRegressions.length ? n.caseRegressions.join(", ") : "—"} |`,
         `| new blocker failures | ${n.newBlockerFailures.length ? n.newBlockerFailures.join(", ") : "—"} |`,
@@ -399,6 +483,107 @@ export async function main(argv) {
         `Comparability: ${comparison.why.length ? comparison.why.join("; ") : "every axis but the one under test matches"}.`,
       ]
       console.log(lines.join("\n"))
+      return
+    }
+    case "run": {
+      const result = await runBatch({
+        plugin: opt.plugin,
+        iteration: opt.iteration,
+        model: opt.model,
+        auth: opt.auth,
+        cases: opt.cases,
+        set: opt.set,
+        trials: opt.trials,
+        parallel: opt.parallel,
+        arm: opt.arm,
+        world: opt.world,
+        host: opt.host,
+        timeout: opt.timeout,
+        options: opt.options,
+        stale: opt.stale,
+        casesDir: opt["cases-dir"],
+        dryRun: Boolean(opt["dry-run"]),
+        keep: Boolean(opt.keep),
+        keepCredentials: Boolean(opt["keep-credentials"]),
+        isolation: opt.isolation,
+        scripted: Boolean(opt.scripted),
+        unsafeNoIsolation: Boolean(opt["unsafe-no-isolation"]),
+        acceptUnknownTokenExpiry: Boolean(opt["accept-unknown-token-expiry"]),
+        append: Boolean(opt.append),
+      })
+      if (result.results?.some((r) => r.error)) process.exitCode = 1
+      return
+    }
+    case "isolation": {
+      const action = opt._[0] ?? "check"
+      const config = containerConfig({ store: storeRoot(), env: process.env })
+      if (action === "build") {
+        console.log(`built ${await buildImage({ config })}`)
+        return
+      }
+      if (action === "check") {
+        const report = await checkIsolation({ config })
+        console.log(JSON.stringify(report, null, 1))
+        if (!report.docker || !report.image_id) {
+          console.log(!report.docker ? "Docker is not usable by this user." : "The image is missing: run `evals isolation build`.")
+          process.exitCode = 1
+        }
+        return
+      }
+      if (action === "sweep") {
+        const backend = containerBackend(config)
+        backend.client(process.env)
+        const removed = await backend.sweep({ tmpRoot: batchTmp(process.env) })
+        console.log(`removed ${removed.containers} container(s), ${removed.networks} network(s) and ${removed.dirs} batch director${removed.dirs === 1 ? "y" : "ies"} left by batches whose runner is gone`)
+        return
+      }
+      throw new Error("evals isolation build|check|sweep")
+    }
+    case "report": {
+      // Arms over trials: strict pass, pass^k, item rates, and a paired bootstrap against the first arm.
+      const arms = opt._.map((spec) => {
+        const at = spec.indexOf("=")
+        if (at < 1) throw new Error(`an arm is <label>=<iteration>[,<iteration>...], not ${JSON.stringify(spec)}`)
+        return { label: spec.slice(0, at), iterations: spec.slice(at + 1).split(",").filter(Boolean).map((it) => segment("iteration", it)) }
+      })
+      if (!arms.length) throw new Error("evals report <label>=<iteration>[,<iteration>...] ...")
+      const verdictsOf = (iteration) => {
+        const file = join(storePath(), "results", iteration, "verdicts.json")
+        if (!existsSync(file)) throw new Error(`not graded: ${iteration} (run evals grade --iteration ${iteration})`)
+        return JSON.parse(read(file))
+      }
+      const loaded = arms.map((arm) => ({ ...arm, results: arm.iterations.map((iteration) => ({ iteration, results: verdictsOf(iteration) })) }))
+      const plugin = opt.plugin ?? loaded[0].results[0]?.results.find((r) => r.plugin)?.plugin ?? "x"
+      const caseList = pluginCases(plugin)
+      const meta = new Map(caseList.map((c) => [c.id, c]))
+      const keep = new Set(selectCases(caseList, { patterns: opt.cases ?? "*", set: opt.set ?? "all" }).selected.map((c) => c.id))
+      // A time-window case (`Seed: time=day`) asks about the world's day: a run recorded on another UTC day asked a
+      // different question, so it is dropped, whatever arm it belongs to.
+      let dropped = 0
+      const sameDay = (iteration, run) => {
+        if (!/(^|\s)time=day(\s|$)/.test(meta.get(run.case)?.seed ?? "")) return true
+        const file = join(rawRoot(), iteration, plugin, `${trialName(run.case, run.trial)}.summary.json`)
+        if (!existsSync(file)) return true
+        const summary = JSON.parse(read(file))
+        const worldNow = summary.world?.now ?? summary.corpus_now
+        if (!worldNow || !summary.started_at) return true
+        return String(summary.started_at).slice(0, 10) === new Date(worldNow).toISOString().slice(0, 10)
+      }
+      const armsIn = loaded.map((arm) => ({
+        label: arm.label,
+        iterations: arm.iterations,
+        runs: arm.results.flatMap(({ iteration, results }) =>
+          results.filter((run) => run.verdict !== "NOT_RUN" && keep.has(run.case)).filter((run) => (sameDay(iteration, run) ? true : (dropped++, false))),
+        ),
+      }))
+      const report = compareArms(armsIn, { allCases: Boolean(opt["all-cases"]), resamples: Number(opt.resamples ?? 5000) })
+      if (opt.json) {
+        console.log(json({ ...report, rows: report.rows.map(({ byCase: _, ...row }) => row), dropped }))
+        return
+      }
+      console.log(`# report, ${plugin}${opt.set ? ` (set ${opt.set})` : ""}\n`)
+      console.log(renderReport(report, { detail: Boolean(opt.detail) }))
+      if (dropped) console.log(`\n${dropped} time-window run(s) dropped: recorded on another UTC day than their world's.`)
       return
     }
     case "t0": {
@@ -416,11 +601,29 @@ export async function main(argv) {
       return
     }
     case "verify": {
+      if (opt.all) {
+        // Every graded iteration in the store, against the grader and the cases as they are now: no re-grading.
+        const root = join(storePath(), "results")
+        const rows = (existsSync(root) ? readdirSync(root) : [])
+          .filter((name) => existsSync(join(root, name, "batch.json")))
+          .sort()
+          .map((name) => {
+            const batch = JSON.parse(read(join(root, name, "batch.json")))
+            const plugin = batch.case_set?.plugin ?? "x"
+            return { iteration: name, plugin, why: staleness(batch, plugin) }
+          })
+        for (const row of rows) console.log(`${row.why.length ? "STALE  " : "current"} ${row.iteration.padEnd(24)} ${row.plugin.padEnd(10)} ${row.why.join(" ")}`)
+        const stale = rows.filter((row) => row.why.length).length
+        console.log(`\n${rows.length} graded iteration(s), ${stale} stale`)
+        if (stale) process.exitCode = 1
+        return
+      }
       const failures = []
       const iteration = opt.iteration ?? "nx6"
       const summaryFile = join(storePath(), "results", iteration, "batch.json")
       if (!existsSync(summaryFile)) throw new Error(`no batch at ${summaryFile}; run grade first`)
       const previous = JSON.parse(read(summaryFile))
+      for (const why of staleness(previous, opt.plugin ?? previous.case_set?.plugin ?? "x")) failures.push(`stale: ${why}`)
       const cases = loadCases(opt.plugin ?? "x")
       const lockFile = path("cases", opt.plugin ?? "x", "evals.lock")
       if (existsSync(lockFile)) {
@@ -428,8 +631,9 @@ export async function main(argv) {
         if (lock.cases_sha256 !== casesDigest(cases)) failures.push(`the case set moved since the lock: ${short(lock.cases_sha256)} -> ${short(casesDigest(cases))}`)
         if (lock.grader_sha256 !== graderHash()) failures.push(`the grader moved since the lock: ${short(lock.grader_sha256)} -> ${short(graderHash())}`)
       } else failures.push("no cases/x/evals.lock")
-      const results = gradeAll(iteration, path("cases", opt.plugin ?? "x"), undefined, undefined, opt.plugin ?? "x")
-      const again = batchSummary(iteration, results, cases)
+      const graded = pluginCases(opt.plugin ?? "x")
+      const results = gradeAll(iteration, graded, tracesDir(iteration, opt.plugin ?? "x"), undefined, opt.plugin ?? "x")
+      const again = batchSummary(iteration, results, graded, opt.plugin ?? "x")
       if (again.batch_sha256 !== previous.batch_sha256) failures.push(`batch digest moved: ${short(previous.batch_sha256)} -> ${short(again.batch_sha256)}`)
       if (canonical(again.coverage) !== canonical(previous.coverage)) failures.push("coverage moved")
       const verdicts = JSON.parse(read(join(storePath(), "results", iteration, "verdicts.json")))
@@ -455,10 +659,11 @@ export async function main(argv) {
     case "pack": {
       // CI has no checkouts: the committed snapshots are verified on their own, which is a real check —
       // schema, digest, counts and the family's invariants. A machine with checkouts also reports drift.
-      const ids = opt._.length ? opt._ : packIds(ROOT)
+      // Every committed snapshot, and every plugin checkout configuration points at (EVALS_PLUGIN_ROOT, EVALS_REPO_<ID>).
+      const ids = opt._.length ? opt._ : allPackIds(ROOT)
       if (!ids.length) throw new Error("no packs to verify: packs/<id>/pack.json is missing")
       let failures = 0
-      let drifted = 0
+      const drifted = []
       const report = []
       for (const id of ids) {
         if (opt.sync) {
@@ -468,10 +673,26 @@ export async function main(argv) {
           }
           const before = readSnapshot(id, ROOT)
           const live = derivePack(id)
+          const problems = familyProblems(live)
+          if (problems.length && !before) {
+            console.log(`${id.padEnd(10)} skipped: not a family pack — ${problems.join("; ")}`)
+            continue
+          }
           const drift = before ? driftReport(live, before) : null
           const pack = writePack(id)
-          if (drift?.drift) drift ? console.log(renderDrift(id, drift)) : null
-          console.log(`${id.padEnd(10)} synced  tools ${pack.counts.tools} (${pack.counts.reads} read, ${pack.counts.writes} write, ${pack.counts.denied} denied)  skills ${pack.counts.skills}  ${pack.digest.slice(0, 12)}`)
+          if (drift?.drift) console.log(renderDrift(id, drift))
+          console.log(`${id.padEnd(10)} ${before ? "synced " : "created"}  tools ${pack.counts.tools} (${pack.counts.reads} read, ${pack.counts.writes} write, ${pack.counts.denied} denied)  skills ${pack.counts.skills}  access ${pack.access?.default ?? "—"}  ${pack.digest.slice(0, 12)}`)
+          continue
+        }
+        if (!readSnapshot(id, ROOT) && repoAvailable(id)) {
+          const problems = familyProblems(derivePack(id))
+          // A checkout that is not a family plugin has no pack to differ from: named, never counted.
+          if (problems.length) {
+            report.push(`${id.padEnd(10)} skipped: not a family plugin — ${problems.join("; ")}`)
+            continue
+          }
+          drifted.push(id)
+          report.push(`${id.padEnd(10)} no snapshot: \`evals pack --sync ${id}\` creates one`)
           continue
         }
         const verified = verifyFromRepo(id, ROOT)
@@ -482,7 +703,7 @@ export async function main(argv) {
           if (repoAvailable(id)) {
             const drift = driftReport(derivePack(id), pack)
             if (drift.drift) {
-              drifted++
+              drifted.push(id)
               line += "\n" + renderDrift(id, drift)
             }
           }
@@ -492,16 +713,16 @@ export async function main(argv) {
         }
       }
       console.log(report.join("\n"))
-      if (!opt.sync && !failures && drifted) {
-        console.log(`\n${drifted} pack(s) differ from their checkout: \`evals pack --sync\` refreshes a snapshot after review.`)
+      if (!opt.sync && !failures && drifted.length) {
+        console.log(`\n${drifted.length} pack(s) differ from their checkout (${drifted.join(", ")}): \`evals pack --sync\` refreshes a snapshot after review.`)
         if (opt.strict) process.exitCode = 1
       }
       if (failures) process.exitCode = 1
       return
     }
     case "t1": {
-      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
-      const ids = opt.plugin ? [opt.plugin] : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear", "history"]
+      const store = opt.store ?? storePath()
+      const ids = opt.plugin ? [opt.plugin] : allPackIds(ROOT).filter((id) => readSnapshot(id, ROOT))
       const versions = opt.versions ? String(opt.versions).split(",") : undefined
       const packs = ids.filter((id) => {
         if (repoAvailable(id)) return true
@@ -522,7 +743,7 @@ export async function main(argv) {
       return
     }
     case "t0-all": {
-      const ids = opt._.length ? opt._ : ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear", "history"]
+      const ids = opt._.length ? opt._ : allPackIds(ROOT).filter((id) => readSnapshot(id, ROOT))
       let failed = 0
       for (const id of ids) {
         const report = checkPack(readPack(id), repoAvailable(id) ? pluginRepo(id) : null)
@@ -539,18 +760,19 @@ export async function main(argv) {
       return
     }
     case "budget": {
-      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const store = opt.store ?? storePath()
       const mtd = monthToDate(store)
-      console.log(opt.json ? json({ ...mtd, caps: CAPS }) : budgetLine(store))
+      if (opt.json) console.log(json({ ...mtd, caps: CAPS, run_caps: loadCaps(store) }))
+      else console.log([budgetLine(store), ...runCapLines(store).map((line) => `  ${line}`)].join("\n"))
       return
     }
     case "cost": {
-      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const store = opt.store ?? storePath()
       const iteration = opt.iteration ?? "nx6"
       const prices = loadPrices()
       const catalog = loadCatalog()
       const mapping = loadMapping()
-      const dir = join(store, "traces", iteration)
+      const dir = tracesDir(iteration, opt.plugin ?? "x")
       if (!existsSync(dir)) throw new Error(`no traces for ${iteration} in ${store}`)
       let runDate = null
       const rows = []
@@ -593,7 +815,7 @@ export async function main(argv) {
       return
     }
     case "label": {
-      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const store = opt.store ?? storePath()
       const plugin = opt.plugin ?? "x"
       const iteration = opt.iteration ?? "nx6"
       if (opt.report) {
@@ -609,7 +831,7 @@ export async function main(argv) {
       }
       const rawDir = join(store, "raw", iteration, plugin)
       const textFor = (item) => {
-        const file = join(rawDir, `${item.case}.jsonl`)
+        const file = join(rawDir, `${trialName(item.case, item.trial)}.jsonl`)
         if (!existsSync(file)) return null
         const last = read(file).split("\n").filter(Boolean).map((line) => JSON.parse(line)).filter((event) => event.type === "text").pop()
         return last?.part?.text ?? null
@@ -624,7 +846,7 @@ export async function main(argv) {
     }
     case "check": {
       const plugin = opt.plugin ?? "x"
-      const store = opt.store ?? process.env.EVALS_STORE ?? path("..", "private", "store")
+      const store = opt.store ?? storePath()
       const repo = repoAvailable(plugin) ? pluginRepo(plugin) : null
       const blockers = []
       console.log(`# check — ${plugin}`)
@@ -655,6 +877,7 @@ export async function main(argv) {
       return
     }
     default:
-      console.log(read(path("README.md")).split("\n").slice(0, 30).join("\n"))
+      console.log(`unknown command ${JSON.stringify(command)}\n\n${usage()}`)
+      process.exitCode = 2
   }
 }

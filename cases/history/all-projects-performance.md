@@ -25,7 +25,7 @@ across all my projects, which sessions were about fixing something slow? list wh
   evidence: text:any matches /CI|cache/i
 
 - [H-PR01] major · The search used scope: all.
-  evidence_any: call:search#1 args.scope == all ;; call:recall#1 args.scope == all ;; call:sql#1 args.sql present
+  evidence_any: call:history.search#1 args.scope == all ;; call:history.recall#1 args.scope == all ;; call:history.sql#1 args.sql present
 
 - [H-PR02] major · Citations in the full form (ses_… #seq).
   evidence: text:any matches /\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\)/
@@ -37,4 +37,4 @@ across all my projects, which sessions were about fixing something slow? list wh
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

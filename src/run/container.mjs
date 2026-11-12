@@ -1,0 +1,613 @@
+// The `container` isolation backend: one Docker container per trial, on its own internal network with no gateway, whose
+// only way out is the batch's CONNECT-only egress proxy. The design, its threat model and its proof of concept are in
+// docs/running.md#isolation; in short:
+//
+//   batch   an egress network (an ordinary bridge) and the proxy on it (docker/egress-proxy.mjs, as nobody, read-only,
+//           no capabilities), allowing CONNECT to port 443 of the allow-list and nothing else;
+//   trial   a network `--internal` with the gateway in `isolated` mode (no host address on the bridge, no route out),
+//           the proxy joined to it as `egress`, and a container on it: the caller's uid (never root), read-only root,
+//           a small tmpfs /tmp, --cap-drop ALL, no-new-privileges, Docker's default seccomp and AppArmor, pids, memory
+//           and CPU limits; the trial sandbox bind-mounted read-write at the same absolute path, the build under test
+//           and the harness's scripted-model files read-only at theirs, the host binaries read-only under
+//           /opt/evals/bin. Nothing else of the host: no home, no Docker socket.
+//
+// Every command of a trial runs through `docker exec`, its environment passed by NAME only (`-e NAME`; the values
+// travel in the docker client's own environment, never in an argv, and never in `docker run`, so `docker inspect`
+// does not show them). Killing a `docker exec` client does not kill what it started inside, so a trial ends with
+// `docker rm -f`, on every path: success, failure, timeout, interrupt; a batch whose runner died is swept by the next.
+
+import { spawn } from "node:child_process"
+import { createHash, randomBytes } from "node:crypto"
+import { createReadStream, existsSync, readFileSync, realpathSync, statSync, accessSync, constants, writeFileSync, openSync, fstatSync, closeSync, readdirSync } from "node:fs"
+import { lstat, opendir, statfs } from "node:fs/promises"
+import { delimiter, dirname, isAbsolute, join, resolve } from "node:path"
+import { removeSandbox } from "./sandbox.mjs"
+import { within } from "./paths.mjs"
+import { parseAllow } from "../../docker/egress-proxy.mjs"
+import { tail } from "./secrets.mjs"
+
+export const DOCKER_DIR = resolve(import.meta.dirname, "..", "..", "docker")
+export const IMAGE_REPO = "opencode-evals-sandbox"
+export const DEFAULT_ALLOW = ["api.anthropic.com", "platform.claude.com", "console.anthropic.com", "claude.ai"]
+export const DEFAULT_LIMITS = { memory_mb: 4096, cpus: 2, pids: 512, tmpfs_mb: 256, disk_mb: 2048, disk_floor_mb: 2048, inodes: 200_000, inode_floor: 100_000, measure_s: 10, max_parallel: 8, tunnels_per_trial: 16, tunnels_total: 64 }
+export const CONTAINER_BIN = "/opt/evals/bin"
+export const CONTAINER_PATH = `${CONTAINER_BIN}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`
+export const PROXY_PORT = 3128
+export const EGRESS_URL = `http://egress:${PROXY_PORT}`
+const SERVER_PORT = 4100
+const NAME = /^[A-Za-z_][A-Za-z0-9_]*$/
+// The docker client's own settings: never forwarded into a trial, and never taken from one.
+const CLIENT_ONLY = /^(DOCKER_|BUILDKIT_|COMPOSE_)/
+
+/** The image tag: a digest of the docker/ directory's two files, so an edit to either makes a new image. */
+export function imageTag(dir = DOCKER_DIR) {
+  const hash = createHash("sha256")
+  for (const file of ["Dockerfile", "egress-proxy.mjs"]) hash.update(`${file}\u0000`).update(readFileSync(join(dir, file))).update("\u0000")
+  return `${IMAGE_REPO}:${hash.digest("hex").slice(0, 16)}`
+}
+
+const positiveNumber = (value, what) => {
+  const n = Number(value)
+  if (!Number.isFinite(n) || n <= 0) throw new Error(`${what} must be a positive number, not ${JSON.stringify(value)}`)
+  return n
+}
+
+/**
+ * The backend's settings: the egress allow-list and the limits. They come from the owner only, `caps.json`'s
+ * `container` section and the environment (which wins), never from a case, an arm or a world.
+ *
+ *   { "container": { "egress_allow": ["api.anthropic.com", …], "memory_mb": 4096, "cpus": 2, "pids": 512,
+ *                    "tmpfs_mb": 256, "disk_mb": 2048, "disk_floor_mb": 2048, "max_parallel": 8, "image": "…" } }
+ */
+export function containerConfig({ store, env = process.env } = {}) {
+  const file = env.EVALS_CAPS ?? (store ? join(store, "caps.json") : null)
+  const fromFile = file && existsSync(file) ? JSON.parse(readFileSync(file, "utf8")).container ?? {} : {}
+  const limits = { ...DEFAULT_LIMITS }
+  const ENV = { memory_mb: "EVALS_CONTAINER_MEMORY_MB", cpus: "EVALS_CONTAINER_CPUS", pids: "EVALS_CONTAINER_PIDS", tmpfs_mb: "EVALS_CONTAINER_TMPFS_MB", disk_mb: "EVALS_CONTAINER_DISK_MB", disk_floor_mb: "EVALS_DISK_FLOOR_MB", inodes: "EVALS_CONTAINER_INODES", inode_floor: "EVALS_INODE_FLOOR", measure_s: "EVALS_CONTAINER_MEASURE_S", max_parallel: "EVALS_CONTAINER_MAX_PARALLEL", tunnels_per_trial: "EVALS_EGRESS_TUNNELS_PER_TRIAL", tunnels_total: "EVALS_EGRESS_TUNNELS_TOTAL" }
+  for (const [key, name] of Object.entries(ENV)) {
+    if (fromFile[key] !== undefined) limits[key] = positiveNumber(fromFile[key], `caps.json container.${key}`)
+    if (env[name] !== undefined && env[name] !== "") limits[key] = positiveNumber(env[name], name)
+  }
+  for (const key of ["memory_mb", "pids", "tmpfs_mb", "disk_mb", "disk_floor_mb", "inodes", "inode_floor", "max_parallel", "tunnels_per_trial", "tunnels_total"]) limits[key] = Math.floor(limits[key])
+  let allow = DEFAULT_ALLOW
+  if (fromFile.egress_allow !== undefined) {
+    if (!Array.isArray(fromFile.egress_allow)) throw new Error("caps.json container.egress_allow must be a list of host names")
+    allow = fromFile.egress_allow
+  }
+  if (env.EVALS_EGRESS_ALLOW !== undefined && env.EVALS_EGRESS_ALLOW !== "") allow = env.EVALS_EGRESS_ALLOW.split(",")
+  const hosts = [...parseAllow(allow.join(","))].sort()
+  return { allow: hosts, limits, image: env.EVALS_CONTAINER_IMAGE ?? fromFile.image ?? null, docker: env.EVALS_DOCKER ?? "docker", proxyNode: env.EVALS_PROXY_NODE ?? null, source: Object.keys(fromFile).length ? file : null }
+}
+
+/** A command on a PATH, as its real absolute path, or null. */
+export function findBinary(command, path = process.env.PATH ?? "") {
+  if (!command) return null
+  const candidates = command.includes("/") ? [resolve(command)] : path.split(delimiter).filter(Boolean).map((dir) => join(dir, command))
+  for (const candidate of candidates) {
+    try {
+      accessSync(candidate, constants.X_OK)
+      const real = realpathSync(candidate)
+      if (statSync(real).isFile()) return real
+    } catch {
+      // not here
+    }
+  }
+  return null
+}
+
+const sha256File = (file) =>
+  new Promise((done, fail) => {
+    const hash = createHash("sha256")
+    createReadStream(file).on("data", (chunk) => hash.update(chunk)).on("error", fail).on("end", () => done(hash.digest("hex")))
+  })
+
+/** A process's start time (Linux /proc), so a reused pid is not taken for a live runner. */
+export function processStart(pid) {
+  try {
+    const stat = readFileSync(`/proc/${pid}/stat`, "utf8")
+    return stat.slice(stat.lastIndexOf(")") + 2).split(" ")[19] ?? null
+  } catch {
+    return null
+  }
+}
+
+const alive = (pid, start) => {
+  if (!Number.isInteger(pid) || pid <= 0) return false
+  try {
+    process.kill(pid, 0)
+  } catch (error) {
+    if (error.code !== "EPERM") return false
+  }
+  return !start || processStart(pid) === null || processStart(pid) === start
+}
+
+/** The marker a runner writes into the batch directory it creates: what lets a sweep tell its own directories apart. */
+export const BATCH_MARKER = ".evals-batch.json"
+
+/** Writes the marker: the directory's own path, the batch's label, and the runner's pid and start time. */
+export function markBatchDir(dir, label) {
+  writeFileSync(join(dir, BATCH_MARKER), `${JSON.stringify({ dir: resolve(dir), batch_label: label, pid: process.pid, pidstart: processStart(process.pid) ?? "" })}\n`, { mode: 0o600, flag: "wx" })
+}
+
+/** Reads a marker without following a link and without reading more than a small file; null when it is not one. */
+function readMarker(file) {
+  let fd
+  try {
+    fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
+    const stat = fstatSync(fd)
+    if (!stat.isFile() || stat.size > 4096 || (typeof process.getuid === "function" && stat.uid !== process.getuid())) return null
+    return JSON.parse(readFileSync(fd, "utf8"))
+  } catch {
+    return null
+  } finally {
+    if (fd !== undefined) closeSync(fd)
+  }
+}
+
+/**
+ * Removes, under `tmpRoot`, each batch directory a dead runner created: only a real directory (not a link) holding the
+ * marker its runner wrote at creation, whose recorded path is that very directory, whose runner (pid and start time) is
+ * gone, and whose batch has no container left (`containersOf(label)` returns 0; null, an unanswered question, keeps it).
+ * A name alone never qualifies a directory. Removal is the runner's own: contained in `tmpRoot`, links not followed.
+ */
+export async function sweepBatchDirs(tmpRoot, { containersOf }) {
+  let removed = 0
+  let entries
+  try {
+    entries = readdirSync(tmpRoot, { withFileTypes: true })
+  } catch {
+    return 0
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue
+    const dir = join(tmpRoot, entry.name)
+    const marker = readMarker(join(dir, BATCH_MARKER))
+    if (!marker || marker.dir !== resolve(dir) || !/^b[0-9a-f]{10}$/.test(String(marker.batch_label))) continue
+    if (alive(Number(marker.pid), marker.pidstart || null)) continue
+    if ((await containersOf(marker.batch_label)) !== 0) continue
+    removeSandbox(within(tmpRoot, dir, "a dead batch's directory"))
+    removed++
+  }
+  return removed
+}
+
+/** Runs the docker client. Resolves { code, stdout, stderr }; never rejects. */
+export function dockerRun(docker, args, { env, input = null, timeoutMs = 120_000 } = {}) {
+  return new Promise((done) => {
+    const child = spawn(docker, args, { env, stdio: [input === null ? "ignore" : "pipe", "pipe", "pipe"] })
+    let stdout = ""
+    let stderr = ""
+    child.stdout.on("data", (data) => (stdout += data))
+    child.stderr.on("data", (data) => (stderr += data))
+    if (input !== null) {
+      child.stdin.on("error", () => {})
+      child.stdin.end(input)
+    }
+    const timer = setTimeout(() => child.kill("SIGKILL"), timeoutMs)
+    child.on("error", (error) => {
+      clearTimeout(timer)
+      done({ code: null, stdout, stderr: String(error.message ?? error) })
+    })
+    child.on("close", (code) => {
+      clearTimeout(timer)
+      done({ code, stdout, stderr })
+    })
+  })
+}
+
+/**
+ * What a sandbox holds: allocated bytes and entries (inodes), walked without following links. While its container runs
+ * the sandbox is the agent's, so nothing here changes it: a directory the run made unreadable, or a walk that takes
+ * longer than `deadlineMs`, makes the sandbox unmeasurable, which the watchdog treats as a limit crossed. The walk
+ * stops early once a limit is passed. Returns { bytes, inodes, unmeasurable } (unmeasurable: null, "denied" or "slow").
+ */
+export async function measureSandbox(root, { deadlineMs = 10_000, maxBytes = Infinity, maxInodes = Infinity } = {}) {
+  const deadline = Date.now() + deadlineMs
+  let bytes = 0
+  let inodes = 0
+  const stack = [root]
+  while (stack.length) {
+    const dir = stack.pop()
+    let handle
+    try {
+      handle = await opendir(dir)
+    } catch (error) {
+      if (error.code === "ENOENT" || error.code === "ENOTDIR") continue
+      return { bytes, inodes, unmeasurable: "denied" }
+    }
+    try {
+      for await (const entry of handle) {
+        if (Date.now() > deadline) return { bytes, inodes, unmeasurable: "slow" }
+        inodes++
+        const path = join(dir, entry.name)
+        let stat
+        try {
+          stat = await lstat(path)
+        } catch {
+          continue
+        }
+        bytes += (stat.blocks ?? 0) * 512 || stat.size
+        if (stat.isDirectory()) stack.push(path)
+        if (bytes > maxBytes || inodes > maxInodes) return { bytes, inodes, unmeasurable: null }
+      }
+    } catch (error) {
+      if (error.code !== "ENOENT") return { bytes, inodes, unmeasurable: "denied" }
+    }
+    if (Date.now() > deadline) return { bytes, inodes, unmeasurable: "slow" }
+  }
+  return { bytes, inodes, unmeasurable: null }
+}
+
+/**
+ * The backend. `config` is containerConfig()'s result; `exec` replaces the docker client in a unit test.
+ */
+export function containerBackend(config = containerConfig()) {
+  const id = `b${randomBytes(5).toString("hex")}`
+  const labels = { "evals.batch": id, "evals.pid": String(process.pid), "evals.pidstart": processStart(process.pid) ?? "" }
+  const labelArgs = (extra = {}) => Object.entries({ ...labels, ...extra }).flatMap(([key, value]) => ["--label", `${key}=${value}`])
+  const proxyName = `evals-${id}-proxy`
+  const egressNet = `evals-${id}-egress`
+  const trials = new Set()
+  const state = { prepared: false, tornDown: false, docker: null, dockerEnv: null, image: null, imageId: null, version: null, binaries: new Map(), shas: {}, batchRoot: null, egress: null, log: () => {} }
+  let counter = 0
+
+  const docker = (args, options = {}) => dockerRun(state.docker, args, { env: state.dockerEnv, ...options })
+  const must = async (args, what, options) => {
+    const result = await docker(args, options)
+    if (result.code !== 0) throw new Error(`${what} failed: ${tail((result.stderr || result.stdout).trim(), 400)}`)
+    return result.stdout.trim()
+  }
+
+  /**
+   * Removes everything a batch whose runner is gone left behind, and everything labelled with this batch when `own`:
+   * its containers and networks, then, under `tmpRoot`, the batch directory it created (sweepBatchDirs).
+   */
+  async function sweep({ own = false, tmpRoot = null } = {}) {
+    const removed = { containers: 0, networks: 0, dirs: 0 }
+    for (const kind of ["container", "network"]) {
+      const listed = kind === "container" ? ["ps", "-a"] : ["network", "ls"]
+      const out = await docker([...listed, "--filter", "label=evals.batch", "--format", '{{.ID}}\t{{.Label "evals.batch"}}\t{{.Label "evals.pid"}}\t{{.Label "evals.pidstart"}}'])
+      if (out.code !== 0) continue
+      for (const line of out.stdout.split("\n").filter(Boolean)) {
+        const [ref, batch, pid, start] = line.split("\t")
+        const mine = batch === id
+        if (mine ? !own : alive(Number(pid), start)) continue
+        const result = kind === "container" ? await docker(["rm", "-f", "-v", ref]) : await docker(["network", "rm", ref])
+        if (result.code === 0) removed[`${kind}s`]++
+      }
+    }
+    if (tmpRoot && !own) removed.dirs = await sweepBatchDirs(tmpRoot, { containersOf: async (label) => {
+      const out = await docker(["ps", "-aq", "--filter", `label=evals.batch=${label}`])
+      return out.code === 0 ? out.stdout.trim().split("\n").filter(Boolean).length : null
+    } })
+    return removed
+  }
+
+  async function proxyLog() {
+    const out = await docker(["logs", proxyName], { timeoutMs: 20_000 })
+    if (out.code !== 0) return null
+    const report = { allow: config.allow, allowed: {}, refused: {}, failed: {} }
+    let distinct = 0
+    for (const line of out.stdout.split("\n")) {
+      let entry
+      try {
+        entry = JSON.parse(line)
+      } catch {
+        continue
+      }
+      const bucket = { allowed: report.allowed, refused: report.refused, failed: report.failed }[entry.ev]
+      if (!bucket || typeof entry.host !== "string") continue
+      const host = entry.host.slice(0, 253) || "(none)"
+      if (!bucket[host]) {
+        // A refused name can carry data (a secret in a subdomain): the record keeps at most 200 distinct names, and is
+        // scrubbed of every known secret like everything else the runner writes.
+        if (++distinct > 200) continue
+        bucket[host] = entry.ev === "allowed" ? 0 : { count: 0, why: [] }
+      }
+      if (entry.ev === "allowed") bucket[host]++
+      else {
+        bucket[host].count++
+        if (entry.why && !bucket[host].why.includes(entry.why)) bucket[host].why.push(String(entry.why).slice(0, 40))
+      }
+    }
+    return report
+  }
+
+  const backend = {
+    name: "container",
+    confines: true,
+    batchLabel: id,
+    config,
+    maxParallel: config.limits.max_parallel,
+
+    /** Finds the docker client and its own settings. The client reads its config from DOCKER_CONFIG, never from a
+     * trial's HOME, which the agent controls. */
+    client(caller = process.env) {
+      state.docker = findBinary(config.docker, caller.PATH)
+      if (!state.docker) throw new Error(`--isolation container: no docker client (${config.docker}) on PATH`)
+      state.dockerEnv = { PATH: caller.PATH ?? "/usr/bin:/bin", DOCKER_CONFIG: caller.DOCKER_CONFIG ?? join(caller.HOME ?? "/nonexistent", ".docker") }
+      for (const key of ["DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH"]) if (caller[key]) state.dockerEnv[key] = caller[key]
+      return { docker: state.docker, env: state.dockerEnv }
+    },
+
+    /** Removes what batches whose runner is gone left behind (`evals isolation sweep`, and every prepare). */
+    sweep: ({ tmpRoot = null } = {}) => sweep({ tmpRoot }),
+
+    /**
+     * Checks Docker and the image, sweeps what dead batches left, records the binaries, and starts the egress proxy.
+     * `binaries` maps a name (opencode, claude, bun) to a host command; a missing one that is required throws.
+     */
+    async prepare({ batchRoot, caller = process.env, binaries = {}, log = () => {} } = {}) {
+      if (state.prepared) return backend.describe()
+      state.log = log
+      state.batchRoot = batchRoot
+      if (typeof process.getuid === "function" && process.getuid() === 0) throw new Error("--isolation container: refusing to run trials as root; run the harness as an ordinary user in the docker group")
+      if (/[,\n"]/.test(batchRoot ?? "")) throw new Error(`--isolation container: the batch directory ${JSON.stringify(batchRoot)} has a comma, quote or newline, which a bind mount cannot name: set EVALS_TMP to a plainer path`)
+      backend.client(caller)
+      const version = await docker(["version", "--format", "{{.Server.Version}}"], { timeoutMs: 20_000 })
+      if (version.code !== 0) throw new Error(`--isolation container: Docker is not usable by this user (${tail((version.stderr || "no answer").trim(), 200)}); is the daemon running, and is this user in the docker group?`)
+      state.version = version.stdout.trim()
+      const major = Number((/^(\d+)/.exec(state.version) ?? [])[1])
+      if (!(major >= 28)) throw new Error(`--isolation container: Docker ${state.version} is too old; the isolated gateway mode a trial network needs is Docker 28 or later`)
+      state.image = config.image ?? imageTag()
+      const image = await docker(["image", "inspect", "--format", "{{.Id}}", state.image], { timeoutMs: 20_000 })
+      if (image.code !== 0) throw new Error(`--isolation container: no image ${state.image}; build it with \`evals isolation build\` (from docker/Dockerfile, no secrets)`)
+      state.imageId = image.stdout.trim()
+      for (const [name, command] of Object.entries(binaries)) {
+        if (!command) continue
+        const real = findBinary(command, caller.PATH)
+        if (!real) throw new Error(`--isolation container: no ${name} binary (${command}) to mount into the trials`)
+        state.binaries.set(name, { host: real, command, inside: `${CONTAINER_BIN}/${name}` })
+        state.shas[name] = await sha256File(real)
+      }
+      const swept = await sweep({ tmpRoot: dirname(resolve(batchRoot)) })
+      if (swept.containers || swept.networks || swept.dirs) log(`isolation: removed ${swept.containers} container(s), ${swept.networks} network(s) and ${swept.dirs} batch director${swept.dirs === 1 ? "y" : "ies"} left by a batch whose runner is gone`)
+      // The proxy runs on the harness's own Node, mounted read-only: the image has none (Ubuntu's is past its end of life).
+      const node = findBinary(config.proxyNode ?? process.execPath, caller.PATH)
+      if (!node) throw new Error(`--isolation container: no Node for the egress proxy (${config.proxyNode ?? process.execPath})`)
+      state.shas.proxy_node = await sha256File(node)
+      state.prepared = true
+      await must(["network", "create", "--driver", "bridge", ...labelArgs({ "evals.role": "egress" }), egressNet], "creating the egress network")
+      await must(
+        ["run", "-d", "--name", proxyName, ...labelArgs({ "evals.role": "proxy" }), "--network", egressNet, "--user", "65534:65534", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "128", "--memory", "256m", "--cpus", "1", "--mount", `type=bind,src=${node},dst=${CONTAINER_BIN}/node,readonly`, "-e", `EVALS_EGRESS_ALLOW=${config.allow.join(",")}`, "-e", `EVALS_EGRESS_MAX_PER_CLIENT=${config.limits.tunnels_per_trial}`, "-e", `EVALS_EGRESS_MAX_TOTAL=${config.limits.tunnels_total}`, state.image, `${CONTAINER_BIN}/node`, "/opt/evals/egress-proxy.mjs", String(PROXY_PORT)],
+        "starting the egress proxy",
+      )
+      const deadline = Date.now() + 15_000
+      for (;;) {
+        const logs = await docker(["logs", proxyName], { timeoutMs: 5000 })
+        if (logs.stdout.includes('"ev":"listening"')) break
+        if (Date.now() > deadline) throw new Error(`the egress proxy did not start: ${tail((logs.stderr || logs.stdout).trim(), 300)}`)
+        await new Promise((done) => setTimeout(done, 100))
+      }
+      return backend.describe()
+    },
+
+    /** A trial: its own network and container, with the sandbox (rw) and `mounts` (ro) at their own paths. */
+    async enter({ name, sandbox, mounts = [], cwd }) {
+      if (!state.prepared || state.tornDown) throw new Error("the container backend is not prepared")
+      const root = resolve(sandbox.root)
+      for (const path of [root, ...mounts.map((m) => m.host)]) if (/[,\n"]/.test(path)) throw new Error(`a bind mount cannot name ${JSON.stringify(path)}`)
+      const n = ++counter
+      const ref = `evals-${id}-t${n}`
+      const enteredAt = Date.now()
+      const trial = {
+        name,
+        ref,
+        container: null,
+        network: null,
+        killed: null,
+        timings: { setup_ms: null, teardown_ms: null },
+        left: false,
+        watchdog: null,
+      }
+      trials.add(trial)
+      // Idempotent: a second call (the watchdog's, then the runner's) waits for the first to finish.
+      const leave = ({ reason = "end" } = {}) => (trial.leaving ??= leaveOnce(reason))
+      const leaveOnce = async (reason) => {
+        trial.left = true
+        if (trial.watchdog) clearInterval(trial.watchdog)
+        const at = Date.now()
+        // By name: a `docker run` that failed half way may have created the container without saying so.
+        await docker(["rm", "-f", "-v", trial.ref], { timeoutMs: 60_000 })
+        if (trial.network) {
+          await docker(["network", "disconnect", "-f", trial.network, proxyName], { timeoutMs: 30_000 })
+          await docker(["network", "rm", trial.network], { timeoutMs: 30_000 })
+        }
+        trial.timings.teardown_ms = Date.now() - at
+        trial.leftFor = reason
+        trials.delete(trial)
+      }
+      trial.leave = leave
+      try {
+        trial.network = ref
+        await must(["network", "create", "--internal", "-o", "com.docker.network.bridge.gateway_mode_ipv4=isolated", "-o", "com.docker.network.bridge.gateway_mode_ipv6=isolated", ...labelArgs({ "evals.role": "trial", "evals.trial": name }), ref], "creating the trial network")
+        await must(["network", "connect", "--alias", "egress", ref, proxyName], "joining the proxy to the trial network")
+        const { memory_mb, cpus, pids, tmpfs_mb } = config.limits
+        const binds = [
+          ["--mount", `type=bind,src=${root},dst=${root}`],
+          ...mounts.map((m) => ["--mount", `type=bind,src=${resolve(m.host)},dst=${resolve(m.host)},readonly`]),
+          ...[...state.binaries.values()].map((b) => ["--mount", `type=bind,src=${b.host},dst=${b.inside},readonly`]),
+        ].flat()
+        const uid = typeof process.getuid === "function" ? `${process.getuid()}:${process.getgid()}` : "1000:1000"
+        const created = await must(
+          ["run", "-d", "--name", ref, ...labelArgs({ "evals.role": "trial", "evals.trial": name }), "--network", ref, "--hostname", "evals", "--user", uid, "--read-only", "--tmpfs", `/tmp:rw,nosuid,nodev,size=${tmpfs_mb}m`, "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", String(pids), "--memory", `${memory_mb}m`, "--memory-swap", `${memory_mb}m`, "--cpus", String(cpus), ...binds, "--workdir", root, state.image],
+          "starting the trial container",
+        )
+        trial.container = created.split("\n").pop()
+      } catch (error) {
+        await leave({ reason: "failed to start" })
+        throw error
+      }
+      trial.timings.setup_ms = Date.now() - enteredAt
+
+      // The disk watchdog: the sandbox is on the host's disk, which no quota bounds without root, so a trial whose sandbox
+      // grows past its size or entry limit, cannot be measured (fail closed), or leaves the filesystem short of space or
+      // inodes, is removed and recorded as killed. It never changes the sandbox while the container runs.
+      const { disk_mb, disk_floor_mb, inodes: inodeLimit, inode_floor: inodeFloor, measure_s } = config.limits
+      const diskLimit = disk_mb * 1024 * 1024
+      const floor = disk_floor_mb * 1024 * 1024
+      let measuring = false
+      const stopFor = async (killed, line) => {
+        trial.killed = killed
+        state.log(`  ${name}: ${line}: the trial is stopped`)
+        await leave({ reason: killed.reason })
+      }
+      trial.checkDisk = async () => {
+        if (measuring || trial.left) return
+        measuring = true
+        try {
+          const m = await measureSandbox(root, { deadlineMs: config.measureMs ?? measure_s * 1000, maxBytes: diskLimit, maxInodes: inodeLimit })
+          if (trial.left) return
+          if (m.unmeasurable) return await stopFor({ reason: "disk-unmeasurable", why: m.unmeasurable }, `the sandbox could not be measured (${m.unmeasurable === "slow" ? `the walk took more than ${measure_s} s` : "a directory in it is unreadable"})`)
+          if (m.bytes > diskLimit) return await stopFor({ reason: "disk", bytes: m.bytes, limit_bytes: diskLimit }, `the sandbox reached ${Math.round(m.bytes / 1048576)} MB, over its ${disk_mb} MB`)
+          if (m.inodes > inodeLimit) return await stopFor({ reason: "inodes", inodes: m.inodes, limit: inodeLimit }, `the sandbox holds more than ${inodeLimit} entries`)
+          const fs = await statfs(root).catch(() => null)
+          if (fs && fs.bavail * fs.bsize < floor) return await stopFor({ reason: "disk-floor", free_bytes: fs.bavail * fs.bsize, floor_bytes: floor }, `the filesystem under the sandboxes has less than ${disk_floor_mb} MB free`)
+          // A filesystem that reports no inode count (files 0) has no inode floor to keep.
+          if (fs && fs.files > 0 && fs.ffree < inodeFloor) return await stopFor({ reason: "inode-floor", free_inodes: fs.ffree, floor: inodeFloor }, `the filesystem under the sandboxes has fewer than ${inodeFloor} free inodes`)
+        } finally {
+          measuring = false
+        }
+      }
+      trial.watchdog = setInterval(() => trial.checkDisk(), config.watchMs ?? 2000)
+      trial.watchdog.unref?.()
+
+      /** The command that runs `spec` inside the container; secrets and everything else by name only. */
+      trial.wrap = ({ command, args = [], cwd: dir, env = {} }) => {
+        const mapped = [...state.binaries.values()].find((b) => b.command === command || b.host === command || (isAbsolute(command) && existsSync(command) && realpathSync(command) === b.host))
+        const inside = mapped ? mapped.inside : command
+        const containerEnv = trialEnv(env)
+        const names = Object.keys(containerEnv)
+        const bad = names.filter((key) => !NAME.test(key))
+        if (bad.length) throw new Error(`refusing to pass ${bad.map((k) => JSON.stringify(k)).join(", ")} into a trial: not a variable name`)
+        return {
+          command: state.docker,
+          args: ["exec", "-i", "-w", dir ?? cwd ?? root, ...names.flatMap((key) => ["-e", key]), trial.ref, inside, ...args],
+          // The docker client runs in the batch directory, outside every sandbox, with its own settings.
+          cwd: state.batchRoot ?? undefined,
+          env: { ...containerEnv, ...state.dockerEnv, PATH: containerEnv.PATH },
+        }
+      }
+
+      trial.port = (attempt = 0) => SERVER_PORT + attempt
+
+      /**
+       * Polls a URL from inside the container (the host has no route to it) until it answers 200. The password, when
+       * there is one, goes to curl on its standard input, never in an argv.
+       */
+      trial.ready = async ({ url, password = null, directory = null, timeoutMs = 60_000, exited = () => false } = {}) => {
+        const deadline = Date.now() + timeoutMs
+        let last = ""
+        while (!exited() && !trial.left && Date.now() < deadline) {
+          const args = ["exec", "-i", trial.container, "curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "--max-time", "2", "--noproxy", "*", "--config", "-", ...(directory ? ["-H", `x-opencode-directory: ${directory}`] : []), url]
+          const result = await docker(args, { input: password ? `user = "opencode:${password}"\n` : "", timeoutMs: 10_000 })
+          if (result.stdout.trim() === "200") return { ok: true }
+          last = result.stdout.trim() ? `HTTP ${result.stdout.trim()}` : (tail(result.stderr.trim(), 200) || `curl exit ${result.code}`)
+          await new Promise((done) => setTimeout(done, 200))
+        }
+        return { ok: false, last: trial.left ? `the trial was stopped (${trial.leftFor ?? "left"})` : exited() ? "the server exited" : `no answer in ${timeoutMs} ms (${last})` }
+      }
+
+      /** Is the trial's container gone? Only when Docker says there is no such container: an error says nothing. */
+      trial.gone = async () => {
+        const result = await docker(["inspect", "--format", "{{.Id}}", trial.ref], { timeoutMs: 20_000 })
+        return result.code !== 0 && /no such/i.test(result.stderr)
+      }
+
+      /** How many processes the memory limit killed (cgroup v2 memory.events), or null when it cannot be read. */
+      trial.oomKills = async () => {
+        if (trial.left) return null
+        const result = await docker(["exec", trial.container, "cat", "/sys/fs/cgroup/memory.events"], { timeoutMs: 10_000 })
+        const kills = (/^oom_kill (\d+)/m.exec(result.stdout) ?? [])[1]
+        return kills === undefined ? null : Number(kills)
+      }
+
+      trial.describe = () => ({ container: trial.ref, setup_ms: trial.timings.setup_ms, teardown_ms: trial.timings.teardown_ms, ...(trial.killed ? { killed: trial.killed } : {}) })
+      return trial
+    },
+
+    /** Leaves every trial still up, collects the proxy's decisions, removes the proxy, its network and every label. */
+    async teardown() {
+      if (state.tornDown) return
+      state.tornDown = true
+      if (!state.docker) return
+      await Promise.all([...trials].map((trial) => trial.leave({ reason: "teardown" })))
+      if (state.prepared) state.egress = await proxyLog()
+      await docker(["rm", "-f", "-v", proxyName], { timeoutMs: 60_000 })
+      await docker(["network", "rm", egressNet], { timeoutMs: 30_000 })
+      await sweep({ own: true })
+    },
+
+    /** Is every container of this batch gone? Only when Docker lists none: an error says nothing. */
+    async allGone() {
+      if (!state.docker) return true
+      const result = await docker(["ps", "-aq", "--filter", `label=evals.batch=${id}`], { timeoutMs: 20_000 })
+      return result.code === 0 && result.stdout.trim() === ""
+    },
+
+    /** What the proxy allowed and refused, by host name: after teardown. */
+    egress: () => state.egress,
+
+    describe: () => ({
+      backend: "container",
+      batch_label: id,
+      docker: state.version,
+      image: state.image,
+      image_id: state.imageId,
+      network: "per-trial --internal network, isolated gateway; egress only through the batch's CONNECT proxy",
+      egress_allow: config.allow,
+      limits: config.limits,
+      binaries: state.shas,
+    }),
+  }
+  return backend
+}
+
+/**
+ * A trial's environment from the sandbox's: the container's PATH, the proxy, loopback never proxied, no host path that
+ * does not exist inside (CA files), no docker client setting, and no models.dev fetch (the proxy would refuse it).
+ */
+export function trialEnv(env) {
+  const out = {}
+  for (const [key, value] of Object.entries(env)) if (!CLIENT_ONLY.test(key) && value !== undefined && value !== null) out[key] = String(value)
+  delete out.SSL_CERT_FILE
+  delete out.NODE_EXTRA_CA_CERTS
+  out.PATH = CONTAINER_PATH
+  for (const key of ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"]) out[key] = EGRESS_URL
+  out.NO_PROXY = out.no_proxy = "127.0.0.1,localhost"
+  out.OPENCODE_DISABLE_MODELS_FETCH = "1"
+  return out
+}
+
+/** Builds the sandbox image from docker/ (its only build context: nothing else of the machine reaches it). */
+export async function buildImage({ caller = process.env, config = containerConfig({ env: caller }), log = (line) => console.log(line) } = {}) {
+  const backend = containerBackend(config)
+  const { docker, env } = backend.client(caller)
+  const tag = config.image ?? imageTag()
+  log(`building ${tag} from ${DOCKER_DIR}`)
+  const status = await new Promise((done) => {
+    const child = spawn(docker, ["build", "--pull=false", "-t", tag, DOCKER_DIR], { env, stdio: ["ignore", "inherit", "inherit"] })
+    child.on("error", () => done(null))
+    child.on("close", (code) => done(code))
+  })
+  if (status !== 0) throw new Error(`docker build failed (exit ${status})`)
+  return tag
+}
+
+/** Docker, its version, the image and the settings, without starting anything. */
+export async function checkIsolation({ caller = process.env, config = containerConfig({ env: caller }) } = {}) {
+  const backend = containerBackend(config)
+  const { docker, env } = backend.client(caller)
+  const version = await dockerRun(docker, ["version", "--format", "{{.Server.Version}}"], { env, timeoutMs: 20_000 })
+  const tag = config.image ?? imageTag()
+  const image = version.code === 0 ? await dockerRun(docker, ["image", "inspect", "--format", "{{.Id}}", tag], { env, timeoutMs: 20_000 }) : { code: 1 }
+  return {
+    docker: version.code === 0 ? version.stdout.trim() : null,
+    docker_error: version.code === 0 ? null : tail((version.stderr || "no answer").trim(), 200),
+    image: tag,
+    image_id: image.code === 0 ? image.stdout.trim() : null,
+    egress_allow: config.allow,
+    limits: config.limits,
+    settings: config.source,
+  }
+}

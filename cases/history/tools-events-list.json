@@ -40,7 +40,7 @@
       "evidence": [
         {
           "kind": "call",
-          "tool": "events_list",
+          "tool": "history.events_list",
           "n": 1,
           "arg": null
         }
@@ -115,7 +115,7 @@
         },
         {
           "kind": "absent",
-          "tool": "apply_patch",
+          "tool": "patch",
           "n": null
         }
       ],
@@ -128,6 +128,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a2cdf021fd2f12b0287547afc64242c003bad8aa5146057d9048b99a394abe8a"
+    "source_sha256": "c53b4063ebbacdd706e750d11aa464b268497c96b40f1a61ff3c3220fb758fbd"
   }
 }

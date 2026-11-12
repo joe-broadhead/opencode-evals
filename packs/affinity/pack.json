@@ -5,7 +5,7 @@
   "name": "Affinity",
   "package": "@joe-broadhead/opencode-affinity",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "pluginId": "affinity.crm",
   "skills": [
     "affinity",
@@ -379,219 +379,219 @@
     {
       "name": "create_company",
       "permission": "affinity_create_company",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_field",
       "permission": "affinity_create_field",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_list_field_dropdown_option",
       "permission": "affinity_create_list_field_dropdown_option",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_interaction",
       "permission": "affinity_create_interaction",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_list",
       "permission": "affinity_create_list",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_list_entry",
       "permission": "affinity_create_list_entry",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_note",
       "permission": "affinity_create_note",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_opportunity",
       "permission": "affinity_create_opportunity",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_person",
       "permission": "affinity_create_person",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "create_reminder",
       "permission": "affinity_create_reminder",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "issue_entity_files_upload_token",
       "permission": "affinity_issue_entity_files_upload_token",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "issue_entity_files_download_token",
       "permission": "affinity_issue_entity_files_download_token",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_company",
       "permission": "affinity_update_company",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_list_field_dropdown_option",
       "permission": "affinity_update_list_field_dropdown_option",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "upsert_entity_field_values",
       "permission": "affinity_upsert_entity_field_values",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "upsert_list_entry_field_values",
       "permission": "affinity_upsert_list_entry_field_values",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_note",
       "permission": "affinity_update_note",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_opportunity",
       "permission": "affinity_update_opportunity",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_person",
       "permission": "affinity_update_person",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "update_reminder",
       "permission": "affinity_update_reminder",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "delete_company",
       "permission": "affinity_delete_company",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "delete_person",
       "permission": "affinity_delete_person",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "delete_opportunity",
       "permission": "affinity_delete_opportunity",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "delete_note",
       "permission": "affinity_delete_note",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "delete_list_entries",
       "permission": "affinity_delete_list_entries",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "delete_list_field_dropdown_option",
       "permission": "affinity_delete_list_field_dropdown_option",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "delete_reminder",
       "permission": "affinity_delete_reminder",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "merge_companies",
       "permission": "affinity_merge_companies",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "merge_persons",
       "permission": "affinity_merge_persons",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "send_feedback",
       "permission": "affinity_send_feedback",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     }
   ],
   "counts": {
     "tools": 82,
     "reads": 52,
-    "writes": 20,
-    "denied": 10,
+    "writes": 30,
+    "denied": 0,
     "skills": 2
   },
   "schema": "oc-pack/1",
@@ -600,14 +600,18 @@
       "name": "affinity",
       "description_sha256": "3600ee7fb1e0be6e22ee573c74c6a2afacc739fc8c205c75534594e2d394328d",
       "description_chars": 708,
-      "body_lines": 78
+      "body_lines": 81
     },
     "affinity-write": {
       "name": "affinity-write",
       "description_sha256": "8aaf0da663a38875e4135d24c6765818a8b79399f7d7cf6fdd780c1b339a57e8",
       "description_chars": 431,
-      "body_lines": 79
+      "body_lines": 84
     }
   },
-  "digest": "cf9cbc2eda165233e1afdb49ed81535f52f2f6d945d89e60cedd4db972c802df"
+  "digest": "d7232cd1bb261273f4bf8f710890505d055854535c4d71ee8218f05fb802ed0f",
+  "access": {
+    "key": "access",
+    "default": "all"
+  }
 }

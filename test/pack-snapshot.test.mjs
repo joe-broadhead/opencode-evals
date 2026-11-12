@@ -4,8 +4,8 @@ import assert from "node:assert/strict"
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
-import { packDigest, verifySnapshot, verifyFromRepo, snapshotChecks, driftReport, recomputeCounts, PACK_IDS, PACK_SCHEMA } from "../src/pack/snapshot.mjs"
-import { derivePack, pluginRepo, repoAvailable, readPack, packIds } from "../src/pack/from-plugin.mjs"
+import { packDigest, verifySnapshot, verifyFromRepo, snapshotChecks, driftReport, recomputeCounts, PACK_SCHEMA } from "../src/pack/snapshot.mjs"
+import { derivePack, pluginRepo, repoAvailable, readPack, packIds, discoverPlugins, familyProblems, allPackIds } from "../src/pack/from-plugin.mjs"
 import { checkPack } from "../src/t0/generic.mjs"
 
 const ROOT = join(import.meta.dirname, "..")
@@ -107,7 +107,7 @@ test("drift is reported, never applied", () => {
   assert.ok(report.changed.some((line) => line.startsWith("get_one.effect")))
   assert.ok(report.changed.some((line) => line.startsWith("create_one.class")))
   assert.equal(report.skillChanged.length, 1)
-  assert.ok(report.meta.some((line) => line.startsWith("version")))
+  assert.ok(report.meta.includes('version: "0.0.0" -> "0.0.1"'), "old -> new, like the tool changes")
 
   const same = driftReport({ ...committed }, committed)
   assert.equal(same.drift, false)
@@ -133,12 +133,45 @@ test("a per-plugin root wins over a shared root, and neither guesses a home dire
 
 test("every committed snapshot verifies — the assertion CI makes", () => {
   const ids = packIds(ROOT)
-  assert.ok(ids.length >= 10, `expected the ten packs, found ${ids.join(",")}`)
+  assert.ok(ids.length >= 22, `expected the family's 22 packs, found ${ids.join(",")}`)
   for (const id of ids) {
     const result = verifyFromRepo(id, ROOT)
     assert.equal(result.ok, true, `${id}: ${result.problems.join("; ")}`)
   }
-  assert.deepEqual([...ids].sort(), [...PACK_IDS].sort())
+  for (const id of ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear", "history"]) assert.ok(ids.includes(id), id)
+  // Every snapshot records the family's access option, and its declared effects are the default's: all allow.
+  for (const id of ids) {
+    const pack = JSON.parse(readFileSync(join(ROOT, "packs", id, "pack.json"), "utf8"))
+    assert.equal(pack.access?.default, "all", `${id} access`)
+  }
+})
+
+const checkout = (root, name, jelly, source = 'export const PLUGIN_ID = "' + name + '.thing"\n') => {
+  const dir = join(root, `opencode-${name}`)
+  mkdirSync(join(dir, "src"), { recursive: true })
+  writeFileSync(join(dir, "package.json"), JSON.stringify({ name: `@demo/opencode-${name}`, version: "0.0.1", jelly }))
+  writeFileSync(join(dir, "src", "constants.ts"), source)
+  return dir
+}
+
+test("packs are discovered from any plugin checkout, and a checkout that is not a family plugin is named, not packed", () => {
+  const root = temp()
+  const access = { contributes: { settings: [{ key: "access", default: "all" }] } }
+  checkout(root, "alpha", { tools: [{ name: "alpha.get", permission: "alpha_get", effect: "allow", readOnly: true }, { name: "alpha.put", permission: "alpha_put", effect: "allow", readOnly: false }], skills: [], ...access })
+  checkout(root, "library", { tools: [] })
+  checkout(root, "shared", { tools: [{ name: "shared.a", permission: "shared.read", readOnly: true }, { name: "shared.b", permission: "shared.read", readOnly: true }] })
+  mkdirSync(join(root, "opencode-empty"))
+  mkdirSync(join(root, "not-a-plugin"))
+  const env = { EVALS_PLUGIN_ROOT: root }
+  assert.deepEqual(discoverPlugins(env), ["alpha", "shared"], "no tools is no plugin; a folder without package.json is skipped")
+  const alpha = derivePack("alpha", pluginRepo("alpha", env))
+  assert.deepEqual(alpha.access, { key: "access", default: "all" })
+  assert.deepEqual(alpha.tools.map((tool) => [tool.name, tool.effect, tool.class]), [["get", "allow", "read"], ["put", "allow", "write"]])
+  assert.deepEqual(familyProblems(alpha), [])
+  assert.match(familyProblems(derivePack("shared", pluginRepo("shared", env))).join(" "), /P-03/)
+  assert.ok(allPackIds(ROOT, env).includes("alpha") && allPackIds(ROOT, env).includes("x"))
+  assert.deepEqual(discoverPlugins({ EVALS_REPO_BETA: join(root, "opencode-alpha") }), ["beta"])
+  rmSync(root, { recursive: true, force: true })
 })
 
 test("the committed snapshots carry no checkout path", () => {
@@ -146,4 +179,17 @@ test("the committed snapshots carry no checkout path", () => {
     const text = readFileSync(join(ROOT, "packs", id, "pack.json"), "utf8")
     assert.doesNotMatch(text, /\/Users\/|\/home\/|\/private\//, `${id} carries a path`)
   }
+})
+
+test("evals pack names the packs that differ, and never counts a checkout that is not a family plugin", async () => {
+  const { spawnSync } = await import("node:child_process")
+  const root = temp()
+  checkout(root, "alpha", { tools: [{ name: "alpha.get", permission: "alpha_get", effect: "allow", readOnly: true }], skills: [] })
+  checkout(root, "shared", { tools: [{ name: "shared.a", permission: "shared.read", readOnly: true }, { name: "shared.b", permission: "shared.read", readOnly: true }] })
+  const out = spawnSync(process.execPath, [join(ROOT, "bin", "evals"), "pack"], { encoding: "utf8", env: { PATH: process.env.PATH, EVALS_PLUGIN_ROOT: root } })
+  assert.equal(out.status, 0, out.stderr)
+  assert.match(out.stdout, /shared\s+skipped: not a family plugin/)
+  assert.match(out.stdout, /alpha\s+no snapshot/)
+  assert.match(out.stdout, /1 pack\(s\) differ from their checkout \(alpha\)/)
+  rmSync(root, { recursive: true, force: true })
 })

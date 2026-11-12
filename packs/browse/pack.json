@@ -1,0 +1,169 @@
+{
+  "schema": "oc-pack/1",
+  "id": "browse",
+  "name": "Browse",
+  "package": "@joe-broadhead/opencode-browse",
+  "version": "0.0.0",
+  "private": false,
+  "pluginId": "browse",
+  "rpc": "browse.tools",
+  "skills": [
+    "browse",
+    "browse-capture"
+  ],
+  "skill_meta": {
+    "browse": {
+      "name": "browse",
+      "description_sha256": "ac9632668744d54a1107a29302a822f8bcf040b68cc246aba76cb7fec581e15f",
+      "description_chars": 257,
+      "body_lines": 96
+    },
+    "browse-capture": {
+      "name": "browse-capture",
+      "description_sha256": "a971a2c29f2fbbbb0c4729b51e00a5eb85104d632208bda4c5f361fb41afd49b",
+      "description_chars": 270,
+      "body_lines": 66
+    }
+  },
+  "tools": [
+    {
+      "name": "status",
+      "permission": "browse_status",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "session_list",
+      "permission": "browse_session_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "secrets_list",
+      "permission": "browse_secrets_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "secrets_status",
+      "permission": "browse_secrets_status",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "tabs_cleanup",
+      "permission": "browse_tabs_cleanup",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "execute",
+      "permission": "browse_execute",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "session_new",
+      "permission": "browse_session_new",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "session_use",
+      "permission": "browse_session_use",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "session_adopt",
+      "permission": "browse_session_adopt",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "session_reset",
+      "permission": "browse_session_reset",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "session_delete",
+      "permission": "browse_session_delete",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "settings",
+      "permission": "browse_settings",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "network",
+      "permission": "browse_network",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "recording",
+      "permission": "browse_recording",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "flight_recorder",
+      "permission": "browse_flight_recorder",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "secrets_run",
+      "permission": "browse_secrets_run",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "secrets_refresh",
+      "permission": "browse_secrets_refresh",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "session_allowlist",
+      "permission": "browse_session_allowlist",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 18,
+    "reads": 4,
+    "writes": 14,
+    "denied": 0,
+    "skills": 2
+  },
+  "digest": "3d10ce3ab2e1c3c924d6868250dd997f2a0adbf6053340cd4affd8cfbf7f34ef",
+  "t1": []
+}

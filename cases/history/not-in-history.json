@@ -107,7 +107,7 @@
         [
           {
             "kind": "call",
-            "tool": "search",
+            "tool": "history.search",
             "n": 1,
             "arg": "args.query.length",
             "op": ">=",
@@ -118,7 +118,7 @@
           },
           {
             "kind": "count",
-            "tool": "search",
+            "tool": "history.search",
             "op": ">=",
             "value": 2
           },
@@ -153,7 +153,7 @@
         },
         {
           "kind": "absent",
-          "tool": "apply_patch",
+          "tool": "patch",
           "n": null
         }
       ],
@@ -166,6 +166,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "50700b1055166ab544244d491b47485d3b83501ec82f9da723c034860a1ba366"
+    "source_sha256": "f1503b0cdbd1c7f9a085f49be7e9160902fd76c057540da896f4680fa86702b7"
   }
 }

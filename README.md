@@ -9,9 +9,11 @@ verdicts, and a ledger that refuses to compare two runs that are not comparable.
 
 - Node 22.
 - For the static, case, grading, policy and label tiers: nothing else.
-- For the T1 tier: an OpenCode stock binary per version you test (2.2.3 to 2.2.5), and `bun` for the fake
+- For the T1 tier: an OpenCode stock binary per version you test (2.2.3 to 2.2.6), and `bun` for the fake
   MCP server. Both are configured, not assumed: see [Configuration](#configure).
 - macOS or Linux.
+- For `evals run`: Docker 28 or later, usable by your user, and the sandbox image (`evals isolation build`): every
+  run is confined in a container ([docs/running.md](docs/running.md#running-live-evals-safely)).
 
 ## Install
 
@@ -24,17 +26,24 @@ Or run it from a checkout: `node bin/evals <command>`.
 ## Use
 
 ```sh
-evals compile                      # markdown cases -> oc-case/1 JSON
+evals compile --plugin history     # markdown cases -> oc-case/1 JSON (--all for every plugin, --check to write nothing)
+evals isolation build              # the sandbox image every run's container uses (once; docker/Dockerfile, no secrets)
+evals run --plugin history --iteration v1-a --model claude-agent/haiku --auth claude-agent --trials 3
+                                   # one live run per case and trial, each in its own container, under the run caps
+evals trace --iteration v1-a --plugin history   # recordings -> oc-trace/1
 evals grade --iteration nx6        # grade a recorded iteration from the private store
 evals scorecard --iteration nx6    # one page, with the comparison against a hand grading
 evals policy --a nx5 --b nx6       # ship, hold or ask, with the reasons
+evals report base=b-t1,b-t2 new=n-t1,n-t2 --set tune   # strict pass, pass^k, paired bootstrap per arm
+evals pack [--sync]                # verify the packs; with EVALS_PLUGIN_ROOT, report drift (--sync refreshes)
 evals t0  --plugin x               # static checks on a plugin checkout
 evals t1  --plugin x               # what the plugin makes possible, with no model
 evals check --plugin x             # T0 + the gold cases + T1: the CI gate
 evals verify                       # re-derive a batch and refuse if a number moved
+evals verify --all                 # list every graded iteration the grader or the cases have moved past
 evals label --plugin x             # the hand-label kit for the advisory items
 evals privacy --scan               # the pre-publish gate over the tree and the history
-evals budget                       # month to date against the caps
+evals budget                       # month to date against the dollar and run caps
 ```
 
 `node --test test/*.test.mjs` runs the suite: no model, no network, no vendor API.
@@ -56,7 +65,10 @@ cases that must fail.
 
 The tool reads plugin checkouts and the private store, and writes results, labels and traces. It starts an
 OpenCode host from a binary you point it at, and a mock model on loopback. It does not sign in to anything,
-does not call a vendor's API, and holds no credentials.
+does not call a vendor's API, and holds no credentials. The one exception is `evals run`, which runs a real model:
+it passes the credential you name with `--auth` into each run's sandbox, and deletes it with the sandbox. Each run is
+confined in a Docker container of its own that sees only its sandbox, reaches nothing on the host, and can reach the
+internet only through a proxy that allows HTTPS to the model provider's hosts ([docs/running.md](docs/running.md#isolation)).
 
 Nothing private is committed: the store — recordings, traces, verdicts, scorecards, labels, holdouts — lives
 outside the repository. A trace reduces a session's content to structure; `evals privacy --scan` checks the
@@ -65,6 +77,7 @@ tree and the whole git history before anything is shared.
 ## Configure
 
 Options, environment variables, the store layout and the cost rules: [docs/configuration.md](docs/configuration.md).
+Live runs, their sandbox, credentials, worlds and caps: [docs/running.md](docs/running.md).
 CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/ci.md).
 
 ## Organisation rollout
@@ -72,18 +85,25 @@ CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/
 1. Add `evals check --plugin <id>` as the last stage of a plugin's `npm run check`.
 2. Give every plugin a pack: `packs/<id>/pack.json`, derived from its own `jelly` declaration.
 3. Keep four holdouts per plugin outside the repository, written by whoever does not tune the skill.
-4. Run the release sweep (T3, then T4 at k=3) under the monthly cap, and attach the scorecard to the release.
+4. Run the release sweep (`evals run`: T3, then T4 at k=3) under the monthly caps, and attach the scorecard to the release.
 
 ## Troubleshooting
 
 | What you see | What it means |
 | --- | --- |
 | `no @opencode/sdk at …` | set `EVALS_SDK_DIR` to a checkout whose `node_modules` holds the SDK and the plugin API |
-| `no stock binary for 2.2.5` | set `OPENCODE_BIN_2_2_5`, or `EVALS_STOCK_DIR` to a directory with one folder per version |
+| `no stock binary for 2.2.6` | set `OPENCODE_BIN_2_2_6`, or `EVALS_STOCK_DIR` to a directory with one folder per version holding an `npm install @opencode/cli@<version>` |
 | `describe answered 400` | the plugin registers no tools RPC without a sign-in or its options; the check reports `unsupported` |
 | `BLOCKED` items | the evidence could not settle the item — a variable argument, a missing recording, a dependency not configured |
 | `not comparable` | the case set, the rules, the model or the grader differ: the tool names the fields |
 | `cost.source: missing` | no price entry; add one with a source and a date rather than a guess |
+| `refusing a run with --isolation none` | every run is confined in a container; `--isolation none` needs `--unsafe-no-isolation` as well: see [docs/running.md](docs/running.md#isolation) |
+| `no image opencode-evals-sandbox:…` | build the sandbox image once: `evals isolation build` |
+| `Docker is not usable by this user` | start Docker, and add your user to the `docker` group (root-equivalent: see [docs/running.md](docs/running.md#running-live-evals-safely)) |
+| `cannot make /var/tmp/evals` | `sudo install -d -m 700 -o "$USER" -g "$USER" /var/tmp/evals`, or set `EVALS_TMP` to a directory on disk |
+| `run cap: … would reach …` | the batch does not fit this month's run caps; nothing ran. `evals budget` shows what is reserved |
+| `world … is stale` | the world's day has passed or another build indexed it; give it a `build`, or rebuild it |
+| `already have recordings` | the iteration has those cases; use a new `--iteration`, or `--append` for more trials |
 
 ## Uninstall
 
@@ -95,7 +115,7 @@ The private store is yours to delete: it is outside the repository.
 
 ## Links
 
-- [Configuration](docs/configuration.md) · [CI](docs/ci.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
+- [Configuration](docs/configuration.md) · [Running](docs/running.md) · [CI](docs/ci.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
 - [Design: how the tiers, cases, traces and policy fit together](docs/design.md)
 
 MIT. Copyright (c) 2026 Joe Broadhead.

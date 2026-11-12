@@ -4,7 +4,9 @@
 // their case set and skill tree are `unrecorded`: a comparison between them is refused, not silently
 // scored. `basis: "declared"` is the explicit override, and it is printed in the verdict.
 
-export const AXES = ["skill", "description", "namespace", "tools", "rules", "cases", "model", "host"]
+import { digestOf } from "../util/canonical.mjs"
+
+export const AXES = ["skill", "description", "namespace", "tools", "rules", "options", "cases", "model", "host"]
 
 const fieldOf = (batch, axis) => {
   const p = batch?.provenance ?? {}
@@ -19,6 +21,9 @@ const fieldOf = (batch, axis) => {
       return p.tools
     case "rules":
       return p.rules
+    case "options":
+      // The plugin's options in the run (an access mode, say). A batch from before they were recorded ran with none.
+      return p.options ?? { sha256: DEFAULT_OPTIONS, source: "default" }
     case "cases":
       return p.cases
     case "model":
@@ -29,6 +34,9 @@ const fieldOf = (batch, axis) => {
       return p[axis] ?? null
   }
 }
+
+/** The digest of "no plugin options": what every run before options were recorded used. */
+export const DEFAULT_OPTIONS = digestOf({})
 
 const scalar = (field) => {
   if (field === null || field === undefined) return null

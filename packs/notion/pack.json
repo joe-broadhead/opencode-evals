@@ -5,7 +5,7 @@
   "name": "Notion",
   "package": "@joe-broadhead/opencode-notion",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "pluginId": "notion.workspace",
   "skills": [
     "notion",
@@ -127,6 +127,20 @@
     {
       "name": "notion-get-session-status",
       "permission": "notion_notion-get-session-status",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "notion-get-setup-guide",
+      "permission": "notion_notion-get-setup-guide",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "notion-get-sidebar-tabs",
+      "permission": "notion_notion-get-sidebar-tabs",
       "effect": "allow",
       "readOnly": true,
       "class": "read"
@@ -288,233 +302,275 @@
     {
       "name": "notion-calendar-create-events",
       "permission": "notion_notion-calendar-create-events",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-calendar-update-events",
       "permission": "notion_notion-calendar-update-events",
-      "effect": "ask",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "notion-complete-mcp-setup",
+      "permission": "notion_notion-complete-mcp-setup",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-convert-page-to-skill",
       "permission": "notion_notion-convert-page-to-skill",
-      "effect": "ask",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "notion-convert-to-meetings-database",
+      "permission": "notion_notion-convert-to-meetings-database",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-create-attachment",
       "permission": "notion_notion-create-attachment",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-create-comment",
       "permission": "notion_notion-create-comment",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-create-database",
       "permission": "notion_notion-create-database",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-create-file-upload",
       "permission": "notion_notion-create-file-upload",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-create-folder",
       "permission": "notion_notion-create-folder",
-      "effect": "ask",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "notion-create-meeting-note",
+      "permission": "notion_notion-create-meeting-note",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-create-pages",
       "permission": "notion_notion-create-pages",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-create-suggested-edit",
       "permission": "notion_notion-create-suggested-edit",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-create-view",
       "permission": "notion_notion-create-view",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-duplicate-page",
       "permission": "notion_notion-duplicate-page",
-      "effect": "ask",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "notion-link-meeting-note-to-calendar-event",
+      "permission": "notion_notion-link-meeting-note-to-calendar-event",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-move-pages",
       "permission": "notion_notion-move-pages",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-resolve-suggested-edit",
       "permission": "notion_notion-resolve-suggested-edit",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-restore-pages",
       "permission": "notion_notion-restore-pages",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-set-comment-reaction",
       "permission": "notion_notion-set-comment-reaction",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-set-discussion-resolved",
       "permission": "notion_notion-set-discussion-resolved",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-update-comment",
       "permission": "notion_notion-update-comment",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-update-data-source",
       "permission": "notion_notion-update-data-source",
-      "effect": "ask",
-      "readOnly": false,
-      "class": "write"
-    },
-    {
-      "name": "notion-update-enabled-skills",
-      "permission": "notion_notion-update-enabled-skills",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-update-folder",
       "permission": "notion_notion-update-folder",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-update-page",
       "permission": "notion_notion-update-page",
-      "effect": "ask",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "notion-update-page-favorites",
+      "permission": "notion_notion-update-page-favorites",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "notion-update-sidebar-tabs",
+      "permission": "notion_notion-update-sidebar-tabs",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "notion-update-skill-settings",
+      "permission": "notion_notion-update-skill-settings",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-update-view",
       "permission": "notion_notion-update-view",
-      "effect": "ask",
+      "effect": "allow",
       "readOnly": false,
       "class": "write"
     },
     {
       "name": "notion-calendar-cancel-events",
       "permission": "notion_notion-calendar-cancel-events",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "notion-delete-comment",
       "permission": "notion_notion-delete-comment",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "notion-delete-databases",
       "permission": "notion_notion-delete-databases",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "notion-delete-pages",
       "permission": "notion_notion-delete-pages",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "notion-restore-version",
       "permission": "notion_notion-restore-version",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "notion-send-message-to-session",
       "permission": "notion_notion-send-message-to-session",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "notion-spawn-session",
       "permission": "notion_notion-spawn-session",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "notion-stop-session",
       "permission": "notion_notion-stop-session",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     },
     {
       "name": "notion-upload-skill",
       "permission": "notion_notion-upload-skill",
-      "effect": "deny",
+      "effect": "allow",
       "readOnly": false,
-      "class": "destructive"
+      "class": "write"
     }
   ],
   "counts": {
-    "tools": 71,
-    "reads": 39,
-    "writes": 23,
-    "denied": 9,
+    "tools": 79,
+    "reads": 41,
+    "writes": 38,
+    "denied": 0,
     "skills": 2
   },
   "schema": "oc-pack/1",
@@ -529,8 +585,12 @@
       "name": "notion-write",
       "description_sha256": "c743c8571a99de3a61561f7c10a7053d6c7c83db87435999f5ca3f04e2ab86f1",
       "description_chars": 428,
-      "body_lines": 95
+      "body_lines": 94
     }
   },
-  "digest": "b8708631bf50171f72398c6f15c1e616578172af0ef480e1361f103770ce0c49"
+  "digest": "e46b9fa500102044084f471366112a47e522814086fdc23229782f18044fbe65",
+  "access": {
+    "key": "access",
+    "default": "all"
+  }
 }

@@ -63,7 +63,7 @@
       "evidence": [
         {
           "kind": "count",
-          "tool": "sql",
+          "tool": "history.sql",
           "op": ">=",
           "value": 1
         }
@@ -92,7 +92,7 @@
         },
         {
           "kind": "absent",
-          "tool": "apply_patch",
+          "tool": "patch",
           "n": null
         }
       ],
@@ -105,6 +105,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7814ff6c2700db6c35d702224e92d6573a370462f99b9fd64ccd443c006ba51e"
+    "source_sha256": "60ef376d365eaad990fa6872799bd808cfb8b82fdc07bb155b997a09244e0004"
   }
 }

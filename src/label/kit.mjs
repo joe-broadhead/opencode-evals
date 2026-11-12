@@ -35,6 +35,7 @@ export function advisoryItems(store, plugin, iteration) {
         plugin,
         iteration,
         case: result.case,
+        ...(result.trial ? { trial: result.trial } : {}),
         item: item.id,
         severity: item.severity,
         ask: source?.ask ?? item.id,
@@ -92,8 +93,9 @@ export function pageFor(item, { text }) {
 /** Interactive labelling. `input` and `output` are injectable so the flow can be tested end to end. */
 export async function runLabelSession({ store, plugin, iteration, textFor = () => null, input, output, limit }) {
   const items = advisoryItems(store, plugin, iteration)
-  const done = new Set(readLabels(store, plugin).map((label) => `${label.iteration}/${label.case}/${label.item}`))
-  const queue = items.filter((item) => !done.has(`${item.iteration}/${item.case}/${item.item}`)).slice(0, limit ?? Infinity)
+  const key = (entry) => `${entry.iteration}/${entry.case}${entry.trial ? `#t${entry.trial}` : ""}/${entry.item}`
+  const done = new Set(readLabels(store, plugin).map(key))
+  const queue = items.filter((item) => !done.has(key(item))).slice(0, limit ?? Infinity)
   if (!queue.length) {
     output.write(`nothing to label for ${plugin} in ${iteration}: ${items.length} advisory item(s), all labelled\n`)
     return { labelled: 0, remaining: 0 }
@@ -108,7 +110,7 @@ export async function runLabelSession({ store, plugin, iteration, textFor = () =
     if (answer === "q") break
     const label = KEYS[answer]
     if (!label || label === "skip") continue
-    recordLabel(store, { plugin: item.plugin, iteration: item.iteration, case: item.case, item: item.item, label, at: new Date().toISOString() })
+    recordLabel(store, { plugin: item.plugin, iteration: item.iteration, case: item.case, ...(item.trial ? { trial: item.trial } : {}), item: item.item, label, at: new Date().toISOString() })
     labelled++
   }
   rl.close()

@@ -29,6 +29,7 @@
     "tokens": 300000,
     "wall_ms": 240000
   },
+  "seed": null,
   "expect": "pass",
   "holdout": false,
   "items": [
@@ -142,7 +143,7 @@
       "evidence": [
         {
           "kind": "absent",
-          "tool": "bash",
+          "tool": "shell",
           "n": null
         },
         {
@@ -217,6 +218,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "fdbd746a2e7cb8549ac44567e1fb5c62b3ff78896a61406ebdabbc104af496c4"
+    "source_sha256": "c73f5aa5496cc81a210afdb50fc753669cdeb288c1ea6f47bae40d11fcb20a3c"
   }
 }

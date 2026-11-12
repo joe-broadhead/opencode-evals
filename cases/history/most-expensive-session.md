@@ -19,7 +19,7 @@ what's the most expensive OpenCode session I've ever run, and what was it about?
   evidence: text:any matches /14\.87/i
 
 - [H-PR01] major · It ranked by cost (sessions with sort: cost, or one sql statement) rather than searching for 'expensive'.
-  evidence_any: call:sessions#1 args.sort == cost ;; call:sql#1 args.sql present
+  evidence_any: call:history.sessions#1 args.sort == cost ;; call:history.sql#1 args.sql present
 
 - [H-PR02] major · It named the session in a citation.
   evidence: text:any matches /ses_5F3vJAwkf9zXff2PL3aPow/
@@ -31,4 +31,4 @@ what's the most expensive OpenCode session I've ever run, and what was it about?
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

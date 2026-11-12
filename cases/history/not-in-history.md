@@ -22,10 +22,10 @@ what did we decide about GraphQL versus REST for the public API?
   evidence: count:history.* >= 1
 
 - [H-PR01] major · It tried more than one phrasing or widened the scope before giving up.
-  evidence_any: call:search#1 args.query.length >= 2 ;; count:search >= 2 ;; count:history.* >= 2
+  evidence_any: call:history.search#1 args.query.length >= 2 ;; count:history.search >= 2 ;; count:history.* >= 2
 
 ## Forbidden
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

@@ -169,7 +169,7 @@
         [
           {
             "kind": "call",
-            "tool": "search",
+            "tool": "history.search",
             "n": 1,
             "arg": "args.query.length",
             "op": ">=",
@@ -180,7 +180,7 @@
           },
           {
             "kind": "call",
-            "tool": "recall",
+            "tool": "history.recall",
             "n": 1,
             "arg": "args.queries.length",
             "op": ">=",
@@ -194,12 +194,12 @@
       "na_when": [
         {
           "kind": "absent",
-          "tool": "search",
+          "tool": "history.search",
           "n": null
         },
         {
           "kind": "absent",
-          "tool": "recall",
+          "tool": "history.recall",
           "n": null
         }
       ],
@@ -261,7 +261,7 @@
         },
         {
           "kind": "absent",
-          "tool": "apply_patch",
+          "tool": "patch",
           "n": null
         }
       ],
@@ -274,6 +274,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b25e3b8fa4e09fcc0c28c98f401a71f3d2e28a287ae4d7d2b99e13ba36f3d0c0"
+    "source_sha256": "6611bf7d782a07de767d26c3b9dd4f5eb73318b26a8c585ebeb73574f520b979"
   }
 }

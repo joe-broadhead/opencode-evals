@@ -6,7 +6,7 @@
 
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from "node:fs"
 import { join } from "node:path"
-import { startHost, stopAll, availableVersions, fakeCalls, captureLines, TESTED } from "./harness.mjs"
+import { startHost, stopAll, availableVersions, fakeCalls, captureLines, stockBinary, TESTED } from "./harness.mjs"
 import { checkRules, checkDescribe, checkStatus, checkScriptedTurn, checkRpcCall } from "./checks.mjs"
 
 const summaryOf = (checks) => ({
@@ -75,7 +75,7 @@ export async function runOne({ pack, version, store, fakeModule }) {
     plugin: pack.id,
     version,
     harness: "0.1.0-dev",
-    host: { version, binary: process.env[`OPENCODE_BIN_${version.replaceAll(".", "_")}`] ?? null },
+    host: { version, binary: stockBinary(version) },
     counts: pack.counts,
     summary: summaryOf(checks),
     checks,

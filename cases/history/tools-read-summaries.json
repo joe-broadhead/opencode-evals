@@ -63,7 +63,7 @@
       "evidence": [
         {
           "kind": "call",
-          "tool": "read",
+          "tool": "history.read",
           "n": 1,
           "arg": "args.kinds",
           "op": "present"
@@ -145,7 +145,7 @@
         },
         {
           "kind": "absent",
-          "tool": "apply_patch",
+          "tool": "patch",
           "n": null
         }
       ],
@@ -158,6 +158,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1b36b1265e1fd75ca049b4138346820bcf3a323e2105bdcc8496a4ad7a0abe58"
+    "source_sha256": "161dc31ded601c32b03369f60b1ed67799ea0fe5fa56831d85629513e4b85ebf"
   }
 }

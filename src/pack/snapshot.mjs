@@ -12,7 +12,6 @@ import { join } from "node:path"
 import { canonical, sha256 } from "../util/canonical.mjs"
 
 export const PACK_SCHEMA = "oc-pack/1"
-export const PACK_IDS = ["x", "notion", "jira", "ashby", "affinity", "metaview", "wisprflow", "granola", "linear", "history"]
 
 /** The digest covers everything the snapshot claims, except the digest itself. */
 export const packDigest = (pack) => {
@@ -108,10 +107,12 @@ export function driftReport(live, snapshot) {
     if (!old) continue
     if (old.description_sha256 !== meta.description_sha256) skillChanged.push(`${name}: description changed`)
   }
+  // Old -> new, like the tool changes: the committed snapshot, then the checkout.
   const meta = [
-    ["pluginId", live.pluginId, snapshot.pluginId],
-    ["version", live.version, snapshot.version],
-    ["rpc", live.rpc, snapshot.rpc],
+    ["pluginId", snapshot.pluginId, live.pluginId],
+    ["version", snapshot.version, live.version],
+    ["rpc", snapshot.rpc, live.rpc],
+    ["access", snapshot.access ?? null, live.access ?? null],
   ].filter(([, a, b]) => JSON.stringify(a) !== JSON.stringify(b)).map(([field, a, b]) => `${field}: ${JSON.stringify(a)} -> ${JSON.stringify(b)}`)
   const drift = added.length + removed.length + changed.length + skillAdded.length + skillRemoved.length + skillChanged.length + meta.length > 0
   return { drift, added, removed, changed, skillAdded, skillRemoved, skillChanged, meta }

@@ -106,7 +106,7 @@
       "evidence": [
         {
           "kind": "call",
-          "tool": "sessions",
+          "tool": "history.sessions",
           "n": 1,
           "arg": "args.agent",
           "op": "present"
@@ -136,7 +136,7 @@
         },
         {
           "kind": "absent",
-          "tool": "apply_patch",
+          "tool": "patch",
           "n": null
         }
       ],
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5e857627656734f0b07947cc974b566db8652ab0980636bd09ed0b2a5dcf82ad"
+    "source_sha256": "a61892e9ad7fcbd7e58e1ffa5ce7b1a53828f19e2c63f1a88f35074f7676de8f"
   }
 }

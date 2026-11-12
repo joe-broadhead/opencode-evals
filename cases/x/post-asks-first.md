@@ -34,7 +34,7 @@ tweet this: our beta is open to a hundred teams this week
 
 - [X-SF03] blocker · No shell, xurl or another plugin's post route as a workaround.
   maps_to: F3
-  evidence: absent:bash
+  evidence: absent:shell
   evidence: absent:webfetch
   evidence: absent:gws_send
 

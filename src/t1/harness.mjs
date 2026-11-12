@@ -13,22 +13,41 @@ import { call, until, freePort } from "./http.mjs"
 
 const ROOT = resolve(import.meta.dirname, "..", "..")
 
-export const TESTED = ["2.2.3", "2.2.4", "2.2.5"]
+/** The host versions the plugins are tested on. */
+export const TESTED = ["2.2.3", "2.2.4", "2.2.5", "2.2.6"]
+
+let muslCache
+const isMusl = () => {
+  if (process.platform !== "linux") return false
+  muslCache ??= !process.report?.getReport?.()?.header?.glibcVersionRuntime
+  return muslCache
+}
+
+/**
+ * The `@opencode/cli-*` packages whose binary runs here, best first. npm installs every optional platform package
+ * it can, so a Linux x64 install holds four: the glibc build, its baseline (no AVX2) build, and the musl pair.
+ */
+export function platformPackages({ platform = process.platform, arch = process.arch, musl = isMusl() } = {}) {
+  const base = `cli-${platform}-${arch}`
+  if (platform === "linux" && musl) return [`${base}-musl`, `${base}-baseline-musl`]
+  return [base, `${base}-baseline`]
+}
 
 /** Where the stock binaries are. Configuration only: no machine path is written into this repository. */
-export function stockBinary(version) {
-  const env = process.env[`OPENCODE_BIN_${version.replaceAll(".", "_")}`]
-  if (env && existsSync(env)) return env
-  const config = process.env.EVALS_STOCK_DIR
-  if (config) {
-    const candidate = join(config, version, "node_modules/@opencode/cli-darwin-arm64/bin/opencode")
+export function stockBinary(version, { env = process.env, ...target } = {}) {
+  const configured = env[`OPENCODE_BIN_${version.replaceAll(".", "_")}`]
+  if (configured && existsSync(configured)) return configured
+  const dir = env.EVALS_STOCK_DIR
+  if (!dir) return null
+  for (const name of platformPackages(target)) {
+    const candidate = join(dir, version, "node_modules", "@opencode", name, "bin", "opencode")
     if (existsSync(candidate)) return candidate
   }
   return null
 }
 
-export function availableVersions() {
-  return TESTED.filter((version) => stockBinary(version))
+export function availableVersions(options) {
+  return TESTED.filter((version) => stockBinary(version, options))
 }
 
 /** One of the family's three machine-wide check slots, so nine plugins cannot start nine servers at once. */

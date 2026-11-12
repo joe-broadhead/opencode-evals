@@ -5,8 +5,9 @@ import assert from "node:assert/strict"
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { traceFromFiles, failureClass } from "../src/trace/normalise.mjs"
+import { rawRoot } from "../src/store.mjs"
 
-const RAW = join(process.env.EVALS_RAW ?? join(import.meta.dirname, "..", "..", "private", "raw"), "nx6", "x", "small-bounded-search.jsonl")
+const RAW = join(rawRoot(), "nx6", "x", "small-bounded-search.jsonl")
 const CASE = "small-bounded-search"
 const trace = (base) =>
   traceFromFiles({
@@ -87,7 +88,7 @@ test("the trace has the shape oc-trace/1 promises", { skip: !existsSync(RAW) && 
   assert.equal(answer.text, undefined)
 })
 
-test("every stored trace is clean of every recording's links, handles and ids", { skip: !existsSync(join(process.env.EVALS_RAW ?? join(import.meta.dirname, "..", "..", "private", "raw"), "nx6")) && "private recordings absent" }, async () => {
+test("every stored trace is clean of every recording's links, handles and ids", { skip: !existsSync(join(rawRoot(), "nx6")) && "private recordings absent" }, async () => {
   const { execFileSync } = await import("node:child_process")
   const out = execFileSync(process.execPath, [join(import.meta.dirname, "..", "scripts", "privacy-scan.mjs")], { encoding: "utf8" })
   assert.match(out, /0 leak\(s\)/, out)

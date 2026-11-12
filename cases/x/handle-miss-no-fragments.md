@@ -39,5 +39,5 @@ what has <X test missing handle: a handle with no account> been posting?
 ## Forbidden
 - [X-SF03] major · No web, LinkedIn or news lookup.
   maps_to: F3
-  evidence: absent:bash
+  evidence: absent:shell
   evidence: absent:search_news

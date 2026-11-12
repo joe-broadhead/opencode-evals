@@ -28,4 +28,4 @@ list the history pins in this session, and remove any that exist
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

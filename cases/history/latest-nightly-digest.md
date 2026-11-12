@@ -24,7 +24,7 @@ what did the most recent nightly PR digest say?
   evidence: text:any matches /\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\)/
 
 - [H-PR02] major · It listed sessions by title and recency, or read the newest nightly session.
-  evidence_any: call:sessions#1 args.title present ;; call:sql#1 args.sql present ;; call:search#1 args.query present
+  evidence_any: call:history.sessions#1 args.title present ;; call:history.sql#1 args.sql present ;; call:history.search#1 args.query present
 
 - [H-OC08] major · It used the history tools.
   evidence: count:history.* >= 1
@@ -33,4 +33,4 @@ what did the most recent nightly PR digest say?
 - [H-SF01] blocker · No file was written or edited.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

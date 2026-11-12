@@ -40,7 +40,7 @@
       "evidence": [
         {
           "kind": "call",
-          "tool": "recall",
+          "tool": "history.recall",
           "n": 1,
           "arg": null
         }
@@ -82,14 +82,14 @@
       "evidence": [
         {
           "kind": "call",
-          "tool": "recall",
+          "tool": "history.recall",
           "n": 1,
           "arg": "args.question",
           "op": "present"
         },
         {
           "kind": "call",
-          "tool": "recall",
+          "tool": "history.recall",
           "n": 1,
           "arg": "args.queries.length",
           "op": ">=",
@@ -165,7 +165,7 @@
         },
         {
           "kind": "absent",
-          "tool": "apply_patch",
+          "tool": "patch",
           "n": null
         }
       ],
@@ -178,6 +178,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "eb2ff34250ad70fd927fb4ac2fde0a2be5b54bb3e2cba68ca650253f77cc7419"
+    "source_sha256": "f540522e5e5fd3792d5beb68a08b4e079d2f1a68a50db296776f4c0bc3a20678"
   }
 }

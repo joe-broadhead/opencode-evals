@@ -9,14 +9,20 @@ import { sha256 } from "../util/canonical.mjs"
 
 const BILLED_EXCEPTIONS = new Set(["get_usage_credits"])
 
+/** A call made by the code inside Code Mode's `execute`, as opposed to the `execute` call that ran it. */
+export const isInner = (call) => call.via === "execute" && call.tool !== "execute"
+
 /** A run view: the one shape every grader reads. Built from a trace file's lines. */
-export function runView(traceLines, { text = null, state = null } = {}) {
+export function runView(traceLines, { text = null, state = null, scope = null, rawArgs = null, checkable = [], files = null } = {}) {
   const parsed = traceLines.map((line) => (typeof line === "string" ? JSON.parse(line) : line))
   const head = parsed.find((event) => event.schema === "oc-trace/1") ?? parsed[0]
   const events = parsed.filter((event) => event.kind)
   const calls = events
     .filter((event) => event.kind === "tool_call")
     .map((event) => ({ ...event, counts: null, appended: null, status: "unknown" }))
+  // The recording's own arguments, call by call, for the keys the case declares checkable. Only when the recording
+  // has exactly the trace's calls: a mismatch would compare the wrong call, so it leaves them unverifiable instead.
+  if (rawArgs && rawArgs.length === calls.length) calls.forEach((call, index) => (call.raw_args = rawArgs[index]))
   // Attach each result to its call (results follow their call; for inner calls the `for_seq` names it).
   const bySeq = new Map(calls.map((call) => [call.seq, call]))
   for (const event of events) {
@@ -30,8 +36,10 @@ export function runView(traceLines, { text = null, state = null } = {}) {
   const permissions = events.filter((event) => event.kind === "permission").map((event) => ({ action: event.action, decision: event.decision }))
   const skills = events.filter((event) => event.kind === "skill_load").map((event) => event.skill).filter(Boolean)
   const tokens = head?.summary?.tokens ?? { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
-  const direct = calls.filter((call) => call.via !== "execute")
-  const inner = calls.filter((call) => call.via === "execute")
+  // Two counts, the same as the trace head's: outer is every call the model made (a skill load, Code Mode's
+  // `execute` and a direct tool alike), inner is every call the code inside an `execute` made.
+  const inner = calls.filter(isInner)
+  const direct = calls.filter((call) => !isInner(call))
   const billed = [...calls].filter((call) => {
     const ns = call.ns ?? (call.via === "execute" ? call.ns : call.tool.startsWith("x_") ? "x" : null)
     if (ns !== "x") return false
@@ -40,6 +48,11 @@ export function runView(traceLines, { text = null, state = null } = {}) {
   return {
     head,
     events,
+    // The case's plugin and the tools it declares: a bare tool name in a clause is that plugin's tool (select.mjs).
+    scope,
+    checkable: new Set(checkable),
+    // The files the run wrote (path, change, digest, a small text file's content), from the private recording.
+    files,
     calls,
     permissions,
     skills,
@@ -144,6 +157,11 @@ export function verdictOf(itemResults, caseObject) {
 
 /** Grades one case against one run view. */
 export function gradeCase(caseObject, view) {
+  // A trial the runner recorded as an infrastructure failure (its credential refused) is not the model's to fail: it is
+  // not graded, and is rerun from the reserve.
+  if (view.head?.infra) {
+    return { case: caseObject.id, plugin: caseObject.plugin, expect: caseObject.expect ?? "pass", verdict: "NOT_RUN", items: [], infra: view.head.infra, note: `infra: ${view.head.infra}: not graded; rerun it`, provenance: { trace_run_id: view.head.run_id ?? null, failure_class: "infra" } }
+  }
   const itemResults = caseObject.items.map((item) => gradeItem(item, view))
   const verdict = verdictOf(itemResults, caseObject)
   const pairs = caseObject.items

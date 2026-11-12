@@ -29,6 +29,9 @@ const FIELDS = new Map([
   ["expect", "expect"],
   ["holdout", "holdout"],
   ["seed", "seed"],
+  ["checkable", "checkable"],
+  ["set", "set"],
+  ["status", "status"],
 ])
 
 const ITEM_KEYS = new Set(["maps_to", "evidence", "evidence_any", "n/a_when", "grader", "where", "note"])

@@ -1,0 +1,134 @@
+{
+  "schema": "oc-pack/1",
+  "id": "jobs",
+  "name": "Jobs",
+  "package": "@joe-broadhead/opencode-jobs",
+  "version": "0.0.0",
+  "private": false,
+  "pluginId": "jobs.scheduler",
+  "rpc": "jobs.scheduler.tools",
+  "skills": [
+    "jobs"
+  ],
+  "skill_meta": {
+    "jobs": {
+      "name": "jobs",
+      "description_sha256": "2ec06c4a276e53b2c870991f5da82fb0392a4215f21e6161454dc52bc24dc599",
+      "description_chars": 267,
+      "body_lines": 103
+    }
+  },
+  "tools": [
+    {
+      "name": "status",
+      "permission": "jobs_status",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list",
+      "permission": "jobs_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get",
+      "permission": "jobs_get",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "history",
+      "permission": "jobs_history",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "pause",
+      "permission": "jobs_pause",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "pause_all",
+      "permission": "jobs_pause_all",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create",
+      "permission": "jobs_create",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update",
+      "permission": "jobs_update",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "delete",
+      "permission": "jobs_delete",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "run_now",
+      "permission": "jobs_run_now",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "resume",
+      "permission": "jobs_resume",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "extend",
+      "permission": "jobs_extend",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "approve",
+      "permission": "jobs_approve",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "run_script",
+      "permission": "jobs_run_script",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 14,
+    "reads": 4,
+    "writes": 10,
+    "denied": 0,
+    "skills": 1
+  },
+  "digest": "5e7bd02b077e44a88fd4af1bfd064027e200b3b67b1f09639decbfabac042a8a",
+  "t1": []
+}

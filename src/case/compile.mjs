@@ -8,6 +8,8 @@ import { sha256 } from "../util/canonical.mjs"
 
 export { ParseError, CaseError }
 
+const list = (text) => String(text).split(/[\s,]+/).map((part) => part.trim()).filter(Boolean)
+
 /** Compiles one markdown case. Throws CaseError or ParseError with the file and line. */
 export function compileCase(file, text) {
   const draft = parseCase(file, text)
@@ -70,6 +72,10 @@ export function compileCase(file, text) {
     seed: draft.fields.seed ?? null,
     expect: draft.fields.expect ?? "pass",
     holdout: draft.fields.holdout === "true",
+    // Present only when declared, so a case that declares none compiles to the JSON it always did.
+    ...(draft.fields.checkable ? { checkable: list(draft.fields.checkable) } : {}),
+    ...(draft.fields.set ? { sets: list(draft.fields.set) } : {}),
+    ...(draft.fields.status ? { status: draft.fields.status } : {}),
     items,
     oracle: draft.oracle.map((o) => ({ path: o.path, op: o.op, value: o.value })),
     notes: draft.notes,

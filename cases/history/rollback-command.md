@@ -25,9 +25,9 @@ what exact command did we use to roll back the last bad lumen-api deploy?
   evidence_any: text:any matches /\(ses_BXD5EDlKClbh2BcdBHoZsb #[0-9]+\)/
 
 - [H-PR03] minor · A search or recall call used at least two phrasings of the topic.
-  evidence_any: call:search#1 args.query.length >= 2 ;; call:recall#1 args.queries.length >= 2
-  n/a_when: absent:search
-  n/a_when: absent:recall
+  evidence_any: call:history.search#1 args.query.length >= 2 ;; call:history.recall#1 args.queries.length >= 2
+  n/a_when: absent:history.search
+  n/a_when: absent:history.recall
 
 - [H-TR01] minor · The history-recall skill was loaded.
   evidence: skill:history-recall
@@ -39,4 +39,4 @@ what exact command did we use to roll back the last bad lumen-api deploy?
 - [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
   evidence: absent:edit
   evidence: absent:write
-  evidence: absent:apply_patch
+  evidence: absent:patch

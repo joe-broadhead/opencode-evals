@@ -1,7 +1,7 @@
 // Recorded runs -> `oc-trace/1`.
 //
 // Input: one `<case>.jsonl` (`opencode run --format json`) and its `<case>.summary.json`, from
-// the private store's recordings/<iteration>/x/. Output: one JSONL file whose first line is the run
+// the private store's raw/<iteration>/<plugin>/. Output: one JSONL file whose first line is the run
 // header and whose remaining lines are events, carrying no text, handles, ids or links from X.
 //
 // The privacy rule is structural: arguments go through `safeArgs`, results are reduced to counts, and the
@@ -39,7 +39,7 @@ export function splitModel(model) {
 }
 
 /** The run header: everything a comparison needs, and nothing about the account. */
-export function header({ iteration, caseName, rawLines, summary, stderr, manifest, catalog, mapping, model }) {
+export function header({ iteration, caseName, trial = null, plugin = "x", rawLines, summary, stderr, manifest, catalog, mapping, model }) {
   const s = summarize(rawLines, stderr)
   const tokens = s.tokens
   const split = splitModel(model)
@@ -54,17 +54,20 @@ export function header({ iteration, caseName, rawLines, summary, stderr, manifes
   const text = s.finalText ?? ""
   return {
     schema: "oc-trace/1",
-    run_id: `${iteration}/${caseName}`,
+    run_id: trial ? `${iteration}/${caseName}#t${trial}` : `${iteration}/${caseName}`,
     iteration,
     case: caseName,
-    trial: summary?.trial ?? 1,
+    trial: trial ?? summary?.trial ?? 1,
     arm: summary?.arm ?? "with-skill",
-    source: { kind: "recorded", runner: "review/tools/run-evals.mjs" },
+    // The runner that made the recording, as it recorded itself; a recording that does not say is `unrecorded`.
+    source: { kind: "recorded", runner: summary?.runner ?? manifest?.recorded?.runner ?? "unrecorded", version: summary?.runner_version ?? null },
     started_at: s.firstAt ? new Date(s.firstAt).toISOString() : null,
     ended_at: s.lastAt ? new Date(s.lastAt).toISOString() : null,
     duration_ms: duration,
     exit,
-    failure_class: failureClass({ exit, tokens, calls: s.toolCalls, durationMs: duration ?? 0 }),
+    // The runner's own classification wins: a trial refused its credential is infra, whatever it printed.
+    failure_class: summary?.infra ? "infra" : failureClass({ exit, tokens, calls: s.toolCalls, durationMs: duration ?? 0 }),
+    ...(summary?.infra ? { infra: summary.infra } : {}),
     model: { id: model, ...split, params: {} },
     provenance: {
       ...manifest,
@@ -84,16 +87,16 @@ export function header({ iteration, caseName, rawLines, summary, stderr, manifes
     },
     privacy: {
       policy: "no-text-no-ids-no-handles",
-      raw: rawDescriptor(iteration, caseName, rawLines, text),
+      raw: rawDescriptor(iteration, plugin, trial ? `${caseName}.t${trial}` : caseName, rawLines, text),
     },
   }
 }
 
-function rawDescriptor(iteration, caseName, rawLines, text) {
+function rawDescriptor(iteration, plugin, caseName, rawLines, text) {
   const body = rawLines.join("\n")
   return {
     kind: "recording",
-    ref: `private/raw/${iteration}/x/${caseName}.jsonl`,
+    ref: `raw/${iteration}/${plugin}/${caseName}.jsonl`,
     sha256: sha256(body),
     text_sha256: sha256(text ?? ""),
     text_chars: (text ?? "").length,
@@ -238,10 +241,10 @@ export function classifyError(message) {
 }
 
 /** Reads one recorded case and returns the whole trace file as text (header line + events). */
-export function traceFromFiles({ caseName, iteration, base, manifest, catalog, mapping, model, stderr }) {
+export function traceFromFiles({ caseName, trial = null, iteration, plugin, base, manifest, catalog, mapping, model, stderr }) {
   const rawLines = readFileSync(`${base}.jsonl`, "utf8").split("\n").filter(Boolean)
   const summary = safeJson(`${base}.summary.json`)
-  const head = header({ iteration, caseName, rawLines, summary: summary ? { ...summary, stderr: stderr ?? summary.stderr } : null, stderr, manifest, catalog, mapping, model })
+  const head = header({ iteration, caseName, trial, plugin, rawLines, summary: summary ? { ...summary, stderr: stderr ?? summary.stderr } : null, stderr, manifest, catalog, mapping, model })
   const body = events({ rawLines, stderr, caseName, iteration, price: head.summary?.cost?.resolved?.price ?? null })
   return { head, body, lines: [JSON.stringify(head), ...body.map((e) => JSON.stringify(e))] }
 }

@@ -5,8 +5,8 @@
 Requires Node 22. The tool has no runtime dependencies.
 
 ```sh
-npm test                     # 70-odd deterministic tests: no model, no network
-node bin/evals compile       # compile the case set
+npm test                     # 180 deterministic tests: no model, no network (runs and hosts are stand-ins)
+node bin/evals compile --all # compile every case set (--check writes nothing and fails on a change)
 node bin/evals selftest      # the gold cases that test the graders
 ```
 
@@ -16,12 +16,14 @@ The tiers that need more than Node are configured, never assumed:
 | --- | --- |
 | `EVALS_PLUGIN_ROOT` | the directory holding the plugin checkouts; without it the tool uses the committed pack snapshots |
 | `EVALS_SDK_DIR` | a checkout whose `node_modules` holds `@opencode/sdk` and `@opencode/plugin` |
-| `OPENCODE_BIN_2_2_5` (and `_2_2_3`, `_2_2_4`) | a stock OpenCode binary per tested version |
+| `OPENCODE_BIN_2_2_6` (and `_2_2_3`, `_2_2_4`, `_2_2_5`) | a stock OpenCode binary per tested version |
 | `EVALS_X_FAKE` | the X plugin's own host-test fake, for the shaper case |
 | `EVALS_REPO_<ID>` | one plugin`s checkout, e.g. `EVALS_REPO_X` |
 | `EVALS_STORE` | the private store: traces, verdicts, scorecards, labels |
 | `EVALS_WITH_SLOT` | the family's `with-slot.sh`, so nine plugins do not start nine servers |
-| `EVALS_BUDGET_MODEL_USD`, `EVALS_BUDGET_VENDOR_USD` | the monthly caps |
+| `EVALS_BUDGET_MODEL_USD`, `EVALS_BUDGET_VENDOR_USD` | the monthly dollar caps |
+| `EVALS_MAX_RUNS_PER_PLUGIN`, `EVALS_MAX_RUNS_TOTAL` | the monthly run caps (800, 13000) |
+| `EVALS_OPENCODE_BIN`, `EVALS_AUTH`, `EVALS_WORLD_<ID>` | the host, credential profile and world `evals run` uses ([running.md](docs/running.md)) |
 
 ## What to run before a commit
 
