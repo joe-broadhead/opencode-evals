@@ -122,6 +122,20 @@ names the fields and refuses. `decide()` is a pure function of the two batches:
 A model-driven suite is noisy: the same arm against itself flips a case or two between trials, so one trial never
 ships. A grader comparison re-judges the same recordings and is exempt.
 
+## Reports over arms
+
+`evals report <label>=<iteration>[,<iteration>...] ...` compares arms over their trials: runs, strict pass, strict
+`pass^k`, "no blocker failed", item pass rates by area (the letters after the plugin prefix of an item id, `H-PR01`
+is `PR`), calls, seconds and tokens per run; a per-case table of strict passes of trials; and, for every arm against
+the first, a paired bootstrap over the cases both ran (5000 resamples of the per-case difference in strict-pass rate,
+a 95% percentile interval). Each comparison seeds its own generator from its two arms' iterations and the cases
+they share, so an arm's interval is the same whichever other arms are listed. The rows are compared on the cases
+every arm ran; `--all-cases` lifts that.
+
+`--set tune|holdout|tools|all` selects cases by their own metadata, the same sets the runner uses: `holdout` is a case
+with `Holdout: true`, `tools` an id starting `tools-`, `tune` the rest. A run of a `Seed: time=day` case recorded on
+another UTC day than its world's is dropped, and the report says how many.
+
 ## The store
 
 Everything a run produces lives outside the repository: [configuration.md](configuration.md#the-store).

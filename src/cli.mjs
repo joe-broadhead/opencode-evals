@@ -6,6 +6,7 @@
 //   evals lock     [--plugin x] [--epoch N]
 //   evals scorecard --iteration nx6 [--grading FILE] [--out FILE]
 //   evals policy   --a nx5 --b nx6 [--strict]
+//   evals report   <label>=<it>[,<it>...] ... [--plugin x] [--set all] [--cases ids] [--all-cases] [--detail] [--json]
 //   evals t0       [--root DIR] [--json]
 //   evals verify   re-derive every number from the stored inputs and compare
 //   evals selftest run the T-G gold cases over synthetic traces
@@ -36,6 +37,8 @@ import { runCost, totals, trustOf } from "./cost/rule.mjs"
 import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "./label/kit.mjs"
 import { storeRoot, rawRoot, tracesDir } from "./store.mjs"
 import { splitTrial, trialName, caseEntry, byCase, trialStats } from "./grade/trials.mjs"
+import { selectCases } from "./case/sets.mjs"
+import { compare as compareArms, renderReport } from "./report/arms.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
 const args = (argv) => {
@@ -410,6 +413,53 @@ export async function main(argv) {
         `Comparability: ${comparison.why.length ? comparison.why.join("; ") : "every axis but the one under test matches"}.`,
       ]
       console.log(lines.join("\n"))
+      return
+    }
+    case "report": {
+      // Arms over trials: strict pass, pass^k, item rates, and a paired bootstrap against the first arm.
+      const arms = opt._.map((spec) => {
+        const at = spec.indexOf("=")
+        if (at < 1) throw new Error(`an arm is <label>=<iteration>[,<iteration>...], not ${JSON.stringify(spec)}`)
+        return { label: spec.slice(0, at), iterations: spec.slice(at + 1).split(",").filter(Boolean) }
+      })
+      if (!arms.length) throw new Error("evals report <label>=<iteration>[,<iteration>...] ...")
+      const verdictsOf = (iteration) => {
+        const file = join(storePath(), "results", iteration, "verdicts.json")
+        if (!existsSync(file)) throw new Error(`not graded: ${iteration} (run evals grade --iteration ${iteration})`)
+        return JSON.parse(read(file))
+      }
+      const loaded = arms.map((arm) => ({ ...arm, results: arm.iterations.map((iteration) => ({ iteration, results: verdictsOf(iteration) })) }))
+      const plugin = opt.plugin ?? loaded[0].results[0]?.results.find((r) => r.plugin)?.plugin ?? "x"
+      const caseList = loadCases(plugin)
+      const meta = new Map(caseList.map((c) => [c.id, c]))
+      const keep = new Set(selectCases(caseList, { patterns: opt.cases ?? "*", set: opt.set ?? "all" }).selected.map((c) => c.id))
+      // A time-window case (`Seed: time=day`) asks about the world's day: a run recorded on another UTC day asked a
+      // different question, so it is dropped, whatever arm it belongs to.
+      let dropped = 0
+      const sameDay = (iteration, run) => {
+        if (!/(^|\s)time=day(\s|$)/.test(meta.get(run.case)?.seed ?? "")) return true
+        const file = join(rawRoot(), iteration, plugin, `${trialName(run.case, run.trial)}.summary.json`)
+        if (!existsSync(file)) return true
+        const summary = JSON.parse(read(file))
+        const worldNow = summary.world?.now ?? summary.corpus_now
+        if (!worldNow || !summary.started_at) return true
+        return String(summary.started_at).slice(0, 10) === new Date(worldNow).toISOString().slice(0, 10)
+      }
+      const armsIn = loaded.map((arm) => ({
+        label: arm.label,
+        iterations: arm.iterations,
+        runs: arm.results.flatMap(({ iteration, results }) =>
+          results.filter((run) => run.verdict !== "NOT_RUN" && keep.has(run.case)).filter((run) => (sameDay(iteration, run) ? true : (dropped++, false))),
+        ),
+      }))
+      const report = compareArms(armsIn, { allCases: Boolean(opt["all-cases"]), resamples: Number(opt.resamples ?? 5000) })
+      if (opt.json) {
+        console.log(json({ ...report, rows: report.rows.map(({ byCase: _, ...row }) => row), dropped }))
+        return
+      }
+      console.log(`# report, ${plugin}${opt.set ? ` (set ${opt.set})` : ""}\n`)
+      console.log(renderReport(report, { detail: Boolean(opt.detail) }))
+      if (dropped) console.log(`\n${dropped} time-window run(s) dropped: recorded on another UTC day than their world's.`)
       return
     }
     case "t0": {

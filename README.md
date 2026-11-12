@@ -28,6 +28,7 @@ evals compile                      # markdown cases -> oc-case/1 JSON
 evals grade --iteration nx6        # grade a recorded iteration from the private store
 evals scorecard --iteration nx6    # one page, with the comparison against a hand grading
 evals policy --a nx5 --b nx6       # ship, hold or ask, with the reasons
+evals report base=b-t1,b-t2 new=n-t1,n-t2 --set tune   # strict pass, pass^k, paired bootstrap per arm
 evals t0  --plugin x               # static checks on a plugin checkout
 evals t1  --plugin x               # what the plugin makes possible, with no model
 evals check --plugin x             # T0 + the gold cases + T1: the CI gate

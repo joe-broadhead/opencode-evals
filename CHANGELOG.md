@@ -14,6 +14,13 @@ Keep a Changelog. This project adheres to Semantic Versioning.
   entry passes only when every trial passed (`pass^k`), and `batch.json` reports `trials`, `strict` (every blocker
   and major item passed, the bar `PASS` does not set) and `pass_k`. `evals policy` prints both.
 
+- `evals report`: arms compared over trials, ported from the History lab's report script — strict pass, strict
+  `pass^k`, item rates by area, calls, time and tokens, a per-case table, and a paired bootstrap over cases against
+  the first arm. Each comparison has its own random stream, seeded from its arms and cases: the lab script shared
+  one, so an arm's interval moved when another arm was listed.
+- Case sets from case metadata (`src/case/sets.mjs`): `tune`, `holdout` (`Holdout: true`) and `tools` (`tools-*`),
+  shared by the runner and the report. History is 47, 10 and 9; the lab runner's `--set tune` took 56.
+
 ### Changed
 
 - `evals policy` never ships on fewer than two trials per case (`LIMITS.minTrials`); it asks, and says why. A batch
