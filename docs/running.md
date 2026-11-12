@@ -152,4 +152,4 @@ holds them. `batch-<id>.json` is the plan and every run's outcome. The ledger
 (`$EVALS_STORE/ledger/runs.jsonl`) has the reservation and one line per run with what it billed.
 
 Not verified end to end by this repository's tests, which use a stand-in binary: a live model, the Claude Agent
-provider, and a real History world. Those are exercised by a pilot, never by `npm test`.
+provider, and a real History world. Those are exercised by a pilot, never by `pnpm test`.

@@ -70,6 +70,8 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Changed
 
+- The docs use pnpm (`pnpm test`, `pnpm add -D`), the team's package manager; CI still calls npm (unchanged).
+
 - `evals compile` needs `--plugin <id>` or `--all`: without them it compiled `x` and rewrote its JSON, and
   `compile --help` did the same. `--help` (and `-h`) on any command prints the usage and runs nothing; an unknown
   command is an error. `compile --check` writes nothing and exits non-zero when a committed JSON is stale; CI runs
