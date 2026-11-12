@@ -490,6 +490,7 @@ export async function main(argv) {
         casesDir: opt["cases-dir"],
         dryRun: Boolean(opt["dry-run"]),
         keep: Boolean(opt.keep),
+        keepCredentials: Boolean(opt["keep-credentials"]),
         append: Boolean(opt.append),
       })
       if (result.results?.some((r) => r.error)) process.exitCode = 1

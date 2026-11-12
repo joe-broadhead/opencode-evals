@@ -7,21 +7,51 @@
 //                   - the credential OpenCode stores as "Claude Agent" (EVALS_AUTH_CREDENTIAL to name another) is
 //                     exported from the caller's own OpenCode once, held in memory, and piped into each sandbox's
 //                     `opencode auth import --standalone`; it lands in the sandbox's database and is deleted with it;
-//                   - the provider spawns `claude`, which reads its own sign-in: ~/.claude and ~/.local/bin are linked
-//                     into the sandbox home (shared, never copied), and the sandbox gets a ~/.claude.json holding
-//                     only the onboarding flags and the account id fields;
-//                   - CLAUDE_AGENT_SDK_VERSION must be set, and is passed on;
-//                   - `claude` writes a transcript per working directory under ~/.claude/projects/; after each run the
-//                     directory for that run's sandbox path is removed, and nothing else.
+//                   - the provider spawns `claude`, which reads its own sign-in. Each sandbox has its own ~/.claude
+//                     holding one thing: a symlink to the caller's ~/.claude/.credentials.json. Nothing else of the
+//                     caller's ~/.claude (settings, hooks, CLAUDE.md, MCP servers, agents, plugins) is visible to the
+//                     run, there is no ~/.claude.json, and everything `claude` writes (projects/, history.jsonl, todos/,
+//                     shell-snapshots/, file-history/) lands in the sandbox and is deleted with it;
+//                   - a token refresh inside the run: `claude` writes credentials by replacing the file, which
+//                     replaces the symlink with a file of its own in the sandbox. When that file holds a later token
+//                     than the caller's, it is written back over the caller's (atomically, mode 0600), so a rotated
+//                     refresh token never leaves the caller signed out. That is the only write to the caller's ~/.claude;
+//                   - CLAUDE_AGENT_SDK_VERSION must be set, and is passed on; claude's auto-updater is off.
 
-import { existsSync, readFileSync, rmSync, symlinkSync, writeFileSync, mkdirSync, realpathSync } from "node:fs"
-import { join, dirname, basename } from "node:path"
+import { existsSync, lstatSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync, mkdirSync } from "node:fs"
+import { join } from "node:path"
+import { randomBytes } from "node:crypto"
 import { runToEnd } from "./sandbox.mjs"
 
-const CLAUDE_KEYS = ["hasCompletedOnboarding", "lastOnboardingVersion", "oauthAccount", "userID"]
+/** The OAuth expiry a credentials file holds, or null; the file's content is never shown. */
+const expiryOf = (file) => {
+  try {
+    const data = JSON.parse(readFileSync(file, "utf8"))
+    const value = data?.claudeAiOauth?.expiresAt
+    return typeof value === "number" ? value : null
+  } catch {
+    return null
+  }
+}
 
-/** The directory `claude` keeps a working directory's transcripts in. */
-export const claudeProjectDir = (realHome, cwd) => join(realHome, ".claude", "projects", cwd.replace(/[^A-Za-z0-9]/g, "-"))
+/** Writes a refreshed sandbox credential back over the caller's, when it is the newer one. */
+export function writeBackCredential(sandboxFile, realFile) {
+  let stat
+  try {
+    stat = lstatSync(sandboxFile)
+  } catch {
+    return "absent"
+  }
+  if (stat.isSymbolicLink()) return "unchanged"
+  const refreshed = expiryOf(sandboxFile)
+  const current = expiryOf(realFile)
+  if (refreshed === null) return "unreadable"
+  if (current !== null && refreshed <= current) return "older"
+  const tmp = `${realFile}.evals-${randomBytes(4).toString("hex")}`
+  writeFileSync(tmp, readFileSync(sandboxFile), { mode: 0o600 })
+  renameSync(tmp, realFile)
+  return "written"
+}
 
 export function parseAuth(spec) {
   const text = String(spec ?? "").trim()
@@ -56,43 +86,26 @@ export async function prepareAuth(profile, { binary, caller = process.env }) {
   const exported = await runToEnd(binary, ["auth", "export", name], { env: caller, timeoutMs: 30_000 })
   if (exported.code !== 0 || !exported.stdout.trim()) throw new Error(`--auth claude-agent: \`opencode auth export ${JSON.stringify(name)}\` failed (exit ${exported.code}); is the credential stored?`)
   const credential = exported.stdout
-  const account = (() => {
-    try {
-      const all = JSON.parse(readFileSync(join(realHome, ".claude.json"), "utf8"))
-      return Object.fromEntries(CLAUDE_KEYS.filter((key) => key in all).map((key) => [key, all[key]]))
-    } catch {
-      return {}
-    }
-  })()
+  const realCredentials = join(realHome, ".claude", ".credentials.json")
+  if (!existsSync(realCredentials)) throw new Error("--auth claude-agent: no ~/.claude/.credentials.json; sign in with `claude` first")
   return {
     profile: "claude-agent",
-    env: { CLAUDE_AGENT_SDK_VERSION: caller.CLAUDE_AGENT_SDK_VERSION },
+    env: { CLAUDE_AGENT_SDK_VERSION: caller.CLAUDE_AGENT_SDK_VERSION, DISABLE_AUTOUPDATER: "1" },
+    holdsCredential: true,
     async apply({ sandbox, env }) {
-      for (const link of [".claude", join(".local", "bin")]) {
-        const target = join(realHome, link)
-        const at = join(sandbox.home, link)
-        if (!existsSync(target) || existsSync(at)) continue
-        mkdirSync(dirname(at), { recursive: true })
-        symlinkSync(target, at)
-      }
-      writeFileSync(join(sandbox.home, ".claude.json"), JSON.stringify(account), { mode: 0o600 })
+      // The sandbox's own ~/.claude, with the sign-in and nothing else: whatever a world's home brought is replaced.
+      const dir = join(sandbox.home, ".claude")
+      rmSync(dir, { recursive: true, force: true })
+      rmSync(join(sandbox.home, ".claude.json"), { force: true })
+      mkdirSync(dir, { recursive: true, mode: 0o700 })
+      symlinkSync(realCredentials, join(dir, ".credentials.json"))
+      env.CLAUDE_CONFIG_DIR = dir
       const imported = await runToEnd(binary, ["auth", "import", "--standalone"], { cwd: sandbox.home, env, input: credential, timeoutMs: 60_000 })
       if (imported.code !== 0) throw new Error(`the credential import into the sandbox failed (exit ${imported.code})`)
     },
-    /** Removes the transcripts `claude` wrote for this run's working directory: that directory only. */
-    cleanup({ cwd }) {
-      const paths = new Set([cwd])
-      try {
-        paths.add(realpathSync(cwd))
-      } catch {
-        // the sandbox is already gone
-      }
-      const projects = join(realHome, ".claude", "projects")
-      for (const path of paths) {
-        const dir = claudeProjectDir(realHome, path)
-        // Only a directory directly under ~/.claude/projects, named for a path inside this batch.
-        if (dirname(dir) === projects && basename(dir).length > 1) rmSync(dir, { recursive: true, force: true })
-      }
+    /** A token the run refreshed goes back to the caller's file; nothing else of the sandbox leaves it. */
+    cleanup({ sandbox }) {
+      return writeBackCredential(join(sandbox.home, ".claude", ".credentials.json"), realCredentials)
     },
   }
 }

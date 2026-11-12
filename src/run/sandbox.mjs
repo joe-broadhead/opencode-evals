@@ -3,8 +3,8 @@
 // servers, agents or provider keys reaches a run unless a credential profile passes it on purpose.
 
 import { spawn } from "node:child_process"
-import { mkdirSync, writeFileSync, existsSync, rmSync } from "node:fs"
-import { join } from "node:path"
+import { mkdirSync, writeFileSync, existsSync, rmSync, readdirSync, lstatSync, readlinkSync, unlinkSync } from "node:fs"
+import { join, resolve, dirname, sep } from "node:path"
 import { randomBytes } from "node:crypto"
 
 const mkdir = (dir) => mkdirSync(dir, { recursive: true, mode: 0o700 })
@@ -159,6 +159,35 @@ export async function stop(proc, { graceMs = 2000 } = {}) {
   // A provider's CLI can outlive the server it was started by; the group signal reaches it, this makes sure.
   proc.kill("SIGKILL")
   reap()
+}
+
+/**
+ * Removes every symlink near the top of the sandbox home that points outside the sandbox: a world's home copied from a
+ * lab sandbox carries links to the caller's ~/.claude or ~/.local/bin, and a run must not reach through them.
+ */
+export function stripForeignLinks(sandbox, { depth = 3 } = {}) {
+  const removed = []
+  const root = resolve(sandbox.root)
+  const walk = (dir, left) => {
+    let entries
+    try {
+      entries = readdirSync(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const entry of entries) {
+      const path = join(dir, entry.name)
+      if (entry.isSymbolicLink()) {
+        const target = resolve(dirname(path), readlinkSync(path))
+        if (target !== root && !target.startsWith(`${root}${sep}`)) {
+          unlinkSync(path)
+          removed.push(path.slice(root.length + 1))
+        }
+      } else if (entry.isDirectory() && left > 0) walk(path, left - 1)
+    }
+  }
+  walk(sandbox.home, depth)
+  return removed
 }
 
 export const removeSandbox = (root) => {

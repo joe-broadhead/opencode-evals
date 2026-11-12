@@ -21,7 +21,7 @@ import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf }
 import { assertWithinBudget, projectedSpend, monthToDate, CAPS } from "../cost/budget.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
-import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, killAll } from "./sandbox.mjs"
+import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, killAll, stripForeignLinks } from "./sandbox.mjs"
 import { parseAuth, prepareAuth } from "./auth.mjs"
 import { loadWorld, parseSeed } from "./world.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
@@ -135,6 +135,8 @@ async function runJob(job, ctx) {
   const sandbox = makeSandbox(root)
   const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
   const cwd = within(root, prepared.cwd, "the working directory")
+  const cut = stripForeignLinks(sandbox)
+  if (cut.length) ctx.log(`  ${name}: removed ${cut.length} link(s) out of the sandbox that the world's home carried (${cut.slice(0, 3).join(", ")})`)
   const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model })
   writeConfig(sandbox, config)
   const password = newPassword()
@@ -183,7 +185,9 @@ async function runJob(job, ctx) {
   writeAtomic(out(".jsonl"), result.stdout ?? "")
   writeAtomic(out(".summary.json"), `${JSON.stringify(summary, null, 1)}\n`)
   writeAtomic(out(".files.json"), `${JSON.stringify(changedFiles(before, cwd), null, 1)}\n`)
-  ctx.auth.cleanup({ cwd })
+  const writeBack = ctx.auth.cleanup({ cwd, sandbox })
+  if (writeBack === "written") ctx.log(`  ${name}: the run refreshed the sign-in; the new token was written back`)
+  if (writeBack === "unreadable") ctx.log(`  ${name}: warning: the run replaced the credentials file with one that could not be read; the caller's was left as it was`)
   if (!ctx.keep) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
   const cost = billedOf(result.stdout ?? "")
   recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
@@ -243,6 +247,10 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     }
     return { planned: jobs.length, launched: 0, dryRun: true }
   }
+
+  const profile = parseAuth(options.auth ?? caller.EVALS_AUTH)
+  // A kept sandbox keeps the credential imported into it: only when asked for in so many words.
+  if (options.keep && profile.kind === "claude-agent" && !options.keepCredentials) throw new Error("--keep with --auth claude-agent keeps the imported credential in the sandboxes: add --keep-credentials to mean it")
 
   const version = await runToEnd(binary, ["--version"], { env: { PATH: caller.PATH ?? "/usr/bin:/bin", HOME: caller.HOME ?? tmpdir() }, timeoutMs: 30_000 })
   if (version.code !== 0) throw new Error(`${binary} --version failed: is the host installed?`)
@@ -322,7 +330,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       if (!status.fresh) throw new Error(`world ${world.name} is stale and was not rebuilt: ${status.why}`)
     }
 
-    const auth = await prepareAuth(parseAuth(options.auth ?? caller.EVALS_AUTH), { binary, caller })
+    const auth = await prepareAuth(profile, { binary, caller })
+    if (keepRoot && auth.holdsCredential) log(`warning: --keep-credentials: the kept sandboxes under ${batchRoot} hold the imported credential; delete them when you are done`)
     // Money, then runs: both checked before anything launches, and the whole batch reserved in one locked step.
     const projected = projectedSpend(store, jobs.length)
     assertWithinBudget(store, { model_usd: projected.model_usd })
@@ -336,6 +345,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       keep: keepRoot, caller, auth, world, armDir, arm, runnerVersion: harnessVersion(),
       worldInfo: { ...(world.provenance?.() ?? { name: world.name }), now: status.now ?? null },
       interrupted: () => interrupted,
+      log,
     }
     Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo })
     let next = 0

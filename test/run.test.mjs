@@ -1,14 +1,14 @@
 // `evals run` with a stand-in OpenCode binary: no model, no network beyond loopback, deterministic outcomes.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync, lstatSync } from "node:fs"
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync, lstatSync, symlinkSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { spawnSync } from "node:child_process"
 import { runBatch, plan } from "../src/run/runner.mjs"
 import { readLedger, usage } from "../src/cost/ledger.mjs"
 import { compileCase } from "../src/case/compile.mjs"
-import { claudeProjectDir } from "../src/run/auth.mjs"
+import { writeBackCredential } from "../src/run/auth.mjs"
 import { freshness, parseSeed } from "../src/run/world.mjs"
 import { installFakeOpencode } from "./helpers/fake-opencode.mjs"
 
@@ -47,6 +47,9 @@ function fixture({ cases = [["demo-a", "- Seed: cwd=api"], ["demo-b", ""], ["ho-
   writeFileSync(join(arm, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo\n---\nbody\n")
   const home = join(root, "user")
   mkdirSync(join(home, ".claude"), { recursive: true })
+  writeFileSync(join(home, ".claude", ".credentials.json"), JSON.stringify({ claudeAiOauth: { accessToken: "a1", refreshToken: "r1", expiresAt: 1000 } }), { mode: 0o600 })
+  writeFileSync(join(home, ".claude", "settings.json"), JSON.stringify({ hooks: { PreToolUse: [] } }))
+  writeFileSync(join(home, ".claude", "CLAUDE.md"), "global instructions\n")
   writeFileSync(join(home, ".claude.json"), JSON.stringify({ hasCompletedOnboarding: true, userID: "u1", oauthAccount: { id: "a" }, projects: { secret: true }, cachedThings: [1, 2] }))
   const bin = join(root, "bin")
   mkdirSync(bin)
@@ -189,25 +192,83 @@ test("freshness rules: a UTC day, a number of hours, or always", () => {
   assert.equal(freshness("always", null, at).fresh, true)
 })
 
-test("claude-agent: the credential is piped in, the login is linked, the account file is minimal, transcripts are removed", async () => {
+test("claude-agent: the credential is piped in, and the run's ~/.claude is its own, holding only the sign-in", async () => {
   const f = fixture()
   await assert.rejects(runBatch({ plugin: "demo", iteration: "ca0", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet }), /CLAUDE_AGENT_SDK_VERSION/)
   const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
-  const result = await runBatch({ plugin: "demo", iteration: "ca1", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true }, { caller, ...quiet })
+  const before = readdirSync(join(f.home, ".claude")).sort()
+  const result = await runBatch({ plugin: "demo", iteration: "ca1", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true, keepCredentials: true }, { caller, ...quiet })
   assert.equal(result.bad, 0, JSON.stringify(result.results))
   const home = join(result.keptAt, "runs", "demo-b.t1", "home")
   const imported = JSON.parse(readFileSync(join(home, "imported.json"), "utf8"))
   assert.deepEqual(JSON.parse(imported.input), { integration: "Claude Agent", kind: "external" })
   assert.deepEqual(imported.argv, ["auth", "import", "--standalone"])
   assert.equal(imported.env.HOME, home, "imported into the sandbox, not the caller's install")
-  assert.ok(lstatSync(join(home, ".claude")).isSymbolicLink())
-  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(home, ".claude.json"), "utf8"))).sort(), ["hasCompletedOnboarding", "oauthAccount", "userID"])
+  // Its own directory: the sign-in is a link to the caller's file, and nothing else of the caller's ~/.claude is there.
+  const dir = join(home, ".claude")
+  assert.equal(lstatSync(dir).isSymbolicLink(), false)
+  assert.ok(lstatSync(join(dir, ".credentials.json")).isSymbolicLink())
+  assert.equal(existsSync(join(dir, "settings.json")) || existsSync(join(dir, "CLAUDE.md")), false)
+  assert.equal(existsSync(join(home, ".claude.json")), false, "no ~/.claude.json in the sandbox")
   const run = JSON.parse(readFileSync(join(home, "run.json"), "utf8"))
   assert.equal(run.env.CLAUDE_AGENT_SDK_VERSION, "0.0.1-test")
+  assert.equal(run.env.CLAUDE_CONFIG_DIR, dir)
+  assert.equal(run.env.DISABLE_AUTOUPDATER, "1")
   assert.equal(run.env.ANTHROPIC_API_KEY, undefined)
-  assert.equal(existsSync(claudeProjectDir(f.home, run.cwd)), false, "the run's transcript directory was removed")
-  assert.ok(existsSync(join(f.home, ".claude")), "and nothing else of the login")
+  // What `claude` writes stays in the sandbox: the caller's ~/.claude is as it was.
+  assert.ok(readdirSync(join(dir, "projects")).length > 0)
+  assert.deepEqual(readdirSync(join(f.home, ".claude")).sort(), before)
   f.cleanup()
+})
+
+test("--keep with claude-agent is refused unless --keep-credentials says so", async () => {
+  const f = fixture()
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "kc", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true }, { caller, ...quiet }), /--keep-credentials/)
+  assert.deepEqual(readLedger(f.store), [], "refused before anything was reserved")
+  assert.deepEqual(readdirSync(f.tmp), [], "and nothing was kept")
+  const lines = []
+  await runBatch({ plugin: "demo", iteration: "kc2", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true, keepCredentials: true }, { caller, log: (line) => lines.push(line) })
+  assert.ok(lines.some((line) => /hold the imported credential/.test(line)))
+  f.cleanup()
+})
+
+test("a world's home that links to the caller's ~/.claude is cut off from it", async () => {
+  const f = fixture()
+  const world = join(f.root, "world")
+  mkdirSync(join(world, "home", ".local"), { recursive: true })
+  symlinkSync(join(f.home, ".claude"), join(world, "home", ".claude"))
+  symlinkSync(join(f.home, "bin-elsewhere"), join(world, "home", ".local", "bin"))
+  writeFileSync(join(world, "home", ".claude.json"), JSON.stringify({ oauthAccount: { id: "a" } }))
+  writeFileSync(join(world, "world.json"), JSON.stringify({ home: "home" }))
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const result = await runBatch({ plugin: "demo", iteration: "wl", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, world, keep: true, keepCredentials: true }, { caller, ...quiet })
+  const home = join(result.keptAt, "runs", "demo-b.t1", "home")
+  assert.equal(lstatSync(join(home, ".claude")).isSymbolicLink(), false)
+  assert.equal(existsSync(join(home, ".local", "bin")), false)
+  assert.equal(existsSync(join(home, ".claude.json")), false)
+  assert.equal(existsSync(join(f.home, ".claude", "projects")), false, "nothing reached the caller's ~/.claude through the world's link")
+  f.cleanup()
+})
+
+test("a token refreshed inside a run is written back when it is the newer one, and never shown", () => {
+  const dir = mkdtempSync(join(tmpdir(), "evals-wb-"))
+  const real = join(dir, "real.json")
+  const sandbox = join(dir, "sandbox.json")
+  writeFileSync(real, JSON.stringify({ claudeAiOauth: { refreshToken: "r1", expiresAt: 1000 } }))
+  symlinkSync(real, sandbox)
+  assert.equal(writeBackCredential(sandbox, real), "unchanged", "still the link: nothing to do")
+  rmSync(sandbox)
+  writeFileSync(sandbox, JSON.stringify({ claudeAiOauth: { refreshToken: "r2", expiresAt: 2000 } }))
+  assert.equal(writeBackCredential(sandbox, real), "written")
+  assert.equal(JSON.parse(readFileSync(real, "utf8")).claudeAiOauth.refreshToken, "r2")
+  assert.equal(lstatSync(real).mode & 0o777, 0o600)
+  writeFileSync(sandbox, JSON.stringify({ claudeAiOauth: { refreshToken: "r0", expiresAt: 500 } }))
+  assert.equal(writeBackCredential(sandbox, real), "older")
+  writeFileSync(sandbox, "not json")
+  assert.equal(writeBackCredential(sandbox, real), "unreadable")
+  assert.equal(JSON.parse(readFileSync(real, "utf8")).claudeAiOauth.refreshToken, "r2")
+  rmSync(dir, { recursive: true, force: true })
 })
 
 test("an unknown or missing --auth is refused before anything runs", async () => {
