@@ -125,6 +125,11 @@ test("the sandbox is sealed: its own home, XDG tree and config, and nothing of t
   assert.ok(run.argv.includes("--server") && run.argv.includes("json"))
   assert.equal(run.env.OPENCODE_DISABLE_AUTOUPDATE, "1")
   assert.ok(existsSync(join(kept, "arm", "dist", "index.js")), "the build was copied, not used in place")
+  // Even the version probe runs in a sandbox of its own.
+  const probe = JSON.parse(readFileSync(join(kept, "probe", "home", "version.json"), "utf8"))
+  assert.equal(probe.env.HOME, join(kept, "probe", "home"))
+  assert.equal(probe.env.EVALS_SECRET_PROBE, undefined)
+  assert.equal(probe.env.OPENCODE_SERVER_PASSWORD, undefined)
   f.cleanup()
 })
 

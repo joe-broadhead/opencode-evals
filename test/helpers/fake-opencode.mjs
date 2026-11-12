@@ -19,7 +19,7 @@ const linger = (name) => {
   writeFileSync(join(home, name), String(child.pid))
   return child
 }
-if (args[0] === "--version") { console.log("opencode v2.2.6"); process.exit(0) }
+if (args[0] === "--version") { note("version.json", seen()); console.log("opencode v2.2.6"); process.exit(0) }
 if (args[0] === "auth" && args[1] === "export") {
   if (process.env.FAKE_NO_CREDENTIAL) process.exit(1)
   console.log(JSON.stringify({ integration: args[2], kind: "external" }))

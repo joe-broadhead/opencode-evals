@@ -6,7 +6,9 @@
 //   claude-agent    OpenCode's Claude Agent provider, the way the History lab ran it:
 //                   - the credential OpenCode stores as "Claude Agent" (EVALS_AUTH_CREDENTIAL to name another) is
 //                     exported from the caller's own OpenCode once, held in memory, and piped into each sandbox's
-//                     `opencode auth import --standalone`; it lands in the sandbox's database and is deleted with it;
+//                     `opencode auth import --standalone`; it lands in the sandbox's database and is deleted with it.
+//                     The export is the one command run with the caller's own environment: it must read the caller's
+//                     stored credential from the caller's own OpenCode, and its output goes to the sandbox, never to disk;
 //                   - the provider spawns `claude`, which reads its own sign-in. Each sandbox has its own ~/.claude
 //                     holding one thing: a symlink to the caller's ~/.claude/.credentials.json. Nothing else of the
 //                     caller's ~/.claude (settings, hooks, CLAUDE.md, MCP servers, agents, plugins) is visible to the

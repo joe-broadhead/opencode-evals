@@ -110,6 +110,9 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- `evals run` asked the host for its version with the caller's `HOME`; it now asks in a sandbox of its own. The
+  credential export is the one command left with the caller's environment, and the docs say why.
+
 - The ledger lock: two waiters could both break a stale lock, and the second could delete the lock the first had just
   taken. A lock is now taken with `link(2)`, carries a holder's token, is broken with `rename(2)` and put back when
   the file moved is not the stale one, and is released only by its holder.

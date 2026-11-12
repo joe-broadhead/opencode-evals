@@ -252,12 +252,6 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // A kept sandbox keeps the credential imported into it: only when asked for in so many words.
   if (options.keep && profile.kind === "claude-agent" && !options.keepCredentials) throw new Error("--keep with --auth claude-agent keeps the imported credential in the sandboxes: add --keep-credentials to mean it")
 
-  const version = await runToEnd(binary, ["--version"], { env: { PATH: caller.PATH ?? "/usr/bin:/bin", HOME: caller.HOME ?? tmpdir() }, timeoutMs: 30_000 })
-  if (version.code !== 0) throw new Error(`${binary} --version failed: is the host installed?`)
-  const opencode = version.stdout.trim()
-  const hostVersion = (/(\d+\.\d+\.\d+)/.exec(opencode) ?? [])[1] ?? null
-  if (hostVersion && !TESTED.includes(hostVersion)) log(`warning: host ${hostVersion} is not a tested version (${TESTED.join(", ")})`)
-
   const tmpRoot = resolve(caller.EVALS_TMP ?? tmpdir())
   const batchRoot = within(tmpRoot, mkdtempSync(join(tmpRoot, `evals-run-${iteration}-`)), "the batch directory")
 
@@ -312,6 +306,14 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     for (const [event, handler] of Object.entries(handlers)) process.off(event, handler)
   }
   try {
+    // The host's version, asked in a sandbox of its own: even `--version` reads nothing of the caller's install.
+    const probe = makeSandbox(join(batchRoot, "probe"))
+    const probeEnv = sandboxEnv({ sandbox: probe, config: sealedConfig({ armDir: null, model: options.model }), password: newPassword(), caller })
+    const version = await runToEnd(binary, ["--version"], { cwd: probe.home, env: probeEnv, timeoutMs: 30_000 })
+    if (version.code !== 0) throw new Error(`${binary} --version failed: is the host installed?`)
+    const opencode = version.stdout.trim()
+    const hostVersion = (/(\d+\.\d+\.\d+)/.exec(opencode) ?? [])[1] ?? null
+    if (hostVersion && !TESTED.includes(hostVersion)) log(`warning: host ${hostVersion} is not a tested version (${TESTED.join(", ")})`)
     const armDir = armSource ? materialiseArm(resolve(armSource), join(batchRoot, "arm")) : null
     const built = armProvenance(armDir, armSource ? resolve(armSource) : null)
     // The options are an axis of their own: an access mode changes what the plugin allows. Recorded by digest (an
