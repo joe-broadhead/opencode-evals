@@ -16,7 +16,7 @@ verdicts, and a ledger that refuses to compare two runs that are not comparable.
 ## Install
 
 ```sh
-pnpm add -D @joe-broadhead/opencode-evals
+npm install --save-dev @joe-broadhead/opencode-evals
 ```
 
 Or run it from a checkout: `node bin/evals <command>`.
@@ -89,7 +89,7 @@ CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/
 | What you see | What it means |
 | --- | --- |
 | `no @opencode/sdk at …` | set `EVALS_SDK_DIR` to a checkout whose `node_modules` holds the SDK and the plugin API |
-| `no stock binary for 2.2.6` | set `OPENCODE_BIN_2_2_6`, or `EVALS_STOCK_DIR` to a directory with one folder per version holding an install of `@opencode/cli@<version>` |
+| `no stock binary for 2.2.6` | set `OPENCODE_BIN_2_2_6`, or `EVALS_STOCK_DIR` to a directory with one folder per version holding an `npm install @opencode/cli@<version>` |
 | `describe answered 400` | the plugin registers no tools RPC without a sign-in or its options; the check reports `unsupported` |
 | `BLOCKED` items | the evidence could not settle the item — a variable argument, a missing recording, a dependency not configured |
 | `not comparable` | the case set, the rules, the model or the grader differ: the tool names the fields |
@@ -102,7 +102,7 @@ CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/
 ## Uninstall
 
 ```sh
-pnpm remove @joe-broadhead/opencode-evals
+npm uninstall @joe-broadhead/opencode-evals
 ```
 
 The private store is yours to delete: it is outside the repository.

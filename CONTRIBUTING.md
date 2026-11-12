@@ -5,7 +5,7 @@
 Requires Node 22. The tool has no runtime dependencies.
 
 ```sh
-pnpm test                    # 165 deterministic tests: no model, no network (runs and hosts are stand-ins)
+npm test                     # 180 deterministic tests: no model, no network (runs and hosts are stand-ins)
 node bin/evals compile --all # compile every case set (--check writes nothing and fails on a change)
 node bin/evals selftest      # the gold cases that test the graders
 ```
