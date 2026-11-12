@@ -17,6 +17,7 @@
 //     "overlay": "$EVALS_STORE/holdouts/history/world",   a private add-on the build receives as EVALS_WORLD_OVERLAY
 //     "prepare": "./fix-paths.sh",          run per sandbox after the copy (EVALS_SANDBOX_HOME, EVALS_RUN_CWD,
 //                                           EVALS_REPO_SOURCE): rewrite recorded directories to the run's own
+//     "truth": "world/truth.json",          what the build derived; a case's `Truth:` claims are checked against it
 //     "sessions": { "earlier": "ses_…" }    sessions a case continues with `Seed: continue=earlier`; or a reference to a
 //                                           map the build writes, "world/truth.json#ids"
 //   }
@@ -194,6 +195,13 @@ export function dirWorld(dir) {
         if (!session) throw new Error(`the world has no session ${JSON.stringify(seeds.continue)} to continue (world.json "sessions")`)
       }
       return { cwd, session }
+    },
+    /** The world's truth file, parsed, or null when it names none. */
+    truth() {
+      const s = spec()
+      if (!s.truth) return null
+      if (!existsSync(at(s.truth))) throw new Error(`the world's truth ${s.truth} is not there: build the world first`)
+      return JSON.parse(readFileSync(at(s.truth), "utf8"))
     },
     provenance() {
       const s = spec()

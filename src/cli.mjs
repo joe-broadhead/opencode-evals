@@ -12,6 +12,7 @@
 //                  [--trials K] [--parallel N] [--arm DIR|none] [--world DIR|FILE] [--host 2.2.6] [--dry-run]
 //                  [--isolation container|none] [--unsafe-no-isolation]   (container by default; none needs the flag)
 //                  [--accept-unknown-token-expiry]   (a claude-agent sign-in with no expiry: refused without it)
+//   evals truth    --plugin x --world DIR [--cases-dir DIR] [--set all]   each case's Truth: against the world's truth
 //   evals isolation build|check|sweep   the container backend's image (docker/Dockerfile), its checks, and the removal
 //                  of what a crashed batch left behind
 //   evals t0       [--root DIR] [--json]
@@ -50,7 +51,9 @@ import { builtinCollisions } from "./grade/select.mjs"
 import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
 import { rawCallArgs } from "./trace/rawArgs.mjs"
 import { compare as compareArms, renderReport } from "./report/arms.mjs"
-import { runBatch, batchTmp } from "./run/runner.mjs"
+import { runBatch, batchTmp, truthCheck } from "./run/runner.mjs"
+import { loadWorld } from "./run/world.mjs"
+import { renderTruthProblem } from "./case/truth.mjs"
 import { buildImage, checkIsolation, containerBackend, containerConfig } from "./run/container.mjs"
 import { segment } from "./run/paths.mjs"
 
@@ -514,6 +517,22 @@ export async function main(argv) {
         append: Boolean(opt.append),
       })
       if (result.results?.some((r) => r.error)) process.exitCode = 1
+      return
+    }
+    case "truth": {
+      if (!opt.plugin || opt.plugin === true || !opt.world || opt.world === true) throw new Error("evals truth --plugin <id> --world <dir> [--cases-dir DIR] [--set all]")
+      const cases = selectCases(pluginCases(opt.plugin, { dir: opt["cases-dir"] ?? null }), { set: opt.set ?? "all" }).selected
+      const result = truthCheck(cases, await loadWorld(opt.world))
+      if (!result) {
+        console.log(`no ${opt.plugin} case declares a Truth:`)
+        return
+      }
+      for (const row of result.rows) console.log(`${row.ok ? "ok  " : "BAD "} ${row.case.padEnd(30)} ${row.path} == ${JSON.stringify(row.expected)}${row.ok ? "" : `  (world: ${JSON.stringify(row.found)})`}`)
+      console.log(`${result.rows.length - result.bad.length}/${result.rows.length} truth claim(s) hold`)
+      if (result.bad.length) {
+        console.log(result.bad.map(renderTruthProblem).join("\n"))
+        process.exitCode = 1
+      }
       return
     }
     case "isolation": {

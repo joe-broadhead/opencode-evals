@@ -86,6 +86,13 @@ and a clause on it is unverifiable, never satisfied; so is anything under a vari
 its shape names nothing that was passed: a positive clause on it fails, and a negative one is unverifiable. On a list (several query phrasings), `matches` and `contains`
 hold when one element does, `not-matches` and `excludes` when none does. `contains` and `excludes` ignore case.
 
+A case whose clauses were written from numbers the world derives (a count, a cost, a session id) declares them:
+`Truth: sql.avgCostByAgent[agent=build].avg_usd == 1.08; ids.stripe-v2 == ses_…`. A path is dotted keys, a list index
+(`.0`) or a list element picked by a field (`[agent=build]`). The world names its truth file (world.json `"truth"`);
+`evals run` checks every selected case's claims after the world is current and before anything is reserved, and
+refuses the batch on a claim that no longer holds, so a world change cannot silently move a case's answer.
+`evals truth --plugin <id> --world <dir>` prints the check on its own.
+
 A trace reduces every free-text argument to a shape, so a session id, a query, an SQL statement or a shell command
 cannot be compared from it. A case that needs to compare one declares its key: `Checkable: sessionID, query`. For
 those keys, and only for them, the grader reads the value from the private recording at grade time (call by call, in

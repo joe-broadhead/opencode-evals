@@ -5,10 +5,19 @@ import { parseCase, parseControls, parseBudget, ParseError } from "./parse.mjs"
 import { parseClause } from "../grade/evidence.mjs"
 import { validateCase, CaseError } from "./schema.mjs"
 import { sha256 } from "../util/canonical.mjs"
+import { parseTruth } from "./truth.mjs"
 
 export { ParseError, CaseError }
 
 const list = (text) => String(text).split(/[\s,]+/).map((part) => part.trim()).filter(Boolean)
+
+const truthOf = (file, text) => {
+  try {
+    return parseTruth(text)
+  } catch (error) {
+    throw new CaseError(file, error.message)
+  }
+}
 
 /** Compiles one markdown case. Throws CaseError or ParseError with the file and line. */
 export function compileCase(file, text) {
@@ -76,6 +85,7 @@ export function compileCase(file, text) {
     ...(draft.fields.checkable ? { checkable: list(draft.fields.checkable) } : {}),
     ...(draft.fields.set ? { sets: list(draft.fields.set) } : {}),
     ...(draft.fields.status ? { status: draft.fields.status } : {}),
+    ...(draft.fields.truth ? { truth: truthOf(file, draft.fields.truth) } : {}),
     items,
     oracle: draft.oracle.map((o) => ({ path: o.path, op: o.op, value: o.value })),
     notes: draft.notes,

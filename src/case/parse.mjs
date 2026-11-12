@@ -32,6 +32,7 @@ const FIELDS = new Map([
   ["checkable", "checkable"],
   ["set", "set"],
   ["status", "status"],
+  ["truth", "truth"],
 ])
 
 const ITEM_KEYS = new Set(["maps_to", "evidence", "evidence_any", "n/a_when", "grader", "where", "note"])

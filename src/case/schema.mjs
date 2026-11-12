@@ -62,6 +62,7 @@ export function validateCase(caseObject, file = "<case>") {
   if (caseObject.expect && !["pass", "fail", "na"].includes(caseObject.expect)) bad("expect must be pass, fail or na")
   for (const key of caseObject.checkable ?? []) if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) bad(`checkable ${JSON.stringify(key)} must be an argument name`)
   for (const name of caseObject.sets ?? []) if (!/^[a-z][a-z0-9-]*$/.test(name) || name === "all") bad(`set ${JSON.stringify(name)} must be a lower-case name, not all`)
+  for (const claim of caseObject.truth ?? []) if (typeof claim?.path !== "string" || !("value" in claim)) bad("a truth is {path, value}")
   if (caseObject.status !== undefined && !STATUSES.includes(caseObject.status)) bad(`status must be one of ${STATUSES.join(", ")}`)
   return caseObject
 }

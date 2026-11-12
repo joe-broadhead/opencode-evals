@@ -23,6 +23,7 @@ import { rawRoot, storeRoot } from "../store.mjs"
 import { makeSandbox, sealedConfig, sandboxEnv, worldEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, removeInside, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
 import { parseAuth, prepareAuth, readCredential, unknownExpiry } from "./auth.mjs"
 import { loadWorld, parseSeed } from "./world.mjs"
+import { checkTruth, renderTruthProblem } from "../case/truth.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
 import { segment, within, inside } from "./paths.mjs"
@@ -302,6 +303,15 @@ export function hourWindow(seed, at = new Date()) {
   return inside ? { ok: true, hour } : { ok: false, hour, why: `the case runs between ${from}:00 and ${to}:00 UTC, and it is ${hour}:xx` }
 }
 
+/** The selected cases' `Truth:` claims against the world's truth file; null when no case declares one. */
+export function truthCheck(cases, world) {
+  const claiming = cases.filter((c) => c.truth?.length)
+  if (!claiming.length) return null
+  const data = typeof world.truth === "function" ? world.truth() : null
+  if (!data) throw new Error(`${claiming.length} case(s) declare a Truth: (${claiming.slice(0, 3).map((c) => c.id).join(", ")}) and the world ${world.name} names no truth file (world.json "truth")`)
+  return checkTruth(claiming, data)
+}
+
 async function runJob(job, ctx) {
   const id = segment("case id", job.case.id)
   const name = `${id}.t${job.trial}`
@@ -495,7 +505,17 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       refused = true
       log(`dry run: the batch would be refused: ${error.message}`)
     }
-    if (!refused) log(`world: ${(await loadWorld(options.world ?? caller[`EVALS_WORLD_${plugin.toUpperCase()}`] ?? null)).name}`)
+    if (!refused) {
+      const world = await loadWorld(options.world ?? caller[`EVALS_WORLD_${plugin.toUpperCase()}`] ?? null)
+      log(`world: ${world.name}`)
+      // What the cases were written from, against the world as it is now (a rebuild may still change it).
+      try {
+        const truth = truthCheck(selected, world)
+        if (truth) log(truth.bad.length ? `dry run: the batch would be refused unless a rebuild fixes it: ${truth.bad.map(renderTruthProblem).join("; ")}` : `truth: ${truth.rows.length} claim(s) of ${new Set(truth.rows.map((r) => r.case)).size} case(s) hold in the world as built`)
+      } catch (error) {
+        log(`dry run: the batch would be refused: ${error.message}`)
+      }
+    }
     // The sign-in's expiry, read as a real batch would read it (its content never shown).
     if (profile.kind === "claude-agent" && caller.HOME) {
       try {
@@ -655,6 +675,10 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       }
       if (!status.fresh) throw new Error(`world ${world.name} is stale and was not rebuilt: ${status.why}`)
     }
+    // Every number a selected case was written from must hold in this world, before anything is reserved (HG-14).
+    const truth = truthCheck(selected, world)
+    if (truth?.bad.length) throw new Error(`the world's truth does not match ${truth.bad.length} claim(s) the cases were written from, so no run was reserved:\n  ${truth.bad.map(renderTruthProblem).join("\n  ")}`)
+    if (truth) facts.truth = { claims: truth.rows.length, cases: new Set(truth.rows.map((r) => r.case)).size }
 
     // A batch must not outlive its sign-in: the worst case is every round of runs hitting the timeout, plus what each
     // run costs around it (world prepare, container setup and teardown, the credential import, the server's start).
