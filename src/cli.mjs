@@ -35,6 +35,7 @@ import { loadCatalog, loadMapping, drift } from "./cost/catalog.mjs"
 import { runCost, totals, trustOf } from "./cost/rule.mjs"
 import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "./label/kit.mjs"
 import { storeRoot, rawRoot, tracesDir } from "./store.mjs"
+import { splitTrial, trialName, caseEntry, byCase, trialStats } from "./grade/trials.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
 const args = (argv) => {
@@ -126,30 +127,40 @@ function stateFor(iteration, caseName) {
 function gradeAll(iteration, casesDir = path("cases", "x"), traceDir = tracesDir(iteration, "x"), rawDir = rawRoot(), plugin = "x") {
   const cases = casesDir.endsWith(".json") ? [] : listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
   const results = []
+  // Every trial of a case is graded: `<case>.trace.jsonl` (one trial, recorded before trials were kept per file) and
+  // `<case>.t<k>.trace.jsonl`.
+  const files = existsSync(traceDir) ? readdirSync(traceDir).filter((f) => f.endsWith(".trace.jsonl")) : []
+  const trialsOf = (id) =>
+    files
+      .map((file) => ({ file, ...splitTrial(file.replace(/\.trace\.jsonl$/, "")) }))
+      .filter((entry) => entry.case === id)
+      .sort((a, b) => (a.trial ?? 0) - (b.trial ?? 0))
   for (const caseObject of cases) {
-    const traceFile = join(traceDir, `${caseObject.id}.trace.jsonl`)
-    if (!existsSync(traceFile)) {
+    const found = trialsOf(caseObject.id)
+    if (!found.length) {
       results.push({ case: caseObject.id, plugin: caseObject.plugin, verdict: "NOT_RUN", items: [], coverage: { declared: caseObject.items.length }, note: "no trace for this case in the iteration" })
       continue
     }
-    const lines = read(traceFile).split("\n").filter(Boolean)
-    const rawBase = join(rawDir, iteration, plugin, caseObject.id)
-    let text = null
-    if (existsSync(`${rawBase}.jsonl`)) {
-      const last = [...read(`${rawBase}.jsonl`).split("\n").filter(Boolean)]
-        .reverse()
-        .map((l) => JSON.parse(l))
-        .find((e) => e.type === "text")
-      text = last?.part?.text ?? null
+    for (const { file, trial } of found) {
+      const lines = read(join(traceDir, file)).split("\n").filter(Boolean)
+      const rawBase = join(rawDir, iteration, plugin, trialName(caseObject.id, trial))
+      let text = null
+      if (existsSync(`${rawBase}.jsonl`)) {
+        const last = [...read(`${rawBase}.jsonl`).split("\n").filter(Boolean)]
+          .reverse()
+          .map((l) => JSON.parse(l))
+          .find((e) => e.type === "text")
+        text = last?.part?.text ?? null
+      }
+      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) })
+      results.push({ ...gradeCase(caseObject, view), ...(trial ? { trial } : {}) })
     }
-    const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) })
-    results.push(gradeCase(caseObject, view))
   }
   return results
 }
 
 const batchDigest = (results) =>
-  digestOf(results.map((r) => ({ case: r.case, verdict: r.verdict, items: (r.items ?? []).map((i) => [i.id, i.state]) })))
+  digestOf(results.map((r) => ({ case: r.case, ...(r.trial ? { trial: r.trial } : {}), verdict: r.verdict, items: (r.items ?? []).map((i) => [i.id, i.state]) })))
 
 /** The provenance of one iteration, read from its first trace head. */
 function iterationProvenance(iteration, plugin = "x") {
@@ -161,16 +172,14 @@ function iterationProvenance(iteration, plugin = "x") {
   const files = readdirSync(dir).filter((f) => f.endsWith(".trace.jsonl")).sort()
   const texts = files.map((f) => {
     const lines = read(join(dir, f)).split("\n").filter(Boolean).map((l) => JSON.parse(l))
-    return `${lines[0].case}:${lines[0].summary?.text?.sha256 ?? ""}`
+    return `${splitTrial(f.replace(/\.trace\.jsonl$/, "")).trial ? f.replace(/\.trace\.jsonl$/, "") : lines[0].case}:${lines[0].summary?.text?.sha256 ?? ""}`
   })
-  const heads = files.map((f) => JSON.parse(read(join(dir, f)).split("\n")[0]))
+  const heads = files.map((f) => ({ ...JSON.parse(read(join(dir, f)).split("\n")[0]), file: f }))
   const costs = heads.map((head) => head.summary?.cost ?? {})
   // The vendor side is a separate wallet, at the plugin's own rates, from the resources each trace recorded.
   const prices = loadPrices()
   const vendor = heads.reduce((sum, head) => {
-    const file = files.find((f) => f.startsWith(`${head.case}.trace`))
-    if (!file) return sum
-    const calls = runView(read(join(dir, file)).split("\n").filter(Boolean)).calls.filter((call) => call.via === "execute")
+    const calls = runView(read(join(dir, head.file)).split("\n").filter(Boolean)).calls.filter((call) => call.via === "execute")
     return sum + (vendorCost(calls, plugin, prices).amount_usd ?? 0)
   }, 0)
   return {
@@ -227,6 +236,8 @@ function batchSummary(iteration, results, caseSet, plugin = caseSet[0]?.plugin ?
       plugin: { ...(provenance.head?.provenance?.plugin ?? {}), source: provenance.head?.provenance?.plugin?.source ?? "unrecorded" },
       quality: provenance.head?.provenance?.quality ?? "unrecorded",
     },
+    // Trials per case, strict pass (every blocker and major item) and pass^k: what one PASS cannot say.
+    ...trialStats(results),
     case_set: {
       plugin: caseSet[0]?.plugin ?? "x",
       cases: caseSet.length,
@@ -237,7 +248,7 @@ function batchSummary(iteration, results, caseSet, plugin = caseSet[0]?.plugin ?
     batch_sha256: batchDigest(results),
     coverage: {
       cases_declared: caseSet.length,
-      cases_run: graded.length,
+      cases_run: byCase(graded).size,
       items_declared: caseSet.reduce((n, c) => n + c.items.length, 0),
       items_executed: graded.reduce((n, r) => n + (r.coverage?.executed ?? 0), 0),
       items_testable: graded.reduce((n, r) => n + (r.coverage?.testable ?? 0), 0),
@@ -246,18 +257,7 @@ function batchSummary(iteration, results, caseSet, plugin = caseSet[0]?.plugin ?
       items_na: graded.reduce((n, r) => n + (r.coverage?.na ?? 0), 0),
       items_advisory: graded.reduce((n, r) => n + (r.coverage?.advisory ?? 0), 0),
     },
-    cases: graded.map((r) => ({
-      case: r.case,
-      verdict: r.verdict,
-      failed: r.failed,
-      failed_blockers: r.failed_blockers ?? [],
-      failed_majors: r.failed_majors ?? [],
-      blocked: [...(r.blocked ?? []), ...(r.blocked_minor ?? [])],
-      findings: r.findings,
-      na: r.na,
-      forbidden_violations: r.forbidden_violations,
-      budget: r.budget,
-    })),
+    cases: [...byCase(graded).values()].map(caseEntry),
     tokens: graded.reduce(
       (n, r) => ({ total: n.total + (r.budget?.tokens ?? 0), calls: n.calls + (r.budget?.outer_calls ?? 0) + (r.budget?.inner_calls ?? 0) }),
       { total: 0, calls: 0 },
@@ -298,8 +298,10 @@ export async function main(argv) {
       ensureDir(out)
       const files = readdirSync(from).filter((f) => f.endsWith(".jsonl") && !f.includes("summary"))
       for (const file of files) {
-        const caseName = basename(file, ".jsonl")
-        const summaryPath = join(from, `${caseName}.summary.json`)
+        // `<case>.t<k>.jsonl` is trial k of the case; the trace keeps the index and every trial's file.
+        const fileName = basename(file, ".jsonl")
+        const { case: caseName, trial } = splitTrial(fileName)
+        const summaryPath = join(from, `${fileName}.summary.json`)
         const summary = existsSync(summaryPath) ? JSON.parse(read(summaryPath)) : {}
         // A runner that records its own provenance (summary.provenance) is trusted over the hand-kept manifest.
         const prov = summary.provenance ?? null
@@ -307,9 +309,10 @@ export async function main(argv) {
         const axis = (value) => (value ? { sha256: value, source: "recorded" } : { sha256: null, source: "unrecorded" })
         const trace = traceFromFiles({
           caseName,
+          trial,
           iteration,
           plugin,
-          base: join(from, caseName),
+          base: join(from, fileName),
           manifest: prov
             ? {
                 recorded: { iteration, date: summary.started_at ?? entry.date ?? null, runner: summary.runner ?? "unrecorded", runner_version: summary.runner_version ?? null, model: summary.model, opencode: summary.opencode ?? null },
@@ -333,7 +336,7 @@ export async function main(argv) {
           model: summary.model ?? entry.model ?? "claude-agent/opus#high",
           stderr: summary.stderr ?? "",
         })
-        writeFileSync(join(out, `${caseName}.trace.jsonl`), `${trace.lines.join("\n")}\n`)
+        writeFileSync(join(out, `${fileName}.trace.jsonl`), `${trace.lines.join("\n")}\n`)
       }
       console.log(`traced ${files.length} runs of ${iteration} -> ${out}`)
       return
@@ -350,7 +353,8 @@ export async function main(argv) {
       write(join(out, "verdicts.json"), json(results))
       write(join(out, "batch.json"), json(summary))
       const counts = results.reduce((acc, r) => ({ ...acc, [r.verdict]: (acc[r.verdict] ?? 0) + 1 }), {})
-      console.log(`${iteration}: ${JSON.stringify(counts)}  items ${summary.coverage.items_testable}/${summary.coverage.items_executed} testable, ${summary.coverage.items_blocked} blocked, ${summary.coverage.items_na} n/a  -> ${out}`)
+      const pct = (value) => (value === null ? "n/a" : `${Math.round(value * 100)}%`)
+      console.log(`${iteration}: ${JSON.stringify(counts)}  items ${summary.coverage.items_testable}/${summary.coverage.items_executed} testable, ${summary.coverage.items_blocked} blocked, ${summary.coverage.items_na} n/a  strict ${pct(summary.strict.rate)} of ${summary.strict.runs} run(s), k=${summary.trials.min}${summary.trials.max !== summary.trials.min ? `-${summary.trials.max}` : ""} pass^k ${pct(summary.pass_k.strict)} strict  -> ${out}`)
       return
     }
     case "scorecard": {
@@ -394,6 +398,8 @@ export async function main(argv) {
         "| --- | --- |",
         `| shared cases | ${n.sharedCases} |`,
         `| pass rate (items testable/executed) | ${n.passRate.a === null ? "—" : n.passRate.a.toFixed(3)} -> ${n.passRate.b === null ? "—" : n.passRate.b.toFixed(3)} |`,
+        `| strict pass (every blocker and major, per run) | ${n.strict.a === null ? "—" : n.strict.a.toFixed(3)} -> ${n.strict.b === null ? "—" : n.strict.b.toFixed(3)} |`,
+        `| strict pass^k (cases whose every trial passed) | ${n.passK.a === null ? "—" : n.passK.a.toFixed(3)} -> ${n.passK.b === null ? "—" : n.passK.b.toFixed(3)} (k=${n.trials}) |`,
         `| cases fixed | ${n.fixes.length ? n.fixes.join(", ") : "—"} |`,
         `| cases regressed | ${n.caseRegressions.length ? n.caseRegressions.join(", ") : "—"} |`,
         `| new blocker failures | ${n.newBlockerFailures.length ? n.newBlockerFailures.join(", ") : "—"} |`,
@@ -614,7 +620,7 @@ export async function main(argv) {
       }
       const rawDir = join(store, "raw", iteration, plugin)
       const textFor = (item) => {
-        const file = join(rawDir, `${item.case}.jsonl`)
+        const file = join(rawDir, `${trialName(item.case, item.trial)}.jsonl`)
         if (!existsSync(file)) return null
         const last = read(file).split("\n").filter(Boolean).map((line) => JSON.parse(line)).filter((event) => event.type === "text").pop()
         return last?.part?.text ?? null

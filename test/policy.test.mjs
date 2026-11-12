@@ -19,6 +19,7 @@ const batch = (over = {}) => ({
     rules: { sha256: "2".repeat(64), source: "recorded" },
   },
   recordings_sha256: "c".repeat(64),
+  trials: { min: 3, max: 3, runs: 36 },
   ...over,
 })
 

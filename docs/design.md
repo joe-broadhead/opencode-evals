@@ -7,9 +7,9 @@ only when they differ in the one axis under test.
 ```
 cases/<plugin>/<id>.md ──compile──▶ <id>.json (oc-case/1)
                                          │
-a runner ──▶ $EVALS_STORE/raw/<it>/<plugin>/<id>.jsonl + <id>.summary.json
+a runner ──▶ $EVALS_STORE/raw/<it>/<plugin>/<id>[.t<k>].jsonl + .summary.json
                                          │
-evals trace ──▶ $EVALS_STORE/traces/<it>/<plugin>/<id>.trace.jsonl (oc-trace/1)
+evals trace ──▶ $EVALS_STORE/traces/<it>/<plugin>/<id>[.t<k>].trace.jsonl (oc-trace/1)
                                          │
 evals grade ──▶ $EVALS_STORE/results/<it>/verdicts.json, batch.json
                                          │
@@ -91,15 +91,22 @@ Each clause is `ok`, `fail` or `unverifiable`. An item passes when all its claus
 blocked item is never a pass and never a guess. `n/a_when` makes an item `N/A`; a `judge` item is advisory.
 
 A case is `FAIL` when a blocker fails, `BLOCKED` when a blocker or a major is unsettled, and `PASS` otherwise; failed
-majors and minors are reported as findings.
+majors and minors are reported as findings. `PASS` therefore says only that no blocker failed; **strict pass** is
+the bar a user feels: every blocker and every major item passed (or was N/A or advisory).
+
+A case can be run k times in one iteration: trial k is `<id>.t<k>` in the recordings, the traces and `verdicts.json`,
+and every trial is kept. A case's batch entry is the aggregate: `PASS` only when every trial passed (`pass^k`), `FAIL`
+when any trial failed. `batch.json` carries `trials` (min and max per case), `strict` (the strict rate over runs) and
+`pass_k` (the share of cases whose every trial passed, by verdict and strictly). A recording without a `.t<k>` suffix
+is one trial, graded as it always was.
 
 The gold cases (`evals selftest`) test the graders: synthetic traces whose verdicts are known, including ones that
 must fail, must block and must be N/A.
 
 ## Batches and the policy
 
-`batch.json` holds the coverage, the per-case verdicts, the cost (billed and list price, never merged), and the
-provenance of every axis: the plugin build, the skill, the tool descriptions, the namespace, the
+`batch.json` holds the coverage, the per-case verdicts, the trials, the cost (billed and list price, never merged),
+and the provenance of every axis: the plugin build, the skill, the tool descriptions, the namespace, the
 result text, the rules, the case set, the model and the host. A runner that records its own provenance is trusted;
 a value nobody recorded is `unrecorded`.
 
@@ -108,8 +115,12 @@ names the fields and refuses. `decide()` is a pure function of the two batches:
 
 - **hold** on a regression: a passing case that no longer passes, a new forbidden violation, a new blocker failure,
   or cost per passing case worse than the noise floor;
-- **ask** on thin coverage, unsettled items, a new major finding, or a declared rather than verified basis;
+- **ask** on thin coverage, unsettled items, a new major finding, a declared rather than verified basis, or fewer
+  than two trials per case on either side;
 - **ship** otherwise.
+
+A model-driven suite is noisy: the same arm against itself flips a case or two between trials, so one trial never
+ships. A grader comparison re-judges the same recordings and is exempt.
 
 ## The store
 

@@ -39,7 +39,7 @@ export function splitModel(model) {
 }
 
 /** The run header: everything a comparison needs, and nothing about the account. */
-export function header({ iteration, caseName, plugin = "x", rawLines, summary, stderr, manifest, catalog, mapping, model }) {
+export function header({ iteration, caseName, trial = null, plugin = "x", rawLines, summary, stderr, manifest, catalog, mapping, model }) {
   const s = summarize(rawLines, stderr)
   const tokens = s.tokens
   const split = splitModel(model)
@@ -54,10 +54,10 @@ export function header({ iteration, caseName, plugin = "x", rawLines, summary, s
   const text = s.finalText ?? ""
   return {
     schema: "oc-trace/1",
-    run_id: `${iteration}/${caseName}`,
+    run_id: trial ? `${iteration}/${caseName}#t${trial}` : `${iteration}/${caseName}`,
     iteration,
     case: caseName,
-    trial: summary?.trial ?? 1,
+    trial: trial ?? summary?.trial ?? 1,
     arm: summary?.arm ?? "with-skill",
     // The runner that made the recording, as it recorded itself; a recording that does not say is `unrecorded`.
     source: { kind: "recorded", runner: summary?.runner ?? manifest?.recorded?.runner ?? "unrecorded", version: summary?.runner_version ?? null },
@@ -85,7 +85,7 @@ export function header({ iteration, caseName, plugin = "x", rawLines, summary, s
     },
     privacy: {
       policy: "no-text-no-ids-no-handles",
-      raw: rawDescriptor(iteration, plugin, caseName, rawLines, text),
+      raw: rawDescriptor(iteration, plugin, trial ? `${caseName}.t${trial}` : caseName, rawLines, text),
     },
   }
 }
@@ -239,10 +239,10 @@ export function classifyError(message) {
 }
 
 /** Reads one recorded case and returns the whole trace file as text (header line + events). */
-export function traceFromFiles({ caseName, iteration, plugin, base, manifest, catalog, mapping, model, stderr }) {
+export function traceFromFiles({ caseName, trial = null, iteration, plugin, base, manifest, catalog, mapping, model, stderr }) {
   const rawLines = readFileSync(`${base}.jsonl`, "utf8").split("\n").filter(Boolean)
   const summary = safeJson(`${base}.summary.json`)
-  const head = header({ iteration, caseName, plugin, rawLines, summary: summary ? { ...summary, stderr: stderr ?? summary.stderr } : null, stderr, manifest, catalog, mapping, model })
+  const head = header({ iteration, caseName, trial, plugin, rawLines, summary: summary ? { ...summary, stderr: stderr ?? summary.stderr } : null, stderr, manifest, catalog, mapping, model })
   const body = events({ rawLines, stderr, caseName, iteration, price: head.summary?.cost?.resolved?.price ?? null })
   return { head, body, lines: [JSON.stringify(head), ...body.map((e) => JSON.stringify(e))] }
 }
