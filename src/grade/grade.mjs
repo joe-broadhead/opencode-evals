@@ -157,6 +157,11 @@ export function verdictOf(itemResults, caseObject) {
 
 /** Grades one case against one run view. */
 export function gradeCase(caseObject, view) {
+  // A trial the runner recorded as an infrastructure failure (its credential refused) is not the model's to fail: it is
+  // not graded, and is rerun from the reserve.
+  if (view.head?.infra) {
+    return { case: caseObject.id, plugin: caseObject.plugin, expect: caseObject.expect ?? "pass", verdict: "NOT_RUN", items: [], infra: view.head.infra, note: `infra: ${view.head.infra}: not graded; rerun it`, provenance: { trace_run_id: view.head.run_id ?? null, failure_class: "infra" } }
+  }
   const itemResults = caseObject.items.map((item) => gradeItem(item, view))
   const verdict = verdictOf(itemResults, caseObject)
   const pairs = caseObject.items

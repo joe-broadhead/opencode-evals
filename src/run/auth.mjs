@@ -62,13 +62,24 @@ export function readCredential(file) {
       throw new Error(`${file} is not JSON`)
     }
     const oauth = data?.claudeAiOauth
-    if (!oauth || typeof oauth !== "object" || typeof oauth.accessToken !== "string" || !oauth.accessToken || typeof oauth.expiresAt !== "number") {
+    // An expiry that is null or absent is unknown (a sign-in something outside keeps fresh, as boxd does); any other
+    // non-number is not a sign-in. The refresh token is never read.
+    const expiry = oauth?.expiresAt
+    if (!oauth || typeof oauth !== "object" || typeof oauth.accessToken !== "string" || !oauth.accessToken || (expiry !== null && expiry !== undefined && typeof expiry !== "number")) {
       throw new Error(`${file} does not hold a Claude sign-in (claudeAiOauth with an access token and its expiry)`)
     }
-    return { accessToken: oauth.accessToken, expiresAt: oauth.expiresAt }
+    return { accessToken: oauth.accessToken, expiresAt: typeof expiry === "number" ? expiry : null }
   } finally {
     closeSync(fd)
   }
+}
+
+/** What to do with a sign-in whose expiry is unknown: refuse, unless --accept-unknown-token-expiry. */
+export function unknownExpiry(accept) {
+  if (accept) return { expires: "unknown", accepted_by_flag: true }
+  throw new Error(
+    "--auth claude-agent: the Claude sign-in has no expiry (expiresAt is null or absent), so this batch cannot be checked against it. If something outside keeps the sign-in fresh (boxd does), pass --accept-unknown-token-expiry: a trial whose token is then refused is recorded as infra: auth, and the batch stops launching",
+  )
 }
 
 /** Refuses a batch that could outlive the token it would run on. */
@@ -99,7 +110,7 @@ export function parseAuth(spec) {
  * Checks the profile once per batch and returns what each run needs. `binary` is the host the credential is exported
  * with; `caller` is the caller's environment.
  */
-export async function prepareAuth(profile, { binary, caller = process.env, horizonMs = 0 }) {
+export async function prepareAuth(profile, { binary, caller = process.env, horizonMs = 0, acceptUnknownExpiry = false }) {
   if (profile.kind === "none") return { profile: "none", env: {}, secrets: [], async apply() {}, cleanup() {} }
   if (profile.kind === "env") {
     const missing = profile.names.filter((name) => !caller[name])
@@ -118,9 +129,11 @@ export async function prepareAuth(profile, { binary, caller = process.env, horiz
   const credential = exported.stdout
   // The access token alone, read once and held in memory; the caller's file is never written, and nothing of it copied.
   const signIn = readCredential(join(realHome, ".claude", ".credentials.json"))
-  assertTokenLasts(signIn.expiresAt, horizonMs)
+  // A known expiry is checked against the batch's horizon; an unknown one is refused unless the caller accepts it.
+  const expiry = signIn.expiresAt === null ? unknownExpiry(acceptUnknownExpiry) : (assertTokenLasts(signIn.expiresAt, horizonMs), null)
   return {
     profile: "claude-agent",
+    ...(expiry ? { expiry } : {}),
     env: {
       CLAUDE_AGENT_SDK_VERSION: caller.CLAUDE_AGENT_SDK_VERSION,
       CLAUDE_CODE_OAUTH_TOKEN: signIn.accessToken,

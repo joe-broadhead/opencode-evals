@@ -141,6 +141,12 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- A Claude sign-in with `expiresAt` null or absent (boxd keeps it fresh itself) was refused as not a sign-in. Its
+  expiry is now unknown: `--auth claude-agent` refuses it with a clear message unless `--accept-unknown-token-expiry`,
+  which skips the horizon check and records `horizon.expires: "unknown", accepted_by_flag: true` (the dry run shows it).
+- A trial whose model call is refused authentication is `infra: "auth"`: not graded (`NOT_RUN`), its run released to
+  the reserve, and the batch launches nothing after it. The grader moved; history and x are re-locked at epoch 3.
+
 - The disk watchdog repaired permissions while a trial's container ran, by path: a run swapping a locked directory
   for a link changed a directory outside the sandbox (reproduced). Nothing changes a sandbox while its container
   runs now; an unmeasurable sandbox ends the trial (`disk-unmeasurable`), and the repair after the container is gone

@@ -65,7 +65,9 @@ export function header({ iteration, caseName, trial = null, plugin = "x", rawLin
     ended_at: s.lastAt ? new Date(s.lastAt).toISOString() : null,
     duration_ms: duration,
     exit,
-    failure_class: failureClass({ exit, tokens, calls: s.toolCalls, durationMs: duration ?? 0 }),
+    // The runner's own classification wins: a trial refused its credential is infra, whatever it printed.
+    failure_class: summary?.infra ? "infra" : failureClass({ exit, tokens, calls: s.toolCalls, durationMs: duration ?? 0 }),
+    ...(summary?.infra ? { infra: summary.infra } : {}),
     model: { id: model, ...split, params: {} },
     provenance: {
       ...manifest,

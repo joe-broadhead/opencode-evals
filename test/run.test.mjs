@@ -612,6 +612,85 @@ test("a sign-in that is a FIFO, a link, too large, not JSON or not a sign-in is 
   rmSync(dir, { recursive: true, force: true })
 })
 
+test("a sign-in with no expiry is refused unless --accept-unknown-token-expiry, which the record and the dry run show", async () => {
+  const f = fixture()
+  const real = join(f.home, ".claude", ".credentials.json")
+  const dir = mkdtempSync(join(tmpdir(), "evals-expiry-"))
+  // null or absent: unknown; anything else that is not a number: not a sign-in. The refresh token is never returned.
+  for (const [label, oauth, expected] of [
+    ["null", { accessToken: TOKEN, refreshToken: "r1", expiresAt: null }, { accessToken: TOKEN, expiresAt: null }],
+    ["absent", { accessToken: TOKEN, refreshToken: "r1" }, { accessToken: TOKEN, expiresAt: null }],
+    ["a number", { accessToken: TOKEN, refreshToken: "r1", expiresAt: 5 }, { accessToken: TOKEN, expiresAt: 5 }],
+  ]) {
+    writeFileSync(join(dir, label), JSON.stringify({ claudeAiOauth: oauth }))
+    assert.deepEqual(readCredential(join(dir, label)), expected, label)
+  }
+  for (const [label, oauth] of [["a string expiry", { accessToken: TOKEN, expiresAt: "soon" }], ["an empty token", { accessToken: "", expiresAt: null }], ["no token", { expiresAt: null }]]) {
+    writeFileSync(join(dir, "bad"), JSON.stringify({ claudeAiOauth: oauth }))
+    assert.throws(() => readCredential(join(dir, "bad")), /does not hold a Claude sign-in/, label)
+  }
+  rmSync(dir, { recursive: true, force: true })
+  writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: TOKEN, refreshToken: "r1", expiresAt: null } }))
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const options = { ...UNCONFINED, plugin: "demo", iteration: "unk", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir }
+  await assert.rejects(runBatch(options, { caller, ...quiet }), /has no expiry .*pass --accept-unknown-token-expiry/)
+  assert.deepEqual(readLedger(f.store), [], "nothing reserved")
+  const lines = []
+  const ok = await runBatch({ ...options, acceptUnknownTokenExpiry: true }, { caller, log: (line) => lines.push(line) })
+  assert.equal(ok.launched, 1)
+  assert.ok(lines.some((line) => /WARNING: --accept-unknown-token-expiry/.test(line)))
+  const dirRaw = join(f.store, "raw", "unk", "demo")
+  const record = JSON.parse(readFileSync(join(dirRaw, readdirSync(dirRaw).find((n) => n.startsWith("batch-"))), "utf8"))
+  assert.equal(record.horizon.expires, "unknown")
+  assert.equal(record.horizon.accepted_by_flag, true)
+  const cli = (extra) => spawnSync(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "unk-dry", "--model", "claude-agent/haiku", "--auth", "claude-agent", "--isolation", "none", "--unsafe-no-isolation", "--arm", f.arm, "--cases-dir", f.casesDir, "--cases", "demo-b", "--dry-run", ...extra], { env: caller, encoding: "utf8" }).stdout
+  assert.match(cli([]), /dry run: the batch would be refused: --auth claude-agent: the Claude sign-in has no expiry/)
+  assert.match(cli(["--accept-unknown-token-expiry"]), /credential: expires unknown, accepted_by_flag true/)
+  // A known expiry is what decides, flag or not: the record says nothing of an unknown one.
+  writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: TOKEN, refreshToken: "r1", expiresAt: Date.now() + 10 * 3_600_000 } }))
+  const known = await runBatch({ ...options, iteration: "known", acceptUnknownTokenExpiry: true }, { caller, ...quiet })
+  assert.deepEqual(known.horizon, { timeout_s: 420, run_overhead_s: 120, rounds: 1 })
+  assert.match(cli(["--accept-unknown-token-expiry"]), /credential: the sign-in expires at \d{4}-/)
+  writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: TOKEN, refreshToken: "r1", expiresAt: Date.now() + 5 * 60_000 } }))
+  await assert.rejects(runBatch({ ...options, iteration: "known2", acceptUnknownTokenExpiry: true }, { caller, ...quiet }), /expires at .*refresh it first/, "the flag does not lift a known, too-near expiry")
+  f.cleanup()
+})
+
+test("a trial refused authentication is infra: auth, released, not graded, and stops the batch launching", async () => {
+  const f = fixture({ cases: [["a-auth", ""], ["b-after", ""]] })
+  const c = JSON.parse(readFileSync(join(f.casesDir, "a-auth.json"), "utf8"))
+  writeFileSync(join(f.casesDir, "a-auth.json"), JSON.stringify({ ...c, prompt: "auth-fail now" }))
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "authf", model: "claude-agent/haiku", auth: "claude-agent", set: "all", parallel: 1, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
+  assert.equal(result.launched, 1, "nothing launched after the first refusal")
+  assert.equal(result.results[0].infra, "auth")
+  assert.match(result.stopped, /a-auth\.t1 was refused authentication \(infra: auth\)/)
+  const summary = JSON.parse(readFileSync(join(f.store, "raw", "authf", "demo", "a-auth.t1.summary.json"), "utf8"))
+  assert.equal(summary.infra, "auth")
+  // Both runs go back to the reserve: the refused one and the one never launched; no run is recorded as spent.
+  const ledger = readLedger(f.store)
+  assert.equal(ledger.filter((e) => e.kind === "release").reduce((n, e) => n + e.runs, 0), 2)
+  assert.equal(ledger.filter((e) => e.kind === "run").length, 0)
+  assert.equal(usage(ledger, { month: new Date().toISOString().slice(0, 7), plugin: "demo", iteration: "authf" }).per_plugin_month, 0)
+  const env = { PATH: process.env.PATH, EVALS_STORE: f.store, EVALS_MODELS_CATALOG: join(f.root, "absent.json") }
+  spawnSync(process.execPath, [BIN, "trace", "--iteration", "authf", "--plugin", "demo"], { env })
+  spawnSync(process.execPath, [BIN, "grade", "--iteration", "authf", "--plugin", "demo", "--cases", f.casesDir], { env })
+  const verdicts = JSON.parse(readFileSync(join(f.store, "results", "authf", "verdicts.json"), "utf8"))
+  const graded = verdicts.find((v) => v.case === "a-auth")
+  assert.equal(graded.verdict, "NOT_RUN", JSON.stringify(graded))
+  assert.equal(graded.infra, "auth")
+  // What counts as refused authentication: the provider's word, with no model work; not a tool's output, not a proxy.
+  const { authFailed } = await import("../src/run/runner.mjs")
+  assert.equal(authFailed({ stderr: "Error: 401 Unauthorized" }), true)
+  assert.equal(authFailed({ stderr: "Invalid bearer token" }), true)
+  assert.equal(authFailed({ stdout: JSON.stringify({ type: "error", error: { name: "ProviderAuthError", data: { message: "403 permission_error" } } }) }), true)
+  assert.equal(authFailed({ stderr: "curl: (56) CONNECT tunnel failed, response 403" }), false, "an egress refusal is not a sign-in failure")
+  const worked = [JSON.stringify({ type: "tool_use", part: { state: { output: "HTTP 401 from the API under test" } } }), JSON.stringify({ type: "step_finish", part: { tokens: { input: 10, output: 5 } } })].join("\n")
+  assert.equal(authFailed({ stdout: worked, stderr: "status 401" }), false, "a run the model worked in is the model's")
+  assert.equal(authFailed({ stderr: "the server exited" }), false)
+  f.cleanup()
+})
+
 test("a batch that could outlive its sign-in is refused, with the step that fixes it", async () => {
   const now = Date.parse("2026-11-11T12:00:00Z")
   assert.doesNotThrow(() => assertTokenLasts(now + 60 * 60_000, 20 * 60_000, now))

@@ -40,6 +40,7 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--append` | off | add trials after the ones the iteration already has; without it, a case with recordings is refused |
 | `--isolation <backend>` | `container` (or `EVALS_ISOLATION`) | what confines the run's processes: `container`, or `none`, which is refused without `--unsafe-no-isolation` |
 | `--scripted` | off | run the harness's own scripted model, `mock/m1` (T1's mock provider and server; needs `bun` or `EVALS_BUN`): with `--auth none`, the one run that is not live, though still confined, since it can call tools |
+| `--accept-unknown-token-expiry` | off | with `--auth claude-agent`, run on a sign-in whose expiry is unknown (`expiresAt` null or absent) instead of refusing it ([Credentials](#credentials)) |
 | `--unsafe-no-isolation` | off | with `--isolation none`, launch anyway: the agent can reach the whole filesystem. It means nothing with `container`, and is refused there |
 | `--dry-run` | off | print the plan, the caps and the isolation; launch and reserve nothing |
 | `--keep` | off | keep the sandboxes (for debugging the runner); with `--auth claude-agent` it is refused unless `--keep-credentials` is given too, because a kept sandbox holds the imported OpenCode credential (a marker; the access token is scrubbed from every kept file) |
@@ -245,6 +246,19 @@ refused when the access token expires within its worst case (the run timeout tim
 setup and teardown, the credential import and the server's start, 120 s by default, `EVALS_RUN_OVERHEAD_S` or
 `run_overhead_s` in `caps.json`; plus ten minutes), with the next step: use `claude` normally once so it refreshes,
 then retry. The batch record's `horizon` says what was assumed.
+
+A sign-in whose `expiresAt` is null or absent has an unknown expiry: some machines keep `claude`'s sign-in fresh
+themselves (boxd injects it, and refreshes it outside every run). Such a batch cannot be checked against its token, so
+`--auth claude-agent` refuses it unless `--accept-unknown-token-expiry` is given; then the horizon check is skipped,
+the log warns, and the batch record's `horizon` says `expires: "unknown", accepted_by_flag: true` (`--dry-run` shows
+the same). A known expiry is checked as above, flag or not. The access token must still be a non-empty string, and the
+refresh token is never read.
+
+A trial whose model call is refused its credential (HTTP 401 or 403 from the provider, an authentication or
+permission error, an expired or invalid token, the sign-in prompt), with no model work done, is recorded as an
+infrastructure failure, `infra: "auth"` in its summary and trace. It is never graded (`evals grade` marks it
+`NOT_RUN`, with the reason), its run goes back to the reserve, and no new trial is launched after it: the batch
+record's `stopped` says why. Refresh the sign-in and rerun with `--append`.
 
 Each sandbox has its own empty `~/.claude` (`CLAUDE_CONFIG_DIR`): no `.credentials.json`, no `~/.claude.json`, none of
 the caller's settings, hooks, global `CLAUDE.md`, MCP servers or agents; `CLAUDE_CODE_SKIP_PROMPT_HISTORY=1` and

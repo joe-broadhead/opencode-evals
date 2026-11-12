@@ -74,6 +74,11 @@ if (args[0] === "run") {
     process.stderr.write("debug token" + leak + String.fromCharCode(10))
     writeFileSync(join(process.cwd(), "leaked.txt"), "token" + leak + String.fromCharCode(10))
   }
+  // The provider refuses the credential: no model work, the host's error on stderr.
+  if (prompt.includes("auth-fail")) {
+    process.stderr.write('Error: 401 {"type":"error","error":{"type":"authentication_error","message":"OAuth token has expired"}}' + String.fromCharCode(10))
+    process.exit(1)
+  }
   // A token that straddles the summary's 4000-character cut of stderr.
   if (prompt.includes("straddle")) process.stderr.write(token + "y".repeat(3990))
   const at = Date.now()

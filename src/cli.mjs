@@ -11,6 +11,7 @@
 //   evals run      --plugin x --iteration it --model p/m --auth none|env:VAR|claude-agent [--cases ids] [--set tune]
 //                  [--trials K] [--parallel N] [--arm DIR|none] [--world DIR|FILE] [--host 2.2.6] [--dry-run]
 //                  [--isolation container|none] [--unsafe-no-isolation]   (container by default; none needs the flag)
+//                  [--accept-unknown-token-expiry]   (a claude-agent sign-in with no expiry: refused without it)
 //   evals isolation build|check|sweep   the container backend's image (docker/Dockerfile), its checks, and the removal
 //                  of what a crashed batch left behind
 //   evals t0       [--root DIR] [--json]
@@ -507,6 +508,7 @@ export async function main(argv) {
         isolation: opt.isolation,
         scripted: Boolean(opt.scripted),
         unsafeNoIsolation: Boolean(opt["unsafe-no-isolation"]),
+        acceptUnknownTokenExpiry: Boolean(opt["accept-unknown-token-expiry"]),
         append: Boolean(opt.append),
       })
       if (result.results?.some((r) => r.error)) process.exitCode = 1

@@ -21,7 +21,7 @@ import { assertBatchWithinBudget, projectedRunUsd, monthToDate, budgetCaps } fro
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
 import { makeSandbox, sealedConfig, sandboxEnv, worldEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, removeInside, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
-import { parseAuth, prepareAuth } from "./auth.mjs"
+import { parseAuth, prepareAuth, readCredential, unknownExpiry } from "./auth.mjs"
 import { loadWorld, parseSeed } from "./world.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
@@ -92,6 +92,28 @@ export function plan({ cases, trials, recorded, append }) {
     throw new Error(`${clashes.length} case(s) already have recordings in this iteration (${clashes.slice(0, 3).map((c) => c.id).join(", ")}${clashes.length > 3 ? ", …" : ""}): use a new --iteration, or --append to add trials after them`)
   }
   return cases.flatMap((c) => Array.from({ length: trials }, (_, index) => ({ case: c, trial: (append ? recorded.get(c.id) ?? 0 : 0) + index + 1 })))
+}
+
+/**
+ * Did the run fail because its model call was refused authentication? Only when the model did no work (no tokens)
+ * and the host's own error output, or an error event, says so: HTTP 401 or 403 from the provider (a proxy's refusal
+ * of a tunnel aside), an authentication or permission error, an expired or invalid token, or the sign-in prompt.
+ */
+const AUTH_ERROR = /\b(?:status|code|http|error)[ :=\-"]*40[13]\b|\b40[13]\s+(?:unauthori[sz]ed|forbidden)|unauthori[sz]ed|authentication[_ ]error|permission[_ ]error|invalid[_ ](?:x-api-key|api[_ ]key|bearer|token|grant)|invalid (?:x-api-key|api key|bearer token|token)|oauth token (?:has )?expired|token (?:has )?expired|not logged in|please run \/login|login required/i
+export function authFailed({ stdout = "", stderr = "" } = {}) {
+  const tokens = billedOf(stdout).tokens
+  if (tokens.input + tokens.output + tokens.cacheRead + tokens.cacheWrite > 0) return false
+  const said = [String(stderr)]
+  for (const line of String(stdout).split("\n")) {
+    if (!line.trim()) continue
+    try {
+      const event = JSON.parse(line)
+      if (event.type === "error" || event.error || event.part?.type === "error") said.push(JSON.stringify(event))
+    } catch {
+      // a partial line
+    }
+  }
+  return said.some((text) => text.split("\n").some((line) => AUTH_ERROR.test(line) && !/tunnel|proxy/i.test(line)))
 }
 
 const billedOf = (stdout) => {
@@ -280,6 +302,8 @@ async function runJob(job, ctx) {
       isolation: ctx.isolation.name,
       ...(detail ? { isolation_detail: { ...detail, ...(oomKills ? { oom_kills: oomKills } : {}) } } : {}),
       ...(killed ? { killed: killed.reason } : {}),
+      // The model call was refused its credential: an infrastructure failure, never graded as the model's.
+      ...(authFailed(result) ? { infra: "auth" } : {}),
       ...(fromWorld.dropped.length ? { world_env_ignored: fromWorld.dropped } : {}),
       ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
       world: ctx.worldInfo,
@@ -302,6 +326,11 @@ async function runJob(job, ctx) {
     if (!gone) ctx.log(`  ${name}: the trial's container is still there: its sandbox is kept, not removed`)
     if (!ctx.keep && gone) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
     const cost = billedOf(result.stdout ?? "")
+    if (summary.infra) {
+      // Not a run of the model: its reservation goes back, so it can be rerun from the reserve.
+      release(ctx.store, ctx.batch, 1)
+      return { case: id, trial: job.trial, exit: summary.exit, durationMs, infra: summary.infra, ...(result.error ? { error: redact(result.error) } : {}) }
+    }
     recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
     return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(killed ? { killed: killed.reason } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
   } finally {
@@ -378,6 +407,19 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       log(`dry run: the batch would be refused: ${error.message}`)
     }
     if (!refused) log(`world: ${(await loadWorld(options.world ?? caller[`EVALS_WORLD_${plugin.toUpperCase()}`] ?? null)).name}`)
+    // The sign-in's expiry, read as a real batch would read it (its content never shown).
+    if (profile.kind === "claude-agent" && caller.HOME) {
+      try {
+        const signIn = readCredential(join(caller.HOME, ".claude", ".credentials.json"))
+        if (signIn.expiresAt !== null) log(`credential: the sign-in expires at ${new Date(signIn.expiresAt).toISOString()}`)
+        else {
+          const expiry = unknownExpiry(Boolean(options.acceptUnknownTokenExpiry))
+          log(`credential: expires ${expiry.expires}, accepted_by_flag ${expiry.accepted_by_flag} (--accept-unknown-token-expiry)`)
+        }
+      } catch (error) {
+        log(`dry run: the batch would be refused: ${error.message}`)
+      }
+    }
     const used = checkCaps(readLedger(store), caps, { month, plugin, iteration, runs: 0 })
     for (const job of jobs) log(`  ${job.case.id}.t${job.trial}`)
     log(`runs reserved: ${plugin} ${used.per_plugin_month}/${caps.per_plugin_month} this month, all plugins ${used.total_month}/${caps.total_month}; this batch would add ${jobs.length}`)
@@ -530,7 +572,11 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const rounds = Math.ceil(jobs.length / parallel)
     const horizonMs = (timeoutMs + overheadMs) * rounds
     facts.horizon = { timeout_s: timeoutMs / 1000, run_overhead_s: overheadMs / 1000, rounds }
-    const auth = await prepareAuth(profile, { binary, caller, horizonMs })
+    const auth = await prepareAuth(profile, { binary, caller, horizonMs, acceptUnknownExpiry: Boolean(options.acceptUnknownTokenExpiry) })
+    if (auth.expiry) {
+      Object.assign(facts.horizon, auth.expiry)
+      log("WARNING: --accept-unknown-token-expiry: the sign-in's expiry is unknown, so this batch is not checked against it; a trial refused authentication stops the batch")
+    }
     // From here on, a run's secret (the access token, a key passed through) is scrubbed, by exact value, from every
     // line logged and every file written.
     redact = redactor(auth.secrets)
@@ -606,7 +652,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
         const outcome = await runJob(job, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: redact(String(error.message ?? error)) }))
         running--
         results.push(outcome)
-        log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)
+        log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.infra ? ` INFRA ${outcome.infra}` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)
+        // A credential refused once will be refused again: no new trial is launched after the first.
+        if (outcome.infra === "auth" && !stopped) stopped = `${job.case.id}.t${job.trial} was refused authentication (infra: auth): no further trial launched; refresh the sign-in and rerun the released runs`
       }
     }
     await Promise.all(Array.from({ length: Math.min(parallel, jobs.length) }, worker))
