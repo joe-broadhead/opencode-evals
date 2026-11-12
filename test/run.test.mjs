@@ -4,7 +4,7 @@ import assert from "node:assert/strict"
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, rmSync, lstatSync, symlinkSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
-import { spawnSync } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 import { runBatch, plan } from "../src/run/runner.mjs"
 import { readLedger, usage } from "../src/cost/ledger.mjs"
 import { compileCase } from "../src/case/compile.mjs"
@@ -643,6 +643,92 @@ test("isLive: only no credential and the harness's own scripted model, in the se
   assert.equal(isLive({ auth: "none", model: "mock/m1", config: plain }), true, "a mock the harness did not register")
   assert.equal(isLive({ auth: "none", model: "mock/m2", config: scripted }), true)
   assert.equal(isLive({ auth: "none", model: "mock/m1", config: { plugins: [{ package: "/elsewhere/mock-provider" }] } }), true)
+})
+
+test("the dollar check runs inside the ledger's lock: racing processes reserve exactly what the cap affords", async () => {
+  const f = fixture()
+  const ledger = join(import.meta.dirname, "..", "src", "cost", "ledger.mjs")
+  const budget = join(import.meta.dirname, "..", "src", "cost", "budget.mjs")
+  const child = join(f.root, "reserve.mjs")
+  // Each child checks the budget, holds still for a moment (a slow read, a busy disk), then reserves one $0.25 run
+  // against a $1 cap. Inside the lock the checks queue and exactly four fit; outside it they all see an empty ledger.
+  writeFileSync(
+    child,
+    `import { reserve } from ${JSON.stringify(ledger)}
+import { assertBatchWithinBudget } from ${JSON.stringify(budget)}
+const [store, at] = process.argv.slice(2)
+const env = { EVALS_BUDGET_MODEL_USD: "1", EVALS_STORE: store }
+while (Date.now() < Number(at)) {}
+try {
+  reserve(store, { plugin: "demo", iteration: "race", runs: 1, env, perRunUsd: 0.25, priceBasis: "test", check: () => {
+    const result = assertBatchWithinBudget(store, { runs: 1, perRunUsd: 0.25 }, env)
+    const until = Date.now() + 150
+    while (Date.now() < until) {}
+    return result
+  } })
+  console.log("reserved")
+} catch (error) {
+  console.log(/D4 budget/.test(error.message) ? "refused" : "error " + error.message)
+}
+`,
+  )
+  const at = Date.now() + 1500
+  const outcomes = await Promise.all(
+    Array.from({ length: 8 }, () =>
+      new Promise((done) => {
+        const proc = spawn(process.execPath, [child, f.store, String(at)], { stdio: ["ignore", "pipe", "pipe"] })
+        let out = ""
+        proc.stdout.on("data", (d) => (out += d))
+        proc.stderr.on("data", (d) => (out += d))
+        proc.on("exit", () => done(out.trim()))
+      }),
+    ),
+  )
+  assert.deepEqual(outcomes.slice().sort(), [...Array(4).fill("refused"), ...Array(4).fill("reserved")], outcomes.join(" | "))
+  assert.equal(readLedger(f.store).filter((e) => e.kind === "reserve").length, 4)
+  f.cleanup()
+})
+
+test("links out of the sandbox are cut wherever a world put them, not only in its home", async () => {
+  const f = fixture()
+  const world = join(f.root, "world")
+  mkdirSync(join(world, "home"), { recursive: true })
+  mkdirSync(join(world, "repos", "api-repo"), { recursive: true })
+  // The world's per-sandbox step (the operator's own script) leaves links outside home: in the working copy and at
+  // the sandbox's root.
+  writeFileSync(join(world, "world.json"), JSON.stringify({ home: "home", repos: "repos", cwd: { api: "api-repo" }, prepare: `ln -s "${f.home}" "$EVALS_RUN_CWD/out-link" && ln -s "${f.home}/.claude" "$EVALS_SANDBOX_ROOT/root-link" && ln -s ../api-repo "$EVALS_RUN_CWD/stays-inside"` }))
+  addCase(f.casesDir, "outside-home", "- Seed: cwd=api")
+  const result = await runBatch({ plugin: "demo", iteration: "rl", model: "mock/m1", auth: "none", scripted: true, isolation: "none", unsafeNoIsolation: true, cases: "outside-home", arm: f.arm, casesDir: f.casesDir, world, keep: true }, { caller: f.caller, ...quiet })
+  assert.equal(result.bad, 0, JSON.stringify(result.results))
+  const sandbox = join(result.keptAt, "runs", "outside-home.t1")
+  assert.equal(existsSync(join(sandbox, "work", "api-repo", "out-link")) || lstatSafe(join(sandbox, "work", "api-repo", "out-link")), false, "the link in the working copy is cut")
+  assert.equal(lstatSafe(join(sandbox, "root-link")), false, "the link at the sandbox's root is cut")
+  assert.ok(lstatSafe(join(sandbox, "work", "api-repo", "stays-inside")), "a link that stays inside is kept")
+  f.cleanup()
+})
+
+const lstatSafe = (path) => {
+  try {
+    lstatSync(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+test("the batch record is scrubbed as a whole: a secret in a field nobody scrubbed on its own does not reach it", async () => {
+  const f = fixture()
+  // A module world whose provenance carries the token: it lands in the batch record's facts, which no step scrubs
+  // field by field.
+  const module = join(f.root, "leaky-world.mjs")
+  writeFileSync(module, `export default { name: "leaky", status: () => ({ fresh: true }), prepare: async ({ sandbox }) => { const { mkdirSync } = await import("node:fs"); mkdirSync(sandbox.project, { recursive: true }); return { cwd: sandbox.project } }, provenance: () => ({ name: "leaky", note: ${JSON.stringify(`built with ${TOKEN}`)} }) }\n`)
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  await runBatch({ plugin: "demo", iteration: "rec", model: "claude-agent/haiku", auth: "claude-agent", isolation: "none", unsafeNoIsolation: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir, world: module }, { caller, ...quiet })
+  const dir = join(f.store, "raw", "rec", "demo")
+  const record = readFileSync(join(dir, readdirSync(dir).find((n) => n.startsWith("batch-"))), "utf8")
+  assert.equal(record.includes(TOKEN), false)
+  assert.match(record, /built with \*{8,}/, "the field is there, masked")
+  f.cleanup()
 })
 
 test("the access token is scrubbed from every recording, summary, files record and log line, and from a kept sandbox", async () => {
