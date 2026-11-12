@@ -10,6 +10,12 @@ Keep a Changelog. This project adheres to Semantic Versioning.
   the case format and its clauses, traces, grading and the policy. A test now fails on a doc link to a missing file
   or heading.
 
+### Changed
+
+- T1 covers OpenCode 2.2.6 (`OPENCODE_BIN_2_2_6`), the plugins' fourth tested host, and finds a stock binary on
+  Linux: `EVALS_STOCK_DIR` resolves the `@opencode/cli-<platform>-<arch>` package npm installed for this machine
+  (glibc before `-baseline`, the `-musl` pair on musl) instead of only `cli-darwin-arm64`.
+
 ### Fixed
 
 - `grade` read recordings from `../private/raw`, beside the repository, while the docs and the runner put them in

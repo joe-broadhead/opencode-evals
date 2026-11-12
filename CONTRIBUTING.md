@@ -16,7 +16,7 @@ The tiers that need more than Node are configured, never assumed:
 | --- | --- |
 | `EVALS_PLUGIN_ROOT` | the directory holding the plugin checkouts; without it the tool uses the committed pack snapshots |
 | `EVALS_SDK_DIR` | a checkout whose `node_modules` holds `@opencode/sdk` and `@opencode/plugin` |
-| `OPENCODE_BIN_2_2_5` (and `_2_2_3`, `_2_2_4`) | a stock OpenCode binary per tested version |
+| `OPENCODE_BIN_2_2_6` (and `_2_2_3`, `_2_2_4`, `_2_2_5`) | a stock OpenCode binary per tested version |
 | `EVALS_X_FAKE` | the X plugin's own host-test fake, for the shaper case |
 | `EVALS_REPO_<ID>` | one plugin`s checkout, e.g. `EVALS_REPO_X` |
 | `EVALS_STORE` | the private store: traces, verdicts, scorecards, labels |

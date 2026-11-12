@@ -9,7 +9,7 @@ verdicts, and a ledger that refuses to compare two runs that are not comparable.
 
 - Node 22.
 - For the static, case, grading, policy and label tiers: nothing else.
-- For the T1 tier: an OpenCode stock binary per version you test (2.2.3 to 2.2.5), and `bun` for the fake
+- For the T1 tier: an OpenCode stock binary per version you test (2.2.3 to 2.2.6), and `bun` for the fake
   MCP server. Both are configured, not assumed: see [Configuration](#configure).
 - macOS or Linux.
 
@@ -79,7 +79,7 @@ CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/
 | What you see | What it means |
 | --- | --- |
 | `no @opencode/sdk at …` | set `EVALS_SDK_DIR` to a checkout whose `node_modules` holds the SDK and the plugin API |
-| `no stock binary for 2.2.5` | set `OPENCODE_BIN_2_2_5`, or `EVALS_STOCK_DIR` to a directory with one folder per version |
+| `no stock binary for 2.2.6` | set `OPENCODE_BIN_2_2_6`, or `EVALS_STOCK_DIR` to a directory with one folder per version holding an `npm install @opencode/cli@<version>` |
 | `describe answered 400` | the plugin registers no tools RPC without a sign-in or its options; the check reports `unsupported` |
 | `BLOCKED` items | the evidence could not settle the item — a variable argument, a missing recording, a dependency not configured |
 | `not comparable` | the case set, the rules, the model or the grader differ: the tool names the fields |

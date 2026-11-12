@@ -54,7 +54,7 @@ plugin's live `jelly` declaration and its snapshot; `evals pack --sync` refreshe
 
 Both are deterministic and need no secrets. The T1 tier is not in CI: it needs a stock binary, which is a
 machine-level asset. Run it on the machine that has one, or add a job that downloads it and sets
-`OPENCODE_BIN_2_2_5`.
+`OPENCODE_BIN_2_2_6`.
 
 ## Before the first publish
 
