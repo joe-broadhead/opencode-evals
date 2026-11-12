@@ -3,9 +3,10 @@
 // servers, agents or provider keys reaches a run unless a credential profile passes it on purpose.
 
 import { spawn } from "node:child_process"
-import { mkdirSync, writeFileSync, existsSync, rmSync, readdirSync, lstatSync, readlinkSync, unlinkSync, chmodSync, realpathSync } from "node:fs"
+import { mkdirSync, writeFileSync, existsSync, rmSync, readdirSync, lstatSync, readlinkSync, unlinkSync, chmodSync } from "node:fs"
 import { join, resolve, dirname, basename, sep } from "node:path"
 import { randomBytes } from "node:crypto"
+import { inside, real } from "./paths.mjs"
 
 const mkdir = (dir) => mkdirSync(dir, { recursive: true, mode: 0o700 })
 
@@ -258,21 +259,12 @@ export const removeSandbox = (root) => {
  * inside the sandbox, so a run that turned `home/.claude` into a link cannot have the runner delete a file outside it.
  */
 export function removeInside(root, path) {
-  const base = realOrSelf(root)
-  const parent = realOrSelf(dirname(path))
-  if (parent !== base && !parent.startsWith(`${base}${sep}`)) return false
+  // The file's directory, every link in it resolved (a dangling one followed), must still be inside the sandbox.
+  if (!inside(root, dirname(path))) return false
   try {
-    rmSync(join(parent, basename(path)), { force: true })
+    rmSync(join(real(dirname(path)), basename(path)), { force: true })
   } catch {
     // a directory of that name holds nothing of a sign-in
   }
   return true
-}
-
-const realOrSelf = (path) => {
-  try {
-    return realpathSync(path)
-  } catch {
-    return resolve(path)
-  }
 }
