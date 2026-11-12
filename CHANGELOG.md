@@ -154,6 +154,14 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- T1 for History: the pack scripted direct calls to `history_sessions` and `history_sql`, which History v0.0.0 offers
+  only inside Code Mode, so they never ran (8 failures over the four hosts). They are now scripted through `execute`
+  (`tools.history.sessions`, `tools.history.sql`, marked `via: "execute"`), and such a case passes only when its call
+  ran inside `execute`. The embedded-SDK runner added an `x_` prefix to every tool (it called `x_pin`: the
+  `evals check` blocker) and ignored a case's `options`: it now takes a case's tool id from the plugin under test
+  (the case's permission action, else the pack's tool), sets each case up with its own options, and starts a fake
+  only for a pack that declares one.
+
 - `evals isolation sweep`, and the sweep at a batch's start, also remove a dead runner's batch directory under
   `EVALS_TMP`: only one holding the marker its runner wrote at creation, naming that directory, whose runner is gone
   and whose containers are gone, removed without following links.
