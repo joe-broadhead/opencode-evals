@@ -122,7 +122,7 @@ test("the allow-list and limits come from caps.json and the environment only, ne
 })
 
 test("a trial's environment: the container's PATH, the proxy, loopback unproxied, no docker setting, no host CA path", () => {
-  const env = trialEnv({ PATH: "/home/someone/bin:/usr/bin", HOME: "/sb/home", HTTPS_PROXY: "http://corp:8080", SSL_CERT_FILE: "/etc/corp.pem", NODE_EXTRA_CA_CERTS: "/x", DOCKER_HOST: "tcp://evil:2375", DOCKER_CONFIG: "/sb/home/.docker", BUILDKIT_HOST: "x", CLAUDE_CODE_OAUTH_TOKEN: "t" })
+  const env = trialEnv({ PATH: "/opt/someone/bin:/usr/bin", HOME: "/sb/home", HTTPS_PROXY: "http://corp:8080", SSL_CERT_FILE: "/etc/corp.pem", NODE_EXTRA_CA_CERTS: "/x", DOCKER_HOST: "tcp://evil:2375", DOCKER_CONFIG: "/sb/home/.docker", BUILDKIT_HOST: "x", CLAUDE_CODE_OAUTH_TOKEN: "t" })
   assert.equal(env.PATH, CONTAINER_PATH)
   for (const key of ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"]) assert.equal(env[key], EGRESS_URL)
   assert.equal(env.NO_PROXY, "127.0.0.1,localhost")

@@ -1,5 +1,7 @@
 // A plugin tool is one tool whichever way it was called; a bare name in a case is the case's plugin's tool.
 import { test } from "node:test"
+import { join } from "node:path"
+import * as fs from "node:fs"
 import assert from "node:assert/strict"
 import { matchesTool, selectCalls, qualify, BUILTIN_TOOLS, builtinCollisions } from "../src/grade/select.mjs"
 import { parseClause, evaluateClause } from "../src/grade/evidence.mjs"
@@ -38,7 +40,12 @@ test("a bare name the case's plugin declares is qualified, unless it is one of O
 })
 
 test("the built-ins are the tested hosts' own: no bash, task, list, todoread or apply_patch, and search is not one", () => {
-  assert.deepEqual([...BUILTIN_TOOLS].sort(), ["edit", "execute", "experimental_image_generate", "glob", "grep", "patch", "question", "read", "shell", "skill", "subagent", "todowrite", "webfetch", "websearch", "write"])
+  assert.deepEqual([...BUILTIN_TOOLS].sort(), [
+    "artifact_create", "artifact_delete", "artifact_read", "artifact_update", "edit", "execute", "experimental_image_generate", "glob", "grep",
+    "list_mcp_resources", "models", "patch", "question", "read", "read_mcp_resource", "schedule_create", "schedule_delete", "schedule_list",
+    "schedule_pause", "schedule_resume", "session_move", "session_rename", "shell", "skill", "subagent", "todowrite", "webfetch", "websearch",
+    "worktree_create", "worktree_list", "worktree_remove", "write",
+  ])
   assert.equal(qualify("search", scope), "history.search", "History's search is History's: there is no built-in search")
 })
 
@@ -77,4 +84,36 @@ test("first: and before: read the order of the calls, skill loads and the execut
   assert.equal(check(noHistory, "before:history.*,bash"), "ok", "bash never ran")
   assert.equal(check(noHistory, "before:history.*,grep"), "fail", "grep ran and History never did")
   assert.equal(check({ calls: [skill], scope }, "first:history.*"), "fail")
+})
+
+// The list against a pinned @opencode/core's own registry, when one is configured (EVALS_OPENCODE_CORE, or the SDK
+// checkout's node_modules): every single-tool plugin declares `name`, and every multi-tool plugin registers its tools
+// as `name: "<tool>"` in the build. A plugin file the list does not account for fails the test.
+const coreDir = (() => {
+  const { existsSync } = fs
+  for (const dir of [process.env.EVALS_OPENCODE_CORE, process.env.EVALS_SDK_DIR && join(process.env.EVALS_SDK_DIR, "node_modules", "@opencode", "core")].filter(Boolean)) if (existsSync(join(dir, "dist", "types", "tool", "plugin"))) return dir
+  return null
+})()
+
+test("the built-in list is the pinned @opencode/core registry's tools, and Code Mode's execute", coreDir ? {} : { skip: "no @opencode/core (set EVALS_OPENCODE_CORE or EVALS_SDK_DIR)" }, () => {
+  const { readdirSync, readFileSync } = fs
+  const types = join(coreDir, "dist", "types", "tool", "plugin")
+  const single = []
+  const multi = []
+  for (const file of readdirSync(types).filter((f) => f.endsWith(".d.ts"))) {
+    const name = (/export declare const name = "([a-z_]+)"/.exec(readFileSync(join(types, file), "utf8")) ?? [])[1]
+    if (name) single.push(name)
+    else multi.push(file.replace(/\.d\.ts$/, ""))
+  }
+  const version = JSON.parse(readFileSync(join(coreDir, "package.json"), "utf8")).version
+  const built = readdirSync(join(coreDir, "dist", "chunks")).map((f) => readFileSync(join(coreDir, "dist", "chunks", f), "utf8")).join("\n")
+  const registered = new Set([...built.matchAll(/name: "([a-z_]+)",/g)].map((m) => m[1]))
+  const MULTI = { artifact: ["artifact_create", "artifact_delete", "artifact_read", "artifact_update"], "mcp-resource": ["list_mcp_resources", "read_mcp_resource"], opencode: ["models", "session_move", "session_rename", "worktree_create", "worktree_list", "worktree_remove"], schedule: ["schedule_create", "schedule_delete", "schedule_list", "schedule_pause", "schedule_resume"], "file-diff": [] }
+  assert.deepEqual(multi.filter((file) => !(file in MULTI)), [], "a multi-tool plugin file the list does not account for")
+  const expected = new Set([...single, ...multi.flatMap((file) => MULTI[file]), "execute"])
+  for (const tool of multi.flatMap((file) => MULTI[file])) assert.ok(registered.has(tool), `${version} registers ${tool}`)
+  const listed = new Set(BUILTIN_TOOLS)
+  for (const tool of expected) assert.ok(listed.has(tool), `${tool} (@opencode/core ${version}) is in BUILTIN_TOOLS`)
+  // A name the list holds beyond this version's registry must come from another tested version (artifact_* is 2.2.5+).
+  for (const tool of listed) if (!expected.has(tool)) assert.match(tool, /^artifact_/, `${tool} is in no tested registry`)
 })
