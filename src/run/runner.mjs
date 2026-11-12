@@ -15,6 +15,7 @@ import { tmpdir } from "node:os"
 import { freePort } from "../t1/http.mjs"
 import { stockBinary, TESTED } from "../t1/harness.mjs"
 import { selectCases } from "../case/sets.mjs"
+import { pluginCases } from "../case/load.mjs"
 import { harnessVersion } from "../version.mjs"
 import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf } from "../cost/ledger.mjs"
 import { assertWithinBudget, projectedSpend, monthToDate, CAPS } from "../cost/budget.mjs"
@@ -22,13 +23,12 @@ import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
 import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox } from "./sandbox.mjs"
 import { parseAuth, prepareAuth } from "./auth.mjs"
-import { loadWorld } from "./world.mjs"
+import { loadWorld, parseSeed } from "./world.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
 import { splitTrial } from "../grade/trials.mjs"
 import { digestOf } from "../util/canonical.mjs"
 import { dirname } from "node:path"
 
-const ROOT = resolve(import.meta.dirname, "..", "..")
 const SAFE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 
 export const RUNNER = "evals run"
@@ -43,10 +43,6 @@ export function hostBinary({ host, env = process.env }) {
   return env.EVALS_OPENCODE_BIN ?? "opencode"
 }
 
-const loadCaseFiles = (dir) => {
-  if (!existsSync(dir)) throw new Error(`no cases at ${dir}`)
-  return readdirSync(dir).filter((file) => file.endsWith(".json")).map((file) => JSON.parse(readFileSync(join(dir, file), "utf8"))).filter((c) => c.schema === "oc-case/1")
-}
 
 /** The trials already recorded for each case in this iteration. */
 function recordedTrials(dir) {
@@ -118,12 +114,24 @@ async function startServer({ binary, cwd, env, password, timeoutMs = 60_000 }) {
   throw new Error(`the host server did not start: ${last}`)
 }
 
+/** `Seed: utc-hours=9-15`: a case whose truth depends on the UTC hour runs only inside its window (9 <= h < 15). */
+export function hourWindow(seed, at = new Date()) {
+  const spec = parseSeed(seed)["utc-hours"]
+  if (!spec) return { ok: true }
+  const match = /^(\d{1,2})-(\d{1,2})$/.exec(spec)
+  if (!match) throw new Error(`Seed utc-hours=${spec}: use <from>-<to>, hours 0-24`)
+  const [from, to] = [Number(match[1]), Number(match[2])]
+  const hour = at.getUTCHours()
+  const inside = from <= to ? hour >= from && hour < to : hour >= from || hour < to
+  return inside ? { ok: true, hour } : { ok: false, hour, why: `the case runs between ${from}:00 and ${to}:00 UTC, and it is ${hour}:xx` }
+}
+
 async function runJob(job, ctx) {
   const id = job.case.id
   const name = `${id}.t${job.trial}`
   const root = join(ctx.batchRoot, "runs", name)
   const sandbox = makeSandbox(root)
-  const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial })
+  const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
   const cwd = prepared.cwd
   const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model })
   writeConfig(sandbox, config)
@@ -135,7 +143,9 @@ async function runJob(job, ctx) {
   let result
   try {
     server = await startServer({ binary: ctx.binary, cwd, env, password })
-    result = await runToEnd(ctx.binary, ["run", "--server", server.url, "--format", "json", "-m", ctx.model, "--title", `eval ${id} t${job.trial}`, job.case.prompt], { cwd, env, timeoutMs: ctx.timeoutMs })
+    // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
+    const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
+    result = await runToEnd(ctx.binary, ["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, job.case.prompt], { cwd, env, timeoutMs: ctx.timeoutMs })
   } catch (error) {
     result = { code: null, stdout: "", stderr: String(error.message ?? error), timedOut: false, error: String(error.message ?? error) }
   } finally {
@@ -150,6 +160,8 @@ async function runJob(job, ctx) {
     arm: ctx.arm.arm,
     model: ctx.model,
     seed: job.case.seed ?? null,
+    utc_hour: new Date(started).getUTCHours(),
+    ...(prepared.session ? { continued: true } : {}),
     stderr: `${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}`.slice(-4000),
     started_at: new Date(started).toISOString(),
     runner: RUNNER,
@@ -185,8 +197,10 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   if (!Number.isInteger(trials) || trials < 1) throw new Error("--trials must be a whole number of at least 1")
   if (!Number.isInteger(parallel) || parallel < 1) throw new Error("--parallel must be a whole number of at least 1")
   const store = options.store ?? storeRoot(caller)
-  const casesDir = options.casesDir ?? join(ROOT, "cases", plugin)
-  const { selected } = selectCases(loadCaseFiles(casesDir), { patterns: options.cases ?? "*", set: options.set ?? "tune" })
+  // The repository's cases and the store's private holdouts, or exactly the directory --cases-dir names.
+  const caseList = pluginCases(plugin, { dir: options.casesDir ?? null, env: caller })
+  if (!caseList.length) throw new Error(`no compiled cases for ${plugin}${options.casesDir ? ` in ${options.casesDir}` : ""}`)
+  const { selected } = selectCases(caseList, { patterns: options.cases ?? "*", set: options.set ?? "tune" })
   const rawDir = join(rawRoot(caller), iteration, plugin)
   const jobs = plan({ cases: selected, trials, recorded: recordedTrials(rawDir), append: Boolean(options.append) })
 
@@ -276,6 +290,12 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       if (!now.fresh) {
         results.push({ case: job.case.id, trial: job.trial, skipped: `world stale: ${now.why}` })
         log(`  ${job.case.id}.t${job.trial} SKIPPED: the world went stale (${now.why})`)
+        continue
+      }
+      const window = hourWindow(job.case.seed)
+      if (!window.ok) {
+        results.push({ case: job.case.id, trial: job.trial, skipped: window.why })
+        log(`  ${job.case.id}.t${job.trial} SKIPPED: ${window.why}`)
         continue
       }
       if (monthToDate(store).model_usd > CAPS.model_usd) {

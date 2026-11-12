@@ -15,7 +15,8 @@ $EVALS_STORE/
   ledger/runs.jsonl                       every live run, reserved before it starts: what the run caps count
   caps.json                               the run caps, when not the defaults (optional)
   labels/<plugin>.jsonl                   the owner's hand labels
-  holdouts/<plugin>/                      four cases per plugin the tuning lane never sees
+  holdouts/<plugin>/                      private holdout cases (<id>.md, compiled in place by `evals compile --plugin <id>
+                                          --holdouts`): run, graded and reported with the repository's cases, as holdouts
 ```
 
 Default: `EVALS_STORE`, else `../private/store` relative to this repository. Nothing in the store is

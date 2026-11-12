@@ -243,3 +243,90 @@ test("an arm file sets the plugin's options; they reach the run, and their diges
   await assert.rejects(runBatch({ plugin: "demo", iteration: "opt2", model: "mock/m1", auth: "none", cases: "demo-b", arm: armFile, options: "{}", casesDir: f.casesDir }, { caller: f.caller, ...quiet }), /pass one/)
   f.cleanup()
 })
+
+const addCase = (dir, id, extra) => {
+  const text = caseText(id, extra)
+  writeFileSync(join(dir, `${id}.md`), text)
+  writeFileSync(join(dir, `${id}.json`), JSON.stringify(compileCase(`cases/demo/${id}.md`, text)))
+}
+
+test("private holdouts come from the store, are holdouts whatever they say, and may not also be published", async () => {
+  const f = fixture()
+  const holdouts = join(f.store, "holdouts", "demo")
+  mkdirSync(holdouts, { recursive: true })
+  addCase(holdouts, "priv-one", "")
+  // With the repository's own cases (no --cases-dir), the private holdout joins the holdout set.
+  const { pluginCases } = await import("../src/case/load.mjs")
+  const cases = pluginCases("demo", { env: f.caller })
+  const priv = cases.find((c) => c.id === "priv-one")
+  assert.equal(priv.holdout, true)
+  assert.equal(priv.private, true)
+  // A run selects it with --set holdout, from the store, with no --cases-dir.
+  const repoCases = join(import.meta.dirname, "..", "cases", "demo")
+  assert.equal(existsSync(repoCases), false)
+  const result = await runBatch({ plugin: "demo", iteration: "priv", model: "mock/m1", auth: "none", set: "holdout", arm: f.arm }, { caller: f.caller, ...quiet })
+  assert.deepEqual(result.cases, ["priv-one"])
+  f.cleanup()
+})
+
+test("utc-hours keeps a time-of-day case inside its window, and the summary records the hour", async () => {
+  const { hourWindow } = await import("../src/run/runner.mjs")
+  const at = new Date("2026-11-11T14:30:00Z")
+  assert.equal(hourWindow("utc-hours=9-15", at).ok, true)
+  assert.equal(hourWindow("utc-hours=15-23", at).ok, false)
+  assert.equal(hourWindow("utc-hours=22-10", new Date("2026-11-11T03:00:00Z")).ok, true, "a window across midnight")
+  assert.equal(hourWindow("cwd=api", at).ok, true)
+  const f = fixture()
+  const hour = new Date().getUTCHours()
+  addCase(f.casesDir, "timed-out", `- Seed: utc-hours=${(hour + 2) % 24}-${(hour + 3) % 24}`)
+  addCase(f.casesDir, "timed-in", `- Seed: utc-hours=0-24`)
+  const result = await runBatch({ plugin: "demo", iteration: "hours", model: "mock/m1", auth: "none", cases: "timed-*", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, ...quiet })
+  assert.equal(result.launched, 1)
+  assert.match(result.results.find((r) => r.case === "timed-out").skipped, /runs between/)
+  assert.equal(JSON.parse(readFileSync(join(f.store, "raw", "hours", "demo", "timed-in.t1.summary.json"), "utf8")).utc_hour, hour)
+  assert.equal(readLedger(f.store).find((e) => e.kind === "release").runs, 1, "the skipped run's reservation is released")
+  f.cleanup()
+})
+
+test("a world can continue its own session, rewrite paths per sandbox, and be built with a private overlay", async () => {
+  const f = fixture()
+  addCase(f.casesDir, "continues", "- Seed: cwd=api continue=earlier")
+  const world = join(f.root, "world")
+  mkdirSync(join(world, "repos", "api-repo"), { recursive: true })
+  const overlay = join(f.store, "holdouts", "demo", "world")
+  mkdirSync(overlay, { recursive: true })
+  writeFileSync(join(overlay, "needles.json"), "[]")
+  writeFileSync(
+    join(world, "world.json"),
+    JSON.stringify({
+      repos: "repos",
+      cwd: { api: "api-repo" },
+      now: Date.now(),
+      fresh: "utc-day",
+      overlay: "$EVALS_STORE/holdouts/demo/world",
+      build: `node -e 'require("fs").writeFileSync("overlay.txt", process.env.EVALS_WORLD_OVERLAY)'`,
+      prepare: `node -e 'require("fs").writeFileSync(require("path").join(process.env.EVALS_SANDBOX_HOME, "prepared.txt"), process.env.EVALS_RUN_CWD + "|" + process.env.EVALS_REPO_SOURCE)'`,
+      sessions: { earlier: "ses_world_earlier" },
+    }),
+  )
+  const result = await runBatch({ plugin: "demo", iteration: "cont", model: "mock/m1", auth: "none", cases: "continues", arm: f.arm, casesDir: f.casesDir, world, keep: true }, { caller: f.caller, ...quiet })
+  assert.equal(result.bad, 0, JSON.stringify(result.results))
+  assert.equal(readFileSync(join(world, "overlay.txt"), "utf8"), overlay)
+  assert.match(JSON.parse(readFileSync(join(world, ".evals-world.json"), "utf8")).overlay_sha256, /^[0-9a-f]{64}$/)
+  const home = join(result.keptAt, "runs", "continues.t1", "home")
+  assert.equal(readFileSync(join(home, "prepared.txt"), "utf8"), `${join(result.keptAt, "runs", "continues.t1", "work", "api-repo")}|${join(world, "repos", "api-repo")}`)
+  const run = JSON.parse(readFileSync(join(home, "run.json"), "utf8"))
+  assert.deepEqual(run.argv.slice(run.argv.indexOf("--session"), run.argv.indexOf("--session") + 2), ["--session", "ses_world_earlier"])
+  assert.equal(JSON.parse(readFileSync(join(f.store, "raw", "cont", "demo", "continues.t1.summary.json"), "utf8")).continued, true)
+  f.cleanup()
+})
+
+test("a private holdout with a published case's id is refused", async () => {
+  const { pluginCases } = await import("../src/case/load.mjs")
+  const store = mkdtempSync(join(tmpdir(), "evals-clash-"))
+  mkdirSync(join(store, "holdouts", "x"), { recursive: true })
+  const published = JSON.parse(readFileSync(join(import.meta.dirname, "..", "cases", "x", "small-bounded-search.json"), "utf8"))
+  writeFileSync(join(store, "holdouts", "x", "small-bounded-search.json"), JSON.stringify(published))
+  assert.throws(() => pluginCases("x", { env: { EVALS_STORE: store } }), /a published holdout is not a holdout/)
+  rmSync(store, { recursive: true, force: true })
+})

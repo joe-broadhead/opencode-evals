@@ -1,6 +1,7 @@
 // The CLI. Every subcommand is deterministic: it reads files, computes, and writes files.
 //
-//   evals compile  --plugin x | --all [--check]   markdown cases -> oc-case/1 JSON; --check writes nothing, fails on a change
+//   evals compile  --plugin x | --all [--check] [--holdouts]   markdown cases -> oc-case/1 JSON; --check writes nothing
+//                  and fails on a change; --holdouts compiles $EVALS_STORE/holdouts/<plugin>/ in the store
 //   evals trace    --iteration nx6 [--plugin x] [--from DIR] [--out DIR]
 //   evals grade    --iteration nx6 [--plugin x] [--cases DIR] [--traces DIR] [--raw DIR] [--out DIR]
 //   evals lock     [--plugin x] [--epoch N]
@@ -41,6 +42,7 @@ import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "
 import { storeRoot, rawRoot, tracesDir } from "./store.mjs"
 import { splitTrial, trialName, caseEntry, byCase, trialStats } from "./grade/trials.mjs"
 import { selectCases } from "./case/sets.mjs"
+import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
 import { rawCallArgs } from "./trace/rawArgs.mjs"
 import { compare as compareArms, renderReport } from "./report/arms.mjs"
 import { runBatch } from "./run/runner.mjs"
@@ -73,14 +75,13 @@ const json = (value) => JSON.stringify(value, null, 2)
 const ensureDir = (dir) => mkdirSync(dir, { recursive: true })
 const listCases = (dir) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".md")).sort() : [])
 
-function compileAll(plugin = "x", { check = false } = {}) {
-  const dir = path("cases", plugin)
+function compileAll(plugin = "x", { check = false, dir = path("cases", plugin) } = {}) {
   const files = listCases(dir)
   if (!files.length) throw new Error(`no cases in ${dir}`)
   // Compile every case before writing any: a broken case must not leave a half-written case set.
   const compiled = files.map((file) => {
     const text = read(join(dir, file))
-    const caseObject = compileCase(join("cases", plugin, file), text)
+    const caseObject = compileCase(dir === path("cases", plugin) ? join("cases", plugin, file) : join("holdouts", plugin, file), text)
     const previous = join(dir, file.replace(/\.md$/, ".json"))
     const next = `${json(caseObject)}\n`
     const changed = !existsSync(previous) || read(previous) !== next
@@ -133,8 +134,7 @@ function stateFor(iteration, caseName) {
   return existsSync(file) ? JSON.parse(read(file)) : null
 }
 
-function gradeAll(iteration, casesDir = path("cases", "x"), traceDir = tracesDir(iteration, "x"), rawDir = rawRoot(), plugin = "x") {
-  const cases = casesDir.endsWith(".json") ? [] : listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
+function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir = rawRoot(), plugin = "x") {
   const results = []
   const pack = readSnapshot(plugin, ROOT)
   const scope = pack ? { ns: plugin, tools: new Set((pack.tools ?? []).map((tool) => tool.name)) } : null
@@ -181,7 +181,7 @@ function gradeAll(iteration, casesDir = path("cases", "x"), traceDir = tracesDir
 function staleness(batch, plugin) {
   const why = []
   if (batch.grader_sha256 && batch.grader_sha256 !== graderHash()) why.push(`graded by grader \`${short(batch.grader_sha256)}\`; the grader is now \`${short(graderHash())}\`. Re-run \`evals grade --iteration ${batch.iteration} --plugin ${plugin}\`.`)
-  const cases = loadCases(plugin)
+  const cases = pluginCases(plugin)
   if (cases.length && batch.case_set?.cases_sha256 && batch.case_set.cases_sha256 !== casesDigest(cases)) why.push(`graded against case set \`${short(batch.case_set.cases_sha256)}\`; the cases are now \`${short(casesDigest(cases))}\`.`)
   return why
 }
@@ -314,7 +314,9 @@ export async function main(argv) {
       const plugins = opt.all ? readdirSync(path("cases")).filter((name) => listCases(path("cases", name)).length).sort() : [opt.plugin]
       let changes = 0
       for (const plugin of plugins) {
-        const compiled = compileAll(plugin, { check: Boolean(opt.check) })
+        // --holdouts compiles the store's private holdouts for the plugin, in the store.
+        const dir = opt.holdouts ? privateHoldoutsDir(plugin) : path("cases", plugin)
+        const compiled = compileAll(plugin, { check: Boolean(opt.check), dir })
         const cases = compiled.map((c) => c.caseObject)
         const share = codedShare(cases)
         for (const { caseObject, changed, file } of compiled) {
@@ -353,7 +355,7 @@ export async function main(argv) {
         const summary = existsSync(summaryPath) ? JSON.parse(read(summaryPath)) : {}
         // A runner that records its own provenance (summary.provenance) is trusted over the hand-kept manifest.
         const prov = summary.provenance ?? null
-        const caseDigest = opt.plugin ? casesDigest(loadCases(opt.plugin)) : null
+        const caseDigest = opt.plugin ? casesDigest(pluginCases(opt.plugin)) : null
         const axis = (value) => (value ? { sha256: value, source: "recorded" } : { sha256: null, source: "unrecorded" })
         const trace = traceFromFiles({
           caseName,
@@ -394,9 +396,9 @@ export async function main(argv) {
     case "grade": {
       const iteration = opt.iteration ?? "nx6"
       const plugin = opt.plugin ?? "x"
-      const casesDir = opt.cases ?? path("cases", plugin)
-      const cases = listCases(casesDir).map((f) => JSON.parse(read(join(casesDir, f.replace(/\.md$/, ".json")))))
-      const results = gradeAll(iteration, casesDir, opt.traces ?? tracesDir(iteration, plugin), opt.raw ?? rawRoot(), plugin)
+      // The repository's cases and the store's private holdouts, or exactly the directory --cases names.
+      const cases = pluginCases(plugin, { dir: opt.cases ?? null })
+      const results = gradeAll(iteration, cases, opt.traces ?? tracesDir(iteration, plugin), opt.raw ?? rawRoot(), plugin)
       const summary = batchSummary(iteration, results, cases, plugin)
       const out = opt.out ?? join(storePath(), "results", iteration)
       ensureDir(out)
@@ -416,7 +418,7 @@ export async function main(argv) {
       const comparison = hand ? compareToHandGrading(results, hand) : null
       // Every disagreement must carry an authored explanation; the note lives in the case's `## Notes`.
       const notes = {}
-      for (const caseObject of loadCases(opt.plugin ?? "x")) {
+      for (const caseObject of pluginCases(opt.plugin ?? batch.case_set?.plugin ?? "x")) {
         for (const note of caseObject.notes ?? []) if (note.id) notes[note.id] = note.text
       }
       const plugin = opt.plugin ?? batch.case_set?.plugin ?? "x"
@@ -503,7 +505,7 @@ export async function main(argv) {
       }
       const loaded = arms.map((arm) => ({ ...arm, results: arm.iterations.map((iteration) => ({ iteration, results: verdictsOf(iteration) })) }))
       const plugin = opt.plugin ?? loaded[0].results[0]?.results.find((r) => r.plugin)?.plugin ?? "x"
-      const caseList = loadCases(plugin)
+      const caseList = pluginCases(plugin)
       const meta = new Map(caseList.map((c) => [c.id, c]))
       const keep = new Set(selectCases(caseList, { patterns: opt.cases ?? "*", set: opt.set ?? "all" }).selected.map((c) => c.id))
       // A time-window case (`Seed: time=day`) asks about the world's day: a run recorded on another UTC day asked a
@@ -580,8 +582,9 @@ export async function main(argv) {
         if (lock.cases_sha256 !== casesDigest(cases)) failures.push(`the case set moved since the lock: ${short(lock.cases_sha256)} -> ${short(casesDigest(cases))}`)
         if (lock.grader_sha256 !== graderHash()) failures.push(`the grader moved since the lock: ${short(lock.grader_sha256)} -> ${short(graderHash())}`)
       } else failures.push("no cases/x/evals.lock")
-      const results = gradeAll(iteration, path("cases", opt.plugin ?? "x"), tracesDir(iteration, opt.plugin ?? "x"), undefined, opt.plugin ?? "x")
-      const again = batchSummary(iteration, results, cases, opt.plugin ?? "x")
+      const graded = pluginCases(opt.plugin ?? "x")
+      const results = gradeAll(iteration, graded, tracesDir(iteration, opt.plugin ?? "x"), undefined, opt.plugin ?? "x")
+      const again = batchSummary(iteration, results, graded, opt.plugin ?? "x")
       if (again.batch_sha256 !== previous.batch_sha256) failures.push(`batch digest moved: ${short(previous.batch_sha256)} -> ${short(again.batch_sha256)}`)
       if (canonical(again.coverage) !== canonical(previous.coverage)) failures.push("coverage moved")
       const verdicts = JSON.parse(read(join(storePath(), "results", iteration, "verdicts.json")))

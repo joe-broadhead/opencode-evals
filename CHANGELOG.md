@@ -56,6 +56,12 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 - Order clauses: `first:<tool>` (the first call, skill loads and the `execute` wrapper aside) and `before:<a>,<b>`
   (the first `a` came before the first `b`, or `b` never happened), so "History before git or grep" can be graded.
+- Private holdouts: `$EVALS_STORE/holdouts/<plugin>/` joins the repository's cases in `run`, `grade`, `report` and the
+  scorecard, always as holdouts (`evals compile --plugin <id> --holdouts` compiles them in the store); an id that is
+  also published is refused.
+- Worlds: a private `overlay` the build receives, a per-sandbox `prepare` step (to rewrite recorded directories to
+  the run's own), and `sessions` a case continues with `Seed: continue=<key>`. `Seed: utc-hours=<a>-<b>` keeps a
+  time-of-day case inside its window; every summary records its UTC hour.
 - Arms carry plugin options: `evals run --arm <file>.json` (`{ "package": …, "options": { "access": "ask-changes" } }`)
   or `--options`. The options are recorded by digest and are a provenance axis, `options`, so an access-mode arm is
   compared on that axis and refuses a comparison on any other.

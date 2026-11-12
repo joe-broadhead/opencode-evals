@@ -14,7 +14,7 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 
 | Flag | Default | What it does |
 | --- | --- | --- |
-| `--plugin <id>` | required | the pack id; the cases are `cases/<id>/*.json` in this repository (`--cases-dir` for another set) |
+| `--plugin <id>` | required | the pack id; the cases are `cases/<id>/*.json` in this repository and the private holdouts in `$EVALS_STORE/holdouts/<id>/` (`--cases-dir` for exactly one other directory) |
 | `--iteration <name>` | required | the recordings go to `$EVALS_STORE/raw/<name>/<plugin>/` |
 | `--model <provider>/<model>[#variant]` | required | the model every run uses |
 | `--auth <profile>` | required (or `EVALS_AUTH`) | where the model credential comes from: below |
@@ -108,7 +108,10 @@ starts in an empty project directory.
   "default_cwd": "api",
   "now": "truth.json#now",
   "fresh": "utc-day",
-  "build": "./make-gold.sh"
+  "build": "./make-gold.sh",
+  "overlay": "$EVALS_STORE/holdouts/history/world",
+  "prepare": "./fix-directories.sh",
+  "sessions": { "earlier": "ses_…" }
 }
 ```
 
@@ -122,6 +125,18 @@ questions mean something else tomorrow), `<n>h`, or `always`.
 plugin's own index must be built by the build being measured, never by a fixed baseline. The runner stamps each build
 it ran with that build's digest (`.evals-world.json`); a world built by another build, or by hand, is stale. A stale
 world is rebuilt (`--stale rebuild`) or refused (`--stale refuse`); a world with no `build` is refused.
+
+`overlay` is a private add-on (holdout sessions, say) that lives in the store, never beside the world: `$VAR` in it is
+the caller's variable, and the build receives it as `EVALS_WORLD_OVERLAY`; its digest is stamped with the build, so a
+world built with another overlay is told apart without the overlay being shown. `prepare` runs per sandbox, after the
+copy, with `EVALS_SANDBOX_HOME`, `EVALS_RUN_CWD` and `EVALS_REPO_SOURCE` set: a world whose recorded sessions name
+directories rewrites them to the run's own there, so a directory-scoped question still means something in a copy.
+`sessions` names sessions a case continues with `Seed: continue=<key>`: the run is `opencode run --session <id>` on
+the sandbox's own copy of the world.
+
+A case's `Seed:` can also bound the time of day: `utc-hours=9-15` runs the case only from 09:00 to 15:00 UTC (a window
+may cross midnight, `22-6`); outside it the run is skipped and its reservation released, and every summary records
+the UTC hour its run started.
 
 A module world exports `{ name, status({ arm }), build({ arm, caller, log })?, prepare({ sandbox, case, seed, trial }),
 provenance()? }`; `prepare` returns `{ cwd, env? }`.
