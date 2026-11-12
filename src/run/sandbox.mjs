@@ -3,8 +3,8 @@
 // servers, agents or provider keys reaches a run unless a credential profile passes it on purpose.
 
 import { spawn } from "node:child_process"
-import { mkdirSync, writeFileSync, existsSync, rmSync, readdirSync, lstatSync, readlinkSync, unlinkSync } from "node:fs"
-import { join, resolve, dirname, sep } from "node:path"
+import { mkdirSync, writeFileSync, existsSync, rmSync, readdirSync, lstatSync, readlinkSync, unlinkSync, chmodSync, realpathSync } from "node:fs"
+import { join, resolve, dirname, basename, sep } from "node:path"
 import { randomBytes } from "node:crypto"
 
 const mkdir = (dir) => mkdirSync(dir, { recursive: true, mode: 0o700 })
@@ -24,9 +24,9 @@ export const SCRIPTED_MODEL = "mock/m1"
  * The run's config, as the host reads it: the harness's scripted model when asked for, the plugin under test (or
  * none), and the model. Nothing else.
  */
-export function sealedConfig({ armDir, options, model, scripted = false }) {
+export function sealedConfig({ armDir, options, model, scripted = false, scriptedProvider = SCRIPTED_PROVIDER }) {
   return {
-    plugins: [...(scripted ? [{ package: SCRIPTED_PROVIDER }] : []), ...(armDir ? [{ package: armDir, ...(options ? { options } : {}) }] : [])],
+    plugins: [...(scripted ? [{ package: scriptedProvider }] : []), ...(armDir ? [{ package: armDir, ...(options ? { options } : {}) }] : [])],
     model,
   }
 }
@@ -197,6 +197,60 @@ export function stripForeignLinks(sandbox, { depth = Infinity } = {}) {
   return removed
 }
 
+/**
+ * Gives the owner back read, write and search on every directory under `root` (links are not followed): a run can
+ * `chmod 000` a directory of its sandbox, which would hide it from a disk measurement and stop its removal.
+ */
+export function repairPermissions(root) {
+  const fix = (dir) => {
+    try {
+      const stat = lstatSync(dir)
+      if (!stat.isDirectory()) return
+      if ((stat.mode & 0o700) !== 0o700) chmodSync(dir, (stat.mode & 0o7777) | 0o700)
+    } catch {
+      return
+    }
+    let entries
+    try {
+      entries = readdirSync(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const entry of entries) if (entry.isDirectory()) fix(join(dir, entry.name))
+  }
+  fix(root)
+}
+
 export const removeSandbox = (root) => {
-  if (existsSync(root)) rmSync(root, { recursive: true, force: true })
+  if (!existsSync(root)) return
+  try {
+    rmSync(root, { recursive: true, force: true })
+  } catch {
+    repairPermissions(root)
+    rmSync(root, { recursive: true, force: true })
+  }
+}
+
+/**
+ * Removes one file of a sandbox the run may have tampered with: only when the path, every link in it resolved, is still
+ * inside the sandbox, so a run that turned `home/.claude` into a link cannot have the runner delete a file outside it.
+ */
+export function removeInside(root, path) {
+  const base = realOrSelf(root)
+  const parent = realOrSelf(dirname(path))
+  if (parent !== base && !parent.startsWith(`${base}${sep}`)) return false
+  try {
+    rmSync(join(parent, basename(path)), { force: true })
+  } catch {
+    // a directory of that name holds nothing of a sign-in
+  }
+  return true
+}
+
+const realOrSelf = (path) => {
+  try {
+    return realpathSync(path)
+  } catch {
+    return resolve(path)
+  }
 }

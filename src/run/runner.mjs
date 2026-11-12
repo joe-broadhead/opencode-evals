@@ -9,9 +9,8 @@
 // reserved against the run caps. A batch that does not fit runs nothing. Every trial has its own sandbox, its own
 // server on a free port and its own file; an existing recording is never overwritten.
 
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs"
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
-import { tmpdir } from "node:os"
 import { freePort } from "../t1/http.mjs"
 import { stockBinary, TESTED } from "../t1/harness.mjs"
 import { selectCases } from "../case/sets.mjs"
@@ -21,13 +20,14 @@ import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf, 
 import { assertBatchWithinBudget, projectedRunUsd, monthToDate, budgetCaps } from "../cost/budget.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
-import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
+import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, removeInside, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
 import { parseAuth, prepareAuth } from "./auth.mjs"
 import { loadWorld, parseSeed } from "./world.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
-import { segment, within } from "./paths.mjs"
-import { selectIsolation, isLive } from "./isolation.mjs"
+import { segment, within, inside } from "./paths.mjs"
+import { selectIsolation, isLive, defaultIsolation } from "./isolation.mjs"
+import { containerConfig, findBinary } from "./container.mjs"
 import { redactor, scrubTree } from "./secrets.mjs"
 import { splitTrial } from "../grade/trials.mjs"
 import { digestOf } from "../util/canonical.mjs"
@@ -35,6 +35,18 @@ import { dirname } from "node:path"
 
 
 export const RUNNER = "evals run"
+
+/** Where a batch's sandboxes go: EVALS_TMP, else /var/tmp/evals (on disk), made private to this user if missing. */
+export const DEFAULT_TMP = "/var/tmp/evals"
+export function batchTmp(caller = process.env) {
+  if (caller.EVALS_TMP) return resolve(caller.EVALS_TMP)
+  try {
+    mkdirSync(DEFAULT_TMP, { recursive: true, mode: 0o700 })
+  } catch (error) {
+    throw new Error(`cannot make ${DEFAULT_TMP} (${error.code}): create it once with \`sudo install -d -m 700 -o "$USER" -g "$USER" ${DEFAULT_TMP}\`, or set EVALS_TMP to a directory on disk`)
+  }
+  return DEFAULT_TMP
+}
 
 /** The host binary: a tested stock version, EVALS_OPENCODE_BIN, or `opencode` on PATH. */
 export function hostBinary({ host, env = process.env }) {
@@ -97,31 +109,40 @@ const writeAtomic = (file, text) => {
   renameSync(tmp, file)
 }
 
-/** Starts one host server on a free port, and retries on another when the port was taken in between. */
-async function startServer({ binary, cwd, env, password, wrap = (spec) => spec, timeoutMs = 60_000 }) {
-  const auth = `Basic ${Buffer.from(`opencode:${password}`).toString("base64")}`
+/**
+ * Starts one host server on a port the trial gives (a free loopback port, or a fixed one inside a container), checks it
+ * from wherever the trial's loopback is reachable, and retries on another port when it does not come up.
+ */
+async function startServer({ binary, cwd, env, password, trial, timeoutMs = 60_000 }) {
   let last = ""
   for (let attempt = 0; attempt < 3; attempt++) {
-    const port = await freePort()
-    const spec = wrap({ command: binary, args: ["serve", "--hostname", "127.0.0.1", "--port", String(port)], cwd, env })
+    const port = await trial.port(attempt)
+    const spec = trial.wrap({ command: binary, args: ["serve", "--hostname", "127.0.0.1", "--port", String(port)], cwd, env })
     const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
     let exited = false
     proc.exited.then(() => (exited = true))
-    const deadline = Date.now() + timeoutMs
-    while (!exited && Date.now() < deadline) {
-      try {
-        const response = await fetch(`http://127.0.0.1:${port}/api/agent`, { headers: { authorization: auth, "x-opencode-directory": cwd }, signal: AbortSignal.timeout(2000) })
-        if (response.ok) return { proc, url: `http://127.0.0.1:${port}`, port }
-        last = `HTTP ${response.status}`
-      } catch (error) {
-        last = String(error.message ?? error)
-      }
-      await new Promise((done) => setTimeout(done, 200))
-    }
-    last = exited ? `the server exited: ${proc.output().stderr.slice(-300)}` : `no answer in ${timeoutMs} ms (${last})`
+    const up = await trial.ready({ url: `http://127.0.0.1:${port}/api/agent`, password, directory: cwd, timeoutMs, exited: () => exited })
+    if (up.ok) return { proc, url: `http://127.0.0.1:${port}`, port }
+    last = exited ? `the server exited: ${proc.output().stderr.slice(-300)}` : up.last
     await stop(proc, { graceMs: 500 })
+    if (trial.killed) break
   }
   throw new Error(`the host server did not start: ${last}`)
+}
+
+/** The scripted model inside a confined trial: T1's mock server on the trial's own loopback. */
+const MOCK_PORT = 4200
+async function startTrialMock({ trial, ctx, sandbox }) {
+  const spec = trial.wrap({ command: ctx.bunBinary, args: [join(ctx.harnessDir, "mock", "server.ts"), String(MOCK_PORT), join(sandbox.tmp, "mock.jsonl")], cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp } })
+  const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
+  let exited = false
+  proc.exited.then(() => (exited = true))
+  const up = await trial.ready({ url: `http://127.0.0.1:${MOCK_PORT}/v1/models`, timeoutMs: 20_000, exited: () => exited })
+  if (!up.ok) {
+    await stop(proc, { graceMs: 200 })
+    throw new Error(`the scripted model did not start in the trial: ${up.last}`)
+  }
+  return { proc, url: `http://127.0.0.1:${MOCK_PORT}/v1` }
 }
 
 /** T1's scripted model server, started for a batch: the harness's own mock, never a model. */
@@ -145,11 +166,11 @@ async function startMock({ batchRoot, caller }) {
   }
 }
 
-/** Removes every sandbox's copy of the sign-in under a batch directory. */
+/** Removes every sandbox's copy of the sign-in under a batch directory, through no link a run may have planted. */
 function scrubCredentials(batchRoot) {
   const runs = join(batchRoot, "runs")
   if (!existsSync(runs)) return
-  for (const name of readdirSync(runs)) rmSync(join(runs, name, "home", ".claude", ".credentials.json"), { force: true })
+  for (const name of readdirSync(runs)) removeInside(join(runs, name), join(runs, name, "home", ".claude", ".credentials.json"))
 }
 
 /** `Seed: utc-hours=9-15`: a case whose truth depends on the UTC hour runs only inside its window (9 <= h < 15). */
@@ -174,24 +195,31 @@ async function runJob(job, ctx) {
   const cwd = within(root, prepared.cwd, "the working directory")
   const cut = stripForeignLinks(sandbox)
   if (cut.length) ctx.log(`  ${name}: removed ${cut.length} link(s) out of the sandbox that the world's home carried (${cut.slice(0, 3).join(", ")})`)
-  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.mockUrl) })
+  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider })
   writeConfig(sandbox, config)
   const password = newPassword()
-  const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, extra: { ...ctx.auth.env, ...(prepared.env ?? {}), ...(ctx.mockUrl ? { SPIKE_MOCK_URL: ctx.mockUrl } : {}) } })
-  // Every host command of the run goes through the isolation backend.
-  const wrap = (spec) => ctx.isolation.wrap({ ...spec, sandbox })
-  const exec = (args, options = {}) => {
-    const spec = wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env })
-    return runToEnd(spec.command, spec.args, { ...options, cwd: spec.cwd, env: spec.env })
-  }
+  // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
+  const redact = redactor([...(ctx.auth.secrets ?? []), password])
+  let trial = null
   try {
+    // The trial: under `container`, its own container and network, with the sandbox mounted at its own path.
+    trial = await ctx.isolation.enter({ name, sandbox, mounts: ctx.mounts, cwd })
+    let mock = null
+    if (ctx.scripted && ctx.mockInTrial) mock = await startTrialMock({ trial, ctx, sandbox })
+    const mockUrl = mock?.url ?? ctx.mockUrl
+    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, extra: { ...ctx.auth.env, ...(prepared.env ?? {}), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
+    // Every host command of the run goes through the trial.
+    const exec = (args, options = {}) => {
+      const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env })
+      return runToEnd(spec.command, spec.args, { ...options, cwd: spec.cwd, env: spec.env })
+    }
     await ctx.auth.apply({ sandbox, env, exec })
     const before = snapshotFiles(cwd)
     const started = Date.now()
     let server = null
     let result
     try {
-      server = await startServer({ binary: ctx.binary, cwd, env, password, wrap })
+      server = await startServer({ binary: ctx.binary, cwd, env, password, trial })
       // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
       const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
       result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, job.case.prompt], { timeoutMs: ctx.timeoutMs })
@@ -199,10 +227,17 @@ async function runJob(job, ctx) {
       result = { code: null, stdout: "", stderr: String(error.message ?? error), timedOut: false, error: String(error.message ?? error) }
     } finally {
       await stop(server?.proc)
+      await stop(mock?.proc, { graceMs: 200 })
     }
+    // Killing a `docker exec` client leaves what it started running inside: the trial ends here, before anything of
+    // its sandbox is read, so nothing it left behind can change the files being recorded.
+    const oomKills = await trial.oomKills()
+    await trial.leave({ reason: result.timedOut ? "timeout" : "end" })
     // An interrupted run is not a recording: nothing is written for it, and the batch's own cleanup removes its sandbox.
     if (ctx.interrupted()) throw new Error(`interrupted by ${ctx.interrupted()}`)
     const durationMs = Date.now() - started
+    const detail = trial.describe()
+    const killed = trial.killed
     const summary = {
       exit: result.timedOut ? 124 : result.code,
       durationMs,
@@ -213,7 +248,7 @@ async function runJob(job, ctx) {
       seed: job.case.seed ?? null,
       utc_hour: new Date(started).getUTCHours(),
       ...(prepared.session ? { continued: true } : {}),
-      stderr: `${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}`.slice(-4000),
+      stderr: `${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}${killed ? `\n[evals run] killed: ${killed.reason}` : ""}`.slice(-4000),
       started_at: new Date(started).toISOString(),
       runner: RUNNER,
       runner_version: ctx.runnerVersion,
@@ -221,6 +256,8 @@ async function runJob(job, ctx) {
       host: ctx.hostVersion,
       auth: ctx.auth.profile,
       isolation: ctx.isolation.name,
+      ...(detail ? { isolation_detail: { ...detail, ...(oomKills ? { oom_kills: oomKills } : {}) } } : {}),
+      ...(killed ? { killed: killed.reason } : {}),
       ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
       world: ctx.worldInfo,
       batch: ctx.batch,
@@ -228,20 +265,25 @@ async function runJob(job, ctx) {
       provenance: ctx.arm.provenance,
       ...(result.error ? { error: result.error } : {}),
     }
+    // The sandbox is hostile once a run has been in it: a working directory it replaced with a link out of the sandbox
+    // is not walked, so no file outside the sandbox can reach the files record.
+    const files = inside(root, cwd) ? changedFiles(before, cwd) : []
+    if (!inside(root, cwd)) summary.files_refused = "the working directory no longer resolves inside the sandbox"
     // Every file written for the run is scrubbed of its secrets first: the recording, the summary, the files record.
     const out = (suffix) => within(ctx.rawDir, join(ctx.rawDir, `${name}${suffix}`), "a recording")
-    writeAtomic(out(".jsonl"), ctx.redact(result.stdout ?? ""))
-    writeAtomic(out(".summary.json"), ctx.redact(`${JSON.stringify(summary, null, 1)}\n`))
-    writeAtomic(out(".files.json"), ctx.redact(`${JSON.stringify(changedFiles(before, cwd), null, 1)}\n`))
+    writeAtomic(out(".jsonl"), redact(result.stdout ?? ""))
+    writeAtomic(out(".summary.json"), redact(`${JSON.stringify(summary, null, 1)}\n`))
+    writeAtomic(out(".files.json"), redact(`${JSON.stringify(files, null, 1)}\n`))
     if (!ctx.keep) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
     const cost = billedOf(result.stdout ?? "")
     recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
-    return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(result.error ? { error: ctx.redact(result.error) } : {}) }
+    return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(killed ? { killed: killed.reason } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
   } finally {
-    // A credentials file goes on every path, a run that failed, threw or was interrupted included; a kept sandbox
-    // keeps no secret.
+    // The trial ends on every path (idempotent); a credentials file goes on every path, a run that failed, threw or was
+    // interrupted included; a kept sandbox keeps no secret.
+    await trial?.leave({ reason: "finally" })
     ctx.auth.cleanup({ sandbox })
-    if (ctx.keep) scrubTree(root, ctx.redact)
+    if (ctx.keep) scrubTree(root, redact)
   }
 }
 
@@ -291,13 +333,17 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const scripted = Boolean(options.scripted)
   if (scripted && options.model !== SCRIPTED_MODEL) throw new Error(`--scripted runs the harness's scripted model, ${SCRIPTED_MODEL}: --model ${options.model} is not it`)
   const live = isLive({ auth: profile.kind, model: options.model, config: sealedConfig({ armDir: null, model: options.model, scripted }) })
-  const isolationSpec = { name: options.isolation ?? caller.EVALS_ISOLATION ?? "none", live, unsafe: Boolean(options.unsafeNoIsolation) }
+  // A live run is confined in a container unless the caller names another backend; the scripted model alone runs bare.
+  const isolationName = options.isolation ?? (caller.EVALS_ISOLATION || null) ?? defaultIsolation({ live })
+  const isolationSpec = { name: isolationName, live, unsafe: Boolean(options.unsafeNoIsolation), config: isolationName === "container" ? containerConfig({ store, env: caller }) : null }
   if (options.dryRun) {
     log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}`)
     let refused = false
     try {
       const isolation = selectIsolation(isolationSpec)
       log(`isolation: ${isolation.name}${isolation.unsafe ? " (UNSAFE: the filesystem is not confined)" : ""}${live ? "" : " (not live: the scripted model, no credential)"}`)
+      if (isolation.config) log(`  egress allowed to ${isolation.config.allow.join(", ")} on 443; limits ${JSON.stringify(isolation.config.limits)}`)
+      if (isolation.maxParallel && parallel > isolation.maxParallel) log(`dry run: the batch would be refused: --parallel ${parallel} is more than the container backend's ${isolation.maxParallel}`)
     } catch (error) {
       refused = true
       log(`dry run: the batch would be refused: ${error.message}`)
@@ -318,12 +364,15 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // No live run without a backend that confines the filesystem, unless the caller says so in so many words.
   const isolation = selectIsolation(isolationSpec)
   if (isolation.unsafe) log("WARNING: --unsafe-no-isolation: the agent under test can read and write anything this user can, by absolute path")
+  // Each trial has its own network, from Docker's limited address pools.
+  if (isolation.maxParallel && parallel > isolation.maxParallel) throw new Error(`--parallel ${parallel} is more than the container backend allows (${isolation.maxParallel}, max_parallel in caps.json's container section)`)
   const world = await loadWorld(options.world ?? caller[`EVALS_WORLD_${plugin.toUpperCase()}`] ?? null)
   log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}  world ${world.name}`)
   // A kept sandbox keeps the credential imported into it: only when asked for in so many words.
   if (options.keep && profile.kind === "claude-agent" && !options.keepCredentials) throw new Error("--keep with --auth claude-agent keeps the imported credential in the sandboxes: add --keep-credentials to mean it")
 
-  const tmpRoot = resolve(caller.EVALS_TMP ?? tmpdir())
+  // On disk, not in a memory-backed /tmp: a trial that fills its sandbox would otherwise fill the machine's memory.
+  const tmpRoot = batchTmp(caller)
   const batchRoot = within(tmpRoot, mkdtempSync(join(tmpRoot, `evals-run-${iteration}-`)), "the batch directory")
 
   // From here on, an interrupt (Ctrl-C, SIGTERM) or an uncaught error stops every process group this batch started,
@@ -359,6 +408,10 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     stopped = `interrupted by ${reason}`
     log(`evals run: ${stopped}; stopping every run this batch started`)
     await killAll()
+    // Killing a `docker exec` client does not stop what it started inside: every trial container, its network and the
+    // proxy are removed before the batch is written up.
+    await isolation.teardown().catch((error) => log(`evals run: isolation teardown: ${error.message ?? error}`))
+    if (isolation.egress?.()) facts.egress = isolation.egress()
     try {
       finish(facts)
     } finally {
@@ -385,15 +438,32 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // The host's version, asked in a sandbox of its own: even `--version` reads nothing of the caller's install.
     const probe = makeSandbox(join(batchRoot, "probe"))
     const probeEnv = sandboxEnv({ sandbox: probe, config: sealedConfig({ armDir: null, model: options.model }), password: newPassword(), caller })
-    await isolation.prepare({ batchRoot, caller })
-    // The harness's scripted model, when asked for: T1's mock server on loopback, for the whole batch.
-    if (scripted) {
+    // The binaries a trial needs, mounted read-only into a container: the host, a provider's own CLI, the mock's bun.
+    const needsClaude = profile.kind === "claude-agent" || options.model.startsWith("claude-agent/")
+    const binaries = { opencode: binary, ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}), ...(scripted ? { bun: caller.EVALS_BUN ?? "bun" } : {}) }
+    await isolation.prepare({ batchRoot, caller, binaries, log })
+    if (isolation.confines) facts.isolation_detail = isolation.describe()
+    // The harness's scripted model, when asked for: T1's mock server, for the whole batch on loopback, or, in a confined
+    // trial, on the trial's own loopback from a read-only copy of the harness's mock files.
+    let harnessDir = null
+    if (scripted && isolation.confines) {
+      harnessDir = join(batchRoot, "harness")
+      cpSync(resolve(import.meta.dirname, "..", "t1", "mock"), join(harnessDir, "mock"), { recursive: true })
+      facts.scripted = true
+    } else if (scripted) {
       mock = await startMock({ batchRoot, caller })
       facts.scripted = true
     }
-    const probeSpec = isolation.wrap({ command: binary, args: ["--version"], cwd: probe.home, env: probeEnv, sandbox: probe })
-    const version = await runToEnd(probeSpec.command, probeSpec.args, { cwd: probeSpec.cwd, env: probeSpec.env, timeoutMs: 30_000 })
-    if (version.code !== 0) throw new Error(`${binary} --version failed: is the host installed?`)
+    // The probe is a trial of its own: under `container`, it proves a container starts before anything is reserved.
+    const probeTrial = await isolation.enter({ name: "probe", sandbox: probe, mounts: [], cwd: probe.home })
+    let version
+    try {
+      const probeSpec = probeTrial.wrap({ command: binary, args: ["--version"], cwd: probe.home, env: probeEnv })
+      version = await runToEnd(probeSpec.command, probeSpec.args, { cwd: probeSpec.cwd, env: probeSpec.env, timeoutMs: 30_000 })
+    } finally {
+      await probeTrial.leave({ reason: "probe" })
+    }
+    if (version.code !== 0) throw new Error(`${binary} --version failed: is the host installed?${version.stderr ? ` (${version.stderr.trim().slice(-200)})` : ""}`)
     const opencode = version.stdout.trim()
     const hostVersion = (/(\d+\.\d+\.\d+)/.exec(opencode) ?? [])[1] ?? null
     if (hostVersion && !TESTED.includes(hostVersion)) log(`warning: host ${hostVersion} is not a tested version (${TESTED.join(", ")})`)
@@ -446,6 +516,12 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       log,
       isolation,
       mockUrl: mock?.url ?? null,
+      scripted,
+      mockInTrial: Boolean(harnessDir),
+      harnessDir,
+      bunBinary: caller.EVALS_BUN ?? "bun",
+      scriptedProvider: harnessDir ? join(harnessDir, "mock", "provider") : undefined,
+      mounts: [armDir, harnessDir].filter(Boolean).map((host) => ({ host, ro: true })),
       redact,
       dollarCap: facts.dollar_cap,
     }
@@ -496,6 +572,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       unhook()
       await stop(mock?.proc)
       await isolation.teardown()
+      if (isolation.egress?.()) facts.egress = isolation.egress()
       finish(facts)
     }
   }

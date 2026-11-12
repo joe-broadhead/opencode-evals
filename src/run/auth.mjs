@@ -27,7 +27,7 @@
 
 import { closeSync, constants, existsSync, fstatSync, mkdirSync, openSync, readSync, rmSync } from "node:fs"
 import { join } from "node:path"
-import { runToEnd } from "./sandbox.mjs"
+import { runToEnd, removeInside } from "./sandbox.mjs"
 
 export const CREDENTIAL_LIMIT = 64 * 1024
 
@@ -142,7 +142,8 @@ export async function prepareAuth(profile, { binary, caller = process.env, horiz
     },
     /** Nothing of the sign-in is on disk; a credentials file a run made for itself goes anyway. */
     cleanup({ sandbox }) {
-      rmSync(join(sandbox.home, ".claude", ".credentials.json"), { force: true })
+      // Through no link: a run that made home/.claude a link out of the sandbox cannot aim this removal elsewhere.
+      removeInside(sandbox.root, join(sandbox.home, ".claude", ".credentials.json"))
       return "removed"
     },
   }

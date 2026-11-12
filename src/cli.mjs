@@ -11,6 +11,8 @@
 //   evals run      --plugin x --iteration it --model p/m --auth none|env:VAR|claude-agent [--cases ids] [--set tune]
 //                  [--trials K] [--parallel N] [--arm DIR|none] [--world DIR|FILE] [--host 2.2.6] [--dry-run]
 //                  [--isolation container|none] [--unsafe-no-isolation]   (a live run needs filesystem isolation)
+//   evals isolation build|check|sweep   the container backend's image (docker/Dockerfile), its checks, and the removal
+//                  of what a crashed batch left behind
 //   evals t0       [--root DIR] [--json]
 //   evals verify   [--iteration it --plugin x | --all]  re-derive every number, or list the stale iterations
 //   evals selftest run the T-G gold cases over synthetic traces
@@ -48,6 +50,7 @@ import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
 import { rawCallArgs } from "./trace/rawArgs.mjs"
 import { compare as compareArms, renderReport } from "./report/arms.mjs"
 import { runBatch } from "./run/runner.mjs"
+import { buildImage, checkIsolation, containerBackend, containerConfig } from "./run/container.mjs"
 import { segment } from "./run/paths.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
@@ -508,6 +511,31 @@ export async function main(argv) {
       })
       if (result.results?.some((r) => r.error)) process.exitCode = 1
       return
+    }
+    case "isolation": {
+      const action = opt._[0] ?? "check"
+      const config = containerConfig({ store: storeRoot(), env: process.env })
+      if (action === "build") {
+        console.log(`built ${await buildImage({ config })}`)
+        return
+      }
+      if (action === "check") {
+        const report = await checkIsolation({ config })
+        console.log(JSON.stringify(report, null, 1))
+        if (!report.docker || !report.image_id) {
+          console.log(!report.docker ? "Docker is not usable by this user." : "The image is missing: run `evals isolation build`.")
+          process.exitCode = 1
+        }
+        return
+      }
+      if (action === "sweep") {
+        const backend = containerBackend(config)
+        backend.client(process.env)
+        const removed = await backend.sweep()
+        console.log(`removed ${removed.containers} container(s) and ${removed.networks} network(s) left by batches whose runner is gone`)
+        return
+      }
+      throw new Error("evals isolation build|check|sweep")
     }
     case "report": {
       // Arms over trials: strict pass, pass^k, item rates, and a paired bootstrap against the first arm.

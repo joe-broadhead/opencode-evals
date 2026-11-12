@@ -4,29 +4,70 @@
 // exactly that, overwriting a real file outside its sandbox. So a live run needs a backend that confines what the
 // run's processes can see and write, and `evals run` refuses to launch one without it.
 //
-// A backend is { name, confines, prepare({ batchRoot, caller }), wrap({ command, args, cwd, env, sandbox }), teardown() }:
+// A backend is
+//   { name, confines, maxParallel?, prepare({ batchRoot, caller, binaries, log }), enter({ name, sandbox, mounts, cwd }),
+//     teardown(), describe(), egress()? }
+// and a trial, what enter() returns, is
+//   { wrap({ command, args, cwd, env }), port(attempt), ready({ url, password, directory, timeoutMs, exited }),
+//     oomKills(), leave({ reason }), describe(), killed }
 //   confines   true when the run's processes cannot reach the host filesystem outside what the backend mounts;
-//   wrap       turns a host command (serve, run, auth import, --version) into the command that runs it confined.
+//   wrap       turns a host command (serve, run, auth import, --version) into the command that runs it confined;
+//   ready      polls a server of the trial until it answers 200, from wherever the trial's loopback is reachable;
+//   leave      ends everything the trial started; idempotent, never throws. teardown() leaves every trial.
 //
 //   none       env isolation only; refused for a live run unless --unsafe-no-isolation says so in so many words
-//   container  confined in a container; designed elsewhere, not implemented here yet
+//   container  one Docker container per trial, on a network whose only way out is an allow-listing proxy (container.mjs)
+
+import { freePort } from "../t1/http.mjs"
+import { containerBackend, containerConfig } from "./container.mjs"
+import { SCRIPTED_PROVIDER, SCRIPTED_MODEL } from "./sandbox.mjs"
+
+/** Polls a loopback URL from the host until it answers 200. */
+async function hostReady({ url, password = null, directory = null, timeoutMs = 60_000, exited = () => false } = {}) {
+  const headers = {}
+  if (password) headers.authorization = `Basic ${Buffer.from(`opencode:${password}`).toString("base64")}`
+  if (directory) headers["x-opencode-directory"] = directory
+  const deadline = Date.now() + timeoutMs
+  let last = ""
+  while (!exited() && Date.now() < deadline) {
+    try {
+      const response = await fetch(url, { headers, signal: AbortSignal.timeout(2000) })
+      if (response.ok) return { ok: true }
+      last = `HTTP ${response.status}`
+    } catch (error) {
+      last = String(error.message ?? error)
+    }
+    await new Promise((done) => setTimeout(done, 200))
+  }
+  return { ok: false, last: exited() ? "the server exited" : `no answer in ${timeoutMs} ms (${last})` }
+}
 
 const none = () => ({
   name: "none",
   confines: false,
   async prepare() {},
-  wrap: (spec) => spec,
+  async enter() {
+    return {
+      killed: null,
+      wrap: (spec) => spec,
+      port: () => freePort(),
+      ready: hostReady,
+      async oomKills() {
+        return null
+      },
+      async leave() {},
+      describe: () => null,
+    }
+  },
   async teardown() {},
+  describe: () => ({ backend: "none" }),
+  egress: () => null,
 })
 
 export const BACKENDS = {
   none,
-  container: () => {
-    throw new Error("--isolation container is not implemented yet: no live run can be launched until a filesystem-isolation backend exists")
-  },
+  container: (config) => containerBackend(config ?? containerConfig()),
 }
-
-import { SCRIPTED_PROVIDER, SCRIPTED_MODEL } from "./sandbox.mjs"
 
 /**
  * Is this a live run, one where a real model can drive real tools? Only one thing is not: no credential at all
@@ -39,18 +80,23 @@ export function isLive({ auth, model, config }) {
   return !(auth === "none" && scripted)
 }
 
+/** The backend when none is named: `container` for a live run, `none` for the harness's scripted model alone. */
+export const defaultIsolation = ({ live }) => (live ? "container" : "none")
+
 /**
  * The backend a batch runs under. Throws, before anything is created, imported or reserved, for a live run on a
  * backend that does not confine the filesystem, unless `unsafe` (--unsafe-no-isolation) was given.
  */
-export function selectIsolation({ name = "none", live = true, unsafe = false } = {}) {
-  const make = BACKENDS[name]
-  if (!make) throw new Error(`unknown --isolation ${JSON.stringify(name)}: use ${Object.keys(BACKENDS).join(" or ")}`)
-  const backend = make()
+export function selectIsolation({ name, live = true, unsafe = false, config = null } = {}) {
+  const chosen = name ?? defaultIsolation({ live })
+  const make = BACKENDS[chosen]
+  if (!make) throw new Error(`unknown --isolation ${JSON.stringify(chosen)}: use ${Object.keys(BACKENDS).join(" or ")}`)
+  if (unsafe && chosen !== "none") throw new Error(`--unsafe-no-isolation means --isolation none; it says nothing with --isolation ${chosen}`)
+  const backend = make(config)
   if (!backend.confines && live && !unsafe) {
     throw new Error(
-      `refusing a live run with --isolation ${backend.name}: the sandbox isolates the environment, not the filesystem, so the agent under test can read and write anything this user can, by absolute path. Configure a filesystem-isolation backend (--isolation container, not implemented yet), or pass --unsafe-no-isolation on a machine you are prepared to lose`,
+      `refusing a live run with --isolation ${backend.name}: the sandbox isolates the environment, not the filesystem, so the agent under test can read and write anything this user can, by absolute path. Use --isolation container (the default for a live run), or pass --unsafe-no-isolation on a machine you are prepared to lose`,
     )
   }
-  return { ...backend, live, unsafe: !backend.confines && live }
+  return Object.assign(backend, { live, unsafe: !backend.confines && live })
 }
