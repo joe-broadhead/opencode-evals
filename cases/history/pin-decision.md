@@ -23,7 +23,7 @@ keep our Redis catalog caching decision pinned in this session so it stays in vi
   evidence_any: call:history_pin#1 args.sessionID present ;; call:history_pin#2 args.sessionID present
 
 - [H-OC04] major · It tells the user plainly whether the pin was applied, or that it was declined or needs approval (not just the word "pin", which the prompt already has).
-  evidence: text:any matches /(is|now|been|was) pinned|pinned (it|the|this)|added (a|the) pin|pin (is|was) (applied|added|in place|set)|declined|denied|not (allowed|approved|permitted)|needs? (your )?approval|permission/i
+  evidence: text:any matches /(^|\n)\W*pinned\b|(is|now|been|was) pinned|pinned (it|the|this)|added (a|the) pin|pin (is|was) (applied|added|in place|set)|declined|denied|not (allowed|approved|permitted)|needs? (your )?approval|permission/i
 
 - [H-PR02] major · It cited the decision session (by ID) so the user can see what was pinned.
   evidence: text:any matches /ses_kYKL7R35tGWuj3BdeILfc4/

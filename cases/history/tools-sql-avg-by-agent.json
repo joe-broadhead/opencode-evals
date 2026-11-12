@@ -4,7 +4,7 @@
   "plugin": "history",
   "skill": "history-recall",
   "tier": "T3",
-  "source": "truth.sql.avgCostByAgent [[\"build\",1.09],[\"plan\",0.93],[\"explore\",1.13]]",
+  "source": "truth.sql.avgCostByAgent [[\"build\",1.07],[\"plan\",0.93],[\"explore\",1.13]]",
   "decision": "A GROUP BY over v_sessions with rounding: the average cost per session by agent.",
   "data_check": null,
   "prompt": "what's the average cost of a session for each agent (build, plan, explore) across everything I've run?",
@@ -51,7 +51,7 @@
     {
       "id": "H-OC01",
       "severity": "blocker",
-      "ask": "build averages $1.09 per session.",
+      "ask": "build averages $1.07 per session (W1 and W2 included).",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -61,7 +61,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "1\\.09",
+            "source": "1\\.07",
             "flags": "i"
           }
         }
@@ -187,6 +187,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d3dc0b48f4daf1abf1090e74a683a8aea4e682ce059ef86ec92b0290e4f9d9eb"
+    "source_sha256": "bcbf8584d511a390fce16e9399277f01b1bb99238ef1d3b5081ff71e8e7e0e65"
   }
 }

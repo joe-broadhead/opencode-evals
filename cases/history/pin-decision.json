@@ -130,7 +130,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(is|now|been|was) pinned|pinned (it|the|this)|added (a|the) pin|pin (is|was) (applied|added|in place|set)|declined|denied|not (allowed|approved|permitted)|needs? (your )?approval|permission",
+            "source": "(^|\\n)\\W*pinned\\b|(is|now|been|was) pinned|pinned (it|the|this)|added (a|the) pin|pin (is|was) (applied|added|in place|set)|declined|denied|not (allowed|approved|permitted)|needs? (your )?approval|permission",
             "flags": "i"
           }
         }
@@ -214,6 +214,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bacfcb3440377a0e47af30aead2afccd2e767f999d3d143a898951cba78d0f57"
+    "source_sha256": "c06920a1ddf1c847230b121cfb786ceaed4201be6d825bdea6e1113a1e670ee2"
   }
 }
