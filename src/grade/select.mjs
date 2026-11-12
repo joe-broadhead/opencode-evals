@@ -4,13 +4,33 @@
 // One plugin tool reaches a run two ways: inside Code Mode's `execute` (recorded as ns "history", tool "read") and as a
 // direct tool (`history_read`, always for some tools, and for every tool when Code Mode is off). A qualified name and a
 // namespace match both. A bare name the case's own plugin declares is qualified with that plugin's namespace before it
-// is matched (`qualify`), so `call:read#1` in a History case is History's read, never the built-in file `read`; a bare
-// name the plugin does not declare (`edit`, `write`, `bash`) is the built-in it names.
+// is matched (`qualify`), unless it is one of OpenCode's own tool names (BUILTIN_TOOLS): a bare `read`, `write` or
+// `search` means every tool of that name, the built-in included, and only `history.read` means History's alone.
 
-/** A bare tool name the case's plugin declares, qualified with the plugin's namespace; anything else as written. */
+/**
+ * OpenCode's own tool names. A bare one in a clause is never qualified with the case's plugin, whatever the plugin
+ * declares (gws has `read`, `write`, `delete`, `send`; History has `read` and `search`): `absent:write` must keep
+ * checking every write. A plugin's tool of the same name is written with its prefix: `history.read`.
+ */
+export const BUILTIN_TOOLS = Object.freeze(["read", "write", "edit", "bash", "glob", "grep", "list", "patch", "apply_patch", "webfetch", "websearch", "task", "todowrite", "todoread", "skill", "execute", "search"])
+const BUILTIN = new Set(BUILTIN_TOOLS)
+
+/** A bare tool name the case's plugin declares, qualified with the plugin's namespace; a built-in name, and anything else, as written. */
 export function qualify(pattern, scope) {
-  if (!scope?.ns || !pattern || pattern.includes(".") || pattern.includes("*")) return pattern
+  if (!scope?.ns || !pattern || pattern.includes(".") || pattern.includes("*") || BUILTIN.has(pattern)) return pattern
   return scope.tools?.has(pattern) ? `${scope.ns}.${pattern}` : pattern
+}
+
+/** The bare names in a case that are both a built-in and a tool of its plugin: they mean every tool of that name. */
+export function builtinCollisions(caseObject, pluginTools) {
+  const tools = new Set(pluginTools)
+  const found = new Set()
+  for (const item of caseObject.items ?? []) {
+    for (const clause of [...(item.evidence ?? []), ...(item.evidence_any ?? []).flat(), ...(item.na_when ?? [])]) {
+      for (const name of [clause.tool, clause.other]) if (name && BUILTIN.has(name) && tools.has(name)) found.add(name)
+    }
+  }
+  return [...found].sort()
 }
 
 /** Does one recorded call answer to this tool pattern? */

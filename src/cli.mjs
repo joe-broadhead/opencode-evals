@@ -43,6 +43,7 @@ import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "
 import { storeRoot, rawRoot, tracesDir } from "./store.mjs"
 import { splitTrial, trialName, caseEntry, byCase, trialStats } from "./grade/trials.mjs"
 import { selectCases } from "./case/sets.mjs"
+import { builtinCollisions } from "./grade/select.mjs"
 import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
 import { rawCallArgs } from "./trace/rawArgs.mjs"
 import { compare as compareArms, renderReport } from "./report/arms.mjs"
@@ -325,6 +326,13 @@ export async function main(argv) {
         const compiled = compileAll(plugin, { check: Boolean(opt.check), dir })
         const cases = compiled.map((c) => c.caseObject)
         const share = codedShare(cases)
+        // A bare name that is both an OpenCode built-in and a tool of this plugin means every tool of that name.
+        const pack = readSnapshot(plugin, ROOT)
+        const collisions = pack ? cases.map((c) => [c.id, builtinCollisions(c, (pack.tools ?? []).map((tool) => tool.name))]).filter(([, names]) => names.length) : []
+        if (collisions.length) {
+          const names = [...new Set(collisions.flatMap(([, n]) => n))].join(", ")
+          console.log(`warning: ${collisions.length} ${plugin} case(s) name ${names} bare: that is OpenCode's built-in and ${plugin}'s tool alike; write ${plugin}.<name> for ${plugin}'s alone${opt.verbose ? `\n  ${collisions.map(([id, n]) => `${id}: ${n.join(", ")}`).join("\n  ")}` : " (--verbose lists them)"}`)
+        }
         for (const { caseObject, changed, file } of compiled) {
           if (changed) changes++
           if (changed || !opt.check) console.log(`${changed ? (opt.check ? "stale" : "wrote") : "same "} ${plugin}/${file.replace(/\.md$/, ".json")}  items ${caseObject.items.length}`)

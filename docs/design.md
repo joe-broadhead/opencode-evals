@@ -92,9 +92,13 @@ the trace's order); the trace still holds only the shape. Without the recording,
 
 A tool is a name, a glob (`x_*`), a namespace (`history.*`) or a qualified name (`history.read`). A plugin tool reaches
 a run two ways, inside Code Mode's `execute` (ns `history`, tool `read`) or as a direct tool (`history_read`); a
-namespace or a qualified name selects both. A bare name the case's own plugin declares is that plugin's tool, so
-`call:read#1` in a History case is History's `read` and never the built-in file `read`; a bare name the plugin does
-not declare (`edit`, `write`, `bash`) is the built-in.
+namespace or a qualified name selects both. A bare name the case's own plugin declares is that plugin's tool
+(`call:pin#1` is `history.pin`), except OpenCode's own tool names, which are never qualified: `read`, `write`, `edit`,
+`bash`, `glob`, `grep`, `list`, `patch`, `apply_patch`, `webfetch`, `websearch`, `task`, `todowrite`, `todoread`,
+`skill`, `execute` and `search` (`BUILTIN_TOOLS` in `src/grade/select.mjs`). A bare one means every tool of that
+name, the built-in included, so `absent:write` in a gws case still sees a built-in `write`; the plugin's tool alone is
+written with its prefix, `history.read`. `evals compile` warns about a case that names one of them bare while its
+plugin declares a tool of that name.
 
 ## Traces
 

@@ -109,6 +109,12 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- A bare tool name the case's plugin declares was always qualified with the plugin, so `absent:write` in a gws case
+  checked only `gws.write` and let a built-in `write` through. OpenCode's own tool names (one constant,
+  `BUILTIN_TOOLS`) are never qualified; the plugin's tool of that name is written `<plugin>.<name>`, and `compile`
+  warns about a bare one the plugin also declares (41 History cases name `search` or `read` bare; across the lab's 67
+  recorded iterations they grade exactly as before).
+
 - The missing-argument rule passed values it could not see: a key inside a nested object, which a trace keeps as
   `{kind: "object", keys}`, read as "not passed", so `args.filter.lang != "en"` held although the call passed `"en"`.
   A key the wrapper lists, or anything under a variable, is now unverifiable; only a key it does not list is missing.

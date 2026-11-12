@@ -1,7 +1,7 @@
 // A plugin tool is one tool whichever way it was called; a bare name in a case is the case's plugin's tool.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { matchesTool, selectCalls, qualify } from "../src/grade/select.mjs"
+import { matchesTool, selectCalls, qualify, BUILTIN_TOOLS, builtinCollisions } from "../src/grade/select.mjs"
 import { parseClause, evaluateClause } from "../src/grade/evidence.mjs"
 
 const inner = (ns, tool, args = {}) => ({ tool, ns, via: "execute", args, args_parsed: true })
@@ -21,17 +21,26 @@ test("history.* and history.read select the inner call and the direct history_ t
   assert.equal(matchesTool("history_pin", direct("history_pin")), true)
 })
 
-test("a bare name the case's plugin declares is qualified; a built-in stays the built-in", () => {
-  assert.equal(qualify("read", scope), "history.read")
-  assert.equal(qualify("edit", scope), "edit")
+test("a bare name the case's plugin declares is qualified, unless it is one of OpenCode's own tool names", () => {
+  const gws = { ns: "gws", tools: new Set(["read", "write", "delete", "send", "plan"]) }
+  assert.equal(qualify("plan", gws), "gws.plan")
+  for (const name of BUILTIN_TOOLS) assert.equal(qualify(name, gws), name, name)
+  assert.equal(qualify("read", scope), "read", "History's read is history.read; bare read is every read")
   assert.equal(qualify("history.read", scope), "history.read")
-  assert.equal(qualify("read", null), "read", "no plugin scope, no qualification")
+  assert.equal(qualify("pin", scope), "history.pin")
+  // absent:write in a gws case still sees the built-in write.
+  const builtinWrite = { calls: [direct("write")], scope: gws }
+  assert.equal(evaluateClause(parseClause("absent:write").clause, builtinWrite).state, "fail")
   const calls = [direct("read"), inner("history", "read"), direct("history_read"), direct("edit")]
-  assert.equal(selectCalls(calls, "read", scope).length, 2)
-  assert.equal(selectCalls(calls, "edit", scope).length, 1)
-  const view = { calls, scope }
-  assert.equal(evaluateClause(parseClause("count:read == 2").clause, view).state, "ok")
+  assert.equal(selectCalls(calls, "history.read", scope).length, 2, "the prefixed name is History's read alone")
+  assert.equal(selectCalls(calls, "read", scope).length, 3, "the bare built-in name is every read")
   assert.equal(evaluateClause(parseClause("absent:history.*").clause, { calls: [direct("history_pin")], scope }).state, "fail", "a direct History call is not an absent History")
+})
+
+test("compile names the cases whose bare tool names are both a built-in and the plugin's own", () => {
+  const kase = { items: [{ evidence: [{ kind: "call", tool: "read" }, { kind: "absent", tool: "write" }], evidence_any: [[{ kind: "before", tool: "history.*", other: "search" }]], na_when: [] }] }
+  assert.deepEqual(builtinCollisions(kase, ["read", "search", "pin"]), ["read", "search"])
+  assert.deepEqual(builtinCollisions(kase, ["pin"]), [])
 })
 
 test("first: and before: read the order of the calls, skill loads and the execute wrapper aside", () => {
