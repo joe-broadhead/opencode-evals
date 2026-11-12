@@ -110,6 +110,10 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- The ledger lock: two waiters could both break a stale lock, and the second could delete the lock the first had just
+  taken. A lock is now taken with `link(2)`, carries a holder's token, is broken with `rename(2)` and put back when
+  the file moved is not the stale one, and is released only by its holder.
+
 - The dollar budget: the check before a batch now runs inside the ledger's lock with the reservation, with the caller's
   caps; a run is launched only when the projected spend, counting the runs in flight, stays within the cap (the
   batch could overshoot by `--parallel` runs); and a non-numeric `EVALS_BUDGET_*_USD` is an error instead of `NaN`.

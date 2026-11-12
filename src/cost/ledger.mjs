@@ -9,7 +9,7 @@
 // A reservation counts until it is released, so a batch that crashed keeps its runs counted: the safe direction.
 // Check-and-reserve happens under an exclusive lock file, so two runners cannot both take the last runs.
 
-import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, statSync, writeSync } from "node:fs"
+import { appendFileSync, existsSync, linkSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { randomBytes } from "node:crypto"
 
@@ -109,33 +109,83 @@ export function checkCaps(entries, caps, { month, plugin, iteration, runs }) {
 
 const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
 
-/** Runs `fn` holding the ledger's lock file. A lock older than `staleMs` belonged to a process that died. */
+/**
+ * The ledger's lock. A holder's lock file carries a token only it knows, and every step that touches the file is atomic:
+ *
+ *   acquire  write a private file with the token, then link(2) it to `lock`: the link fails if a lock exists;
+ *   break    a lock older than `staleMs` belonged to a process that died: rename(2) it to a private name, then read
+ *            what was moved. If it is not the stale token that was seen (someone broke it and took the lock in
+ *            between), link it straight back, so a waiter can never remove a live holder's lock;
+ *   release  remove `lock` only if it still holds this holder's token.
+ */
+const tokenOf = (file) => {
+  try {
+    return readFileSync(file, "utf8")
+  } catch {
+    return null
+  }
+}
+
+export function acquireLock(lock, token) {
+  const mine = `${lock}.${token}`
+  writeFileSync(mine, token, { mode: 0o600 })
+  try {
+    linkSync(mine, lock)
+    return true
+  } catch (error) {
+    if (error.code !== "EEXIST") throw error
+    return false
+  } finally {
+    rmSync(mine, { force: true })
+  }
+}
+
+/** Breaks `lock` only if it still holds `seen`, the stale token; returns whether it did. */
+export function breakStaleLock(lock, seen, token) {
+  const moved = `${lock}.broken.${token}`
+  try {
+    renameSync(lock, moved)
+  } catch {
+    return false
+  }
+  if (tokenOf(moved) === seen) {
+    rmSync(moved, { force: true })
+    return true
+  }
+  // Not the lock that was judged stale: a live holder's. Put it back where it was.
+  try {
+    linkSync(moved, lock)
+  } catch {
+    // a third runner took the lock meanwhile; the one moved aside was already superseded
+  }
+  rmSync(moved, { force: true })
+  return false
+}
+
+export function releaseLock(lock, token) {
+  if (tokenOf(lock) === token) rmSync(lock, { force: true })
+}
+
+/** Runs `fn` holding the ledger's lock. */
 export function withLock(store, fn, { timeoutMs = 10_000, staleMs = 60_000 } = {}) {
   mkdirSync(join(store, "ledger"), { recursive: true, mode: 0o700 })
   const lock = join(store, "ledger", "lock")
+  const token = `${process.pid}-${randomBytes(8).toString("hex")}`
   const deadline = Date.now() + timeoutMs
-  let fd
-  for (;;) {
+  while (!acquireLock(lock, token)) {
     try {
-      fd = openSync(lock, "wx")
-      writeSync(fd, String(process.pid))
-      break
-    } catch (error) {
-      if (error.code !== "EEXIST") throw error
-      try {
-        if (Date.now() - statSync(lock).mtimeMs > staleMs) rmSync(lock, { force: true })
-      } catch {
-        // gone already
-      }
-      if (Date.now() > deadline) throw new Error(`the run ledger is locked (${lock}); another runner holds it`)
-      sleep(50)
+      const seen = tokenOf(lock)
+      if (seen !== null && Date.now() - statSync(lock).mtimeMs > staleMs) breakStaleLock(lock, seen, token)
+    } catch {
+      // released meanwhile
     }
+    if (Date.now() > deadline) throw new Error(`the run ledger is locked (${lock}); another runner holds it`)
+    sleep(50)
   }
   try {
     return fn()
   } finally {
-    closeSync(fd)
-    rmSync(lock, { force: true })
+    releaseLock(lock, token)
   }
 }
 

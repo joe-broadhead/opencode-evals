@@ -1,7 +1,7 @@
 // The run caps hold before any run starts, across invocations, and whatever a run costs.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from "node:fs"
+import { mkdtempSync, writeFileSync, rmSync, mkdirSync, readFileSync, existsSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { loadCaps, reserve, release, recordRun, readLedger, usage, checkCaps, CapError, withLock, DEFAULT_CAPS } from "../src/cost/ledger.mjs"
@@ -115,4 +115,24 @@ test("the dollar check runs inside the ledger lock: a batch it refuses reserves 
   assert.throws(() => reserve(store, { plugin: "x", iteration: "i", runs: 1, env: {}, check: () => { throw new Error("D4 budget: no") } }), /D4 budget/)
   assert.deepEqual(readLedger(store), [])
   rmSync(store, { recursive: true, force: true })
+})
+
+test("the lock is taken atomically, and breaking a stale one can never remove a live holder's", async () => {
+  const { acquireLock, breakStaleLock, releaseLock } = await import("../src/cost/ledger.mjs")
+  const dir = temp()
+  const lock = join(dir, "lock")
+  assert.equal(acquireLock(lock, "A"), true)
+  assert.equal(acquireLock(lock, "B"), false, "one holder at a time")
+  // B and C both saw A's lock as stale. B breaks it and takes the lock; C's break then finds B's token, not A's,
+  // and puts B's lock back.
+  assert.equal(breakStaleLock(lock, "A", "B"), true)
+  assert.equal(acquireLock(lock, "B"), true)
+  assert.equal(breakStaleLock(lock, "A", "C"), false)
+  assert.equal(readFileSync(lock, "utf8"), "B", "B still holds the lock")
+  releaseLock(lock, "C")
+  assert.equal(readFileSync(lock, "utf8"), "B", "a release by someone else removes nothing")
+  releaseLock(lock, "B")
+  assert.equal(existsSync(lock), false)
+  assert.deepEqual(readdirSync(dir), [], "no private files left behind")
+  rmSync(dir, { recursive: true, force: true })
 })
