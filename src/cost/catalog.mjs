@@ -128,17 +128,24 @@ const targetOf = (entry) => {
  * has released a newer model in the same family since then, the claim is stale — reported, never silently
  * re-priced.
  */
-export function drift(catalog, mapping, { provider = "anthropic", family = /opus/i, familyName = "Opus" } = {}) {
+export function drift(catalog, mapping, { provider = "anthropic", family = null, familyName = null } = {}) {
   const models = catalog.providers?.[provider]?.models ?? {}
-  const released = Object.entries(models)
-    .filter(([id, model]) => family.test(id) && model?.release_date)
-    .map(([id, model]) => ({ id, release_date: model.release_date }))
-    .sort((a, b) => a.release_date.localeCompare(b.release_date))
-  const newest = released[released.length - 1] ?? null
+  // Each alias is checked against its own family (an Opus alias against the newest Opus, a Haiku one against Haiku).
+  const newestOf = (re) => {
+    const released = Object.entries(models)
+      .filter(([id, model]) => re.test(id) && model?.release_date)
+      .map(([id, model]) => ({ id, release_date: model.release_date }))
+      .sort((a, b) => a.release_date.localeCompare(b.release_date))
+    return released[released.length - 1] ?? null
+  }
   const out = []
   for (const [alias, entry] of Object.entries(mapping ?? {})) {
     const target = targetOf(entry)
     if (!target) continue
+    const word = (/(opus|sonnet|haiku|fable|mythos)/i.exec(target.to) ?? /(opus|sonnet|haiku|fable|mythos)/i.exec(alias) ?? [])[1]?.toLowerCase() ?? null
+    const re = family ?? (word ? new RegExp(word, "i") : null)
+    const name = familyName ?? (word ? word[0].toUpperCase() + word.slice(1) : "model")
+    const newest = re ? newestOf(re) : null
     const stale = Boolean(newest && target.asOf && newest.release_date > target.asOf)
     out.push({
       alias,
@@ -148,7 +155,7 @@ export function drift(catalog, mapping, { provider = "anthropic", family = /opus
       newest: newest ? `${provider}/${newest.id}` : null,
       newest_release: newest?.release_date ?? null,
       stale,
-      note: stale ? `the mapping is dated ${target.asOf} but ${provider}/${newest.id} was released ${newest.release_date}: the alias may mean a newer ${familyName}. Re-confirm the mapping; nothing was re-priced.` : null,
+      note: stale ? `the mapping is dated ${target.asOf} but ${provider}/${newest.id} was released ${newest.release_date}: the alias may mean a newer ${name}. Re-confirm the mapping; nothing was re-priced.` : null,
     })
   }
   return out

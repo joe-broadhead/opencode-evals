@@ -21,7 +21,17 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 - Case sets from case metadata (`src/case/sets.mjs`): `tune`, `holdout` (`Holdout: true`) and `tools` (`tools-*`),
   shared by the runner and the report. History is 47, 10 and 9; the lab runner's `--set tune` took 56.
 
+- Run caps and a run ledger (`src/cost/ledger.mjs`, `$EVALS_STORE/ledger/runs.jsonl`): a batch reserves its runs
+  under a lock before anything launches, and is refused whole when it would take a plugin past 800 runs in a month,
+  every plugin past 13000, or an iteration past its own cap (`EVALS_MAX_RUNS_*`, or `caps.json` in the store). Every
+  run counts, priced or not, so a subscription eval, which the dollar cap cannot see, is capped too.
+- `evals budget` prints the runs reserved this month per plugin; the month's dollars include the ledger's runs, and
+  `projectedSpend` prices a planned batch from the month's priced runs.
+- `cost/model-map.json` maps `claude-agent/haiku` to `anthropic/claude-haiku-5-5`.
+
 ### Changed
+
+- Mapping drift is checked per alias against its own family: a newer Opus no longer marks a Haiku alias stale.
 
 - `evals policy` never ships on fewer than two trials per case (`LIMITS.minTrials`); it asks, and says why. A batch
   graded before trials were recorded counts as one trial.

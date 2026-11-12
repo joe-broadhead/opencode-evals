@@ -12,6 +12,8 @@ $EVALS_STORE/
   t1/<plugin>/<version>/                  a T1 run's logs, capture events and fake-MCP call log
   results/<iteration>/                    verdicts.json, batch.json, scorecard.md
   results/t1/                             the coverage table
+  ledger/runs.jsonl                       every live run, reserved before it starts: what the run caps count
+  caps.json                               the run caps, when not the defaults (optional)
   labels/<plugin>.jsonl                   the owner's hand labels
   holdouts/<plugin>/                      four cases per plugin the tuning lane never sees
 ```
@@ -34,6 +36,12 @@ committed, and nothing in the repository may reference a machine path: `evals pr
 | `EVALS_WITH_SLOT` | unset | the family's `with-slot.sh` |
 | `EVALS_BUDGET_MODEL_USD` | `25` | the monthly model cap (D4) |
 | `EVALS_BUDGET_VENDOR_USD` | `10` | the monthly vendor cap (D4) |
+| `EVALS_MAX_RUNS_PER_PLUGIN` | `800` | live runs of one plugin in a calendar month (UTC) |
+| `EVALS_MAX_RUNS_TOTAL` | `13000` | live runs of every plugin in a calendar month |
+| `EVALS_MAX_RUNS_PER_PLUGIN_ITERATION`, `EVALS_MAX_RUNS_PER_ITERATION` | the monthly caps | live runs of one plugin, and of every plugin, in one iteration |
+| `EVALS_CAPS` | `$EVALS_STORE/caps.json` | a JSON file with `per_plugin_month`, `total_month`, `per_plugin_iteration`, `total_iteration`; the environment wins over it |
+| `EVALS_MODEL_MAP` | `cost/model-map.json` | the alias-to-catalogue mapping |
+| `EVALS_MODELS_CATALOG` | `$XDG_CACHE_HOME/opencode/models.json` | OpenCode's models.dev cache, the only source of a model price |
 | `EVALS_TMP` | the system temp | where a T1 run's scratch tree is made |
 
 ## Packs
@@ -79,6 +87,8 @@ recorded with every trace. A provider alias that is not a catalogue provider (ou
 ```
 
 `EVALS_MODEL_MAP` points at that file. It is a mapping, never a price: the rate still comes from the catalogue.
+`claude-agent/haiku` maps to `anthropic/claude-haiku-5-5`, the id the claude CLI's own model catalogue gives its
+`haiku` alias for a first-party sign-in; each alias is checked for drift against its own family's newest release.
 
 **Vendors.** `src/cost/prices.json`, each rate with a `source` and an `as_of`, from the plugin's own
 published table (the X rates are its skill file's). Vendor spend is reported beside the model spend, with
@@ -86,6 +96,19 @@ its own source, and is charged to its own cap.
 
 ## Budget
 
-The runner checks the month's spend before a batch: `evals budget` prints it, and
-`assertWithinBudget` refuses a run that would cross either cap. A run whose price is unknown is allowed and
-counted as `unknown_cost_runs`, because refusing to run on a missing price would hide the work that finds it.
+Two limits, both checked before a batch starts.
+
+**Run caps.** Every live run is reserved in `$EVALS_STORE/ledger/runs.jsonl` before anything launches: a batch that
+would take a plugin past `EVALS_MAX_RUNS_PER_PLUGIN` (800) runs this month, all plugins past `EVALS_MAX_RUNS_TOTAL`
+(13000), or an iteration past its own cap, is refused whole, and nothing runs. The check and the reservation happen
+under one lock file, so two runners cannot both take the last runs, and the ledger outlives the process, so the
+caps hold across invocations. A run counts whatever it cost: a subscription run bills $0 and only the run cap can
+stop it. A reservation counts until its unused runs are released; a batch that crashed keeps its runs counted.
+
+**Dollars.** `assertWithinBudget` refuses a batch whose projected spend would cross either monthly cap. The month's
+model spend is what the providers billed: the ledger's runs, plus any graded batch the ledger does not cover. The
+projection is the month's mean billed cost per priced run times the runs planned, and $0 when no run this month was
+priced. A run whose price is unknown is allowed and counted as `unknown_cost_runs`, because refusing to run on a
+missing price would hide the work that finds it; it still counts against the run caps.
+
+`evals budget` prints both: the dollars against their caps, and the runs reserved this month, per plugin.

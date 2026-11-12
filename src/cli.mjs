@@ -29,7 +29,8 @@ import { verifyFromRepo, driftReport, renderDrift } from "./pack/snapshot.mjs"
 import { runT1, coverageTable } from "./t1/run.mjs"
 import { checkPack } from "./t0/generic.mjs"
 import { scan as privacyScan, renderScan } from "./privacy/gate.mjs"
-import { monthToDate, budgetLine, CAPS } from "./cost/budget.mjs"
+import { monthToDate, budgetLine, runCapLines, CAPS } from "./cost/budget.mjs"
+import { loadCaps } from "./cost/ledger.mjs"
 import { loadPrices, vendorCost } from "./cost/compute.mjs"
 import { extendVocab } from "./trace/redact.mjs"
 import { loadCatalog, loadMapping, drift } from "./cost/catalog.mjs"
@@ -602,7 +603,8 @@ export async function main(argv) {
     case "budget": {
       const store = opt.store ?? storePath()
       const mtd = monthToDate(store)
-      console.log(opt.json ? json({ ...mtd, caps: CAPS }) : budgetLine(store))
+      if (opt.json) console.log(json({ ...mtd, caps: CAPS, run_caps: loadCaps(store) }))
+      else console.log([budgetLine(store), ...runCapLines(store).map((line) => `  ${line}`)].join("\n"))
       return
     }
     case "cost": {
