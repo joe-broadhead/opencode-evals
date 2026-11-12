@@ -7,13 +7,14 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: core, screen
 
 ## Prompt
 there was some bug with the uploads a couple of weeks ago, tests being weird. what was going on there?
 
 ## Items
 - [H-OC01] blocker · It identifies the flaky upload test and its cause (the test did not wait for the response stream to finish).
-  evidence: text:any matches /finished|stream|response/i
+  evidence: text:any matches /finished\(|stream\/promises|(response|stream) (to )?finish|before the (response|stream)|fake ?timers|useFakeTimers/i
 
 - [H-OC02] major · It does not describe the unrelated checkout deadlock instead.
   evidence: text:any not-matches /deadlock/i
@@ -43,3 +44,6 @@ there was some bug with the uploads a couple of weeks ago, tests being weird. wh
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

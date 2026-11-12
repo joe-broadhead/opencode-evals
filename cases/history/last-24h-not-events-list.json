@@ -1,0 +1,196 @@
+{
+  "schema": "oc-case/1",
+  "id": "last-24h-not-events-list",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "today-1 \"Triage Sentry alert for 500s on /v1/catalog\" (2.5 h before the corpus was built)",
+  "decision": "F11 precision. events_list is \"for Memory's collector and scripts, not for answering questions\"; a recent-work question is sessions with since.",
+  "data_check": null,
+  "prompt": "what have I worked on in the last 24 hours?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC01"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "wall_ms": 240000
+  },
+  "seed": "cwd=api time=day",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "core",
+    "new"
+  ],
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "major",
+      "ask": "It lists the Sentry triage of the /v1/catalog 500s.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "sentry",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "H-PR05",
+      "severity": "major",
+      "ask": "It did not use events_list to answer a question.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history.events_list",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "H-PR06",
+      "severity": "major",
+      "ask": "It used a time-bounded listing: sessions with since, or sql.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": "args.since",
+            "op": "present"
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 2,
+            "arg": "args.since",
+            "op": "present"
+          },
+          {
+            "kind": "call",
+            "tool": "history.sql",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "H-OC08",
+      "severity": "major",
+      "ask": "It used the history tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "today-1 is in the last 24 hours whenever the run is within about 21 hours of the build; time=day keeps it on the corpus day.",
+      "line": 38
+    },
+    {
+      "id": null,
+      "text": "Families: F11 (tool choice in the catalog), F4 (time window). World: unchanged.",
+      "line": 39
+    }
+  ],
+  "hashes": {
+    "source_sha256": "ee0fbe0e764dc84594154ad2d9e5f67c1d521c1e94f508cabf44dde0d4fe39a7"
+  }
+}

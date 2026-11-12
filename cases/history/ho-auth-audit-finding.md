@@ -8,6 +8,7 @@
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
 - Holdout: true
+- Status: retired
 
 ## Prompt
 what did the auth audit subagent flag?

@@ -7,6 +7,8 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC01)
 - Budget: outer_calls <= 10, inner_calls <= 10, wall_ms <= 300000
+- Set: smoke
+- Truth: sql.avgCostByAgent[agent=build].avg_usd == 1.07; sql.avgCostByAgent[agent=plan].avg_usd == 0.93; sql.avgCostByAgent[agent=explore].avg_usd == 1.13
 
 ## Prompt
 what's the average cost of a session for each agent (build, plan, explore) across everything I've run?
@@ -29,3 +31,6 @@ what's the average cost of a session for each agent (build, plan, explore) acros
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

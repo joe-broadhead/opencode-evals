@@ -1,0 +1,259 @@
+{
+  "schema": "oc-case/1",
+  "id": "audit-tree-cost",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "needles audit-parent ($1.50) and its subagents audit-catalog ($0.80), audit-auth ($0.70), audit-billing ($0.60): $3.60 for the tree (fixed costs, not time-dependent)",
+  "decision": "F4. A session's cost is its own; a subagent session is its own row. A tree total needs root_id in sql, or the subagents included (the skill's cost rule).",
+  "data_check": null,
+  "prompt": "how much did the auth/billing/catalog module audit cost in total, including the subagents it launched?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "fail",
+      "on": [
+        "H-OC01"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 10,
+    "wall_ms": 240000
+  },
+  "seed": "cwd=api",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "core",
+    "new"
+  ],
+  "truth": [
+    {
+      "path": "sql.treeCost[root=audit-parent].usd",
+      "value": 3.6
+    },
+    {
+      "path": "ids.audit-parent",
+      "value": "ses_mU7wCnfSqD3PT3fn6t7PjG"
+    }
+  ],
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It states the tree total: $3.60.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\$ ?3\\.60?\\b|\\b3\\.60\\b",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "H-OC02",
+      "severity": "minor",
+      "ask": "It shows the parent's own cost ($1.50) as part of the breakdown.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\$ ?1\\.50?\\b|\\b1\\.50\\b",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "H-PR05",
+      "severity": "major",
+      "ask": "It summed the tree: sql (root_id or parent_id), brief with children, or a list that includes subagents.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "history.sql",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "history.brief",
+            "n": 1,
+            "arg": "args.children",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.brief",
+            "n": 2,
+            "arg": "args.children",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": "args.includeSubagents",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 2,
+            "arg": "args.includeSubagents",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "H-PR02",
+      "severity": "major",
+      "ask": "It names the audit session by ID.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "ses_mU7wCnfSqD3PT3fn6t7PjG",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "H-OC08",
+      "severity": "major",
+      "ask": "It used the history tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Families: F4 (aggregates), F5 (subagents). World: unchanged.",
+      "line": 42
+    }
+  ],
+  "hashes": {
+    "source_sha256": "ac141ffcae289bad0b8d1b3d7fa2d41b99cced7919ffba664ca8faed44d59fd5"
+  }
+}

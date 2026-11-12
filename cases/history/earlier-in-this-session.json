@@ -1,0 +1,223 @@
+{
+  "schema": "oc-case/1",
+  "id": "earlier-in-this-session",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "needle stripe-v2, continued as the current session (two compactions hide the first message from the model's context)",
+  "decision": "(runnable since HG-4) scope \"session\" (or includeCurrent, or a read of the current session) recovers what was said before a compaction; the agent must not guess from the compaction summary alone.",
+  "data_check": null,
+  "prompt": "what exactly did I ask you to do at the very start of this session, word for word?",
+  "controls": [
+    {
+      "kind": "no-skill",
+      "expect": "pass",
+      "on": []
+    },
+    {
+      "kind": "no-plugin",
+      "expect": "partial",
+      "on": [
+        "H-OC01"
+      ]
+    }
+  ],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 10,
+    "wall_ms": 240000
+  },
+  "seed": "cwd=api continue=stripe-v2",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "extra"
+  ],
+  "truth": [
+    {
+      "path": "ids.stripe-v2",
+      "value": "ses_5F3vJAwkf9zXff2PL3aPow"
+    }
+  ],
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It quotes the first message: migrate from the Stripe v1 charges API to v2 payment intents, keep behaviour identical, invoices in flight.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "v1 charges API",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "invoices in flight|keep behaviou?r identical",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "H-PR05",
+      "severity": "major",
+      "ask": "It read this session from History: scope session, includeCurrent, or a read of the current session.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "history.search",
+            "n": 1,
+            "arg": "args.scope",
+            "op": "==",
+            "value": {
+              "kind": "string",
+              "value": "session"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.search",
+            "n": 1,
+            "arg": "args.includeCurrent",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.read",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": "args.scope",
+            "op": "==",
+            "value": {
+              "kind": "string",
+              "value": "session"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sql",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "H-OC08",
+      "severity": "major",
+      "ask": "It used the history tools rather than the compaction summary alone.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Needs the runner to pass `--session <stripe-v2 id>` to `opencode run` (HG-4). The session must be the world's copy in the sandbox, so the run appends to it; delete the sandbox afterwards as today.",
+      "line": 37
+    },
+    {
+      "id": null,
+      "text": "\"session\" is in the pack's vocab, so `args.scope == session` survives the trace's redaction.",
+      "line": 38
+    },
+    {
+      "id": null,
+      "text": "Families: F5 (scope session, includeCurrent). World: unchanged.",
+      "line": 39
+    }
+  ],
+  "hashes": {
+    "source_sha256": "1472c41fe61baeb62fa94a5a7d216b3e5e46f0fac0fbc0efd2edb6724f1aaf56"
+  }
+}

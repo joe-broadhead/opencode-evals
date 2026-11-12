@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC01)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: guard
 
 ## Prompt
 which file have we changed in the most different sessions?
@@ -16,7 +17,7 @@ which file have we changed in the most different sessions?
   evidence: text:any matches /config/settings\.ts|settings\.ts/i
 
 - [H-OC02] major · It states the count: 8 sessions.
-  evidence: text:any matches /\b8\b|eight/i
+  evidence: text:any matches /\b(8|eight) (different |distinct |separate )?sessions|sessions?[^.\n]{0,20}\b(8|eight)\b/i
 
 - [H-OC08] major · It used the history tools (sql or files).
   evidence: count:history.* >= 1
@@ -29,3 +30,6 @@ which file have we changed in the most different sessions?
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

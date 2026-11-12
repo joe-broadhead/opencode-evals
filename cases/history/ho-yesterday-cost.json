@@ -5,7 +5,7 @@
   "skill": "history-recall",
   "tier": "T3",
   "source": "yesterday-1..5",
-  "decision": "Held out: a time window plus a sum.",
+  "decision": "A time window plus a sum (a former holdout, public since the lab report: now a tune case).",
   "data_check": null,
   "prompt": "how much did yesterday's sessions cost in total?",
   "controls": [
@@ -29,7 +29,20 @@
   },
   "seed": "cwd=api time=day",
   "expect": "pass",
-  "holdout": true,
+  "holdout": false,
+  "sets": [
+    "core"
+  ],
+  "truth": [
+    {
+      "path": "sql.yesterdayCalendar.api",
+      "value": 3.4
+    },
+    {
+      "path": "sql.yesterdayCalendar.all",
+      "value": 3.9
+    }
+  ],
   "items": [
     {
       "id": "H-OC01",
@@ -44,7 +57,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "3\\.40|3.4\\b|3\\.90|3.9\\b",
+            "source": "\\$ ?3\\.(40?|90?)\\b|\\b3\\.(40|90)\\b",
             "flags": "i"
           }
         }
@@ -52,7 +65,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 18
     },
     {
       "id": "H-OC08",
@@ -71,7 +84,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
     },
     {
       "id": "H-SF01",
@@ -99,12 +112,30 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 25
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access \"all\").",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9cd2a8bc58a165dddfcd271da883106160711b52cfc13854c0c34b0ae00c0a35"
+    "source_sha256": "10862013649a872f6de722d2ca62d5157bd2f37502ae0825feaf18ba745a0c6d"
   }
 }

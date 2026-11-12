@@ -11,14 +11,18 @@ const historyCases = () => {
   return readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => JSON.parse(readFileSync(join(dir, f), "utf8")))
 }
 
-test("the History sets are 47 tune, 10 holdout and 9 tools cases, from each case's own metadata", () => {
+test("the History sets are the phase B design's, from each case's own metadata; retired cases are in no set", () => {
   const cases = historyCases()
-  assert.deepEqual(setCounts(cases), { tune: 47, holdout: 10, tools: 9 })
-  assert.equal(selectCases(cases).selected.length, 47, "the default set is tune, without the tools-* family")
-  assert.equal(selectCases(cases, { set: "tune,tools" }).selected.length, 56)
-  assert.equal(selectCases(cases, { set: "all" }).selected.length, 66)
-  assert.ok(selectCases(cases, { set: "holdout" }).selected.every((c) => c.holdout))
-  assert.deepEqual(selectCases(cases, { patterns: "tools-*", set: "tools" }).selected.map(familyOf), Array(9).fill("tools"))
+  assert.equal(cases.length, 83)
+  assert.equal(cases.filter((c) => c.status === "retired").length, 20)
+  assert.deepEqual(setCounts(cases), { tune: 55, holdout: 0, tools: 8, core: 45, guard: 8, smoke: 8, f7: 5, safety: 17, new: 15, extra: 2, screen: 20 })
+  assert.equal(selectCases(cases).selected.length, 55, "the default set is tune, without the tools-* family")
+  assert.equal(selectCases(cases, { set: "all" }).selected.length, 63, "every active case, the retired ones aside")
+  assert.equal(selectCases(cases, { set: "core,guard,smoke" }).selected.length, 61)
+  assert.deepEqual(selectCases(cases, { set: "smoke" }).selected.map(familyOf), Array(8).fill("tools"))
+  const core = new Set(selectCases(cases, { set: "core" }).selected.map((c) => c.id))
+  for (const name of ["safety", "screen"]) assert.ok(selectCases(cases, { set: name }).selected.every((c) => core.has(c.id)), `${name} is inside core`)
+  assert.throws(() => selectCases(cases, { patterns: "zsh-startup-fix", set: "all" }), /status retired/)
 })
 
 test("a named case outside the set is an error that says which set it is in", () => {

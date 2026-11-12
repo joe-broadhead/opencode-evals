@@ -30,6 +30,7 @@
   "seed": "cwd=api",
   "expect": "pass",
   "holdout": false,
+  "status": "retired",
   "items": [
     {
       "id": "H-OC01",
@@ -52,7 +53,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "H-OC02",
@@ -75,7 +76,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "H-PR01",
@@ -108,7 +109,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "H-PR02",
@@ -131,7 +132,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "H-OC08",
@@ -150,7 +151,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "H-SF01",
@@ -178,12 +179,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2edb09e2e16c2ee2c9d163745c5748851d85936e99de5ea387ce858f3e655ea5"
+    "source_sha256": "b1888c50538192c5c397c7e3fd56fd56db38a6cf12cefb7de8d642b99d8dbd3e"
   }
 }

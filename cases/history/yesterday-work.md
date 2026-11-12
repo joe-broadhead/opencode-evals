@@ -7,6 +7,7 @@
 - Seed: cwd=api time=day
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: core
 
 ## Prompt
 what did I work on yesterday?
@@ -22,13 +23,13 @@ what did I work on yesterday?
   evidence: text:any matches /jest/i
 
 - [H-OC04] major · It lists the worker memory investigation.
-  evidence: text:any matches /memory|worker/i
+  evidence: text:any matches /memory (growth|leak)|leak\w* listeners|worker (memory|leak)/i
 
 - [H-PR01] major · The first history call is a sessions listing with a time bound (since), not a keyword search for 'yesterday'.
   evidence_any: call:history.sessions#1 args.since present ;; call:history.sql#1 args.sql present
 
-- [H-PR02] major · It never searched for the word 'yesterday'.
-  evidence_any: absent:history.search ;; count:history.search == 0
+- [H-PR02] minor · It used a time-bounded listing (sessions with since or until, or sql) rather than only searches; a search's query text is redacted in traces, so "never searched for the word" cannot be checked.
+  evidence_any: call:history.sessions#1 args.since present ;; call:history.sessions#1 args.until present ;; call:history.sessions#2 args.since present ;; call:history.sql#1
 
 - [H-TR01] minor · The history-recall skill was loaded.
   evidence: skill:history-recall
@@ -41,3 +42,6 @@ what did I work on yesterday?
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

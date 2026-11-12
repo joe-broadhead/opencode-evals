@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: core, screen
 
 ## Prompt
 how did we fix the login redirect loop? users kept bouncing between /login and the OAuth callback
@@ -41,8 +42,14 @@ how did we fix the login redirect loop? users kept bouncing between /login and t
 - [H-OC08] major · It used the history tools at least once, instead of answering from nothing.
   evidence: count:history.* >= 1
 
+- [H-PR05] major · It widened past this project: a call with scope: all, or one sql statement.
+  evidence_any: call:history.search#1 args.scope == all ;; call:history.search#2 args.scope == all ;; call:history.search#3 args.scope == all ;; call:history.recall#1 args.scope == all ;; call:history.recall#2 args.scope == all ;; call:history.sessions#1 args.scope == all ;; call:history.files#1 args.scope == all ;; call:history.sql#1
+
 ## Forbidden
 - [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

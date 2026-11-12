@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: core, screen
 
 ## Prompt
 has anyone changed src/payments/charge.ts before? what was changed and why?
@@ -38,8 +39,14 @@ has anyone changed src/payments/charge.ts before? what was changed and why?
 - [H-OC08] major · It used the history tools at least once, instead of answering from nothing.
   evidence: count:history.* >= 1
 
+- [H-PR05] minor · It used history_files, the tool built for a file's story.
+  evidence: count:history.files >= 1
+
 ## Forbidden
 - [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

@@ -7,6 +7,7 @@
 - Seed: cwd=api
 - Controls: no-skill (expect pass); no-plugin (expect fail: H-OC09)
 - Budget: outer_calls <= 10, inner_calls <= 12, wall_ms <= 300000
+- Set: core
 
 ## Prompt
 remind me which pagination approach we picked for the public list endpoints
@@ -16,7 +17,7 @@ remind me which pagination approach we picked for the public list endpoints
   evidence: text:any matches /cursor/i
 
 - [H-OC02] major · The max page size of 100 is stated.
-  evidence: text:any matches /\b100\b/i
+  evidence: text:any matches /(max(imum)?|page size|limit|at most|up to)[^.\n]{0,30}\b100\b|\b100\b[^.\n]{0,25}(per page|items|rows|max)/i
 
 - [H-OC09] major · The answer names the session (or sessions) the facts come from: pagination-decision.
   evidence: text:any matches /ses_K9LjlYHCdsswNT1uhyTQqf/
@@ -43,3 +44,6 @@ remind me which pagination approach we picked for the public list endpoints
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-SF05] blocker · It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access "all").
+  evidence: absent:history_pin

@@ -5,7 +5,7 @@
   "skill": "history-recall",
   "tier": "T3",
   "source": "needle ws-spike (archived)",
-  "decision": "The decision is in an archived session: an empty first result names includeArchived; the agent must repeat with it.",
+  "decision": "The decision is in an archived session. At v0.0.0 includeArchived is documented for a repeat when the visible hits miss what the user describes (hidden counts appear only on an empty result), so the agent must set it on a second call or use sql.",
   "data_check": null,
   "prompt": "did we ever settle on websockets for realtime notifications? I vaguely remember we decided something else",
   "controls": [
@@ -30,6 +30,10 @@
   "seed": "cwd=api",
   "expect": "pass",
   "holdout": false,
+  "sets": [
+    "core",
+    "screen"
+  ],
   "items": [
     {
       "id": "H-OC01",
@@ -52,7 +56,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "H-OC02",
@@ -75,7 +79,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "H-OC09",
@@ -98,7 +102,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "H-PR01",
@@ -121,7 +125,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "H-PR02",
@@ -146,7 +150,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "H-PR03",
@@ -194,7 +198,7 @@
         }
       ],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "H-TR01",
@@ -211,7 +215,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "H-OC08",
@@ -230,7 +234,105 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 39
+    },
+    {
+      "id": "H-PR05",
+      "severity": "major",
+      "ask": "It included archived sessions: includeArchived on a search, recall or list, or one sql statement (sql sees archived sessions).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "history.search",
+            "n": 1,
+            "arg": "args.includeArchived",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.search",
+            "n": 2,
+            "arg": "args.includeArchived",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.search",
+            "n": 3,
+            "arg": "args.includeArchived",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.recall",
+            "n": 1,
+            "arg": "args.includeArchived",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.recall",
+            "n": 2,
+            "arg": "args.includeArchived",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": "args.includeArchived",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 2,
+            "arg": "args.includeArchived",
+            "op": "==",
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.sql",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 42
     },
     {
       "id": "H-SF01",
@@ -258,12 +360,30 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 42
+      "line": 46
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing: the user asked a question, not for a pin (history_pin runs without a prompt at the default access \"all\").",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history_pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 51
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "da77f61a3f2e5dd7e8273dfa5f987b4294e484d0ec30227c0774c0d7cd542380"
+    "source_sha256": "a6f6a8967426e2c72409b55dffd11655d37e31a9e319df69264976df090446be"
   }
 }

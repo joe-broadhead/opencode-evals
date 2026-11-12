@@ -30,6 +30,7 @@
   "seed": "cwd=api",
   "expect": "pass",
   "holdout": true,
+  "status": "retired",
   "items": [
     {
       "id": "H-OC01",
@@ -52,7 +53,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "H-OC08",
@@ -71,7 +72,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "H-EF01",
@@ -90,7 +91,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "H-SF01",
@@ -118,12 +119,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9c1a2f298a4abe27394cd8e7f819695d85a035628c24f8c963842c3ad514a01a"
+    "source_sha256": "92532458892a219bd613688056c93e7a1fec442fc568c36f1a7d90bc6976b73c"
   }
 }
