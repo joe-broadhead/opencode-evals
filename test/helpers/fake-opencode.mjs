@@ -35,6 +35,7 @@ if (args[0] === "serve") {
   const port = Number(args[args.indexOf("--port") + 1])
   const expected = "Basic " + Buffer.from("opencode:" + process.env.OPENCODE_PASSWORD).toString("base64")
   note("serve-" + port + ".json", seen())
+  writeFileSync(join(home, "serve-started"), String(Date.now()))
   linger("serve-child.pid")
   const server = http.createServer((req, res) => {
     if (req.headers.authorization !== expected) { res.statusCode = 401; return res.end("{}") }
@@ -44,6 +45,13 @@ if (args[0] === "serve") {
   process.on("SIGTERM", () => process.exit(0))
   return
 }
+// Like the Claude Agent provider, the host fills its model list a moment after its server answers: before that it
+// routes only a model of its own, and a run sent then gets no route.
+const routing = () => {
+  const file = join(home, "serve-started")
+  return existsSync(file) && Date.now() - Number(readFileSync(file, "utf8")) >= 600
+}
+if (args[0] === "models") { console.log((routing() ? ["opencode/free-1", "mock/m1", "claude-agent/haiku", "claude-agent/sonnet", "claude-agent/opus"] : ["opencode/free-1"]).join(String.fromCharCode(10))); process.exit(0) }
 if (args[0] === "run") {
   const prompt = args[args.length - 1]
   note("run.json", seen())
@@ -73,6 +81,11 @@ if (args[0] === "run") {
   if (leak) {
     process.stderr.write("debug token" + leak + String.fromCharCode(10))
     writeFileSync(join(process.cwd(), "leaked.txt"), "token" + leak + String.fromCharCode(10))
+  }
+  // The host has no route for the model: one error event, as OpenCode prints it.
+  if (prompt.includes("no-route") || !routing()) {
+    console.log(JSON.stringify({ type: "error", error: { type: "provider.no-route", message: "Model unavailable: claude-agent/haiku" } }))
+    process.exit(1)
   }
   // The provider refuses the credential: no model work, the host's error on stderr.
   if (prompt.includes("auth-fail")) {

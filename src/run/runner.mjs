@@ -116,6 +116,85 @@ export function authFailed({ stdout = "", stderr = "" } = {}) {
   return said.some((text) => text.split("\n").some((line) => AUTH_ERROR.test(line) && !/tunnel|proxy/i.test(line)))
 }
 
+/**
+ * Did the run fail before any model was reached because the host could not route the model to a provider? The
+ * runner's own wait gave up (noRoute), or, with no model work done, the host reported a provider error such as
+ * `provider.no-route` ("Model unavailable").
+ */
+const NO_ROUTE = /provider\.no-route|"type":"provider\.|model unavailable|ProviderModelNotFound|model not found/i
+export function providerFailed(result = {}) {
+  if (result.noRoute) return true
+  const { stdout = "", stderr = "" } = result
+  const tokens = billedOf(stdout).tokens
+  if (tokens.input + tokens.output + tokens.cacheRead + tokens.cacheWrite > 0) return false
+  const said = [String(stderr)]
+  for (const line of String(stdout).split("\n")) {
+    try {
+      const event = JSON.parse(line)
+      if (event.type === "error" || event.error) said.push(JSON.stringify(event))
+    } catch {
+      // not an event
+    }
+  }
+  return said.some((text) => NO_ROUTE.test(text))
+}
+
+/** "auth", "provider", or null: a failure before the model did any work, which is never the model's to be graded on. */
+export const preModelFailure = (result) => (authFailed(result) ? "auth" : providerFailed(result) ? "provider" : null)
+
+/**
+ * Waits until `model` is listed by the trial's own server (`opencode models --server`, run inside the trial), or the
+ * timeout passes. Returns { ok, waitedMs, listed }.
+ */
+export async function modelRoutes({ trial, binary, url, env, cwd, model, timeoutMs = 60_000 }) {
+  const target = String(model).replace(/#.*$/, "")
+  const started = Date.now()
+  let listed = []
+  for (;;) {
+    const spec = trial.wrap({ command: binary, args: ["models", "--server", url], cwd, env })
+    const out = await runToEnd(spec.command, spec.args, { cwd: spec.cwd, env: spec.env, timeoutMs: 30_000 })
+    listed = out.stdout.split("\n").map((line) => line.trim()).filter((line) => /^[\w.-]+\/\S+$/.test(line))
+    if (listed.includes(target)) return { ok: true, waitedMs: Date.now() - started, listed }
+    if (Date.now() - started > timeoutMs || trial.killed || trial.left) return { ok: false, waitedMs: Date.now() - started, listed }
+    await new Promise((done) => setTimeout(done, 500))
+  }
+}
+
+/**
+ * Before anything is reserved: one trial set up exactly as a run's would be (the isolation, the build under test, the
+ * credential imported, the server started), with no prompt sent, checks that the batch's model routes inside it.
+ */
+async function preflightRoute(p) {
+  const sandbox = makeSandbox(join(p.batchRoot, "preflight"))
+  mkdirSync(join(sandbox.project, ".git"), { recursive: true })
+  const config = sealedConfig({ armDir: p.armDir, options: p.options, model: p.model, scripted: p.scripted, scriptedProvider: p.scriptedProvider })
+  writeConfig(sandbox, config)
+  const password = newPassword()
+  registerSecrets([password])
+  const trial = await p.isolation.enter({ name: "preflight", sandbox, mounts: p.mounts, cwd: sandbox.project })
+  let server = null
+  let mock = null
+  try {
+    if (p.scripted && p.mockInTrial) mock = await startTrialMock({ trial, ctx: p, sandbox })
+    const mockUrl = mock?.url ?? p.mockUrl
+    const env = sandboxEnv({ sandbox, config, password, caller: p.caller, extra: { ...p.auth.env, ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
+    const exec = (args, options = {}) => {
+      const spec = trial.wrap({ command: p.binary, args, cwd: options.cwd ?? sandbox.project, env: options.env ?? env })
+      return runToEnd(spec.command, spec.args, { ...options, cwd: spec.cwd, env: spec.env })
+    }
+    await p.auth.apply({ sandbox, env, exec })
+    server = await startServer({ binary: p.binary, cwd: sandbox.project, env, password, trial })
+    return await modelRoutes({ trial, binary: p.binary, url: server.url, env, cwd: sandbox.project, model: p.model, timeoutMs: p.routeTimeoutMs })
+  } finally {
+    await stop(server?.proc)
+    await stop(mock?.proc, { graceMs: 200 })
+    await trial.leave({ reason: "preflight" })
+    const gone = await trial.gone()
+    p.auth.cleanup({ sandbox, gone })
+    if (gone) removeSandbox(sandbox.root)
+  }
+}
+
 const billedOf = (stdout) => {
   let total = 0
   let priced = false
@@ -263,9 +342,18 @@ async function runJob(job, ctx) {
     let result
     try {
       server = await startServer({ binary: ctx.binary, cwd, env, password, trial })
-      // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
-      const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
-      result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, job.case.prompt], { timeoutMs: ctx.timeoutMs })
+      // A provider can fill its model list after the server answers (the Claude Agent provider probes `claude` first):
+      // the run is sent only once its model routes on this server, and a model that never does is the provider's
+      // failure, not the model's.
+      const routed = await modelRoutes({ trial, binary: ctx.binary, url: server.url, env, cwd, model: ctx.model, timeoutMs: ctx.routeTimeoutMs })
+      if (!routed.ok) {
+        const why = `the model ${ctx.model} did not route on the trial's server within ${Math.round(ctx.routeTimeoutMs / 1000)} s (it listed ${routed.listed.length ? routed.listed.slice(0, 12).join(", ") : "nothing"})`
+        result = { code: null, stdout: "", stderr: why, timedOut: false, error: why, noRoute: true }
+      } else {
+        // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
+        const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
+        result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, job.case.prompt], { timeoutMs: ctx.timeoutMs })
+      }
     } catch (error) {
       result = { code: null, stdout: "", stderr: String(error.message ?? error), timedOut: false, error: String(error.message ?? error) }
     } finally {
@@ -302,8 +390,9 @@ async function runJob(job, ctx) {
       isolation: ctx.isolation.name,
       ...(detail ? { isolation_detail: { ...detail, ...(oomKills ? { oom_kills: oomKills } : {}) } } : {}),
       ...(killed ? { killed: killed.reason } : {}),
-      // The model call was refused its credential: an infrastructure failure, never graded as the model's.
-      ...(authFailed(result) ? { infra: "auth" } : {}),
+      // The model call was refused its credential, or never reached a model (no route): an infrastructure failure,
+      // never graded as the model's.
+      ...(preModelFailure(result) ? { infra: preModelFailure(result) } : {}),
       ...(fromWorld.dropped.length ? { world_env_ignored: fromWorld.dropped } : {}),
       ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
       world: ctx.worldInfo,
@@ -584,6 +673,13 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const unscrubbed = log
     log = (line) => unscrubbed(redact(line))
     if (keepRoot && auth.holdsCredential) log(`warning: --keep-credentials: the kept sandboxes under ${batchRoot} hold the imported credential; delete them when you are done`)
+    // The model must route inside a trial before anything is reserved: one trial, no prompt, no model call.
+    const routeTimeoutMs = Number(caller.EVALS_ROUTE_TIMEOUT_S || 60) * 1000
+    const mounts = [armDir, harnessDir].filter(Boolean).map((host) => ({ host, ro: true }))
+    const routed = await preflightRoute({ batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs })
+    if (!routed.ok) throw new Error(`preflight: the model ${options.model} does not route inside a trial within ${routeTimeoutMs / 1000} s, so no run was reserved. The trial's server lists ${routed.listed.length ? routed.listed.slice(0, 12).join(", ") : "no model"}`)
+    facts.preflight = { model: options.model, routed_after_ms: routed.waitedMs }
+    log(`preflight: ${options.model} routes inside a trial (after ${(routed.waitedMs / 1000).toFixed(1)} s)`)
     // Money, then runs: both checked under the ledger's lock before anything launches, and the whole batch reserved in
     // the same step. The dollar caps are the caller's.
     // Every batch's reserved runs count, at the price each was reserved with, before they bill. A batch with no price
@@ -605,6 +701,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       log,
       isolation,
       mockUrl: mock?.url ?? null,
+      routeTimeoutMs,
       scripted,
       mockInTrial: Boolean(harnessDir) && isolation.confines,
       harnessDir,
@@ -653,8 +750,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
         running--
         results.push(outcome)
         log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.infra ? ` INFRA ${outcome.infra}` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)
-        // A credential refused once will be refused again: no new trial is launched after the first.
+        // A credential refused once, or a model that does not route, will fail again: no new trial after the first.
         if (outcome.infra === "auth" && !stopped) stopped = `${job.case.id}.t${job.trial} was refused authentication (infra: auth): no further trial launched; refresh the sign-in and rerun the released runs`
+        if (outcome.infra === "provider" && !stopped) stopped = `${job.case.id}.t${job.trial} never reached its model (infra: provider): no further trial launched; rerun the released runs once the provider routes`
       }
     }
     await Promise.all(Array.from({ length: Math.min(parallel, jobs.length) }, worker))

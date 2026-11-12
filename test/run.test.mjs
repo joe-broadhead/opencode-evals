@@ -691,6 +691,35 @@ test("a trial refused authentication is infra: auth, released, not graded, and s
   f.cleanup()
 })
 
+test("a model that does not route inside a trial is refused before anything is reserved; a no-route run is infra: provider", async () => {
+  const f = fixture({ cases: [["a-route", ""], ["b-after", ""]] })
+  const base = { ...UNCONFINED, plugin: "demo", auth: "none", set: "all", parallel: 1, arm: f.arm, casesDir: f.casesDir }
+  // The stand-in host routes mock/m1 and the Claude Agent models, not this one: the preflight trial says so.
+  await assert.rejects(runBatch({ ...base, iteration: "noroute", model: "claude-agent/not-a-model" }, { caller: { ...f.caller, EVALS_ROUTE_TIMEOUT_S: "1" }, ...quiet }), /preflight: the model claude-agent\/not-a-model does not route inside a trial within 1 s, so no run was reserved\. The trial's server lists opencode\/free-1, mock\/m1, claude-agent\/haiku/)
+  assert.deepEqual(readLedger(f.store), [], "nothing reserved")
+  // A run whose host reports no route all the same (the provider's list changed mid-batch) is the provider's failure.
+  const c = JSON.parse(readFileSync(join(f.casesDir, "a-route.json"), "utf8"))
+  writeFileSync(join(f.casesDir, "a-route.json"), JSON.stringify({ ...c, prompt: "no-route please" }))
+  const result = await runBatch({ ...base, iteration: "prov", model: "mock/m1", scripted: true }, { caller: f.caller, ...quiet })
+  assert.equal(result.preflight.model, "mock/m1")
+  assert.equal(result.results[0].infra, "provider")
+  assert.equal(result.launched, 1, "nothing launched after it")
+  assert.match(result.stopped, /never reached its model \(infra: provider\)/)
+  assert.equal(readLedger(f.store).filter((e) => e.kind === "run").length, 0, "no run spent")
+  const env = { PATH: process.env.PATH, EVALS_STORE: f.store, EVALS_MODELS_CATALOG: join(f.root, "absent.json") }
+  spawnSync(process.execPath, [BIN, "trace", "--iteration", "prov", "--plugin", "demo"], { env })
+  spawnSync(process.execPath, [BIN, "grade", "--iteration", "prov", "--plugin", "demo", "--cases", f.casesDir], { env })
+  const verdict = JSON.parse(readFileSync(join(f.store, "results", "prov", "verdicts.json"), "utf8")).find((v) => v.case === "a-route")
+  assert.equal(verdict.verdict, "NOT_RUN")
+  assert.equal(verdict.infra, "provider")
+  const { providerFailed, preModelFailure } = await import("../src/run/runner.mjs")
+  assert.equal(providerFailed({ stdout: JSON.stringify({ type: "error", error: { type: "provider.no-route", message: "Model unavailable: claude-agent/haiku" } }) }), true)
+  assert.equal(providerFailed({ noRoute: true }), true)
+  assert.equal(providerFailed({ stdout: [JSON.stringify({ type: "text", part: { text: "provider.no-route is a string in my answer" } }), JSON.stringify({ type: "step_finish", part: { tokens: { input: 5, output: 1 } } })].join("\n") }), false, "a run the model worked in is the model's")
+  assert.equal(preModelFailure({ stderr: "Error: 401 Unauthorized" }), "auth")
+  f.cleanup()
+})
+
 test("a batch that could outlive its sign-in is refused, with the step that fixes it", async () => {
   const now = Date.parse("2026-11-11T12:00:00Z")
   assert.doesNotThrow(() => assertTokenLasts(now + 60 * 60_000, 20 * 60_000, now))

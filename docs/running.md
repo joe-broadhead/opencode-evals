@@ -179,7 +179,10 @@ In this order, and a failure stops the batch with nothing launched:
 5. the world is checked, and rebuilt with the build under test when it is stale (below);
 6. the credential profile is prepared;
 7. the dollar budget: the projected spend must fit the month's cap ([configuration.md](configuration.md#budget));
-8. the run caps: the whole batch is reserved in the run ledger, or refused whole.
+8. the model routes: one preflight trial, set up as a run's would be (the isolation, the build under test, the
+   credential imported, the server started) but sent no prompt, must list the batch's model within
+   `EVALS_ROUTE_TIMEOUT_S` (60 s), or the batch is refused;
+9. the run caps: the whole batch is reserved in the run ledger, or refused whole.
 
 During the batch, a run is not launched when the world has gone stale since the batch started (a batch that crosses
 midnight UTC on a day-bound world) or when the month's billed spend has crossed its cap; its reservation is
@@ -253,6 +256,13 @@ themselves (boxd injects it, and refreshes it outside every run). Such a batch c
 the log warns, and the batch record's `horizon` says `expires: "unknown", accepted_by_flag: true` (`--dry-run` shows
 the same). A known expiry is checked as above, flag or not. The access token must still be a non-empty string, and the
 refresh token is never read.
+
+A provider can fill its model list only after the server answers: the Claude Agent provider caches its catalog in
+OpenCode's plugin storage and, in a fresh sandbox, fills it by probing `claude` (about a second; no model call). So
+every run waits, after its server is ready, until `opencode models --server` inside the trial lists its model, and
+only then sends the prompt. A model that does not route within `EVALS_ROUTE_TIMEOUT_S` (60 s), or a run the host
+answers with `provider.no-route` before any model work, is `infra: "provider"`: not graded, released to the reserve,
+and the batch launches nothing after it.
 
 A trial whose model call is refused its credential (HTTP 401 or 403 from the provider, an authentication or
 permission error, an expired or invalid token, the sign-in prompt), with no model work done, is recorded as an

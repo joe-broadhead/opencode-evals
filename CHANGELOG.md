@@ -141,6 +141,12 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- The live canary's trial failed in 2 s with `provider.no-route` for `claude-agent/haiku`: the Claude Agent provider
+  lists its models from a catalog in OpenCode's plugin storage, which a fresh sandbox lacks (phase A's lab base had
+  it cached) and fills by probing `claude` about a second after the server answers; the run was sent before that.
+  Every run now waits until its model routes on the trial's own server; a preflight trial checks it before anything
+  is reserved; and a run that never reaches a model is `infra: "provider"` (not graded, released, the batch stops).
+
 - A Claude sign-in with `expiresAt` null or absent (boxd keeps it fresh itself) was refused as not a sign-in. Its
   expiry is now unknown: `--auth claude-agent` refuses it with a clear message unless `--accept-unknown-token-expiry`,
   which skips the horizon check and records `horizon.expires: "unknown", accepted_by_flag: true` (the dry run shows it).

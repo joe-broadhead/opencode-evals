@@ -19,6 +19,7 @@ import { containerBackend, containerConfig, trialEnv, imageTag, findBinary, CONT
 import { selectIsolation } from "../src/run/isolation.mjs"
 import { makeSandbox, removeSandbox, removeInside, repairPermissions, runToEnd } from "../src/run/sandbox.mjs"
 import { runBatch } from "../src/run/runner.mjs"
+import { readLedger } from "../src/cost/ledger.mjs"
 import { compileCase } from "../src/case/compile.mjs"
 
 const BIN = join(import.meta.dirname, "..", "bin", "evals")
@@ -588,6 +589,19 @@ const hostProcesses = (needle) =>
       }
     })
 
+/** Host `docker exec` clients aimed at a container of some evals batch (argv, not a substring of any command line). */
+const dockerExecClients = () =>
+  readdirSync("/proc")
+    .filter((p) => /^\d+$/.test(p))
+    .filter((p) => {
+      try {
+        const argv = readFileSync(`/proc/${p}/cmdline`, "utf8").split("\0")
+        return /(^|\/)docker$/.test(argv[0]) && argv[1] === "exec" && argv.some((arg) => /^evals-b[0-9a-f]{10}-t\d+$/.test(arg))
+      } catch {
+        return false
+      }
+    })
+
 async function liveFixture({ watchMs, limits } = {}) {
   const root = scratch("evals-iso-docker-")
   const batchRoot = join(root, "batch")
@@ -861,11 +875,11 @@ test("docker: a timeout and a failure leave no container, network or process beh
     const broken = join(f.root, "opencode")
     writeFileSync(broken, '#!/bin/sh\nif [ "$1" = "--version" ]; then echo "opencode v2.2.6"; exit 0; fi\necho "no server today" >&2\nexit 3\n')
     chmodSync(broken, 0o755)
-    const failed = await runBatch({ plugin: "demo", iteration: "fail", model: "mock/m1", auth: "none", scripted: true, isolation: "container", arm: "none", casesDir: f.casesDir, set: "all" }, { caller: { ...f.caller, EVALS_OPENCODE_BIN: broken }, ...quiet })
-    assert.match(failed.results[0].error ?? "", /the host server did not start: the server exited: no server today/)
-    const failedLabel = batchRecord(f.store, "fail").isolation_detail.batch_label
-    assert.deepEqual(leftovers(`label=evals.batch=${failedLabel}`), { containers: "", networks: "" })
-    assert.deepEqual(hostProcesses(`evals-${failedLabel}`), [])
+    // It is caught by the preflight trial, before anything is reserved; that trial goes too.
+    await assert.rejects(runBatch({ plugin: "demo", iteration: "fail", model: "mock/m1", auth: "none", scripted: true, isolation: "container", arm: "none", casesDir: f.casesDir, set: "all" }, { caller: { ...f.caller, EVALS_OPENCODE_BIN: broken }, ...quiet }), /the host server did not start: the server exited: no server today/)
+    assert.equal(readLedger(f.store).filter((e) => e.kind === "reserve").length, 1, "only the timeout batch reserved anything")
+    assert.deepEqual(leftovers(`label=evals.pid=${process.pid}`), { containers: "", networks: "" })
+    assert.deepEqual(dockerExecClients(), [], "no docker exec client of any batch is left")
   } finally {
     f.cleanup()
   }
@@ -900,6 +914,73 @@ test("docker: Ctrl-C mid-run removes every container, network and docker exec th
   } finally {
     f.cleanup()
   }
+})
+
+// The Claude Agent provider inside a trial, with no model call and no real token: a dummy token, and a "Claude Agent"
+// credential marker made by hand (the marker holds no secret: an external credential of the claude-agent integration).
+const claudeReason = binReason ?? (!findBinary("claude") ? "no claude on PATH" : null)
+
+function claudeAgentHome(root) {
+  const home = join(root, "owner")
+  mkdirSync(join(home, ".claude"), { recursive: true })
+  writeFileSync(join(home, ".claude", ".credentials.json"), JSON.stringify({ claudeAiOauth: { accessToken: "dummy-not-a-token-0000000000", refreshToken: "dummy-refresh", expiresAt: Date.now() + 10 * 3_600_000 } }), { mode: 0o600 })
+  const marker = JSON.stringify([{ id: "cred_evalsdummymarker0000000", integrationID: "claude-agent", label: "Claude Agent", active: true, value: { type: "external", methodID: "claude-login" } }])
+  const env = { PATH: process.env.PATH, HOME: home, XDG_CONFIG_HOME: join(home, ".config"), XDG_DATA_HOME: join(home, ".local", "share"), XDG_CACHE_HOME: join(home, ".cache"), XDG_STATE_HOME: join(home, ".local", "state"), OPENCODE_DISABLE_AUTOUPDATE: "1" }
+  const imported = spawnSync("opencode", ["auth", "import", "--standalone"], { input: marker, env, encoding: "utf8" })
+  assert.equal(imported.status, 0, imported.stderr)
+  return home
+}
+
+test("docker: the Claude Agent provider fills its models only after the server answers, and a trial waits for them", claudeReason ? { skip: claudeReason } : {}, async (t) => {
+  const f = batchFixture([["says-eight", "never sent"]])
+  const home = claudeAgentHome(f.root)
+  const backend = containerBackend(containerConfig({ env: {} }))
+  const batchRoot = join(f.tmp, "direct")
+  mkdirSync(batchRoot)
+  try {
+    await backend.prepare({ batchRoot, caller: process.env, binaries: { opencode: "opencode", claude: "claude" } })
+    const sandbox = makeSandbox(join(batchRoot, "runs", "probe.t1"))
+    mkdirSync(join(sandbox.project, ".git"), { recursive: true })
+    const trial = await backend.enter({ name: "probe.t1", sandbox, cwd: sandbox.project })
+    const { sandboxEnv, sealedConfig, newPassword, writeConfig, start, stop } = await import("../src/run/sandbox.mjs")
+    const { modelRoutes } = await import("../src/run/runner.mjs")
+    const config = sealedConfig({ armDir: null, model: "claude-agent/haiku" })
+    writeConfig(sandbox, config)
+    const password = newPassword()
+    const env = sandboxEnv({ sandbox, config, password, caller: process.env, extra: { CLAUDE_CODE_OAUTH_TOKEN: "dummy-not-a-token-0000000000", CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1", CLAUDE_CODE_SKIP_PROMPT_HISTORY: "1", CLAUDE_AGENT_SDK_VERSION: "0.3.301", CLAUDE_CONFIG_DIR: join(sandbox.home, ".claude") } })
+    mkdirSync(join(sandbox.home, ".claude"), { recursive: true })
+    // --standalone: a private server on the scratch home's own database, never the machine's background service.
+    const exported = spawnSync("opencode", ["auth", "export", "Claude Agent", "--standalone"], { env: { PATH: process.env.PATH, HOME: home, OPENCODE_DISABLE_AUTOUPDATE: "1" }, encoding: "utf8" })
+    assert.match(exported.stdout, /"integrationID":\s*"claude-agent"/)
+    const spec = (args) => trial.wrap({ command: "opencode", args, cwd: sandbox.project, env })
+    const importSpec = spec(["auth", "import", "--standalone"])
+    assert.equal((await runToEnd(importSpec.command, importSpec.args, { cwd: importSpec.cwd, env: importSpec.env, input: exported.stdout, timeoutMs: 60_000 })).code, 0)
+    const serveSpec = spec(["serve", "--hostname", "127.0.0.1", "--port", "4100"])
+    const server = start(serveSpec.command, serveSpec.args, { cwd: serveSpec.cwd, env: serveSpec.env })
+    try {
+      const up = await trial.ready({ url: "http://127.0.0.1:4100/api/agent", password, directory: sandbox.project, timeoutMs: 60_000 })
+      assert.ok(up.ok, up.last)
+      // Right after the server answers, the provider has not listed its models yet: a run sent now gets no route.
+      const early = await modelRoutes({ trial, binary: "opencode", url: "http://127.0.0.1:4100", env, cwd: sandbox.project, model: "claude-agent/haiku", timeoutMs: 0 })
+      const routed = await modelRoutes({ trial, binary: "opencode", url: "http://127.0.0.1:4100", env, cwd: sandbox.project, model: "claude-agent/haiku", timeoutMs: 60_000 })
+      assert.ok(routed.ok, `claude-agent/haiku routes inside the container (listed: ${routed.listed.join(", ")})`)
+      t.diagnostic(`claude-agent/haiku listed at the first poll: ${early.ok}; routed after ${routed.waitedMs} ms; claude-agent models: ${routed.listed.filter((m) => m.startsWith("claude-agent/")).join(", ")}`)
+      const missing = await modelRoutes({ trial, binary: "opencode", url: "http://127.0.0.1:4100", env, cwd: sandbox.project, model: "claude-agent/not-a-model", timeoutMs: 1000 })
+      assert.equal(missing.ok, false)
+    } finally {
+      await stop(server)
+      await trial.leave()
+    }
+  } finally {
+    await backend.teardown()
+  }
+  // The runner's own gate, in a container: a model that does not route is refused before anything is reserved, and no
+  // run is sent (an env: credential, a dummy value, so nothing of a sign-in is read).
+  const caller = { ...f.caller, CLAUDE_CODE_OAUTH_TOKEN: "dummy-not-a-token-0000000000", EVALS_ROUTE_TIMEOUT_S: "5" }
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "pre", model: "claude-agent/not-a-model", auth: "env:CLAUDE_CODE_OAUTH_TOKEN", arm: "none", casesDir: f.casesDir, set: "all" }, { caller, ...quiet }), /preflight: the model claude-agent\/not-a-model does not route inside a trial within 5 s, so no run was reserved/)
+  assert.deepEqual(readLedger(f.store), [], "nothing reserved, nothing run")
+  assert.deepEqual(leftovers(`label=evals.pid=${process.pid}`), { containers: "", networks: "" })
+  f.cleanup()
 })
 
 test("selectIsolation: container is the default for every run, and none is refused for every run unless unsafe", () => {
