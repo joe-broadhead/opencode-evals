@@ -17,7 +17,8 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "document"
+    "document",
+    "data"
   ],
   "sets": [
     "corpus",
@@ -150,7 +151,7 @@
     {
       "id": "C-SF01",
       "severity": "blocker",
-      "ask": "No category was filtered out to make it fit (no transform on the data).",
+      "ask": "No category was filtered out to make it fit: no data.transform in a charts_quick or charts_render call (document or raw spec).",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -158,6 +159,18 @@
           "kind": "absent-arg",
           "tool": "charts.quick",
           "arg": "args.document.chart.data.transform",
+          "op": "present"
+        },
+        {
+          "kind": "absent-arg",
+          "tool": "charts.render",
+          "arg": "args.document.chart.data.transform",
+          "op": "present"
+        },
+        {
+          "kind": "absent-arg",
+          "tool": "charts.render",
+          "arg": "args.data.transform",
           "op": "present"
         }
       ],
@@ -172,10 +185,10 @@
     {
       "id": null,
       "text": "A saved artifact at 360 × 480 means the planner met the inline profile's 11 px label floor: an unsatisfiable layout is refused with LAYOUT_UNSATISFIABLE and saves nothing.",
-      "line": 35
+      "line": 37
     }
   ],
   "hashes": {
-    "source_sha256": "8cccd35d49f7046166878f4109f89a7ae2a2de26a788a4b3e028bcf7b6f9dc97"
+    "source_sha256": "67b7f65a079830cfc064ba816bc7d6dc1dd9c354e9c8f7c9c6bd968a99381b3d"
   }
 }

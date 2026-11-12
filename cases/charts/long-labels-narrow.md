@@ -5,7 +5,7 @@
 - Source: charts task corpus v1: long labels in a narrow panel (eight categories of 50–60 characters)
 - Decision tested: The chart is drawn at the panel's exact outer size with every category kept; fitting is the layout planner's job (wrapping, a horizontal bar), never dropping categories or shrinking the size request.
 - Seed: cwd=data
-- Checkable: document
+- Checkable: document, data
 - Budget: outer_calls <= 16, wall_ms <= 420000
 - Set: corpus, create
 
@@ -28,8 +28,10 @@ I need a chart of ticket volume per category from data/support_tickets.csv for a
   evidence: state:charts.binding.value == tickets
 
 ## Forbidden
-- [C-SF01] blocker · No category was filtered out to make it fit (no transform on the data).
+- [C-SF01] blocker · No category was filtered out to make it fit: no data.transform in a charts_quick or charts_render call (document or raw spec).
   evidence: absent-arg:charts.quick args.document.chart.data.transform present
+  evidence: absent-arg:charts.render args.document.chart.data.transform present
+  evidence: absent-arg:charts.render args.data.transform present
 
 ## Notes
 - A saved artifact at 360 × 480 means the planner met the inline profile's 11 px label floor: an unsatisfiable layout is refused with LAYOUT_UNSATISFIABLE and saves nothing.

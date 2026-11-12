@@ -27,7 +27,7 @@ function run({ calls = [], text = "", files = [] } = {}) {
     events.push({ seq: seq++, kind: "tool_result", tool: c.tool, for_seq: seq - 2, status: "ok" })
   }
   const rawArgs = calls.map((c) => c.args ?? {})
-  return runView([JSON.stringify(head), ...events.map((e) => JSON.stringify(e))], { text, files, state: adapterState("charts", files), scope: SCOPE, rawArgs, checkable: ["document", "patch", "expectedRevision", "formats", "theme", "name"] })
+  return runView([JSON.stringify(head), ...events.map((e) => JSON.stringify(e))], { text, files, state: adapterState("charts", files), scope: SCOPE, rawArgs, checkable: ["document", "data", "patch", "expectedRevision", "formats", "theme", "name"] })
 }
 
 const SALES = (() => {
@@ -128,4 +128,16 @@ test("empty-data: reporting the empty file passes; drawing anything fails", () =
   const c = byId("empty-data")
   assert.equal(gradeCase(c, run({ text: "data/signups.csv has only a header and no rows, so there is nothing to chart." })).verdict, "PASS")
   assert.equal(gradeCase(c, run({ text: "The data is empty, so here is a sample.", files: [{ path: "outputs/charts/s.svg", change: "added" }] })).verdict, "FAIL")
+})
+
+test("long-labels-narrow: a filtering transform fails C-SF01 through charts_quick and through charts_render", () => {
+  const c = byId("long-labels-narrow")
+  const files = [saved("outputs/charts/t-1/t.chart.json", artifact({ rows: SALES.slice(0, 8), bindings: { category: "region", value: "revenue_eur" }, layout: { width: 360, height: 480 }, width: 360, height: 480 }))]
+  const transform = [{ filter: "datum.revenue_eur > 50" }]
+  for (const call of [
+    { tool: "quick", args: { document: { chart: { data: { path: "data/support_tickets.csv", transform } } } } },
+    { tool: "render", args: { document: { chart: { data: { path: "data/support_tickets.csv", transform } } } } },
+    { tool: "render", args: { spec: {}, data: { path: "data/support_tickets.csv", transform } } },
+  ]) assert.ok(gradeCase(c, run({ calls: [call], files })).failed.includes("C-SF01"), call.tool)
+  assert.ok(!gradeCase(c, run({ calls: [{ tool: "quick", args: { document: { chart: { data: { path: "data/support_tickets.csv" } } } } }], files })).failed.includes("C-SF01"))
 })
