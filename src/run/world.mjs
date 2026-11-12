@@ -23,13 +23,14 @@
 // A world with a build command must have been built by the build under test: the runner stamps each build with that
 // build's digest (.evals-world.json) and a world built by another build, or by hand, is stale.
 
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from "node:fs"
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, writeFileSync, statSync } from "node:fs"
+import { dirname } from "node:path"
 import { isAbsolute, join, resolve } from "node:path"
 import { pathToFileURL } from "node:url"
 import { runToEnd } from "./sandbox.mjs"
 import { sha256 } from "../util/canonical.mjs"
 import { treeDigest } from "./arm.mjs"
-import { segment, within } from "./paths.mjs"
+import { segment, within, inside } from "./paths.mjs"
 
 /** A digest of a file or a directory tree: what records which private overlay a world was built with. */
 const digestOfPath = (path) => (statSync(path).isDirectory() ? treeDigest(path) : sha256(readFileSync(path)))
@@ -43,6 +44,24 @@ export const parseSeed = (seed) =>
   )
 
 const STAMP = ".evals-world.json"
+
+/** The first symlink under `dir` that points outside `root`, as a path relative to `dir`, or null. */
+function linkOutOf(dir, root) {
+  const walk = (at) => {
+    for (const entry of readdirSync(at, { withFileTypes: true })) {
+      const path = join(at, entry.name)
+      if (entry.isSymbolicLink()) {
+        const target = resolve(dirname(path), readlinkSync(path))
+        if (!inside(root, target)) return path.slice(dir.length + 1)
+      } else if (entry.isDirectory()) {
+        const found = walk(path)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  return walk(dir)
+}
 
 /** Is a world clock still valid now? */
 export function freshness(rule, now, at = Date.now()) {
@@ -129,6 +148,10 @@ export function dirWorld(dir) {
         segment("Seed cwd", key)
         const name = segment(`the world's repository for cwd=${key}`, s.cwd?.[key] ?? key)
         source = within(at(s.repos), join(at(s.repos), name), "the seeded repository")
+        // A repository that is a link, or holds a link out of the world, would carry the run outside: refused.
+        if (lstatSync(source).isSymbolicLink()) throw new Error(`the world's repository ${name} is a symbolic link: refusing it`)
+        const escape = linkOutOf(source, dir)
+        if (escape) throw new Error(`the world's repository ${name} holds a link out of the world (${escape}): refusing it`)
         if (!existsSync(source)) throw new Error(`the world has no repository ${name} (seed cwd=${key})`)
         // The agent works in its own copy, with the same .git (so the same project id): one run cannot touch another's.
         cwd = within(sandbox.root, join(sandbox.root, "work", name), "the working directory")

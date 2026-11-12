@@ -59,3 +59,19 @@ test("an iteration or a plugin that is a path is refused by the runner and by ev
   assert.equal(existsSync(join(root, "out")), false)
   rmSync(root, { recursive: true, force: true })
 })
+
+test("containment compares real paths: a link inside a root that points out of it is outside", async () => {
+  const { symlinkSync } = await import("node:fs")
+  const root = temp()
+  const outside = temp()
+  mkdirSync(join(root, "in"))
+  symlinkSync(outside, join(root, "out"))
+  assert.equal(inside(root, join(root, "in", "file")), true)
+  assert.equal(inside(root, join(root, "out", "file")), false, "through a link that leaves the root")
+  assert.throws(() => within(root, join(root, "out", "new", "file"), "a recording"), /outside/)
+  // A root reached through a link is compared by where it really is.
+  symlinkSync(root, join(outside, "alias"))
+  assert.equal(inside(join(outside, "alias"), join(root, "in")), true)
+  rmSync(root, { recursive: true, force: true })
+  rmSync(outside, { recursive: true, force: true })
+})

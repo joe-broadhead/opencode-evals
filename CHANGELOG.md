@@ -112,6 +112,11 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- Containment: paths are compared by their real paths (a link inside a root that leaves it is outside); links out of
+  the sandbox are removed anywhere in it, not only near the top of its home; a world repository that is a link, or
+  holds one out of the world, is refused; and breaking a stale ledger lock takes a second lock and removes only the
+  very file judged stale, so a third waiter can no longer slip in while a lock is briefly absent.
+
 - A path under a redacted string counted as "not passed", so `args.query.length != 1` held on a value nobody could
   see. A negative clause on such a path is now unverifiable; a positive one still fails.
 

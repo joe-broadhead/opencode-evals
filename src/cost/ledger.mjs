@@ -9,7 +9,7 @@
 // A reservation counts until it is released, so a batch that crashed keeps its runs counted: the safe direction.
 // Check-and-reserve happens under an exclusive lock file, so two runners cannot both take the last runs.
 
-import { appendFileSync, existsSync, linkSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { appendFileSync, existsSync, linkSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { randomBytes } from "node:crypto"
 
@@ -113,9 +113,10 @@ const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 
  * The ledger's lock. A holder's lock file carries a token only it knows, and every step that touches the file is atomic:
  *
  *   acquire  write a private file with the token, then link(2) it to `lock`: the link fails if a lock exists;
- *   break    a lock older than `staleMs` belonged to a process that died: rename(2) it to a private name, then read
- *            what was moved. If it is not the stale token that was seen (someone broke it and took the lock in
- *            between), link it straight back, so a waiter can never remove a live holder's lock;
+ *   break    a lock older than `staleMs` belonged to a process that died. Breaking it takes a second lock,
+ *            `lock.break`, so one waiter at a time breaks; under it the waiter checks that `lock` is still the very
+ *            file it judged stale (the same inode and token) and only then removes it. A waiter that lost the race
+ *            finds a different file, or none, and removes nothing, so no waiter can remove a live holder's lock;
  *   release  remove `lock` only if it still holds this holder's token.
  */
 const tokenOf = (file) => {
@@ -140,26 +141,34 @@ export function acquireLock(lock, token) {
   }
 }
 
-/** Breaks `lock` only if it still holds `seen`, the stale token; returns whether it did. */
-export function breakStaleLock(lock, seen, token) {
-  const moved = `${lock}.broken.${token}`
-  try {
-    renameSync(lock, moved)
-  } catch {
+/**
+ * Breaks `lock` only if it is still the file judged stale (`seen`: its inode and token), one breaker at a time.
+ * Returns whether it removed it.
+ */
+export function breakStaleLock(lock, seen, token, { staleMs = 60_000 } = {}) {
+  const breaker = `${lock}.break`
+  if (!acquireLock(breaker, token)) {
+    // Another waiter is breaking it. A breaker that died inside this short step is cleared once it is stale itself.
+    try {
+      if (Date.now() - statSync(breaker).mtimeMs > staleMs) rmSync(breaker, { force: true })
+    } catch {
+      // gone already
+    }
     return false
   }
-  if (tokenOf(moved) === seen) {
-    rmSync(moved, { force: true })
-    return true
-  }
-  // Not the lock that was judged stale: a live holder's. Put it back where it was.
   try {
-    linkSync(moved, lock)
-  } catch {
-    // a third runner took the lock meanwhile; the one moved aside was already superseded
+    let now
+    try {
+      now = statSync(lock)
+    } catch {
+      return false
+    }
+    if (now.ino !== seen.ino || tokenOf(lock) !== seen.token) return false
+    rmSync(lock, { force: true })
+    return true
+  } finally {
+    releaseLock(breaker, token)
   }
-  rmSync(moved, { force: true })
-  return false
 }
 
 export function releaseLock(lock, token) {
@@ -174,8 +183,9 @@ export function withLock(store, fn, { timeoutMs = 10_000, staleMs = 60_000 } = {
   const deadline = Date.now() + timeoutMs
   while (!acquireLock(lock, token)) {
     try {
+      const stat = statSync(lock)
       const seen = tokenOf(lock)
-      if (seen !== null && Date.now() - statSync(lock).mtimeMs > staleMs) breakStaleLock(lock, seen, token)
+      if (seen !== null && Date.now() - stat.mtimeMs > staleMs) breakStaleLock(lock, { ino: stat.ino, token: seen }, token, { staleMs })
     } catch {
       // released meanwhile
     }

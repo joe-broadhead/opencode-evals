@@ -166,7 +166,10 @@ starts in an empty project directory.
 
 `home` is copied over each sandbox home (a seeded OpenCode database, a prebuilt index). `repos` holds working
 directories, and a case's `Seed: cwd=<key>` picks one through `cwd`; each run works in its own copy. A key, and the
-repository it names, is a single name inside `repos` (no `/`, no `..`): anything else is refused. `now` is the
+repository it names, is a single name inside `repos` (no `/`, no `..`): anything else is refused, and so is a
+repository that is itself a symbolic link or holds one that points out of the world. After the copy, any link left in
+the sandbox that points outside it is removed, however deep. Every containment check compares real paths, links
+resolved. `now` is the
 world's clock, a number of milliseconds or `file#key`. `fresh` says how long a build stays valid: `utc-day` (the
 world's day must be today, UTC: History's synthetic history is relative to its build time, so its time-window
 questions mean something else tomorrow), `<n>h`, or `always`.

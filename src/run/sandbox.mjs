@@ -169,10 +169,10 @@ export async function stop(proc, { graceMs = 2000 } = {}) {
 }
 
 /**
- * Removes every symlink near the top of the sandbox home that points outside the sandbox: a world's home copied from a
- * lab sandbox carries links to the caller's ~/.claude or ~/.local/bin, and a run must not reach through them.
+ * Removes every symlink anywhere in the sandbox that points outside it: a world's home copied from a lab sandbox carries
+ * links to the caller's ~/.claude or ~/.local/bin, and a run must not reach through them. Links are not followed.
  */
-export function stripForeignLinks(sandbox, { depth = 3 } = {}) {
+export function stripForeignLinks(sandbox, { depth = Infinity } = {}) {
   const removed = []
   const root = resolve(sandbox.root)
   const walk = (dir, left) => {
@@ -193,7 +193,7 @@ export function stripForeignLinks(sandbox, { depth = 3 } = {}) {
       } else if (entry.isDirectory() && left > 0) walk(path, left - 1)
     }
   }
-  walk(sandbox.home, depth)
+  walk(root, depth)
   return removed
 }
 

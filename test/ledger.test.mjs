@@ -117,18 +117,27 @@ test("the dollar check runs inside the ledger lock: a batch it refuses reserves 
   rmSync(store, { recursive: true, force: true })
 })
 
-test("the lock is taken atomically, and breaking a stale one can never remove a live holder's", async () => {
+test("the lock is taken atomically, and breaking a stale one can never remove a live holder's, three waiters or not", async () => {
   const { acquireLock, breakStaleLock, releaseLock } = await import("../src/cost/ledger.mjs")
+  const { statSync } = await import("node:fs")
   const dir = temp()
   const lock = join(dir, "lock")
   assert.equal(acquireLock(lock, "A"), true)
   assert.equal(acquireLock(lock, "B"), false, "one holder at a time")
-  // B and C both saw A's lock as stale. B breaks it and takes the lock; C's break then finds B's token, not A's,
-  // and puts B's lock back.
-  assert.equal(breakStaleLock(lock, "A", "B"), true)
+  // A died. B and C both saw A's lock, stale: the same inode, the token "A".
+  const seen = { ino: statSync(lock).ino, token: "A" }
+  // B breaks it and takes the lock; C, breaking with what it saw, finds B's lock (another inode) and removes nothing.
+  assert.equal(breakStaleLock(lock, seen, "B"), true)
   assert.equal(acquireLock(lock, "B"), true)
-  assert.equal(breakStaleLock(lock, "A", "C"), false)
+  assert.equal(breakStaleLock(lock, seen, "C"), false)
   assert.equal(readFileSync(lock, "utf8"), "B", "B still holds the lock")
+  // D, a third waiter, cannot take it either: there was never a moment without B's lock.
+  assert.equal(acquireLock(lock, "D"), false)
+  // While one waiter is breaking (it holds lock.break), another does not break at all.
+  assert.equal(acquireLock(`${lock}.break`, "E"), true)
+  assert.equal(breakStaleLock(lock, { ino: statSync(lock).ino, token: "B" }, "F"), false)
+  assert.equal(readFileSync(lock, "utf8"), "B")
+  releaseLock(`${lock}.break`, "E")
   releaseLock(lock, "C")
   assert.equal(readFileSync(lock, "utf8"), "B", "a release by someone else removes nothing")
   releaseLock(lock, "B")
