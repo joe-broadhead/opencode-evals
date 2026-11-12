@@ -107,6 +107,8 @@ export function dirWorld(dir) {
     if (typeof value === "number") return value
     if (typeof value === "string" && value.includes("#")) {
       const [path, key] = value.split("#")
+      // A world whose build writes its clock and has not been built yet has no clock: stale, so a batch builds it.
+      if (!existsSync(at(path))) return null
       const data = JSON.parse(readFileSync(at(path), "utf8"))
       const found = key.split(".").reduce((node, part) => node?.[part], data)
       return typeof found === "number" ? found : Date.parse(found)
