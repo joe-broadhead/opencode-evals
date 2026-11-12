@@ -1,0 +1,13 @@
+campaign,channel,spend_k,conversions
+C01,Search,12.0,340
+C02,Search,18.5,470
+C03,Search,25.0,610
+C04,Social,8.0,150
+C05,Social,14.0,220
+C06,Social,21.0,310
+C07,Email,3.0,120
+C08,Email,5.5,180
+C09,Email,7.0,205
+C10,Display,10.0,90
+C11,Display,16.0,130
+C12,Display,22.0,160

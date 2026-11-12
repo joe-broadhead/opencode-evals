@@ -1,0 +1,115 @@
+{
+  "schema": "oc-case/1",
+  "id": "scripted-probe-document",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T1",
+  "source": "harness probe: the scripted model makes one fixed charts_quick document call (through Code Mode's execute, as a model would), so the world, the run, the trace and the Charts grading adapter are exercised end to end with no model",
+  "decision": "The pipeline grades a real saved chart: the adapter recomputes the totals from the artifact the run wrote.",
+  "data_check": null,
+  "prompt": "[[mock:tool:execute:{\"code\":\"return await tools.charts.quick({document: {version: 1, chart: {kind: 'recipe', recipe: 'bar', data: {path: 'data/sales.csv'}, bindings: {category: 'region', value: 'revenue_eur'}, options: {aggregate: 'sum'}}, title: 'Revenue by region'}, name: 'probe'})\"}]]",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 4,
+    "wall_ms": 180000
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "document"
+  ],
+  "sets": [
+    "scripted"
+  ],
+  "items": [
+    {
+      "id": "C-PR01",
+      "severity": "blocker",
+      "ask": "The scripted call reached charts_quick with a document.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.quick",
+          "n": 1,
+          "arg": "args.document",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "One chart was saved, and its rows sum to the hand-computed totals.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 1
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.North",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 510
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.West",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 192
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "C-OC02",
+      "severity": "major",
+      "ask": "Its files are in one generation folder: SVG and PNG with the document.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "outputs/charts/probe-*/probe.chart.json",
+          "op": "exists"
+        },
+        {
+          "kind": "file",
+          "glob": "outputs/charts/probe-*/probe.svg",
+          "op": "exists"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "2aab19fcd429aa1c19e5e02a65fa04ff4125c591369cdd483632ccdbe511bb5a"
+  }
+}

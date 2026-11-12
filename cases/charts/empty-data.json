@@ -1,0 +1,102 @@
+{
+  "schema": "oc-case/1",
+  "id": "empty-data",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: empty data (data/signups.csv has a header and no rows)",
+  "decision": "An empty file is reported as empty; no sample values are invented and no chart is saved.",
+  "data_check": null,
+  "prompt": "Make a line chart of weekly signups from data/signups.csv.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "corpus",
+    "create"
+  ],
+  "items": [
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "The answer says the data is empty (no rows).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "empty|no rows|no data|only (a|the) header|has no (signups|entries|records)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "C-SF01",
+      "severity": "blocker",
+      "ask": "No chart was saved and no picture was drawn.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.svg",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "C-SF02",
+      "severity": "blocker",
+      "ask": "The data file was not edited to add rows.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "data/signups.csv",
+          "op": "absent"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "60d0a126b221f9885fb12f6b66d5d331eb2602efdbf190d3524f20028fa1df06"
+  }
+}

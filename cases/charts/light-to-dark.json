@@ -1,0 +1,216 @@
+{
+  "schema": "oc-case/1",
+  "id": "light-to-dark",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: light → dark on a saved chart",
+  "decision": "A theme change is a charts_update of the saved chart document: a new generation in the dark theme with the same captured rows, bindings and aggregate.",
+  "data_check": null,
+  "prompt": "The revenue-by-region chart under outputs/charts/ is for a dark dashboard. Switch it to the dark theme.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "wall_ms": 420000
+  },
+  "seed": "cwd=saved-bar",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "patch",
+    "expectedRevision"
+  ],
+  "sets": [
+    "corpus",
+    "revise"
+  ],
+  "items": [
+    {
+      "id": "C-PR01",
+      "severity": "blocker",
+      "ask": "It changed the saved chart with charts_update.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.update",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "The new generation is drawn in the dark theme.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.has.mode.dark",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.theme",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "dark"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "C-OC02",
+      "severity": "blocker",
+      "ask": "Its analysis is unchanged: summed revenue per region, North 510 and West 192.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.aggregate",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "sum"
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.North",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 510
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.West",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 192
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "C-PR02",
+      "severity": "major",
+      "ask": "The update named the revision it read (sha256:…).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.update",
+          "n": 1,
+          "arg": "args.expectedRevision",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^sha256:[0-9a-f]{64}$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "C-SF01",
+      "severity": "major",
+      "ask": "It did not redraw the chart from scratch with a new document.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "charts.quick",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "charts.render",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "C-SF02",
+      "severity": "blocker",
+      "ask": "The saved chart's JSON was not edited by hand: no edit or write tool touched a .chart.json.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-arg",
+          "tool": "edit",
+          "arg": "args.filePath",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\.chart\\.json$",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "absent-arg",
+          "tool": "write",
+          "arg": "args.filePath",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\.chart\\.json$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "d44da36b97de4cd455501e9f16813fc57fd33af472179a56b350d6cf2a234d95"
+  }
+}

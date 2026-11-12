@@ -1,0 +1,163 @@
+{
+  "schema": "oc-case/1",
+  "id": "count-vs-measure",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: count versus measure (one row per order, with an amount)",
+  "decision": "\"How many\" is a count of rows, with no measure bound; the order amount is not summed.",
+  "data_check": null,
+  "prompt": "How many orders came through each channel? Chart it from data/orders.csv.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 16,
+    "wall_ms": 420000
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "document"
+  ],
+  "sets": [
+    "corpus",
+    "create"
+  ],
+  "items": [
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "The saved chart counts orders: Web 5, Store 4, Phone 3.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.Web",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 5
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.Store",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 4
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.Phone",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 3
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC02",
+      "severity": "major",
+      "ask": "The aggregate is count, and channel is the category.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.aggregate",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "count"
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.binding.category",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "channel"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "C-EF01",
+      "severity": "minor",
+      "ask": "Drawn on the first attempt: one charts_quick call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.quick",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "C-SF01",
+      "severity": "blocker",
+      "ask": "The order amount was not summed in place of the count.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.has.aggregate.sum",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": false
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "fc417c8aa5a3425b43313804b81da5076efa289ea0d6b527685f10d4781a9f9e"
+  }
+}

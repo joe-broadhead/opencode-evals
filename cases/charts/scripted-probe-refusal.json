@@ -1,0 +1,82 @@
+{
+  "schema": "oc-case/1",
+  "id": "scripted-probe-refusal",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T1",
+  "source": "harness probe: the scripted model asks for x zoom on a pie (through Code Mode's execute), which the plugin refuses (INTERACTION_UNSUPPORTED) before writing anything",
+  "decision": "A refused document call saves nothing, and the adapter reports no chart rather than a wrong one.",
+  "data_check": null,
+  "prompt": "[[mock:tool:execute:{\"code\":\"return await tools.charts.quick({document: {version: 1, chart: {kind: 'recipe', recipe: 'pie', data: {path: 'data/channels.csv'}, bindings: {category: 'channel', value: 'visits'}}, interactions: {zoom: 'x'}}, name: 'pie-zoom'})\"}]]",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 4,
+    "wall_ms": 180000
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "document"
+  ],
+  "sets": [
+    "scripted"
+  ],
+  "items": [
+    {
+      "id": "C-PR01",
+      "severity": "blocker",
+      "ask": "The scripted call reached charts_quick.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.quick",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was saved or drawn.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.svg",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "138acf03e621faec85525c9b3812da51bbd4b7b4866e2a338f89452d0b278062"
+  }
+}

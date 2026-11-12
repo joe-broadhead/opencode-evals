@@ -1,0 +1,123 @@
+{
+  "schema": "oc-case/1",
+  "id": "malformed-field-names",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "charts task corpus v1: malformed field names (the request misspells both columns)",
+  "decision": "The agent binds the real columns (region, revenue_eur), repairing from the data or the tool's did-you-mean, rather than giving up or inventing columns.",
+  "data_check": null,
+  "prompt": "plot total revnue per regoin from data/sales.csv",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 16,
+    "wall_ms": 420000
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "document"
+  ],
+  "sets": [
+    "corpus",
+    "create"
+  ],
+  "items": [
+    {
+      "id": "C-OC01",
+      "severity": "blocker",
+      "ask": "A saved chart binds the real columns: region and revenue_eur.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.binding.category",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "region"
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.binding.value",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "revenue_eur"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "C-OC02",
+      "severity": "major",
+      "ask": "The values are the per-region totals (North 510).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "charts.count",
+          "op": "!=",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "charts.values.North",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 510
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "C-EF01",
+      "severity": "minor",
+      "ask": "At most one repair: no more than two chart calls.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.quick",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "86110c53661dd5ea48c49153ad6c2128d09190201737aab13580ae7d005c3351"
+  }
+}

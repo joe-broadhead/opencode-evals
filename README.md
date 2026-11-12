@@ -117,5 +117,6 @@ The private store is yours to delete: it is outside the repository.
 
 - [Configuration](docs/configuration.md) · [Running](docs/running.md) · [CI](docs/ci.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
 - [Design: how the tiers, cases, traces and policy fit together](docs/design.md)
+- Corpora: [History](docs/history.md) · [Charts](docs/charts.md)
 
 MIT. Copyright (c) 2026 Joe Broadhead.

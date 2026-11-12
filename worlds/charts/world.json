@@ -1,0 +1,7 @@
+{
+  "repos": "repos",
+  "default_cwd": "data",
+  "fresh": "always",
+  "build": "node build.mjs",
+  "truth": "truth.json"
+}
