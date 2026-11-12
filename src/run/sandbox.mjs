@@ -21,12 +21,13 @@ export const SCRIPTED_PROVIDER = resolve(import.meta.dirname, "..", "t1", "mock"
 export const SCRIPTED_MODEL = "mock/m1"
 
 /**
- * The run's config, as the host reads it: the harness's scripted model when asked for, the plugin under test (or
- * none), and the model. Nothing else.
+ * The run's config, as the host reads it: the plugin under test (or none), the harness's scripted model when asked for,
+ * and the model. Nothing else. The scripted provider comes last: the host applies plugins in order, so a plugin under
+ * test that registers a provider called `mock` of its own is overridden by the harness's, never the reverse.
  */
 export function sealedConfig({ armDir, options, model, scripted = false, scriptedProvider = SCRIPTED_PROVIDER }) {
   return {
-    plugins: [...(scripted ? [{ package: scriptedProvider }] : []), ...(armDir ? [{ package: armDir, ...(options ? { options } : {}) }] : [])],
+    plugins: [...(armDir ? [{ package: armDir, ...(options ? { options } : {}) }] : []), ...(scripted ? [{ package: scriptedProvider }] : [])],
     model,
   }
 }
@@ -34,11 +35,32 @@ export function sealedConfig({ armDir, options, model, scripted = false, scripte
 const PASS_THROUGH = ["LANG", "TZ", "TERM", "HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy", "SSL_CERT_FILE", "NODE_EXTRA_CA_CERTS"]
 
 /**
- * The environment of every process in a run. Built from nothing: PATH (the host and a provider's own CLI must be
- * found), locale and the network settings a machine may need, then the sandbox's own directories and switches.
+ * The variables only the harness sets: where the run lives (HOME, XDG_*, TMPDIR, PATH), its sealed config and switches
+ * (OPENCODE_*), the provider's credential and settings (CLAUDE_*, ANTHROPIC_*), the scripted model's endpoint, the
+ * network, and what would load code into the host (NODE_OPTIONS, LD_PRELOAD, BUN_*). A world's `env` may set anything
+ * else; these it may not, and the harness's own values are applied after it, so they win.
  */
-export function sandboxEnv({ sandbox, config, password, caller = process.env, extra = {} }) {
-  const env = {}
+export const SEALED_ENV = /^(HOME|PATH|TMPDIR|TMP|TEMP|USER|LOGNAME|SHELL|SPIKE_MOCK_URL|NO_PROXY|no_proxy|HTTPS?_PROXY|https?_proxy|ALL_PROXY|all_proxy|SSL_CERT_FILE|NODE_EXTRA_CA_CERTS|NODE_OPTIONS|NODE_PATH|LD_PRELOAD|LD_LIBRARY_PATH|DYLD_.*|BUN_.*|OPENCODE_.*|XDG_.*|CLAUDE_.*|ANTHROPIC_.*|DOCKER_.*)$/
+
+/** A world's environment, without the harness's own variables: { env, dropped } (the names it tried to set). */
+export function worldEnv(env = {}) {
+  const kept = {}
+  const dropped = []
+  for (const [key, value] of Object.entries(env ?? {})) {
+    if (SEALED_ENV.test(key)) dropped.push(key)
+    else if (value !== undefined && value !== null) kept[key] = String(value)
+  }
+  return { env: kept, dropped: dropped.sort() }
+}
+
+/**
+ * The environment of every process in a run. Built from nothing: a world's own variables first (never the sealed
+ * ones), then PATH (the host and a provider's own CLI must be found), locale and the network settings a machine may
+ * need, the sandbox's own directories and switches, and last the harness's `extra` (the credential, the scripted
+ * model's endpoint), so nothing a world sets can replace the sealed config after the checks that read it.
+ */
+export function sandboxEnv({ sandbox, config, password, caller = process.env, world = {}, extra = {} }) {
+  const env = { ...worldEnv(world).env }
   env.PATH = caller.PATH ?? "/usr/bin:/bin"
   for (const key of PASS_THROUGH) if (caller[key]) env[key] = caller[key]
   // The client reaches its own server on loopback, never through a proxy.

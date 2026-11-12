@@ -20,7 +20,7 @@ import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf, 
 import { assertBatchWithinBudget, projectedRunUsd, monthToDate, budgetCaps } from "../cost/budget.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
-import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, removeInside, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
+import { makeSandbox, sealedConfig, sandboxEnv, worldEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, removeInside, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
 import { parseAuth, prepareAuth } from "./auth.mjs"
 import { loadWorld, parseSeed } from "./world.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
@@ -132,6 +132,7 @@ async function startServer({ binary, cwd, env, password, trial, timeoutMs = 60_0
 
 /** The scripted model inside a confined trial: T1's mock server on the trial's own loopback. */
 const MOCK_PORT = 4200
+const TRIAL_MOCK_URL = `http://127.0.0.1:${MOCK_PORT}/v1`
 async function startTrialMock({ trial, ctx, sandbox }) {
   const spec = trial.wrap({ command: ctx.bunBinary, args: [join(ctx.harnessDir, "mock", "server.ts"), String(MOCK_PORT), join(sandbox.tmp, "mock.jsonl")], cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp } })
   const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
@@ -142,7 +143,7 @@ async function startTrialMock({ trial, ctx, sandbox }) {
     await stop(proc, { graceMs: 200 })
     throw new Error(`the scripted model did not start in the trial: ${up.last}`)
   }
-  return { proc, url: `http://127.0.0.1:${MOCK_PORT}/v1` }
+  return { proc, url: TRIAL_MOCK_URL }
 }
 
 /** T1's scripted model server, started for a batch: the harness's own mock, never a model. */
@@ -208,7 +209,10 @@ async function runJob(job, ctx) {
     let mock = null
     if (ctx.scripted && ctx.mockInTrial) mock = await startTrialMock({ trial, ctx, sandbox })
     const mockUrl = mock?.url ?? ctx.mockUrl
-    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, extra: { ...ctx.auth.env, ...(prepared.env ?? {}), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
+    // A world's own variables go in first and never the sealed ones; the harness's (credential, endpoint) go in last.
+    const fromWorld = worldEnv(prepared.env)
+    if (fromWorld.dropped.length) ctx.log(`  ${name}: the world's env may not set ${fromWorld.dropped.join(", ")}: ignored`)
+    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...ctx.auth.env, ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
     // Every host command of the run goes through the trial.
     const exec = (args, options = {}) => {
       const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env })
@@ -260,6 +264,7 @@ async function runJob(job, ctx) {
       isolation: ctx.isolation.name,
       ...(detail ? { isolation_detail: { ...detail, ...(oomKills ? { oom_kills: oomKills } : {}) } } : {}),
       ...(killed ? { killed: killed.reason } : {}),
+      ...(fromWorld.dropped.length ? { world_env_ignored: fromWorld.dropped } : {}),
       ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
       world: ctx.worldInfo,
       batch: ctx.batch,
@@ -337,15 +342,15 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const scripted = Boolean(options.scripted)
   if (scripted && options.model !== SCRIPTED_MODEL) throw new Error(`--scripted runs the harness's scripted model, ${SCRIPTED_MODEL}: --model ${options.model} is not it`)
   const live = isLive({ auth: profile.kind, model: options.model, config: sealedConfig({ armDir: null, model: options.model, scripted }) })
-  // A live run is confined in a container unless the caller names another backend; the scripted model alone runs bare.
-  const isolationName = options.isolation ?? (caller.EVALS_ISOLATION || null) ?? defaultIsolation({ live })
+  // Every run is confined in a container unless the caller names another backend: the scripted model can call tools too.
+  const isolationName = options.isolation ?? (caller.EVALS_ISOLATION || null) ?? defaultIsolation()
   const isolationSpec = { name: isolationName, live, unsafe: Boolean(options.unsafeNoIsolation), config: isolationName === "container" ? containerConfig({ store, env: caller }) : null }
   if (options.dryRun) {
     log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}`)
     let refused = false
     try {
       const isolation = selectIsolation(isolationSpec)
-      log(`isolation: ${isolation.name}${isolation.unsafe ? " (UNSAFE: the filesystem is not confined)" : ""}${live ? "" : " (not live: the scripted model, no credential)"}`)
+      log(`isolation: ${isolation.name}${isolation.unsafe ? " (UNSAFE: the filesystem is not confined)" : ""}${live ? "" : " (not live: the scripted model, no credential; still confined, since it can call tools)"}`)
       if (isolation.config) log(`  egress allowed to ${isolation.config.allow.join(", ")} on 443; limits ${JSON.stringify(isolation.config.limits)}`)
       if (isolation.maxParallel && parallel > isolation.maxParallel) log(`dry run: the batch would be refused: --parallel ${parallel} is more than the container backend's ${isolation.maxParallel}`)
     } catch (error) {
@@ -365,7 +370,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     return { planned: jobs.length, launched: 0, dryRun: true }
   }
 
-  // No live run without a backend that confines the filesystem, unless the caller says so in so many words.
+  // No run without a backend that confines the filesystem, unless the caller says so in so many words.
   const isolation = selectIsolation(isolationSpec)
   if (isolation.unsafe) log("WARNING: --unsafe-no-isolation: the agent under test can read and write anything this user can, by absolute path")
   // Each trial has its own network, from Docker's limited address pools.
@@ -449,13 +454,15 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     if (isolation.confines) facts.isolation_detail = isolation.describe()
     // The harness's scripted model, when asked for: T1's mock server, for the whole batch on loopback, or, in a confined
     // trial, on the trial's own loopback from a read-only copy of the harness's mock files.
+    // Either way the provider is the batch's own copy, with its endpoint pinned in a file beside it (read-only inside a
+    // container), not in the process environment, which the plugin under test shares and could rewrite before the
+    // provider reads it.
     let harnessDir = null
-    if (scripted && isolation.confines) {
+    if (scripted) {
+      if (!isolation.confines) mock = await startMock({ batchRoot, caller })
       harnessDir = join(batchRoot, "harness")
       cpSync(resolve(import.meta.dirname, "..", "t1", "mock"), join(harnessDir, "mock"), { recursive: true })
-      facts.scripted = true
-    } else if (scripted) {
-      mock = await startMock({ batchRoot, caller })
+      writeFileSync(join(harnessDir, "mock", "provider", "endpoint.json"), `${JSON.stringify({ url: mock?.url ?? TRIAL_MOCK_URL })}\n`, { mode: 0o444 })
       facts.scripted = true
     }
     // The probe is a trial of its own: under `container`, it proves a container starts before anything is reserved.
@@ -522,7 +529,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       isolation,
       mockUrl: mock?.url ?? null,
       scripted,
-      mockInTrial: Boolean(harnessDir),
+      mockInTrial: Boolean(harnessDir) && isolation.confines,
       harnessDir,
       bunBinary: caller.EVALS_BUN ?? "bun",
       scriptedProvider: harnessDir ? join(harnessDir, "mock", "provider") : undefined,

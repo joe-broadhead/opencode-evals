@@ -15,7 +15,8 @@
 //   ready      polls a server of the trial until it answers 200, from wherever the trial's loopback is reachable;
 //   leave      ends everything the trial started; idempotent, never throws. teardown() leaves every trial.
 //
-//   none       env isolation only; refused for a live run unless --unsafe-no-isolation says so in so many words
+//   none       env isolation only; refused for every run unless --unsafe-no-isolation says so in so many words: any run
+//              can execute tools, the harness's scripted model included (`[[mock:tool:shell:…]]` runs a real shell)
 //   container  one Docker container per trial, on a network whose only way out is an allow-listing proxy (container.mjs)
 
 import { freePort } from "../t1/http.mjs"
@@ -73,30 +74,31 @@ export const BACKENDS = {
  * Is this a live run, one where a real model can drive real tools? Only one thing is not: no credential at all
  * (`--auth none`) and the harness's own scripted model, registered by the harness in the sealed config. A model that
  * is merely called `mock` can come from the plugin under test and be backed by anything; a credential means a real
- * model can be reached. Everything else is live.
+ * model can be reached. Everything else is live. "Not live" is not "confined": the scripted model can call any tool,
+ * so it decides only what the batch record says, never whether a run may go unconfined.
  */
 export function isLive({ auth, model, config }) {
   const scripted = model === SCRIPTED_MODEL && (config?.plugins ?? []).some((plugin) => plugin.package === SCRIPTED_PROVIDER)
   return !(auth === "none" && scripted)
 }
 
-/** The backend when none is named: `container` for a live run, `none` for the harness's scripted model alone. */
-export const defaultIsolation = ({ live }) => (live ? "container" : "none")
+/** The backend when none is named: `container`, for every run, the scripted model's included. */
+export const defaultIsolation = () => "container"
 
 /**
- * The backend a batch runs under. Throws, before anything is created, imported or reserved, for a live run on a
- * backend that does not confine the filesystem, unless `unsafe` (--unsafe-no-isolation) was given.
+ * The backend a batch runs under. Throws, before anything is created, imported or reserved, for any run on a backend
+ * that does not confine the filesystem, unless `unsafe` (--unsafe-no-isolation) was given.
  */
 export function selectIsolation({ name, live = true, unsafe = false, config = null } = {}) {
-  const chosen = name ?? defaultIsolation({ live })
+  const chosen = name ?? defaultIsolation()
   const make = BACKENDS[chosen]
   if (!make) throw new Error(`unknown --isolation ${JSON.stringify(chosen)}: use ${Object.keys(BACKENDS).join(" or ")}`)
   if (unsafe && chosen !== "none") throw new Error(`--unsafe-no-isolation means --isolation none; it says nothing with --isolation ${chosen}`)
   const backend = make(config)
-  if (!backend.confines && live && !unsafe) {
+  if (!backend.confines && !unsafe) {
     throw new Error(
-      `refusing a live run with --isolation ${backend.name}: the sandbox isolates the environment, not the filesystem, so the agent under test can read and write anything this user can, by absolute path. Use --isolation container (the default for a live run), or pass --unsafe-no-isolation on a machine you are prepared to lose`,
+      `refusing a${live ? " live" : ""} run with --isolation ${backend.name}: the sandbox isolates the environment, not the filesystem, so the agent under test${live ? "" : " (even the scripted model, which can call a shell tool)"} can read and write anything this user can, by absolute path. Use --isolation container (the default), or pass --unsafe-no-isolation on a machine you are prepared to lose`,
     )
   }
-  return Object.assign(backend, { live, unsafe: !backend.confines && live })
+  return Object.assign(backend, { live, unsafe: !backend.confines })
 }
