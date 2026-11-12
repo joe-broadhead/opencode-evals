@@ -15,7 +15,7 @@
 //                     directory for that run's sandbox path is removed, and nothing else.
 
 import { existsSync, readFileSync, rmSync, symlinkSync, writeFileSync, mkdirSync, realpathSync } from "node:fs"
-import { join, dirname } from "node:path"
+import { join, dirname, basename } from "node:path"
 import { runToEnd } from "./sandbox.mjs"
 
 const CLAUDE_KEYS = ["hasCompletedOnboarding", "lastOnboardingVersion", "oauthAccount", "userID"]
@@ -87,7 +87,12 @@ export async function prepareAuth(profile, { binary, caller = process.env }) {
       } catch {
         // the sandbox is already gone
       }
-      for (const path of paths) rmSync(claudeProjectDir(realHome, path), { recursive: true, force: true })
+      const projects = join(realHome, ".claude", "projects")
+      for (const path of paths) {
+        const dir = claudeProjectDir(realHome, path)
+        // Only a directory directly under ~/.claude/projects, named for a path inside this batch.
+        if (dirname(dir) === projects && basename(dir).length > 1) rmSync(dir, { recursive: true, force: true })
+      }
     },
   }
 }

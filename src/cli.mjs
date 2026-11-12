@@ -46,6 +46,7 @@ import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
 import { rawCallArgs } from "./trace/rawArgs.mjs"
 import { compare as compareArms, renderReport } from "./report/arms.mjs"
 import { runBatch } from "./run/runner.mjs"
+import { segment } from "./run/paths.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
 const args = (argv) => {
@@ -310,6 +311,8 @@ export async function main(argv) {
     console.log(usage())
     return
   }
+  // An iteration or a plugin id is a directory name in the store: one safe segment, never a path.
+  for (const key of ["iteration", "plugin", "a", "b"]) if (typeof opt[key] === "string") segment(`--${key}`, opt[key])
   switch (command) {
     case "compile": {
       if (!opt.plugin && !opt.all) throw new Error("evals compile --plugin <id>, or --all for every cases/<id>; add --check to write nothing")
@@ -497,7 +500,7 @@ export async function main(argv) {
       const arms = opt._.map((spec) => {
         const at = spec.indexOf("=")
         if (at < 1) throw new Error(`an arm is <label>=<iteration>[,<iteration>...], not ${JSON.stringify(spec)}`)
-        return { label: spec.slice(0, at), iterations: spec.slice(at + 1).split(",").filter(Boolean) }
+        return { label: spec.slice(0, at), iterations: spec.slice(at + 1).split(",").filter(Boolean).map((it) => segment("iteration", it)) }
       })
       if (!arms.length) throw new Error("evals report <label>=<iteration>[,<iteration>...] ...")
       const verdictsOf = (iteration) => {

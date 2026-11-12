@@ -26,11 +26,11 @@ import { parseAuth, prepareAuth } from "./auth.mjs"
 import { loadWorld, parseSeed } from "./world.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
+import { segment, within } from "./paths.mjs"
 import { splitTrial } from "../grade/trials.mjs"
 import { digestOf } from "../util/canonical.mjs"
 import { dirname } from "node:path"
 
-const SAFE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 
 export const RUNNER = "evals run"
 
@@ -128,12 +128,13 @@ export function hourWindow(seed, at = new Date()) {
 }
 
 async function runJob(job, ctx) {
-  const id = job.case.id
+  const id = segment("case id", job.case.id)
   const name = `${id}.t${job.trial}`
-  const root = join(ctx.batchRoot, "runs", name)
+  // Every path this run writes or removes is checked against the root it belongs to.
+  const root = within(join(ctx.batchRoot, "runs"), join(ctx.batchRoot, "runs", name), "the sandbox")
   const sandbox = makeSandbox(root)
   const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
-  const cwd = prepared.cwd
+  const cwd = within(root, prepared.cwd, "the working directory")
   const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model })
   writeConfig(sandbox, config)
   const password = newPassword()
@@ -176,11 +177,12 @@ async function runJob(job, ctx) {
     provenance: ctx.arm.provenance,
     ...(result.error ? { error: result.error } : {}),
   }
-  writeAtomic(join(ctx.rawDir, `${name}.jsonl`), result.stdout ?? "")
-  writeAtomic(join(ctx.rawDir, `${name}.summary.json`), `${JSON.stringify(summary, null, 1)}\n`)
-  writeAtomic(join(ctx.rawDir, `${name}.files.json`), `${JSON.stringify(changedFiles(before, cwd), null, 1)}\n`)
+  const out = (suffix) => within(ctx.rawDir, join(ctx.rawDir, `${name}${suffix}`), "a recording")
+  writeAtomic(out(".jsonl"), result.stdout ?? "")
+  writeAtomic(out(".summary.json"), `${JSON.stringify(summary, null, 1)}\n`)
+  writeAtomic(out(".files.json"), `${JSON.stringify(changedFiles(before, cwd), null, 1)}\n`)
   ctx.auth.cleanup({ cwd })
-  if (!ctx.keep) removeSandbox(root)
+  if (!ctx.keep) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
   const cost = billedOf(result.stdout ?? "")
   recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
   return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(result.error ? { error: result.error } : {}) }
@@ -192,8 +194,10 @@ async function runJob(job, ctx) {
 export async function runBatch(options, { caller = process.env, log = (line) => console.log(line) } = {}) {
   const plugin = options.plugin
   const iteration = options.iteration
-  if (!plugin || !SAFE.test(plugin)) throw new Error("--plugin <id> is required")
-  if (!iteration || !SAFE.test(iteration)) throw new Error("--iteration <name> is required: letters, digits, dot, dash, underscore")
+  if (!plugin) throw new Error("--plugin <id> is required")
+  if (!iteration) throw new Error("--iteration <name> is required")
+  segment("--plugin", plugin)
+  segment("--iteration", iteration)
   if (!options.model) throw new Error("--model <provider>/<model> is required, e.g. claude-agent/haiku")
   const trials = Number(options.trials ?? 1)
   const parallel = Number(options.parallel ?? 4)
@@ -204,7 +208,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const caseList = pluginCases(plugin, { dir: options.casesDir ?? null, env: caller })
   if (!caseList.length) throw new Error(`no compiled cases for ${plugin}${options.casesDir ? ` in ${options.casesDir}` : ""}`)
   const { selected } = selectCases(caseList, { patterns: options.cases ?? "*", set: options.set ?? "tune" })
-  const rawDir = join(rawRoot(caller), iteration, plugin)
+  const rawDir = within(rawRoot(caller), join(rawRoot(caller), iteration, plugin), "the recordings directory")
   const jobs = plan({ cases: selected, trials, recorded: recordedTrials(rawDir), append: Boolean(options.append) })
 
   // An arm is a built plugin directory, `none`, or a JSON file naming one and the options it runs with:
@@ -244,7 +248,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const hostVersion = (/(\d+\.\d+\.\d+)/.exec(opencode) ?? [])[1] ?? null
   if (hostVersion && !TESTED.includes(hostVersion)) log(`warning: host ${hostVersion} is not a tested version (${TESTED.join(", ")})`)
 
-  const batchRoot = mkdtempSync(join(caller.EVALS_TMP ?? tmpdir(), `evals-run-${iteration}-`))
+  const tmpRoot = resolve(caller.EVALS_TMP ?? tmpdir())
+  const batchRoot = within(tmpRoot, mkdtempSync(join(tmpRoot, `evals-run-${iteration}-`)), "the batch directory")
   const armDir = armSource ? materialiseArm(resolve(armSource), join(batchRoot, "arm")) : null
   const built = armProvenance(armDir, armSource ? resolve(armSource) : null)
   // The options are an axis of their own: an access mode changes what the plugin allows. Recorded by digest (an
@@ -318,7 +323,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     if (!ctx.keep) removeSandbox(batchRoot)
   }
   const record = { batch: reservation.batch, iteration, plugin, model: options.model, runner: RUNNER, runner_version: ctx.runnerVersion, opencode, auth: auth.profile, world: ctx.worldInfo, arm: { arm: arm.arm, sha256: arm.sha256, version: arm.version }, trials, cases: selected.map((c) => c.id), planned: jobs.length, launched, stopped, ran_at: new Date().toISOString(), results }
-  writeAtomic(join(rawDir, `batch-${reservation.batch}.json`), `${JSON.stringify(record, null, 1)}\n`)
+  writeAtomic(within(rawDir, join(rawDir, `batch-${segment("batch id", reservation.batch)}.json`), "the batch record"), `${JSON.stringify(record, null, 1)}\n`)
   const bad = results.filter((r) => r.error || (r.exit !== 0 && r.exit !== undefined))
   log(`done: ${launched} of ${jobs.length} run(s) launched, ${bad.length} with a non-zero exit or an error${stopped ? `; stopped: ${stopped}` : ""}`)
   return { ...record, bad: bad.length, keptAt: ctx.keep ? batchRoot : null }

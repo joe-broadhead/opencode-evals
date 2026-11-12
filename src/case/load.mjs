@@ -5,20 +5,29 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join, resolve } from "node:path"
 import { storeRoot } from "../store.mjs"
+import { validateCase } from "./schema.mjs"
 
 const ROOT = resolve(import.meta.dirname, "..", "..")
 
 export const repoCasesDir = (plugin) => join(ROOT, "cases", plugin)
 export const privateHoldoutsDir = (plugin, env = process.env) => join(storeRoot(env), "holdouts", plugin)
 
-/** The compiled cases in one directory: every `<id>.json` that is an oc-case/1. */
+/**
+ * The compiled cases in one directory: every `<id>.json` that is an oc-case/1. Each is validated, and its id must be
+ * its file's name: an id becomes a path segment in the store and the sandbox, so a case named `../x` is refused here.
+ */
 export function casesIn(dir) {
   if (!existsSync(dir)) return []
   return readdirSync(dir)
     .filter((file) => file.endsWith(".json"))
     .sort()
-    .map((file) => JSON.parse(readFileSync(join(dir, file), "utf8")))
-    .filter((c) => c?.schema === "oc-case/1")
+    .map((file) => ({ file, parsed: JSON.parse(readFileSync(join(dir, file), "utf8")) }))
+    .filter(({ parsed }) => parsed?.schema === "oc-case/1")
+    .map(({ file, parsed }) => {
+      validateCase(parsed, join(dir, file))
+      if (`${parsed.id}.json` !== file) throw new Error(`${join(dir, file)}: the case id is ${JSON.stringify(parsed.id)}, the file is ${file}`)
+      return parsed
+    })
 }
 
 /**

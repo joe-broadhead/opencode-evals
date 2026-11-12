@@ -110,6 +110,12 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- A case id, an iteration or a plugin id could be a path: a private holdout with id `../../../../ESCAPED` made the
+  runner write its recording, create and delete its sandbox, and remove transcripts outside their roots. Every loaded
+  case is now validated (a case id is lower-case words joined by dashes, and is its file's name), every name that
+  becomes a path segment is checked by every command, and every path the runner writes or deletes must resolve
+  inside the root it belongs to.
+
 - `outer_calls` meant two things: the trace head counted every call the model made, while a grade budget left out
   Code Mode's `execute` itself and counted it as an inner call instead. Both now count the same: outer is every call
   the model made (a skill load included), inner is every call made by the code inside an `execute`. Budgets graded

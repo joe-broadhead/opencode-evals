@@ -9,6 +9,8 @@ export const STATUSES = ["active", "retired", "deferred"]
 export const BUDGET_KEYS = ["outer_calls", "inner_calls", "billed_calls", "tokens", "cost_usd", "wall_ms", "turns"]
 
 const ID = /^[A-Z]+-(?:TR|OC|PR|EF|RL|SF|RB)\d{2}$/
+/** A case id is a file name and a path segment everywhere it goes: lower-case words joined by dashes. */
+export const CASE_ID = /^[a-z0-9][a-z0-9-]{0,119}$/
 
 export class CaseError extends Error {
   constructor(file, message, line) {
@@ -29,6 +31,7 @@ export function validateCase(caseObject, file = "<case>") {
   for (const key of ["id", "plugin", "skill", "tier", "prompt", "items"]) {
     if (caseObject[key] === undefined || caseObject[key] === null || caseObject[key] === "") bad(`missing ${key}`)
   }
+  if (!CASE_ID.test(String(caseObject.id))) bad(`case id ${JSON.stringify(caseObject.id)} must be lower-case words joined by dashes`)
   if (!TIERS.includes(caseObject.tier)) bad(`tier must be one of ${TIERS.join(", ")}`)
   if (!Array.isArray(caseObject.items) || caseObject.items.length === 0) bad("a case needs at least one item")
   const seen = new Set()
