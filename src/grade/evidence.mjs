@@ -166,9 +166,10 @@ export function argState(args, key) {
     // Below the top level the trace keeps a wrapper, not the value. A nested object is `{kind: "object", keys}`: a key it
     // lists is there but unseen, so it is opaque, never missing, and so is anything under a variable (`keys: ["$ref"]`);
     // only a key the wrapper says is absent is missing. A string, an id or a time reduced to its shape is a scalar:
-    // it has no keys at all, so a path under it is missing (a single query string has no `.length` of phrasings).
+    // a path under it names nothing that was passed (a single query string has no `.length` of phrasings), so a
+    // positive clause on it fails, and a negative one cannot be settled: the value it would negate is unseen.
     if (depth > 0 && !Array.isArray(value) && WRAPPERS.has(value.kind)) {
-      if (value.kind !== "object") return { state: "missing" }
+      if (value.kind !== "object") return { state: "missing", under: value.kind }
       const keys = Array.isArray(value.keys) ? value.keys : null
       if (keys && !keys.includes("$ref") && !keys.includes(part)) return { state: "missing" }
       return { state: "opaque", why: `${path.slice(0, depth).join(".")} is kept as ${keys?.includes("$ref") ? "a variable" : `an object with keys ${(keys ?? []).join(",")}`}, not its value` }
@@ -230,6 +231,7 @@ export function evaluateClause(clause, view) {
       const resolved = checkable ? rawArgState(call.raw_args, clause.arg) : argState(call.args ?? {}, clause.arg)
       // An argument that was not passed is not equal to anything and matches nothing: !=, not-matches and excludes hold.
       if (resolved.state === "missing") {
+        if (NEGATIVE.has(clause.op) && resolved.under) return { state: "unverifiable", detail: `${label} is a path under a ${resolved.under} value the trace keeps only as a shape` }
         return NEGATIVE.has(clause.op) ? { state: "ok", detail: `${label} was not passed, so it satisfies ${clause.op}` } : { state: "fail", detail: `${clause.arg} was not passed` }
       }
       // The whole argument object is a variable: nothing is known about its keys, `present` included.

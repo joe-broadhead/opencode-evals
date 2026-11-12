@@ -81,8 +81,8 @@ The clauses, each one observable in a trace:
 An argument that was not passed satisfies `!=`, `not-matches` and `excludes` (it equals nothing and matches nothing)
 and fails every other operator, `present` included. "Not passed" means the trace shows it absent: a nested object is
 kept as its list of keys, so a key it lists (`args.filter.lang`) was passed with a value the trace does not carry,
-and a clause on it is unverifiable, never satisfied; so is anything under a variable. A string reduced to its shape
-has no keys, so a path under it was not passed. On a list (several query phrasings), `matches` and `contains`
+and a clause on it is unverifiable, never satisfied; so is anything under a variable. A path under a string reduced to
+its shape names nothing that was passed: a positive clause on it fails, and a negative one is unverifiable. On a list (several query phrasings), `matches` and `contains`
 hold when one element does, `not-matches` and `excludes` when none does. `contains` and `excludes` ignore case.
 
 A trace reduces every free-text argument to a shape, so a session id, a query, an SQL statement or a shell command

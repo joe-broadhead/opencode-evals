@@ -102,7 +102,11 @@ test("a key inside a value the trace keeps only as a shape is unseen, never miss
   assert.equal(check(view, 'call:search_posts_all#2 args.filter.lang != "en"'), "unverifiable")
   assert.equal(check(view, "call:search_posts_all#1 args.query != en"), "unverifiable", "a variable is not missing")
   assert.equal(check(view, "call:search_posts_all#1 args.query.text != en"), "unverifiable", "nor is anything under a variable")
-  assert.equal(check(view, "call:search_posts_all#2 args.query.text != en"), "ok", "a string has no keys: query.text was never passed")
+  assert.equal(check(view, "call:search_posts_all#2 args.query.text != en"), "unverifiable", "a path under a redacted string cannot be negated")
+  assert.equal(check(view, "call:search_posts_all#2 args.query.length != 1"), "unverifiable")
+  assert.equal(check(view, "call:search_posts_all#2 args.query.length excludes x"), "unverifiable")
+  assert.equal(check(view, "call:search_posts_all#2 args.query.length not-matches /1/"), "unverifiable")
+  assert.equal(check(view, "call:search_posts_all#2 args.query.length >= 2"), "fail", "a single string is not a list of phrasings")
   assert.equal(check(view, "call:search_posts_all#1 args.filter.lang present"), "ok", "the wrapper lists the key: it was passed")
   // A key the wrapper says is absent is missing, and the negations hold on it.
   assert.equal(check(view, "call:search_posts_all#1 args.filter.country != us"), "ok")

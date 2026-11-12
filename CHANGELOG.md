@@ -112,6 +112,9 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- A path under a redacted string counted as "not passed", so `args.query.length != 1` held on a value nobody could
+  see. A negative clause on such a path is now unverifiable; a positive one still fails.
+
 - `BUILTIN_TOOLS` is now exactly the tested hosts' own tools (read from `@opencode/core` 2.2.3 to 2.2.6, and Code
   Mode's `execute`): `bash`, `task`, `list`, `todoread`, `apply_patch` and `search` are not tools in 2.2.x, and a bare
   `read` or `search` could pick a file read or another plugin's search. The 52 History cases that named History's
