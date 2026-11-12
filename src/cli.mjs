@@ -10,7 +10,7 @@
 //   evals run      --plugin x --iteration it --model p/m --auth none|env:VAR|claude-agent [--cases ids] [--set tune]
 //                  [--trials K] [--parallel N] [--arm DIR|none] [--world DIR|FILE] [--host 2.2.6] [--dry-run]
 //   evals t0       [--root DIR] [--json]
-//   evals verify   re-derive every number from the stored inputs and compare
+//   evals verify   [--iteration it --plugin x | --all]  re-derive every number, or list the stale iterations
 //   evals selftest run the T-G gold cases over synthetic traces
 
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs"
@@ -164,6 +164,18 @@ function gradeAll(iteration, casesDir = path("cases", "x"), traceDir = tracesDir
     }
   }
   return results
+}
+
+/**
+ * Why a graded iteration no longer says what the code would say: the grader or the case set moved since it was
+ * graded. A stale batch is reported, never silently trusted; `evals grade` again refreshes it.
+ */
+function staleness(batch, plugin) {
+  const why = []
+  if (batch.grader_sha256 && batch.grader_sha256 !== graderHash()) why.push(`graded by grader \`${short(batch.grader_sha256)}\`; the grader is now \`${short(graderHash())}\`. Re-run \`evals grade --iteration ${batch.iteration} --plugin ${plugin}\`.`)
+  const cases = loadCases(plugin)
+  if (cases.length && batch.case_set?.cases_sha256 && batch.case_set.cases_sha256 !== casesDigest(cases)) why.push(`graded against case set \`${short(batch.case_set.cases_sha256)}\`; the cases are now \`${short(casesDigest(cases))}\`.`)
+  return why
 }
 
 const batchDigest = (results) =>
@@ -376,7 +388,9 @@ export async function main(argv) {
       for (const caseObject of loadCases(opt.plugin ?? "x")) {
         for (const note of caseObject.notes ?? []) if (note.id) notes[note.id] = note.text
       }
-      const text = renderScorecard({ batch, results, comparison, iteration, notes })
+      const plugin = opt.plugin ?? batch.case_set?.plugin ?? "x"
+      const title = readSnapshot(plugin, ROOT)?.name ?? plugin
+      const text = renderScorecard({ batch, results, comparison, iteration, notes, title, stale: staleness(batch, plugin) })
       const out = opt.out ?? join(storePath(), "results", iteration, "scorecard.md")
       write(out, text)
       write(join(storePath(), "results", iteration, "scorecard.json"), json({ batch, comparison }))
@@ -505,11 +519,29 @@ export async function main(argv) {
       return
     }
     case "verify": {
+      if (opt.all) {
+        // Every graded iteration in the store, against the grader and the cases as they are now: no re-grading.
+        const root = join(storePath(), "results")
+        const rows = (existsSync(root) ? readdirSync(root) : [])
+          .filter((name) => existsSync(join(root, name, "batch.json")))
+          .sort()
+          .map((name) => {
+            const batch = JSON.parse(read(join(root, name, "batch.json")))
+            const plugin = batch.case_set?.plugin ?? "x"
+            return { iteration: name, plugin, why: staleness(batch, plugin) }
+          })
+        for (const row of rows) console.log(`${row.why.length ? "STALE  " : "current"} ${row.iteration.padEnd(24)} ${row.plugin.padEnd(10)} ${row.why.join(" ")}`)
+        const stale = rows.filter((row) => row.why.length).length
+        console.log(`\n${rows.length} graded iteration(s), ${stale} stale`)
+        if (stale) process.exitCode = 1
+        return
+      }
       const failures = []
       const iteration = opt.iteration ?? "nx6"
       const summaryFile = join(storePath(), "results", iteration, "batch.json")
       if (!existsSync(summaryFile)) throw new Error(`no batch at ${summaryFile}; run grade first`)
       const previous = JSON.parse(read(summaryFile))
+      for (const why of staleness(previous, opt.plugin ?? previous.case_set?.plugin ?? "x")) failures.push(`stale: ${why}`)
       const cases = loadCases(opt.plugin ?? "x")
       const lockFile = path("cases", opt.plugin ?? "x", "evals.lock")
       if (existsSync(lockFile)) {

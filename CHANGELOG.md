@@ -42,7 +42,14 @@ Keep a Changelog. This project adheres to Semantic Versioning.
   `projectedSpend` prices a planned batch from the month's priced runs.
 - `cost/model-map.json` maps `claude-agent/haiku` to `anthropic/claude-haiku-5-5`.
 
+- `evals verify --all` lists every graded iteration whose grader or case set has moved since it was graded, and the
+  scorecard and `evals verify` say so too: a batch graded by an older grader no longer goes stale silently.
+
 ### Changed
+
+- The scorecard is titled by the plugin (its pack name), not "X plugin"; it lists the runs an iteration made, one row
+  per trial, and counts the declared cases it did not run instead of listing each as `NOT_RUN`. It reports strict pass
+  and, with trials, strict `pass^k`; its alias-mapping line names the run's own model.
 
 - Mapping drift is checked per alias against its own family: a newer Opus no longer marks a Haiku alias stale.
 

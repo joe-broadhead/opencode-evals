@@ -36,6 +36,7 @@ evals t0  --plugin x               # static checks on a plugin checkout
 evals t1  --plugin x               # what the plugin makes possible, with no model
 evals check --plugin x             # T0 + the gold cases + T1: the CI gate
 evals verify                       # re-derive a batch and refuse if a number moved
+evals verify --all                 # list every graded iteration the grader or the cases have moved past
 evals label --plugin x             # the hand-label kit for the advisory items
 evals privacy --scan               # the pre-publish gate over the tree and the history
 evals budget                       # month to date against the caps

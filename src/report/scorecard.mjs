@@ -62,24 +62,31 @@ export function compareToHandGrading(results, hand) {
 }
 
 /** @returns {string} the markdown scorecard */
-export function renderScorecard({ batch, results, comparison, iteration, notes = {} }) {
+export function renderScorecard({ batch, results, comparison, iteration, notes = {}, title = null, stale = [] }) {
   const lines = []
   const c = batch.coverage
-  lines.push(`# X plugin — retroactive scorecard, \`${iteration}\``)
+  const name = title ?? batch.case_set?.plugin ?? "plugin"
+  lines.push(`# ${name} — scorecard, \`${iteration}\``)
   lines.push("")
+  for (const why of stale) lines.push(`> **Stale.** ${why}`, "")
   lines.push(`Re-derived by code from the recorded run. Harness \`${batch.harness_version}\`. Case set \`${batch.case_set.cases_sha256.slice(0, 12)}\` (${batch.case_set.cases} cases, ${batch.case_set.items} items, ${Math.round(batch.case_set.coded_share.share * 100)}% code-decided). Grader \`${(batch.grader_sha256 ?? "").slice(0, 12) || "—"}\`. Batch \`${batch.batch_sha256.slice(0, 12)}\`.`)
   lines.push("")
-  lines.push(`Coverage: **${c.cases_run}/${c.cases_declared}** cases run · **${c.items_testable}/${c.items_executed}** items testable (${c.items_blocked} blocked, ${c.items_na} n/a, ${c.items_advisory} advisory).`)
+  const k = batch.trials?.min ? (batch.trials.min === batch.trials.max ? `${batch.trials.min}` : `${batch.trials.min}-${batch.trials.max}`) : "1"
+  lines.push(`Coverage: **${c.cases_run}/${c.cases_declared}** cases run${k !== "1" ? ` × ${k} trials` : ""} · **${c.items_testable}/${c.items_executed}** items testable (${c.items_blocked} blocked, ${c.items_na} n/a, ${c.items_advisory} advisory).${batch.strict ? ` Strict pass (every blocker and major): **${pct(batch.strict.rate)}** of ${batch.strict.runs} run(s)${k !== "1" ? `; strict pass^k ${pct(batch.pass_k?.strict ?? null)} of cases` : ""}.` : ""}`)
   lines.push("")
   lines.push("## Verdicts")
   lines.push("")
+  // A run of a case subset lists what ran; the declared cases it did not run are counted, not listed.
+  const ran = results.filter((r) => r.verdict !== "NOT_RUN")
+  const notRun = results.length - ran.length
   lines.push("| Case | Verdict | Failed items | Blocked | Findings (majors) | n/a |")
   lines.push("| --- | --- | --- | --- | --- | --- |")
-  for (const r of results) {
-    lines.push(`| ${r.case} | **${r.verdict}** | ${list(r.failed)} | ${list([...(r.blocked ?? []), ...(r.blocked_minor ?? [])])} | ${list(r.findings)} | ${list(r.na)} |`)
+  for (const r of ran) {
+    lines.push(`| ${r.case}${r.trial ? ` (t${r.trial})` : ""} | **${r.verdict}** | ${list(r.failed)} | ${list([...(r.blocked ?? []), ...(r.blocked_minor ?? [])])} | ${list(r.findings)} | ${list(r.na)} |`)
   }
-  const counts = results.reduce((acc, r) => ({ ...acc, [r.verdict]: (acc[r.verdict] ?? 0) + 1 }), {})
-  lines.push(`| **${results.length} cases** | ${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(", ")} | | | | |`)
+  const counts = ran.reduce((acc, r) => ({ ...acc, [r.verdict]: (acc[r.verdict] ?? 0) + 1 }), {})
+  lines.push(`| **${ran.length} run(s)** | ${Object.entries(counts).map(([key, v]) => `${v} ${key}`).join(", ")} | | | | |`)
+  if (notRun) lines.push("", `${notRun} declared case(s) were not run in this iteration.`)
   lines.push("")
   lines.push("## By axis")
   lines.push("")
@@ -147,7 +154,7 @@ export function renderScorecard({ batch, results, comparison, iteration, notes =
     const t = trustOf(cost.run_date, mapping.asOf)
     const trust = t.trust === "assumed" ? `**assumed** — ${t.why}` : t.trust === "verified" ? `verified — ${t.why}` : `unknown — ${t.why}`
     lines.push("")
-    lines.push(`Alias mapping: \`claude-agent/opus\` → \`${cost.mapped_to ?? "?"}\` (asOf ${mapping.asOf}; ${trust}).`)
+    lines.push(`Alias mapping: \`${String(batch.provenance?.model?.value ?? "?").replace(/#.*$/, "")}\` → \`${cost.mapped_to ?? "?"}\` (asOf ${mapping.asOf}; ${trust}).`)
   }
   for (const entry of cost.drift ?? []) {
     if (!entry.stale) continue

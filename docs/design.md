@@ -119,6 +119,10 @@ names the fields and refuses. `decide()` is a pure function of the two batches:
   than two trials per case on either side;
 - **ship** otherwise.
 
+A batch records the grader digest and the case-set digest it was graded with. When either has moved, the scorecard
+opens with a **Stale** note and `evals verify` fails; `evals verify --all` lists every stale iteration in the store,
+without re-grading, so a batch graded by an older grader is never trusted by accident.
+
 A model-driven suite is noisy: the same arm against itself flips a case or two between trials, so one trial never
 ships. A grader comparison re-judges the same recordings and is exempt.
 
