@@ -263,7 +263,7 @@ themselves (boxd injects it, and refreshes it outside every run). Such a batch c
 `--auth claude-agent` refuses it unless `--accept-unknown-token-expiry` is given; then the horizon check is skipped,
 the log warns, and the batch record's `horizon` says `expires: "unknown", accepted_by_flag: true` (`--dry-run` shows
 the same). A known expiry is checked as above, flag or not. The access token must still be a non-empty string, and the
-refresh token is never read.
+refresh token is parsed with the file but never kept or passed on.
 
 A provider can fill its model list only after the server answers: the Claude Agent provider caches its catalog in
 OpenCode's plugin storage and, in a fresh sandbox, fills it by probing `claude` (about a second; no model call). So
@@ -276,7 +276,9 @@ A trial whose model call is refused its credential (HTTP 401 or 403 from the pro
 permission error, an expired or invalid token, the sign-in prompt), with no model work done, is recorded as an
 infrastructure failure, `infra: "auth"` in its summary and trace. It is never graded (`evals grade` marks it
 `NOT_RUN`, with the reason), its run goes back to the reserve, and no new trial is launched after it: the batch
-record's `stopped` says why. Refresh the sign-in and rerun with `--append`.
+record's `stopped` says why. Refresh the sign-in and rerun with `--append`. A run that ends on such a refusal after
+the model already worked (the token was revoked mid-run) is `infra: "auth"` too, and not graded; but it spent, so it
+is recorded in the ledger with what it billed (marked `infra`) and counts against the run and dollar caps.
 
 Each sandbox has its own empty `~/.claude` (`CLAUDE_CONFIG_DIR`): no `.credentials.json`, no `~/.claude.json`, none of
 the caller's settings, hooks, global `CLAUDE.md`, MCP servers or agents; `CLAUDE_CODE_SKIP_PROMPT_HISTORY=1` and

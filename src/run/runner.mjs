@@ -431,9 +431,13 @@ async function runJob(job, ctx) {
     if (!ctx.keep && gone) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
     const cost = billedOf(result.stdout ?? "")
     if (summary.infra) {
-      // Not a run of the model: its reservation goes back, so it can be rerun from the reserve.
-      release(ctx.store, ctx.batch, 1)
-      return { case: id, trial: job.trial, exit: summary.exit, durationMs, infra: summary.infra, ...(result.error ? { error: redact(result.error) } : {}) }
+      // Never graded. A failure before the model did any work spent nothing: its reservation goes back, so it can be
+      // rerun from the reserve. A run cut short after the model worked (its sign-in revoked mid-run) did spend: it is
+      // recorded with what it billed, marked infra, and counts against the run and dollar caps like any other run.
+      const worked = cost.billed_usd > 0 || Object.values(cost.tokens ?? {}).some((n) => n > 0)
+      if (worked) recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, infra: summary.infra, ...cost })
+      else release(ctx.store, ctx.batch, 1)
+      return { case: id, trial: job.trial, exit: summary.exit, durationMs, infra: summary.infra, ...(worked ? { spent: true } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
     }
     recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
     return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(killed ? { killed: killed.reason } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
