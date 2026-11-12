@@ -17,7 +17,7 @@ import { randomBytes } from "node:crypto"
 import { clean, createProxy, parseAllow, privateAddress } from "../docker/egress-proxy.mjs"
 import { containerBackend, containerConfig, trialEnv, imageTag, findBinary, CONTAINER_PATH, DEFAULT_ALLOW, EGRESS_URL } from "../src/run/container.mjs"
 import { selectIsolation } from "../src/run/isolation.mjs"
-import { makeSandbox, removeSandbox, removeInside, runToEnd } from "../src/run/sandbox.mjs"
+import { makeSandbox, removeSandbox, removeInside, repairPermissions, runToEnd } from "../src/run/sandbox.mjs"
 import { runBatch } from "../src/run/runner.mjs"
 import { compileCase } from "../src/case/compile.mjs"
 
@@ -106,7 +106,7 @@ test("the allow-list and limits come from caps.json and the environment only, ne
   const root = scratch("evals-iso-cfg-")
   const def = containerConfig({ store: root, env: {} })
   assert.deepEqual(def.allow, [...DEFAULT_ALLOW].sort())
-  assert.deepEqual(def.limits, { memory_mb: 4096, cpus: 2, pids: 512, tmpfs_mb: 256, disk_mb: 2048, disk_floor_mb: 2048, max_parallel: 8 })
+  assert.deepEqual(def.limits, { memory_mb: 4096, cpus: 2, pids: 512, tmpfs_mb: 256, disk_mb: 2048, disk_floor_mb: 2048, inodes: 200_000, inode_floor: 100_000, measure_s: 10, max_parallel: 8, tunnels_per_trial: 16, tunnels_total: 64 })
   writeFileSync(join(root, "caps.json"), JSON.stringify({ per_plugin_month: 5, container: { egress_allow: ["api.anthropic.com"], memory_mb: 2048, pids: 256 } }))
   const fromFile = containerConfig({ store: root, env: {} })
   assert.deepEqual(fromFile.allow, ["api.anthropic.com"])
@@ -160,7 +160,7 @@ process.exit(0)
   return { file, calls: () => (existsSync(log) ? readFileSync(log, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)) : []) }
 }
 
-function offlineFixture(options) {
+function offlineFixture(options, overrides = {}) {
   const root = scratch("evals-iso-fake-")
   const docker = fakeDocker(root, options)
   const batchRoot = join(root, "batch")
@@ -172,7 +172,8 @@ function offlineFixture(options) {
   writeFileSync(opencode, "#!/bin/sh\n")
   chmodSync(opencode, 0o755)
   const caller = { PATH: process.env.PATH, HOME: join(root, "user") }
-  const backend = containerBackend({ ...containerConfig({ env: {} }), docker: docker.file })
+  const base = containerConfig({ env: {} })
+  const backend = containerBackend({ ...base, docker: docker.file, watchMs: 3_600_000, ...overrides, limits: { ...base.limits, ...(overrides.limits ?? {}) } })
   return { root, docker, batchRoot, arm, sandbox, opencode, caller, backend, cleanup: () => rmSync(root, { recursive: true, force: true }) }
 }
 
@@ -264,6 +265,117 @@ test("the runner removes a sandbox a run made unremovable, and a sign-in file on
   chmodSync(join(sandbox.root, "locked"), 0o000)
   removeSandbox(sandbox.root)
   assert.equal(existsSync(sandbox.root), false)
+  rmSync(root, { recursive: true, force: true })
+})
+
+// ---------------------------------------------------------------- the watchdog and the repair, against a hostile sandbox
+
+/** A trial against the stand-in docker, whose watchdog is run by hand; its sandbox is a real directory. */
+async function watchedTrial(limits = {}, overrides = {}) {
+  const f = offlineFixture({}, { ...overrides, limits })
+  await f.backend.prepare({ batchRoot: f.batchRoot, caller: f.caller, binaries: {} })
+  const trial = await f.backend.enter({ name: "case.t1", sandbox: f.sandbox, cwd: f.sandbox.project })
+  return { ...f, trial }
+}
+
+test("the watchdog never changes a running trial's sandbox: an unreadable directory ends the trial, fail-closed", async () => {
+  const f = await watchedTrial()
+  const locked = join(f.sandbox.project, "locked")
+  mkdirSync(join(locked, "inner"), { recursive: true })
+  writeFileSync(join(locked, "inner", "big"), Buffer.alloc(1024))
+  chmodSync(locked, 0o077)
+  await f.trial.checkDisk()
+  assert.deepEqual(f.trial.killed, { reason: "disk-unmeasurable", why: "denied" })
+  assert.equal(statSync(locked).mode & 0o7777, 0o077, "its mode is what the run left: nothing was repaired while the container ran")
+  assert.ok(f.docker.calls().some((c) => c.args.join(" ") === `rm -f -v ${f.trial.ref}`), "the trial was removed")
+  // Once the container is gone, removal repairs through descriptors and succeeds.
+  await f.backend.teardown()
+  removeSandbox(f.sandbox.root)
+  assert.equal(existsSync(f.sandbox.root), false)
+  f.cleanup()
+})
+
+test("the watchdog counts entries and free inodes, and a measurement that runs too long ends the trial", async () => {
+  const many = await watchedTrial({ inodes: 50 })
+  for (let i = 0; i < 80; i++) writeFileSync(join(many.sandbox.project, `f${i}`), "")
+  await many.trial.checkDisk()
+  assert.equal(many.trial.killed?.reason, "inodes")
+  await many.backend.teardown()
+  many.cleanup()
+  const floor = await watchedTrial({ inode_floor: Number.MAX_SAFE_INTEGER })
+  await floor.trial.checkDisk()
+  const { statfsSync } = await import("node:fs")
+  if (statfsSync(floor.sandbox.root).files > 0) assert.equal(floor.trial.killed?.reason, "inode-floor")
+  else assert.equal(floor.trial.killed, null, "a filesystem with no inode count has no inode floor")
+  await floor.backend.teardown()
+  floor.cleanup()
+  const slow = await watchedTrial({}, { measureMs: 0 })
+  for (let i = 0; i < 20; i++) mkdirSync(join(slow.sandbox.project, `d${i}`, "e"), { recursive: true })
+  await new Promise((done) => setTimeout(done, 5))
+  await slow.trial.checkDisk()
+  assert.deepEqual(slow.trial.killed, { reason: "disk-unmeasurable", why: "slow" })
+  await slow.backend.teardown()
+  slow.cleanup()
+  // Within every limit, nothing happens.
+  const fine = await watchedTrial()
+  writeFileSync(join(fine.sandbox.project, "note"), "x")
+  await fine.trial.checkDisk()
+  assert.equal(fine.trial.killed, null)
+  await fine.backend.teardown()
+  fine.cleanup()
+})
+
+test("the repair cannot be aimed outside the sandbox by a directory swapped for a link while it runs", async () => {
+  const root = scratch("evals-iso-swap-")
+  const outside = join(root, "outside")
+  mkdirSync(outside, { mode: 0o700 })
+  chmodSync(outside, 0o700)
+  writeFileSync(join(outside, "secret"), "owner's", { mode: 0o600 })
+  chmodSync(join(outside, "secret"), 0o600)
+  const sandbox = join(root, "sandbox")
+  mkdirSync(sandbox)
+  // The agent's racing swapper: one name that is, by turns, a locked setgid directory and a link out of the sandbox
+  // (to a directory, and to a file).
+  const racer = join(root, "racer.mjs")
+  writeFileSync(
+    racer,
+    `import { chmodSync, mkdirSync, renameSync, symlinkSync } from "node:fs"
+const [box, outside, ms] = process.argv.slice(2)
+const D = box + "/swap.dir", X = box + "/swap", L = box + "/swap.link", F = box + "/swap.file"
+mkdirSync(D)
+symlinkSync(outside, L)
+symlinkSync(outside + "/secret", F)
+const end = Date.now() + Number(ms)
+let n = 0
+while (Date.now() < end) {
+  try { chmodSync(D, 0o2077) } catch {}
+  try { renameSync(D, X) } catch {}
+  try { renameSync(X, D) } catch {}
+  try { renameSync(n % 2 ? L : F, X) } catch {}
+  try { renameSync(X, n % 2 ? L : F) } catch {}
+  n++
+}
+`,
+  )
+  const child = spawn(process.execPath, [racer, sandbox, outside, "2500"], { stdio: "ignore" })
+  const exited = new Promise((done) => child.on("exit", done))
+  await new Promise((done) => setTimeout(done, 150))
+  let calls = 0
+  const end = Date.now() + 2000
+  while (Date.now() < end) {
+    repairPermissions(sandbox)
+    calls++
+    if (calls % 50 === 0) await new Promise((done) => setImmediate(done))
+  }
+  await exited
+  assert.ok(calls > 200, `the repair ran ${calls} times against the swapper`)
+  assert.equal(statSync(outside).mode & 0o7777, 0o700, "the directory outside the sandbox keeps its mode")
+  assert.equal(statSync(join(outside, "secret")).mode & 0o7777, 0o600, "so does the file outside it")
+  // Inside, a locked directory is repaired, and a setuid, setgid or sticky bit is dropped, never added.
+  mkdirSync(join(sandbox, "locked"))
+  chmodSync(join(sandbox, "locked"), 0o3077)
+  repairPermissions(sandbox)
+  assert.equal(statSync(join(sandbox, "locked")).mode & 0o7777, 0o777)
   rmSync(root, { recursive: true, force: true })
 })
 
@@ -431,7 +543,7 @@ test("docker: the proxy refuses a host off the allow-list and allows one on it (
 test("docker: a sandbox over its disk limit is stopped and recorded; what a dead runner left is swept", needsDocker, async () => {
   const f = await liveFixture({ watchMs: 300, limits: { disk_mb: 8 } })
   try {
-    await f.sh(`mkdir -p locked && dd if=/dev/zero of=locked/big bs=1M count=20 status=none; chmod 000 locked; sleep 30`, { timeoutMs: 40_000 })
+    await f.sh(`mkdir -p big && dd if=/dev/zero of=big/file bs=1M count=20 status=none; sleep 30`, { timeoutMs: 40_000 })
     assert.equal(f.trial.killed?.reason, "disk", JSON.stringify(f.trial.killed))
     await f.trial.leave()
     assert.equal(leftovers(`name=${f.trial.ref}`).containers, "", "the trial's container is gone")

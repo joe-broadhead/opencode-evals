@@ -19,16 +19,15 @@
 import { spawn } from "node:child_process"
 import { createHash, randomBytes } from "node:crypto"
 import { createReadStream, existsSync, readFileSync, realpathSync, statSync, accessSync, constants } from "node:fs"
-import { statfs } from "node:fs/promises"
+import { lstat, opendir, statfs } from "node:fs/promises"
 import { delimiter, isAbsolute, join, resolve } from "node:path"
 import { parseAllow } from "../../docker/egress-proxy.mjs"
-import { repairPermissions } from "./sandbox.mjs"
 import { tail } from "./secrets.mjs"
 
 export const DOCKER_DIR = resolve(import.meta.dirname, "..", "..", "docker")
 export const IMAGE_REPO = "opencode-evals-sandbox"
 export const DEFAULT_ALLOW = ["api.anthropic.com", "platform.claude.com", "console.anthropic.com", "claude.ai"]
-export const DEFAULT_LIMITS = { memory_mb: 4096, cpus: 2, pids: 512, tmpfs_mb: 256, disk_mb: 2048, disk_floor_mb: 2048, max_parallel: 8 }
+export const DEFAULT_LIMITS = { memory_mb: 4096, cpus: 2, pids: 512, tmpfs_mb: 256, disk_mb: 2048, disk_floor_mb: 2048, inodes: 200_000, inode_floor: 100_000, measure_s: 10, max_parallel: 8, tunnels_per_trial: 16, tunnels_total: 64 }
 export const CONTAINER_BIN = "/opt/evals/bin"
 export const CONTAINER_PATH = `${CONTAINER_BIN}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`
 export const PROXY_PORT = 3128
@@ -62,12 +61,12 @@ export function containerConfig({ store, env = process.env } = {}) {
   const file = env.EVALS_CAPS ?? (store ? join(store, "caps.json") : null)
   const fromFile = file && existsSync(file) ? JSON.parse(readFileSync(file, "utf8")).container ?? {} : {}
   const limits = { ...DEFAULT_LIMITS }
-  const ENV = { memory_mb: "EVALS_CONTAINER_MEMORY_MB", cpus: "EVALS_CONTAINER_CPUS", pids: "EVALS_CONTAINER_PIDS", tmpfs_mb: "EVALS_CONTAINER_TMPFS_MB", disk_mb: "EVALS_CONTAINER_DISK_MB", disk_floor_mb: "EVALS_DISK_FLOOR_MB", max_parallel: "EVALS_CONTAINER_MAX_PARALLEL" }
+  const ENV = { memory_mb: "EVALS_CONTAINER_MEMORY_MB", cpus: "EVALS_CONTAINER_CPUS", pids: "EVALS_CONTAINER_PIDS", tmpfs_mb: "EVALS_CONTAINER_TMPFS_MB", disk_mb: "EVALS_CONTAINER_DISK_MB", disk_floor_mb: "EVALS_DISK_FLOOR_MB", inodes: "EVALS_CONTAINER_INODES", inode_floor: "EVALS_INODE_FLOOR", measure_s: "EVALS_CONTAINER_MEASURE_S", max_parallel: "EVALS_CONTAINER_MAX_PARALLEL", tunnels_per_trial: "EVALS_EGRESS_TUNNELS_PER_TRIAL", tunnels_total: "EVALS_EGRESS_TUNNELS_TOTAL" }
   for (const [key, name] of Object.entries(ENV)) {
     if (fromFile[key] !== undefined) limits[key] = positiveNumber(fromFile[key], `caps.json container.${key}`)
     if (env[name] !== undefined && env[name] !== "") limits[key] = positiveNumber(env[name], name)
   }
-  for (const key of ["memory_mb", "pids", "tmpfs_mb", "disk_mb", "disk_floor_mb", "max_parallel"]) limits[key] = Math.floor(limits[key])
+  for (const key of ["memory_mb", "pids", "tmpfs_mb", "disk_mb", "disk_floor_mb", "inodes", "inode_floor", "max_parallel", "tunnels_per_trial", "tunnels_total"]) limits[key] = Math.floor(limits[key])
   let allow = DEFAULT_ALLOW
   if (fromFile.egress_allow !== undefined) {
     if (!Array.isArray(fromFile.egress_allow)) throw new Error("caps.json container.egress_allow must be a list of host names")
@@ -144,28 +143,47 @@ export function dockerRun(docker, args, { env, input = null, timeoutMs = 120_000
   })
 }
 
-/** Disk use of a tree in bytes, not following links or crossing filesystems; null when it cannot be measured. */
-export async function diskUse(root, docker = null) {
-  const measure = () =>
-    new Promise((done) => {
-      const child = spawn("du", ["-s", "-k", "-x", root], { stdio: ["ignore", "pipe", "pipe"] })
-      let out = ""
-      let err = ""
-      child.stdout.on("data", (d) => (out += d))
-      child.stderr.on("data", (d) => (err += d))
-      child.on("error", () => done({ bytes: null, denied: false }))
-      child.on("close", (code) => {
-        const kb = Number((/^(\d+)/.exec(out) ?? [])[1])
-        done({ bytes: Number.isFinite(kb) ? kb * 1024 : null, denied: code !== 0 && /denied/i.test(err) })
-      })
-    })
-  let result = await measure()
-  // A directory the agent made unreadable (chmod 000) hides what is under it: give the owner back access and measure again.
-  if (result.denied) {
-    repairPermissions(root)
-    result = await measure()
+/**
+ * What a sandbox holds: allocated bytes and entries (inodes), walked without following links. While its container runs
+ * the sandbox is the agent's, so nothing here changes it: a directory the run made unreadable, or a walk that takes
+ * longer than `deadlineMs`, makes the sandbox unmeasurable, which the watchdog treats as a limit crossed. The walk
+ * stops early once a limit is passed. Returns { bytes, inodes, unmeasurable } (unmeasurable: null, "denied" or "slow").
+ */
+export async function measureSandbox(root, { deadlineMs = 10_000, maxBytes = Infinity, maxInodes = Infinity } = {}) {
+  const deadline = Date.now() + deadlineMs
+  let bytes = 0
+  let inodes = 0
+  const stack = [root]
+  while (stack.length) {
+    const dir = stack.pop()
+    let handle
+    try {
+      handle = await opendir(dir)
+    } catch (error) {
+      if (error.code === "ENOENT" || error.code === "ENOTDIR") continue
+      return { bytes, inodes, unmeasurable: "denied" }
+    }
+    try {
+      for await (const entry of handle) {
+        if (Date.now() > deadline) return { bytes, inodes, unmeasurable: "slow" }
+        inodes++
+        const path = join(dir, entry.name)
+        let stat
+        try {
+          stat = await lstat(path)
+        } catch {
+          continue
+        }
+        bytes += (stat.blocks ?? 0) * 512 || stat.size
+        if (stat.isDirectory()) stack.push(path)
+        if (bytes > maxBytes || inodes > maxInodes) return { bytes, inodes, unmeasurable: null }
+      }
+    } catch (error) {
+      if (error.code !== "ENOENT") return { bytes, inodes, unmeasurable: "denied" }
+    }
+    if (Date.now() > deadline) return { bytes, inodes, unmeasurable: "slow" }
   }
-  return result.bytes
+  return { bytes, inodes, unmeasurable: null }
 }
 
 /**
@@ -359,28 +377,31 @@ export function containerBackend(config = containerConfig()) {
       }
       trial.timings.setup_ms = Date.now() - enteredAt
 
-      // The disk watchdog: the sandbox is on the host's disk, which no quota bounds without root, so a trial that
-      // grows past its limit, or leaves the filesystem short, is removed and recorded as killed.
-      const diskLimit = config.limits.disk_mb * 1024 * 1024
-      const floor = config.limits.disk_floor_mb * 1024 * 1024
+      // The disk watchdog: the sandbox is on the host's disk, which no quota bounds without root, so a trial whose sandbox
+      // grows past its size or entry limit, cannot be measured (fail closed), or leaves the filesystem short of space or
+      // inodes, is removed and recorded as killed. It never changes the sandbox while the container runs.
+      const { disk_mb, disk_floor_mb, inodes: inodeLimit, inode_floor: inodeFloor, measure_s } = config.limits
+      const diskLimit = disk_mb * 1024 * 1024
+      const floor = disk_floor_mb * 1024 * 1024
       let measuring = false
+      const stopFor = async (killed, line) => {
+        trial.killed = killed
+        state.log(`  ${name}: ${line}: the trial is stopped`)
+        await leave({ reason: killed.reason })
+      }
       trial.checkDisk = async () => {
         if (measuring || trial.left) return
         measuring = true
         try {
-          const bytes = await diskUse(root)
-          if (bytes !== null && bytes > diskLimit) {
-            trial.killed = { reason: "disk", bytes, limit_bytes: diskLimit }
-            state.log(`  ${name}: the sandbox reached ${Math.round(bytes / 1048576)} MB, over its ${config.limits.disk_mb} MB: the trial is stopped`)
-            await leave({ reason: "disk" })
-            return
-          }
+          const m = await measureSandbox(root, { deadlineMs: config.measureMs ?? measure_s * 1000, maxBytes: diskLimit, maxInodes: inodeLimit })
+          if (trial.left) return
+          if (m.unmeasurable) return await stopFor({ reason: "disk-unmeasurable", why: m.unmeasurable }, `the sandbox could not be measured (${m.unmeasurable === "slow" ? `the walk took more than ${measure_s} s` : "a directory in it is unreadable"})`)
+          if (m.bytes > diskLimit) return await stopFor({ reason: "disk", bytes: m.bytes, limit_bytes: diskLimit }, `the sandbox reached ${Math.round(m.bytes / 1048576)} MB, over its ${disk_mb} MB`)
+          if (m.inodes > inodeLimit) return await stopFor({ reason: "inodes", inodes: m.inodes, limit: inodeLimit }, `the sandbox holds more than ${inodeLimit} entries`)
           const fs = await statfs(root).catch(() => null)
-          if (fs && fs.bavail * fs.bsize < floor) {
-            trial.killed = { reason: "disk-floor", free_bytes: fs.bavail * fs.bsize, floor_bytes: floor }
-            state.log(`  ${name}: the filesystem under the sandboxes has less than ${config.limits.disk_floor_mb} MB free: the trial is stopped`)
-            await leave({ reason: "disk-floor" })
-          }
+          if (fs && fs.bavail * fs.bsize < floor) return await stopFor({ reason: "disk-floor", free_bytes: fs.bavail * fs.bsize, floor_bytes: floor }, `the filesystem under the sandboxes has less than ${disk_floor_mb} MB free`)
+          // A filesystem that reports no inode count (files 0) has no inode floor to keep.
+          if (fs && fs.files > 0 && fs.ffree < inodeFloor) return await stopFor({ reason: "inode-floor", free_inodes: fs.ffree, floor: inodeFloor }, `the filesystem under the sandboxes has fewer than ${inodeFloor} free inodes`)
         } finally {
           measuring = false
         }

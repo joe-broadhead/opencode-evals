@@ -3,7 +3,7 @@
 // servers, agents or provider keys reaches a run unless a credential profile passes it on purpose.
 
 import { spawn } from "node:child_process"
-import { mkdirSync, writeFileSync, existsSync, rmSync, readdirSync, lstatSync, readlinkSync, unlinkSync, chmodSync } from "node:fs"
+import { mkdirSync, writeFileSync, existsSync, rmSync, readdirSync, lstatSync, readlinkSync, unlinkSync, chmodSync, openSync, closeSync, fstatSync, constants } from "node:fs"
 import { join, resolve, dirname, basename, sep } from "node:path"
 import { randomBytes } from "node:crypto"
 import { inside, real } from "./paths.mjs"
@@ -220,28 +220,68 @@ export function stripForeignLinks(sandbox, { depth = Infinity } = {}) {
   return removed
 }
 
+/** Linux's O_PATH: a descriptor naming an inode without opening it, which works on a directory the owner cannot read. */
+const O_PATH = constants.O_PATH ?? 0o10000000
+const PROC_FD = "/proc/self/fd"
+
 /**
- * Gives the owner back read, write and search on every directory under `root` (links are not followed): a run can
- * `chmod 000` a directory of its sandbox, which would hide it from a disk measurement and stop its removal.
+ * Gives the owner back read, write and search on every directory under `root`, so a sandbox whose directories a run
+ * locked (`chmod 000`) can be removed. Only ever called once nothing of the run is left (its container removed, its
+ * processes ended), and even then through descriptors, never by path: each entry is opened with O_NOFOLLOW (a link is
+ * opened as the link itself, and skipped), its mode changed through /proc/self/fd/<n>, which names exactly the inode
+ * that was opened, and its children looked up inside that inode. A directory swapped for a link between a check and a
+ * change therefore cannot aim the change outside the sandbox. Only the permission bits are set: setuid, setgid and the
+ * sticky bit are dropped, never added. Without /proc (not Linux), nothing is changed.
  */
 export function repairPermissions(root) {
-  const fix = (dir) => {
+  if (!existsSync(PROC_FD)) return
+  const visit = (fd, depth) => {
+    let stat
     try {
-      const stat = lstatSync(dir)
-      if (!stat.isDirectory()) return
-      if ((stat.mode & 0o700) !== 0o700) chmodSync(dir, (stat.mode & 0o7777) | 0o700)
+      stat = fstatSync(fd)
     } catch {
       return
     }
-    let entries
+    if (!stat.isDirectory() || depth > 256) return
+    const at = `${PROC_FD}/${fd}`
+    if ((stat.mode & 0o700) !== 0o700 || (stat.mode & 0o7000) !== 0) {
+      try {
+        chmodSync(at, (stat.mode & 0o777) | 0o700)
+      } catch {
+        return
+      }
+    }
+    let names
     try {
-      entries = readdirSync(dir, { withFileTypes: true })
+      names = readdirSync(at)
     } catch {
       return
     }
-    for (const entry of entries) if (entry.isDirectory()) fix(join(dir, entry.name))
+    for (const name of names) {
+      let child
+      try {
+        child = openSync(`${at}/${name}`, O_PATH | constants.O_NOFOLLOW)
+      } catch {
+        continue
+      }
+      try {
+        visit(child, depth + 1)
+      } finally {
+        closeSync(child)
+      }
+    }
   }
-  fix(root)
+  let fd
+  try {
+    fd = openSync(root, O_PATH | constants.O_NOFOLLOW)
+  } catch {
+    return
+  }
+  try {
+    visit(fd, 0)
+  } finally {
+    closeSync(fd)
+  }
 }
 
 export const removeSandbox = (root) => {
