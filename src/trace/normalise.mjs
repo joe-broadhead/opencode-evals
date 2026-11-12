@@ -19,6 +19,7 @@ import { runCost } from "../cost/rule.mjs"
 import { listPrice } from "../cost/catalog.mjs"
 import { sha256 } from "../util/canonical.mjs"
 import { harnessVersion } from "../version.mjs"
+import { endedOnAuth } from "../run/authError.mjs"
 
 /** Classifies a run before any score is computed, so an infra failure is never a zero. */
 export function failureClass({ exit, tokens, calls, durationMs, timeoutMs = 900_000 }) {
@@ -51,6 +52,7 @@ export function header({ iteration, caseName, trial = null, plugin = "x", rawLin
   })
   const duration = summary?.durationMs ?? (s.firstAt && s.lastAt ? s.lastAt - s.firstAt : null)
   const exit = summary?.exit ?? 0
+  const infraOf = summary?.infra ?? (endedOnAuth(rawLines.join("\n")) ? "auth" : null)
   const text = s.finalText ?? ""
   return {
     schema: "oc-trace/1",
@@ -65,9 +67,10 @@ export function header({ iteration, caseName, trial = null, plugin = "x", rawLin
     ended_at: s.lastAt ? new Date(s.lastAt).toISOString() : null,
     duration_ms: duration,
     exit,
-    // The runner's own classification wins: a trial refused its credential is infra, whatever it printed.
-    failure_class: summary?.infra ? "infra" : failureClass({ exit, tokens, calls: s.toolCalls, durationMs: duration ?? 0 }),
-    ...(summary?.infra ? { infra: summary.infra } : {}),
+    // The runner's own classification wins: a trial refused its credential is infra, whatever it printed. A recording
+    // that ended on a refused sign-in, which a runner did not mark, is infra too: the run was cut short.
+    failure_class: infraOf ? "infra" : failureClass({ exit, tokens, calls: s.toolCalls, durationMs: duration ?? 0 }),
+    ...(infraOf ? { infra: infraOf } : {}),
     model: { id: model, ...split, params: {} },
     provenance: {
       ...manifest,

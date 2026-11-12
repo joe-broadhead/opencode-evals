@@ -118,3 +118,19 @@ test("a skill call that failed is not a skill load", async () => {
   assert.ok(failed.lines.some((l) => JSON.parse(l).kind === "skill_failed"))
   rmSync(dir, { recursive: true, force: true })
 })
+
+test("a recording that ended on a refused sign-in is infra: auth, even when the runner did not mark it", async () => {
+  const { mkdtempSync, writeFileSync: write, rmSync } = await import("node:fs")
+  const { tmpdir } = await import("node:os")
+  const dir = mkdtempSync(join(tmpdir(), "evals-revoked-"))
+  const lines = [
+    { type: "step_finish", timestamp: 1000, sessionID: "s", part: { tokens: { input: 10, output: 5 } } },
+    { type: "error", timestamp: 2000, sessionID: "s", error: { type: "provider.unknown", message: "Failed to authenticate: OAuth token revoked. Please log in again." } },
+  ]
+  write(join(dir, "c.jsonl"), lines.map((l) => JSON.stringify(l)).join("\n"))
+  write(join(dir, "c.summary.json"), JSON.stringify({ exit: 1, model: "claude-agent/haiku" }))
+  const head = JSON.parse(traceFromFiles({ caseName: "c", iteration: "it", plugin: "history", base: join(dir, "c"), manifest: {}, model: "claude-agent/haiku", catalog: { providers: {} }, mapping: {} }).lines[0])
+  assert.equal(head.infra, "auth")
+  assert.equal(head.failure_class, "infra")
+  rmSync(dir, { recursive: true, force: true })
+})

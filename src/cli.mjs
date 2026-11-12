@@ -516,7 +516,8 @@ export async function main(argv) {
         acceptUnknownTokenExpiry: Boolean(opt["accept-unknown-token-expiry"]),
         append: Boolean(opt.append),
       })
-      if (result.results?.some((r) => r.error)) process.exitCode = 1
+      // A batch with an error, an infra failure, or one the runner stopped is not a clean batch: a script must see that.
+      if (result.stopped || result.results?.some((r) => r.error || r.infra)) process.exitCode = 1
       return
     }
     case "truth": {

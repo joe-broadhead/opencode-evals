@@ -708,6 +708,10 @@ test("a trial refused authentication is infra: auth, released, not graded, and s
   const worked = [JSON.stringify({ type: "tool_use", part: { state: { output: "HTTP 401 from the API under test" } } }), JSON.stringify({ type: "step_finish", part: { tokens: { input: 10, output: 5 } } })].join("\n")
   assert.equal(authFailed({ stdout: worked, stderr: "status 401" }), false, "a run the model worked in is the model's")
   assert.equal(authFailed({ stderr: "the server exited" }), false)
+  const revoked = JSON.stringify({ type: "error", error: { type: "provider.unknown", message: "Failed to authenticate: OAuth token revoked. Please log in again or contact your administrator." } })
+  assert.equal(authFailed({ stdout: revoked }), true, "a revoked token before any work")
+  assert.equal(authFailed({ stdout: `${worked}\n${revoked}` }), true, "a run that ended on a revoked token was cut short, not the model's")
+  assert.equal(authFailed({ stdout: `${revoked}\n${worked}` }), false, "a run that went on after the error is the model's")
   f.cleanup()
 })
 

@@ -24,6 +24,7 @@ import { makeSandbox, sealedConfig, sandboxEnv, worldEnv, newPassword, writeConf
 import { parseAuth, prepareAuth, readCredential, unknownExpiry } from "./auth.mjs"
 import { loadWorld, parseSeed } from "./world.mjs"
 import { checkTruth, renderTruthProblem } from "../case/truth.mjs"
+import { AUTH_ERROR, endedOnAuth } from "./authError.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
 import { segment, within, inside } from "./paths.mjs"
@@ -100,8 +101,9 @@ export function plan({ cases, trials, recorded, append }) {
  * and the host's own error output, or an error event, says so: HTTP 401 or 403 from the provider (a proxy's refusal
  * of a tunnel aside), an authentication or permission error, an expired or invalid token, or the sign-in prompt.
  */
-const AUTH_ERROR = /\b(?:status|code|http|error)[ :=\-"]*40[13]\b|\b40[13]\s+(?:unauthori[sz]ed|forbidden)|unauthori[sz]ed|authentication[_ ]error|permission[_ ]error|invalid[_ ](?:x-api-key|api[_ ]key|bearer|token|grant)|invalid (?:x-api-key|api key|bearer token|token)|oauth token (?:has )?expired|token (?:has )?expired|not logged in|please run \/login|login required/i
+export { AUTH_ERROR, endedOnAuth }
 export function authFailed({ stdout = "", stderr = "" } = {}) {
+  if (endedOnAuth(stdout)) return true
   const tokens = billedOf(stdout).tokens
   if (tokens.input + tokens.output + tokens.cacheRead + tokens.cacheWrite > 0) return false
   const said = [String(stderr)]
