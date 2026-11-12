@@ -22,7 +22,7 @@ import { harnessVersion } from "./version.mjs"
 import { traceFromFiles } from "./trace/normalise.mjs"
 import { gradeCase, runView } from "./grade/grade.mjs"
 import { decide, numericVerdict } from "./policy/decide.mjs"
-import { comparable } from "./policy/comparable.mjs"
+import { comparable, DEFAULT_OPTIONS } from "./policy/comparable.mjs"
 import { checkX } from "./t0/x.mjs"
 import { renderScorecard, compareToHandGrading } from "./report/scorecard.mjs"
 import { goldCases } from "./grade/gold.mjs"
@@ -260,6 +260,7 @@ function batchSummary(iteration, results, caseSet, plugin = caseSet[0]?.plugin ?
       },
       skills: { sha256: provenance.head?.provenance?.skills?.sha256 ?? null, source: provenance.head?.provenance?.skills?.source ?? "unrecorded" },
       ...Object.fromEntries(["descriptions", "namespace", "tools", "rules"].map((axis) => [axis, { sha256: provenance.head?.provenance?.[axis]?.sha256 ?? null, source: provenance.head?.provenance?.[axis]?.source ?? "unrecorded" }])),
+      options: provenance.head?.provenance?.options ?? { sha256: DEFAULT_OPTIONS, source: "default" },
       plugin: { ...(provenance.head?.provenance?.plugin ?? {}), source: provenance.head?.provenance?.plugin?.source ?? "unrecorded" },
       quality: provenance.head?.provenance?.quality ?? "unrecorded",
     },
@@ -369,6 +370,8 @@ export async function main(argv) {
                 namespace: axis(prov.namespace),
                 tools: axis(prov.tools),
                 rules: axis(prov.rules),
+                // Options are recorded by digest; a runner that records none ran the plugin with none.
+                options: prov.options ? { sha256: prov.options, source: "recorded", ...(prov.access ? { access: prov.access } : {}) } : { sha256: DEFAULT_OPTIONS, source: "default" },
                 cases: { sha256: caseDigest, source: caseDigest ? "recorded" : "unrecorded", rule_set: prov.rule_set ?? null },
                 quality: "recorded",
               }

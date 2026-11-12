@@ -228,3 +228,18 @@ test("the CLI's dry run lists the plan and the caps, and launches nothing", () =
   assert.deepEqual(readLedger(f.store), [])
   f.cleanup()
 })
+
+test("an arm file sets the plugin's options; they reach the run, and their digest is a provenance axis", async () => {
+  const f = fixture()
+  const armFile = join(f.root, "ask-changes.json")
+  writeFileSync(armFile, JSON.stringify({ package: "plugin", options: { access: "ask-changes" } }))
+  const result = await runBatch({ plugin: "demo", iteration: "opt", model: "mock/m1", auth: "none", cases: "demo-b", arm: armFile, casesDir: f.casesDir, keep: true }, { caller: f.caller, ...quiet })
+  const run = JSON.parse(readFileSync(join(result.keptAt, "runs", "demo-b.t1", "home", "run.json"), "utf8"))
+  assert.deepEqual(JSON.parse(run.env.OPENCODE_CONFIG_CONTENT).plugins[0].options, { access: "ask-changes" })
+  const summary = JSON.parse(readFileSync(join(f.store, "raw", "opt", "demo", "demo-b.t1.summary.json"), "utf8"))
+  assert.equal(summary.provenance.access, "ask-changes")
+  assert.match(summary.provenance.options, /^[0-9a-f]{64}$/)
+  assert.doesNotMatch(JSON.stringify(summary), /"options":\{/, "the option values are not written, only their digest")
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "opt2", model: "mock/m1", auth: "none", cases: "demo-b", arm: armFile, options: "{}", casesDir: f.casesDir }, { caller: f.caller, ...quiet }), /pass one/)
+  f.cleanup()
+})

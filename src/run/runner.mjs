@@ -25,6 +25,8 @@ import { parseAuth, prepareAuth } from "./auth.mjs"
 import { loadWorld } from "./world.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
 import { splitTrial } from "../grade/trials.mjs"
+import { digestOf } from "../util/canonical.mjs"
+import { dirname } from "node:path"
 
 const ROOT = resolve(import.meta.dirname, "..", "..")
 const SAFE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
@@ -188,8 +190,18 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const rawDir = join(rawRoot(caller), iteration, plugin)
   const jobs = plan({ cases: selected, trials, recorded: recordedTrials(rawDir), append: Boolean(options.append) })
 
-  const armSource = options.arm === "none" ? null : options.arm ?? pluginRepo(plugin, caller)
-  if (options.arm !== "none" && !armSource) throw new Error(`no build for ${plugin}: pass --arm <built plugin dir> (or none), or set EVALS_REPO_${plugin.toUpperCase()} or EVALS_PLUGIN_ROOT`)
+  // An arm is a built plugin directory, `none`, or a JSON file naming one and the options it runs with:
+  //   { "package": "../opencode-history", "options": { "access": "ask-changes" } }
+  let armSpec = options.arm
+  let pluginOptions = options.options ? JSON.parse(options.options) : null
+  if (armSpec && armSpec !== "none" && armSpec.endsWith(".json")) {
+    const manifest = JSON.parse(readFileSync(armSpec, "utf8"))
+    if (pluginOptions && manifest.options) throw new Error(`${armSpec} sets options; --options would override them: pass one`)
+    pluginOptions = pluginOptions ?? manifest.options ?? null
+    armSpec = manifest.package === "none" ? "none" : resolve(dirname(resolve(armSpec)), manifest.package)
+  }
+  const armSource = armSpec === "none" ? null : armSpec ?? pluginRepo(plugin, caller)
+  if (armSpec !== "none" && !armSource) throw new Error(`no build for ${plugin}: pass --arm <built plugin dir> (or none), or set EVALS_REPO_${plugin.toUpperCase()} or EVALS_PLUGIN_ROOT`)
   const binary = hostBinary({ host: options.host, env: caller })
   const world = await loadWorld(options.world ?? caller[`EVALS_WORLD_${plugin.toUpperCase()}`] ?? null)
   const caps = loadCaps(store, caller)
@@ -217,7 +229,10 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
 
   const batchRoot = mkdtempSync(join(caller.EVALS_TMP ?? tmpdir(), `evals-run-${iteration}-`))
   const armDir = armSource ? materialiseArm(resolve(armSource), join(batchRoot, "arm")) : null
-  const arm = armProvenance(armDir, armSource ? resolve(armSource) : null)
+  const built = armProvenance(armDir, armSource ? resolve(armSource) : null)
+  // The options are an axis of their own: an access mode changes what the plugin allows. Recorded by digest (an
+  // option can be a secret), with the access value beside it.
+  const arm = { ...built, provenance: { ...built.provenance, options: digestOf(pluginOptions ?? {}), ...(pluginOptions?.access ? { access: pluginOptions.access } : {}) } }
 
   // The world must be current, and built by the build under test.
   let status = world.status({ arm: armDir ? { dir: armDir, sha256: arm.sha256 } : null })
@@ -243,7 +258,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   mkdirSync(rawDir, { recursive: true, mode: 0o700 })
   const ctx = {
     store, plugin, iteration, month: reservation.month, batch: reservation.batch, batchRoot, rawDir, binary, opencode, hostVersion,
-    model: options.model, options: options.options ? JSON.parse(options.options) : null, timeoutMs: Number(options.timeout ?? 420) * 1000,
+    model: options.model, options: pluginOptions, timeoutMs: Number(options.timeout ?? 420) * 1000,
     keep: Boolean(options.keep), caller, auth, world, armDir, arm, runnerVersion: harnessVersion(),
     worldInfo: { ...(world.provenance?.() ?? { name: world.name }), now: status.now ?? null },
   }

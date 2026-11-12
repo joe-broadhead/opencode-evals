@@ -123,7 +123,7 @@ must fail, must block and must be N/A.
 
 `batch.json` holds the coverage, the per-case verdicts, the trials, the cost (billed and list price, never merged),
 and the provenance of every axis: the plugin build, the skill, the tool descriptions, the namespace, the
-result text, the rules, the case set, the model and the host. A runner that records its own provenance is trusted;
+result text, the rules, the plugin's options, the case set, the model and the host. A runner that records its own provenance is trusted;
 a value nobody recorded is `unrecorded`.
 
 `comparable()` allows a comparison only when every axis but the one under test is recorded and equal; otherwise it

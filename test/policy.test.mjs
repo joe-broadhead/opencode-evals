@@ -106,3 +106,13 @@ test("thin coverage asks rather than shipping", () => {
   assert.equal(verdict.verdict, "ask")
   assert.match(verdict.reasons.join(" "), /coverage 5\/12/)
 })
+
+test("plugin options are an axis: two arms that differ only in access compare on options, and on nothing else", async () => {
+  const { DEFAULT_OPTIONS } = await import("../src/policy/comparable.mjs")
+  const ask = batch({ provenance: { ...batch().provenance, options: { sha256: "9".repeat(64), source: "recorded", access: "ask-changes" } } })
+  assert.equal(comparable(batch(), ask, "options").ok, true, "a batch without recorded options ran with none")
+  const refused = comparable(batch(), ask, "skill")
+  assert.equal(refused.ok, false)
+  assert.match(refused.why.join(" "), /options differs/)
+  assert.equal(comparable(batch(), batch({ provenance: { ...batch().provenance, options: { sha256: DEFAULT_OPTIONS, source: "default" } } }), "skill").ok, true)
+})

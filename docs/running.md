@@ -22,15 +22,29 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--set <sets>` | `tune` | `tune`, `holdout`, `tools`, `all`, or a comma list (see [design.md](design.md#reports-over-arms)) |
 | `--trials <k>` | `1` | runs per case; each is `<case>.t<k>`, and one trial never ships |
 | `--parallel <n>` | `4` | runs at once; each gets its own server on a free port |
-| `--arm <dir>` \| `none` | the plugin's checkout | a built plugin (`dist/`, `skills/`, `package.json`), copied once per batch; `none` is the no-plugin control |
+| `--arm <dir>` \| `<file>.json` \| `none` | the plugin's checkout | a built plugin (`dist/`, `skills/`, `package.json`), copied once per batch; a JSON arm file names one and its options; `none` is the no-plugin control |
 | `--world <dir\|file.mjs>` | `EVALS_WORLD_<ID>`, else an empty project | what each sandbox starts with: below |
 | `--host <version>` | `EVALS_OPENCODE_BIN`, else `opencode` on `PATH` | a tested stock binary (`OPENCODE_BIN_<version>` or `EVALS_STOCK_DIR`) |
-| `--options <json>` | none | the plugin's options in the run |
+| `--options <json>` | none | the plugin's options in the run (or put them in an arm file, not both) |
 | `--timeout <s>` | `420` | a run is killed after this |
 | `--stale rebuild\|refuse` | `rebuild` | what to do with a stale world |
 | `--append` | off | add trials after the ones the iteration already has; without it, a case with recordings is refused |
 | `--dry-run` | off | print the plan and the caps; launch and reserve nothing |
 | `--keep` | off | keep the sandboxes (for debugging the runner; they hold the imported credential) |
+
+## Arms
+
+An arm is what a run measures: a built plugin, the options it runs with, or no plugin at all. An arm file keeps the
+two together, so an `ask-changes` arm is a file and not a flag someone forgets:
+
+```json
+{ "package": "../opencode-history", "options": { "access": "ask-changes" } }
+```
+
+`package` is relative to the file. The options reach the run in its sealed config, and are recorded by digest (an
+option can be a secret), with the `access` value beside it. They are a provenance axis of their own, `options`:
+two arms that differ only in access compare with `evals policy --axis options`, and an options difference refuses
+a comparison on any other axis. A batch from before options were recorded ran with none.
 
 ## Before the first run
 
