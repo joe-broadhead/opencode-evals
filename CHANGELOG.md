@@ -141,6 +141,16 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- The disk watchdog repaired permissions while a trial's container ran, by path: a run swapping a locked directory
+  for a link changed a directory outside the sandbox (reproduced). Nothing changes a sandbox while its container
+  runs now; an unmeasurable sandbox ends the trial (`disk-unmeasurable`), and the repair after the container is gone
+  works through file descriptors and never sets setuid, setgid or sticky bits. The watchdog also counts entries
+  (`inodes`), keeps a free-inode floor, and bounds a measurement at 10 s.
+- The egress proxy refuses a tunnel whose ClientHello SNI is not the CONNECT host, refuses IPv6 forms carrying an
+  IPv4 address (mapped, compatible, NAT64, 6to4, Teredo), and caps open tunnels per trial and in all.
+- A sandbox is removed or scrubbed only once its container is confirmed gone.
+- The image pins every package and carries no Node; the proxy runs on the harness's own.
+
 - A summary's stderr was cut to its last 4000 characters before the token was scrubbed, so a token straddling the cut
   left its tail behind; every cut now scrubs first.
 - Containment followed links with `existsSync`, so a dangling link counted as inside its root wherever it pointed; it

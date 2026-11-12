@@ -74,8 +74,9 @@ none` is refused for every run, before anything is created, reserved or imported
 
 `--isolation container` (`src/run/container.mjs`) gives every trial:
 
-- **its own container**, from the sandbox image (`docker/Dockerfile`: Ubuntu 24.04 pinned by digest, with curl, git,
-  ripgrep, sqlite3, jq, tini, procps and Node; no OpenCode, no claude, no plugin, no credential). It runs as your own
+- **its own container**, from the sandbox image (`docker/Dockerfile`: Ubuntu 24.04 pinned by digest, every package
+  pinned by version: curl, git, ripgrep, sqlite3, jq, tini, procps; no Node, no OpenCode, no claude, no plugin, no
+  credential). It runs as your own
   uid (never root), with a read-only root filesystem, a small tmpfs `/tmp` (256 MB), `--cap-drop ALL`,
   `no-new-privileges`, Docker's default seccomp and AppArmor profiles, its own pid namespace, and pids (512), memory
   (4 GB, no swap) and CPU (2) limits;
@@ -90,8 +91,13 @@ none` is refused for every run, before anything is created, reserved or imported
   resolve. A plain `--internal` network is not enough: its bridge address reaches the host;
 - **one way out**: the batch's egress proxy (`docker/egress-proxy.mjs`), joined to every trial network as `egress`
   and set as `HTTPS_PROXY`. It allows `CONNECT` to port 443 of a host name on the allow-list, exactly (no wildcard, no
-  IP literal, and only when the name resolves to a public address), and refuses everything else: another host,
-  another port, a plain HTTP request. It runs as `nobody`, read-only, with no capabilities, on a network of its own.
+  IP literal, and only when the name resolves to a public address: never a private, loopback, link-local or
+  documentation one, nor an IPv6 form that carries an IPv4 address, such as IPv4-mapped, NAT64, 6to4 or Teredo), and
+  refuses everything else: another host, another port, a plain HTTP request. After `200`, nothing goes through the
+  tunnel until the client's TLS ClientHello names the same host in its SNI (another name behind the same address, no
+  SNI, or nothing within 10 s closes it). At most 16 tunnels per trial and 64 in all are open at once. It runs as
+  `nobody`, read-only, with no capabilities, on a network of its own, on the harness's own Node mounted read-only (the
+  image has none: Ubuntu's is 18.x, past its end of life).
   The default allow-list is `api.anthropic.com`, `platform.claude.com`, `console.anthropic.com` and `claude.ai`;
   only the owner sets it (`caps.json` or `EVALS_EGRESS_ALLOW`, [configuration.md](configuration.md#the-container-backend)),
   never a case, an arm or a world. Every decision is logged by host name only, and the batch record's `egress` lists
@@ -110,10 +116,21 @@ uncaught error. A runner killed outright leaves its containers and networks labe
 start, or `evals isolation sweep`, removes everything whose runner is gone.
 
 The sandbox lives on disk (`EVALS_TMP`, by default `/var/tmp/evals`), not in a memory-backed `/tmp`. Docker cannot put
-a quota on a bind mount without root, so the disk is watched instead: every two seconds the trial's sandbox is
-measured, and a trial past its limit (2 GB), or one running while the filesystem under the sandboxes has less than
-2 GB free, is removed and recorded as `killed: disk` (or `disk-floor`). This is a watchdog, not a quota: a trial can
-write for up to two seconds past its limit before it is stopped, so the floor is what protects the machine.
+a quota on a bind mount without root, so the disk is watched instead: every two seconds the trial's sandbox is walked
+(links not followed) and its allocated bytes and entries counted. A trial is removed and recorded as killed when its
+sandbox passes 2 GB (`disk`) or 200000 entries (`inodes`), when the filesystem under the sandboxes has less than 2 GB
+or 100000 inodes free (`disk-floor`, `inode-floor`), or when the sandbox cannot be measured (`disk-unmeasurable`): a
+directory the run made unreadable, or a walk longer than 10 s. While the container runs, the watchdog changes nothing
+in the sandbox; it fails closed instead. This is a watchdog, not a quota: between two measurements (two seconds, plus
+the walk itself, at most 10 s) a trial can write past its limits at the disk's speed, so the floors are what protect
+the machine.
+
+Once a trial's container is confirmed gone (`docker inspect` says there is no such container; an error is not taken
+for one), and only then, the runner removes or scrubs its sandbox. A sandbox whose directories the run locked is
+repaired through file descriptors, never by path: each entry is opened without following links and its mode changed
+through `/proc/self/fd`, so a directory swapped for a link cannot aim the change outside the sandbox, and setuid,
+setgid and sticky bits are dropped, never added. A batch whose containers cannot be confirmed gone keeps its
+directory untouched and says so (`containers_left` in the batch record).
 
 Startup checks, before any run is reserved: Docker is usable by this user, is version 28 or later, and the image is
 built; the binaries exist; the proxy starts; and the version probe runs as a trial of its own, so a container that
@@ -137,7 +154,8 @@ context is that directory alone), `evals isolation check` reports Docker, the im
    directory on disk.
 4. **A credential that can only reach Anthropic**: the access token reaches a trial's processes as
    `CLAUDE_CODE_OAUTH_TOKEN` and nothing else of your sign-in ([Credentials](#credentials)); the agent can read it, and
-   can send it only to the allow-listed hosts.
+   can send it only to the allow-listed hosts, and only in a TLS session whose SNI names the host it asked for. A
+   client that uses Encrypted Client Hello would be refused (its outer SNI is another name).
 5. **Start small**: a dry run (`--dry-run` prints the isolation and the allow-list), then a supervised batch of a few
    cases. Its batch record's `egress.refused` names the hosts `claude` or OpenCode tried and could not reach: widen
    the allow-list deliberately, in `caps.json`, only for a host that is needed.

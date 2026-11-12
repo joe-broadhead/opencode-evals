@@ -51,8 +51,10 @@ committed, and nothing in the repository may reference a machine path: `evals pr
 | `CLAUDE_AGENT_SDK_VERSION` | unset | required by the `claude-agent` profile, and passed to its runs |
 | `EVALS_ISOLATION` | `container` | `evals run`'s isolation backend when `--isolation` is not given; `none` is refused for every run without `--unsafe-no-isolation` ([running.md](running.md#isolation)) |
 | `EVALS_EGRESS_ALLOW` | the four Anthropic hosts | the egress proxy's allow-list, comma separated host names (below) |
-| `EVALS_CONTAINER_MEMORY_MB`, `_CPUS`, `_PIDS`, `_TMPFS_MB`, `_DISK_MB`, `_MAX_PARALLEL` | 4096, 2, 512, 256, 2048, 8 | a trial container's limits (below) |
-| `EVALS_DISK_FLOOR_MB` | 2048 | a trial is stopped when the filesystem under the sandboxes has less free |
+| `EVALS_CONTAINER_MEMORY_MB`, `_CPUS`, `_PIDS`, `_TMPFS_MB`, `_DISK_MB`, `_INODES`, `_MEASURE_S`, `_MAX_PARALLEL` | 4096, 2, 512, 256, 2048, 200000, 10, 8 | a trial container's limits (below) |
+| `EVALS_DISK_FLOOR_MB`, `EVALS_INODE_FLOOR` | 2048, 100000 | a trial is stopped when the filesystem under the sandboxes has less free space, or fewer free inodes |
+| `EVALS_EGRESS_TUNNELS_PER_TRIAL`, `EVALS_EGRESS_TUNNELS_TOTAL` | 16, 64 | the egress proxy's caps on open tunnels |
+| `EVALS_PROXY_NODE` | the Node running the harness | the Node binary the egress proxy runs on, mounted read-only |
 | `EVALS_CONTAINER_IMAGE` | `opencode-evals-sandbox:<digest of docker/>` | the sandbox image, when not the one `evals isolation build` makes |
 | `EVALS_DOCKER` | `docker` on `PATH` | the docker client |
 | `EVALS_CLAUDE_BIN` | `claude` on `PATH` | the `claude` mounted into a trial for the Claude Agent provider |
@@ -71,7 +73,8 @@ committed, and nothing in the repository may reference a machine path: `evals pr
   "container": {
     "egress_allow": ["api.anthropic.com", "platform.claude.com", "console.anthropic.com", "claude.ai"],
     "memory_mb": 4096, "cpus": 2, "pids": 512, "tmpfs_mb": 256,
-    "disk_mb": 2048, "disk_floor_mb": 2048, "max_parallel": 8,
+    "disk_mb": 2048, "disk_floor_mb": 2048, "inodes": 200000, "inode_floor": 100000, "measure_s": 10,
+    "max_parallel": 8, "tunnels_per_trial": 16, "tunnels_total": 64,
     "image": "opencode-evals-sandbox:<tag>"
   },
   "run_overhead_s": 120
@@ -80,8 +83,10 @@ committed, and nothing in the repository may reference a machine path: `evals pr
 
 `egress_allow` lists host names, exactly: no wildcard, no address; the proxy allows `CONNECT` to port 443 of these and
 nothing else. `max_parallel` bounds `--parallel`, since each trial takes one of Docker's network address pools.
-`disk_mb` is the per-trial sandbox limit and `disk_floor_mb` the free space below which a trial is stopped; both are
-enforced by a watchdog, not a quota. The image is built from `docker/` with `evals isolation build`.
+`disk_mb` and `inodes` are the per-trial sandbox limits, `disk_floor_mb` and `inode_floor` the free space and inodes
+below which a trial is stopped, and `measure_s` the longest a measurement may take before the trial is stopped as
+unmeasurable; all are enforced by a watchdog, not a quota. `tunnels_per_trial` and `tunnels_total` cap the egress
+proxy's open tunnels. The image is built from `docker/` with `evals isolation build`.
 
 ## Packs
 
