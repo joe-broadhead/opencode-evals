@@ -109,6 +109,9 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- `evals pack` counted a checkout that is not a family plugin (mem, messaging) as a pack that differs, and did not name
+  the packs it counted. It now names them, and lists a non-family checkout as skipped.
+
 - A bare tool name the case's plugin declares was always qualified with the plugin, so `absent:write` in a gws case
   checked only `gws.write` and let a built-in `write` through. OpenCode's own tool names (one constant,
   `BUILTIN_TOOLS`) are never qualified; the plugin's tool of that name is written `<plugin>.<name>`, and `compile`

@@ -180,3 +180,16 @@ test("the committed snapshots carry no checkout path", () => {
     assert.doesNotMatch(text, /\/Users\/|\/home\/|\/private\//, `${id} carries a path`)
   }
 })
+
+test("evals pack names the packs that differ, and never counts a checkout that is not a family plugin", async () => {
+  const { spawnSync } = await import("node:child_process")
+  const root = temp()
+  checkout(root, "alpha", { tools: [{ name: "alpha.get", permission: "alpha_get", effect: "allow", readOnly: true }], skills: [] })
+  checkout(root, "shared", { tools: [{ name: "shared.a", permission: "shared.read", readOnly: true }, { name: "shared.b", permission: "shared.read", readOnly: true }] })
+  const out = spawnSync(process.execPath, [join(ROOT, "bin", "evals"), "pack"], { encoding: "utf8", env: { PATH: process.env.PATH, EVALS_PLUGIN_ROOT: root } })
+  assert.equal(out.status, 0, out.stderr)
+  assert.match(out.stdout, /shared\s+skipped: not a family plugin/)
+  assert.match(out.stdout, /alpha\s+no snapshot/)
+  assert.match(out.stdout, /1 pack\(s\) differ from their checkout \(alpha\)/)
+  rmSync(root, { recursive: true, force: true })
+})

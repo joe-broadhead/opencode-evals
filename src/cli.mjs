@@ -631,7 +631,7 @@ export async function main(argv) {
       const ids = opt._.length ? opt._ : allPackIds(ROOT)
       if (!ids.length) throw new Error("no packs to verify: packs/<id>/pack.json is missing")
       let failures = 0
-      let drifted = 0
+      const drifted = []
       const report = []
       for (const id of ids) {
         if (opt.sync) {
@@ -653,9 +653,14 @@ export async function main(argv) {
           continue
         }
         if (!readSnapshot(id, ROOT) && repoAvailable(id)) {
-          drifted++
           const problems = familyProblems(derivePack(id))
-          report.push(`${id.padEnd(10)} no snapshot: ${problems.length ? `not a family pack — ${problems.join("; ")}` : "`evals pack --sync " + id + "` creates one"}`)
+          // A checkout that is not a family plugin has no pack to differ from: named, never counted.
+          if (problems.length) {
+            report.push(`${id.padEnd(10)} skipped: not a family plugin — ${problems.join("; ")}`)
+            continue
+          }
+          drifted.push(id)
+          report.push(`${id.padEnd(10)} no snapshot: \`evals pack --sync ${id}\` creates one`)
           continue
         }
         const verified = verifyFromRepo(id, ROOT)
@@ -666,7 +671,7 @@ export async function main(argv) {
           if (repoAvailable(id)) {
             const drift = driftReport(derivePack(id), pack)
             if (drift.drift) {
-              drifted++
+              drifted.push(id)
               line += "\n" + renderDrift(id, drift)
             }
           }
@@ -676,8 +681,8 @@ export async function main(argv) {
         }
       }
       console.log(report.join("\n"))
-      if (!opt.sync && !failures && drifted) {
-        console.log(`\n${drifted} pack(s) differ from their checkout: \`evals pack --sync\` refreshes a snapshot after review.`)
+      if (!opt.sync && !failures && drifted.length) {
+        console.log(`\n${drifted.length} pack(s) differ from their checkout (${drifted.join(", ")}): \`evals pack --sync\` refreshes a snapshot after review.`)
         if (opt.strict) process.exitCode = 1
       }
       if (failures) process.exitCode = 1
