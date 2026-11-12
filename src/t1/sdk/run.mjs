@@ -23,7 +23,11 @@ const flag = (name, fallback) => {
   const at = argv.indexOf(`--${name}`)
   return at < 0 ? fallback : argv[at + 1]
 }
-const pluginId = flag("plugin", "x")
+const pluginId = flag("plugin", "")
+if (!pluginId) {
+  console.log(JSON.stringify({ plugin: null, state: "unsupported", detail: "--plugin <id> is required", checks: [] }))
+  process.exit(0)
+}
 const sdkDir = flag("sdk", process.env.EVALS_SDK_DIR ?? "")
 // A checkout is configuration, never a guessed home directory.
 const repoFlag = flag("repo", "")
@@ -82,9 +86,10 @@ const toolsCatalogue = pack.tools ?? []
 
 let fake = null
 let endpoint = null
-if (fakeModule && existsSync(fakeModule)) {
+// Only a pack that declares a fake gets one, with its own catalogue (`fake: "<catalogue>"`), as the stock-host runner does.
+if (pack.fake && fakeModule && existsSync(fakeModule)) {
   const module = await import(pathToFileURL(fakeModule).href)
-  fake = await module.startFakeMcp({ catalog: "x" })
+  fake = await module.startFakeMcp({ catalog: pack.fake })
   endpoint = fake.url
 }
 
@@ -119,8 +124,10 @@ if (endpoint) {
 }
 
 const loaded = (await import(pathToFileURL(join(built, "dist", "index.js")).href)).default
-const options = pack.options ?? {}
-const underTest = Plugin.define({ id: loaded.id ?? `${pluginId}.plugin`, setup: (ctx) => loaded.setup({ ...ctx, options }) })
+// The plugin's options per location: the host runs a plugin's setup once per location, so a case with its own
+// `options` (an access mode) gets a location of its own, set up with them; every other location gets the pack's.
+const optionsAt = new Map()
+const underTest = Plugin.define({ id: loaded.id ?? `${pluginId}.plugin`, setup: (ctx) => loaded.setup({ ...ctx, options: optionsAt.get(ctx.location?.directory) ?? pack.options ?? {} }) })
 
 const checks = []
 const probes = new Map()
@@ -149,16 +156,28 @@ try {
 }
 
 const location = { directory: join(root, "work") }
-const ctx = async () => {
+/** A location for a case's own options (none: the pack's location). */
+const locationFor = (caseDef) => {
+  if (!caseDef?.options) return location
+  const at = { directory: join(root, "work", `options-${optionsAt.size + 1}`) }
+  mkdirSync(at.directory, { recursive: true })
+  optionsAt.set(at.directory, caseDef.options)
+  return at
+}
+const ctx = async (at = location) => {
   for (let i = 0; i < 400; i++) {
-    const found = probes.get(location.directory)
+    const found = probes.get(at.directory)
     if (found) return found
     // Opening the location is what makes the host run every plugin's setup for it.
-    await client.plugin.list({ location }).catch(() => {})
+    await client.plugin.list({ location: at }).catch(() => {})
     await Bun.sleep(50)
   }
   throw new Error("the probe plugin did not load")
 }
+
+// The id of the direct tool a case calls comes from the plugin under test (checks.mjs, directToolId).
+const { directToolId } = await import(pathToFileURL(join(import.meta.dirname, "..", "checks.mjs")).href)
+const toolIdOf = (caseDef) => directToolId(pack, caseDef)
 
 const sha = (value) => createHash("sha256").update(String(value ?? "")).digest("hex")
 const norm = (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_")
@@ -169,12 +188,12 @@ const sameTool = (a, b) => {
 
 let calls = []
 /** One call through the host's own executor, which asserts the tool's permission exactly as the model path does. */
-async function attempt(toolId, input, decision = "reject") {
-  const probeCtx = await ctx()
+async function attempt(toolId, input, decision = "reject", at = location) {
+  const probeCtx = await ctx(at)
   const listed = await probeCtx.tool.list()
   const executor = listed.find((tool) => tool.id === toolId)
   if (!executor) return { missing: true, listed: listed.map((tool) => tool.id) }
-  const sessionID = (await client.sessions.create({ agent: agent, location })).id
+  const sessionID = (await client.sessions.create({ agent: agent, location: at })).id
   const call = {
     sessionID,
     agent,
@@ -252,15 +271,16 @@ try {
   const askCase = (pack.t1 ?? []).find((entry) => entry.kind === "asked")
   if (askCase) {
     agent = "build"
-    const result = await attempt(askCase.tool.startsWith("x_") ? askCase.tool : `x_${askCase.tool}`, askCase.args ?? { text: "eval draft" })
+    const toolId = toolIdOf(askCase)
+    const result = await attempt(toolId, askCase.args ?? {}, "reject", locationFor(askCase))
     const fakeCalls = (fake?.calls ?? []).filter((name) => sameTool(name, askCase.tool))
     const state = result.asked && !result.ok && fakeCalls.length === 0 ? "pass" : "fail"
     checks.push({
-      id: `${pluginId}-asked-${askCase.tool.replace(/^x_/, "")}`,
+      id: `${pluginId}-asked-${askCase.tool}`,
       kind: "asked",
       state,
-      detail: `${result.asked ? "asked" : result.missing ? "tool not registered" : "not asked"}; ${result.ok ? "the call ran" : "refused"}; fake saw ${fakeCalls.length} call(s)`,
-      evidence: { asked: result.asked ?? null, error: result.error ?? null, calls: fakeCalls.length },
+      detail: `${result.asked ? "asked" : result.missing ? `tool ${toolId} not registered` : "not asked"}; ${result.ok ? "the call ran" : "refused"}; fake saw ${fakeCalls.length} call(s)`,
+      evidence: { tool: toolId, options: askCase.options ?? null, asked: result.asked ?? null, error: result.error ?? null, calls: fakeCalls.length },
     })
   }
 
@@ -268,15 +288,16 @@ try {
   const denyCase = (pack.t1 ?? []).find((entry) => entry.kind === "refused")
   if (denyCase) {
     const before = (fake?.calls ?? []).length
-    const result = await attempt(denyCase.tool.startsWith("x_") ? denyCase.tool : `x_${denyCase.tool}`, denyCase.args ?? { target_user_id: "1" })
+    const toolId = toolIdOf(denyCase)
+    const result = await attempt(toolId, denyCase.args ?? {}, "reject", locationFor(denyCase))
     const after = (fake?.calls ?? []).length
     const state = !result.ok && after === before ? "pass" : "fail"
     checks.push({
-      id: `${pluginId}-refused-${denyCase.tool.replace(/^x_/, "")}`,
+      id: `${pluginId}-refused-${denyCase.tool}`,
       kind: "refused",
       state,
-      detail: `${result.ok ? "the call ran" : "refused"}; the fake saw ${after - before} call(s)`,
-      evidence: { error: result.error ?? null, calls: after - before, asked: result.asked ?? null },
+      detail: `${result.ok ? "the call ran" : result.missing ? `refused: tool ${toolId} not offered` : "refused"}; the fake saw ${after - before} call(s)`,
+      evidence: { tool: toolId, options: denyCase.options ?? null, offered: !result.missing, error: result.error ?? null, calls: after - before, asked: result.asked ?? null },
     })
   }
 
@@ -284,13 +305,13 @@ try {
   // direct call, so the stock-binary runner owns that case (see src/t1/run.mjs).
   const capCase = null
   if (capCase && fake) {
-    const result = await attempt(capCase.tool.startsWith("x_") ? capCase.tool : `x_${capCase.tool}`, { query: "eval", max_results: 100 })
+    const result = await attempt(toolIdOf(capCase), capCase.args ?? {})
     const argumentsSent = fake.callArguments ?? []
     const last = argumentsSent[argumentsSent.length - 1] ?? {}
     const appended = JSON.stringify(result.result ?? "").includes("Cost:")
     const state = Number(last.max_results) === (capCase.max ?? 10) && appended ? "pass" : "fail"
     checks.push({
-      id: `${pluginId}-capped-${capCase.tool.replace(/^x_/, "")}`,
+      id: `${pluginId}-capped-${capCase.tool}`,
       kind: "capped",
       state,
       detail: `the server received max_results ${JSON.stringify(last.max_results)}; the result ${appended ? "carries" : "lacks"} the appended cost line`,

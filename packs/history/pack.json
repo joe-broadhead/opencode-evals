@@ -17,19 +17,21 @@
       "kind": "allowed",
       "tool": "sessions",
       "permission": "history_sessions",
-      "prompt": "[[mock:tool:history_sessions:{\"limit\":1}]] list one session",
+      "prompt": "[[mock:tool:execute:{\"code\":\"return await tools.history.sessions({ limit: 1 })\"}]] list one session",
       "args": {
         "limit": 1
-      }
+      },
+      "via": "execute"
     },
     {
       "kind": "allowed",
       "tool": "sql",
       "permission": "history_sql",
-      "prompt": "[[mock:tool:history_sql:{\"sql\":\"select count(*) from v_sessions\"}]] count the sessions",
+      "prompt": "[[mock:tool:execute:{\"code\":\"return await tools.history.sql({ sql: 'select count(*) from v_sessions' })\"}]] count the sessions",
       "args": {
         "sql": "select count(*) from v_sessions"
-      }
+      },
+      "via": "execute"
     },
     {
       "kind": "asked",
@@ -144,7 +146,7 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "16701fa9264dfc2ae0145305dea1fdf9df9a44da5b50f7331907ad65dbbfb6c3",
+  "digest": "ccb19d5f7d210521db3244d30fa70273d11a7f11f344a99289f8cdf5fe97af2c",
   "vocab": [
     "project",
     "directory",

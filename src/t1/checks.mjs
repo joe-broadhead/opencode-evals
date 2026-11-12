@@ -176,6 +176,13 @@ export async function checkStatus(host, pack) {
   }
 }
 
+/**
+ * The id of the direct tool a T1 case calls, from the plugin under test: the case's own permission action, else the
+ * pack's tool of that name (a tool's permission action is its direct tool id), else the name as written. Never a
+ * prefix taken from another plugin.
+ */
+export const directToolId = (pack, caseDef) => caseDef.permission ?? (pack.tools ?? []).find((tool) => tool.name === caseDef.tool)?.permission ?? caseDef.tool
+
 /** The capture plugin's record, as events. */
 export const captureOf = (lines, kind) => lines.filter((event) => event.kind === kind)
 
@@ -214,13 +221,15 @@ export function checkScriptedTurn({ pack, caseDef, result, capture, fakeCalls })
     }
   }
   if (caseDef.kind === "allowed") {
-    // The tool ran on its own: no permission asked or denied it, and the host completed the call.
+    // The tool ran on its own: no permission asked or denied it, and the host completed the call. A Code Mode tool
+    // (`via: "execute"`) is offered only inside `execute`: its call must have run inside one.
     const asked = permissions.filter((event) => event.effect_in === "ask" || event.effect_in === "deny")
     const completed = after.some((event) => event.status === "completed")
+    const wrapped = caseDef.via !== "execute" || captureOf(capture, "execute_before").some((event) => norm(event.tool) === "execute")
     return {
-      id, kind: "allowed", state: completed && !asked.length ? "pass" : "fail",
-      detail: `${completed ? "completed" : "not completed"}; ${asked.length ? `permission ${asked.map((p) => p.effect_in).join(",")}` : "no permission asked"}`,
-      evidence: { completed, effects: permissions.map((p) => p.effect_in) },
+      id, kind: "allowed", state: completed && wrapped && !asked.length ? "pass" : "fail",
+      detail: `${completed ? "completed" : "not completed"}${caseDef.via === "execute" ? (wrapped ? " inside execute" : " outside execute") : ""}; ${asked.length ? `permission ${asked.map((p) => p.effect_in).join(",")}` : "no permission asked"}`,
+      evidence: { completed, ...(caseDef.via ? { via: caseDef.via, wrapped } : {}), effects: permissions.map((p) => p.effect_in) },
     }
   }
   if (caseDef.kind === "capped") {
