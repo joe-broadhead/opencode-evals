@@ -85,7 +85,7 @@
         [
           {
             "kind": "call",
-            "tool": "brief",
+            "tool": "history.brief",
             "n": 1,
             "arg": "args.children",
             "op": "==",
@@ -96,7 +96,7 @@
           },
           {
             "kind": "count",
-            "tool": "brief",
+            "tool": "history.brief",
             "op": ">=",
             "value": 4
           }
@@ -161,6 +161,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8c06fb9f9c3fbf5f7b5491019c9c4b1402d2c252eb9883d68fac24776f1ab6b6"
+    "source_sha256": "6516d755b008eac3900de846fe0a554efcca5a4231cae2699acb1657a29e6143"
   }
 }

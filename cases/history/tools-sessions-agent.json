@@ -106,7 +106,7 @@
       "evidence": [
         {
           "kind": "call",
-          "tool": "sessions",
+          "tool": "history.sessions",
           "n": 1,
           "arg": "args.agent",
           "op": "present"
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5e857627656734f0b07947cc974b566db8652ab0980636bd09ed0b2a5dcf82ad"
+    "source_sha256": "82a4d08ecea7ed4d1d6684583c7e04051b06820c79114c0511672c582d2572d6"
   }
 }

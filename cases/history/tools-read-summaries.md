@@ -16,7 +16,7 @@ show me only the compaction summaries of the Stripe v2 migration session, nothin
   evidence: text:any matches /STRIPE_LEGACY/i
 
 - [H-OC02] major · It read with kinds (summary) instead of paging through every message.
-  evidence: call:read#1 args.kinds present
+  evidence: call:history.read#1 args.kinds present
 
 - [H-OC03] major · It shows two summaries (the session was compacted twice).
   evidence: text:any matches /idempotency/i

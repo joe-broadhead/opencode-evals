@@ -18,7 +18,7 @@ brief the session where I asked for a quick audit of the auth, billing and catal
   evidence: text:any matches /catalog/i
 
 - [H-OC02] major · It used brief with children: true (one call), or briefed the subagents one by one.
-  evidence_any: call:brief#1 args.children == true ;; count:brief >= 4
+  evidence_any: call:history.brief#1 args.children == true ;; count:history.brief >= 4
 
 - [H-PR01] major · Cited in the full form (ses_… #seq), or by session ID.
   evidence: text:any matches /ses_mU7wCnfSqD3PT3fn6t7PjG/

@@ -107,7 +107,7 @@
         [
           {
             "kind": "call",
-            "tool": "search",
+            "tool": "history.search",
             "n": 1,
             "arg": "args.query.length",
             "op": ">=",
@@ -118,7 +118,7 @@
           },
           {
             "kind": "count",
-            "tool": "search",
+            "tool": "history.search",
             "op": ">=",
             "value": 2
           },
@@ -166,6 +166,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "50700b1055166ab544244d491b47485d3b83501ec82f9da723c034860a1ba366"
+    "source_sha256": "9e060c83133c14c661b9fb083a50975c613ccf85c705f664b1163641a0472dbe"
   }
 }

@@ -131,21 +131,21 @@
         [
           {
             "kind": "call",
-            "tool": "sessions",
+            "tool": "history.sessions",
             "n": 1,
             "arg": "args.title",
             "op": "present"
           },
           {
             "kind": "call",
-            "tool": "sql",
+            "tool": "history.sql",
             "n": 1,
             "arg": "args.sql",
             "op": "present"
           },
           {
             "kind": "call",
-            "tool": "search",
+            "tool": "history.search",
             "n": 1,
             "arg": "args.query",
             "op": "present"
@@ -207,6 +207,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "00c8296deba6bbb742a8f962a38e124075b5ca2cf47c3ba2a0335cae012372b8"
+    "source_sha256": "35ea8db37f6c140434b935a9041ace443bab5f950efcc6f34bda0f2440a51861"
   }
 }

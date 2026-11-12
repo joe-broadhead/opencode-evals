@@ -8,11 +8,15 @@
 // `search` means every tool of that name, the built-in included, and only `history.read` means History's alone.
 
 /**
- * OpenCode's own tool names. A bare one in a clause is never qualified with the case's plugin, whatever the plugin
- * declares (gws has `read`, `write`, `delete`, `send`; History has `read` and `search`): `absent:write` must keep
- * checking every write. A plugin's tool of the same name is written with its prefix: `history.read`.
+ * OpenCode's own tool names, on every tested host (2.2.3 to 2.2.6): the tools `@opencode/core` registers from
+ * `dist/tool/plugin/*` (edit, glob, grep, experimental_image_generate, patch, question, read, shell, skill, subagent,
+ * todowrite, webfetch, websearch, write), and Code Mode's `execute`. There is no `bash`, `task`, `list`, `todoread`
+ * or `apply_patch` in 2.2.x, and `search` is a function inside Code Mode, not a tool. A bare one in a clause is never
+ * qualified with the case's plugin, so `absent:write` keeps checking every write; a plugin's tool of the same name is
+ * written with its prefix, `history.read`, and `evals compile` refuses a case that names one bare when its plugin
+ * declares a tool of that name.
  */
-export const BUILTIN_TOOLS = Object.freeze(["read", "write", "edit", "bash", "glob", "grep", "list", "patch", "apply_patch", "webfetch", "websearch", "task", "todowrite", "todoread", "skill", "execute", "search"])
+export const BUILTIN_TOOLS = Object.freeze(["edit", "execute", "experimental_image_generate", "glob", "grep", "patch", "question", "read", "shell", "skill", "subagent", "todowrite", "webfetch", "websearch", "write"])
 const BUILTIN = new Set(BUILTIN_TOOLS)
 
 /** A bare tool name the case's plugin declares, qualified with the plugin's namespace; a built-in name, and anything else, as written. */

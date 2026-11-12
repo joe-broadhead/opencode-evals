@@ -37,10 +37,31 @@ test("a bare name the case's plugin declares is qualified, unless it is one of O
   assert.equal(evaluateClause(parseClause("absent:history.*").clause, { calls: [direct("history_pin")], scope }).state, "fail", "a direct History call is not an absent History")
 })
 
+test("the built-ins are the tested hosts' own: no bash, task, list, todoread or apply_patch, and search is not one", () => {
+  assert.deepEqual([...BUILTIN_TOOLS].sort(), ["edit", "execute", "experimental_image_generate", "glob", "grep", "patch", "question", "read", "shell", "skill", "subagent", "todowrite", "webfetch", "websearch", "write"])
+  assert.equal(qualify("search", scope), "history.search", "History's search is History's: there is no built-in search")
+})
+
 test("compile names the cases whose bare tool names are both a built-in and the plugin's own", () => {
-  const kase = { items: [{ evidence: [{ kind: "call", tool: "read" }, { kind: "absent", tool: "write" }], evidence_any: [[{ kind: "before", tool: "history.*", other: "search" }]], na_when: [] }] }
-  assert.deepEqual(builtinCollisions(kase, ["read", "search", "pin"]), ["read", "search"])
+  const kase = { items: [{ evidence: [{ kind: "call", tool: "read" }, { kind: "absent", tool: "write" }], evidence_any: [[{ kind: "before", tool: "history.*", other: "grep" }]], na_when: [] }] }
+  assert.deepEqual(builtinCollisions(kase, ["read", "search", "grep"]), ["grep", "read"])
   assert.deepEqual(builtinCollisions(kase, ["pin"]), [])
+})
+
+test("compile refuses a case that names a shared tool bare, and writes nothing", async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync } = await import("node:fs")
+  const { join } = await import("node:path")
+  const { tmpdir } = await import("node:os")
+  const { spawnSync } = await import("node:child_process")
+  const store = mkdtempSync(join(tmpdir(), "evals-collide-"))
+  const dir = join(store, "holdouts", "history")
+  mkdirSync(dir, { recursive: true })
+  writeFileSync(join(dir, "ambiguous.md"), "# ambiguous\n- Plugin: history\n- Skill under test: history-recall\n- Tier: T3\n- Source: test\n- Decision tested: test\n\n## Prompt\np\n\n## Items\n- [H-OC01] blocker · It read the session it found.\n  evidence: call:read#1\n")
+  const out = spawnSync(process.execPath, [join(import.meta.dirname, "..", "bin", "evals"), "compile", "--plugin", "history", "--holdouts"], { encoding: "utf8", env: { PATH: process.env.PATH, EVALS_STORE: store } })
+  assert.notEqual(out.status, 0)
+  assert.match(out.stderr, /ambiguous: read/)
+  assert.equal(existsSync(join(dir, "ambiguous.json")), false, "nothing written")
+  rmSync(store, { recursive: true, force: true })
 })
 
 test("first: and before: read the order of the calls, skill loads and the execute wrapper aside", () => {

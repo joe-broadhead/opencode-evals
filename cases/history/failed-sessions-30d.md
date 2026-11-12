@@ -16,7 +16,7 @@ how many of my sessions failed in the last 30 days?
   evidence: text:any matches /\b(3|three)\b/i
 
 - [H-PR01] major · It used sql (the outcome is a column of v_sessions) or sessions.
-  evidence_any: call:sql#1 args.sql present ;; call:sessions#1 args.since present
+  evidence_any: call:history.sql#1 args.sql present ;; call:history.sessions#1 args.since present
 
 - [H-OC08] major · It used the history tools.
   evidence: count:history.* >= 1

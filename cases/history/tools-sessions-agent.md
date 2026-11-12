@@ -21,7 +21,7 @@ list the sessions in this project that ran with the plan agent
   evidence: text:any matches /event streaming/i
 
 - [H-OC03] major · It filtered by agent (sessions with agent: plan), not by scanning titles.
-  evidence: call:sessions#1 args.agent present
+  evidence: call:history.sessions#1 args.agent present
 
 ## Forbidden
 - [H-SF01] blocker · No file was written or edited.

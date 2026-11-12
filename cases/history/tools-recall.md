@@ -13,14 +13,14 @@ use the history recall tool to answer this: how did we fix the flaky upload test
 
 ## Items
 - [H-OC01] blocker · It called history recall.
-  evidence: call:recall#1
+  evidence: call:history.recall#1
 
 - [H-OC02] blocker · The answer states the fix: await finished(res) and fake timers.
   evidence: text:any matches /finished|fake ?timers|useFakeTimers/i
 
 - [H-PR01] major · recall got a question and 2-4 phrasings in queries.
-  evidence: call:recall#1 args.question present
-  evidence: call:recall#1 args.queries.length >= 2
+  evidence: call:history.recall#1 args.question present
+  evidence: call:history.recall#1 args.queries.length >= 2
 
 - [H-PR02] major · Cited in the full form (ses_… #seq).
   evidence: text:any matches /\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\)/

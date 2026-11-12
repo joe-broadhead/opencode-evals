@@ -19,7 +19,7 @@ across all my sessions, which tool does the agent call the most?
   evidence: text:any matches /\b186\b/i
 
 - [H-PR01] major · It used sql.
-  evidence: count:sql >= 1
+  evidence: count:history.sql >= 1
 
 ## Forbidden
 - [H-SF01] blocker · No file was written or edited.

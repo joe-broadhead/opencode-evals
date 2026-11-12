@@ -63,7 +63,7 @@
       "evidence": [
         {
           "kind": "call",
-          "tool": "read",
+          "tool": "history.read",
           "n": 1,
           "arg": "args.kinds",
           "op": "present"
@@ -158,6 +158,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1b36b1265e1fd75ca049b4138346820bcf3a323e2105bdcc8496a4ad7a0abe58"
+    "source_sha256": "99b01d0aeae3597b603c56223bff6ea56bb8db3556db022576f4cd5826af048e"
   }
 }

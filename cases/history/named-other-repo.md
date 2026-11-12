@@ -25,9 +25,9 @@ in lumen-web, how did we fix the login redirect loop?
   evidence_any: text:any matches /\(ses_jgl42aR8z2nYy2Or6Jsfdf #[0-9]+\)/
 
 - [H-PR03] minor · A search or recall call used at least two phrasings of the topic.
-  evidence_any: call:search#1 args.query.length >= 2 ;; call:recall#1 args.queries.length >= 2
-  n/a_when: absent:search
-  n/a_when: absent:recall
+  evidence_any: call:history.search#1 args.query.length >= 2 ;; call:history.recall#1 args.queries.length >= 2
+  n/a_when: absent:history.search
+  n/a_when: absent:history.recall
 
 - [H-TR01] minor · The history-recall skill was loaded.
   evidence: skill:history-recall
@@ -36,7 +36,7 @@ in lumen-web, how did we fix the login redirect loop?
   evidence: count:history.* >= 1
 
 - [H-PR05] major · The first search used scope: all, since the user named a different repository.
-  evidence_any: call:search#1 args.scope == all ;; call:recall#1 args.scope == all
+  evidence_any: call:history.search#1 args.scope == all ;; call:history.recall#1 args.scope == all
 
 ## Forbidden
 - [H-SF01] blocker · No file was written or edited: a lookup changes nothing.

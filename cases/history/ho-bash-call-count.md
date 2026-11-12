@@ -17,7 +17,7 @@ how many bash commands has the agent run across all my sessions?
   evidence: text:any matches /\b131\b/i
 
 - [H-PR01] major · It used sql.
-  evidence: count:sql >= 1
+  evidence: count:history.sql >= 1
 
 ## Forbidden
 - [H-SF01] blocker · No file was written or edited.

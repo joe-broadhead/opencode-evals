@@ -25,10 +25,10 @@ what did I work on yesterday?
   evidence: text:any matches /memory|worker/i
 
 - [H-PR01] major · The first history call is a sessions listing with a time bound (since), not a keyword search for 'yesterday'.
-  evidence_any: call:sessions#1 args.since present ;; call:sql#1 args.sql present
+  evidence_any: call:history.sessions#1 args.since present ;; call:history.sql#1 args.sql present
 
 - [H-PR02] major · It never searched for the word 'yesterday'.
-  evidence_any: absent:search ;; count:search == 0
+  evidence_any: absent:history.search ;; count:history.search == 0
 
 - [H-TR01] minor · The history-recall skill was loaded.
   evidence: skill:history-recall

@@ -88,28 +88,28 @@
         [
           {
             "kind": "call",
-            "tool": "read",
+            "tool": "history.read",
             "n": 1,
             "arg": "args.at",
             "op": "present"
           },
           {
             "kind": "call",
-            "tool": "read",
+            "tool": "history.read",
             "n": 2,
             "arg": "args.at",
             "op": "present"
           },
           {
             "kind": "call",
-            "tool": "read",
+            "tool": "history.read",
             "n": 3,
             "arg": "args.at",
             "op": "present"
           },
           {
             "kind": "call",
-            "tool": "sql",
+            "tool": "history.sql",
             "n": 1,
             "arg": "args.sql",
             "op": "present"
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c66efb44608cd0635f241b125c27d69f2ebc202227629f532725fabbeff54d0d"
+    "source_sha256": "498290545792d24d4f13869e647f2db67a968f04f8cfeb7bc3141c80366d86f6"
   }
 }

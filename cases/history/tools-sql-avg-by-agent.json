@@ -109,7 +109,7 @@
       "evidence": [
         {
           "kind": "call",
-          "tool": "sql",
+          "tool": "history.sql",
           "n": 1,
           "arg": "args.sql",
           "op": "present"
@@ -152,6 +152,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cd0e6f4cb6e9c15eb2c9e779b49f8b5c778d223b405caf8ddfde4b93dd6b0eed"
+    "source_sha256": "383ca1e9322ac8aae94844527fc5b5f5fff9d981bc7fb3cbf15404e209c4f86a"
   }
 }

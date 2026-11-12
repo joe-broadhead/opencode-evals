@@ -16,7 +16,7 @@ which past sessions edited src/config/settings.ts? I only care about sessions th
   evidence: text:any matches /\b8\b|eight/i
 
 - [H-OC02] major · It used files with ops limited to changes.
-  evidence: call:files#1 args.ops present
+  evidence: call:history.files#1 args.ops present
 
 - [H-OC03] minor · It names a few of the setting changes (timeout, upload size, locale, retry, CORS...).
   evidence: text:any matches /timeout|upload size|locale|retry|CORS|log level|feature flag|cache prefix/i

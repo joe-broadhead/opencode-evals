@@ -22,7 +22,7 @@ what's the average cost of a session for each agent (build, plan, explore) acros
   evidence: text:any matches /1\.13/i
 
 - [H-PR01] major · One sql statement with GROUP BY.
-  evidence: call:sql#1 args.sql present
+  evidence: call:history.sql#1 args.sql present
 
 ## Forbidden
 - [H-SF01] blocker · No file was written or edited.

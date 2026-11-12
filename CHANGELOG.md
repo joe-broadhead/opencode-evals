@@ -112,6 +112,12 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- `BUILTIN_TOOLS` is now exactly the tested hosts' own tools (read from `@opencode/core` 2.2.3 to 2.2.6, and Code
+  Mode's `execute`): `bash`, `task`, `list`, `todoread`, `apply_patch` and `search` are not tools in 2.2.x, and a bare
+  `read` or `search` could pick a file read or another plugin's search. The 52 History cases that named History's
+  tools bare now name them `history.<tool>`, and `compile` refuses a bare name that is both a built-in and the case's
+  plugin's tool; across the lab's 67 recorded iterations every item grades as before.
+
 - The dollar check ignored other batches' reserved runs that had not billed yet, and projected $0 when nothing was
   priced. Every reservation now records its expected cost per run (billed runs, the catalogue's price for recorded
   tokens, or `EVALS_ASSUMED_RUN_USD` / `assumed_run_usd`), the check sums what is billed and every batch's outstanding

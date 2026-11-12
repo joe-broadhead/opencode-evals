@@ -25,7 +25,7 @@ how much have I spent per project over the last 30 days?
   evidence: text:any matches /5\.83/i
 
 - [H-PR01] major · It used one sql statement (or very few) instead of paging through sessions.
-  evidence_any: call:sql#1 args.sql present
+  evidence_any: call:history.sql#1 args.sql present
 
 - [H-EF01] minor · No more than three history calls.
   evidence: budget:inner_calls <= 3

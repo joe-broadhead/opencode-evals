@@ -40,7 +40,7 @@
       "evidence": [
         {
           "kind": "call",
-          "tool": "recall",
+          "tool": "history.recall",
           "n": 1,
           "arg": null
         }
@@ -82,14 +82,14 @@
       "evidence": [
         {
           "kind": "call",
-          "tool": "recall",
+          "tool": "history.recall",
           "n": 1,
           "arg": "args.question",
           "op": "present"
         },
         {
           "kind": "call",
-          "tool": "recall",
+          "tool": "history.recall",
           "n": 1,
           "arg": "args.queries.length",
           "op": ">=",
@@ -178,6 +178,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "eb2ff34250ad70fd927fb4ac2fde0a2be5b54bb3e2cba68ca650253f77cc7419"
+    "source_sha256": "22f1a70d60149dc12af871b000c9106684a6751664209ccf4585bc86c5f35d6e"
   }
 }

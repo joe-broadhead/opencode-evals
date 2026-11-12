@@ -19,7 +19,7 @@ in the Stripe v2 migration session, what was my very first message, and what was
   evidence: text:any matches /\b38\b/i
 
 - [H-PR01] major · It read the end of the session by seq (at, or following next) or queried it with sql, not from a summary.
-  evidence_any: call:read#1 args.at present ;; call:read#2 args.at present ;; call:read#3 args.at present ;; call:sql#1 args.sql present
+  evidence_any: call:history.read#1 args.at present ;; call:history.read#2 args.at present ;; call:history.read#3 args.at present ;; call:history.sql#1 args.sql present
 
 - [H-OC08] major · It used the history tools.
   evidence: count:history.* >= 1

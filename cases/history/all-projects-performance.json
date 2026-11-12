@@ -134,7 +134,7 @@
         [
           {
             "kind": "call",
-            "tool": "search",
+            "tool": "history.search",
             "n": 1,
             "arg": "args.scope",
             "op": "==",
@@ -145,7 +145,7 @@
           },
           {
             "kind": "call",
-            "tool": "recall",
+            "tool": "history.recall",
             "n": 1,
             "arg": "args.scope",
             "op": "==",
@@ -156,7 +156,7 @@
           },
           {
             "kind": "call",
-            "tool": "sql",
+            "tool": "history.sql",
             "n": 1,
             "arg": "args.sql",
             "op": "present"
@@ -241,6 +241,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a54887a8281c8ced853fe1f65d8033fd8ec6a4b7b41d0bf540dcebc722599135"
+    "source_sha256": "a326aec89ffa78110f6c0f8a54d88ca655b246bc65b12e8723ac98c51882542e"
   }
 }

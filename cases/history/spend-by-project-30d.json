@@ -141,7 +141,7 @@
         [
           {
             "kind": "call",
-            "tool": "sql",
+            "tool": "history.sql",
             "n": 1,
             "arg": "args.sql",
             "op": "present"
@@ -220,6 +220,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ffbd02e1a692b412c14dc45698069b3a1755766259ffb09bc67bde5f43728c39"
+    "source_sha256": "94cd833e6555f9551d50ee555eb093ba333bcd56acdc92c135d9645779f38ed6"
   }
 }

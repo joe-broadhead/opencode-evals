@@ -28,9 +28,9 @@ show me the exact SQL migration we wrote to add the tax region to invoices
   evidence_any: text:any matches /\(ses_VujfiMKKuOh76eowPfnmiP #[0-9]+\)/
 
 - [H-PR03] minor · A search or recall call used at least two phrasings of the topic.
-  evidence_any: call:search#1 args.query.length >= 2 ;; call:recall#1 args.queries.length >= 2
-  n/a_when: absent:search
-  n/a_when: absent:recall
+  evidence_any: call:history.search#1 args.query.length >= 2 ;; call:history.recall#1 args.queries.length >= 2
+  n/a_when: absent:history.search
+  n/a_when: absent:history.recall
 
 - [H-TR01] minor · The history-recall skill was loaded.
   evidence: skill:history-recall
