@@ -8,7 +8,7 @@ import { spawnSync } from "node:child_process"
 import { runBatch, plan } from "../src/run/runner.mjs"
 import { readLedger, usage } from "../src/cost/ledger.mjs"
 import { compileCase } from "../src/case/compile.mjs"
-import { writeBackCredential } from "../src/run/auth.mjs"
+import { readCredential, assertTokenLasts, CREDENTIAL_LIMIT } from "../src/run/auth.mjs"
 import { freshness, parseSeed } from "../src/run/world.mjs"
 import { installFakeOpencode } from "./helpers/fake-opencode.mjs"
 
@@ -47,7 +47,7 @@ function fixture({ cases = [["demo-a", "- Seed: cwd=api"], ["demo-b", ""], ["ho-
   writeFileSync(join(arm, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo\n---\nbody\n")
   const home = join(root, "user")
   mkdirSync(join(home, ".claude"), { recursive: true })
-  writeFileSync(join(home, ".claude", ".credentials.json"), JSON.stringify({ claudeAiOauth: { accessToken: "a1", refreshToken: "r1", expiresAt: 1000 } }), { mode: 0o600 })
+  writeFileSync(join(home, ".claude", ".credentials.json"), JSON.stringify({ claudeAiOauth: { accessToken: "a1", refreshToken: "r1", expiresAt: Date.now() + 10 * 3_600_000 } }), { mode: 0o600 })
   writeFileSync(join(home, ".claude", "settings.json"), JSON.stringify({ hooks: { PreToolUse: [] } }))
   writeFileSync(join(home, ".claude", "CLAUDE.md"), "global instructions\n")
   writeFileSync(join(home, ".claude.json"), JSON.stringify({ hasCompletedOnboarding: true, userID: "u1", oauthAccount: { id: "a" }, projects: { secret: true }, cachedThings: [1, 2] }))
@@ -209,10 +209,13 @@ test("claude-agent: the credential is piped in, and the run's ~/.claude is its o
   assert.deepEqual(JSON.parse(imported.input), { integration: "Claude Agent", kind: "external" })
   assert.deepEqual(imported.argv, ["auth", "import", "--standalone"])
   assert.equal(imported.env.HOME, home, "imported into the sandbox, not the caller's install")
-  // Its own directory: the sign-in is a link to the caller's file, and nothing else of the caller's ~/.claude is there.
+  // Its own directory: the sign-in is a copy, a regular file of its own, and nothing else of the caller's ~/.claude.
   const dir = join(home, ".claude")
   assert.equal(lstatSync(dir).isSymbolicLink(), false)
-  assert.ok(lstatSync(join(dir, ".credentials.json")).isSymbolicLink())
+  const copy = lstatSync(join(dir, ".credentials.json"))
+  assert.equal(copy.isSymbolicLink(), false, "no symlink to the caller's file")
+  assert.equal(copy.isFile(), true)
+  assert.equal(copy.mode & 0o777, 0o600)
   assert.equal(existsSync(join(dir, "settings.json")) || existsSync(join(dir, "CLAUDE.md")), false)
   assert.equal(existsSync(join(home, ".claude.json")), false, "no ~/.claude.json in the sandbox")
   const run = JSON.parse(readFileSync(join(home, "run.json"), "utf8"))
@@ -254,26 +257,6 @@ test("a world's home that links to the caller's ~/.claude is cut off from it", a
   assert.equal(existsSync(join(home, ".claude.json")), false)
   assert.equal(existsSync(join(f.home, ".claude", "projects")), false, "nothing reached the caller's ~/.claude through the world's link")
   f.cleanup()
-})
-
-test("a token refreshed inside a run is written back when it is the newer one, and never shown", () => {
-  const dir = mkdtempSync(join(tmpdir(), "evals-wb-"))
-  const real = join(dir, "real.json")
-  const sandbox = join(dir, "sandbox.json")
-  writeFileSync(real, JSON.stringify({ claudeAiOauth: { refreshToken: "r1", expiresAt: 1000 } }))
-  symlinkSync(real, sandbox)
-  assert.equal(writeBackCredential(sandbox, real), "unchanged", "still the link: nothing to do")
-  rmSync(sandbox)
-  writeFileSync(sandbox, JSON.stringify({ claudeAiOauth: { refreshToken: "r2", expiresAt: 2000 } }))
-  assert.equal(writeBackCredential(sandbox, real), "written")
-  assert.equal(JSON.parse(readFileSync(real, "utf8")).claudeAiOauth.refreshToken, "r2")
-  assert.equal(lstatSync(real).mode & 0o777, 0o600)
-  writeFileSync(sandbox, JSON.stringify({ claudeAiOauth: { refreshToken: "r0", expiresAt: 500 } }))
-  assert.equal(writeBackCredential(sandbox, real), "older")
-  writeFileSync(sandbox, "not json")
-  assert.equal(writeBackCredential(sandbox, real), "unreadable")
-  assert.equal(JSON.parse(readFileSync(real, "utf8")).claudeAiOauth.refreshToken, "r2")
-  rmSync(dir, { recursive: true, force: true })
 })
 
 test("an unknown or missing --auth is refused before anything runs", async () => {
@@ -443,24 +426,27 @@ test("a finished run leaves nothing running: the server's own children go with i
   f.cleanup()
 })
 
-test("Ctrl-C stops every process the batch started, removes its sandboxes, releases what never ran, and exits 130", async () => {
+async function interrupted(signal, code, { claude = false } = {}) {
   const f = fixture()
   addCase(f.casesDir, "sleepy", "")
   addCase(f.casesDir, "zz-after", "")
   const sleepy = JSON.parse(readFileSync(join(f.casesDir, "sleepy.json"), "utf8"))
   writeFileSync(join(f.casesDir, "sleepy.json"), JSON.stringify({ ...sleepy, prompt: "please sleep" }))
   const { spawn } = await import("node:child_process")
-  const cli = spawn(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "int", "--model", "mock/m1", "--auth", "none", "--arm", f.arm, "--cases-dir", f.casesDir, "--cases", "sleepy,demo-b,zz-after", "--parallel", "1"], { env: f.caller, stdio: ["ignore", "pipe", "pipe"] })
+  const auth = claude ? ["--auth", "claude-agent", "--model", "claude-agent/haiku", "--unsafe-no-isolation"] : ["--auth", "none", "--model", "mock/m1"]
+  const env = claude ? { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" } : f.caller
+  const cli = spawn(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "int", ...auth, "--arm", f.arm, "--cases-dir", f.casesDir, "--cases", "sleepy,demo-b,zz-after", "--parallel", "1"], { env, stdio: ["ignore", "pipe", "pipe"] })
   let out = ""
   cli.stdout.on("data", (d) => (out += d))
   cli.stderr.on("data", (d) => (out += d))
-  const exited = new Promise((done) => cli.on("exit", (code) => done(code)))
+  const exited = new Promise((done) => cli.on("exit", (status) => done(status)))
   // demo-b runs first (id order), then sleepy hangs; wait until sleepy's run and its child are up.
   const home = await until("the sleeping run", () => {
     const batch = readdirSync(f.tmp).find((n) => n.startsWith("evals-run-int-"))
     const dir = batch && join(f.tmp, batch, "runs", "sleepy.t1", "home")
     return dir && existsSync(join(dir, "run-child.pid")) && existsSync(join(dir, "run.json")) ? dir : null
   })
+  if (claude) assert.ok(existsSync(join(home, ".claude", ".credentials.json")), "the copy is there while the run runs")
   const pids = [
     JSON.parse(readFileSync(join(home, "run.json"), "utf8")).pid,
     Number(readFileSync(join(home, "run-child.pid"), "utf8")),
@@ -468,20 +454,24 @@ test("Ctrl-C stops every process the batch started, removes its sandboxes, relea
     JSON.parse(readFileSync(join(home, readdirSync(home).find((n) => /^serve-\d+\.json$/.test(n))), "utf8")).pid,
   ]
   assert.ok(pids.every(alive), "everything is running before the interrupt")
-  cli.kill("SIGINT")
-  assert.equal(await exited, 130, out)
+  cli.kill(signal)
+  assert.equal(await exited, code, out)
   await until("every process to end", () => pids.every((pid) => !alive(pid)), 5000)
-  assert.deepEqual(readdirSync(f.tmp), [], "no sandbox, no imported credential left in tmp")
+  assert.deepEqual(readdirSync(f.tmp), [], "no sandbox, no copy of a credential, left in tmp")
   const raw = readdirSync(join(f.store, "raw", "int", "demo"))
   assert.ok(raw.includes("demo-b.t1.jsonl"))
   assert.equal(raw.includes("sleepy.t1.jsonl"), false, "an interrupted run is not a recording")
   const record = JSON.parse(readFileSync(join(f.store, "raw", "int", "demo", raw.find((n) => n.startsWith("batch-"))), "utf8"))
-  assert.equal(record.stopped, "interrupted by SIGINT")
+  assert.equal(record.stopped, `interrupted by ${signal}`)
   assert.equal(record.launched, 2)
   assert.equal(readLedger(f.store).find((e) => e.kind === "release").runs, 1, "zz-after never launched: released")
-  assert.match(out, /interrupted by SIGINT/)
+  assert.match(out, new RegExp(`interrupted by ${signal}`))
   f.cleanup()
-})
+}
+
+test("Ctrl-C stops every process the batch started, removes its sandboxes, releases what never ran, and exits 130", () => interrupted("SIGINT", 130))
+
+test("SIGTERM does the same, exits 143, and leaves no copy of the sign-in behind", () => interrupted("SIGTERM", 143, { claude: true }))
 
 test("a seed's cwd is a repository of the world, never a path out of it", async () => {
   const f = fixture()
@@ -542,5 +532,75 @@ test("a live run is refused without filesystem isolation, before anything is cre
   assert.equal(mock.unsafe_no_isolation, undefined)
   const dry = spawnSync(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "dry2", "--model", "claude-agent/haiku", "--auth", "none", "--arm", f.arm, "--cases-dir", f.casesDir, "--dry-run"], { env: f.caller, encoding: "utf8" })
   assert.match(dry.stdout, /the batch would be refused: refusing a live run/)
+  f.cleanup()
+})
+
+test("a run that rewrites its copy of the sign-in leaves the caller's file byte for byte, mtime included", async () => {
+  const f = fixture()
+  const real = join(f.home, ".claude", ".credentials.json")
+  const before = { bytes: readFileSync(real), mtime: lstatSync(real).mtimeMs }
+  addCase(f.casesDir, "refreshes", "")
+  const refreshes = JSON.parse(readFileSync(join(f.casesDir, "refreshes.json"), "utf8"))
+  writeFileSync(join(f.casesDir, "refreshes.json"), JSON.stringify({ ...refreshes, prompt: "refresh the token" }))
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const result = await runBatch({ plugin: "demo", iteration: "rf", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "refreshes", arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
+  assert.equal(result.bad, 0, JSON.stringify(result.results))
+  assert.deepEqual(readFileSync(real), before.bytes)
+  assert.equal(lstatSync(real).mtimeMs, before.mtime)
+  assert.deepEqual(readdirSync(f.tmp), [], "the sandbox, and its copy, are gone")
+  f.cleanup()
+})
+
+test("a sign-in that is a FIFO, a link, too large, not JSON or not a sign-in is refused, without hanging", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "evals-cred-"))
+  const file = join(dir, "c.json")
+  const fifo = join(dir, "fifo")
+  spawnSync("mkfifo", [fifo])
+  const started = Date.now()
+  assert.throws(() => readCredential(fifo), /is not a regular file/)
+  assert.ok(Date.now() - started < 1000, "a FIFO does not block the read")
+  writeFileSync(file, JSON.stringify({ claudeAiOauth: { accessToken: "a", expiresAt: 1 } }))
+  symlinkSync(file, join(dir, "link"))
+  assert.throws(() => readCredential(join(dir, "link")), /is a symbolic link/)
+  writeFileSync(join(dir, "big"), "x".repeat(CREDENTIAL_LIMIT + 1))
+  assert.throws(() => readCredential(join(dir, "big")), /more than a sign-in/)
+  writeFileSync(join(dir, "bad"), "{not json")
+  assert.throws(() => readCredential(join(dir, "bad")), /is not JSON/)
+  writeFileSync(join(dir, "other"), JSON.stringify({ apiKey: "k" }))
+  assert.throws(() => readCredential(join(dir, "other")), /does not hold a Claude sign-in/)
+  assert.equal(readCredential(file).expiresAt, 1)
+  // The errors never carry the content.
+  try {
+    readCredential(join(dir, "other"))
+  } catch (error) {
+    assert.doesNotMatch(error.message, /apiKey|"k"/)
+  }
+  // And a batch on any of them is refused before anything is reserved.
+  const f = fixture()
+  const real = join(f.home, ".claude", ".credentials.json")
+  rmSync(real)
+  spawnSync("mkfifo", [real])
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "ff", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /is not a regular file/)
+  assert.deepEqual(readLedger(f.store), [])
+  assert.deepEqual(readdirSync(f.tmp), [])
+  f.cleanup()
+  rmSync(dir, { recursive: true, force: true })
+})
+
+test("a batch that could outlive its sign-in is refused, with the step that fixes it", async () => {
+  const now = Date.parse("2026-11-11T12:00:00Z")
+  assert.doesNotThrow(() => assertTokenLasts(now + 60 * 60_000, 20 * 60_000, now))
+  assert.throws(() => assertTokenLasts(now + 25 * 60_000, 20 * 60_000, now), /expires at 2026-11-11T12:25:00.000Z, within the 30 minutes .*start `claude` once interactively/)
+  const f = fixture()
+  const real = join(f.home, ".claude", ".credentials.json")
+  writeFileSync(real, JSON.stringify({ claudeAiOauth: { accessToken: "a1", refreshToken: "r1", expiresAt: Date.now() + 20 * 60_000 } }))
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  // 3 runs, 1 at a time, 420 s each in the worst case: 21 minutes, plus 10 of margin, is more than the 20 left.
+  await assert.rejects(runBatch({ plugin: "demo", iteration: "exp", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "demo-b", trials: 3, parallel: 1, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet }), /expires at .*refresh it first/)
+  assert.deepEqual(readLedger(f.store), [])
+  // One quick run fits: 1 x 60 s + 10 minutes.
+  const ok = await runBatch({ plugin: "demo", iteration: "exp2", model: "claude-agent/haiku", auth: "claude-agent", unsafeNoIsolation: true, cases: "demo-b", timeout: 60, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
+  assert.equal(ok.launched, 1)
   f.cleanup()
 })

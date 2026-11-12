@@ -143,10 +143,11 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 - `--auth claude-agent` linked the whole `~/.claude` into each sandbox, so `claude` could load the caller's settings,
   hooks, global `CLAUDE.md` and MCP servers, and wrote `history.jsonl`, `todos/`, `shell-snapshots/` and
-  `file-history/` into the caller's own directory. Each sandbox now has its own `~/.claude` holding only a symlink to
-  the caller's `.credentials.json`, and no `~/.claude.json`; a refreshed token is written back to the caller's file
-  when it is newer, and links a world's home carries out of the sandbox are removed. `--keep` with `claude-agent`
-  needs `--keep-credentials`, since a kept sandbox holds the imported credential.
+  `file-history/` into the caller's own directory. Each sandbox now has its own `~/.claude` holding only a copy of the
+  caller's `.credentials.json` (mode 0600; read with `O_NOFOLLOW`, size-capped, shape-checked, never logged), and no
+  `~/.claude.json`. A sandboxed run never writes to the caller's `~/.claude`: there is no write-back, and a batch is
+  refused when the token would expire within its worst case. The copy is deleted on every exit path, links a world's
+  home carries out of the sandbox are removed, and `--keep` with `claude-agent` needs `--keep-credentials`.
 
 - `Seed: cwd=../../x` (or an alias to one) copied a directory from outside the world into the sandbox: a seed key and
   the repository it names must be single names inside the world's `repos`.

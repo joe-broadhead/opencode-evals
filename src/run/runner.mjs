@@ -9,7 +9,7 @@
 // reserved against the run caps. A batch that does not fit runs nothing. Every trial has its own sandbox, its own
 // server on a free port and its own file; an existing recording is never overwritten.
 
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
 import { tmpdir } from "node:os"
 import { freePort } from "../t1/http.mjs"
@@ -117,6 +117,13 @@ async function startServer({ binary, cwd, env, password, wrap = (spec) => spec, 
   throw new Error(`the host server did not start: ${last}`)
 }
 
+/** Removes every sandbox's copy of the sign-in under a batch directory. */
+function scrubCredentials(batchRoot) {
+  const runs = join(batchRoot, "runs")
+  if (!existsSync(runs)) return
+  for (const name of readdirSync(runs)) rmSync(join(runs, name, "home", ".claude", ".credentials.json"), { force: true })
+}
+
 /** `Seed: utc-hours=9-15`: a case whose truth depends on the UTC hour runs only inside its window (9 <= h < 15). */
 export function hourWindow(seed, at = new Date()) {
   const spec = parseSeed(seed)["utc-hours"]
@@ -149,59 +156,61 @@ async function runJob(job, ctx) {
     const spec = wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env })
     return runToEnd(spec.command, spec.args, { ...options, cwd: spec.cwd, env: spec.env })
   }
-  await ctx.auth.apply({ sandbox, env, exec })
-  const before = snapshotFiles(cwd)
-  const started = Date.now()
-  let server = null
-  let result
   try {
-    server = await startServer({ binary: ctx.binary, cwd, env, password, wrap })
-    // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
-    const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
-    result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, job.case.prompt], { timeoutMs: ctx.timeoutMs })
-  } catch (error) {
-    result = { code: null, stdout: "", stderr: String(error.message ?? error), timedOut: false, error: String(error.message ?? error) }
+    await ctx.auth.apply({ sandbox, env, exec })
+    const before = snapshotFiles(cwd)
+    const started = Date.now()
+    let server = null
+    let result
+    try {
+      server = await startServer({ binary: ctx.binary, cwd, env, password, wrap })
+      // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
+      const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
+      result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, job.case.prompt], { timeoutMs: ctx.timeoutMs })
+    } catch (error) {
+      result = { code: null, stdout: "", stderr: String(error.message ?? error), timedOut: false, error: String(error.message ?? error) }
+    } finally {
+      await stop(server?.proc)
+    }
+    // An interrupted run is not a recording: nothing is written for it, and the batch's own cleanup removes its sandbox.
+    if (ctx.interrupted()) throw new Error(`interrupted by ${ctx.interrupted()}`)
+    const durationMs = Date.now() - started
+    const summary = {
+      exit: result.timedOut ? 124 : result.code,
+      durationMs,
+      trial: job.trial,
+      case: id,
+      arm: ctx.arm.arm,
+      model: ctx.model,
+      seed: job.case.seed ?? null,
+      utc_hour: new Date(started).getUTCHours(),
+      ...(prepared.session ? { continued: true } : {}),
+      stderr: `${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}`.slice(-4000),
+      started_at: new Date(started).toISOString(),
+      runner: RUNNER,
+      runner_version: ctx.runnerVersion,
+      opencode: ctx.opencode,
+      host: ctx.hostVersion,
+      auth: ctx.auth.profile,
+      isolation: ctx.isolation.name,
+      ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
+      world: ctx.worldInfo,
+      batch: ctx.batch,
+      provenance: ctx.arm.provenance,
+      ...(result.error ? { error: result.error } : {}),
+    }
+    const out = (suffix) => within(ctx.rawDir, join(ctx.rawDir, `${name}${suffix}`), "a recording")
+    writeAtomic(out(".jsonl"), result.stdout ?? "")
+    writeAtomic(out(".summary.json"), `${JSON.stringify(summary, null, 1)}\n`)
+    writeAtomic(out(".files.json"), `${JSON.stringify(changedFiles(before, cwd), null, 1)}\n`)
+    if (!ctx.keep) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
+    const cost = billedOf(result.stdout ?? "")
+    recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
+    return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(result.error ? { error: result.error } : {}) }
   } finally {
-    await stop(server?.proc)
+    // The sign-in copy goes on every path, a run that failed, threw or was interrupted included, unless kept on purpose.
+    if (!ctx.keepCredentials) ctx.auth.cleanup({ sandbox })
   }
-  // An interrupted run is not a recording: nothing is written for it, and the batch's own cleanup removes its sandbox.
-  if (ctx.interrupted()) throw new Error(`interrupted by ${ctx.interrupted()}`)
-  const durationMs = Date.now() - started
-  const summary = {
-    exit: result.timedOut ? 124 : result.code,
-    durationMs,
-    trial: job.trial,
-    case: id,
-    arm: ctx.arm.arm,
-    model: ctx.model,
-    seed: job.case.seed ?? null,
-    utc_hour: new Date(started).getUTCHours(),
-    ...(prepared.session ? { continued: true } : {}),
-    stderr: `${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}`.slice(-4000),
-    started_at: new Date(started).toISOString(),
-    runner: RUNNER,
-    runner_version: ctx.runnerVersion,
-    opencode: ctx.opencode,
-    host: ctx.hostVersion,
-    auth: ctx.auth.profile,
-    isolation: ctx.isolation.name,
-    ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
-    world: ctx.worldInfo,
-    batch: ctx.batch,
-    provenance: ctx.arm.provenance,
-    ...(result.error ? { error: result.error } : {}),
-  }
-  const out = (suffix) => within(ctx.rawDir, join(ctx.rawDir, `${name}${suffix}`), "a recording")
-  writeAtomic(out(".jsonl"), result.stdout ?? "")
-  writeAtomic(out(".summary.json"), `${JSON.stringify(summary, null, 1)}\n`)
-  writeAtomic(out(".files.json"), `${JSON.stringify(changedFiles(before, cwd), null, 1)}\n`)
-  const writeBack = ctx.auth.cleanup({ cwd, sandbox })
-  if (writeBack === "written") ctx.log(`  ${name}: the run refreshed the sign-in; the new token was written back`)
-  if (writeBack === "unreadable") ctx.log(`  ${name}: warning: the run replaced the credentials file with one that could not be read; the caller's was left as it was`)
-  if (!ctx.keep) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
-  const cost = billedOf(result.stdout ?? "")
-  recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
-  return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(result.error ? { error: result.error } : {}) }
 }
 
 /**
@@ -290,6 +299,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     if (finished) return
     finished = true
     if (reservation) release(store, reservation.batch, jobs.length - launched)
+    // No sign-in copy outlives the batch unless --keep-credentials asked for it, whatever path ended the batch.
+    if (!(keepRoot && options.keepCredentials)) scrubCredentials(batchRoot)
     if (!keepRoot) removeSandbox(within(tmpRoot, batchRoot, "the batch directory"))
     if (reservation) {
       const record = { batch: reservation.batch, iteration, plugin, model: options.model, runner: RUNNER, runner_version: harnessVersion(), ...facts, trials, cases: selected.map((c) => c.id), planned: jobs.length, launched, stopped, ran_at: new Date().toISOString(), results }
@@ -354,7 +365,10 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       if (!status.fresh) throw new Error(`world ${world.name} is stale and was not rebuilt: ${status.why}`)
     }
 
-    const auth = await prepareAuth(profile, { binary, caller })
+    // A batch must not outlive its sign-in: the worst case is every round of runs hitting the timeout.
+    const timeoutMs = Number(options.timeout ?? 420) * 1000
+    const horizonMs = timeoutMs * Math.ceil(jobs.length / parallel)
+    const auth = await prepareAuth(profile, { binary, caller, horizonMs })
     if (keepRoot && auth.holdsCredential) log(`warning: --keep-credentials: the kept sandboxes under ${batchRoot} hold the imported credential; delete them when you are done`)
     // Money, then runs: both checked under the ledger's lock before anything launches, and the whole batch reserved in
     // the same step. The dollar caps are the caller's.
@@ -367,7 +381,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const ctx = {
       store, plugin, iteration, month: reservation.month, batch: reservation.batch, batchRoot, rawDir, binary, opencode, hostVersion,
       model: options.model, options: pluginOptions, timeoutMs: Number(options.timeout ?? 420) * 1000,
-      keep: keepRoot, caller, auth, world, armDir, arm, runnerVersion: harnessVersion(),
+      keep: keepRoot, keepCredentials: keepRoot && Boolean(options.keepCredentials), caller, auth, world, armDir, arm, runnerVersion: harnessVersion(),
       worldInfo: { ...(world.provenance?.() ?? { name: world.name }), now: status.now ?? null },
       interrupted: () => interrupted,
       log,

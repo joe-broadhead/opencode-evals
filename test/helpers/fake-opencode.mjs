@@ -57,6 +57,12 @@ if (args[0] === "run") {
     mkdirSync(dir, { recursive: true })
     writeFileSync(join(dir, "transcript.jsonl"), "{}\\n")
   }
+  // A token refresh: claude replaces its credentials file (write elsewhere, rename over it).
+  if (prompt.includes("refresh") && existsSync(join(home, ".claude", ".credentials.json"))) {
+    const target = join(home, ".claude", ".credentials.json")
+    writeFileSync(target + ".tmp", JSON.stringify({ claudeAiOauth: { accessToken: "a2", refreshToken: "r2", expiresAt: Date.now() + 36000000 } }))
+    require("node:fs").renameSync(target + ".tmp", target)
+  }
   if (prompt.includes("write a note")) {
     mkdirSync(join(process.cwd(), "notes"), { recursive: true })
     writeFileSync(join(process.cwd(), "notes", "answer.md"), "the answer is eight\\n")
