@@ -21,7 +21,7 @@ import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf }
 import { assertWithinBudget, projectedSpend, monthToDate, CAPS } from "../cost/budget.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
-import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox } from "./sandbox.mjs"
+import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, killAll } from "./sandbox.mjs"
 import { parseAuth, prepareAuth } from "./auth.mjs"
 import { loadWorld, parseSeed } from "./world.mjs"
 import { materialiseArm, armProvenance } from "./arm.mjs"
@@ -154,6 +154,8 @@ async function runJob(job, ctx) {
   } finally {
     await stop(server?.proc)
   }
+  // An interrupted run is not a recording: nothing is written for it, and the batch's own cleanup removes its sandbox.
+  if (ctx.interrupted()) throw new Error(`interrupted by ${ctx.interrupted()}`)
   const durationMs = Date.now() - started
   const summary = {
     exit: result.timedOut ? 124 : result.code,
@@ -250,81 +252,129 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
 
   const tmpRoot = resolve(caller.EVALS_TMP ?? tmpdir())
   const batchRoot = within(tmpRoot, mkdtempSync(join(tmpRoot, `evals-run-${iteration}-`)), "the batch directory")
-  const armDir = armSource ? materialiseArm(resolve(armSource), join(batchRoot, "arm")) : null
-  const built = armProvenance(armDir, armSource ? resolve(armSource) : null)
-  // The options are an axis of their own: an access mode changes what the plugin allows. Recorded by digest (an
-  // option can be a secret), with the access value beside it.
-  const arm = { ...built, provenance: { ...built.provenance, options: digestOf(pluginOptions ?? {}), ...(pluginOptions?.access ? { access: pluginOptions.access } : {}) } }
 
-  // The world must be current, and built by the build under test.
-  let status = world.status({ arm: armDir ? { dir: armDir, sha256: arm.sha256 } : null })
-  if (!status.fresh) {
-    if ((options.stale ?? "rebuild") === "rebuild" && typeof world.build === "function" && status.rebuildable !== false) {
-      log(`world ${world.name} is stale: ${status.why}`)
-      await world.build({ arm: armDir ? { dir: armDir, sha256: arm.sha256 } : null, caller, log })
-      status = world.status({ arm: armDir ? { dir: armDir, sha256: arm.sha256 } : null })
-    }
-    if (!status.fresh) {
-      removeSandbox(batchRoot)
-      throw new Error(`world ${world.name} is stale and was not rebuilt: ${status.why}`)
-    }
-  }
-
-  const auth = await prepareAuth(parseAuth(options.auth ?? caller.EVALS_AUTH), { binary, caller })
-  // Money, then runs: both checked before anything launches, and the whole batch reserved in one locked step.
-  const projected = projectedSpend(store, jobs.length)
-  assertWithinBudget(store, { model_usd: projected.model_usd })
-  const reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller })
-  log(`reserved ${jobs.length} run(s) as ${reservation.batch}: ${plugin} at ${reservation.used.per_plugin_month + jobs.length}/${caps.per_plugin_month} this month; projected spend $${projected.model_usd.toFixed(2)} (${projected.basis})`)
-
-  mkdirSync(rawDir, { recursive: true, mode: 0o700 })
-  const ctx = {
-    store, plugin, iteration, month: reservation.month, batch: reservation.batch, batchRoot, rawDir, binary, opencode, hostVersion,
-    model: options.model, options: pluginOptions, timeoutMs: Number(options.timeout ?? 420) * 1000,
-    keep: Boolean(options.keep), caller, auth, world, armDir, arm, runnerVersion: harnessVersion(),
-    worldInfo: { ...(world.provenance?.() ?? { name: world.name }), now: status.now ?? null },
-  }
-  const results = []
-  let next = 0
+  // From here on, an interrupt (Ctrl-C, SIGTERM) or an uncaught error stops every process group this batch started,
+  // removes the sandboxes (and the credential imported into them) unless --keep, releases the runs that never
+  // launched, writes the batch record, and exits non-zero. `finish` is the one cleanup, shared with a normal end.
+  let reservation = null
   let launched = 0
   let stopped = null
-  const worker = async () => {
-    for (;;) {
-      if (stopped) return
-      const index = next++
-      if (index >= jobs.length) return
-      const job = jobs[index]
-      const now = world.status({ arm: armDir ? { dir: armDir, sha256: arm.sha256 } : null })
-      if (!now.fresh) {
-        results.push({ case: job.case.id, trial: job.trial, skipped: `world stale: ${now.why}` })
-        log(`  ${job.case.id}.t${job.trial} SKIPPED: the world went stale (${now.why})`)
-        continue
-      }
-      const window = hourWindow(job.case.seed)
-      if (!window.ok) {
-        results.push({ case: job.case.id, trial: job.trial, skipped: window.why })
-        log(`  ${job.case.id}.t${job.trial} SKIPPED: ${window.why}`)
-        continue
-      }
-      if (monthToDate(store).model_usd > CAPS.model_usd) {
-        stopped = `the month's model spend crossed $${CAPS.model_usd}`
-        return
-      }
-      launched++
-      const outcome = await runJob(job, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: String(error.message ?? error) }))
-      results.push(outcome)
-      log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)
+  let interrupted = null
+  const results = []
+  let finished = false
+  let keepRoot = Boolean(options.keep)
+  const facts = {}
+  const finish = (facts = {}) => {
+    if (finished) return
+    finished = true
+    if (reservation) release(store, reservation.batch, jobs.length - launched)
+    if (!keepRoot) removeSandbox(within(tmpRoot, batchRoot, "the batch directory"))
+    if (reservation) {
+      const record = { batch: reservation.batch, iteration, plugin, model: options.model, runner: RUNNER, runner_version: harnessVersion(), ...facts, trials, cases: selected.map((c) => c.id), planned: jobs.length, launched, stopped, ran_at: new Date().toISOString(), results }
+      mkdirSync(rawDir, { recursive: true, mode: 0o700 })
+      writeAtomic(within(rawDir, join(rawDir, `batch-${segment("batch id", reservation.batch)}.json`), "the batch record"), `${JSON.stringify(record, null, 1)}\n`)
     }
   }
+  const onInterrupt = async (reason, code) => {
+    if (interrupted) return
+    interrupted = reason
+    stopped = `interrupted by ${reason}`
+    log(`evals run: ${stopped}; stopping every run this batch started`)
+    await killAll()
+    try {
+      finish(facts)
+    } finally {
+      process.exit(code)
+    }
+  }
+  const handlers = {
+    SIGINT: () => onInterrupt("SIGINT", 130),
+    SIGTERM: () => onInterrupt("SIGTERM", 143),
+    uncaughtException: (error) => {
+      log(`evals run: ${error?.stack ?? error}`)
+      onInterrupt("an uncaught error", 1)
+    },
+    unhandledRejection: (error) => {
+      log(`evals run: ${error?.stack ?? error}`)
+      onInterrupt("an unhandled rejection", 1)
+    },
+  }
+  for (const [event, handler] of Object.entries(handlers)) process.on(event, handler)
+  const unhook = () => {
+    for (const [event, handler] of Object.entries(handlers)) process.off(event, handler)
+  }
   try {
+    const armDir = armSource ? materialiseArm(resolve(armSource), join(batchRoot, "arm")) : null
+    const built = armProvenance(armDir, armSource ? resolve(armSource) : null)
+    // The options are an axis of their own: an access mode changes what the plugin allows. Recorded by digest (an
+    // option can be a secret), with the access value beside it.
+    const arm = { ...built, provenance: { ...built.provenance, options: digestOf(pluginOptions ?? {}), ...(pluginOptions?.access ? { access: pluginOptions.access } : {}) } }
+    Object.assign(facts, { opencode, arm: { arm: arm.arm, sha256: arm.sha256, version: arm.version } })
+
+    // The world must be current, and built by the build under test.
+    let status = world.status({ arm: armDir ? { dir: armDir, sha256: arm.sha256 } : null })
+    if (!status.fresh) {
+      if ((options.stale ?? "rebuild") === "rebuild" && typeof world.build === "function" && status.rebuildable !== false) {
+        log(`world ${world.name} is stale: ${status.why}`)
+        await world.build({ arm: armDir ? { dir: armDir, sha256: arm.sha256 } : null, caller, log })
+        status = world.status({ arm: armDir ? { dir: armDir, sha256: arm.sha256 } : null })
+      }
+      if (!status.fresh) throw new Error(`world ${world.name} is stale and was not rebuilt: ${status.why}`)
+    }
+
+    const auth = await prepareAuth(parseAuth(options.auth ?? caller.EVALS_AUTH), { binary, caller })
+    // Money, then runs: both checked before anything launches, and the whole batch reserved in one locked step.
+    const projected = projectedSpend(store, jobs.length)
+    assertWithinBudget(store, { model_usd: projected.model_usd })
+    reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller })
+    log(`reserved ${jobs.length} run(s) as ${reservation.batch}: ${plugin} at ${reservation.used.per_plugin_month + jobs.length}/${caps.per_plugin_month} this month; projected spend $${projected.model_usd.toFixed(2)} (${projected.basis})`)
+
+    mkdirSync(rawDir, { recursive: true, mode: 0o700 })
+    const ctx = {
+      store, plugin, iteration, month: reservation.month, batch: reservation.batch, batchRoot, rawDir, binary, opencode, hostVersion,
+      model: options.model, options: pluginOptions, timeoutMs: Number(options.timeout ?? 420) * 1000,
+      keep: keepRoot, caller, auth, world, armDir, arm, runnerVersion: harnessVersion(),
+      worldInfo: { ...(world.provenance?.() ?? { name: world.name }), now: status.now ?? null },
+      interrupted: () => interrupted,
+    }
+    Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo })
+    let next = 0
+    const worker = async () => {
+      for (;;) {
+        if (stopped) return
+        const index = next++
+        if (index >= jobs.length) return
+        const job = jobs[index]
+        const now = world.status({ arm: armDir ? { dir: armDir, sha256: arm.sha256 } : null })
+        if (!now.fresh) {
+          results.push({ case: job.case.id, trial: job.trial, skipped: `world stale: ${now.why}` })
+          log(`  ${job.case.id}.t${job.trial} SKIPPED: the world went stale (${now.why})`)
+          continue
+        }
+        const window = hourWindow(job.case.seed)
+        if (!window.ok) {
+          results.push({ case: job.case.id, trial: job.trial, skipped: window.why })
+          log(`  ${job.case.id}.t${job.trial} SKIPPED: ${window.why}`)
+          continue
+        }
+        if (monthToDate(store).model_usd > CAPS.model_usd) {
+          stopped = `the month's model spend crossed $${CAPS.model_usd}`
+          return
+        }
+        launched++
+        const outcome = await runJob(job, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: String(error.message ?? error) }))
+        results.push(outcome)
+        log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)
+      }
+    }
     await Promise.all(Array.from({ length: Math.min(parallel, jobs.length) }, worker))
   } finally {
-    release(store, reservation.batch, jobs.length - launched)
-    if (!ctx.keep) removeSandbox(batchRoot)
+    if (!interrupted) {
+      unhook()
+      finish(facts)
+    }
   }
-  const record = { batch: reservation.batch, iteration, plugin, model: options.model, runner: RUNNER, runner_version: ctx.runnerVersion, opencode, auth: auth.profile, world: ctx.worldInfo, arm: { arm: arm.arm, sha256: arm.sha256, version: arm.version }, trials, cases: selected.map((c) => c.id), planned: jobs.length, launched, stopped, ran_at: new Date().toISOString(), results }
-  writeAtomic(within(rawDir, join(rawDir, `batch-${segment("batch id", reservation.batch)}.json`), "the batch record"), `${JSON.stringify(record, null, 1)}\n`)
   const bad = results.filter((r) => r.error || (r.exit !== 0 && r.exit !== undefined))
   log(`done: ${launched} of ${jobs.length} run(s) launched, ${bad.length} with a non-zero exit or an error${stopped ? `; stopped: ${stopped}` : ""}`)
-  return { ...record, bad: bad.length, keptAt: ctx.keep ? batchRoot : null }
+  return { batch: reservation.batch, iteration, plugin, model: options.model, ...facts, trials, cases: selected.map((c) => c.id), planned: jobs.length, launched, stopped, results, bad: bad.length, keptAt: keepRoot ? batchRoot : null }
 }

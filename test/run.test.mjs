@@ -348,3 +348,71 @@ test("the files a run wrote are recorded beside it and graded with file: clauses
   assert.equal(verdicts.find((v) => v.case === "writes-note").verdict, "PASS", JSON.stringify(verdicts.find((v) => v.case === "writes-note").items))
   f.cleanup()
 })
+
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+const until = async (what, probe, ms = 15000) => {
+  const deadline = Date.now() + ms
+  for (;;) {
+    const value = probe()
+    if (value) return value
+    if (Date.now() > deadline) throw new Error(`timed out waiting for ${what}`)
+    await new Promise((done) => setTimeout(done, 50))
+  }
+}
+
+test("a finished run leaves nothing running: the server's own children go with its group", async () => {
+  const f = fixture()
+  const result = await runBatch({ plugin: "demo", iteration: "reap", model: "mock/m1", auth: "none", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true }, { caller: f.caller, ...quiet })
+  const home = join(result.keptAt, "runs", "demo-b.t1", "home")
+  const child = Number(readFileSync(join(home, "serve-child.pid"), "utf8"))
+  const serve = JSON.parse(readFileSync(join(home, readdirSync(home).find((n) => /^serve-\d+\.json$/.test(n))), "utf8")).pid
+  await until("the server group to end", () => !alive(child) && !alive(serve), 5000)
+  f.cleanup()
+})
+
+test("Ctrl-C stops every process the batch started, removes its sandboxes, releases what never ran, and exits 130", async () => {
+  const f = fixture()
+  addCase(f.casesDir, "sleepy", "")
+  addCase(f.casesDir, "zz-after", "")
+  const sleepy = JSON.parse(readFileSync(join(f.casesDir, "sleepy.json"), "utf8"))
+  writeFileSync(join(f.casesDir, "sleepy.json"), JSON.stringify({ ...sleepy, prompt: "please sleep" }))
+  const { spawn } = await import("node:child_process")
+  const cli = spawn(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "int", "--model", "mock/m1", "--auth", "none", "--arm", f.arm, "--cases-dir", f.casesDir, "--cases", "sleepy,demo-b,zz-after", "--parallel", "1"], { env: f.caller, stdio: ["ignore", "pipe", "pipe"] })
+  let out = ""
+  cli.stdout.on("data", (d) => (out += d))
+  cli.stderr.on("data", (d) => (out += d))
+  const exited = new Promise((done) => cli.on("exit", (code) => done(code)))
+  // demo-b runs first (id order), then sleepy hangs; wait until sleepy's run and its child are up.
+  const home = await until("the sleeping run", () => {
+    const batch = readdirSync(f.tmp).find((n) => n.startsWith("evals-run-int-"))
+    const dir = batch && join(f.tmp, batch, "runs", "sleepy.t1", "home")
+    return dir && existsSync(join(dir, "run-child.pid")) && existsSync(join(dir, "run.json")) ? dir : null
+  })
+  const pids = [
+    JSON.parse(readFileSync(join(home, "run.json"), "utf8")).pid,
+    Number(readFileSync(join(home, "run-child.pid"), "utf8")),
+    Number(readFileSync(join(home, "serve-child.pid"), "utf8")),
+    JSON.parse(readFileSync(join(home, readdirSync(home).find((n) => /^serve-\d+\.json$/.test(n))), "utf8")).pid,
+  ]
+  assert.ok(pids.every(alive), "everything is running before the interrupt")
+  cli.kill("SIGINT")
+  assert.equal(await exited, 130, out)
+  await until("every process to end", () => pids.every((pid) => !alive(pid)), 5000)
+  assert.deepEqual(readdirSync(f.tmp), [], "no sandbox, no imported credential left in tmp")
+  const raw = readdirSync(join(f.store, "raw", "int", "demo"))
+  assert.ok(raw.includes("demo-b.t1.jsonl"))
+  assert.equal(raw.includes("sleepy.t1.jsonl"), false, "an interrupted run is not a recording")
+  const record = JSON.parse(readFileSync(join(f.store, "raw", "int", "demo", raw.find((n) => n.startsWith("batch-"))), "utf8"))
+  assert.equal(record.stopped, "interrupted by SIGINT")
+  assert.equal(record.launched, 2)
+  assert.equal(readLedger(f.store).find((e) => e.kind === "release").runs, 1, "zz-after never launched: released")
+  assert.match(out, /interrupted by SIGINT/)
+  f.cleanup()
+})

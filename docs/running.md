@@ -76,6 +76,11 @@ The host is `opencode serve` on a free loopback port, and the run is `opencode r
 the case's working directory. Both are started in their own process group and stopped with it, so a provider's own
 CLI cannot outlive its run. The sandbox is deleted after the run.
 
+An interrupt (Ctrl-C, `SIGTERM`) or an uncaught error stops the batch the same way: every process group it started
+gets `SIGTERM`, then `SIGKILL`; the run that was interrupted is not recorded; the sandboxes, with the credential
+imported into them, are removed (unless `--keep`); the runs that never launched are released from the ledger; the
+batch record says `interrupted by SIGINT`; and the runner exits 130 (143 on `SIGTERM`, 1 on an error).
+
 ## Credentials
 
 `--auth` is required, so a run never picks a credential up by accident. Nothing is written into the repository or

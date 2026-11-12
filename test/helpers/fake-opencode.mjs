@@ -12,7 +12,13 @@ const http = require("node:http")
 const args = process.argv.slice(2)
 const home = process.env.HOME
 const note = (name, data) => writeFileSync(join(home, name), JSON.stringify(data, null, 1))
-const seen = () => ({ argv: args, env: process.env, cwd: process.cwd() })
+const seen = () => ({ argv: args, env: process.env, cwd: process.cwd(), pid: process.pid })
+// A child in the same process group, the way a provider's CLI runs under a server: it must not outlive the run.
+const linger = (name) => {
+  const child = require("node:child_process").spawn(process.execPath, ["-e", "setTimeout(() => {}, 120000)"], { stdio: "ignore" })
+  writeFileSync(join(home, name), String(child.pid))
+  return child
+}
 if (args[0] === "--version") { console.log("opencode v2.2.6"); process.exit(0) }
 if (args[0] === "auth" && args[1] === "export") {
   if (process.env.FAKE_NO_CREDENTIAL) process.exit(1)
@@ -29,6 +35,7 @@ if (args[0] === "serve") {
   const port = Number(args[args.indexOf("--port") + 1])
   const expected = "Basic " + Buffer.from("opencode:" + process.env.OPENCODE_PASSWORD).toString("base64")
   note("serve-" + port + ".json", seen())
+  linger("serve-child.pid")
   const server = http.createServer((req, res) => {
     if (req.headers.authorization !== expected) { res.statusCode = 401; return res.end("{}") }
     res.setHeader("content-type", "application/json"); res.end("[]")
@@ -40,6 +47,11 @@ if (args[0] === "serve") {
 if (args[0] === "run") {
   const prompt = args[args.length - 1]
   note("run.json", seen())
+  if (prompt.includes("sleep")) {
+    linger("run-child.pid")
+    setTimeout(() => process.exit(0), 120000)
+    return
+  }
   if (existsSync(join(home, ".claude"))) {
     const dir = join(home, ".claude", "projects", process.cwd().replace(/[^A-Za-z0-9]/g, "-"))
     mkdirSync(dir, { recursive: true })

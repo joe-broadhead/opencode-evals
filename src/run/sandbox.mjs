@@ -65,9 +65,43 @@ export function writeConfig(sandbox, config) {
   writeFileSync(join(sandbox.home, ".config", "opencode", "opencode.json"), `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 })
 }
 
+/**
+ * Every process group this runner started and has not seen end. A group outlives its leader when the leader leaves
+ * children behind (a provider's CLI under a server), so a group is dropped only once nothing in it is left.
+ */
+const groups = new Set()
+
+const signalGroup = (pgid, signal) => {
+  try {
+    process.kill(-pgid, signal)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const reap = () => {
+  for (const pgid of groups) if (!signalGroup(pgid, 0)) groups.delete(pgid)
+}
+
+/** The groups still alive: for a test, and for the interrupt handler. */
+export const liveGroups = () => (reap(), [...groups])
+
+/** TERM to every group this runner started, a grace period, then KILL. Used on an interrupt. */
+export async function killAll({ graceMs = 1500 } = {}) {
+  reap()
+  for (const pgid of groups) signalGroup(pgid, "SIGTERM")
+  const deadline = Date.now() + graceMs
+  while (Date.now() < deadline && liveGroups().length) await new Promise((done) => setTimeout(done, 50))
+  for (const pgid of groups) signalGroup(pgid, "SIGKILL")
+  await new Promise((done) => setTimeout(done, 50))
+  reap()
+}
+
 /** A process in its own group, so a timeout or a stop reaches what it started (a provider's CLI included). */
 export function start(command, args, { cwd, env, input = null } = {}) {
   const child = spawn(command, args, { cwd, env, stdio: [input === null ? "ignore" : "pipe", "pipe", "pipe"], detached: true })
+  if (child.pid) groups.add(child.pid)
   let stdout = ""
   let stderr = ""
   child.stdout.on("data", (data) => (stdout += data))
@@ -110,6 +144,9 @@ export async function runToEnd(command, args, { cwd, env, input = null, timeoutM
     : null
   const exit = await proc.exited
   if (timer) clearTimeout(timer)
+  // Nothing a finished command started is left running.
+  proc.kill("SIGKILL")
+  reap()
   return { ...exit, ...proc.output(), timedOut }
 }
 
@@ -121,6 +158,7 @@ export async function stop(proc, { graceMs = 2000 } = {}) {
   if (!done) proc.kill("SIGKILL")
   // A provider's CLI can outlive the server it was started by; the group signal reaches it, this makes sure.
   proc.kill("SIGKILL")
+  reap()
 }
 
 export const removeSandbox = (root) => {
