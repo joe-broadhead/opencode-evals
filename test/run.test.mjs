@@ -674,6 +674,24 @@ test("the access token is scrubbed from every recording, summary, files record a
   f.cleanup()
 })
 
+test("stderr is scrubbed before it is cut: a token straddling the cut leaves no tail in the summary", async () => {
+  const f = fixture({ cases: [["straddles", ""]] })
+  const c = JSON.parse(readFileSync(join(f.casesDir, "straddles.json"), "utf8"))
+  writeFileSync(join(f.casesDir, "straddles.json"), JSON.stringify({ ...c, prompt: "straddle the cut" }))
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  await runBatch({ plugin: "demo", iteration: "cut", model: "claude-agent/haiku", auth: "claude-agent", isolation: "none", unsafeNoIsolation: true, cases: "straddles", arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
+  const summary = JSON.parse(readFileSync(join(f.store, "raw", "cut", "demo", "straddles.t1.summary.json"), "utf8"))
+  assert.equal(summary.stderr.length, 4000)
+  assert.ok(summary.stderr.startsWith("*"), "the cut runs through the masked token")
+  for (let n = 8; n < TOKEN.length; n++) assert.equal(summary.stderr.includes(TOKEN.slice(-n)), false, `no ${n}-character tail of the token`)
+  // The helper every other cut uses (a server's stderr, a world step's, a docker error) scrubs first too.
+  const { tail, registerSecrets } = await import("../src/run/secrets.mjs")
+  const secret = "straddling-secret-0123456789"
+  registerSecrets([secret])
+  assert.equal(tail(`${secret}${"z".repeat(10)}`, 20), `${"*".repeat(10)}${"z".repeat(10)}`)
+  f.cleanup()
+})
+
 test("the scrubber masks a secret by its exact value, in text and in files, keeping their size", async () => {
   const { redactor, scrubTree } = await import("../src/run/secrets.mjs")
   const redact = redactor([TOKEN, "short"])

@@ -74,6 +74,8 @@ if (args[0] === "run") {
     process.stderr.write("debug token" + leak + String.fromCharCode(10))
     writeFileSync(join(process.cwd(), "leaked.txt"), "token" + leak + String.fromCharCode(10))
   }
+  // A token that straddles the summary's 4000-character cut of stderr.
+  if (prompt.includes("straddle")) process.stderr.write(token + "y".repeat(3990))
   const at = Date.now()
   const event = (type, part, dt = 0) => console.log(JSON.stringify({ type, timestamp: at + dt, sessionID: "ses_fake", part }))
   event("step_start", { type: "step-start" })

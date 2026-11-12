@@ -23,6 +23,7 @@ import { statfs } from "node:fs/promises"
 import { delimiter, isAbsolute, join, resolve } from "node:path"
 import { parseAllow } from "../../docker/egress-proxy.mjs"
 import { repairPermissions } from "./sandbox.mjs"
+import { tail } from "./secrets.mjs"
 
 export const DOCKER_DIR = resolve(import.meta.dirname, "..", "..", "docker")
 export const IMAGE_REPO = "opencode-evals-sandbox"
@@ -183,7 +184,7 @@ export function containerBackend(config = containerConfig()) {
   const docker = (args, options = {}) => dockerRun(state.docker, args, { env: state.dockerEnv, ...options })
   const must = async (args, what, options) => {
     const result = await docker(args, options)
-    if (result.code !== 0) throw new Error(`${what} failed: ${(result.stderr || result.stdout).trim().slice(-400)}`)
+    if (result.code !== 0) throw new Error(`${what} failed: ${tail((result.stderr || result.stdout).trim(), 400)}`)
     return result.stdout.trim()
   }
 
@@ -267,7 +268,7 @@ export function containerBackend(config = containerConfig()) {
       if (/[,\n"]/.test(batchRoot ?? "")) throw new Error(`--isolation container: the batch directory ${JSON.stringify(batchRoot)} has a comma, quote or newline, which a bind mount cannot name: set EVALS_TMP to a plainer path`)
       backend.client(caller)
       const version = await docker(["version", "--format", "{{.Server.Version}}"], { timeoutMs: 20_000 })
-      if (version.code !== 0) throw new Error(`--isolation container: Docker is not usable by this user (${(version.stderr || "no answer").trim().slice(-200)}); is the daemon running, and is this user in the docker group?`)
+      if (version.code !== 0) throw new Error(`--isolation container: Docker is not usable by this user (${tail((version.stderr || "no answer").trim(), 200)}); is the daemon running, and is this user in the docker group?`)
       state.version = version.stdout.trim()
       const major = Number((/^(\d+)/.exec(state.version) ?? [])[1])
       if (!(major >= 28)) throw new Error(`--isolation container: Docker ${state.version} is too old; the isolated gateway mode a trial network needs is Docker 28 or later`)
@@ -294,7 +295,7 @@ export function containerBackend(config = containerConfig()) {
       for (;;) {
         const logs = await docker(["logs", proxyName], { timeoutMs: 5000 })
         if (logs.stdout.includes('"ev":"listening"')) break
-        if (Date.now() > deadline) throw new Error(`the egress proxy did not start: ${(logs.stderr || logs.stdout).trim().slice(-300)}`)
+        if (Date.now() > deadline) throw new Error(`the egress proxy did not start: ${tail((logs.stderr || logs.stdout).trim(), 300)}`)
         await new Promise((done) => setTimeout(done, 100))
       }
       return backend.describe()
@@ -417,7 +418,7 @@ export function containerBackend(config = containerConfig()) {
           const args = ["exec", "-i", trial.container, "curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "--max-time", "2", "--noproxy", "*", "--config", "-", ...(directory ? ["-H", `x-opencode-directory: ${directory}`] : []), url]
           const result = await docker(args, { input: password ? `user = "opencode:${password}"\n` : "", timeoutMs: 10_000 })
           if (result.stdout.trim() === "200") return { ok: true }
-          last = result.stdout.trim() ? `HTTP ${result.stdout.trim()}` : (result.stderr.trim().slice(-200) || `curl exit ${result.code}`)
+          last = result.stdout.trim() ? `HTTP ${result.stdout.trim()}` : (tail(result.stderr.trim(), 200) || `curl exit ${result.code}`)
           await new Promise((done) => setTimeout(done, 200))
         }
         return { ok: false, last: trial.left ? `the trial was stopped (${trial.leftFor ?? "left"})` : exited() ? "the server exited" : `no answer in ${timeoutMs} ms (${last})` }
@@ -505,7 +506,7 @@ export async function checkIsolation({ caller = process.env, config = containerC
   const image = version.code === 0 ? await dockerRun(docker, ["image", "inspect", "--format", "{{.Id}}", tag], { env, timeoutMs: 20_000 }) : { code: 1 }
   return {
     docker: version.code === 0 ? version.stdout.trim() : null,
-    docker_error: version.code === 0 ? null : (version.stderr || "no answer").trim().slice(-200),
+    docker_error: version.code === 0 ? null : tail((version.stderr || "no answer").trim(), 200),
     image: tag,
     image_id: image.code === 0 ? image.stdout.trim() : null,
     egress_allow: config.allow,

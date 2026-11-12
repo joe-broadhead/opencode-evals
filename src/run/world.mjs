@@ -31,6 +31,7 @@ import { runToEnd } from "./sandbox.mjs"
 import { sha256 } from "../util/canonical.mjs"
 import { treeDigest } from "./arm.mjs"
 import { segment, within, inside } from "./paths.mjs"
+import { tail } from "./secrets.mjs"
 
 /** A digest of a file or a directory tree: what records which private overlay a world was built with. */
 const digestOfPath = (path) => (statSync(path).isDirectory() ? treeDigest(path) : sha256(readFileSync(path)))
@@ -132,7 +133,7 @@ export function dirWorld(dir) {
       const overlay = overlayOf(s, caller)
       if (overlay && !existsSync(overlay)) throw new Error(`the world's overlay ${s.overlay} is not there`)
       const result = await runToEnd("bash", ["-c", s.build], { cwd: dir, env: { ...caller, EVALS_WORLD_DIR: dir, EVALS_WORLD_ARM: arm?.dir ?? "", EVALS_WORLD_OVERLAY: overlay ?? "" }, timeoutMs: 30 * 60_000 })
-      if (result.code !== 0) throw new Error(`the world build failed (exit ${result.code}): ${result.stderr.slice(-400)}`)
+      if (result.code !== 0) throw new Error(`the world build failed (exit ${result.code}): ${tail(result.stderr, 400)}`)
       writeFileSync(join(dir, STAMP), `${JSON.stringify({ built_at: new Date().toISOString(), arm_sha256: arm?.sha256 ?? null, overlay_sha256: overlay ? digestOfPath(overlay) : null, now: clock(spec().now) }, null, 1)}\n`)
     },
     async prepare({ sandbox, seed, caller = process.env }) {
@@ -161,7 +162,7 @@ export function dirWorld(dir) {
       // something in a copy.
       if (s.prepare) {
         const result = await runToEnd("bash", ["-c", s.prepare], { cwd: dir, env: { ...caller, EVALS_WORLD_DIR: dir, EVALS_SANDBOX_ROOT: sandbox.root, EVALS_SANDBOX_HOME: sandbox.home, EVALS_RUN_CWD: cwd, EVALS_REPO_SOURCE: source ?? "" }, timeoutMs: 5 * 60_000 })
-        if (result.code !== 0) throw new Error(`the world's prepare step failed (exit ${result.code}): ${result.stderr.slice(-300)}`)
+        if (result.code !== 0) throw new Error(`the world's prepare step failed (exit ${result.code}): ${tail(result.stderr, 300)}`)
       }
       let session = null
       if (seeds.continue) {

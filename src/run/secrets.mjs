@@ -58,3 +58,18 @@ export function scrubTree(root, redact) {
   walk(root)
   return changed
 }
+
+// Every secret this process has handed a run, so that any text is scrubbed before it is cut: a value straddling a
+// cut would otherwise leave its tail behind, which no exact-value scrub of the cut text can find.
+const known = new Set()
+
+/** Registers secrets (the batch's token or keys, each run's password) for scrub() and tail(). */
+export function registerSecrets(values = []) {
+  for (const value of values) if (typeof value === "string" && value.length >= 8) known.add(value)
+}
+
+/** Every registered secret masked in `text`. */
+export const scrub = (text) => redactor([...known])(text)
+
+/** The last `n` characters of `text`, scrubbed first and cut after. Use this wherever output is truncated. */
+export const tail = (text, n) => String(scrub(String(text ?? ""))).slice(-n)

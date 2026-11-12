@@ -28,7 +28,7 @@ import { snapshotFiles, changedFiles } from "./files.mjs"
 import { segment, within, inside } from "./paths.mjs"
 import { selectIsolation, isLive, defaultIsolation } from "./isolation.mjs"
 import { containerConfig, findBinary } from "./container.mjs"
-import { redactor, scrubTree } from "./secrets.mjs"
+import { redactor, scrubTree, registerSecrets, tail } from "./secrets.mjs"
 import { splitTrial } from "../grade/trials.mjs"
 import { digestOf } from "../util/canonical.mjs"
 import { dirname } from "node:path"
@@ -123,7 +123,7 @@ async function startServer({ binary, cwd, env, password, trial, timeoutMs = 60_0
     proc.exited.then(() => (exited = true))
     const up = await trial.ready({ url: `http://127.0.0.1:${port}/api/agent`, password, directory: cwd, timeoutMs, exited: () => exited })
     if (up.ok) return { proc, url: `http://127.0.0.1:${port}`, port }
-    last = exited ? `the server exited: ${proc.output().stderr.slice(-300)}` : up.last
+    last = exited ? `the server exited: ${tail(proc.output().stderr, 300)}` : up.last
     await stop(proc, { graceMs: 500 })
     if (trial.killed) break
   }
@@ -200,6 +200,7 @@ async function runJob(job, ctx) {
   const password = newPassword()
   // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
   const redact = redactor([...(ctx.auth.secrets ?? []), password])
+  registerSecrets([password])
   let trial = null
   try {
     // The trial: under `container`, its own container and network, with the sandbox mounted at its own path.
@@ -248,7 +249,8 @@ async function runJob(job, ctx) {
       seed: job.case.seed ?? null,
       utc_hour: new Date(started).getUTCHours(),
       ...(prepared.session ? { continued: true } : {}),
-      stderr: `${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}${killed ? `\n[evals run] killed: ${killed.reason}` : ""}`.slice(-4000),
+      // Scrubbed, then cut: a secret straddling the cut would leave its tail in the summary otherwise.
+      stderr: redact(`${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}${killed ? `\n[evals run] killed: ${killed.reason}` : ""}`).slice(-4000),
       started_at: new Date(started).toISOString(),
       runner: RUNNER,
       runner_version: ctx.runnerVersion,
@@ -330,6 +332,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // harness's own scripted model with no credential is not live. Decided, and refused, before a world module is
   // imported: importing one runs its code.
   const profile = parseAuth(options.auth ?? caller.EVALS_AUTH)
+  // A key passed through is a secret from the start: a world build's error output is scrubbed of it too.
+  if (profile.kind === "env") registerSecrets(profile.names.map((name) => caller[name]))
   const scripted = Boolean(options.scripted)
   if (scripted && options.model !== SCRIPTED_MODEL) throw new Error(`--scripted runs the harness's scripted model, ${SCRIPTED_MODEL}: --model ${options.model} is not it`)
   const live = isLive({ auth: profile.kind, model: options.model, config: sealedConfig({ armDir: null, model: options.model, scripted }) })
@@ -463,7 +467,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     } finally {
       await probeTrial.leave({ reason: "probe" })
     }
-    if (version.code !== 0) throw new Error(`${binary} --version failed: is the host installed?${version.stderr ? ` (${version.stderr.trim().slice(-200)})` : ""}`)
+    if (version.code !== 0) throw new Error(`${binary} --version failed: is the host installed?${version.stderr ? ` (${tail(version.stderr.trim(), 200)})` : ""}`)
     const opencode = version.stdout.trim()
     const hostVersion = (/(\d+\.\d+\.\d+)/.exec(opencode) ?? [])[1] ?? null
     if (hostVersion && !TESTED.includes(hostVersion)) log(`warning: host ${hostVersion} is not a tested version (${TESTED.join(", ")})`)
@@ -492,6 +496,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // From here on, a run's secret (the access token, a key passed through) is scrubbed, by exact value, from every
     // line logged and every file written.
     redact = redactor(auth.secrets)
+    registerSecrets(auth.secrets)
     const unscrubbed = log
     log = (line) => unscrubbed(redact(line))
     if (keepRoot && auth.holdsCredential) log(`warning: --keep-credentials: the kept sandboxes under ${batchRoot} hold the imported credential; delete them when you are done`)
