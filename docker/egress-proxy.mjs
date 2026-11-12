@@ -155,10 +155,11 @@ export function clientHelloSni(buffer) {
  * After `200 Connection Established` nothing goes through the tunnel until the client's first TLS message, its
  * ClientHello, names the very host it asked to CONNECT to (SNI, compared exactly): a tunnel to an allowed name cannot
  * carry a TLS session to another one behind the same address. No SNI, anything that is not a ClientHello, or nothing
- * within `helloTimeoutMs`, and the tunnel is closed. At most `maxPerClient` connections per client address (one trial
+ * within `helloTimeoutMs`, and the tunnel is closed. The request head itself must arrive within `headTimeoutMs` of the
+ * connection, however it is dribbled. At most `maxPerClient` connections per client address (one trial
  * is one address) and `maxTotal` in all are open at once; another is answered 429.
  */
-export function createProxy({ allow, lookup = (host) => dnsLookup(host, { all: true, verbatim: true }), log = (entry) => process.stdout.write(`${JSON.stringify(entry)}\n`), dial = (address, port) => connect({ host: address, port }), helloTimeoutMs = 10_000, maxPerClient = 16, maxTotal = 64 } = {}) {
+export function createProxy({ allow, lookup = (host) => dnsLookup(host, { all: true, verbatim: true }), log = (entry) => process.stdout.write(`${JSON.stringify(entry)}\n`), dial = (address, port) => connect({ host: address, port }), helloTimeoutMs = 10_000, headTimeoutMs = 10_000, maxPerClient = 16, maxTotal = 64 } = {}) {
   const allowed = allow instanceof Set ? allow : parseAllow(allow)
   const active = new Map()
   let total = 0
@@ -182,8 +183,18 @@ export function createProxy({ allow, lookup = (host) => dnsLookup(host, { all: t
     let decided = false
     client.setTimeout(10_000)
     client.on("timeout", () => client.destroy())
+    // One fixed deadline from accept for the whole request head, never reset by data: a client dribbling a byte at a
+    // time cannot hold its slot past it. After the head, the SNI deadline takes over.
+    const headTimer = setTimeout(() => {
+      if (decided) return
+      decided = true
+      log({ ev: "refused", host: "", why: "slow-request" })
+      client.destroy()
+    }, headTimeoutMs)
+    client.on("close", () => clearTimeout(headTimer))
     const refuse = (status, host, why) => {
       decided = true
+      clearTimeout(headTimer)
       log({ ev: "refused", host: clean(host), why })
       client.end(`HTTP/1.1 ${status} ${status === 405 ? "Method Not Allowed" : "Forbidden"}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n`)
     }
@@ -198,6 +209,7 @@ export function createProxy({ allow, lookup = (host) => dnsLookup(host, { all: t
       client.off("data", onData)
       client.pause()
       decided = true
+      clearTimeout(headTimer)
       const rest = head.subarray(end + 4)
       const line = head.subarray(0, head.indexOf("\r\n")).toString("latin1")
       const [method, target] = line.split(" ")

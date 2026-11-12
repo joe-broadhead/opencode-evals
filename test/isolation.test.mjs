@@ -176,6 +176,45 @@ test("a tunnel carries nothing until the ClientHello names the CONNECT host: oth
   assert.deepEqual(clientHelloSni(clientHello("claude.ai").subarray(0, 20)), { incomplete: true })
 })
 
+test("a client dribbling its request head loses its slot at a fixed deadline from accept", async () => {
+  const log = []
+  const server = createProxy({ allow: "api.anthropic.com", log: (e) => log.push(e), headTimeoutMs: 400, maxPerClient: 1, maxTotal: 1 })
+  await new Promise((done) => server.listen(0, "127.0.0.1", done))
+  const sockets = []
+  let dribbler = null
+  try {
+    const slow = connect({ host: "127.0.0.1", port: server.address().port })
+    sockets.push(slow)
+    slow.on("error", () => {})
+    let closedAt = null
+    const openedAt = Date.now()
+    slow.on("close", () => (closedAt = Date.now()))
+    await new Promise((done) => slow.on("connect", done))
+    // One byte every 100 ms: each would reset an idle timeout, none may move the deadline.
+    const line = "CONNECT api.anthropic.com:443 HTTP/1.1"
+    let at = 0
+    dribbler = setInterval(() => !slow.destroyed && slow.write(line[at++ % line.length]), 100)
+    while (closedAt === null && Date.now() - openedAt < 3000) await new Promise((done) => setTimeout(done, 25))
+    assert.ok(closedAt !== null, "the dribbling client was cut off")
+    assert.ok(closedAt - openedAt < 1500, `cut off at the deadline, not later (${closedAt - openedAt} ms)`)
+    assert.deepEqual(log, [{ ev: "refused", host: "", why: "slow-request" }])
+    // Its slot is free again: the next connection is served, not answered 429.
+    const next = connect({ host: "127.0.0.1", port: server.address().port })
+    sockets.push(next)
+    let answer = ""
+    next.on("error", () => {})
+    next.on("data", (d) => (answer += d))
+    await new Promise((done) => next.on("connect", done))
+    next.write("CONNECT example.com:443 HTTP/1.1\r\nHost: x\r\n\r\n")
+    while (!answer.includes("\r\n") && Date.now() - openedAt < 5000) await new Promise((done) => setTimeout(done, 25))
+    assert.match(answer, /^HTTP\/1\.1 403 /, "a refusal on its merits, not a 429")
+  } finally {
+    clearInterval(dribbler)
+    for (const socket of sockets) socket.destroy()
+    await new Promise((done) => server.close(done))
+  }
+})
+
 test("the proxy caps open tunnels per client and in all", async () => {
   for (const [options, label] of [[{ maxPerClient: 2, maxTotal: 10 }, "per client"], [{ maxPerClient: 10, maxTotal: 2 }, "in all"]]) {
     const log = []

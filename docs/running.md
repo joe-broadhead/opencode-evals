@@ -95,7 +95,8 @@ none` is refused for every run, before anything is created, reserved or imported
   documentation one, nor an IPv6 form that carries an IPv4 address, such as IPv4-mapped, NAT64, 6to4 or Teredo), and
   refuses everything else: another host, another port, a plain HTTP request. After `200`, nothing goes through the
   tunnel until the client's TLS ClientHello names the same host in its SNI (another name behind the same address, no
-  SNI, or nothing within 10 s closes it). At most 16 tunnels per trial and 64 in all are open at once. It runs as
+  SNI, or nothing within 10 s closes it), and the request itself must arrive within 10 s of the connection, however
+slowly it is sent. At most 16 tunnels per trial and 64 in all are open at once. It runs as
   `nobody`, read-only, with no capabilities, on a network of its own, on the harness's own Node mounted read-only (the
   image has none: Ubuntu's is 18.x, past its end of life).
   The default allow-list is `api.anthropic.com`, `platform.claude.com`, `console.anthropic.com` and `claude.ai`;
