@@ -5,6 +5,7 @@ export const TIERS = ["T0", "T1", "T2", "T3", "T4"]
 export const SEVERITIES = ["blocker", "major", "minor"]
 export const GRADERS = ["code", "judge"]
 export const AREAS = ["TR", "OC", "PR", "EF", "RL", "SF", "RB"]
+export const STATUSES = ["active", "retired", "deferred"]
 export const BUDGET_KEYS = ["outer_calls", "inner_calls", "billed_calls", "tokens", "cost_usd", "wall_ms", "turns"]
 
 const ID = /^[A-Z]+-(?:TR|OC|PR|EF|RL|SF|RB)\d{2}$/
@@ -56,5 +57,8 @@ export function validateCase(caseObject, file = "<case>") {
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) bad(`budget ${budget} must be a non-negative number`)
   }
   if (caseObject.expect && !["pass", "fail", "na"].includes(caseObject.expect)) bad("expect must be pass, fail or na")
+  for (const key of caseObject.checkable ?? []) if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) bad(`checkable ${JSON.stringify(key)} must be an argument name`)
+  for (const name of caseObject.sets ?? []) if (!/^[a-z][a-z0-9-]*$/.test(name) || name === "all") bad(`set ${JSON.stringify(name)} must be a lower-case name, not all`)
+  if (caseObject.status !== undefined && !STATUSES.includes(caseObject.status)) bad(`status must be one of ${STATUSES.join(", ")}`)
   return caseObject
 }

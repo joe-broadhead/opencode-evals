@@ -33,6 +33,9 @@ is a compile error, so a broken case never reaches a run. `cases/x/small-bounded
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000           (optional)
 - Seed: cwd=api time=day                                                 (optional, read by the runner's world)
 - Holdout: true                                                          (optional)
+- Checkable: sessionID, query, sql, command                              (optional: below)
+- Set: core, smoke                                                       (optional: the plugin's own run sets)
+- Status: active | retired | deferred                                    (optional; default active)
 
 ## Prompt
 <what the user types>
@@ -70,6 +73,15 @@ The clauses, each one observable in a trace:
 | `budget:<name> <op> <n>` | `outer_calls` (every tool call the model made: skill loads, Code Mode's `execute`, direct tools), `inner_calls` (every call the code inside an `execute` made), `billed_calls`, `tokens`, `wall_ms`, `turns`, `cost_usd` |
 | `cost:matches-appended [tolerance <n>]` | the answer's cost line matches the plugin's appended one |
 | `state:<path> ==\|!= <value>` | the final state, from the case's oracle file |
+
+An argument that was not passed satisfies `!=`, `not-matches` and `excludes` (it equals nothing and matches nothing)
+and fails every other operator, `present` included. On a list (several query phrasings), `matches` and `contains`
+hold when one element does, `not-matches` and `excludes` when none does. `contains` and `excludes` ignore case.
+
+A trace reduces every free-text argument to a shape, so a session id, a query, an SQL statement or a shell command
+cannot be compared from it. A case that needs to compare one declares its key: `Checkable: sessionID, query`. For
+those keys, and only for them, the grader reads the value from the private recording at grade time (call by call, in
+the trace's order); the trace still holds only the shape. Without the recording, such a clause is unverifiable.
 
 A tool is a name, a glob (`x_*`), a namespace (`history.*`) or a qualified name (`history.read`). A plugin tool reaches
 a run two ways, inside Code Mode's `execute` (ns `history`, tool `read`) or as a direct tool (`history_read`); a
@@ -141,7 +153,8 @@ they share, so an arm's interval is the same whichever other arms are listed. Th
 every arm ran; `--all-cases` lifts that.
 
 `--set tune|holdout|tools|all` selects cases by their own metadata, the same sets the runner uses: `holdout` is a case
-with `Holdout: true`, `tools` an id starting `tools-`, `tune` the rest. A run of a `Seed: time=day` case recorded on
+with `Holdout: true`, `tools` an id starting `tools-`, `tune` the rest. A plugin defines its own sets with a
+`Set:` header (`--set core`, `--set smoke`); a case with `Status: retired` or `deferred` is in no set. A run of a `Seed: time=day` case recorded on
 another UTC day than its world's is dropped, and the report says how many.
 
 ## Running

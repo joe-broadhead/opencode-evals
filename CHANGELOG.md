@@ -48,7 +48,15 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 - Packs for twelve more plugins (boxd, browse, charts, elevenlabs, github, gws, jobs, plaud, slack, tavily,
   utilities, voice): 22 in all.
 
+- Case headers `Checkable:` (argument keys the grader compares from the private recording, never stored in a
+  trace: session ids, queries, SQL, shell commands), `Set:` (a plugin's own run sets, such as `core`, `guard`,
+  `smoke`) and `Status:` (`retired` and `deferred` cases are in no set).
+- `contains` is implemented (it parsed, and always failed); on a list argument, `matches` and `contains` hold when
+  one element does.
+
 ### Changed
+
+- An argument that was not passed now satisfies `!=`, `not-matches` and `excludes` instead of failing them.
 
 - The tool selector: `history.*` also selects the direct `history_*` tools (`history_pin`, or every tool when Code
   Mode is off), `history.read` also selects a direct `history_read` and never the built-in `read`, and a bare name the

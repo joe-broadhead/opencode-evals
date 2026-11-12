@@ -73,3 +73,19 @@ test("strict pass and pass^k are per run and per case", () => {
   const text = renderReport(compare([arm("a", "i", [3, 0, 2]), arm("b", "j", [3, 3, 3])]))
   assert.match(text, /\| b \| 3 \| \+44\.4 pts \|/)
 })
+
+test("a plugin's own sets come from Set: headers, and a retired or deferred case is in none", () => {
+  const cases = [
+    { id: "a", sets: ["core", "smoke"] },
+    { id: "b", sets: ["core"] },
+    { id: "c", sets: ["guard"], status: "deferred" },
+    { id: "d" },
+    { id: "ho-e", holdout: true, sets: ["core"] },
+  ]
+  assert.deepEqual(selectCases(cases, { set: "core" }).selected.map((c) => c.id), ["a", "b", "ho-e"])
+  assert.deepEqual(selectCases(cases, { set: "smoke" }).selected.map((c) => c.id), ["a"])
+  assert.deepEqual(selectCases(cases, { set: "tune" }).selected.map((c) => c.id), ["a", "b", "d"])
+  assert.throws(() => selectCases(cases, { set: "guard" }), /status deferred/)
+  assert.throws(() => selectCases(cases, { set: "nightly" }), /unknown case set nightly/)
+  assert.deepEqual(setCounts(cases), { tune: 3, holdout: 1, tools: 0, core: 3, smoke: 1 })
+})

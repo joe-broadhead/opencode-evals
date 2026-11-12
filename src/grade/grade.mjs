@@ -13,13 +13,16 @@ const BILLED_EXCEPTIONS = new Set(["get_usage_credits"])
 export const isInner = (call) => call.via === "execute" && call.tool !== "execute"
 
 /** A run view: the one shape every grader reads. Built from a trace file's lines. */
-export function runView(traceLines, { text = null, state = null, scope = null } = {}) {
+export function runView(traceLines, { text = null, state = null, scope = null, rawArgs = null, checkable = [] } = {}) {
   const parsed = traceLines.map((line) => (typeof line === "string" ? JSON.parse(line) : line))
   const head = parsed.find((event) => event.schema === "oc-trace/1") ?? parsed[0]
   const events = parsed.filter((event) => event.kind)
   const calls = events
     .filter((event) => event.kind === "tool_call")
     .map((event) => ({ ...event, counts: null, appended: null, status: "unknown" }))
+  // The recording's own arguments, call by call, for the keys the case declares checkable. Only when the recording
+  // has exactly the trace's calls: a mismatch would compare the wrong call, so it leaves them unverifiable instead.
+  if (rawArgs && rawArgs.length === calls.length) calls.forEach((call, index) => (call.raw_args = rawArgs[index]))
   // Attach each result to its call (results follow their call; for inner calls the `for_seq` names it).
   const bySeq = new Map(calls.map((call) => [call.seq, call]))
   for (const event of events) {
@@ -47,6 +50,7 @@ export function runView(traceLines, { text = null, state = null, scope = null } 
     events,
     // The case's plugin and the tools it declares: a bare tool name in a clause is that plugin's tool (select.mjs).
     scope,
+    checkable: new Set(checkable),
     calls,
     permissions,
     skills,

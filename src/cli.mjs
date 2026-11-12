@@ -41,6 +41,7 @@ import { runLabelSession, labelReport, advisoryItems, pageFor as pageOf } from "
 import { storeRoot, rawRoot, tracesDir } from "./store.mjs"
 import { splitTrial, trialName, caseEntry, byCase, trialStats } from "./grade/trials.mjs"
 import { selectCases } from "./case/sets.mjs"
+import { rawCallArgs } from "./trace/rawArgs.mjs"
 import { compare as compareArms, renderReport } from "./report/arms.mjs"
 import { runBatch } from "./run/runner.mjs"
 
@@ -102,6 +103,7 @@ function graderHash() {
     "src/grade/select.mjs",
     "src/trace/analyse.mjs",
     "src/trace/redact.mjs",
+    "src/trace/rawArgs.mjs",
     "src/grade/gold.mjs",
   ]
   const digests = {}
@@ -154,14 +156,18 @@ function gradeAll(iteration, casesDir = path("cases", "x"), traceDir = tracesDir
       const lines = read(join(traceDir, file)).split("\n").filter(Boolean)
       const rawBase = join(rawDir, iteration, plugin, trialName(caseObject.id, trial))
       let text = null
+      let rawArgs = null
       if (existsSync(`${rawBase}.jsonl`)) {
-        const last = [...read(`${rawBase}.jsonl`).split("\n").filter(Boolean)]
+        const rawLines = read(`${rawBase}.jsonl`).split("\n").filter(Boolean)
+        const last = [...rawLines]
           .reverse()
           .map((l) => JSON.parse(l))
           .find((e) => e.type === "text")
         text = last?.part?.text ?? null
+        // The arguments the case declares checkable are read from the recording here, and kept out of every trace.
+        if (caseObject.checkable?.length) rawArgs = rawCallArgs(rawLines)
       }
-      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id), scope })
+      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id), scope, rawArgs, checkable: caseObject.checkable ?? [] })
       results.push({ ...gradeCase(caseObject, view), ...(trial ? { trial } : {}) })
     }
   }
