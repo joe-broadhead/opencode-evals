@@ -17,8 +17,8 @@ import { stockBinary, TESTED } from "../t1/harness.mjs"
 import { selectCases } from "../case/sets.mjs"
 import { pluginCases } from "../case/load.mjs"
 import { harnessVersion } from "../version.mjs"
-import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf } from "../cost/ledger.mjs"
-import { assertWithinBudget, projectedSpend, monthToDate, budgetCaps } from "../cost/budget.mjs"
+import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf, outstanding } from "../cost/ledger.mjs"
+import { assertBatchWithinBudget, projectedRunUsd, monthToDate, budgetCaps } from "../cost/budget.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
 import { makeSandbox, sealedConfig, sandboxEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
@@ -70,19 +70,25 @@ export function plan({ cases, trials, recorded, append }) {
 const billedOf = (stdout) => {
   let total = 0
   let priced = false
+  const tokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
   for (const line of stdout.split("\n")) {
     if (!line.includes("step_finish")) continue
     try {
-      const cost = JSON.parse(line).part?.cost
-      if (typeof cost === "number") {
-        total += cost
-        if (cost > 0) priced = true
+      const part = JSON.parse(line).part ?? {}
+      if (typeof part.cost === "number") {
+        total += part.cost
+        if (part.cost > 0) priced = true
       }
+      tokens.input += part.tokens?.input ?? 0
+      tokens.output += part.tokens?.output ?? 0
+      tokens.cacheRead += part.tokens?.cache?.read ?? 0
+      tokens.cacheWrite += part.tokens?.cache?.write ?? 0
     } catch {
       // a partial line from a killed run
     }
   }
-  return { billed_usd: total, cost_source: priced ? "billed" : "unpriced" }
+  // The split counters let a later batch price its runs from the catalogue when nothing billed.
+  return { billed_usd: total, cost_source: priced ? "billed" : "unpriced", tokens }
 }
 
 const writeAtomic = (file, text) => {
@@ -218,6 +224,7 @@ async function runJob(job, ctx) {
       ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
       world: ctx.worldInfo,
       batch: ctx.batch,
+      dollar_cap: ctx.dollarCap,
       provenance: ctx.arm.provenance,
       ...(result.error ? { error: result.error } : {}),
     }
@@ -228,7 +235,7 @@ async function runJob(job, ctx) {
     writeAtomic(out(".files.json"), ctx.redact(`${JSON.stringify(changedFiles(before, cwd), null, 1)}\n`))
     if (!ctx.keep) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
     const cost = billedOf(result.stdout ?? "")
-    recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
+    recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
     return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(result.error ? { error: ctx.redact(result.error) } : {}) }
   } finally {
     // A credentials file goes on every path, a run that failed, threw or was interrupted included; a kept sandbox
@@ -420,10 +427,14 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     if (keepRoot && auth.holdsCredential) log(`warning: --keep-credentials: the kept sandboxes under ${batchRoot} hold the imported credential; delete them when you are done`)
     // Money, then runs: both checked under the ledger's lock before anything launches, and the whole batch reserved in
     // the same step. The dollar caps are the caller's.
+    // Every batch's reserved runs count, at the price each was reserved with, before they bill. A batch with no price
+    // for its runs cannot be held to the dollar cap: the run caps alone apply to it, and that is said.
     const dollarCaps = budgetCaps(caller)
-    const projected = projectedSpend(store, jobs.length)
-    reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller, check: () => assertWithinBudget(store, { model_usd: projectedSpend(store, jobs.length).model_usd }, caller) })
-    log(`reserved ${jobs.length} run(s) as ${reservation.batch}: ${plugin} at ${reservation.used.per_plugin_month + jobs.length}/${caps.per_plugin_month} this month; projected spend $${projected.model_usd.toFixed(2)} (${projected.basis})`)
+    const price = projectedRunUsd(store, options.model, caller)
+    reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller, perRunUsd: price.usd, priceBasis: price.basis, check: () => assertBatchWithinBudget(store, { runs: jobs.length, perRunUsd: price.usd, basis: price.basis }, caller) })
+    facts.dollar_cap = price.usd === null ? { enforceable: false, why: price.basis } : { enforceable: true, per_run_usd: price.usd, basis: price.basis }
+    log(`reserved ${jobs.length} run(s) as ${reservation.batch}: ${plugin} at ${reservation.used.per_plugin_month + jobs.length}/${caps.per_plugin_month} this month`)
+    log(price.usd === null ? `dollar cap: NOT ENFORCEABLE for this batch (${price.basis}); the run caps alone apply` : `dollar cap: $${dollarCaps.model_usd} a month, this batch at $${price.usd.toFixed(4)} a run (${price.basis}); $${reservation.dollars.projected.toFixed(2)} with what is billed and reserved`)
 
     mkdirSync(rawDir, { recursive: true, mode: 0o700 })
     const ctx = {
@@ -436,6 +447,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       isolation,
       mockUrl: mock?.url ?? null,
       redact,
+      dollarCap: facts.dollar_cap,
     }
     Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo })
     let next = 0
@@ -458,13 +470,17 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
           log(`  ${job.case.id}.t${job.trial} SKIPPED: ${window.why}`)
           continue
         }
-        // Before each launch: what the month has billed, plus what this run and the ones still running are expected
-        // to bill, must stay within the cap. A batch stops before it crosses the cap, not after.
-        const perRun = projectedSpend(store, 1).model_usd
-        const expected = monthToDate(store).model_usd + perRun * (running + 1)
-        if (expected > dollarCaps.model_usd) {
-          stopped = `the next run would take the month's model spend to $${expected.toFixed(2)}, over $${dollarCaps.model_usd}`
-          return
+        // Before each launch: what the month has billed, plus every other batch's reserved runs, plus what this run
+        // and the ones still running are expected to bill, must stay within the cap. A batch stops before it crosses
+        // the cap, not after. The expected cost is refreshed from what this month's runs actually billed.
+        if (price.usd !== null) {
+          const perRun = projectedRunUsd(store, options.model, caller).usd ?? price.usd
+          const others = outstanding(readLedger(store).filter((entry) => entry.batch !== reservation.batch)).usd
+          const expected = monthToDate(store).model_usd + others + perRun * (running + 1)
+          if (expected > dollarCaps.model_usd) {
+            stopped = `the next run would take the month's model spend to $${expected.toFixed(2)}, over $${dollarCaps.model_usd}`
+            return
+          }
         }
         launched++
         running++

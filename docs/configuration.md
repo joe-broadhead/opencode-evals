@@ -40,6 +40,7 @@ committed, and nothing in the repository may reference a machine path: `evals pr
 | `EVALS_MAX_RUNS_PER_PLUGIN` | `800` | live runs of one plugin in a calendar month (UTC) |
 | `EVALS_MAX_RUNS_TOTAL` | `13000` | live runs of every plugin in a calendar month |
 | `EVALS_MAX_RUNS_PER_PLUGIN_ITERATION`, `EVALS_MAX_RUNS_PER_ITERATION` | the monthly caps | live runs of one plugin, and of every plugin, in one iteration |
+| `EVALS_ASSUMED_RUN_USD` | unset | the cost of one live run to assume when nothing else prices it; without it, an unpriced batch is held to the run caps alone |
 | `EVALS_CAPS` | `$EVALS_STORE/caps.json` | a JSON file with `per_plugin_month`, `total_month`, `per_plugin_iteration`, `total_iteration`; the environment wins over it |
 | `EVALS_MODEL_MAP` | `cost/model-map.json` | the alias-to-catalogue mapping |
 | `EVALS_MODELS_CATALOG` | `$XDG_CACHE_HOME/opencode/models.json` | OpenCode's models.dev cache, the only source of a model price |
@@ -118,13 +119,14 @@ under one lock file, so two runners cannot both take the last runs, and the ledg
 caps hold across invocations. A run counts whatever it cost: a subscription run bills $0 and only the run cap can
 stop it. A reservation counts until its unused runs are released; a batch that crashed keeps its runs counted.
 
-**Dollars.** `assertWithinBudget` refuses a batch whose projected spend would cross either monthly cap; the check runs
-inside the ledger's lock, with the reservation, and with the caller's caps. During a batch, each run is launched only
-if the month's billed spend plus what it and the runs still in flight are expected to bill stays within the cap, so a
-batch stops before it crosses the cap rather than after. A cap that is not a number is an error. The month's
-model spend is what the providers billed: the ledger's runs, plus any graded batch the ledger does not cover. The
-projection is the month's mean billed cost per priced run times the runs planned, and $0 when no run this month was
-priced. A run whose price is unknown is allowed and counted as `unknown_cost_runs`, because refusing to run on a
-missing price would hide the work that finds it; it still counts against the run caps.
+**Dollars.** Every reservation records what each of its runs is expected to cost, and how that is known: the month's
+mean billed cost of the model's priced runs; else the catalogue's list price (through the mapping) for the model's
+mean recorded tokens; else an assumption the owner configured, `EVALS_ASSUMED_RUN_USD` or `assumed_run_usd` in
+`caps.json` (a number, or a map by model). Before a batch, inside the ledger's lock, what the month has billed plus
+every batch's reserved runs that have not billed yet plus this batch must stay within the cap. During a batch, each run
+is launched only if the same sum, with this batch's runs in flight, stays within it, so a batch stops before it
+crosses the cap. When nothing prices a batch's runs, the dollar cap is **not enforceable** for it: the run caps alone
+apply, and the runner's log, each run's summary (`dollar_cap`) and `evals budget` say so; it is never taken as $0. A
+cap that is not a number is an error. A run whose price is unknown still counts against the run caps.
 
 `evals budget` prints both: the dollars against their caps, and the runs reserved this month, per plugin.

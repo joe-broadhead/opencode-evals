@@ -6,7 +6,8 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
-import { ledgerMonth, loadCaps, readLedger, usage } from "./ledger.mjs"
+import { ledgerMonth, loadCaps, readLedger, usage, outstanding, capsFile } from "./ledger.mjs"
+import { loadCatalog, loadMapping, resolve as resolvePrice, listPrice } from "./catalog.mjs"
 
 const dollars = (env, name, fallback) => {
   const raw = env[name]
@@ -90,6 +91,51 @@ export function projectedSpend(store, runs, month = new Date().toISOString().sli
   return { model_usd: perRun * runs, basis: `$${perRun.toFixed(4)} per run, the month's mean over ${month_.priced_runs} priced run(s)` }
 }
 
+/**
+ * What one run of `model` is expected to cost, and how that is known. In order: the month's mean billed cost of the
+ * model's priced runs; the catalogue's list price (through the mapping) for the model's mean recorded tokens; an
+ * assumption the owner configured (`EVALS_ASSUMED_RUN_USD`, or `assumed_run_usd` in caps.json, a number or a map by
+ * model). With none of them the dollar cap cannot be enforced for the run, and that is said, never taken as $0.
+ */
+export function projectedRunUsd(store, model, env = process.env, month = new Date().toISOString().slice(0, 7)) {
+  const runs = readLedger(store).filter((entry) => entry.kind === "run" && entry.month === month && entry.model === model)
+  const billed = runs.filter((entry) => typeof entry.billed_usd === "number" && entry.billed_usd > 0)
+  if (billed.length) return { usd: billed.reduce((n, e) => n + e.billed_usd, 0) / billed.length, basis: `the month's mean billed over ${billed.length} run(s) of ${model}` }
+  const [provider, ...rest] = String(model ?? "").split("/")
+  const price = resolvePrice(loadCatalog(env), provider, rest.join("/"), loadMapping(env)).price
+  const counted = runs.filter((entry) => entry.tokens && typeof entry.tokens === "object")
+  if (price && counted.length) {
+    const mean = counted.reduce((n, e) => n + (listPrice(e.tokens, price) ?? 0), 0) / counted.length
+    return { usd: mean, basis: `list price for the mean tokens of ${counted.length} run(s) of ${model}` }
+  }
+  const assumed = env.EVALS_ASSUMED_RUN_USD
+  if (assumed !== undefined && assumed !== "") return { usd: dollars(env, "EVALS_ASSUMED_RUN_USD", 0), basis: "assumed (EVALS_ASSUMED_RUN_USD)" }
+  const file = capsFile(store, env)
+  if (existsSync(file)) {
+    const configured = JSON.parse(readFileSync(file, "utf8")).assumed_run_usd
+    const value = typeof configured === "number" ? configured : configured?.[model]
+    if (typeof value === "number" && Number.isFinite(value) && value >= 0) return { usd: value, basis: `assumed (assumed_run_usd in ${file})` }
+  }
+  return { usd: null, basis: `no price for ${model}: no billed or token-counted run this month, no catalogue price, no EVALS_ASSUMED_RUN_USD or assumed_run_usd` }
+}
+
+/**
+ * The dollar check for a batch of `runs` at `perRunUsd` each: what the month has billed, plus every batch's reserved
+ * runs that have not billed yet, plus this batch, must stay within the cap. With no price for this batch the cap is
+ * not enforceable for it: the run caps alone apply, and the result says so.
+ */
+export function assertBatchWithinBudget(store, { runs, perRunUsd, basis = null }, env = process.env) {
+  const caps = budgetCaps(env)
+  const committed = monthToDate(store).model_usd
+  const pending = outstanding(readLedger(store))
+  if (typeof perRunUsd !== "number") return { enforceable: false, committed, outstanding: pending, why: basis ?? "no price for this batch's runs" }
+  const next = committed + pending.usd + runs * perRunUsd
+  if (next > caps.model_usd) {
+    throw new Error(`D4 budget: model spend would reach $${next.toFixed(2)} of $${caps.model_usd} this month ($${committed.toFixed(2)} billed, $${pending.usd.toFixed(2)} reserved by batches still running, $${(runs * perRunUsd).toFixed(2)} for this one)`)
+  }
+  return { enforceable: true, committed, outstanding: pending, projected: next, caps }
+}
+
 /** Throws when a proposed run would cross a cap. A run with unknown prices is allowed but reported. */
 export function assertWithinBudget(store, { model_usd = 0, vendor_usd = 0 } = {}, env = process.env) {
   const caps = budgetCaps(env)
@@ -104,7 +150,9 @@ export const budgetLine = (store) => {
   const mtd = monthToDate(store)
   const caps = loadCaps(store)
   const used = usage(readLedger(store), { month: mtd.month, plugin: null, iteration: null })
-  return `Month to date (${mtd.month}): $${mtd.model_usd.toFixed(2)} of $${CAPS.model_usd} billed models (a $${mtd.shadow_list_usd.toFixed(2)} list-price shadow is reported and not charged), $${mtd.vendor_usd.toFixed(2)} of $${CAPS.vendor_usd} vendor APIs, ${mtd.runs} run(s)${mtd.unknown_cost_runs ? `, ${mtd.unknown_cost_runs} with a missing price` : ""}. Run cap: ${used.total_month} of ${caps.total_month} runs reserved this month, at most ${caps.per_plugin_month} per plugin.`
+  const pending = outstanding(readLedger(store), mtd.month)
+  const reserved = pending.runs ? ` Reserved and not yet billed: ${pending.runs} run(s), $${pending.usd.toFixed(2)} expected${pending.unpriced ? `; ${pending.unpriced} of them have no price, so the dollar cap is not enforceable for them and the run caps alone apply` : ""}.` : ""
+  return `Month to date (${mtd.month}): $${mtd.model_usd.toFixed(2)} of $${CAPS.model_usd} billed models (a $${mtd.shadow_list_usd.toFixed(2)} list-price shadow is reported and not charged), $${mtd.vendor_usd.toFixed(2)} of $${CAPS.vendor_usd} vendor APIs, ${mtd.runs} run(s)${mtd.unknown_cost_runs ? `, ${mtd.unknown_cost_runs} with a missing price` : ""}.${reserved} Run cap: ${used.total_month} of ${caps.total_month} runs reserved this month, at most ${caps.per_plugin_month} per plugin.`
 }
 
 /** Runs reserved this month, per plugin, against the caps. */

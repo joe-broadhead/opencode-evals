@@ -136,3 +136,49 @@ test("the lock is taken atomically, and breaking a stale one can never remove a 
   assert.deepEqual(readdirSync(dir), [], "no private files left behind")
   rmSync(dir, { recursive: true, force: true })
 })
+
+test("two batches at once: the second's dollar check counts the first's reserved runs before they bill", async () => {
+  const { assertBatchWithinBudget, budgetLine } = await import("../src/cost/budget.mjs")
+  const { outstanding } = await import("../src/cost/ledger.mjs")
+  const store = temp()
+  const env = { EVALS_BUDGET_MODEL_USD: "10" }
+  const check = (runs, perRunUsd) => () => assertBatchWithinBudget(store, { runs, perRunUsd }, env)
+  // A reserves 3 runs at $2: $6 expected, nothing billed yet.
+  const a = reserve(store, { plugin: "x", iteration: "a", runs: 3, model: "m/x", perRunUsd: 2, env, check: check(3, 2) })
+  assert.equal(outstanding(readLedger(store)).usd, 6)
+  // B wants 3 more at $2: $6 reserved + $6 = $12 over $10, though nothing has billed. Refused, nothing reserved.
+  assert.throws(() => reserve(store, { plugin: "y", iteration: "b", runs: 3, model: "m/x", perRunUsd: 2, env, check: check(3, 2) }), /would reach \$12\.00 of \$10 .*\$6\.00 reserved by batches still running/)
+  assert.equal(readLedger(store).filter((e) => e.kind === "reserve").length, 1)
+  // A's runs bill $2 each: committed $6, outstanding $0; B's 2 runs make $10, within the cap.
+  const month = new Date().toISOString().slice(0, 7)
+  for (const trial of [1, 2, 3]) recordRun(store, { batch: a.batch, month, iteration: "a", plugin: "x", model: "m/x", case: "c", trial, billed_usd: 2, cost_source: "billed" })
+  assert.equal(outstanding(readLedger(store)).usd, 0)
+  assert.doesNotThrow(() => reserve(store, { plugin: "y", iteration: "b", runs: 2, model: "m/x", perRunUsd: 2, env, check: check(2, 2) }))
+  // A batch with no price is reserved, counted as unpriced, and the budget line says the cap is not enforceable for it.
+  const free = reserve(store, { plugin: "z", iteration: "c", runs: 4, model: "m/unpriced", perRunUsd: null, env, check: check(4, null) })
+  assert.equal(free.dollars.enforceable, false)
+  assert.equal(outstanding(readLedger(store)).unpriced, 4)
+  assert.match(budgetLine(store), /4 of them have no price, so the dollar cap is not enforceable for them and the run caps alone apply/)
+  rmSync(store, { recursive: true, force: true })
+})
+
+test("a run's price comes from billed runs, then the catalogue for recorded tokens, then an assumption, else none", async () => {
+  const { projectedRunUsd } = await import("../src/cost/budget.mjs")
+  const store = temp()
+  const month = new Date().toISOString().slice(0, 7)
+  const catalogFile = join(store, "models.json")
+  writeFileSync(catalogFile, JSON.stringify({ anthropic: { models: { "claude-haiku-5-5": { cost: { input: 1, output: 5, cache_read: 0.1, cache_write: 1.25 } } } } }))
+  const env = { EVALS_MODELS_CATALOG: catalogFile }
+  assert.equal(projectedRunUsd(store, "claude-agent/haiku", env).usd, null, "no run recorded yet: nothing to price tokens by")
+  recordRun(store, { batch: "b", month, model: "claude-agent/haiku", billed_usd: 0, cost_source: "unpriced", tokens: { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite: 0 } })
+  const listed = projectedRunUsd(store, "claude-agent/haiku", env)
+  assert.equal(listed.usd, 1)
+  assert.match(listed.basis, /list price/)
+  assert.deepEqual(projectedRunUsd(store, "other/model", { EVALS_ASSUMED_RUN_USD: "0.25" }), { usd: 0.25, basis: "assumed (EVALS_ASSUMED_RUN_USD)" })
+  writeFileSync(join(store, "caps.json"), JSON.stringify({ assumed_run_usd: { "other/model": 0.4 } }))
+  assert.equal(projectedRunUsd(store, "other/model", {}).usd, 0.4)
+  assert.match(projectedRunUsd(store, "third/model", {}).basis, /no price for third\/model/)
+  recordRun(store, { batch: "b", month, model: "other/model", billed_usd: 3, cost_source: "billed" })
+  assert.equal(projectedRunUsd(store, "other/model", {}).usd, 3, "what this month's runs billed wins")
+  rmSync(store, { recursive: true, force: true })
+})

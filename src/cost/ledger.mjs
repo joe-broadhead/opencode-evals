@@ -195,16 +195,41 @@ const append = (store, entry) => appendFileSync(ledgerFile(store), `${JSON.strin
  * Checks every cap and reserves `runs` runs, in one locked step, before anything is launched. Returns the batch id.
  * `check` (the dollar budget) runs inside the same lock, so two runners cannot both spend the last dollars.
  */
-export function reserve(store, { plugin, iteration, runs, model = null, now = new Date(), env = process.env, check = null }) {
+export function reserve(store, { plugin, iteration, runs, model = null, now = new Date(), env = process.env, check = null, perRunUsd = null, priceBasis = null }) {
   const caps = loadCaps(store, env)
   const month = monthOf(now)
   return withLock(store, () => {
-    check?.()
+    const dollars = check?.()
     const used = checkCaps(readLedger(store), caps, { month, plugin, iteration, runs })
     const batch = `${iteration}-${now.toISOString().replace(/[^0-9]/g, "").slice(0, 14)}-${randomBytes(3).toString("hex")}`
-    append(store, { kind: "reserve", batch, at: now.toISOString(), month, iteration, plugin, runs, model })
-    return { batch, month, caps, used }
+    // What each run is expected to cost, so another batch's dollar check counts these runs before they bill.
+    append(store, { kind: "reserve", batch, at: now.toISOString(), month, iteration, plugin, runs, model, per_run_usd: typeof perRunUsd === "number" ? perRunUsd : null, price_basis: priceBasis })
+    return { batch, month, caps, used, dollars }
   })
+}
+
+/**
+ * The reserved runs of the month that have not billed yet, and what they are expected to cost: every batch's runs
+ * reserved, less those released and those recorded. A reservation with no price is counted, and named, as unpriced.
+ */
+export function outstanding(entries, month = monthOf()) {
+  const released = new Map()
+  const recorded = new Map()
+  for (const entry of entries) {
+    if (entry.kind === "release") released.set(entry.batch, (released.get(entry.batch) ?? 0) + entry.runs)
+    if (entry.kind === "run") recorded.set(entry.batch, (recorded.get(entry.batch) ?? 0) + 1)
+  }
+  let usd = 0
+  let runs = 0
+  let unpriced = 0
+  for (const entry of entries) {
+    if (entry.kind !== "reserve" || entry.month !== month) continue
+    const left = Math.max(0, entry.runs - (released.get(entry.batch) ?? 0) - (recorded.get(entry.batch) ?? 0))
+    runs += left
+    if (typeof entry.per_run_usd === "number") usd += left * entry.per_run_usd
+    else unpriced += left
+  }
+  return { usd, runs, unpriced }
 }
 
 export const recordRun = (store, entry) => withLock(store, () => append(store, { kind: "run", at: new Date().toISOString(), ...entry }))

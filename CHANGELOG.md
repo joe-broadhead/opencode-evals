@@ -112,6 +112,12 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Fixed
 
+- The dollar check ignored other batches' reserved runs that had not billed yet, and projected $0 when nothing was
+  priced. Every reservation now records its expected cost per run (billed runs, the catalogue's price for recorded
+  tokens, or `EVALS_ASSUMED_RUN_USD` / `assumed_run_usd`), the check sums what is billed and every batch's outstanding
+  reservations, and a batch nothing prices is reported as "not enforceable" (log, summary, `evals budget`), held to the
+  run caps alone.
+
 - The live check trusted the model's name: a `mock` provider can come from the plugin under test, and `--auth
   claude-agent` with a mock model still reached the credential with no isolation. A run is now not live only with
   `--auth none` and the harness's own scripted model, registered by the harness in the sealed config (`--scripted`);

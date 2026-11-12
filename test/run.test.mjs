@@ -500,7 +500,7 @@ test("a batch stops before the next run would cross the dollar cap, counting the
   const { recordRun: record } = await import("../src/cost/ledger.mjs")
   const month = new Date().toISOString().slice(0, 7)
   // Two priced runs this month at $1: the projection is $1 a run.
-  for (const trial of [1, 2]) record(f.store, { batch: "seed", month, iteration: "old", plugin: "demo", case: "c", trial, billed_usd: 1, cost_source: "billed" })
+  for (const trial of [1, 2]) record(f.store, { batch: "seed", month, iteration: "old", plugin: "demo", model: "mock/m1", case: "c", trial, billed_usd: 1, cost_source: "billed" })
   addCase(f.casesDir, "pricey", "")
   const pricey = JSON.parse(readFileSync(join(f.casesDir, "pricey.json"), "utf8"))
   writeFileSync(join(f.casesDir, "pricey.json"), JSON.stringify({ ...pricey, prompt: "answer at cost=3" }))
@@ -682,4 +682,18 @@ test("the scrubber masks a secret by its exact value, in text and in files, keep
   assert.equal(readFileSync(join(dir, "db")).includes(TOKEN), false)
   assert.equal(readFileSync(join(dir, "deep", "er", "log"), "utf8"), `x ${"*".repeat(TOKEN.length)}\n`)
   rmSync(dir, { recursive: true, force: true })
+})
+
+test("a batch with no price for its runs says the dollar cap is not enforceable for it, in the log and the summary", async () => {
+  const f = fixture()
+  const lines = []
+  await runBatch({ plugin: "demo", iteration: "np", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, log: (line) => lines.push(line) })
+  assert.ok(lines.some((line) => /dollar cap: NOT ENFORCEABLE for this batch .*the run caps alone apply/.test(line)))
+  const summary = JSON.parse(readFileSync(join(f.store, "raw", "np", "demo", "demo-b.t1.summary.json"), "utf8"))
+  assert.equal(summary.dollar_cap.enforceable, false)
+  // With an assumed price the cap is enforced, and recorded with its basis.
+  await runBatch({ plugin: "demo", iteration: "ap", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller: { ...f.caller, EVALS_ASSUMED_RUN_USD: "0.5" }, ...quiet })
+  const priced = JSON.parse(readFileSync(join(f.store, "raw", "ap", "demo", "demo-b.t1.summary.json"), "utf8"))
+  assert.deepEqual(priced.dollar_cap, { enforceable: true, per_run_usd: 0.5, basis: "assumed (EVALS_ASSUMED_RUN_USD)" })
+  f.cleanup()
 })
