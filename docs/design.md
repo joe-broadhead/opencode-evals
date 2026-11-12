@@ -68,6 +68,8 @@ The clauses, each one observable in a trace:
 | `counts:<tool>#<n>.<key> <op> <n>` | a count read from that call's result compares |
 | `text:<span> matches\|not-matches /re/` | the answer's `any`, `first-line`, `first-paragraph` or `last-line` matches |
 | `text:<span> count /re/ <op> <n>` | the number of matches compares |
+| `first:<tool>` | the first call, skill loads and Code Mode's `execute` wrapper aside, is that tool |
+| `before:<a>,<b>` | the first `a` came before the first `b`, or `b` never happened (`before:history.*,bash`) |
 | `skill:<name>`, `absent-skill:<name>` | the skill was, or was not, loaded |
 | `declined:<tool>`, `absent-declined:<tool>` | a call was, or was not, declined by a permission |
 | `budget:<name> <op> <n>` | `outer_calls` (every tool call the model made: skill loads, Code Mode's `execute`, direct tools), `inner_calls` (every call the code inside an `execute` made), `billed_calls`, `tokens`, `wall_ms`, `turns`, `cost_usd` |

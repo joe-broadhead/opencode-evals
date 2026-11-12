@@ -7,6 +7,7 @@ import { parseClause, evaluateClause } from "../src/grade/evidence.mjs"
 const inner = (ns, tool, args = {}) => ({ tool, ns, via: "execute", args, args_parsed: true })
 const direct = (tool, args = {}) => ({ tool, via: "direct", args, args_parsed: true })
 const scope = { ns: "history", tools: new Set(["search", "read", "pin", "sql"]) }
+const check = (view, text) => evaluateClause(parseClause(text).clause, view).state
 
 test("history.* and history.read select the inner call and the direct history_ tool alike", () => {
   assert.equal(matchesTool("history.*", inner("history", "search")), true)
@@ -31,4 +32,19 @@ test("a bare name the case's plugin declares is qualified; a built-in stays the 
   const view = { calls, scope }
   assert.equal(evaluateClause(parseClause("count:read == 2").clause, view).state, "ok")
   assert.equal(evaluateClause(parseClause("absent:history.*").clause, { calls: [direct("history_pin")], scope }).state, "fail", "a direct History call is not an absent History")
+})
+
+test("first: and before: read the order of the calls, skill loads and the execute wrapper aside", () => {
+  const skill = direct("skill")
+  const execute = { tool: "execute", via: "execute", args: {} }
+  const historyFirst = { calls: [skill, execute, inner("history", "search"), direct("bash"), direct("grep")], scope }
+  const gitFirst = { calls: [direct("bash"), execute, inner("history", "search")], scope }
+  const noHistory = { calls: [direct("grep")], scope }
+  assert.equal(check(historyFirst, "first:history.*"), "ok")
+  assert.equal(check(gitFirst, "first:history.*"), "fail")
+  assert.equal(check(historyFirst, "before:history.*,bash"), "ok")
+  assert.equal(check(gitFirst, "before:history.*,bash"), "fail")
+  assert.equal(check(noHistory, "before:history.*,bash"), "ok", "bash never ran")
+  assert.equal(check(noHistory, "before:history.*,grep"), "fail", "grep ran and History never did")
+  assert.equal(check({ calls: [skill], scope }, "first:history.*"), "fail")
 })

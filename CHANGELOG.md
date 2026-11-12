@@ -54,6 +54,8 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 - `contains` is implemented (it parsed, and always failed); on a list argument, `matches` and `contains` hold when
   one element does.
 
+- Order clauses: `first:<tool>` (the first call, skill loads and the `execute` wrapper aside) and `before:<a>,<b>`
+  (the first `a` came before the first `b`, or `b` never happened), so "History before git or grep" can be graded.
 - Arms carry plugin options: `evals run --arm <file>.json` (`{ "package": …, "options": { "access": "ask-changes" } }`)
   or `--options`. The options are recorded by digest and are a provenance axis, `options`, so an access-mode arm is
   compared on that axis and refuses a comparison on any other.

@@ -77,6 +77,13 @@ export function parseClause(text) {
     return { ok: true, clause: { kind: "text", span: m[1], op: m[2], value } }
   }
 
+  // Order: the first call (skill loads and the `execute` wrapper aside), and one call before another.
+  m = /^first:([a-z0-9_.*-]+)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "first", tool: m[1] } }
+
+  m = /^before:([a-z0-9_.*-]+),([a-z0-9_.*-]+)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "before", tool: m[1], other: m[2] } }
+
   m = /^(absent-)?skill:([a-z0-9_.-]+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: m[1] ? "absent-skill" : "skill", skill: m[2] } }
 
@@ -286,6 +293,20 @@ export function evaluateClause(clause, view) {
       const count = [...String(span).matchAll(re)].length
       const ok = compare(count, clause.n, clause.op)
       return { state: ok ? "ok" : "fail", detail: `answer ${clause.span} has ${count} match(es) of /${clause.value.source}/, ${ok ? "satisfying" : "violating"} ${clause.op} ${clause.n}` }
+    }
+    case "first": {
+      const moves = view.calls.filter((call) => call.tool !== "skill" && call.tool !== "execute")
+      if (!moves.length) return { state: "fail", detail: "no tool was called" }
+      const ok = selectCalls([moves[0]], clause.tool, view.scope).length === 1
+      return { state: ok ? "ok" : "fail", detail: `the first call is ${moves[0].ns ? `${moves[0].ns}.` : ""}${moves[0].tool}` }
+    }
+    case "before": {
+      const at = (pattern) => view.calls.findIndex((call) => selectCalls([call], pattern, view.scope).length === 1)
+      const a = at(clause.tool)
+      const b = at(clause.other)
+      if (b < 0) return { state: "ok", detail: `${clause.other} was never called` }
+      if (a < 0) return { state: "fail", detail: `${clause.other} was called and ${clause.tool} never was` }
+      return a < b ? { state: "ok", detail: `${clause.tool} came before ${clause.other}` } : { state: "fail", detail: `${clause.other} came before ${clause.tool}` }
     }
     case "skill": {
       const loaded = view.skills.includes(clause.skill)
