@@ -24,7 +24,7 @@ pin just the part of the catalog caching decision session where you compared Red
   evidence_any: call:history_pin#1 args.to <= 5 ;; call:history_pin#1 args.from == 2
 
 - [H-OC04] major · It tells the user plainly whether the pin was applied, declined or needs approval.
-  evidence: text:any matches /(is|now|been|was) pinned|pinned (it|the|this|messages|seq)|added (a|the) pin|pin (is|was) (applied|added|in place|set)|declined|denied|not (allowed|approved|permitted)|needs? (your )?approval|permission/i
+  evidence: text:any matches /\bI('ve| have)? pinned\b|(is|now|been|was) pinned|pinned (it|the|this|messages|seq)|added (a|the) pin|pin (is|was) (applied|added|in place|set)|declined|denied|not (allowed|approved|permitted)|needs? (your )?approval|permission/i
 
 - [H-OC05] major · It found the session first.
   evidence: count:history.* >= 1

@@ -169,7 +169,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(is|now|been|was) pinned|pinned (it|the|this|messages|seq)|added (a|the) pin|pin (is|was) (applied|added|in place|set)|declined|denied|not (allowed|approved|permitted)|needs? (your )?approval|permission",
+            "source": "\\bI('ve| have)? pinned\\b|(is|now|been|was) pinned|pinned (it|the|this|messages|seq)|added (a|the) pin|pin (is|was) (applied|added|in place|set)|declined|denied|not (allowed|approved|permitted)|needs? (your )?approval|permission",
             "flags": "i"
           }
         }
@@ -265,6 +265,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "1856fcf7d901816aed19e978f2a6d105523908df37d0df6c9f0415d6d648d2c6"
+    "source_sha256": "4f02d2fb6a55f0b7e2b33ce75f4c3edb6fa7935655335bbdf3c615d3bb4246d6"
   }
 }

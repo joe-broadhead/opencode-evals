@@ -70,7 +70,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(don't|do not|can't|cannot|couldn't|could not) (have |find |see )?(any )?(access|record|notes|transcript|meeting)|no (access|record|notes|transcript|meeting notes)|not (available|connected)|meeting notes|no meeting (or |and )?notes|(doesn't|does not|don't|do not) (record|have) (any )?(meetings|meeting notes)",
+            "source": "(don't|do not|can't|cannot|couldn't|could not) (have |find |see )?(any )?(access|record|notes|transcript|meeting)|no (access|record|notes|transcript|meeting notes)|not (available|connected)|meeting[- ]notes|no meeting (or |and )?notes|(doesn't|does not|don't|do not) (record|have) (any )?(meetings|meeting notes)",
             "flags": "i"
           }
         }
@@ -158,6 +158,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "eda5df467278b427d17038afa6c9690e29507f95a5019c36fc258d8a9d145df2"
+    "source_sha256": "170b9b0c3c998c2d5d22c1328b91f9699fadc7262b81f26c68efdf4973f2fc87"
   }
 }
