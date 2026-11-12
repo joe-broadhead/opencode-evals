@@ -64,6 +64,7 @@ The clauses, each one observable in a trace:
 | `call:<tool>#<n>` | the n-th call of the tool happened |
 | `call:<tool>#<n> args.<key> <op> <value>` | its argument compares; ops `==`, `!=`, `<`, `<=`, `>`, `>=`, `matches`, `not-matches`, `contains`, `excludes`, `present` |
 | `absent:<tool>[#<n>]` | the tool (or its n-th call) did not happen |
+| `absent-arg:<tool> args.<key> <op> <value>` | no call of the tool passed an argument that compares (`absent-arg:history.read args.full == true`); positive ops only; a value the trace keeps only as a shape, or a variable, makes it unverifiable unless a call is seen to match |
 | `count:<tool> <op> <n>` | the number of calls compares |
 | `counts:<tool>#<n>.<key> <op> <n>` | a count read from that call's result compares |
 | `text:<span> matches\|not-matches /re/` | the answer's `any`, `first-line`, `first-paragraph` or `last-line` matches |
