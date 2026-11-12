@@ -4,6 +4,12 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+
+- `docs/design.md`, which the README and `docs/configuration.md` linked to and nobody had written: the pipeline,
+  the case format and its clauses, traces, grading and the policy. A test now fails on a doc link to a missing file
+  or heading.
+
 ### Fixed
 
 - `grade` read recordings from `../private/raw`, beside the repository, while the docs and the runner put them in
