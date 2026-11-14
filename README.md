@@ -23,7 +23,11 @@ evals is not on npm. Install it from a GitHub Release tag (the [Releases](https:
 npm install --save-dev github:joe-broadhead/opencode-evals#v0.1.0
 ```
 
-Use the latest Release's tag in place of `v0.1.0`. Before the first Release, pin a commit sha. Or run it from a checkout: `node bin/evals <command>`.
+Use the latest Release's tag in place of `v0.1.0`. Or run it from a checkout: `node bin/evals <command>`.
+
+The installed package carries the harness, the packs, the cost map and the sandbox's Dockerfile. It does not carry
+the repository's case corpora (`cases/`, `live/`), its worlds, or its tests. To compile, run or grade those corpora, use a
+checkout.
 
 ## Use
 

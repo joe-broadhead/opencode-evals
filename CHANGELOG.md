@@ -11,6 +11,11 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 - **A release workflow** (`.github/workflows/release.yml`). It tags a master commit that CI passed as
   `v<package.json version>` and creates its GitHub Release, after the owner approves the `release` environment.
   Nothing is built and nothing goes to npm. CONTRIBUTING's "Releasing" section lists the steps.
+  It runs only when dispatched on master. A re-run resumes when the tag is already on the approved sha and has no
+  Release; every other case with an existing tag is refused.
+- **A `files` list in `package.json`.** An install carries `bin/`, `src/`, `packs/`, `cost/`, `docker/` and the
+  CHANGELOG, plus the README and the LICENSE. It leaves out `cases/`, `live/`, `test/`, `worlds/`, `fixtures/`, `docs/`
+  and `scripts/`.
 - **The Charts corpus** (`cases/charts`, `docs/charts.md`): 13 agent tasks, version 1, for creating and revising
   charts (long labels in a narrow panel, explicit and ambiguous aggregation, count versus measure, misspelt fields, a
   brand theme, empty data; light → dark, inline → presentation → inline, add x zoom, add scatter brushing, an

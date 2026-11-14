@@ -60,7 +60,11 @@ A release is a `v<version>` tag on a `master` commit, plus its GitHub Release. N
 2. Run `gh workflow run release.yml --ref master -f sha=<that master head>`.
 3. The workflow refuses a sha that is not master's head, a sha CI did not pass, a version that is not `x.y.z` or
    differs from `src/version.mjs`, an undated CHANGELOG heading, a tag that already exists, and a `release`
-   environment with no required reviewer. Then it waits for the owner to approve the `release` environment. After
-   that it creates the tag and the Release, with that CHANGELOG section as the notes.
+   environment with no required reviewer. It also refuses a run dispatched on any ref but `master`. Then it waits for
+   the owner to approve the `release` environment. After that it creates the tag and the Release, with that
+   CHANGELOG section as the notes.
+4. If a run stops after the tag but before the Release, run step 2 again with the same sha: a tag already on that sha
+   with no Release is resumed, and only the Release is created. A tag on another sha, or a tag that already has a
+   Release, is refused.
 
 Only the owner approves a release.

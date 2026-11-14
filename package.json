@@ -7,6 +7,14 @@
   "bin": {
     "evals": "./bin/evals"
   },
+  "files": [
+    "bin/",
+    "src/",
+    "packs/",
+    "cost/",
+    "docker/",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "trace": "node bin/evals trace",
