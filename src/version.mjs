@@ -3,7 +3,7 @@
 import { execFileSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 
-export const VERSION = "0.1.0-dev"
+export const VERSION = "0.1.0"
 const ROOT = fileURLToPath(new URL("../", import.meta.url))
 
 export function commit() {

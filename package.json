@@ -1,6 +1,6 @@
 {
   "name": "@joe-broadhead/opencode-evals",
-  "version": "0.1.0-dev",
+  "version": "0.1.0",
   "private": true,
   "description": "Deterministic evals for OpenCode skills, tools and plugins: cases, traces, graders, ledger.",
   "type": "module",

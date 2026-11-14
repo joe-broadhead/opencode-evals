@@ -4,6 +4,14 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-14
+
+The first Release. Install it with `npm install --save-dev github:joe-broadhead/opencode-evals#v0.1.0`; evals is not on npm.
+It contains the deterministic harness (static checks, compiled cases, traces, graders, the policy, the cost ledger
+and the privacy gate), the T1 tier against stock OpenCode hosts, live runs confined in a container, and 24 plugin
+packs synced to each plugin's latest GitHub Release. The case corpora are History, Charts and X, and there are
+live tasks for nine plugins; those stay in the repository and don't ship in the package.
+
 ### Added
 
 - **Packs for opencode-inference and opencode-openrouter** (`packs/inference`, `packs/openrouter`), read from their
@@ -105,6 +113,17 @@ Keep a Changelog. This project adheres to Semantic Versioning.
   or `--options`. The options are recorded by digest and are a provenance axis, `options`, so an access-mode arm is
   compared on that axis and refuses a comparison on any other.
 
+- A pack and 66 cases for the History plugin (`packs/history`, `cases/history`): lookups, listings, aggregates, safety
+  and "never happened" questions, a holdout of ten, and nine tool-forced cases that make every tool and parameter
+  family necessary once. Every item is code-decided. See `docs/history.md`.
+- `pack.vocab`: a plugin declares the values that belong to its own grammar (enum values, tool names) and the trace
+  keeps them verbatim instead of reducing them to a shape, so `args.scope == all` can be asserted.
+- `Seed:` in a case header (for example `cwd=api time=day`) is carried into the compiled case, for a runner.
+- The tool selector accepts `ns.name` for an inner Code Mode call (`history.search`).
+- A trace written by a runner that records its own provenance (`summary.provenance`: the plugin build, skill,
+  descriptions, result text and rules, each by hash) is trusted over the hand-kept manifest, and the batch exposes every
+  axis, so `evals policy --axis skill` and `--axis description` compare two arms that differ in exactly one.
+
 ### Changed
 
 - **The 21 drifted packs now match each plugin's latest GitHub Release**, not 0.0.0. affinity, ashby, boxd,
@@ -173,6 +192,40 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 - T1 covers OpenCode 2.2.6 (`OPENCODE_BIN_2_2_6`), the plugins' fourth tested host, and finds a stock binary on
   Linux: `EVALS_STOCK_DIR` resolves the `@opencode/cli-<platform>-<arch>` package npm installed for this machine
   (glibc before `-baseline`, the `-musl` pair on musl) instead of only `cli-darwin-arm64`.
+
+- `trace`, `grade`, `verify` and `lock` take `--plugin`; they assumed `x`.
+- A call whose whole argument object is a variable (`events_list(args)`) is unverifiable, not "key missing".
+- The host version is `recorded` when a trace carries it.
+- T1 links the SDK checkout's `node_modules` into the plugin's temp directory, so a bundle that leaves
+  `@opencode/plugin` external (as History's does) loads.
+
+- `oc-trace/1`: a normalised trace of a run — permissions, tool calls with their arguments at the MCP
+  boundary, Code Mode inner calls, skill loads, split token counters, cost with its source, timings, and a
+  failure class. Content is reduced to structure: no text, handle, id or link.
+- The inner-call analyser: Code Mode's `execute` reports `completed` whatever happened inside it, so
+  declines, upstream failures and thrown errors are read from the code and its result.
+- `oc-case/1`: evidence-bound checklist items, compiled from a one-screen markdown file. Every clause is
+  parsed at compile time; a clause that cannot be settled makes its item `BLOCKED`, never a pass.
+- Graders that decide in code, judge only where code cannot, and four verdicts: `PASS`, `FAIL`,
+  `BLOCKED`, and per-item `N/A`.
+- Gold cases that test the graders: must-fail with a named failing item, must-pass, must-block, must-be-N/A.
+- `comparable()` and `decide()`: promotion as a pure function, and a refusal to compare two runs whose case
+  set, rules, model or harness digest differ.
+- A capture plugin that records the resolved permission decision, the tool list and the MCP boundary, and
+  changes nothing: a scripted session with it and without it is the same session.
+- T1: an embedded OpenCode host proves what a plugin makes possible with no model — that it loads, that its
+  default rules guard the agents it claims, that a write asks and is refused, that a denied tool is refused
+  before dispatch — plus the tools RPC and a stock-binary run for the shaper case.
+- Packs for nine plugins, derived from each plugin's own declaration, with T0 static checks and live
+  checklists.
+- The cost rule: every model call records what the provider billed and what OpenCode's own models.dev
+  catalogue would charge; billed wins, a subscription falls back to list price, a catalogue zero is free, and
+  an unknown model is `missing` rather than zero. No model price is typed into the repository.
+- A vendor price table with a source and a date for every rate, reported beside the model spend, and a cost
+  per passing case that is reported as missing rather than guessed.
+- A monthly budget cap, enforced in the runner and printed on every scorecard.
+- A hand-label kit for calibrating judges: one screen per advisory item, one key per label.
+- `evals privacy`: a pre-publish gate over the working tree and the whole git history.
 
 ### Fixed
 
@@ -314,54 +367,3 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 - `grade` read recordings from `../private/raw`, beside the repository, while the docs and the runner put them in
   `$EVALS_STORE/raw`. Every command now resolves the store in one place (`src/store.mjs`); `EVALS_RAW` and
   `grade --raw DIR` still point elsewhere, and `grade --cases DIR` and `--traces DIR` do what the usage line said.
-
-## [0.1.0] - Unreleased
-
-### Added
-
-- A pack and 66 cases for the History plugin (`packs/history`, `cases/history`): lookups, listings, aggregates, safety
-  and "never happened" questions, a holdout of ten, and nine tool-forced cases that make every tool and parameter
-  family necessary once. Every item is code-decided. See `docs/history.md`.
-- `pack.vocab`: a plugin declares the values that belong to its own grammar (enum values, tool names) and the trace
-  keeps them verbatim instead of reducing them to a shape, so `args.scope == all` can be asserted.
-- `Seed:` in a case header (for example `cwd=api time=day`) is carried into the compiled case, for a runner.
-- The tool selector accepts `ns.name` for an inner Code Mode call (`history.search`).
-- A trace written by a runner that records its own provenance (`summary.provenance`: the plugin build, skill,
-  descriptions, result text and rules, each by hash) is trusted over the hand-kept manifest, and the batch exposes every
-  axis, so `evals policy --axis skill` and `--axis description` compare two arms that differ in exactly one.
-
-### Changed
-
-- `trace`, `grade`, `verify` and `lock` take `--plugin`; they assumed `x`.
-- A call whose whole argument object is a variable (`events_list(args)`) is unverifiable, not "key missing".
-- The host version is `recorded` when a trace carries it.
-- T1 links the SDK checkout's `node_modules` into the plugin's temp directory, so a bundle that leaves
-  `@opencode/plugin` external (as History's does) loads.
-
-- `oc-trace/1`: a normalised trace of a run — permissions, tool calls with their arguments at the MCP
-  boundary, Code Mode inner calls, skill loads, split token counters, cost with its source, timings, and a
-  failure class. Content is reduced to structure: no text, handle, id or link.
-- The inner-call analyser: Code Mode's `execute` reports `completed` whatever happened inside it, so
-  declines, upstream failures and thrown errors are read from the code and its result.
-- `oc-case/1`: evidence-bound checklist items, compiled from a one-screen markdown file. Every clause is
-  parsed at compile time; a clause that cannot be settled makes its item `BLOCKED`, never a pass.
-- Graders that decide in code, judge only where code cannot, and four verdicts: `PASS`, `FAIL`,
-  `BLOCKED`, and per-item `N/A`.
-- Gold cases that test the graders: must-fail with a named failing item, must-pass, must-block, must-be-N/A.
-- `comparable()` and `decide()`: promotion as a pure function, and a refusal to compare two runs whose case
-  set, rules, model or harness digest differ.
-- A capture plugin that records the resolved permission decision, the tool list and the MCP boundary, and
-  changes nothing: a scripted session with it and without it is the same session.
-- T1: an embedded OpenCode host proves what a plugin makes possible with no model — that it loads, that its
-  default rules guard the agents it claims, that a write asks and is refused, that a denied tool is refused
-  before dispatch — plus the tools RPC and a stock-binary run for the shaper case.
-- Packs for nine plugins, derived from each plugin's own declaration, with T0 static checks and live
-  checklists.
-- The cost rule: every model call records what the provider billed and what OpenCode's own models.dev
-  catalogue would charge; billed wins, a subscription falls back to list price, a catalogue zero is free, and
-  an unknown model is `missing` rather than zero. No model price is typed into the repository.
-- A vendor price table with a source and a date for every rate, reported beside the model spend, and a cost
-  per passing case that is reported as missing rather than guessed.
-- A monthly budget cap, enforced in the runner and printed on every scorecard.
-- A hand-label kit for calibrating judges: one screen per advisory item, one key per label.
-- `evals privacy`: a pre-publish gate over the working tree and the whole git history.
