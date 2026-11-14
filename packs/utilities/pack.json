@@ -3,7 +3,7 @@
   "id": "utilities",
   "name": "Utilities",
   "package": "@joe-broadhead/opencode-utilities",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "private": false,
   "pluginId": "utilities.local",
   "rpc": "utilities.local.tools",
@@ -200,13 +200,6 @@
       "effect": "allow",
       "readOnly": false,
       "class": "write"
-    },
-    {
-      "name": "speech_download",
-      "permission": "utilities_speech_download",
-      "effect": "allow",
-      "readOnly": false,
-      "class": "write"
     }
   ],
   "access": {
@@ -214,12 +207,12 @@
     "default": "all"
   },
   "counts": {
-    "tools": 25,
+    "tools": 24,
     "reads": 21,
-    "writes": 4,
+    "writes": 3,
     "denied": 0,
     "skills": 3
   },
-  "digest": "99828ccb43ff24eeecce12235644ff5accca80df69b24018801bbe8f8b0a6c30",
+  "digest": "87cb0fdfd45385ba66dd147f96c48b7baeb0eeed41728a5a4849e6fac001011f",
   "t1": []
 }

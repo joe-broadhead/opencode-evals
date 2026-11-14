@@ -3,7 +3,7 @@
   "id": "charts",
   "name": "Charts",
   "package": "@joe-broadhead/opencode-charts",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "private": false,
   "pluginId": "charts",
   "rpc": "charts.tools",
@@ -22,7 +22,7 @@
       "name": "charts-cookbook",
       "description_sha256": "b50ad3dc61013e06e2843b4235084aa486c73129874d1731fb9fcc5b18a687a5",
       "description_chars": 278,
-      "body_lines": 771
+      "body_lines": 779
     }
   },
   "tools": [
@@ -101,6 +101,6 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "fb4eca6fd7db13b1ee6212916e575039f17c1d49831d283b9bd30ea2cf76408f",
+  "digest": "15aed4aa457f44aa6697f88138ff7738089a26e2d39217e6b8e72bf54bebde48",
   "t1": []
 }

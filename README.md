@@ -17,11 +17,17 @@ verdicts, and a ledger that refuses to compare two runs that are not comparable.
 
 ## Install
 
+evals is not on npm. Install it from a GitHub Release tag (the [Releases](https://github.com/joe-broadhead/opencode-evals/releases) page lists them):
+
 ```sh
-npm install --save-dev @joe-broadhead/opencode-evals
+npm install --save-dev github:joe-broadhead/opencode-evals#v0.1.0
 ```
 
-Or run it from a checkout: `node bin/evals <command>`.
+Use the latest Release's tag in place of `v0.1.0`. Or run it from a checkout: `node bin/evals <command>`.
+
+The installed package carries the harness, the packs, the cost map and the sandbox's Dockerfile. It does not carry
+the repository's case corpora (`cases/`, `live/`), its worlds, or its tests. To compile, run or grade those corpora, use a
+checkout.
 
 ## Use
 
@@ -110,6 +116,8 @@ CI, the gate and how a plugin's own `npm run check` calls it: [docs/ci.md](docs/
 ```sh
 npm uninstall @joe-broadhead/opencode-evals
 ```
+
+This removes the GitHub install by its package name. Nothing is fetched from npm.
 
 The private store is yours to delete: it is outside the repository.
 

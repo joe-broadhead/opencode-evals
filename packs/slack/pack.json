@@ -3,7 +3,7 @@
   "id": "slack",
   "name": "Slack",
   "package": "@joe-broadhead/opencode-slack",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": false,
   "pluginId": "slack.workspace",
   "rpc": "slack.workspace.tools",
@@ -214,6 +214,13 @@
       "effect": "allow",
       "readOnly": false,
       "class": "write"
+    },
+    {
+      "name": "mark_read",
+      "permission": "slack_mark_read",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
     }
   ],
   "access": {
@@ -221,12 +228,12 @@
     "default": "all"
   },
   "counts": {
-    "tools": 28,
+    "tools": 29,
     "reads": 15,
-    "writes": 13,
+    "writes": 14,
     "denied": 0,
     "skills": 1
   },
-  "digest": "d73c5bf4c512979a91bea0f8dc39270c2b01eb141c8d521d3a9e3287387cb3d5",
+  "digest": "5eca4b6b958ea6c21eefca57e9fea74143f8beda22d908423ad1131210d9335a",
   "t1": []
 }

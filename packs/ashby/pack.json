@@ -4,8 +4,8 @@
   "id": "ashby",
   "name": "Ashby",
   "package": "@joe-broadhead/opencode-ashby",
-  "version": "0.0.0",
-  "private": false,
+  "version": "0.0.2",
+  "private": true,
   "pluginId": "ashby.recruiting",
   "skills": [
     "ashby",
@@ -83,13 +83,6 @@
       "class": "read"
     },
     {
-      "name": "search_product_docs",
-      "permission": "ashby_search_product_docs",
-      "effect": "allow",
-      "readOnly": true,
-      "class": "read"
-    },
-    {
       "name": "search_records_by_name",
       "permission": "ashby_search_records_by_name",
       "effect": "allow",
@@ -133,8 +126,8 @@
     }
   ],
   "counts": {
-    "tools": 17,
-    "reads": 12,
+    "tools": 16,
+    "reads": 11,
     "writes": 5,
     "denied": 0,
     "skills": 2
@@ -143,8 +136,8 @@
   "skill_meta": {
     "ashby": {
       "name": "ashby",
-      "description_sha256": "d29b23f71a039c0536250a301c9e2155ed4bcb6aaacd15115e71901055c4baf5",
-      "description_chars": 868,
+      "description_sha256": "cf3e0ec483baf366078016bd2d4d2a0db36755d92977585e7dccd0eb392553e9",
+      "description_chars": 838,
       "body_lines": 95
     },
     "ashby-write": {
@@ -154,7 +147,7 @@
       "body_lines": 66
     }
   },
-  "digest": "713fd1ac5c8b3169b09a4944dfba18486e31a95da869d6635437802e4128e24d",
+  "digest": "319f06cd9dd229b9233479db464d8d669cf18c43b1922744a9dd9010da1df597",
   "access": {
     "key": "access",
     "default": "all"

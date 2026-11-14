@@ -4,7 +4,7 @@
   "id": "metaview",
   "name": "Metaview",
   "package": "@joe-broadhead/opencode-metaview",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": false,
   "pluginId": "metaview.workspace",
   "skills": [
@@ -518,7 +518,7 @@
       "body_lines": 95
     }
   },
-  "digest": "f5c0ae68d6e76580de05da5a175c61add91b641116d01e1be52f33e0e2a57991",
+  "digest": "afe8d033f95233973fffdabf100554e00da80ead1fcfa7c003846369d43ed199",
   "access": {
     "key": "access",
     "default": "all"

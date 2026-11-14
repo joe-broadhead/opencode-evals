@@ -4,8 +4,8 @@
   "id": "linear",
   "name": "Linear",
   "package": "@joe-broadhead/opencode-linear",
-  "version": "0.0.0",
-  "private": false,
+  "version": "0.0.2",
+  "private": true,
   "pluginId": "linear.workspace",
   "skills": [
     "linear",
@@ -564,12 +564,19 @@
       "effect": "allow",
       "readOnly": false,
       "class": "write"
+    },
+    {
+      "name": "whoami",
+      "permission": "linear_whoami",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
     }
   ],
   "counts": {
-    "tools": 79,
+    "tools": 80,
     "reads": 43,
-    "writes": 36,
+    "writes": 37,
     "denied": 0,
     "skills": 2
   },
@@ -588,7 +595,7 @@
       "body_lines": 50
     }
   },
-  "digest": "8149921dff9a27962377eb544d29add9dc581de0bb94390fa8cc1c85141afb7e",
+  "digest": "3cddb44914ec3d276e74d342ff8b6cd90f73d6f8513b3fc77e4a31b2afa65bbb",
   "access": {
     "key": "access",
     "default": "all"

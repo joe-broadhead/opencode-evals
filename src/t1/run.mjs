@@ -7,6 +7,7 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { startHost, stopAll, availableVersions, fakeCalls, captureLines, stockBinary, TESTED } from "./harness.mjs"
+import { VERSION } from "../version.mjs"
 import { checkRules, checkDescribe, checkStatus, checkScriptedTurn, checkRpcCall } from "./checks.mjs"
 
 const summaryOf = (checks) => ({
@@ -55,7 +56,7 @@ export async function runOne({ pack, version, store, fakeModule }) {
   const result = {
     plugin: pack.id,
     version,
-    harness: "0.1.0-dev",
+    harness: VERSION,
     host: { version, binary: stockBinary(version) },
     counts: pack.counts,
     summary: summaryOf(checks),
