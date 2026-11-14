@@ -4,7 +4,9 @@
   "private": true,
   "description": "Deterministic evals for OpenCode skills, tools and plugins: cases, traces, graders, ledger.",
   "type": "module",
-  "bin": { "evals": "./bin/evals" },
+  "bin": {
+    "evals": "./bin/evals"
+  },
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "trace": "node bin/evals trace",
@@ -15,5 +17,7 @@
     "t0": "node bin/evals t0",
     "verify": "node bin/evals verify"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  }
 }

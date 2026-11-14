@@ -3,7 +3,7 @@
   "id": "boxd",
   "name": "boxd",
   "package": "@joe-broadhead/opencode-boxd",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "private": false,
   "pluginId": "boxd.machines",
   "rpc": "boxd.machines.tools",
@@ -15,7 +15,7 @@
       "name": "boxd",
       "description_sha256": "1ff72f3273a17e135d781c0b0c93cd55fb907bbe058e97dfe7ee629554475010",
       "description_chars": 203,
-      "body_lines": 62
+      "body_lines": 95
     }
   },
   "tools": [
@@ -94,6 +94,6 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "3f0b592d268df2e6348c6b87d6ec276d52f91f638aadbfd373b3dec722caa5e4",
+  "digest": "b9901716bd2136f100e1490fbfd8d4c250d6b2b4056b00af199502a8b578eb4b",
   "t1": []
 }

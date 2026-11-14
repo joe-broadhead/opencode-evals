@@ -3,7 +3,7 @@
   "id": "gws",
   "name": "Google Workspace",
   "package": "@joe-broadhead/opencode-gws",
-  "version": "0.0.0",
+  "version": "0.0.3",
   "private": false,
   "pluginId": "google-workspace.gws",
   "rpc": "google-workspace.gws.tools",
@@ -122,6 +122,6 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "7392986448478b248c87bdf9b939bf46d80ae7f620c3ec21388a77ce08939be2",
+  "digest": "0d8411173806631e48df0371987a08297fc395ec4768d00bf27e94593183e956",
   "t1": []
 }

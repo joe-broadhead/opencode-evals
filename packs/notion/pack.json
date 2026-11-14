@@ -4,8 +4,8 @@
   "id": "notion",
   "name": "Notion",
   "package": "@joe-broadhead/opencode-notion",
-  "version": "0.0.0",
-  "private": false,
+  "version": "0.0.2",
+  "private": true,
   "pluginId": "notion.workspace",
   "skills": [
     "notion",
@@ -588,7 +588,7 @@
       "body_lines": 94
     }
   },
-  "digest": "e46b9fa500102044084f471366112a47e522814086fdc23229782f18044fbe65",
+  "digest": "60158386f0e7ff85feb27e851d2e863874fbb409257634ff5eeb7bca60a2da97",
   "access": {
     "key": "access",
     "default": "all"

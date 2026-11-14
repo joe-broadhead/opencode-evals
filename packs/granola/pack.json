@@ -5,8 +5,8 @@
   "id": "granola",
   "name": "Granola",
   "package": "@joe-broadhead/opencode-granola",
-  "version": "0.0.0",
-  "private": false,
+  "version": "0.0.2",
+  "private": true,
   "skills": [
     "granola",
     "granola-meeting-brief"
@@ -22,13 +22,6 @@
     {
       "name": "list_meeting_folders",
       "permission": "granola_list_meeting_folders",
-      "effect": "allow",
-      "readOnly": true,
-      "class": "read"
-    },
-    {
-      "name": "list_meetings",
-      "permission": "granola_list_meetings",
       "effect": "allow",
       "readOnly": true,
       "class": "read"
@@ -78,6 +71,13 @@
     {
       "name": "search_transcripts",
       "permission": "granola_search_transcripts",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_agent_brief",
+      "permission": "granola_get_agent_brief",
       "effect": "allow",
       "readOnly": true,
       "class": "read"
@@ -139,6 +139,20 @@
       "class": "write"
     },
     {
+      "name": "create_meeting_note_from_transcript",
+      "permission": "granola_create_meeting_note_from_transcript",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "sign_out",
+      "permission": "granola_sign_out",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
       "name": "export_markdown",
       "permission": "granola_export_markdown",
       "effect": "allow",
@@ -147,9 +161,9 @@
     }
   ],
   "counts": {
-    "tools": 19,
+    "tools": 21,
     "reads": 11,
-    "writes": 8,
+    "writes": 10,
     "denied": 0,
     "skills": 2
   },
@@ -159,7 +173,7 @@
       "name": "granola",
       "description_sha256": "063b088bd828024db457dc9834ff05f0b62a880540dca06de1c6b6dcff4afa11",
       "description_chars": 275,
-      "body_lines": 70
+      "body_lines": 71
     },
     "granola-meeting-brief": {
       "name": "granola-meeting-brief",
@@ -168,7 +182,7 @@
       "body_lines": 41
     }
   },
-  "digest": "0d5c7cc54314d0101164116fa00141afb2090f70fd9750c8cab948071ce9d964",
+  "digest": "e1629a5028f78a91410012341007095f0f1d88b41e264d3f1a9baee8d1f4980a",
   "access": {
     "key": "access",
     "default": "all"

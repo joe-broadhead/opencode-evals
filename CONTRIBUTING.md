@@ -53,4 +53,14 @@ hand-built batch pairs; the privacy gate has fixtures that must fail.
 
 ## Releasing
 
-A `v<version>` tag on `master`. The release workflow refuses a tag that differs from `package.json`.
+A release is a `v<version>` tag on a `master` commit, plus its GitHub Release. Nothing is published to npm. To cut one:
+
+1. In a PR, set the version in `package.json` and `src/version.mjs` to `x.y.z`, and date its CHANGELOG heading
+   `## [x.y.z] - YYYY-MM-DD`. Merge it, and wait for CI on master.
+2. Run `gh workflow run release.yml --ref master -f sha=<that master head>`.
+3. The workflow refuses a sha that is not master's head, a sha CI did not pass, a version that is not `x.y.z` or
+   differs from `src/version.mjs`, an undated CHANGELOG heading, a tag that already exists, and a `release`
+   environment with no required reviewer. Then it waits for the owner to approve the `release` environment. After
+   that it creates the tag and the Release, with that CHANGELOG section as the notes.
+
+Only the owner approves a release.

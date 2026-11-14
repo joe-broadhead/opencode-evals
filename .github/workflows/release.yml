@@ -1,0 +1,92 @@
+name: release
+
+# Releases v<package.json version> as a git tag and a GitHub Release on a master commit CI passed. Started by hand:
+#   gh workflow run release.yml --ref master -f sha=<master head CI passed>
+# Nothing is built and nothing touches npm: evals has no dependencies and no build, so the tag is the release and
+# `npm install --save-dev github:joe-broadhead/opencode-evals#v<version>` installs it.
+#
+# `plan` refuses before anything is written. The sha must be master's head, and CI must have passed on it. The version
+# must be x.y.z and equal src/version.mjs. CHANGELOG.md needs a dated `## [x.y.z] - YYYY-MM-DD` heading. The tag must
+# not exist yet, and the `release` environment must require a reviewer. `publish` waits for the owner's approval of that
+# environment, then creates the tag on the sha and the Release with that CHANGELOG section. It runs no repository code.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: The full sha of the master head whose CI passed
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: plan the release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha }}
+          persist-credentials: false
+      - id: plan
+        name: Plan, or refuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ inputs.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || fail "sha is not a full commit sha"
+          [ "$(git rev-parse HEAD)" = "$SHA" ] || fail "checked out $(git rev-parse HEAD), not $SHA"
+          head=$(gh api "repos/$REPO/commits/master" --jq .sha)
+          [ "$head" = "$SHA" ] || fail "master's head is $head, not $SHA"
+          ci=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SHA&event=push&status=success" --jq .total_count)
+          [ "$ci" -ge 1 ] || fail "no successful ci push run on $SHA"
+          version=$(node -p 'require("./package.json").version')
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "package.json version $version is not x.y.z"
+          grep -qxF "export const VERSION = \"$version\"" src/version.mjs || fail "src/version.mjs does not say $version"
+          grep -qE "^## \[${version//./\\.}\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$" CHANGELOG.md || fail "CHANGELOG.md has no dated ## [$version] heading"
+          if gh api "repos/$REPO/git/ref/tags/v$version" >/dev/null 2>&1; then fail "tag v$version exists"; fi
+          reviewers=$(gh api "repos/$REPO/environments/release" --jq '[.protection_rules[]? | select(.type == "required_reviewers")] | length' 2>/dev/null || echo 0)
+          [ "$reviewers" -ge 1 ] || fail "the release environment requires no reviewer: add the owner as a required reviewer first"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing v$version on $SHA"
+
+  publish:
+    name: tag and release
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha }}
+          persist-credentials: false
+      - name: Create the tag and the Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ inputs.sha }}
+          REPO: ${{ github.repository }}
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          set -euo pipefail
+          notes="$RUNNER_TEMP/notes.md"
+          awk -v h="## [$VERSION] - " 'index($0, h) == 1 { on = 1; next } on && /^## \[/ { exit } on { print }' CHANGELOG.md > "$notes"
+          [ -s "$notes" ] || { echo "::error::the CHANGELOG section for $VERSION is empty"; exit 1; }
+          gh api "repos/$REPO/git/refs" -f ref="refs/tags/v$VERSION" -f sha="$SHA" >/dev/null
+          gh release create "v$VERSION" --repo "$REPO" --verify-tag --title "v$VERSION" --notes-file "$notes"

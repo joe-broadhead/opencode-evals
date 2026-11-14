@@ -1,0 +1,274 @@
+{
+  "schema": "oc-pack/1",
+  "id": "openrouter",
+  "name": "OpenRouter",
+  "package": "@joe-broadhead/opencode-openrouter",
+  "version": "0.0.2",
+  "private": false,
+  "pluginId": "openrouter.models",
+  "rpc": "openrouter.models.tools",
+  "skills": [
+    "openrouter",
+    "openrouter-evaluate",
+    "openrouter-images",
+    "openrouter-troubleshoot"
+  ],
+  "skill_meta": {
+    "openrouter": {
+      "name": "openrouter",
+      "description_sha256": "e502d249cb5f0dca1a48bae72de4e6dbc270744793a6b60500ec22d7b2502bb1",
+      "description_chars": 334,
+      "body_lines": 31
+    },
+    "openrouter-evaluate": {
+      "name": "openrouter-evaluate",
+      "description_sha256": "465b80191558b25604e25193f5a910c06fa0b30930da1066fea78f27c08bc84c",
+      "description_chars": 301,
+      "body_lines": 44
+    },
+    "openrouter-images": {
+      "name": "openrouter-images",
+      "description_sha256": "1d4861456464129c3b3878947b95d2d0b3d82128811b1796ff9ee3e738c9c843",
+      "description_chars": 415,
+      "body_lines": 39
+    },
+    "openrouter-troubleshoot": {
+      "name": "openrouter-troubleshoot",
+      "description_sha256": "af170a5ff3acc6ccacf21edbf96c70a31ea83f057dd582631146f05c3f4b232d",
+      "description_chars": 260,
+      "body_lines": 39
+    }
+  },
+  "tools": [
+    {
+      "name": "get-endpoint-uptime-history",
+      "permission": "openrouter_get-endpoint-uptime-history",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get-model",
+      "permission": "openrouter_get-model",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get-session-cost",
+      "permission": "openrouter_get-session-cost",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list-app-rankings",
+      "permission": "openrouter_list-app-rankings",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list-benchmarks",
+      "permission": "openrouter_list-benchmarks",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list-daily-model-rankings",
+      "permission": "openrouter_list-daily-model-rankings",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list-model-endpoints",
+      "permission": "openrouter_list-model-endpoints",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list-models",
+      "permission": "openrouter_list-models",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list-providers",
+      "permission": "openrouter_list-providers",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list-task-classifications",
+      "permission": "openrouter_list-task-classifications",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "ping",
+      "permission": "openrouter_ping",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "search-docs",
+      "permission": "openrouter_search-docs",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get-batch",
+      "permission": "openrouter_get-batch",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get-credits",
+      "permission": "openrouter_get-credits",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get-current-key",
+      "permission": "openrouter_get-current-key",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get-generation",
+      "permission": "openrouter_get-generation",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get-preset",
+      "permission": "openrouter_get-preset",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get-video",
+      "permission": "openrouter_get-video",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list-batches",
+      "permission": "openrouter_list-batches",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list-preset-versions",
+      "permission": "openrouter_list-preset-versions",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list-presets",
+      "permission": "openrouter_list-presets",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "install-ori-harness",
+      "permission": "openrouter_install-ori-harness",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "spawn-ori-eval",
+      "permission": "openrouter_spawn-ori-eval",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "generate-image",
+      "permission": "openrouter_generate-image",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "generate-speech",
+      "permission": "openrouter_generate-speech",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "generate-video",
+      "permission": "openrouter_generate-video",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "send-batch",
+      "permission": "openrouter_send-batch",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "send-decision",
+      "permission": "openrouter_send-decision",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "send-message",
+      "permission": "openrouter_send-message",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "transcribe-audio",
+      "permission": "openrouter_transcribe-audio",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "send-feedback",
+      "permission": "openrouter_send-feedback",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 31,
+    "reads": 23,
+    "writes": 8,
+    "denied": 0,
+    "skills": 4
+  },
+  "digest": "5aeaabc2d571f935758ab1d92f26c113db0973d77305c21091886a0529ccbf71",
+  "t1": []
+}

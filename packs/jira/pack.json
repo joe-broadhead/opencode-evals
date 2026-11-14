@@ -4,8 +4,8 @@
   "id": "jira",
   "name": "Jira",
   "package": "@joe-broadhead/opencode-jira",
-  "version": "0.0.0",
-  "private": false,
+  "version": "0.0.2",
+  "private": true,
   "pluginId": "jira.issues",
   "skills": [
     "jira",
@@ -420,7 +420,7 @@
       "body_lines": 95
     }
   },
-  "digest": "fb263c5497440af86ad8a664e259f8dc1a97fbb537e26591b1c0ea10ae4a6ddd",
+  "digest": "fa1f7c282c48ff0f22706dd8ebc2b6c00b7b52bd906280b44effb8b7b5df6aef",
   "access": {
     "key": "access",
     "default": "all"

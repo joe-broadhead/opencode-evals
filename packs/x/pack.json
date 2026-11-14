@@ -42,7 +42,7 @@
   "id": "x",
   "name": "X",
   "package": "@joe-broadhead/opencode-x",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "private": false,
   "pluginId": "x.posts",
   "skills": [
@@ -771,7 +771,7 @@
       "name": "x",
       "description_sha256": "da609550174e1ce3094ffbb0fcf8ee5d71b320312546b32af13f0aa73e5e9344",
       "description_chars": 631,
-      "body_lines": 95
+      "body_lines": 94
     },
     "x-write": {
       "name": "x-write",
@@ -780,7 +780,7 @@
       "body_lines": 77
     }
   },
-  "digest": "b6fddce47bfafcf29aa442f3fd8a4aa0f4189c17cba55d83d1f247160940e9fd",
+  "digest": "d2fb7b2a95154f0b7289b6007a78daf07d299608dd81c556cfe95abb1123914b",
   "access": {
     "key": "access",
     "default": "all"

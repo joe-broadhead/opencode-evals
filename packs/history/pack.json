@@ -61,7 +61,7 @@
   "schema": "oc-pack/1",
   "name": "History",
   "package": "@joe-broadhead/opencode-history",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "private": false,
   "skills": [
     "history-recall"
@@ -71,7 +71,7 @@
       "name": "history-recall",
       "description_sha256": "23e2378d1e9d250d8ea09bfe5826f1d01184c4d591297e52274638577fee4443",
       "description_chars": 744,
-      "body_lines": 97
+      "body_lines": 98
     }
   },
   "tools": [
@@ -146,7 +146,7 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "ccb19d5f7d210521db3244d30fa70273d11a7f11f344a99289f8cdf5fe97af2c",
+  "digest": "667c568d38c88d254bc0d50dbed7c571c139efd1616d0288e3496bd7eb2adacb",
   "vocab": [
     "project",
     "directory",

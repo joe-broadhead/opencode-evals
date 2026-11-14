@@ -3,7 +3,7 @@
   "id": "voice",
   "name": "Voice",
   "package": "@joe-broadhead/opencode-voice",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": false,
   "pluginId": "voice.dictation",
   "rpc": "voice.dictation.tools",
@@ -45,6 +45,6 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "f605e424c39f52f42a480ddb3a8d9878a56e202ab998c60c4714c8480efcb77d",
+  "digest": "b436a795068c60a774d31833ea350fc884547cb28ba52c00452ea9a7534570c2",
   "t1": []
 }

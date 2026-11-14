@@ -1,0 +1,78 @@
+{
+  "schema": "oc-pack/1",
+  "id": "inference",
+  "name": "Inference",
+  "package": "@joe-broadhead/opencode-inference",
+  "version": "0.0.2",
+  "private": false,
+  "pluginId": "inference.core",
+  "rpc": "inference.core.tools",
+  "skills": [
+    "inference-extract",
+    "inference-decide"
+  ],
+  "skill_meta": {
+    "inference-extract": {
+      "name": "inference-extract",
+      "description_sha256": "5a91e4f725d8234bb7343a37945fe891590f5a846a86bb347cdda277645870cc",
+      "description_chars": 598,
+      "body_lines": 66
+    },
+    "inference-decide": {
+      "name": "inference-decide",
+      "description_sha256": "75c64bdb0595f63b8dd1b8604f945c2be719d4ca90944d28a99a3f3397d6ac82",
+      "description_chars": 610,
+      "body_lines": 72
+    }
+  },
+  "tools": [
+    {
+      "name": "status",
+      "permission": "inference_status",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "capabilities",
+      "permission": "inference_capabilities",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "plan",
+      "permission": "inference_plan",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "extract",
+      "permission": "inference_extract",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "decide",
+      "permission": "inference_decide",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    }
+  ],
+  "access": {
+    "key": "access",
+    "default": "all"
+  },
+  "counts": {
+    "tools": 5,
+    "reads": 3,
+    "writes": 2,
+    "denied": 0,
+    "skills": 2
+  },
+  "digest": "25c0e1668f1959bdac7231a892e85a2771fd21a0dec1e9907855ee596c8afc39",
+  "t1": []
+}

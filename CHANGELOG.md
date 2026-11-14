@@ -6,6 +6,11 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Added
 
+- **Packs for opencode-inference and opencode-openrouter** (`packs/inference`, `packs/openrouter`), read from their
+  v0.0.2 Releases.
+- **A release workflow** (`.github/workflows/release.yml`). It tags a master commit that CI passed as
+  `v<package.json version>` and creates its GitHub Release, after the owner approves the `release` environment.
+  Nothing is built and nothing goes to npm. CONTRIBUTING's "Releasing" section lists the steps.
 - **The Charts corpus** (`cases/charts`, `docs/charts.md`): 13 agent tasks, version 1, for creating and revising
   charts (long labels in a narrow panel, explicit and ambiguous aggregation, count versus measure, misspelt fields, a
   brand theme, empty data; light → dark, inline → presentation → inline, add x zoom, add scatter brushing, an
@@ -97,6 +102,18 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ### Changed
 
+- **The 21 drifted packs now match each plugin's latest GitHub Release**, not 0.0.0. affinity, ashby, boxd,
+  browse, charts, elevenlabs, github, granola, gws, history, jira, linear, metaview, notion, plaud, slack, tavily,
+  utilities, voice, wisprflow and x were synced with `evals pack --sync`, each read from its Release tag. Besides
+  the versions: ashby lost `search_product_docs` and changed its skill description. elevenlabs gained 47 tools,
+  and three tools became reads. granola gained `get_agent_brief`, `create_meeting_note_from_transcript` and
+  `sign_out`, and lost `list_meetings`. linear gained `whoami`, slack gained `mark_read`, and utilities lost
+  `speech_download`.
+- **jobs' pack notes that its `access` setting has no list of choices** (a top-level `notes` entry). jobs v0.0.0
+  hasn't had the family settings release. The sync keeps the note.
+- **The README installs from a GitHub Release tag** (`github:joe-broadhead/opencode-evals#v<version>`): evals is
+  not on npm, and the old `npm install` returned a 404. `package.json` is now in canonical JSON form
+  (`JSON.stringify(pkg, null, 2)`) and keeps `"private": true`.
 - Every `evals run` is confined by default, the scripted model's included: "not live" is not "confined", since the
   scripted model can call a shell tool. `--isolation none` is refused for any run unless `--unsafe-no-isolation`, which
   now means `--isolation none` only. Sandboxes moved from the memory-backed `/tmp` to `/var/tmp/evals` (`EVALS_TMP`).

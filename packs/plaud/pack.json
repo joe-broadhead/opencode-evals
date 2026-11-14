@@ -3,7 +3,7 @@
   "id": "plaud",
   "name": "Plaud",
   "package": "@joe-broadhead/opencode-plaud",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": false,
   "pluginId": "plaud.recordings",
   "rpc": "plaud.recordings.tools",
@@ -101,6 +101,6 @@
     "denied": 0,
     "skills": 3
   },
-  "digest": "946aef0eb84e3eb23b3fce713650f5ae1c07639d690299d005a52814e4c445db",
+  "digest": "839f51c509eaf750a3e88429e224a73528526ef2cf8c5a614ca6e6df5be3ebcb",
   "t1": []
 }
