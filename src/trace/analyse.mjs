@@ -65,6 +65,9 @@ export function innerCounts(code, output) {
       detail.push({ kind: "errored", tool: m[1], server: m[2], status: (m[3].match(HTTP_STATUS) ?? [])[1], message: m[0].slice(0, MAX_MESSAGE) })
     }
     const trimmed = s.trim()
+    // Code Mode's answer to a tool that does not exist ("Unknown tool 'slack.send'. Did you mean ..."): the call never ran.
+    const unknown = /^Unknown tool '([^']+)'/.exec(trimmed)
+    if (unknown) detail.push({ kind: "errored", tool: unknown[1], unknown: true, message: trimmed.slice(0, MAX_MESSAGE) })
     if (CODE_ERROR.test(trimmed) && !detail.some((d) => d.kind === "errored" && d.message === trimmed.slice(0, MAX_MESSAGE))) {
       detail.push({ kind: "errored", tool: "execute", message: trimmed.slice(0, MAX_MESSAGE) })
     }

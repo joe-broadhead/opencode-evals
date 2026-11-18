@@ -86,6 +86,8 @@ export function compileCase(file, text) {
     ...(draft.fields.set ? { sets: list(draft.fields.set) } : {}),
     ...(draft.fields.status ? { status: draft.fields.status } : {}),
     ...(draft.fields.truth ? { truth: truthOf(file, draft.fields.truth) } : {}),
+    // What kind of data the case reads (EVALS-232 §2.7): decides which providers may run it.
+    ...(draft.fields.data ? { data: draft.fields.data.trim().toLowerCase() } : {}),
     items,
     oracle: draft.oracle.map((o) => ({ path: o.path, op: o.op, value: o.value })),
     notes: draft.notes,

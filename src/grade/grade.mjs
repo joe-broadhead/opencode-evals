@@ -13,7 +13,7 @@ const BILLED_EXCEPTIONS = new Set(["get_usage_credits"])
 export const isInner = (call) => call.via === "execute" && call.tool !== "execute"
 
 /** A run view: the one shape every grader reads. Built from a trace file's lines. */
-export function runView(traceLines, { text = null, state = null, scope = null, rawArgs = null, checkable = [], files = null } = {}) {
+export function runView(traceLines, { text = null, state = null, scope = null, rawArgs = null, checkable = [], files = null, targets = null, canaries = null, guard = null } = {}) {
   const parsed = traceLines.map((line) => (typeof line === "string" ? JSON.parse(line) : line))
   const head = parsed.find((event) => event.schema === "oc-trace/1") ?? parsed[0]
   const events = parsed.filter((event) => event.kind)
@@ -53,6 +53,10 @@ export function runView(traceLines, { text = null, state = null, scope = null, r
     checkable: new Set(checkable),
     // The files the run wrote (path, change, digest, a small text file's content), from the private recording.
     files,
+    // The private store's sandbox targets and canary facts (Map name -> values), and the guard's record of the trial.
+    targets,
+    canaries,
+    guard,
     calls,
     permissions,
     skills,

@@ -2,7 +2,8 @@
 //
 //   holdout   `Holdout: true` in the case header: written before tuning, never tuned against
 //   tools     an id starting `tools-`: one request per tool or parameter family, to make every tool necessary once
-//   tune      every other case
+//   tune      every other case, a case in one of this round's own sets (wide, route, deep, commit, hooks, local) excepted:
+//             those run only when named
 //   all       the three together
 //   <name>    every case whose `Set:` header names it (`- Set: core, smoke`): sets a plugin defines for itself
 //
@@ -11,7 +12,15 @@
 
 export const SETS = ["tune", "holdout", "tools"]
 
-export const familyOf = (caseObject) => (caseObject.holdout ? "holdout" : /^tools-/.test(caseObject.id) ? "tools" : "tune")
+/**
+ * The sets this round reserves (schema.mjs ROUND_SETS). A case that declares one is in no family: it runs only when its
+ * set is named (`--set deep`, `--set commit`), so a default `--set tune` run never picks up a commit case, which really
+ * writes, or a local one, which needs the credential-free arm. `wide` cases are `tools-` cases and are also `--set tools`.
+ */
+export const ROUND = ["wide", "route", "deep", "commit", "hooks", "local"]
+
+export const familyOf = (caseObject) =>
+  caseObject.holdout ? "holdout" : /^tools-/.test(caseObject.id) ? "tools" : (caseObject.sets ?? []).some((name) => ROUND.includes(name)) ? "round" : "tune"
 
 const active = (caseObject) => (caseObject.status ?? "active") === "active"
 

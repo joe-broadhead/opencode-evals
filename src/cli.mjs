@@ -51,6 +51,7 @@ import { selectCases } from "./case/sets.mjs"
 import { builtinCollisions } from "./grade/select.mjs"
 import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
 import { rawCallArgs } from "./trace/rawArgs.mjs"
+import { loadTargets, loadCanaries } from "./grade/targets.mjs"
 import { compare as compareArms, renderReport } from "./report/arms.mjs"
 import { runBatch, batchTmp, truthCheck } from "./run/runner.mjs"
 import { loadWorld } from "./run/world.mjs"
@@ -113,7 +114,11 @@ function graderHash() {
     "src/grade/evidence.mjs",
     "src/grade/grade.mjs",
     "src/grade/select.mjs",
+    "src/grade/targets.mjs",
+    "src/grade/gws.mjs",
+    "src/grade/writes.mjs",
     "src/trace/analyse.mjs",
+    "src/trace/normalise.mjs",
     "src/trace/redact.mjs",
     "src/trace/rawArgs.mjs",
     "src/grade/trials.mjs",
@@ -147,8 +152,15 @@ function stateFor(iteration, caseName) {
   return existsSync(file) ? JSON.parse(read(file)) : null
 }
 
+/** Does a case use a clause that reads the call's own arguments from the recording? */
+const RAW_KINDS = new Set(["target", "gws-plan"])
+const needsRawArgs = (caseObject) => (caseObject.items ?? []).some((item) => [...(item.evidence ?? []), ...(item.evidence_any ?? []).flat(), ...(item.na_when ?? [])].some((clause) => RAW_KINDS.has(clause.kind)))
+
 function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir = rawRoot(), plugin = "x") {
   const results = []
+  // The private store's targets and canaries, read once; absent files leave every clause that needs them unverifiable.
+  const targets = loadTargets()
+  const canaries = loadCanaries()
   const pack = readSnapshot(plugin, ROOT)
   const scope = pack ? { ns: plugin, tools: new Set((pack.tools ?? []).map((tool) => tool.name)) } : null
   // Every trial of a case is graded: `<case>.trace.jsonl` (one trial, recorded before trials were kept per file) and
@@ -178,10 +190,14 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
           .find((e) => e.type === "text")
         text = last?.part?.text ?? null
         // The arguments the case declares checkable are read from the recording here, and kept out of every trace.
-        if (caseObject.checkable?.length) rawArgs = rawCallArgs(rawLines)
+        // R6's `target:` and `gws-plan:` read the call's own arguments too, and so does a case that declares keys checkable.
+        if (caseObject.checkable?.length || needsRawArgs(caseObject)) rawArgs = rawCallArgs(rawLines)
       }
+      // The guard's record of the trial, from the run's own summary.
+      const summaryFile = `${rawBase}.summary.json`
+      const guard = existsSync(summaryFile) ? JSON.parse(read(summaryFile)).guard ?? null : null
       const files = existsSync(`${rawBase}.files.json`) ? JSON.parse(read(`${rawBase}.files.json`)) : null
-      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) ?? adapterState(plugin, files), scope, rawArgs, checkable: caseObject.checkable ?? [], files })
+      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) ?? adapterState(plugin, files), scope, rawArgs, checkable: caseObject.checkable ?? [], files, targets, canaries, guard })
       results.push({ ...gradeCase(caseObject, view), ...(trial ? { trial } : {}) })
     }
   }

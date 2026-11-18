@@ -108,8 +108,12 @@ export function assertTokenLasts(expiresAt, horizonMs, now = Date.now()) {
 }
 
 export function parseAuth(spec) {
-  const text = String(spec ?? "").trim()
-  if (!text) throw new Error("--auth is required: none, env:<VAR>[,<VAR>...] or claude-agent (see docs/running.md)")
+  const whole = String(spec ?? "").trim()
+  // `<source>+profile`: the same model credential, and the evals profile's vendor credentials as well (R2).
+  const vendor = whole.endsWith("+profile")
+  const text = vendor ? whole.slice(0, -"+profile".length) : whole
+  if (!text) throw new Error("--auth is required: none, env:<VAR>[,<VAR>...] or claude-agent, each optionally with +profile (see docs/running.md)")
+  if (vendor) return { ...parseAuth(text), vendor: true }
   if (text === "none") return { kind: "none" }
   if (text === "claude-agent") return { kind: "claude-agent" }
   if (text.startsWith("env:")) {

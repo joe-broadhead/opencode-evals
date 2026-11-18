@@ -32,7 +32,7 @@ how many for ${id}?
 `
 
 /** A store, a case set, a built plugin, a stand-in host and a stand-in user home. */
-function fixture({ cases = [["demo-a", "- Seed: cwd=api"], ["demo-b", ""], ["ho-demo-c", "- Holdout: true"]] } = {}) {
+function fixture({ cases = [["demo-a", "- Seed: cwd=api"], ["demo-b", ""], ["hold-demo-3-c", "- Holdout: true"]] } = {}) {
   const root = mkdtempSync(join(tmpdir(), "evals-run-test-"))
   const casesDir = join(root, "cases")
   mkdirSync(casesDir)
@@ -116,7 +116,7 @@ test("every trial is its own sandbox and its own file, in parallel, on its own p
 
 test("the sandbox is sealed: its own home, XDG tree and config, and nothing of the caller's environment", async () => {
   const f = fixture()
-  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "seal", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true }, { caller: f.caller, ...quiet })
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "seal", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true, tools: "local" }, { caller: f.caller, ...quiet })
   const kept = result.keptAt
   const home = join(kept, "runs", "demo-b.t1", "home")
   const run = JSON.parse(readFileSync(join(home, "run.json"), "utf8"))
@@ -284,7 +284,7 @@ test("the CLI's dry run lists the plan and the caps, and launches nothing", () =
   const out = spawnSync(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "dry", "--model", "mock/m1", "--auth", "none", "--scripted", "--isolation", "none", "--unsafe-no-isolation", "--arm", f.arm, "--cases-dir", f.casesDir, "--set", "all", "--trials", "2", "--dry-run"], { env: f.caller, encoding: "utf8" })
   assert.equal(out.status, 0, out.stderr)
   assert.match(out.stdout, /3 case\(s\) x 2 trial\(s\) = 6 run\(s\)/)
-  assert.match(out.stdout, /ho-demo-c\.t2/)
+  assert.match(out.stdout, /hold-demo-3-c\.t2/)
   assert.match(out.stdout, /nothing launched, nothing reserved/)
   assert.deepEqual(readLedger(f.store), [])
   f.cleanup()
@@ -775,7 +775,7 @@ test("a world's env cannot replace the sealed config, the sandbox's directories 
   const module = join(f.root, "env-world.mjs")
   writeFileSync(module, `export default { name: "env", status: () => ({ fresh: true }), prepare: async ({ sandbox }) => { const { mkdirSync } = await import("node:fs"); mkdirSync(sandbox.project, { recursive: true }); return { cwd: sandbox.project, env: { OPENCODE_CONFIG_CONTENT: '{"plugins":[{"package":"/elsewhere"}]}', OPENCODE_CONFIG_DIR: "/elsewhere", HOME: "/elsewhere", XDG_DATA_HOME: "/elsewhere", TMPDIR: "/elsewhere", PATH: "/elsewhere", CLAUDE_CONFIG_DIR: "/elsewhere", CLAUDE_CODE_OAUTH_TOKEN: "world-token-000000", SPIKE_MOCK_URL: "http://elsewhere/v1", NODE_OPTIONS: "--require /elsewhere", WORLD_NOTE: "kept" } } } }\n`)
   const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
-  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "wenv", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, world: module, keep: true, keepCredentials: true }, { caller, ...quiet })
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "wenv", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, world: module, keep: true, keepCredentials: true, tools: "local" }, { caller, ...quiet })
   assert.equal(result.bad, 0, JSON.stringify(result.results))
   const home = join(result.keptAt, "runs", "demo-b.t1", "home")
   const run = JSON.parse(readFileSync(join(home, "run.json"), "utf8"))

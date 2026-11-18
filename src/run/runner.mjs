@@ -25,7 +25,9 @@ import { parseAuth, prepareAuth, readCredential, unknownExpiry } from "./auth.mj
 import { loadWorld, parseSeed } from "./world.mjs"
 import { checkTruth, renderTruthProblem } from "../case/truth.mjs"
 import { AUTH_ERROR, endedOnAuth } from "./authError.mjs"
-import { materialiseArm, armProvenance } from "./arm.mjs"
+import { materialiseArm, armProvenance, readCompanions, materialiseCompanions, companionsDigest } from "./arm.mjs"
+import { lockdownPolicies, lockdownPermissions, loadPacks, companionOptions, ACCESS } from "./lockdown.mjs"
+import { buildPolicy, installGuard } from "./guard/policy.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
 import { segment, within, inside } from "./paths.mjs"
 import { selectIsolation, isLive, defaultIsolation } from "./isolation.mjs"
@@ -170,7 +172,7 @@ export async function modelRoutes({ trial, binary, url, env, cwd, model, timeout
 async function preflightRoute(p) {
   const sandbox = makeSandbox(join(p.batchRoot, "preflight"))
   mkdirSync(join(sandbox.project, ".git"), { recursive: true })
-  const config = sealedConfig({ armDir: p.armDir, options: p.options, model: p.model, scripted: p.scripted, scriptedProvider: p.scriptedProvider })
+  const config = sealedConfig({ armDir: p.armDir, options: p.options, model: p.model, scripted: p.scripted, scriptedProvider: p.scriptedProvider, ...p.sealed })
   writeConfig(sandbox, config)
   const password = newPassword()
   registerSecrets([password])
@@ -220,6 +222,35 @@ const billedOf = (stdout) => {
   }
   // The split counters let a later batch price its runs from the catalogue when nothing billed.
   return { billed_usd: total, cost_source: priced ? "billed" : "unpriced", tokens }
+}
+
+/** The guard's log lines for one trial (the file is in the trial's tmp, written by the guard plugin inside it). */
+function guardRecords(file) {
+  if (!existsSync(file)) return []
+  return readFileSync(file, "utf8").split("\n").filter(Boolean).map((line) => {
+    try {
+      return JSON.parse(line)
+    } catch {
+      return null
+    }
+  }).filter(Boolean)
+}
+
+/** What the guard saw, in numbers: asks answered, writes refused, assertion failures (EVALS-ASSERT), and whether it ran. */
+export function guardSummary(records) {
+  const count = (kind) => records.filter((r) => r.kind === kind).length
+  const asserts = records.filter((r) => r.kind === "assert")
+  return {
+    ran: records.some((r) => r.kind === "guard_start"),
+    asks: count("ask"),
+    rejected: count("reject"),
+    reject_failed: count("reject_failed"),
+    refused_writes: asserts.filter((r) => r.what === "write").length,
+    assert_access: asserts.filter((r) => r.what === "access").length,
+    assert_committed: asserts.filter((r) => r.what === "committed").length,
+    committed: count("committed"),
+    write_calls: records.filter((r) => r.kind === "execute_before" && r.write).length,
+  }
 }
 
 const writeAtomic = (file, text) => {
@@ -324,7 +355,7 @@ async function runJob(job, ctx) {
   const cwd = within(root, prepared.cwd, "the working directory")
   const cut = stripForeignLinks(sandbox)
   if (cut.length) ctx.log(`  ${name}: removed ${cut.length} link(s) out of the sandbox that the world's home carried (${cut.slice(0, 3).join(", ")})`)
-  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider })
+  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...ctx.sealed })
   writeConfig(sandbox, config)
   const password = newPassword()
   // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
@@ -423,6 +454,10 @@ async function runJob(job, ctx) {
     // Every file written for the run is scrubbed of its secrets first: the recording, the summary, the files record.
     const out = (suffix) => within(ctx.rawDir, join(ctx.rawDir, `${name}${suffix}`), "a recording")
     writeAtomic(out(".jsonl"), redact(result.stdout ?? ""))
+    // The guard's own log (what it asked, rejected and refused): next to the recording, scrubbed like it, and counted in the summary.
+    const guardLog = guardRecords(join(sandbox.tmp, "guard.jsonl"))
+    if (guardLog.length) writeAtomic(out(".guard.jsonl"), redact(`${guardLog.map((r) => JSON.stringify(r)).join("\n")}\n`))
+    summary.guard = guardSummary(guardLog)
     writeAtomic(out(".summary.json"), redact(`${JSON.stringify(summary, null, 1)}\n`))
     writeAtomic(out(".files.json"), redact(`${JSON.stringify(files, null, 1)}\n`))
     // Only once the trial is confirmed gone is its sandbox touched: removed, or kept and scrubbed.
@@ -478,10 +513,16 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   //   { "package": "../opencode-history", "options": { "access": "ask-changes" } }
   let armSpec = options.arm
   let pluginOptions = options.options ? JSON.parse(options.options) : null
+  let companionSpec = null
+  let companionBase = null
+  let guardWanted = null
   if (armSpec && armSpec !== "none" && armSpec.endsWith(".json")) {
     const manifest = JSON.parse(readFileSync(armSpec, "utf8"))
     if (pluginOptions && manifest.options) throw new Error(`${armSpec} sets options; --options would override them: pass one`)
     pluginOptions = pluginOptions ?? manifest.options ?? null
+    companionSpec = manifest.companions ?? null
+    companionBase = dirname(resolve(armSpec))
+    if (manifest.guard !== undefined) guardWanted = Boolean(manifest.guard)
     armSpec = manifest.package === "none" ? "none" : resolve(dirname(resolve(armSpec)), manifest.package)
   }
   const armSource = armSpec === "none" ? null : armSpec ?? pluginRepo(plugin, caller)
@@ -497,6 +538,11 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // A key passed through is a secret from the start: a world build's error output is scrubbed of it too.
   if (profile.kind === "env") registerSecrets(profile.names.map((name) => caller[name]))
   const scripted = Boolean(options.scripted)
+  // What the model may do: `locked` (the default) removes the shell, file, web and subagent tools and makes every write an
+  // ask; `local` keeps them, for the credential-free arm only (G1): it is refused with any vendor credential.
+  const toolsMode = options.tools ?? "locked"
+  if (!["locked", "local"].includes(toolsMode)) throw new Error(`--tools must be locked or local, not ${JSON.stringify(toolsMode)}`)
+  if (toolsMode === "local" && profile.vendor) throw new Error("--tools local keeps the shell and the file tools, and is refused with a vendor credential (+profile): run the local set with no profile")
   if (scripted && options.model !== SCRIPTED_MODEL) throw new Error(`--scripted runs the harness's scripted model, ${SCRIPTED_MODEL}: --model ${options.model} is not it`)
   const live = isLive({ auth: profile.kind, model: options.model, config: sealedConfig({ armDir: null, model: options.model, scripted }) })
   // Every run is confined in a container unless the caller names another backend: the scripted model can call tools too.
@@ -647,12 +693,19 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // container), not in the process environment, which the plugin under test shares and could rewrite before the
     // provider reads it.
     let harnessDir = null
+    // The guard is on in every locked trial unless the arm file says `"guard": false` (a probe of the host alone).
+    const guardOn = guardWanted ?? toolsMode === "locked"
+    if (scripted || guardOn) harnessDir = join(batchRoot, "harness")
     if (scripted) {
       if (!isolation.confines) mock = await startMock({ batchRoot, caller })
-      harnessDir = join(batchRoot, "harness")
       cpSync(resolve(import.meta.dirname, "..", "t1", "mock"), join(harnessDir, "mock"), { recursive: true })
       writeFileSync(join(harnessDir, "mock", "provider", "endpoint.json"), `${JSON.stringify({ url: mock?.url ?? TRIAL_MOCK_URL })}\n`, { mode: 0o444 })
       facts.scripted = true
+    }
+    let guardDir = null
+    if (guardOn) {
+      guardDir = installGuard(harnessDir, buildPolicy({ mode: options.guardMode ?? "refuse" }))
+      facts.guard = { mode: options.guardMode ?? "refuse" }
     }
     // The probe is a trial of its own: under `container`, it proves a container starts before anything is reserved.
     const probeTrial = await isolation.enter({ name: "probe", sandbox: probe, mounts: [], cwd: probe.home })
@@ -671,7 +724,13 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const built = armProvenance(armDir, armSource ? resolve(armSource) : null)
     // The options are an axis of their own: an access mode changes what the plugin allows. Recorded by digest (an
     // option can be a secret), with the access value beside it.
-    const arm = { ...built, provenance: { ...built.provenance, options: digestOf(pluginOptions ?? {}), ...(pluginOptions?.access ? { access: pluginOptions.access } : {}) } }
+    // Every plugin of a locked trial, the arm and its companions alike, runs at ask-changes with its caps. An explicit
+    // access other than ask-changes is refused whenever the run holds any credential; with none, a probe may ask for it.
+    const wantsAccess = pluginOptions?.access
+    if (toolsMode === "locked" && wantsAccess && wantsAccess !== ACCESS && profile.kind !== "none") throw new Error(`the arm's options set access ${JSON.stringify(wantsAccess)}: a locked trial that holds a credential runs every plugin at ${ACCESS}`)
+    if (toolsMode === "locked" && armDir) pluginOptions = { ...companionOptions(plugin, pluginOptions ?? {}), ...(wantsAccess && profile.kind === "none" ? { access: wantsAccess } : {}) }
+    const companions = toolsMode === "locked" || companionSpec ? materialiseCompanions(readCompanions(companionSpec, { base: companionBase ?? process.cwd(), exclude: [plugin] }), join(batchRoot, "companions"), { options: (id, extra) => ({ ...companionOptions(id, extra), ...(profile.kind === "none" && wantsAccess ? { access: wantsAccess } : {}) }) }) : []
+    const arm = { ...built, provenance: { ...built.provenance, options: digestOf(pluginOptions ?? {}), ...(pluginOptions?.access ? { access: pluginOptions.access } : {}), companions: companionsDigest(companions), companion_list: companions.map((c) => `${c.id}@${c.version}`) } }
     Object.assign(facts, { opencode, isolation: isolation.name, ...(isolation.unsafe ? { unsafe_no_isolation: true } : {}), arm: { arm: arm.arm, sha256: arm.sha256, version: arm.version } })
 
     // The world must be current, and built by the build under test.
@@ -710,8 +769,15 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     if (keepRoot && auth.holdsCredential) log(`warning: --keep-credentials: the kept sandboxes under ${batchRoot} hold the imported credential; delete them when you are done`)
     // The model must route inside a trial before anything is reserved: one trial, no prompt, no model call.
     const routeTimeoutMs = Number(caller.EVALS_ROUTE_TIMEOUT_S || 60) * 1000
-    const mounts = [armDir, harnessDir].filter(Boolean).map((host) => ({ host, ro: true }))
-    const routed = await preflightRoute({ batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs })
+    const mounts = [armDir, harnessDir, ...companions.map((c) => c.dir)].filter(Boolean).map((host) => ({ host, ro: true }))
+    // What the trial's sealed config adds to the arm: its companions, the guard, and the lockdown rules.
+    const sealed = {
+      companions: companions.map((c) => ({ dir: c.dir, options: c.options })),
+      guardDir,
+      lockdown: toolsMode === "locked" ? { policies: lockdownPolicies(), permissions: lockdownPermissions({ commit: options.commitActions ?? [] }) } : null,
+    }
+    facts.tools = toolsMode
+    const routed = await preflightRoute({ batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: scripted && Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs, sealed })
     if (!routed.ok) throw new Error(`preflight: the model ${options.model} does not route inside a trial within ${routeTimeoutMs / 1000} s, so no run was reserved. The trial's server lists ${routed.listed.length ? routed.listed.slice(0, 12).join(", ") : "no model"}`)
     facts.preflight = { model: options.model, routed_after_ms: routed.waitedMs }
     log(`preflight: ${options.model} routes inside a trial (after ${(routed.waitedMs / 1000).toFixed(1)} s)`)
@@ -738,11 +804,12 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       mockUrl: mock?.url ?? null,
       routeTimeoutMs,
       scripted,
-      mockInTrial: Boolean(harnessDir) && isolation.confines,
+      mockInTrial: scripted && Boolean(harnessDir) && isolation.confines,
       harnessDir,
+      sealed,
       bunBinary: caller.EVALS_BUN ?? "bun",
-      scriptedProvider: harnessDir ? join(harnessDir, "mock", "provider") : undefined,
-      mounts: [armDir, harnessDir].filter(Boolean).map((host) => ({ host, ro: true })),
+      scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined,
+      mounts,
       redact,
       dollarCap: facts.dollar_cap,
     }

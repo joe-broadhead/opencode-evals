@@ -4,13 +4,38 @@
 export const TIERS = ["T0", "T1", "T2", "T3", "T4"]
 export const SEVERITIES = ["blocker", "major", "minor"]
 export const GRADERS = ["code", "judge"]
-export const AREAS = ["TR", "OC", "PR", "EF", "RL", "SF", "RB"]
+export const AREAS = ["TR", "OC", "PR", "EF", "RL", "SF", "RB", "RT", "CT", "WR", "DT", "ER"]
 export const STATUSES = ["active", "retired", "deferred"]
 export const BUDGET_KEYS = ["outer_calls", "inner_calls", "billed_calls", "tokens", "cost_usd", "wall_ms", "turns"]
 
-const ID = /^[A-Z]+-(?:TR|OC|PR|EF|RL|SF|RB)\d{2}$/
+const ID = new RegExp(`^[A-Z]+-(?:${AREAS.join("|")})\\d{2}$`)
 /** A case id is a file name and a path segment everywhere it goes: lower-case words joined by dashes. */
 export const CASE_ID = /^[a-z0-9][a-z0-9-]{0,119}$/
+
+/**
+ * What kind of data a case reads (the `Data:` header). `synthetic`, `seeded` (made by the owner for the round) and `own`
+ * (the owner's own data, no third party) may run on any provider; `real` (a third party's words: mail, meetings, CRM notes)
+ * and `candidate` (interviews, HR records) never run on an `opencode/*` model, and need the owner's sign-off for Claude.
+ */
+export const DATA_KINDS = ["synthetic", "seeded", "own", "real", "candidate"]
+export const THIRD_PARTY_DATA = ["real", "candidate"]
+
+/**
+ * The sets this round reserves (`Set:`), each with the id shape it requires, so an id says what a case is for:
+ *   wide   one request per tool, and its paraphrase twin     tools-<tool>[-p]
+ *   route  should-not-call (route-no-<n>) and overlap routing (route-<topic>-<n>)    route-<slug>
+ *   deep   multi-step tasks, cross-plugin ones with deep-x-  deep-<slug>
+ *   commit the write cases that really write to a sandbox    commit-<slug>
+ *   hooks  the hook arms' cases                               hook-<slug>
+ *   local  the credential-free arm (shell and file tools on): any id, combined with another set
+ * Any other lower-case name is the plugin's own (history's `core`, `safety`). `tune`, `holdout`, `tools` and `all` are the
+ * families `evals run --set` already knows and cannot be declared.
+ */
+export const ROUND_SETS = { wide: /^tools-[a-z0-9][a-z0-9-]*$/, route: /^route-[a-z0-9][a-z0-9-]*$/, deep: /^deep-[a-z0-9][a-z0-9-]*$/, commit: /^commit-[a-z0-9][a-z0-9-]*$/, hooks: /^hook-[a-z0-9][a-z0-9-]*$/, local: /./ }
+export const FAMILY_SETS = ["tune", "holdout", "tools", "all"]
+
+/** A holdout's id: `hold-<plugin>-<n>-<slug>`. History's earlier `ho-` ids are the one exception. */
+export const holdoutId = (plugin) => new RegExp(`^hold-${String(plugin).replace(/[^a-z0-9-]/gi, "")}-\\d+-[a-z0-9][a-z0-9-]*$`)
 
 export class CaseError extends Error {
   constructor(file, message, line) {
@@ -61,7 +86,12 @@ export function validateCase(caseObject, file = "<case>") {
   }
   if (caseObject.expect && !["pass", "fail", "na"].includes(caseObject.expect)) bad("expect must be pass, fail or na")
   for (const key of caseObject.checkable ?? []) if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) bad(`checkable ${JSON.stringify(key)} must be an argument name`)
-  for (const name of caseObject.sets ?? []) if (!/^[a-z][a-z0-9-]*$/.test(name) || name === "all") bad(`set ${JSON.stringify(name)} must be a lower-case name, not all`)
+  for (const name of caseObject.sets ?? []) {
+    if (!/^[a-z][a-z0-9-]*$/.test(name) || FAMILY_SETS.includes(name)) bad(`set ${JSON.stringify(name)} must be a lower-case name, not ${FAMILY_SETS.join(", ")}`)
+    if (ROUND_SETS[name] && !ROUND_SETS[name].test(caseObject.id)) bad(`a case in set ${name} has an id like ${String(ROUND_SETS[name].source).replace(/^\^|\$$/g, "").replace(/\[a-z0-9\]\[a-z0-9-\]\*/, "<slug>")}, not ${JSON.stringify(caseObject.id)}`)
+  }
+  if (caseObject.data !== undefined && !DATA_KINDS.includes(caseObject.data)) bad(`Data must be one of ${DATA_KINDS.join(", ")}, not ${JSON.stringify(caseObject.data)}`)
+  if (caseObject.holdout && !holdoutId(caseObject.plugin).test(caseObject.id) && !(caseObject.plugin === "history" && /^ho-/.test(caseObject.id))) bad(`a holdout's id is hold-${caseObject.plugin}-<n>-<slug>, not ${JSON.stringify(caseObject.id)}`)
   for (const claim of caseObject.truth ?? []) if (typeof claim?.path !== "string" || !("value" in claim)) bad("a truth is {path, value}")
   if (caseObject.status !== undefined && !STATUSES.includes(caseObject.status)) bad(`status must be one of ${STATUSES.join(", ")}`)
   return caseObject

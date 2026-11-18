@@ -1,0 +1,10 @@
+{
+  "name": "opencode-evals-guard",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "An eval-only OpenCode plugin: deny-by-default for every write tool, a reject-all responder for every permission ask, and a log of both.",
+  "exports": {
+    ".": "./plugin.ts"
+  }
+}

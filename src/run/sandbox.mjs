@@ -26,11 +26,24 @@ export const SCRIPTED_MODEL = "mock/m1"
  * and the model. Nothing else. The scripted provider comes last: the host applies plugins in order, so a plugin under
  * test that registers a provider called `mock` of its own is overridden by the harness's, never the reverse.
  */
-export function sealedConfig({ armDir, options, model, scripted = false, scriptedProvider = SCRIPTED_PROVIDER }) {
-  return {
-    plugins: [...(armDir ? [{ package: armDir, ...(options ? { options } : {}) }] : []), ...(scripted ? [{ package: scriptedProvider }] : [])],
+export function sealedConfig({ armDir, options, model, scripted = false, scriptedProvider = SCRIPTED_PROVIDER, companions = [], guardDir = null, lockdown = null, extraPlugins = [] }) {
+  const config = {
+    plugins: [
+      ...(armDir ? [{ package: armDir, ...(options ? { options } : {}) }] : []),
+      // Companions: the other plugins installed beside the arm, each at ask-changes with its caps (R1).
+      ...companions.map((c) => ({ package: c.dir, options: c.options })),
+      // The guard: deny-by-default for writes, a responder for every ask (R4, R11).
+      ...(guardDir ? [{ package: guardDir }] : []),
+      ...extraPlugins.map((p) => (typeof p === "string" ? { package: p } : p)),
+      ...(scripted ? [{ package: scriptedProvider }] : []),
+    ],
     model,
   }
+  // `lockdown` is { policies, permissions } from lockdown.mjs: the tools a credentialed trial never has, and every
+  // write and spending action as an ask.
+  if (lockdown?.policies?.length) config.policies = lockdown.policies
+  if (lockdown?.permissions?.length) config.permissions = lockdown.permissions
+  return config
 }
 
 const PASS_THROUGH = ["LANG", "TZ", "TERM", "HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy", "SSL_CERT_FILE", "NODE_EXTRA_CA_CERTS"]
@@ -83,6 +96,7 @@ export function sandboxEnv({ sandbox, config, password, caller = process.env, wo
     OPENCODE_DISABLE_CLAUDE_CODE: "1",
     OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: "1",
     OPENCODE_DISABLE_FILEWATCHER: "1",
+    EVALS_GUARD_OUT: join(sandbox.tmp, "guard.jsonl"),
     ...extra,
   })
   return env
