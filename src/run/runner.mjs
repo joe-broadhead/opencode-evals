@@ -17,17 +17,21 @@ import { selectCases } from "../case/sets.mjs"
 import { pluginCases } from "../case/load.mjs"
 import { harnessVersion } from "../version.mjs"
 import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf, outstanding, capsFile } from "../cost/ledger.mjs"
-import { assertBatchWithinBudget, projectedRunUsd, monthToDate, budgetCaps } from "../cost/budget.mjs"
+import { assertBatchWithinBudget, projectedRunUsd, monthToDate, budgetCaps, assertLaunchWithinRound, estimateRunUsd, roundLimits, tierOf, RoundCapError } from "../cost/budget.mjs"
+import { loadCatalog, loadMapping, resolve as resolvePrice, listPrice } from "../cost/catalog.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
 import { makeSandbox, sealedConfig, sandboxEnv, worldEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, removeInside, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
 import { parseAuth, prepareAuth, readCredential, unknownExpiry } from "./auth.mjs"
-import { loadWorld, parseSeed } from "./world.mjs"
+import { loadWorld, parseSeed, parseSeedList } from "./world.mjs"
 import { checkTruth, renderTruthProblem } from "../case/truth.mjs"
 import { AUTH_ERROR, endedOnAuth } from "./authError.mjs"
 import { materialiseArm, armProvenance, readCompanions, materialiseCompanions, companionsDigest } from "./arm.mjs"
 import { lockdownPolicies, lockdownPermissions, loadPacks, companionOptions, ACCESS } from "./lockdown.mjs"
 import { buildPolicy, installGuard } from "./guard/policy.mjs"
+import { gateCases, seedFiles } from "./gate.mjs"
+import { loadTargets, loadCanaries } from "../grade/targets.mjs"
+import { batchEgress } from "./egress.mjs"
 import { snapshotFiles, changedFiles } from "./files.mjs"
 import { segment, within, inside } from "./paths.mjs"
 import { selectIsolation, isLive, defaultIsolation } from "./isolation.mjs"
@@ -224,6 +228,41 @@ const billedOf = (stdout) => {
   return { billed_usd: total, cost_source: priced ? "billed" : "unpriced", tokens }
 }
 
+/**
+ * The run's cost at LIST price: its tokens against the catalogue through the model map, whatever was billed (a subscription
+ * bills $0). Null when the catalogue has no price for the model. This is what the round's ceiling counts (R9).
+ */
+export function listUsdOf(tokens, price) {
+  return price ? listPrice(tokens, price) : null
+}
+
+/** The catalogue price of the batch's model, resolved once: `{ price, via }` or `{ price: null, why }`. */
+export function modelPrice(model, caller) {
+  const [provider, ...rest] = String(model ?? "").split("/")
+  const resolved = resolvePrice(loadCatalog(caller), provider, rest.join("/"), loadMapping(caller))
+  return resolved.price ? { price: resolved.price, via: resolved.via } : { price: null, why: resolved.why }
+}
+
+/**
+ * What the host logged about plugins and servers in one trial (its own log file under the sandbox's data dir): the plugins
+ * that failed to load, with the first line of why, and how many warnings it wrote. A plugin that fails to load registers
+ * nothing, silently, so this is where "loaded" is proved.
+ */
+export function hostLogFacts(home) {
+  const file = join(home, ".local", "share", "opencode", "log", "opencode.log")
+  if (!existsSync(file)) return { log: false }
+  const lines = readFileSync(file, "utf8").split("\n")
+  const failed = []
+  let warnings = 0
+  for (const line of lines) {
+    if (!/level=(WARN|ERROR)/.test(line)) continue
+    warnings++
+    const m = /message="failed to load plugin" plugin\.id=(\S+) cause="([^"]{0,300})/.exec(line)
+    if (m) failed.push({ plugin: m[1], why: m[2].replace(/\s+/g, " ") })
+  }
+  return { log: true, warnings, plugin_load_failures: failed }
+}
+
 /** The guard's log lines for one trial (the file is in the trial's tmp, written by the guard plugin inside it). */
 function guardRecords(file) {
   if (!existsSync(file)) return []
@@ -245,6 +284,7 @@ export function guardSummary(records) {
     asks: count("ask"),
     rejected: count("reject"),
     reject_failed: count("reject_failed"),
+    asks_left_to_run: records.filter((r) => r.kind === "ask" && r.own === true).length,
     refused_writes: asserts.filter((r) => r.what === "write").length,
     assert_access: asserts.filter((r) => r.what === "access").length,
     assert_committed: asserts.filter((r) => r.what === "committed").length,
@@ -284,7 +324,7 @@ async function startServer({ binary, cwd, env, password, trial, timeoutMs = 60_0
 const MOCK_PORT = 4200
 const TRIAL_MOCK_URL = `http://127.0.0.1:${MOCK_PORT}/v1`
 async function startTrialMock({ trial, ctx, sandbox }) {
-  const spec = trial.wrap({ command: ctx.bunBinary, args: [join(ctx.harnessDir, "mock", "server.ts"), String(MOCK_PORT), join(sandbox.tmp, "mock.jsonl")], cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp } })
+  const spec = trial.wrap({ command: ctx.bunBinary, args: [join(ctx.harnessDir, "mock", "server.ts"), String(MOCK_PORT), join(sandbox.tmp, "mock.jsonl")], cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp, ...(ctx.caller.EVALS_MOCK_USAGE ? { EVALS_MOCK_USAGE: ctx.caller.EVALS_MOCK_USAGE } : {}) } })
   const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
   let exited = false
   proc.exited.then(() => (exited = true))
@@ -301,7 +341,7 @@ async function startMock({ batchRoot, caller }) {
   const port = await freePort()
   const home = join(batchRoot, "mock")
   mkdirSync(home, { recursive: true, mode: 0o700 })
-  const proc = start(caller.EVALS_BUN ?? "bun", [resolve(import.meta.dirname, "..", "t1", "mock", "server.ts"), String(port), join(home, "mock.jsonl")], { cwd: home, env: { PATH: caller.PATH ?? "/usr/bin:/bin", HOME: home, TMPDIR: home } })
+  const proc = start(caller.EVALS_BUN ?? "bun", [resolve(import.meta.dirname, "..", "t1", "mock", "server.ts"), String(port), join(home, "mock.jsonl")], { cwd: home, env: { PATH: caller.PATH ?? "/usr/bin:/bin", HOME: home, TMPDIR: home, ...(caller.EVALS_MOCK_USAGE ? { EVALS_MOCK_USAGE: caller.EVALS_MOCK_USAGE } : {}) } })
   const deadline = Date.now() + 15_000
   for (;;) {
     try {
@@ -353,6 +393,9 @@ async function runJob(job, ctx) {
   const sandbox = makeSandbox(root)
   const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
   const cwd = within(root, prepared.cwd, "the working directory")
+  // The case's own files (`Seed: files=`), copied into its project before the world's home is cut of its links.
+  const seeded = seedFiles(job.case.seed, cwd, { env: ctx.caller })
+  if (seeded.length) ctx.log(`  ${name}: seeded ${seeded.length} file(s) into the project`)
   const cut = stripForeignLinks(sandbox)
   if (cut.length) ctx.log(`  ${name}: removed ${cut.length} link(s) out of the sandbox that the world's home carried (${cut.slice(0, 3).join(", ")})`)
   const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...ctx.sealed })
@@ -385,6 +428,7 @@ async function runJob(job, ctx) {
     const before = snapshotFiles(cwd)
     const started = Date.now()
     let server = null
+    let serverStderr = ""
     let result
     try {
       server = await startServer({ binary: ctx.binary, cwd, env, password, trial })
@@ -398,11 +442,13 @@ async function runJob(job, ctx) {
       } else {
         // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
         const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
-        result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, job.case.prompt], { timeoutMs: ctx.timeoutMs })
+        result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs })
       }
     } catch (error) {
       result = { code: null, stdout: "", stderr: String(error.message ?? error), timedOut: false, error: String(error.message ?? error) }
     } finally {
+      // What the host printed while it ran (a plugin that failed to load says so here), kept for the summary, scrubbed there.
+      serverStderr = server?.proc?.output?.().stderr ?? ""
       await stop(server?.proc)
       await stop(mock?.proc, { graceMs: 200 })
     }
@@ -426,6 +472,7 @@ async function runJob(job, ctx) {
       utc_hour: new Date(started).getUTCHours(),
       ...(prepared.session ? { continued: true } : {}),
       // Scrubbed, then cut: a secret straddling the cut would leave its tail in the summary otherwise.
+      server_stderr: redact(String(serverStderr).slice(-6000)),
       stderr: redact(`${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}${killed ? `\n[evals run] killed: ${killed.reason}` : ""}`).slice(-4000),
       started_at: new Date(started).toISOString(),
       runner: RUNNER,
@@ -458,6 +505,7 @@ async function runJob(job, ctx) {
     const guardLog = guardRecords(join(sandbox.tmp, "guard.jsonl"))
     if (guardLog.length) writeAtomic(out(".guard.jsonl"), redact(`${guardLog.map((r) => JSON.stringify(r)).join("\n")}\n`))
     summary.guard = guardSummary(guardLog)
+    summary.host_log = hostLogFacts(sandbox.home)
     writeAtomic(out(".summary.json"), redact(`${JSON.stringify(summary, null, 1)}\n`))
     writeAtomic(out(".files.json"), redact(`${JSON.stringify(files, null, 1)}\n`))
     // Only once the trial is confirmed gone is its sandbox touched: removed, or kept and scrubbed.
@@ -465,6 +513,9 @@ async function runJob(job, ctx) {
     if (!gone) ctx.log(`  ${name}: the trial's container is still there: its sandbox is kept, not removed`)
     if (!ctx.keep && gone) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
     const cost = billedOf(result.stdout ?? "")
+    // Priced at list as well as billed: a subscription run bills $0, and the round's ceiling counts list price (R9).
+    cost.list_usd = listUsdOf(cost.tokens, ctx.listPrice)
+    cost.tier = tierOf(job.case)
     if (summary.infra) {
       // Never graded. A failure before the model did any work spent nothing: its reservation goes back, so it can be
       // rerun from the reserve. A run cut short after the model worked (its sign-in revoked mid-run) did spend: it is
@@ -505,7 +556,13 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // The repository's cases and the store's private holdouts, or exactly the directory --cases-dir names.
   const caseList = pluginCases(plugin, { dir: options.casesDir ?? null, env: caller })
   if (!caseList.length) throw new Error(`no compiled cases for ${plugin}${options.casesDir ? ` in ${options.casesDir}` : ""}`)
-  const { selected } = selectCases(caseList, { patterns: options.cases ?? "*", set: options.set ?? "tune" })
+  const { selected: chosen } = selectCases(caseList, { patterns: options.cases ?? "*", set: options.set ?? "tune" })
+  // What may run on this model, with its placeholders filled from the private store (R5): a case that reads a third party's words
+  // never goes to an `opencode/*` model, and one the store cannot fill is deferred, each with its reason in the batch record.
+  const gated = gateCases(chosen, { model: options.model, targets: loadTargets(caller), canaries: loadCanaries(caller) })
+  const selected = gated.runnable
+  const deferred = gated.deferred
+  if (!selected.length) throw new Error(`nothing to run: all ${chosen.length} selected case(s) are deferred (${deferred.slice(0, 3).map((d) => `${d.case}: ${d.why}`).join("; ")}${deferred.length > 3 ? "; …" : ""})`)
   const rawDir = within(rawRoot(caller), join(rawRoot(caller), iteration, plugin), "the recordings directory")
   const jobs = plan({ cases: selected, trials, recorded: recordedTrials(rawDir), append: Boolean(options.append) })
 
@@ -543,11 +600,23 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const toolsMode = options.tools ?? "locked"
   if (!["locked", "local"].includes(toolsMode)) throw new Error(`--tools must be locked or local, not ${JSON.stringify(toolsMode)}`)
   if (toolsMode === "local" && profile.vendor) throw new Error("--tools local keeps the shell and the file tools, and is refused with a vendor credential (+profile): run the local set with no profile")
+  // The set and the arm must agree: a `local` case measures shell-first behaviour and needs the credential-free arm; every other
+  // case runs locked. A commit case really writes, and only with a commit plan (the guard's in-scope list and the asks it opens).
+  const localCases = selected.filter((c) => (c.sets ?? []).includes("local"))
+  if (toolsMode === "local" && localCases.length !== selected.length) throw new Error(`--tools local runs only cases in set local (${selected.length - localCases.length} selected case(s) are not: ${selected.filter((c) => !(c.sets ?? []).includes("local")).slice(0, 3).map((c) => c.id).join(", ")})`)
+  if (toolsMode === "locked" && localCases.length) throw new Error(`${localCases.length} selected case(s) are in set local (${localCases.slice(0, 3).map((c) => c.id).join(", ")}): run them with --tools local and no +profile`)
+  const commitCases = selected.filter((c) => (c.sets ?? []).includes("commit"))
+  if (commitCases.length && !options.commitPlan) throw new Error(`${commitCases.length} selected case(s) are in set commit (${commitCases.slice(0, 3).map((c) => c.id).join(", ")}): they really write, and run only with --commit-plan <file> naming what they may write`)
+  if (options.commitPlan && commitCases.length !== selected.length) throw new Error("--commit-plan runs only cases in set commit: every other case stays at the ask")
+  const commitPlan = options.commitPlan ? JSON.parse(readFileSync(options.commitPlan, "utf8")) : null
   if (scripted && options.model !== SCRIPTED_MODEL) throw new Error(`--scripted runs the harness's scripted model, ${SCRIPTED_MODEL}: --model ${options.model} is not it`)
   const live = isLive({ auth: profile.kind, model: options.model, config: sealedConfig({ armDir: null, model: options.model, scripted }) })
   // Every run is confined in a container unless the caller names another backend: the scripted model can call tools too.
   const isolationName = options.isolation ?? (caller.EVALS_ISOLATION || null) ?? defaultIsolation()
-  const isolationSpec = { name: isolationName, live, unsafe: Boolean(options.unsafeNoIsolation), config: isolationName === "container" ? containerConfig({ store, env: caller }) : null }
+  const baseConfig = isolationName === "container" ? containerConfig({ store, env: caller }) : null
+  // Each batch reaches the model's hosts, and the hosts of the credentialed plugins its cases name, and nothing else (R3).
+  const egress = baseConfig ? batchEgress({ model: options.model, vendor: Boolean(profile.vendor), cases: selected, packs: loadPacks(), targets: loadTargets(caller), base: baseConfig.allow, explicit: Boolean(baseConfig.source || caller.EVALS_EGRESS_ALLOW) }) : null
+  const isolationSpec = { name: isolationName, live, unsafe: Boolean(options.unsafeNoIsolation), config: baseConfig ? { ...baseConfig, allow: egress.allow } : null }
   if (options.dryRun) {
     log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}`)
     let refused = false
@@ -702,10 +771,18 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       writeFileSync(join(harnessDir, "mock", "provider", "endpoint.json"), `${JSON.stringify({ url: mock?.url ?? TRIAL_MOCK_URL })}\n`, { mode: 0o444 })
       facts.scripted = true
     }
+    let probeDir = null
+    if (options.probe) {
+      if (profile.kind !== "none" || profile.vendor) throw new Error("--probe installs the permission probe plugin and is for runs with no credential")
+      harnessDir ??= join(batchRoot, "harness")
+      probeDir = join(harnessDir, "probe")
+      cpSync(resolve(import.meta.dirname, "probe"), probeDir, { recursive: true })
+    }
     let guardDir = null
     if (guardOn) {
-      guardDir = installGuard(harnessDir, buildPolicy({ mode: options.guardMode ?? "refuse" }))
-      facts.guard = { mode: options.guardMode ?? "refuse" }
+      const guardMode = commitPlan ? "commit" : options.guardMode ?? "refuse"
+      guardDir = installGuard(harnessDir, buildPolicy({ mode: guardMode, commit: commitPlan?.writes ?? {}, plans: commitPlan?.plans ?? null }))
+      facts.guard = { mode: guardMode }
     }
     // The probe is a trial of its own: under `container`, it proves a container starts before anything is reserved.
     const probeTrial = await isolation.enter({ name: "probe", sandbox: probe, mounts: [], cwd: probe.home })
@@ -727,9 +804,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // Every plugin of a locked trial, the arm and its companions alike, runs at ask-changes with its caps. An explicit
     // access other than ask-changes is refused whenever the run holds any credential; with none, a probe may ask for it.
     const wantsAccess = pluginOptions?.access
-    if (toolsMode === "locked" && wantsAccess && wantsAccess !== ACCESS && profile.kind !== "none") throw new Error(`the arm's options set access ${JSON.stringify(wantsAccess)}: a locked trial that holds a credential runs every plugin at ${ACCESS}`)
-    if (toolsMode === "locked" && armDir) pluginOptions = { ...companionOptions(plugin, pluginOptions ?? {}), ...(wantsAccess && profile.kind === "none" ? { access: wantsAccess } : {}) }
-    const companions = toolsMode === "locked" || companionSpec ? materialiseCompanions(readCompanions(companionSpec, { base: companionBase ?? process.cwd(), exclude: [plugin] }), join(batchRoot, "companions"), { options: (id, extra) => ({ ...companionOptions(id, extra), ...(profile.kind === "none" && wantsAccess ? { access: wantsAccess } : {}) }) }) : []
+    if (toolsMode === "locked" && wantsAccess && wantsAccess !== ACCESS && (profile.kind !== "none" || profile.vendor)) throw new Error(`the arm's options set access ${JSON.stringify(wantsAccess)}: a locked trial that holds a credential runs every plugin at ${ACCESS}`)
+    if (toolsMode === "locked" && armDir) pluginOptions = { ...companionOptions(plugin, pluginOptions ?? {}), ...(wantsAccess && profile.kind === "none" && !profile.vendor ? { access: wantsAccess } : {}) }
+    const companions = toolsMode === "locked" || companionSpec ? materialiseCompanions(readCompanions(companionSpec, { base: companionBase ?? process.cwd(), exclude: [plugin] }), join(batchRoot, "companions"), { options: (id, extra) => ({ ...companionOptions(id, extra), ...(profile.kind === "none" && !profile.vendor && wantsAccess ? { access: wantsAccess } : {}) }) }) : []
     const arm = { ...built, provenance: { ...built.provenance, options: digestOf(pluginOptions ?? {}), ...(pluginOptions?.access ? { access: pluginOptions.access } : {}), companions: companionsDigest(companions), companion_list: companions.map((c) => `${c.id}@${c.version}`) } }
     Object.assign(facts, { opencode, isolation: isolation.name, ...(isolation.unsafe ? { unsafe_no_isolation: true } : {}), arm: { arm: arm.arm, sha256: arm.sha256, version: arm.version } })
 
@@ -755,7 +832,12 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const rounds = Math.ceil(jobs.length / parallel)
     const horizonMs = (timeoutMs + overheadMs) * rounds
     facts.horizon = { timeout_s: timeoutMs / 1000, run_overhead_s: overheadMs / 1000, rounds }
-    const auth = await prepareAuth(profile, { binary, caller, horizonMs, acceptUnknownExpiry: Boolean(options.acceptUnknownTokenExpiry) })
+    // The integrations a `+profile` batch holds: the arm's plugin and every plugin its cases name in `Seed: plugins=`, by the id
+    // each pack gives its integration (the pack's own id unless it says otherwise).
+    const packs = loadPacks()
+    const named = [...new Set([plugin, ...selected.flatMap((c) => parseSeedList(parseSeed(c.seed).plugins))])]
+    const needed = [...new Set(named.flatMap((id) => [].concat(packs.find((p) => p.id === id)?.integration ?? id)))].sort()
+    const auth = await prepareAuth(profile, { binary, caller, horizonMs, acceptUnknownExpiry: Boolean(options.acceptUnknownTokenExpiry), needed })
     if (auth.expiry) {
       Object.assign(facts.horizon, auth.expiry)
       log("WARNING: --accept-unknown-token-expiry: the sign-in's expiry is unknown, so this batch is not checked against it; a trial refused authentication stops the batch")
@@ -774,9 +856,15 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const sealed = {
       companions: companions.map((c) => ({ dir: c.dir, options: c.options })),
       guardDir,
-      lockdown: toolsMode === "locked" ? { policies: lockdownPolicies(), permissions: lockdownPermissions({ commit: options.commitActions ?? [] }) } : null,
+      lockdown: toolsMode === "locked" ? { policies: lockdownPolicies(), permissions: lockdownPermissions({ commit: commitPlan?.actions ?? [], ...(options.noWriteAsks ? { packs: [] } : {}) }) } : null,
+      // Eval-only plugins a probe asks for (src/run/probe): they ask the host about permissions and call no vendor.
+      extraPlugins: probeDir ? [probeDir] : [],
     }
     facts.tools = toolsMode
+    if (deferred.length) {
+      facts.deferred = deferred
+      log(`deferred ${deferred.length} case(s): ${deferred.slice(0, 4).map((d) => `${d.case} (${d.why})`).join("; ")}${deferred.length > 4 ? "; …" : ""}`)
+    }
     const routed = await preflightRoute({ batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: scripted && Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs, sealed })
     if (!routed.ok) throw new Error(`preflight: the model ${options.model} does not route inside a trial within ${routeTimeoutMs / 1000} s, so no run was reserved. The trial's server lists ${routed.listed.length ? routed.listed.slice(0, 12).join(", ") : "no model"}`)
     facts.preflight = { model: options.model, routed_after_ms: routed.waitedMs }
@@ -787,7 +875,21 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // for its runs cannot be held to the dollar cap: the run caps alone apply to it, and that is said.
     const dollarCaps = budgetCaps(caller)
     const price = projectedRunUsd(store, options.model, caller)
-    reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller, perRunUsd: price.usd, priceBasis: price.basis, check: () => assertBatchWithinBudget(store, { runs: jobs.length, perRunUsd: price.usd, basis: price.basis }, caller) })
+    // The round's list-price ceiling (R9): a model priced at $0 by its subscription is still counted at list price. With a
+    // ceiling or cap set, a run with no estimate cannot be held to it and is refused, and so is a batch whose first run
+    // would already cross it. The batch reserves its runs at the mean estimate of its tiers; each launch is checked below.
+    const roundLimit = roundLimits(store, caller)
+    const listInfo = modelPrice(options.model, caller)
+    let perRunListUsd = null
+    if (roundLimit.limit !== null) {
+      const estimates = jobs.map((job) => estimateRunUsd(store, options.model, tierOf(job.case), caller))
+      const missing = estimates.find((e) => e.usd === null)
+      if (missing) throw new RoundCapError(`${roundLimit.binds}: cannot hold ${options.model} to $${roundLimit.limit}: ${missing.basis}`)
+      perRunListUsd = estimates.reduce((n, e) => n + e.usd, 0) / Math.max(1, estimates.length)
+      assertLaunchWithinRound(store, { model: options.model, tier: tierOf(jobs[0].case), running: 0 }, caller)
+    }
+    reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller, perRunUsd: price.usd, priceBasis: price.basis, perRunListUsd, check: () => assertBatchWithinBudget(store, { runs: jobs.length, perRunUsd: price.usd, basis: price.basis }, caller) })
+    facts.round = roundLimit.limit === null ? { enforced: false } : { enforced: true, limit: roundLimit.limit, binds: roundLimit.binds, per_run_list_usd: perRunListUsd, list_price: listInfo.price ? "catalogue" : `none (${listInfo.why})` }
     facts.dollar_cap = price.usd === null ? { enforceable: false, why: price.basis } : { enforceable: true, per_run_usd: price.usd, basis: price.basis }
     log(`reserved ${jobs.length} run(s) as ${reservation.batch}: ${plugin} at ${reservation.used.per_plugin_month + jobs.length}/${caps.per_plugin_month} this month`)
     log(price.usd === null ? `dollar cap: NOT ENFORCEABLE for this batch (${price.basis}); the run caps alone apply` : `dollar cap: $${dollarCaps.model_usd} a month, this batch at $${price.usd.toFixed(4)} a run (${price.basis}); $${reservation.dollars.projected.toFixed(2)} with what is billed and reserved`)
@@ -810,10 +912,13 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       bunBinary: caller.EVALS_BUN ?? "bun",
       scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined,
       mounts,
+      prompts: gated.prompts,
       redact,
       dollarCap: facts.dollar_cap,
+      listPrice: listInfo.price,
     }
-    Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo })
+    Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo, ...(auth.vendor ? { vendor: auth.vendor } : {}) })
+    if (egress && (egress.plugins.length || egress.skipped.length)) facts.egress_plan = { allow: isolationSpec.config?.allow, why: egress.why, plugins: egress.plugins, ...(egress.skipped.length ? { skipped: egress.skipped } : {}) }
     let next = 0
     let running = 0
     const worker = async () => {
@@ -843,6 +948,17 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
           const expected = monthToDate(store).model_usd + others + perRun * (running + 1)
           if (expected > dollarCaps.model_usd) {
             stopped = `the next run would take the month's model spend to $${expected.toFixed(2)}, over $${dollarCaps.model_usd}`
+            return
+          }
+        }
+        // The round's list-price ceiling, per launch: what the round has spent at list price, with the other batches' reserved
+        // runs and this one's runs in flight, plus this run, must stay within the phase ceiling and the hard cap.
+        if (roundLimit.limit !== null) {
+          try {
+            assertLaunchWithinRound(store, { model: options.model, tier: tierOf(job.case), running, batch: reservation.batch }, caller)
+          } catch (error) {
+            if (!(error instanceof RoundCapError)) throw error
+            stopped = error.message
             return
           }
         }

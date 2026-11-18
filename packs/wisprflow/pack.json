@@ -4,8 +4,8 @@
   "id": "wisprflow",
   "name": "Wispr Flow",
   "package": "@joe-broadhead/opencode-wisprflow",
-  "version": "0.0.1",
-  "private": false,
+  "version": "0.0.6",
+  "private": true,
   "pluginId": "wisprflow.meetings",
   "skills": [
     "wisprflow",
@@ -154,9 +154,13 @@
       "body_lines": 47
     }
   },
-  "digest": "55ac736816a4ae290d87c03a8e404f71fd67e3034913ceea2956328635302eb2",
+  "digest": "0766ce1712c14fd5abfd713173880f9d3ede9e780bfc9053350b1b53c5848839",
   "access": {
     "key": "access",
     "default": "all"
-  }
+  },
+  "egress": [
+    "api.wisprflow.ai",
+    "mcp-auth.wisprflow.com"
+  ]
 }

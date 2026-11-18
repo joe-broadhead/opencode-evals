@@ -36,7 +36,9 @@ export const CONFIRM_ONLY_READS = Object.freeze(["tavily_tavily_research", "tavi
 
 /** Options every companion gets besides `access`, so a stray call cannot spend (plan §1.3). */
 export const COMPANION_CAPS = Object.freeze({
-  elevenlabs: { sessionCreditCap: 0, dailyCreditCap: 0 },
+  // The plugin refuses 0 ("a whole number of credits, or null for no cap", found 0: probe P0-A2): 1 is the lowest cap it takes.
+  // Every ElevenLabs write is asked and declined in this round besides, so the cap is a second lock, not the first.
+  elevenlabs: { sessionCreditCap: 1, dailyCreditCap: 1 },
   x: { scriptBudgetUsd: 0.25, scriptDailyBudgetUsd: 5 },
 })
 

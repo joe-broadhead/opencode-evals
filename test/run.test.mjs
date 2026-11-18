@@ -116,7 +116,7 @@ test("every trial is its own sandbox and its own file, in parallel, on its own p
 
 test("the sandbox is sealed: its own home, XDG tree and config, and nothing of the caller's environment", async () => {
   const f = fixture()
-  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "seal", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true, tools: "local" }, { caller: f.caller, ...quiet })
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "seal", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir, keep: true }, { caller: f.caller, ...quiet })
   const kept = result.keptAt
   const home = join(kept, "runs", "demo-b.t1", "home")
   const run = JSON.parse(readFileSync(join(home, "run.json"), "utf8"))
@@ -127,7 +127,10 @@ test("the sandbox is sealed: its own home, XDG tree and config, and nothing of t
   const config = JSON.parse(run.env.OPENCODE_CONFIG_CONTENT)
   // The plugin under test first, the harness's scripted provider last (it wins), from the batch's own copy whose
   // endpoint is pinned in a file, not taken from the environment the plugin shares.
-  assert.deepEqual(config, { plugins: [{ package: join(kept, "arm") }, { package: join(kept, "harness", "mock", "provider") }], model: "mock/m1" })
+  // The plugin under test first (at ask-changes: every run is locked unless it says otherwise), the guard, then the scripted provider.
+  assert.deepEqual(config.plugins, [{ package: join(kept, "arm"), options: { access: "ask-changes" } }, { package: join(kept, "harness", "guard") }, { package: join(kept, "harness", "mock", "provider") }])
+  assert.equal(config.model, "mock/m1")
+  assert.ok(config.policies.length > 10 && config.permissions.length > 400, "the lockdown rules are in the sealed config")
   assert.notEqual(join(kept, "harness", "mock", "provider"), SCRIPTED_PROVIDER)
   assert.deepEqual(JSON.parse(readFileSync(join(kept, "harness", "mock", "provider", "endpoint.json"), "utf8")), { url: run.env.SPIKE_MOCK_URL })
   assert.deepEqual(JSON.parse(readFileSync(join(home, ".config", "opencode", "opencode.json"), "utf8")), config)
@@ -775,12 +778,12 @@ test("a world's env cannot replace the sealed config, the sandbox's directories 
   const module = join(f.root, "env-world.mjs")
   writeFileSync(module, `export default { name: "env", status: () => ({ fresh: true }), prepare: async ({ sandbox }) => { const { mkdirSync } = await import("node:fs"); mkdirSync(sandbox.project, { recursive: true }); return { cwd: sandbox.project, env: { OPENCODE_CONFIG_CONTENT: '{"plugins":[{"package":"/elsewhere"}]}', OPENCODE_CONFIG_DIR: "/elsewhere", HOME: "/elsewhere", XDG_DATA_HOME: "/elsewhere", TMPDIR: "/elsewhere", PATH: "/elsewhere", CLAUDE_CONFIG_DIR: "/elsewhere", CLAUDE_CODE_OAUTH_TOKEN: "world-token-000000", SPIKE_MOCK_URL: "http://elsewhere/v1", NODE_OPTIONS: "--require /elsewhere", WORLD_NOTE: "kept" } } } }\n`)
   const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
-  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "wenv", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, world: module, keep: true, keepCredentials: true, tools: "local" }, { caller, ...quiet })
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "wenv", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-b", arm: f.arm, casesDir: f.casesDir, world: module, keep: true, keepCredentials: true }, { caller, ...quiet })
   assert.equal(result.bad, 0, JSON.stringify(result.results))
   const home = join(result.keptAt, "runs", "demo-b.t1", "home")
   const run = JSON.parse(readFileSync(join(home, "run.json"), "utf8"))
   assert.equal(run.env.WORLD_NOTE, "kept", "a world's own variable reaches the run")
-  assert.deepEqual(JSON.parse(run.env.OPENCODE_CONFIG_CONTENT).plugins, [{ package: join(result.keptAt, "arm") }])
+  assert.equal(JSON.parse(run.env.OPENCODE_CONFIG_CONTENT).plugins[0].package, join(result.keptAt, "arm"))
   for (const key of ["OPENCODE_CONFIG_DIR", "HOME", "XDG_DATA_HOME", "TMPDIR", "CLAUDE_CONFIG_DIR"]) assert.ok(run.env[key].startsWith(join(result.keptAt, "runs", "demo-b.t1")), key)
   assert.equal(run.env.PATH, f.caller.PATH)
   // The harness's token (masked in a kept sandbox, as every copy of it is), not the world's.

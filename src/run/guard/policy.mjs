@@ -27,10 +27,10 @@ export function namesOf(pack, tool) {
 }
 
 /**
- * The policy: `mode` "refuse" (no write passes), "commit" (only `commit[<permission>] = { extract, allow }` passes) or
- * "log" (probes: observe only). `packs` defaults to every pack in this repository.
+ * The policy: `mode` "refuse" (no write passes), "commit" (only `commit[<permission>] = { extract, allow }` passes, and a plan
+ * commit only for a plan made in scope: `plans`) or "log" (probes: observe only). `packs` defaults to every pack here.
  */
-export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {} } = {}) {
+export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {}, plans = null } = {}) {
   const writes = []
   const actions = new Set()
   for (const pack of packs) {
@@ -41,14 +41,14 @@ export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {} 
       writes.push({ names: namesOf(pack, tool), action: tool.permission, ...(declared ? { extract: declared.extract, allow: declared.allow } : {}) })
     }
   }
-  return { mode, writes, actions: [...actions].sort() }
+  return { mode, writes, actions: [...actions].sort(), ...(plans ? { plans } : {}) }
 }
 
 /** Copies the guard into `into/guard` and writes its policy read-only beside it. Returns the guard's directory. */
 export function installGuard(into, policy) {
   const dir = join(into, "guard")
   mkdirSync(dir, { recursive: true, mode: 0o700 })
-  for (const file of ["index.ts", "plugin.ts", "package.json"]) cpSync(join(GUARD_SOURCE, file), join(dir, file))
+  for (const file of ["index.ts", "plugin.ts", "logic.mjs", "package.json"]) cpSync(join(GUARD_SOURCE, file), join(dir, file))
   writeFileSync(join(dir, "guard.json"), `${JSON.stringify(policy, null, 1)}\n`, { mode: 0o444 })
   return dir
 }

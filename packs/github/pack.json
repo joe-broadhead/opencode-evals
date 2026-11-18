@@ -3,8 +3,8 @@
   "id": "github",
   "name": "GitHub",
   "package": "@joe-broadhead/opencode-github",
-  "version": "0.0.1",
-  "private": false,
+  "version": "0.0.6",
+  "private": true,
   "pluginId": "github.platform",
   "rpc": "github.platform.tools",
   "skills": [
@@ -745,6 +745,12 @@
     "denied": 0,
     "skills": 3
   },
-  "digest": "a02ca5852d683966e8b6efd9f956736809d1a2b7a095b7b55ef4186872e91d74",
-  "t1": []
+  "digest": "ede9be5ad4995ce167c213f2b76038eb2360cb4e081c892d60bc4cdfb209c8b3",
+  "t1": [],
+  "egress": [
+    "api.github.com",
+    "api.githubcopilot.com",
+    "uploads.github.com",
+    "raw.githubusercontent.com"
+  ]
 }

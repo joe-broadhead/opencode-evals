@@ -3,8 +3,8 @@
   "id": "inference",
   "name": "Inference",
   "package": "@joe-broadhead/opencode-inference",
-  "version": "0.0.2",
-  "private": false,
+  "version": "0.0.7",
+  "private": true,
   "pluginId": "inference.core",
   "rpc": "inference.core.tools",
   "skills": [
@@ -73,6 +73,10 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "25c0e1668f1959bdac7231a892e85a2771fd21a0dec1e9907855ee596c8afc39",
-  "t1": []
+  "digest": "9a5ccc5befc7afb837ec97db4d44d62f092e3798e0cc9ba69d19054ddd7e2eb0",
+  "t1": [],
+  "egress": [
+    "openrouter.ai",
+    "mcp.openrouter.ai"
+  ]
 }

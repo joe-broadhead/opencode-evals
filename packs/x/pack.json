@@ -42,8 +42,8 @@
   "id": "x",
   "name": "X",
   "package": "@joe-broadhead/opencode-x",
-  "version": "0.0.2",
-  "private": false,
+  "version": "0.0.7",
+  "private": true,
   "pluginId": "x.posts",
   "skills": [
     "x",
@@ -450,6 +450,13 @@
       "class": "write"
     },
     {
+      "name": "media_upload",
+      "permission": "x_media_upload",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
       "name": "pin_list",
       "permission": "x_pin_list",
       "effect": "allow",
@@ -759,9 +766,9 @@
     }
   ],
   "counts": {
-    "tools": 101,
+    "tools": 102,
     "reads": 58,
-    "writes": 43,
+    "writes": 44,
     "denied": 0,
     "skills": 2
   },
@@ -777,12 +784,15 @@
       "name": "x-write",
       "description_sha256": "1b8ca5b24bc0ca45393f8ae3fa024ff16e51cf6a62a31b3b4dfabaaedf931ad3",
       "description_chars": 334,
-      "body_lines": 77
+      "body_lines": 81
     }
   },
-  "digest": "d2fb7b2a95154f0b7289b6007a78daf07d299608dd81c556cfe95abb1123914b",
+  "digest": "8c980ffed0d6e6a6c8b6dfc650c1b05b098a094a170b6bf4e96a7825ba31610b",
   "access": {
     "key": "access",
     "default": "all"
-  }
+  },
+  "egress": [
+    "api.x.com"
+  ]
 }

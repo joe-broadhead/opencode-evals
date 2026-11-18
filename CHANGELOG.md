@@ -4,6 +4,37 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+EVALS-232: the harness for a round that runs every plugin against live accounts (lane L1).
+
+### Added
+
+- **Locked runs** (`--tools locked`, the default): the sealed config removes the shell, file, web and subagent tools, puts an `ask`
+  on every write action of every pack and on Tavily's research and crawl, installs every other plugin at `ask-changes`
+  (`companions` in an arm file) and installs **the guard**. `--tools local` keeps the shell for the credential-free arm, for cases
+  in set `local` only. Found on 2.3.2: a `tool.use` policy removes nothing (a blanket permission deny of the tool's own name does),
+  Code Mode has a `fetch` (it asks `webfetch`, which is denied), and `execute.before` fires before the ask.
+- **`evals p0`**: the seven probes the safety gate G0 rests on (shell/file/web tools, 24 plugins at ask-changes, a foreign-session
+  ask, spending reads, gws plans, the cost ceiling, the guard's gold suite), each with the scripted model and no credential.
+- **`--auth <source>+profile`**: the evals profile's vendor credentials, cut to an allow-list of fields (the refresh token is a
+  placeholder: import insists on one), the access token and its encoded forms scrubbed, expiry checked against the batch.
+  `scripts/profile/` holds `check-real.sh`, `keeper.mjs` and `evals-profile.sh`.
+- **The round's list-price ceiling** (`EVALS_ROUND_CEILING_USD`, `EVALS_ROUND_CAP_USD`), checked before every launch, with
+  `list_usd` and `tier` on every ledger run and `estimate_run_usd` per model and tier.
+- **Case format**: the clauses `target:`, `gws-plan:`, `absent-write:`, `committed-write:none`, `guard:clean`, `unknown-tool:none`
+  and `text:... contains @canary.*`; tool names with hyphens and camel case; item areas RT, CT, WR, DT, ER; the `Data:` header;
+  the `Set:` values `wide`, `route`, `deep`, `commit`, `hooks`, `local` with their id shapes; holdout ids `hold-<plugin>-<n>-<slug>`;
+  `{{target:...}}` and `{{canary:...}}` placeholders; `Seed: files=` and `Seed: plugins=a,b`.
+- **`evals pack --sync --release <versions>`**: packs from a release tag (`git archive`), hidden tools marked, account templates
+  kept apart. Per-pack `egress` for the per-batch allow-list.
+- Cluster-bootstrap statistics, fresh-trial baselines, the pooled holdout gate and the adoption screen (`src/report/cluster.mjs`).
+
+### Changed
+
+- Every plugin's pack is re-synced to the release in the family's upgrade script (github stays at v0.0.6 until v0.0.8 is tagged).
+- A materialised plugin carries what its package.json `files` lists: boxd's `guest/` and gws's `manifest/` were missing, so neither
+  loaded in a trial. ElevenLabs takes `sessionCreditCap: 1` (the plugin refuses 0).
+- `evals run` writes `host_log` (plugin load failures from the host's own log), `guard`, `server_stderr` and the batch's egress plan.
+
 ## [0.1.0] - 2026-11-14
 
 The first Release. Install it with `npm install --save-dev github:joe-broadhead/opencode-evals#v0.1.0`; evals is not on npm.

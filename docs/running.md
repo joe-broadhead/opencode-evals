@@ -26,7 +26,7 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--plugin <id>` | required | the pack id; the cases are `cases/<id>/*.json` in this repository and the private holdouts in `$EVALS_STORE/holdouts/<id>/` (`--cases-dir` for exactly one other directory) |
 | `--iteration <name>` | required | the recordings go to `$EVALS_STORE/raw/<name>/<plugin>/` |
 | `--model <provider>/<model>[#variant]` | required | the model every run uses |
-| `--auth <profile>` | required (or `EVALS_AUTH`) | where the model credential comes from: below |
+| `--auth <profile>[+profile]` | required (or `EVALS_AUTH`) | where the model credential comes from: below; `+profile` adds the evals profile's vendor credentials, allow-listed |
 | `--cases <ids>` | `*` | ids and `prefix*` globs, comma separated |
 | `--set <sets>` | `tune` | `tune`, `holdout`, `tools`, `all`, or a comma list (see [design.md](design.md#reports-over-arms)) |
 | `--trials <k>` | `1` | runs per case; each is `<case>.t<k>`, and one trial never ships |
@@ -43,6 +43,8 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--accept-unknown-token-expiry` | off | with `--auth claude-agent`, run on a sign-in whose expiry is unknown (`expiresAt` null or absent) instead of refusing it ([Credentials](#credentials)) |
 | `--unsafe-no-isolation` | off | with `--isolation none`, launch anyway: the agent can reach the whole filesystem. It means nothing with `container`, and is refused there |
 | `--dry-run` | off | print the plan, the caps and the isolation; launch and reserve nothing |
+| `--tools locked\|local` | `locked` | `locked` removes the shell, file, web and subagent tools, asks every write and installs the guard ([Locked runs](#locked-runs-and-the-safety-gate-g0)); `local` keeps them, for the credential-free arm (cases in set `local`) only |
+| `--commit-plan <file>` | none | the commit set only (cases in set `commit`): a JSON file in the private store naming the write actions that become `allow`, each one's target extractor and the aliases it may touch, and the plan registry for plan-committed writes (gws) |
 | `--keep` | off | keep the sandboxes (for debugging the runner); with `--auth claude-agent` it is refused unless `--keep-credentials` is given too, because a kept sandbox holds the imported OpenCode credential (a marker; the access token is scrubbed from every kept file) |
 
 ## Arms
@@ -58,6 +60,43 @@ two together, so an `ask-changes` arm is a file and not a flag someone forgets:
 option can be a secret), with the `access` value beside it. They are a provenance axis of their own, `options`:
 two arms that differ only in access compare with `evals policy --axis options`, and an options difference refuses
 a comparison on any other axis. A batch from before options were recorded ran with none.
+
+## Locked runs and the safety gate G0
+
+Every run is **locked** unless it says `--tools local`. A trial that holds a vendor credential keeps it in its own `auth.json` and
+environment; a model with a shell, a file read, a web fetch or a subagent could read it and call the vendor directly, past every
+plugin's `ask-changes`. So the sealed config (`src/run/lockdown.mjs`):
+
+- **removes** `shell`, `read`, `grep`, `glob`, `write`, `edit`, `patch`, `webfetch`, `websearch`, `subagent` and
+  `experimental_image_generate` (and the host's `schedule_*`, `worktree_*`, `session_*` and MCP-resource tools), by a blanket
+  permission `deny` of each tool's own name: that is what takes a tool out of the list the model is offered. A policy
+  `tool.use deny` with resource `<tool>:*` and a `websearch.use` deny are the second lock. (A policy alone removes nothing: it is a
+  call-time check on `<tool>:<input>`, found by probe on OpenCode 2.3.2.) Code Mode keeps a `fetch`, which asks the `webfetch`
+  permission, so it is denied too; `process`, `Bun` and `globalThis` do not exist there, so no token is readable from it;
+- puts an `ask` rule on **every write action of every pack**, and on Tavily's `research` and `crawl` (spending "reads"), which
+  `opencode run` rejects. Only the commit set turns its own named actions into `allow`;
+- installs every other plugin as a **companion** at `access: ask-changes` with its caps (`companions` in an arm file: a map from a
+  plugin id to a built directory, or the path of a file holding one); an arm file cannot raise the access while the run holds any
+  credential (`+profile` counts);
+- installs **the guard** (`src/run/guard`): a write that resolves to `allow` is turned into a deny (`EVALS-ASSERT access`); a write
+  that completes is logged (`EVALS-ASSERT committed`); an ask from a session no run owns is rejected at once (the "global" one:
+  `opencode run --server` answers none), and one still pending after 3 s is rejected. `execute.before` fires before the tool asks,
+  so outside the commit set the guard does not refuse there: that would stop the ask, and a write graded as "asked and declined"
+  would never be asked. In the commit set it does refuse, for a write with no declared target extractor or a target outside the
+  allowed aliases, and for a plan commit (gws: only the `planId`) of a plan it did not see made for an in-sandbox target.
+
+`evals p0 [a1|a2|a3|a4|a5|c|g|all] [--companions FILE]` runs the probes the gate rests on, with the scripted model, no credential
+and every trial in a container: **a1** shell/file/web/subagent tools refused, no egress, a canary credential in no output;
+**a2** all 24 plugins at ask-changes, every write action asks (at access `all` too), the local writes decline end to end;
+**a3** a foreign-session ask is rejected within 5 s (and hangs without the guard); **a4** Tavily research and crawl are
+confirm-only; **a5** gws commits ask, and the guard's plan registry; **c** the token-priced round ceiling refuses the second
+launch; **g** the guard is deny-by-default at access `all`, and the suite fails without it.
+
+The round's list-price ceiling (`EVALS_ROUND_CEILING_USD`, the phase's; `EVALS_ROUND_CAP_USD` or `round_cap_usd` in `caps.json`, the
+hard cap) is checked **before every launch**: what the round has spent at list price (every run's tokens against the frozen catalogue,
+through the model map: a subscription bills $0 and is counted anyway), plus the other batches' reserved runs, this batch's runs in
+flight and this run, must stay under it. A run with no estimate (`estimate_run_usd[model][tier]` in `caps.json`, replaced by the
+measured mean after five runs) cannot be held to the cap and is refused while one is set.
 
 ## Isolation
 

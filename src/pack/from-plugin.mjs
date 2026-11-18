@@ -66,13 +66,20 @@ export function derivePack(id, directory = pluginRepo(id)) {
   }
   walk(join(directory, "src"))
   const pluginId = (source.match(/PLUGIN_ID\s*=\s*"([^"]+)"/) ?? [])[1] ?? null
-  const tools = (jelly.tools ?? []).map((tool) => ({
+  // Tools a plugin hides at runtime (`export const HIDDEN_TOOLS = ["sign_out"] as const`): declared, never reachable by a model,
+  // so no case is expected for them and the coverage count leaves them out.
+  const hiddenNames = new Set([...source.matchAll(/HIDDEN_TOOLS\s*=\s*(?:new Set\(\s*)?\[([^\]]*)\]/g)].flatMap((m) => [...m[1].matchAll(/["']([^"']+)["']/g)].map((n) => n[1])))
+  // A tool named with a `*` (`plaud-*.get_note`) is a template for the tools of another signed-in account, not a tool: it shares
+  // its permission action with the real one, and no case can name it. It is kept beside the pack, never among its tools.
+  const declared = (jelly.tools ?? []).filter((tool) => !String(tool.name ?? "").includes("*"))
+  const templates = (jelly.tools ?? []).filter((tool) => String(tool.name ?? "").includes("*")).map((tool) => String(tool.name))
+  const tools = declared.map((tool) => ({
     name: String(tool.name ?? "").replace(/^[a-z]+[._]/, ""),
     permission: tool.permission ?? String(tool.name ?? "").replace(".", "_"),
     effect: tool.effect ?? "allow",
     readOnly: Boolean(tool.readOnly),
     class: classOf(tool),
-  }))
+  })).map((tool) => (hiddenNames.has(tool.name) || hiddenNames.has(tool.name.replace(/^[a-z]+_/, "")) ? { ...tool, hidden: true } : tool))
   // The family's one access option: `all` (the default) allows every tool, `ask-changes` asks for the changes,
   // `read-only` denies them. The tools' declared effects are the default's; the option is recorded beside them.
   const accessSetting = (jelly.contributes?.settings ?? []).find((setting) => setting?.key === "access")
@@ -95,6 +102,7 @@ export function derivePack(id, directory = pluginRepo(id)) {
     skills,
     skill_meta,
     tools,
+    ...(templates.length ? { account_templates: templates } : {}),
     ...(access ? { access } : {}),
     counts: recomputeCounts({ tools, skills }),
   }
@@ -126,9 +134,9 @@ export function readPack(id, root = join(import.meta.dirname, "..", ".."), env =
  * options a test host needs, the scripted cases) is carried over from the snapshot it replaces. Nothing is
  * dropped silently: `derivePack` says what it knows, and the file keeps the rest.
  */
-export function writePack(id, root = join(import.meta.dirname, "..", ".."), env = process.env) {
+export function writePack(id, root = join(import.meta.dirname, "..", ".."), env = process.env, directory = pluginRepo(id, env)) {
   const declared = readSnapshot(id, root) ?? {}
-  const live = derivePack(id, pluginRepo(id, env))
+  const live = derivePack(id, directory)
   const merged = {
     ...declared,
     ...live,
@@ -136,6 +144,7 @@ export function writePack(id, root = join(import.meta.dirname, "..", ".."), env 
     rpc: declared.rpc ?? live.rpc,
     t1: declared.t1 ?? live.t1 ?? [],
     tools: live.tools,
+    ...(live.account_templates ? { account_templates: live.account_templates } : {}),
     skills: live.skills,
     skill_meta: live.skill_meta,
     counts: live.counts,
@@ -145,6 +154,9 @@ export function writePack(id, root = join(import.meta.dirname, "..", ".."), env 
     ...(declared.fakeModuleEnv ? { fakeModuleEnv: declared.fakeModuleEnv } : {}),
     ...(declared.statusRpc ? { statusRpc: declared.statusRpc } : {}),
     ...(declared.vocab ? { vocab: declared.vocab } : {}),
+    // The round's per-plugin facts the checkout cannot answer (R8): where it reaches, its sandbox targets, how a neutral call and a
+    // prefix read, what a "read" spends. Carried over like the options above.
+    ...Object.fromEntries(["egress", "targets", "neutral", "prefix", "spend", "release"].filter((key) => declared[key] !== undefined).map((key) => [key, declared[key]])),
   }
   return writeSnapshot(root, merged)
 }

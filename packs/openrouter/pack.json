@@ -3,8 +3,8 @@
   "id": "openrouter",
   "name": "OpenRouter",
   "package": "@joe-broadhead/opencode-openrouter",
-  "version": "0.0.2",
-  "private": false,
+  "version": "0.0.6",
+  "private": true,
   "pluginId": "openrouter.models",
   "rpc": "openrouter.models.tools",
   "skills": [
@@ -269,6 +269,10 @@
     "denied": 0,
     "skills": 4
   },
-  "digest": "5aeaabc2d571f935758ab1d92f26c113db0973d77305c21091886a0529ccbf71",
-  "t1": []
+  "digest": "dc22a6abb94f6ad6c986d0216bb6569659c28ebb9deb83d16845eeea815bf743",
+  "t1": [],
+  "egress": [
+    "openrouter.ai",
+    "mcp.openrouter.ai"
+  ]
 }

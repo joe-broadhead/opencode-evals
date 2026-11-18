@@ -28,12 +28,34 @@ const filesUnder = (dir) => {
 /** One digest over a tree: every file's relative path and bytes, in order. */
 export const treeDigest = (dir) => sha256(filesUnder(dir).map((file) => `${relative(dir, file)}\u0000${sha256(readFileSync(file))}`).join("\n"))
 
+/**
+ * What a plugin needs at run time besides `dist/`: the paths its package.json `files` lists (a plugin's `guest/`, `manifest/`,
+ * `native/`, `licenses/`, `views/`, an icon), found by the probes (EVALS-232 P0-A2) after the host reported boxd's missing
+ * `guest/guest.py` and gws's missing `manifest/generated.json`. `dist`, `skills`, `assets` and the package file are always
+ * copied; a negated entry (`!dist/**.map`) and a path that does not exist are skipped. Never `node_modules`, `.git`, `src` or `test`.
+ */
+export function runtimePaths(source) {
+  const paths = new Set(["dist", "skills", "assets"])
+  try {
+    const files = JSON.parse(readFileSync(join(source, "package.json"), "utf8")).files
+    if (Array.isArray(files)) for (const entry of files) if (typeof entry === "string" && !entry.startsWith("!") && !/[*?{]/.test(entry)) paths.add(entry.replace(/^\.\//, "").replace(/\/$/, ""))
+  } catch {
+    // an unreadable package.json fails below, with the better message
+  }
+  return [...paths].filter((path) => !/^(node_modules|\.git|src|test)(\/|$)/.test(path) && !path.startsWith("..") && !path.startsWith("/"))
+}
+
 /** Copies a built plugin into `into`. Throws when the source is not a built plugin. */
 export function materialiseArm(source, into) {
   if (!existsSync(join(source, "package.json"))) throw new Error(`no plugin at ${source}: no package.json`)
   if (!existsSync(join(source, "dist")) || !statSync(join(source, "dist")).isDirectory()) throw new Error(`${source} is not built: no dist/`)
   mkdirSync(into, { recursive: true, mode: 0o700 })
-  for (const part of ["dist", "skills", "assets"]) if (existsSync(join(source, part))) cpSync(join(source, part), join(into, part), { recursive: true })
+  for (const part of runtimePaths(source)) {
+    const from = join(source, part)
+    if (!existsSync(from)) continue
+    mkdirSync(dirname(join(into, part)), { recursive: true })
+    cpSync(from, join(into, part), { recursive: true })
+  }
   for (const file of ["package.json", ".provenance.json"]) if (existsSync(join(source, file))) cpSync(join(source, file), join(into, file))
   return into
 }

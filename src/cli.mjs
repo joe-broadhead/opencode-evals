@@ -13,13 +13,16 @@
 //                  [--isolation container|none] [--unsafe-no-isolation]   (container by default; none needs the flag)
 //                  [--accept-unknown-token-expiry]   (a claude-agent sign-in with no expiry: refused without it)
 //   evals truth    --plugin x --world DIR [--cases-dir DIR] [--set all]   each case's Truth: against the world's truth
+//   evals p0       [a1|a2|a3|a4|a5|c|g|all] [--companions FILE]   the safety probes G0 rests on: scripted model, no credential
 //   evals isolation build|check|sweep   the container backend's image (docker/Dockerfile), its checks, and the removal
 //                  of what a crashed batch left behind
 //   evals t0       [--root DIR] [--json]
 //   evals verify   [--iteration it --plugin x | --all]  re-derive every number, or list the stale iterations
 //   evals selftest run the T-G gold cases over synthetic traces
 
-import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs"
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, mkdtempSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { readVersions, extractRelease } from "./pack/release.mjs"
 import { join, dirname, resolve, basename } from "node:path"
 import { fileURLToPath } from "node:url"
 import { compileCase, casesDigest, codedShare } from "./case/compile.mjs"
@@ -538,6 +541,25 @@ export async function main(argv) {
       if (result.stopped || result.results?.some((r) => r.error || r.infra)) process.exitCode = 1
       return
     }
+    case "p0": {
+      // The safety probes G0 rests on (docs/running.md#g0): scripted model, no credential, every trial in a container.
+      const { PROBES } = await import("./p0/probes.mjs")
+      const wanted = opt._[0] && opt._[0] !== "all" ? opt._[0].split(",") : Object.keys(PROBES)
+      const unknown = wanted.filter((id) => !PROBES[id])
+      if (unknown.length) throw new Error(`unknown probe ${unknown.join(", ")}: ${Object.keys(PROBES).join(", ")}`)
+      const env = { companions: opt.companions && opt.companions !== true ? opt.companions : process.env.EVALS_COMPANIONS, tmp: process.env.EVALS_TMP }
+      let failed = 0
+      for (const id of wanted) {
+        const result = await PROBES[id](env)
+        console.log(`${result.ok ? "PASS" : "FAIL"} P0-${id}${result.actions ? ` (${result.actions} actions)` : ""}`)
+        for (const check of result.checks) console.log(`  ${check.ok ? "ok  " : "FAIL"} ${check.name}${check.ok ? "" : `: ${check.detail}`}`)
+        if (result.note) console.log(`  note: ${result.note}`)
+        if (!result.ok) failed++
+      }
+      console.log(failed ? `${failed} probe(s) failed` : `${wanted.length} probe(s) passed`)
+      if (failed) process.exitCode = 1
+      return
+    }
     case "truth": {
       if (!opt.plugin || opt.plugin === true || !opt.world || opt.world === true) throw new Error("evals truth --plugin <id> --world <dir> [--cases-dir DIR] [--set all]")
       const cases = selectCases(pluginCases(opt.plugin, { dir: opt["cases-dir"] ?? null }), { set: opt.set ?? "all" }).selected
@@ -705,7 +727,38 @@ export async function main(argv) {
       let failures = 0
       const drifted = []
       const report = []
+      // `--sync --release <versions>`: each pack from its plugin's RELEASE tag (`git archive`), not the checkout's master. The versions
+      // are a JSON map or a file with `[id]=x.y.z` pairs; `--fetch` fetches the tags first. A plugin with no version is left alone.
+      const releases = opt.release && opt.release !== true ? readVersions(opt.release) : null
+      const scratch = releases ? mkdtempSync(join(process.env.TMPDIR ?? tmpdir(), "evals-release-")) : null
       for (const id of ids) {
+        if (opt.sync && releases) {
+          if (!releases[id]) {
+            console.log(`${id.padEnd(10)} skipped: no release version in ${opt.release}`)
+            continue
+          }
+          let dir
+          try {
+            dir = extractRelease({ id, version: releases[id], repo: pluginRepo(id), into: scratch, fetch: Boolean(opt.fetch) })
+          } catch (error) {
+            // A version not published yet (github's v0.0.8 waits on its release): the pack stays as it is, and the run says so.
+            console.log(`${id.padEnd(10)} NOT SYNCED: ${error.message} (the pack stays at v${readSnapshot(id, ROOT)?.version ?? "?"})`)
+            process.exitCode = 1
+            continue
+          }
+          const before = readSnapshot(id, ROOT)
+          const live = derivePack(id, dir)
+          const problems = familyProblems(live)
+          if (problems.length && !before) {
+            console.log(`${id.padEnd(10)} skipped: not a family pack — ${problems.join("; ")}`)
+            continue
+          }
+          const drift = before ? driftReport(live, before) : null
+          const pack = writePack(id, ROOT, process.env, dir)
+          if (drift?.drift) console.log(renderDrift(id, drift))
+          console.log(`${id.padEnd(10)} v${releases[id]} ${before ? "synced " : "created"}  tools ${pack.counts.tools} (${pack.counts.reads} read, ${pack.counts.writes} write, ${pack.counts.denied} denied${pack.counts.hidden ? `, ${pack.counts.hidden} hidden` : ""})  skills ${pack.counts.skills}  ${pack.digest.slice(0, 12)}${before ? `  was v${before.version}, ${before.counts?.tools} tools` : ""}`)
+          continue
+        }
         if (opt.sync) {
           if (!repoAvailable(id)) {
             console.log(`${id.padEnd(10)} skipped: no checkout (set EVALS_REPO_${id.toUpperCase()} or EVALS_PLUGIN_ROOT)`)

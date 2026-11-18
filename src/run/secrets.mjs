@@ -5,9 +5,28 @@
 import { lstatSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 
+/**
+ * A secret and the other shapes it takes on its way out: base64, base64url, URL-encoded, JSON-escaped, and each of the long ones
+ * folded at a line break (76 columns, MIME's, and 64, PEM's), the way a tool wraps what it prints. Only secret-bearing values go
+ * through this (a token, a key, a password): a URL, a scope or an address is not masked, which would break the graders that read them.
+ */
+export function expand(value) {
+  if (typeof value !== "string" || value.length < 8) return []
+  const forms = new Set([value, Buffer.from(value).toString("base64"), Buffer.from(value).toString("base64url"), encodeURIComponent(value), JSON.stringify(value).slice(1, -1)])
+  for (const form of [...forms]) {
+    for (const width of [64, 76]) {
+      if (form.length <= width) continue
+      const folded = form.match(new RegExp(`.{1,${width}}`, "g")).join("\n")
+      forms.add(folded)
+      forms.add(folded.replace(/\n/g, "\r\n"))
+    }
+  }
+  return [...forms].filter((form) => form.length >= 8)
+}
+
 /** A function that replaces every secret in a string (or a Buffer) by its mask. */
 export function redactor(secrets = []) {
-  const values = [...new Set(secrets.filter((value) => typeof value === "string" && value.length >= 8))].sort((a, b) => b.length - a.length)
+  const values = [...new Set(secrets.flatMap(expand))].sort((a, b) => b.length - a.length)
   const text = (input) => {
     if (input === null || input === undefined || !values.length) return input
     let out = String(input)
@@ -67,7 +86,7 @@ const known = new Set()
 
 /** Registers secrets (the batch's token or keys, each run's password) for scrub() and tail(). */
 export function registerSecrets(values = []) {
-  for (const value of values) if (typeof value === "string" && value.length >= 8) known.add(value)
+  for (const value of values) for (const form of expand(value)) known.add(form)
 }
 
 /** Every registered secret masked in `text`. */

@@ -4,8 +4,8 @@
   "id": "metaview",
   "name": "Metaview",
   "package": "@joe-broadhead/opencode-metaview",
-  "version": "0.0.1",
-  "private": false,
+  "version": "0.0.6",
+  "private": true,
   "pluginId": "metaview.workspace",
   "skills": [
     "metaview",
@@ -315,6 +315,13 @@
       "class": "read"
     },
     {
+      "name": "events_list",
+      "permission": "metaview_events_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
       "name": "create_ai_field",
       "permission": "metaview_create_ai_field",
       "effect": "allow",
@@ -491,8 +498,8 @@
     }
   ],
   "counts": {
-    "tools": 68,
-    "reads": 43,
+    "tools": 69,
+    "reads": 44,
     "writes": 25,
     "denied": 0,
     "skills": 3
@@ -518,9 +525,13 @@
       "body_lines": 95
     }
   },
-  "digest": "afe8d033f95233973fffdabf100554e00da80ead1fcfa7c003846369d43ed199",
+  "digest": "3e772868542941c5d4a646b0834690d5934fa8d3b10c1745d0b7b7f536bfff2d",
   "access": {
     "key": "access",
     "default": "all"
-  }
+  },
+  "egress": [
+    "mcp.metaview.ai",
+    "auth.metaview.ai"
+  ]
 }
