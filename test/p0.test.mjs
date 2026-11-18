@@ -137,3 +137,16 @@ test("P0-G (G7): the guard is deny-by-default at access all, and the suite fails
   const result = await PROBES.g(env)
   assert.equal(result.ok, true, show(result))
 })
+
+test("P0-13: the Claude Agent request holds none of Claude Code's own tools, and a Bash tool_use runs nothing", live, async () => {
+  const result = await PROBES.p13(env)
+  assert.equal(result.ok, true, show(result))
+  assert.deepEqual(result.surface.tools.filter((t) => !/^mcp__opencode__/.test(t)), [], "only the host's own MCP tools")
+})
+
+test("P0-1 to P0-5: the surface dump, search, errors, the hook's reach and import", needsBuilds, async () => {
+  for (const id of ["p1", "p2", "p3", "p4", "p5"]) {
+    const result = await PROBES[id]({ ...env, store: env.tmp })
+    assert.equal(result.ok, true, `${id}: ${show(result)}`)
+  }
+})

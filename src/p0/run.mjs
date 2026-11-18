@@ -62,7 +62,7 @@ const readLines = (file) => (existsSync(file) ? readFileSync(file, "utf8").split
  *   caller     extra environment for the runner (EVALS_ROUND_CEILING_USD, EVALS_MOCK_USAGE, …)
  *   options    extra runBatch options (tools, guardMode, noWriteAsks, probe, auth, trials, parallel, …)
  */
-export async function scriptedRun({ cases, arm = { package: "none" }, caller = {}, options = {}, tmp, env = process.env, keep = false } = {}) {
+export async function scriptedRun({ cases, arm = { package: "none" }, caller = {}, options = {}, tmp, env = process.env, keep = false, prepare = null } = {}) {
   const root = mkdtempSync(join(tmp ?? env.TMPDIR ?? "/tmp", "evals-p0-"))
   const casesDir = join(root, "cases")
   mkdirSync(casesDir)
@@ -77,6 +77,8 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
   const sandboxes = join(root, "tmp")
   mkdirSync(sandboxes, { recursive: true })
   const callerEnv = { PATH: env.PATH, HOME: root, EVALS_STORE: store, EVALS_OPENCODE_BIN: env.EVALS_OPENCODE_BIN ?? env.OPENCODE_BIN_2_3_2 ?? "opencode", EVALS_TMP: sandboxes, ...(env.EVALS_BUN ? { EVALS_BUN: env.EVALS_BUN } : {}), ...(env.EVALS_CONTAINER_IMAGE ? { EVALS_CONTAINER_IMAGE: env.EVALS_CONTAINER_IMAGE } : {}), ...caller }
+  // A probe that needs something in the caller's home (a dummy sign-in) makes it here, before the batch starts.
+  if (prepare) await prepare(root, callerEnv)
   const log = []
   const iteration = options.iteration ?? "p0"
   const result = await runBatch({ plugin: "p0", iteration, model: "mock/m1", auth: "none", scripted: true, isolation: "container", casesDir, set: "all", arm: armFile, ...options, store: undefined }, { caller: callerEnv, log: (line) => log.push(line) })
@@ -90,6 +92,8 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
     trials[c.id] = { id: c.id, lines, calls: toolUses(lines), summary, guard: readLines(`${base}.guard.jsonl`).map((l) => JSON.parse(l)), analysed: summarize(lines, summary?.stderr ?? "") }
   }
   const everything = existsSync(raw) ? readdirSync(raw).map((name) => readFileSync(join(raw, name), "utf8")).join("\n") : ""
+  for (const c of cases) trials[c.id].mock = readLines(join(raw, `${c.id}.t1.mock.jsonl`)).map((l) => JSON.parse(l))
+  for (const c of cases) trials[c.id].capture = readLines(join(raw, `${c.id}.t1.capture.jsonl`)).map((l) => JSON.parse(l))
   return { root, store, raw, result, log, trials, everything, egress: result.egress ?? null, ledger: readLedgerFile(store), cleanup: () => rmSync(root, { recursive: true, force: true }), keep }
 }
 

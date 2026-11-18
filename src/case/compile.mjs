@@ -6,6 +6,7 @@ import { parseClause } from "../grade/evidence.mjs"
 import { validateCase, CaseError } from "./schema.mjs"
 import { sha256 } from "../util/canonical.mjs"
 import { parseTruth } from "./truth.mjs"
+import { toolNameProblems } from "./toolnames.mjs"
 
 export { ParseError, CaseError }
 
@@ -19,10 +20,16 @@ const truthOf = (file, text) => {
   }
 }
 
-/** Compiles one markdown case. Throws CaseError or ParseError with the file and line. */
-export function compileCase(file, text) {
+/**
+ * Compiles one markdown case. Throws CaseError or ParseError with the file and line. With `packs` (parsed pack.json objects), a
+ * case in one of this round's sets is also checked against its plugin's pack: a clause that names a tool the plugin does not have
+ * can never fire, and is a compile error (src/case/toolnames.mjs).
+ */
+export function compileCase(file, text, { packs = null } = {}) {
   const draft = parseCase(file, text)
   if (!draft.id) throw new ParseError(file, "missing # case id")
+  // A wide skeleton (scripts/wide-skeletons.mjs) carries `<<TODO ...>>` where the writer's words go: it cannot be compiled, run or committed.
+  if (/<<TODO/.test(draft.prompt)) throw new CaseError(file, "the prompt is still a skeleton's <<TODO>>: write the task a user would have, without the tool's description")
   const problems = []
   const items = draft.items.map((item) => {
     const isJudge = (item.grader ?? "code") === "judge"
@@ -88,12 +95,19 @@ export function compileCase(file, text) {
     ...(draft.fields.truth ? { truth: truthOf(file, draft.fields.truth) } : {}),
     // What kind of data the case reads (EVALS-232 §2.7): decides which providers may run it.
     ...(draft.fields.data ? { data: draft.fields.data.trim().toLowerCase() } : {}),
+    // Places under the trial's HOME whose files the record keeps (`plaud_export` writes to ~/Plaud): only these, never the rest.
+    ...(draft.fields.homeFiles ? { home_files: list(draft.fields.homeFiles) } : {}),
     items,
     oracle: draft.oracle.map((o) => ({ path: o.path, op: o.op, value: o.value })),
     notes: draft.notes,
     hashes: { source_sha256: sha256(text) },
   }
-  return validateCase(compiled, file)
+  validateCase(compiled, file)
+  if (packs) {
+    const named = toolNameProblems(compiled, packs)
+    if (named.length) throw new CaseError(file, `a clause names a tool its plugin's pack does not have, so it could never fire:\n  ${named.join("\n  ")}`)
+  }
+  return compiled
 }
 
 /** The digest of a set of compiled cases: what a comparison is frozen to. */

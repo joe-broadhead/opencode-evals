@@ -29,10 +29,13 @@ import { AUTH_ERROR, endedOnAuth } from "./authError.mjs"
 import { materialiseArm, armProvenance, readCompanions, materialiseCompanions, companionsDigest } from "./arm.mjs"
 import { lockdownPolicies, lockdownPermissions, loadPacks, companionOptions, ACCESS } from "./lockdown.mjs"
 import { buildPolicy, installGuard } from "./guard/policy.mjs"
-import { gateCases, seedFiles } from "./gate.mjs"
+import { gateCases, seedFiles, dataPreflight } from "./gate.mjs"
+import { integrationsFor } from "./vendor-auth.mjs"
+import { checkBalances, vendorUseOf, SPENDING } from "./balance.mjs"
+import { summarize } from "../trace/analyse.mjs"
 import { loadTargets, loadCanaries } from "../grade/targets.mjs"
 import { batchEgress } from "./egress.mjs"
-import { snapshotFiles, changedFiles } from "./files.mjs"
+import { snapshotFiles, changedFiles, snapshotHome, changedHome } from "./files.mjs"
 import { segment, within, inside } from "./paths.mjs"
 import { selectIsolation, isLive, defaultIsolation } from "./isolation.mjs"
 import { containerConfig, findBinary, markBatchDir } from "./container.mjs"
@@ -148,8 +151,36 @@ export function providerFailed(result = {}) {
   return said.some((text) => NO_ROUTE.test(text))
 }
 
+/**
+ * A run refused for rate (R13): no model work, and an error event or stderr line that says 429, rate limit or overloaded, and is not
+ * a refusal of the credential. Never the model's to be graded on, and not an infrastructure failure either: it is tried again after a
+ * backoff, and three in a row pause the model.
+ */
+const RATE_LIMITED = /\b429\b|rate[_ -]?limit|too many requests|overloaded/i
+export function rateLimited(result = {}) {
+  if (authFailed(result)) return false
+  const { stdout = "", stderr = "" } = result
+  const tokens = billedOf(stdout).tokens
+  if (tokens.input + tokens.output + tokens.cacheRead + tokens.cacheWrite > 0) return false
+  const said = [String(stderr)]
+  for (const line of String(stdout).split("\n")) {
+    try {
+      const event = JSON.parse(line)
+      if (event.type === "error" || event.error) said.push(JSON.stringify(event))
+    } catch {
+      // not an event
+    }
+  }
+  return said.some((text) => RATE_LIMITED.test(text))
+}
+
+/** The backoff before each retry of a rate-limited run, in seconds, and how long three in a row pause the model. */
+export const BACKOFF_S = [60, 120, 240]
+export const PAUSE_S = 30 * 60
+
 /** "auth", "provider", or null: a failure before the model did any work, which is never the model's to be graded on. */
-export const preModelFailure = (result) => (authFailed(result) ? "auth" : providerFailed(result) ? "provider" : null)
+// A rate limit is neither: it is retried after a backoff (rateLimited above), and the host may name it a provider error.
+export const preModelFailure = (result) => (authFailed(result) ? "auth" : rateLimited(result) ? null : providerFailed(result) ? "provider" : null)
 
 /**
  * Waits until `model` is listed by the trial's own server (`opencode models --server`, run inside the trial), or the
@@ -336,6 +367,23 @@ async function startTrialMock({ trial, ctx, sandbox }) {
   return { proc, url: TRIAL_MOCK_URL }
 }
 
+/** P0-13's capture server inside the trial: a stand-in for the Anthropic API on the trial's own loopback, logging what `claude` sends. */
+const CAPTURE_PORT = 4300
+async function startCapture({ trial, ctx, sandbox }) {
+  const args = [join(ctx.harnessDir, "capture", "capture-server.ts"), String(CAPTURE_PORT), join(sandbox.tmp, "capture.jsonl")]
+  if (ctx.captureServer?.toolUse) args.push(JSON.stringify(ctx.captureServer.toolUse))
+  const spec = trial.wrap({ command: ctx.bunBinary, args, cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp } })
+  const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
+  let exited = false
+  proc.exited.then(() => (exited = true))
+  const up = await trial.ready({ url: `http://127.0.0.1:${CAPTURE_PORT}/v1/models`, timeoutMs: 20_000, exited: () => exited })
+  if (!up.ok) {
+    await stop(proc, { graceMs: 200 })
+    throw new Error(`the capture server did not start in the trial: ${up.last}`)
+  }
+  return { proc, url: `http://127.0.0.1:${CAPTURE_PORT}` }
+}
+
 /** T1's scripted model server, started for a batch: the harness's own mock, never a model. */
 async function startMock({ batchRoot, caller }) {
   const port = await freePort()
@@ -415,10 +463,12 @@ async function runJob(job, ctx) {
     let mock = null
     if (ctx.scripted && ctx.mockInTrial) mock = await startTrialMock({ trial, ctx, sandbox })
     const mockUrl = mock?.url ?? ctx.mockUrl
+    let capture = null
+    if (ctx.captureServer) capture = await startCapture({ trial, ctx, sandbox })
     // A world's own variables go in first and never the sealed ones; the harness's (credential, endpoint) go in last.
     const fromWorld = worldEnv(prepared.env)
     if (fromWorld.dropped.length) ctx.log(`  ${name}: the world's env may not set ${fromWorld.dropped.join(", ")}: ignored`)
-    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
+    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}), ...(capture ? { ANTHROPIC_BASE_URL: capture.url } : {}) } })
     // Every host command of the run goes through the trial.
     const exec = (args, options = {}) => {
       const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env })
@@ -426,6 +476,7 @@ async function runJob(job, ctx) {
     }
     await ctx.auth.apply({ sandbox, env, exec })
     const before = snapshotFiles(cwd)
+    const homeBefore = snapshotHome(sandbox.home, job.case.home_files)
     const started = Date.now()
     let server = null
     let serverStderr = ""
@@ -451,6 +502,7 @@ async function runJob(job, ctx) {
       serverStderr = server?.proc?.output?.().stderr ?? ""
       await stop(server?.proc)
       await stop(mock?.proc, { graceMs: 200 })
+      await stop(capture?.proc, { graceMs: 200 })
     }
     // Killing a `docker exec` client leaves what it started running inside: the trial ends here, before anything of
     // its sandbox is read, so nothing it left behind can change the files being recorded.
@@ -496,12 +548,16 @@ async function runJob(job, ctx) {
     }
     // The sandbox is hostile once a run has been in it: a working directory it replaced with a link out of the sandbox
     // is not walked, so no file outside the sandbox can reach the files record.
-    const files = inside(root, cwd) ? changedFiles(before, cwd) : []
+    const files = [...(inside(root, cwd) ? changedFiles(before, cwd) : []), ...(job.case.home_files?.length ? changedHome(homeBefore, sandbox.home, job.case.home_files) : [])]
     if (!inside(root, cwd)) summary.files_refused = "the working directory no longer resolves inside the sandbox"
     // Every file written for the run is scrubbed of its secrets first: the recording, the summary, the files record.
     const out = (suffix) => within(ctx.rawDir, join(ctx.rawDir, `${name}${suffix}`), "a recording")
     writeAtomic(out(".jsonl"), redact(result.stdout ?? ""))
     // The guard's own log (what it asked, rejected and refused): next to the recording, scrubbed like it, and counted in the summary.
+    // The scripted model's own log (a probe's `[[mock:dump]]` reads what reached the model from it), beside the recording, scrubbed like it.
+    if (ctx.scripted && existsSync(join(sandbox.tmp, "mock.jsonl"))) writeAtomic(out(".mock.jsonl"), redact(readFileSync(join(sandbox.tmp, "mock.jsonl"), "utf8")))
+    // The capture server's log (P0-13), beside the recording, scrubbed like it.
+    if (ctx.captureServer && existsSync(join(sandbox.tmp, "capture.jsonl"))) writeAtomic(out(".capture.jsonl"), redact(readFileSync(join(sandbox.tmp, "capture.jsonl"), "utf8")))
     const guardLog = guardRecords(join(sandbox.tmp, "guard.jsonl"))
     if (guardLog.length) writeAtomic(out(".guard.jsonl"), redact(`${guardLog.map((r) => JSON.stringify(r)).join("\n")}\n`))
     summary.guard = guardSummary(guardLog)
@@ -513,6 +569,20 @@ async function runJob(job, ctx) {
     if (!gone) ctx.log(`  ${name}: the trial's container is still there: its sandbox is kept, not removed`)
     if (!ctx.keep && gone) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
     const cost = billedOf(result.stdout ?? "")
+    // What this run's own tool calls spent at vendors that bill for reads (R14), counted from the recording.
+    try {
+      const calls = summarize((result.stdout ?? "").split("\n").filter(Boolean), result.stderr ?? "").calls
+      cost.vendor_use = vendorUseOf(calls.flatMap((call) => [call.tool, ...(call.inner ?? [])]))
+    } catch {
+      // a recording that does not parse spent nothing we can count
+    }
+    // Rate-limited with retries left: nothing is recorded, nothing is released (the reservation stays for the retry), and the
+    // caller backs off. After the last retry it is an infrastructure failure like a refused credential, and is released.
+    if (!summary.infra && rateLimited(result)) {
+      if ((job.attempt ?? 0) < BACKOFF_S.length) return { case: id, trial: job.trial, rateLimited: true, exit: summary.exit, durationMs }
+      summary.infra = "rate-limit"
+      writeAtomic(out(".summary.json"), redact(`${JSON.stringify({ ...summary, attempts: (job.attempt ?? 0) + 1 }, null, 1)}\n`))
+    }
     // Priced at list as well as billed: a subscription run bills $0, and the round's ceiling counts list price (R9).
     cost.list_usd = listUsdOf(cost.tokens, ctx.listPrice)
     cost.tier = tierOf(job.case)
@@ -560,8 +630,17 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // What may run on this model, with its placeholders filled from the private store (R5): a case that reads a third party's words
   // never goes to an `opencode/*` model, and one the store cannot fill is deferred, each with its reason in the batch record.
   const gated = gateCases(chosen, { model: options.model, targets: loadTargets(caller), canaries: loadCanaries(caller) })
-  const selected = gated.runnable
-  const deferred = gated.deferred
+  let selected = gated.runnable
+  const deferred = [...gated.deferred]
+  // `--preflight data` (R10): a case whose clauses name a target, a canary or a seed the store lacks would only be BLOCKED later, so it
+  // is deferred now, each with the missing name. Re-run before every variant batch and before h1, so a drifted store is seen at once.
+  if (options.preflight) {
+    if (options.preflight !== "data") throw new Error(`--preflight must be data, not ${JSON.stringify(options.preflight)}`)
+    const found = dataPreflight(selected, { targets: loadTargets(caller), canaries: loadCanaries(caller), env: caller })
+    deferred.push(...found)
+    const skip = new Set(found.map((d) => d.case))
+    selected = selected.filter((c) => !skip.has(c.id))
+  }
   if (!selected.length) throw new Error(`nothing to run: all ${chosen.length} selected case(s) are deferred (${deferred.slice(0, 3).map((d) => `${d.case}: ${d.why}`).join("; ")}${deferred.length > 3 ? "; …" : ""})`)
   const rawDir = within(rawRoot(caller), join(rawRoot(caller), iteration, plugin), "the recordings directory")
   const jobs = plan({ cases: selected, trials, recorded: recordedTrials(rawDir), append: Boolean(options.append) })
@@ -753,7 +832,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const probeEnv = sandboxEnv({ sandbox: probe, config: sealedConfig({ armDir: null, model: options.model }), password: newPassword(), caller })
     // The binaries a trial needs, mounted read-only into a container: the host, a provider's own CLI, the mock's bun.
     const needsClaude = profile.kind === "claude-agent" || options.model.startsWith("claude-agent/")
-    const binaries = { opencode: binary, ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}), ...(scripted ? { bun: caller.EVALS_BUN ?? "bun" } : {}) }
+    const binaries = { opencode: binary, ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}), ...(scripted || options.captureServer ? { bun: caller.EVALS_BUN ?? "bun" } : {}) }
     await isolation.prepare({ batchRoot, caller, binaries, log })
     if (isolation.confines) facts.isolation_detail = isolation.describe()
     // The harness's scripted model, when asked for: T1's mock server, for the whole batch on loopback, or, in a confined
@@ -770,6 +849,13 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       cpSync(resolve(import.meta.dirname, "..", "t1", "mock"), join(harnessDir, "mock"), { recursive: true })
       writeFileSync(join(harnessDir, "mock", "provider", "endpoint.json"), `${JSON.stringify({ url: mock?.url ?? TRIAL_MOCK_URL })}\n`, { mode: 0o444 })
       facts.scripted = true
+    }
+    if (options.captureServer) {
+      // P0-13: only with a dummy credential, never one that reaches anything: the capture server is the model's whole world.
+      if (profile.vendor || (profile.kind === "env" && profile.names.some((name) => !/^(CLAUDE_CODE_OAUTH_TOKEN|CLAUDE_AGENT_SDK_VERSION)$/.test(name)))) throw new Error("--capture-server is for the Claude surface probe: no vendor credential")
+      harnessDir ??= join(batchRoot, "harness")
+      mkdirSync(join(harnessDir, "capture"), { recursive: true })
+      cpSync(resolve(import.meta.dirname, "..", "p0", "capture-server.ts"), join(harnessDir, "capture", "capture-server.ts"))
     }
     let probeDir = null
     if (options.probe) {
@@ -836,7 +922,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // each pack gives its integration (the pack's own id unless it says otherwise).
     const packs = loadPacks()
     const named = [...new Set([plugin, ...selected.flatMap((c) => parseSeedList(parseSeed(c.seed).plugins))])]
-    const needed = [...new Set(named.flatMap((id) => [].concat(packs.find((p) => p.id === id)?.integration ?? id)))].sort()
+    const needed = integrationsFor(plugin, selected, packs, (seed) => parseSeedList(parseSeed(seed).plugins))
     const auth = await prepareAuth(profile, { binary, caller, horizonMs, acceptUnknownExpiry: Boolean(options.acceptUnknownTokenExpiry), needed })
     if (auth.expiry) {
       Object.assign(facts.horizon, auth.expiry)
@@ -888,6 +974,16 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       perRunListUsd = estimates.reduce((n, e) => n + e.usd, 0) / Math.max(1, estimates.length)
       assertLaunchWithinRound(store, { model: options.model, tier: tierOf(jobs[0].case), running: 0 }, caller)
     }
+    // Vendors that bill for reads (R14): each spending plugin the batch names must stay under its written cap, by the ledger's count
+    // and, when the caller supplies fetchers, by the vendor's own balance.
+    const spenders = named.filter((id) => SPENDING[id])
+    if (spenders.length) {
+      const capsFileText = existsSync(capsFile(store, caller)) ? JSON.parse(readFileSync(capsFile(store, caller), "utf8")) : {}
+      const balances = await checkBalances({ plugins: spenders, runsByPlugin: Object.fromEntries(spenders.map((id) => [id, jobs.length])), ledger: readLedger(store), limits: capsFileText.vendors ?? {}, live: options.balanceFetchers ?? {} })
+      for (const line of balances.lines) log(`vendor budget: ${line}`)
+      if (!balances.ok) throw new Error(`vendor budget: ${balances.refusals.join("; ")}`)
+      facts.vendor_budget = balances.lines
+    }
     reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller, perRunUsd: price.usd, priceBasis: price.basis, perRunListUsd, check: () => assertBatchWithinBudget(store, { runs: jobs.length, perRunUsd: price.usd, basis: price.basis }, caller) })
     facts.round = roundLimit.limit === null ? { enforced: false } : { enforced: true, limit: roundLimit.limit, binds: roundLimit.binds, per_run_list_usd: perRunListUsd, list_price: listInfo.price ? "catalogue" : `none (${listInfo.why})` }
     facts.dollar_cap = price.usd === null ? { enforceable: false, why: price.basis } : { enforceable: true, per_run_usd: price.usd, basis: price.basis }
@@ -913,6 +1009,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined,
       mounts,
       prompts: gated.prompts,
+      captureServer: options.captureServer ?? null,
       redact,
       dollarCap: facts.dollar_cap,
       listPrice: listInfo.price,
@@ -921,6 +1018,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     if (egress && (egress.plugins.length || egress.skipped.length)) facts.egress_plan = { allow: isolationSpec.config?.allow, why: egress.why, plugins: egress.plugins, ...(egress.skipped.length ? { skipped: egress.skipped } : {}) }
     let next = 0
     let running = 0
+    let rateStreak = 0
+    let pausedUntil = 0
     const worker = async () => {
       for (;;) {
         if (stopped) return
@@ -982,7 +1081,29 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
         }
         launched++
         running++
-        const outcome = await runJob({ ...job, authEnv: trialAuth.env }, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: redact(String(error.message ?? error)) }))
+        // A rate-limited run is tried again after 60, 120 and 240 s (R13), and counts as nothing until it ends otherwise; three
+        // rate-limited runs in a row, across the batch, pause the model for 30 minutes. Delays scale by EVALS_BACKOFF_SCALE (tests).
+        const scale = Number(caller.EVALS_BACKOFF_SCALE ?? 1)
+        const nap = (seconds) => new Promise((done) => setTimeout(done, seconds * 1000 * scale))
+        let outcome
+        for (let attempt = 0; ; attempt++) {
+          if (pausedUntil > Date.now()) await new Promise((done) => setTimeout(done, pausedUntil - Date.now()))
+          outcome = await runJob({ ...job, attempt, authEnv: trialAuth.env }, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: redact(String(error.message ?? error)) }))
+          if (!outcome.rateLimited) {
+            rateStreak = 0
+            break
+          }
+          rateStreak++
+          facts.rate_limited = (facts.rate_limited ?? 0) + 1
+          if (rateStreak >= 3) {
+            pausedUntil = Date.now() + PAUSE_S * 1000 * scale
+            facts.model_paused = (facts.model_paused ?? 0) + 1
+            log(`  ${options.model}: three rate-limited runs in a row: paused ${PAUSE_S / 60} min`)
+            rateStreak = 0
+          }
+          log(`  ${job.case.id}.t${job.trial} was rate-limited (attempt ${attempt + 1}): trying again after ${BACKOFF_S[attempt]} s`)
+          await nap(BACKOFF_S[attempt])
+        }
         running--
         results.push(outcome)
         log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.infra ? ` INFRA ${outcome.infra}` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)

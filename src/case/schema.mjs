@@ -90,6 +90,7 @@ export function validateCase(caseObject, file = "<case>") {
     if (!/^[a-z][a-z0-9-]*$/.test(name) || FAMILY_SETS.includes(name)) bad(`set ${JSON.stringify(name)} must be a lower-case name, not ${FAMILY_SETS.join(", ")}`)
     if (ROUND_SETS[name] && !ROUND_SETS[name].test(caseObject.id)) bad(`a case in set ${name} has an id like ${String(ROUND_SETS[name].source).replace(/^\^|\$$/g, "").replace(/\[a-z0-9\]\[a-z0-9-\]\*/, "<slug>")}, not ${JSON.stringify(caseObject.id)}`)
   }
+  for (const name of caseObject.home_files ?? []) if (!/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(name) || name.split("/").some((part) => part === "." || part === "..")) bad(`Home files ${JSON.stringify(name)} must be a path of names under the home (no .., no leading /)`)
   if (caseObject.data !== undefined && !DATA_KINDS.includes(caseObject.data)) bad(`Data must be one of ${DATA_KINDS.join(", ")}, not ${JSON.stringify(caseObject.data)}`)
   if (caseObject.holdout && !holdoutId(caseObject.plugin).test(caseObject.id) && !(caseObject.plugin === "history" && /^ho-/.test(caseObject.id))) bad(`a holdout's id is hold-${caseObject.plugin}-<n>-<slug>, not ${JSON.stringify(caseObject.id)}`)
   for (const claim of caseObject.truth ?? []) if (typeof claim?.path !== "string" || !("value" in claim)) bad("a truth is {path, value}")

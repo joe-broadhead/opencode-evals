@@ -156,7 +156,7 @@ export function writePack(id, root = join(import.meta.dirname, "..", ".."), env 
     ...(declared.vocab ? { vocab: declared.vocab } : {}),
     // The round's per-plugin facts the checkout cannot answer (R8): where it reaches, its sandbox targets, how a neutral call and a
     // prefix read, what a "read" spends. Carried over like the options above.
-    ...Object.fromEntries(["egress", "targets", "neutral", "prefix", "spend", "release"].filter((key) => declared[key] !== undefined).map((key) => [key, declared[key]])),
+    ...Object.fromEntries(["egress", "targets", "neutral", "prefix", "spend", "release", "integration"].filter((key) => declared[key] !== undefined).map((key) => [key, declared[key]])),
   }
   return writeSnapshot(root, merged)
 }

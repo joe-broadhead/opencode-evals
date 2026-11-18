@@ -3,6 +3,7 @@
 //   [[mock:text:SOME TEXT]]   plain text answer
 //   [[mock:slow:N]]           N one-second chunks, then "slow done"
 //   [[mock:tool:NAME:JSON]]   one tool call to NAME with JSON arguments, then text after the tool result
+//   [[mock:dump]]            logs the whole request body (what reaches a model), then a short answer
 // A request without tools (title generation etc.) gets a short text answer.
 // Usage: bun mock/server.ts <port> <logFile>
 import { appendFileSync } from "node:fs"
@@ -89,6 +90,11 @@ const server = Bun.serve({
     const directive = /\[\[mock:(\w+)(?::([^\]]*))?\]\]/.exec(unescaped)
     const kind = directive?.[1] ?? "text"
     const arg = directive?.[2] ?? "hello from mock"
+    // [[mock:dump]]: the whole request body goes in the log, so a probe can read exactly what reaches a model (P0-1).
+    if (kind === "dump") {
+      log({ ev: "dump", body })
+      return textAnswer("dumped", signal)
+    }
     if (kind === "slow") {
       const seconds = Number(arg) || 30
       return stream(async (send, signal) => {

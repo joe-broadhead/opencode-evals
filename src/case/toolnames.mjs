@@ -40,7 +40,8 @@ export function toolsNamedBy(clause) {
       return [{ tool: clause.tool }, { tool: clause.other }]
     case "declined":
     case "absent-declined":
-      return clause.tool ? [{ tool: clause.tool }] : []
+      // `declined:` compares action names in their normal form (case and punctuation aside); every other clause compares exactly.
+      return clause.tool ? [{ tool: clause.tool, loose: true }] : []
     case "gws-plan":
       return [{ tool: "gws.plan", fixed: true }]
     default:
@@ -59,15 +60,22 @@ export function toolNameProblems(caseObject, packs) {
   if (!own) return [`no pack for plugin ${caseObject.plugin}: its tools cannot be checked`]
   const route = sets.includes("route")
   const builtin = new Set(BUILTIN_TOOLS)
-  const index = (pack) => new Map((pack.tools ?? []).flatMap((tool) => namesOfTool(pack, tool).map((name) => [norm(name), tool])))
-  const ownIndex = index(own)
+  // A tool name in a clause must be spelled as the plugin spells it: `matchesTool` is case-sensitive, so `getjiraissue` for
+  // `getJiraIssue` never matches. Only `declined:` (permission actions) reads names loosely.
+  const cache = new Map()
+  const indexFor = (pack, loose) => {
+    const key = `${pack.id}|${loose}`
+    if (!cache.has(key)) cache.set(key, new Map((pack.tools ?? []).flatMap((tool) => namesOfTool(pack, tool).map((name) => [loose ? norm(name) : name, tool]))))
+    return cache.get(key)
+  }
+  const find = (pack, name, loose) => indexFor(pack, loose).get(loose ? norm(name) : name)
   const siblings = packs.filter((p) => p.id !== own.id)
   const problems = []
   const seen = new Set()
   for (const item of caseObject.items ?? []) {
     for (const clause of clausesOf(item)) {
       if (clause.kind === "absent-write" && !packs.some((p) => p.id === clause.ns)) problems.push(`${item.id}: absent-write:${clause.ns} names no plugin`)
-      for (const { tool, fixed } of toolsNamedBy(clause)) {
+      for (const { tool, fixed, loose = false } of toolsNamedBy(clause)) {
         const key = `${item.id}|${tool}`
         if (seen.has(key) || !tool) continue
         seen.add(key)
@@ -91,18 +99,18 @@ export function toolNameProblems(caseObject, packs) {
             problems.push(`${item.id}: ${tool}: no plugin ${ns}`)
             continue
           }
-          const hit = index(pack).get(norm(name)) ?? index(pack).get(norm(`${pack.id}_${name}`))
+          const hit = find(pack, name, loose) ?? find(pack, `${pack.id}_${name}`, loose)
           if (!hit || hit.hidden) problems.push(`${item.id}: ${tool} is not a ${hit?.hidden ? "reachable " : ""}tool of ${pack.id} v${pack.version}`)
           else if (pack.id !== own.id && !route) problems.push(`${item.id}: ${tool} is a tool of ${pack.id}, not of ${own.id} (only a case in set route may name a sibling's tool)`)
           continue
         }
         if (builtin.has(tool)) continue
-        const mine = ownIndex.get(norm(tool))
+        const mine = find(own, tool, loose)
         if (mine) {
           if (mine.hidden) problems.push(`${item.id}: ${tool} is hidden by ${own.id} at runtime: no model can call it`)
           continue
         }
-        const sibling = siblings.find((p) => index(p).has(norm(tool)))
+        const sibling = siblings.find((p) => find(p, tool, loose))
         if (sibling && route) continue
         problems.push(`${item.id}: ${tool} is not a tool of ${own.id} v${own.version}${sibling ? ` (it is ${sibling.id}'s: only a case in set route may name it)` : ""}`)
       }

@@ -85,12 +85,30 @@ plugin's `ask-changes`. So the sealed config (`src/run/lockdown.mjs`):
   would never be asked. In the commit set it does refuse, for a write with no declared target extractor or a target outside the
   allowed aliases, and for a plan commit (gws: only the `planId`) of a plan it did not see made for an in-sandbox target.
 
-`evals p0 [a1|a2|a3|a4|a5|c|g|all] [--companions FILE]` runs the probes the gate rests on, with the scripted model, no credential
+`evals p0 [a1|a2|a3|a4|a5|c|g|g8|p1|p2|p3|p4|p5|p13|all] [--companions FILE]` runs the probes the gate rests on, with the scripted model, no credential
 and every trial in a container: **a1** shell/file/web/subagent tools refused, no egress, a canary credential in no output;
 **a2** all 24 plugins at ask-changes, every write action asks (at access `all` too), the local writes decline end to end;
 **a3** a foreign-session ask is rejected within 5 s (and hangs without the guard); **a4** Tavily research and crawl are
 confirm-only; **a5** gws commits ask, and the guard's plan registry; **c** the token-priced round ceiling refuses the second
 launch; **g** the guard is deny-by-default at access `all`, and the suite fails without it.
+
+The other probes: **p1** what reaches the model (the request body dumped in the locked and the open arm, saved under `$EVALS_STORE/p0/`);
+**p2** `search()` returns the full description and the signature; **p3** what the model sees when an inner call fails; **p4** the
+guard's hook reaches inner calls and, in commit mode, refuses an out-of-scope write there while an in-scope one passes to its
+rule; **p5** what `auth import` accepts (an oauth credential needs a refresh token, so a trial gets the placeholder `evals-no-refresh`;
+import merges); **p13** the Claude Agent surface: a capture server on the trial's loopback (`--capture-server`, an Anthropic-API
+stand-in, no model call) shows the request holds only the host's three MCP tools and no Claude Code built-in, and a Bash `tool_use`
+it sends is answered "No such tool available: Bash"; **g8** the owner's assets (`container.assets` in `caps.json`: browse's pinned
+binary, utilities' speech models, voice's engine) are on the host and mounted read-only in every trial (`evals isolation assets`
+checks the host half). The probes that need a credential (P0-6 keeper timing, P0-6b the GitHub token, P0-6c logout, P0-7 egress and
+data) and the paid pilot (P0-8) are not here: they run after the owner's sign-ins.
+
+Other run flags: `--preflight data` defers a case whose clauses name a target, a canary or a seed the store lacks, with the missing
+name; a rate-limited run (429, with no model work) is tried again after 60, 120 and 240 s and is `infra: rate-limit` after the last,
+and three in a row pause the model for 30 minutes; a spending plugin (Tavily, X, Affinity, OpenRouter) runs only under a cap in
+`caps.json` `vendors` (`tavily_credits`, `affinity_calls`, `x_usd`, `openrouter_usd`), counted from the ledger and, when the caller
+supplies a fetcher, from the vendor's own balance. `scripts/wide-skeletons.mjs --plugin <id>` writes one wide skeleton per reachable
+tool, whose prompt is `<<TODO>>` (compile refuses it) so it is written without sight of the tool's description.
 
 The round's list-price ceiling (`EVALS_ROUND_CEILING_USD`, the phase's; `EVALS_ROUND_CAP_USD` or `round_cap_usd` in `caps.json`, the
 hard cap) is checked **before every launch**: what the round has spent at list price (every run's tokens against the frozen catalogue,

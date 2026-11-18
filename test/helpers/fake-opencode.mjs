@@ -87,6 +87,17 @@ if (args[0] === "run") {
     console.log(JSON.stringify({ type: "error", error: { type: "provider.no-route", message: "Model unavailable: claude-agent/haiku" } }))
     process.exit(1)
   }
+  // The provider refuses for rate: no model work, a 429. "rate-limit-once" refuses the first attempt only (a marker file under /tmp,
+  // keyed by the prompt, since every attempt is a fresh sandbox); "rate-limit-always" refuses every one.
+  if (prompt.includes("rate-limit")) {
+    const marker = "/tmp/evals-fake-429-" + require("node:crypto").createHash("sha256").update(prompt).digest("hex").slice(0, 16)
+    const first = !existsSync(marker)
+    if (prompt.includes("rate-limit-always") || first) {
+      writeFileSync(marker, "x")
+      console.log(JSON.stringify({ type: "error", error: { type: "provider.rate-limit", message: "429 rate_limit_error: too many requests" } }))
+      process.exit(1)
+    }
+  }
   // The provider refuses the credential: no model work, the host's error on stderr.
   if (prompt.includes("auth-fail")) {
     process.stderr.write('Error: 401 {"type":"error","error":{"type":"authentication_error","message":"OAuth token has expired"}}' + String.fromCharCode(10))

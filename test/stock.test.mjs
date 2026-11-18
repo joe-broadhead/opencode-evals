@@ -14,8 +14,8 @@ const install = (dir, version, pkg) => {
   return join(bin, "opencode")
 }
 
-test("the tested hosts are the plugins' own: 2.2.3 to 2.2.6", () => {
-  assert.deepEqual(TESTED, ["2.2.3", "2.2.4", "2.2.5", "2.2.6"])
+test("the tested hosts are the plugins' own: 2.2.3 to 2.2.6, and 2.3.2 (EVALS-232 G9)", () => {
+  assert.deepEqual(TESTED, ["2.2.3", "2.2.4", "2.2.5", "2.2.6", "2.3.2"])
   assert.deepEqual(coverageTable([]).versions, TESTED)
 })
 

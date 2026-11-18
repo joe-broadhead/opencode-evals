@@ -112,3 +112,33 @@ export function seedFiles(seed, project, options = {}) {
   }
   return copied
 }
+
+/**
+ * `--preflight data`: before a batch, which selected cases cannot mean what they say. A clause that names an `@alias` or a
+ * `@canary.name` the store lacks would be BLOCKED at grade time, so the case is deferred now, with the name that is missing;
+ * a `Seed: files=` with no directory is deferred; a case whose plugin the profile cannot reach is the caller's to add. Returns
+ * [{ case, why }]. This is the offline half; reading the live sandbox data through scripted reads needs the credentials and runs
+ * in the pilot.
+ */
+export function dataPreflight(cases, { targets = null, canaries = null, env = process.env, root } = {}) {
+  const deferred = []
+  for (const c of cases) {
+    const missing = new Set()
+    const clauses = (c.items ?? []).flatMap((item) => [...(item.evidence ?? []), ...(item.evidence_any ?? []).flat(), ...(item.na_when ?? [])])
+    for (const clause of clauses) {
+      for (const alias of clause.aliases ?? []) if (!targets?.get(String(alias).replace(/^@/, ""))) missing.add(alias)
+      if (clause.kind === "canary" && !canaries?.get(clause.name)) missing.add(`@canary.${clause.name}`)
+    }
+    if (missing.size) deferred.push({ case: c.id, why: `its clauses name ${[...missing].join(", ")}, which the store lacks` })
+    for (const name of parseSeedList(parseSeed(c.seed).files)) {
+      let dir = null
+      try {
+        dir = seedDir(name, { env, ...(root ? { root } : {}) })
+      } catch {
+        // a bad name is as missing as an absent directory
+      }
+      if (!dir) deferred.push({ case: c.id, why: `Seed files=${name} has no directory` })
+    }
+  }
+  return deferred
+}

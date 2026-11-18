@@ -117,3 +117,13 @@ export async function exportProfile({ binary, profileDir, caller = process.env }
   if (out.code !== 0 || !out.stdout.trim()) throw new Error(`--auth +profile: \`opencode auth export\` of the evals profile failed (exit ${out.code}); is ${profileDir} signed in?`)
   return out.stdout
 }
+
+/**
+ * The integrations a `+profile` batch holds: the arm's plugin and every plugin its cases name in `Seed: plugins=`, by the ids each
+ * pack gives its integration (its own id unless the pack says otherwise: OpenRouter's one key serves two entries, the MCP server's
+ * and `inference-openrouter`, so both of its packs name both).
+ */
+export function integrationsFor(plugin, cases, packs, parse) {
+  const named = [...new Set([plugin, ...cases.flatMap((c) => parse(c.seed))])]
+  return [...new Set(named.flatMap((id) => [].concat(packs.find((p) => p.id === id)?.integration ?? id)))].sort()
+}

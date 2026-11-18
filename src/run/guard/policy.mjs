@@ -38,7 +38,7 @@ export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {},
       if (tool.class !== "write") continue
       actions.add(tool.permission)
       const declared = commit[tool.permission]
-      writes.push({ names: namesOf(pack, tool), action: tool.permission, ...(declared ? { extract: declared.extract, allow: declared.allow } : {}) })
+      writes.push({ names: namesOf(pack, tool), action: tool.permission, ...(declared ? { ...(declared.extract ? { extract: declared.extract } : {}), ...(declared.allow ? { allow: declared.allow } : {}), ...(declared.local === true ? { local: true } : {}) } : {}) })
     }
   }
   return { mode, writes, actions: [...actions].sort(), ...(plans ? { plans } : {}) }

@@ -14,7 +14,7 @@ import { call, until, freePort } from "./http.mjs"
 const ROOT = resolve(import.meta.dirname, "..", "..")
 
 /** The host versions the plugins are tested on. */
-export const TESTED = ["2.2.3", "2.2.4", "2.2.5", "2.2.6"]
+export const TESTED = ["2.2.3", "2.2.4", "2.2.5", "2.2.6", "2.3.2"]
 
 let muslCache
 const isMusl = () => {

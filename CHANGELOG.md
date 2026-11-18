@@ -26,6 +26,10 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
   `{{target:...}}` and `{{canary:...}}` placeholders; `Seed: files=` and `Seed: plugins=a,b`.
 - **`evals pack --sync --release <versions>`**: packs from a release tag (`git archive`), hidden tools marked, account templates
   kept apart. Per-pack `egress` for the per-batch allow-list.
+- **R7 skeletons** (`scripts/wide-skeletons.mjs`), **R10** `--preflight data`, **R13** rate-limit backoff and pause, **R14** vendor
+  budgets (`caps.json` `vendors`), `evals t0 --plugin`, `Home files:` (files a run wrote under named places of its HOME), `container.assets`
+  and `evals isolation assets` (G8), a compile-time check that every tool a clause names exists in the plugin's pack, and the probes
+  p1 to p5, p13 and g8.
 - Cluster-bootstrap statistics, fresh-trial baselines, the pooled holdout gate and the adoption screen (`src/report/cluster.mjs`).
 
 ### Changed

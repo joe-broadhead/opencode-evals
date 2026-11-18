@@ -37,3 +37,33 @@ export function changedFiles(before, dir) {
   for (const [path, file] of before) if (!after.has(path)) changes.push({ path, change: "deleted", sha256: file.sha256, bytes: file.bytes })
   return changes.sort((a, b) => a.path.localeCompare(b.path))
 }
+
+/**
+ * Files a run wrote outside its project, in named places under its HOME (`plaud_export` writes to ~/Plaud). Only the paths a case
+ * names are recorded (`Home files: Plaud`), so nothing else of the home reaches a record; each is labelled `~/<name>/<path>`, which
+ * a `file:~/Plaud/**` clause matches. Same digests and the same small-text rule as the project's.
+ */
+export function snapshotHome(home, names = []) {
+  const out = new Map()
+  for (const name of names) {
+    const base = join(home, name)
+    for (const [rel, file] of snapshotFiles(base)) out.set(`~/${name}/${rel}`, file)
+    if (existsSync(base) && statSync(base).isFile()) out.set(`~/${name}`, { sha256: sha256(readFileSync(base)), bytes: statSync(base).size })
+  }
+  return out
+}
+
+export function changedHome(before, home, names = []) {
+  const after = snapshotHome(home, names)
+  const changes = []
+  const read = (label) => join(home, label.slice(2))
+  for (const [path, file] of after) {
+    const old = before.get(path)
+    if (old && old.sha256 === file.sha256) continue
+    const body = file.bytes <= TEXT_LIMIT ? readFileSync(read(path)) : null
+    const text = body && !body.includes(0) ? body.toString("utf8") : null
+    changes.push({ path, change: old ? "modified" : "added", sha256: file.sha256, bytes: file.bytes, ...(text !== null ? { text } : {}) })
+  }
+  for (const [path, file] of before) if (!after.has(path)) changes.push({ path, change: "deleted", sha256: file.sha256, bytes: file.bytes })
+  return changes.sort((a, b) => a.path.localeCompare(b.path))
+}

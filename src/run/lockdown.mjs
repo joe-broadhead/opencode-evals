@@ -26,6 +26,8 @@ export const LOCKED_TOOLS = Object.freeze(["shell", "read", "grep", "glob", "wri
  * server. None of them is a vendor tool, so none is measured; all are removed from a credentialed trial.
  */
 export const EXTRA_LOCKED_TOOLS = Object.freeze([
+  // 2.3.x's automations (they replace the schedule tools, which 2.2.x still has) and its MCP event watch.
+  "automation_create", "automation_delete", "automation_list", "automation_pause", "automation_resume", "watch_mcp_event",
   "schedule_create", "schedule_delete", "schedule_list", "schedule_pause", "schedule_resume",
   "worktree_create", "worktree_list", "worktree_remove", "session_move", "session_rename",
   "list_mcp_resources", "read_mcp_resource",

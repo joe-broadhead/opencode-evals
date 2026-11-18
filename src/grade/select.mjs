@@ -16,6 +16,8 @@
  *   models, session_move, session_rename, worktree_create, worktree_list, worktree_remove   (opencode.js)
  *   schedule_create, schedule_delete, schedule_list, schedule_pause, schedule_resume         (schedule.js)
  *   artifact_create, artifact_delete, artifact_read, artifact_update     (artifact.js; 2.2.5 and later)
+ *   automation_create, automation_delete, automation_list, automation_pause, automation_resume   (automation.js; 2.3.x, which
+ *   replaces schedule_*), and watch_mcp_event (mcp-events.js; 2.3.x): found by P0-0 on 2.3.2
  * There is no `bash`, `task`, `list`, `todoread` or `apply_patch` in 2.2.x, and `search` is a function inside Code
  * Mode, not a tool. A bare one in a clause is never qualified with the case's plugin, so `absent:write` keeps checking
  * every write; a plugin's tool of the same name is written with its prefix, `history.read`, and `evals compile`
@@ -23,6 +25,7 @@
  */
 export const BUILTIN_TOOLS = Object.freeze([
   "artifact_create", "artifact_delete", "artifact_read", "artifact_update",
+  "automation_create", "automation_delete", "automation_list", "automation_pause", "automation_resume", "watch_mcp_event",
   "edit", "execute", "experimental_image_generate", "glob", "grep",
   "list_mcp_resources", "models", "patch", "question", "read", "read_mcp_resource",
   "schedule_create", "schedule_delete", "schedule_list", "schedule_pause", "schedule_resume",

@@ -73,10 +73,14 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "9a5ccc5befc7afb837ec97db4d44d62f092e3798e0cc9ba69d19054ddd7e2eb0",
+  "digest": "b7c9572dad87b092b1574545a1b4d4386745513c093aa646a09e83ce57102baa",
   "t1": [],
   "egress": [
     "openrouter.ai",
     "mcp.openrouter.ai"
+  ],
+  "integration": [
+    "openrouter",
+    "inference-openrouter"
   ]
 }

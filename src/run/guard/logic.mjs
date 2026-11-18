@@ -73,6 +73,9 @@ export function decideBefore(policy, tool, input, plans = new Map()) {
     const plan = typeof id === "string" ? plans.get(id) : undefined
     return plan?.ok ? { pass: true, why: "a recorded in-sandbox plan", write, committer } : { pass: false, why: plan ? "a plan whose target is outside the sandbox" : "a plan id the guard never saw made", write, committer }
   }
+  // A write that touches only the trial's own sandbox (charts_render's files, a timer in the project) has no external target to
+  // check: the commit plan says so with `local: true`, per action, and nothing else is let through without an extractor.
+  if (write?.local === true) return { pass: true, why: "a write that touches only the trial's own sandbox", write, committer }
   if (!write || !write.extract || !write.allow?.length) return { pass: false, why: "no target extractor declared for this write", write, committer }
   const target = pick(input, write.extract)
   if (target === undefined || target === null || target === "") return { pass: false, why: "no target in the call", write, committer }

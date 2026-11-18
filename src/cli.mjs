@@ -13,7 +13,7 @@
 //                  [--isolation container|none] [--unsafe-no-isolation]   (container by default; none needs the flag)
 //                  [--accept-unknown-token-expiry]   (a claude-agent sign-in with no expiry: refused without it)
 //   evals truth    --plugin x --world DIR [--cases-dir DIR] [--set all]   each case's Truth: against the world's truth
-//   evals p0       [a1|a2|a3|a4|a5|c|g|all] [--companions FILE]   the safety probes G0 rests on: scripted model, no credential
+//   evals p0       [a1|a2|a3|a4|a5|c|g|p13|all] [--companions FILE]   the safety probes G0 rests on: scripted model or a capture server, no credential
 //   evals isolation build|check|sweep   the container backend's image (docker/Dockerfile), its checks, and the removal
 //                  of what a crashed batch left behind
 //   evals t0       [--root DIR] [--json]
@@ -23,6 +23,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { readVersions, extractRelease } from "./pack/release.mjs"
+import { loadPacks } from "./run/lockdown.mjs"
 import { join, dirname, resolve, basename } from "node:path"
 import { fileURLToPath } from "node:url"
 import { compileCase, casesDigest, codedShare } from "./case/compile.mjs"
@@ -59,7 +60,7 @@ import { compare as compareArms, renderReport } from "./report/arms.mjs"
 import { runBatch, batchTmp, truthCheck } from "./run/runner.mjs"
 import { loadWorld } from "./run/world.mjs"
 import { renderTruthProblem } from "./case/truth.mjs"
-import { buildImage, checkIsolation, containerBackend, containerConfig } from "./run/container.mjs"
+import { buildImage, checkIsolation, containerBackend, containerConfig, checkAssets } from "./run/container.mjs"
 import { segment } from "./run/paths.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
@@ -91,12 +92,14 @@ const ensureDir = (dir) => mkdirSync(dir, { recursive: true })
 const listCases = (dir) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".md")).sort() : [])
 
 function compileAll(plugin = "x", { check = false, dir = path("cases", plugin) } = {}) {
+  // The packs a case's tool names are checked against: this repository's, as synced from the releases.
+  const packs = loadPacks()
   const files = listCases(dir)
   if (!files.length) throw new Error(`no cases in ${dir}`)
   // Compile every case before writing any: a broken case must not leave a half-written case set.
   const compiled = files.map((file) => {
     const text = read(join(dir, file))
-    const caseObject = compileCase(dir === path("cases", plugin) ? join("cases", plugin, file) : join("holdouts", plugin, file), text)
+    const caseObject = compileCase(dir === path("cases", plugin) ? join("cases", plugin, file) : join("holdouts", plugin, file), text, { packs })
     const previous = join(dir, file.replace(/\.md$/, ".json"))
     const next = `${json(caseObject)}\n`
     const changed = !existsSync(previous) || read(previous) !== next
@@ -536,6 +539,9 @@ export async function main(argv) {
         unsafeNoIsolation: Boolean(opt["unsafe-no-isolation"]),
         acceptUnknownTokenExpiry: Boolean(opt["accept-unknown-token-expiry"]),
         append: Boolean(opt.append),
+        tools: opt.tools && opt.tools !== true ? opt.tools : undefined,
+        commitPlan: opt["commit-plan"] && opt["commit-plan"] !== true ? opt["commit-plan"] : undefined,
+        preflight: opt.preflight && opt.preflight !== true ? opt.preflight : undefined,
       })
       // A batch with an error, an infra failure, or one the runner stopped is not a clean batch: a script must see that.
       if (result.stopped || result.results?.some((r) => r.error || r.infra)) process.exitCode = 1
@@ -544,10 +550,12 @@ export async function main(argv) {
     case "p0": {
       // The safety probes G0 rests on (docs/running.md#g0): scripted model, no credential, every trial in a container.
       const { PROBES } = await import("./p0/probes.mjs")
-      const wanted = opt._[0] && opt._[0] !== "all" ? opt._[0].split(",") : Object.keys(PROBES)
+      // `all` leaves g8 out when the owner has mounted no assets (container.assets in caps.json): it has nothing to prove then.
+      const hasAssets = containerConfig({ store: storeRoot(), env: process.env }).assets.length > 0
+      const wanted = opt._[0] && opt._[0] !== "all" ? opt._[0].split(",") : Object.keys(PROBES).filter((id) => id !== "g8" || hasAssets)
       const unknown = wanted.filter((id) => !PROBES[id])
       if (unknown.length) throw new Error(`unknown probe ${unknown.join(", ")}: ${Object.keys(PROBES).join(", ")}`)
-      const env = { companions: opt.companions && opt.companions !== true ? opt.companions : process.env.EVALS_COMPANIONS, tmp: process.env.EVALS_TMP }
+      const env = { companions: opt.companions && opt.companions !== true ? opt.companions : process.env.EVALS_COMPANIONS, tmp: process.env.EVALS_TMP, store: storeRoot() }
       let failed = 0
       for (const id of wanted) {
         const result = await PROBES[id](env)
@@ -590,6 +598,14 @@ export async function main(argv) {
           console.log(!report.docker ? "Docker is not usable by this user." : "The image is missing: run `evals isolation build`.")
           process.exitCode = 1
         }
+        return
+      }
+      if (action === "assets") {
+        // G8: what the owner mounted into every trial (browse's binary, the speech models) is on the host and not empty.
+        const rows = checkAssets(config.assets)
+        for (const row of rows) console.log(`${row.ok ? "ok  " : "FAIL"} ${row.name}: ${row.why}`)
+        console.log(rows.length ? `${rows.filter((r) => r.ok).length}/${rows.length} asset(s) present` : "no assets configured (container.assets in caps.json)")
+        if (rows.some((r) => !r.ok)) process.exitCode = 1
         return
       }
       if (action === "sweep") {
@@ -649,6 +665,18 @@ export async function main(argv) {
       return
     }
     case "t0": {
+      // `--plugin <id>` names the plugin whose declaration is checked (x by default, as before): its pack against itself and the
+      // family's invariants, and against its checkout's skills and namespace text when `--root` or the configured checkout is there.
+      const id = opt.plugin && opt.plugin !== true ? opt.plugin : "x"
+      if (id !== "x") {
+        if (!allPackIds(ROOT).includes(id)) throw new Error(`no pack for ${id}: ${allPackIds(ROOT).join(", ")}`)
+        const where = opt.root && opt.root !== true ? opt.root : pluginRepo(id)
+        const report = checkPack(readPack(id), where && existsSync(join(where, "package.json")) ? where : null)
+        console.log(opt.json ? json(report) : report.text)
+        if (opt.write) write(path("results", "t0", `${id}.json`), json(report))
+        if (report.failed) process.exitCode = 1
+        return
+      }
       const root = opt.root ?? pluginRepo("x")
       if (!root) {
         const report = checkPack(readPack("x"), null)

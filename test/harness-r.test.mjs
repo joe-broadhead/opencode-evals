@@ -424,3 +424,206 @@ test("a locked run that holds any credential runs every plugin at ask-changes, a
     f.cleanup()
   }
 })
+
+// ------------------------------------------------------------------------------------------------ R10, R13, R14
+
+import { checkBalances, vendorUseOf, TAVILY_CREDITS } from "../src/run/balance.mjs"
+import { dataPreflight } from "../src/run/gate.mjs"
+import { rateLimited, BACKOFF_S } from "../src/run/runner.mjs"
+import { rmSync as rmFile } from "node:fs"
+import { createHash } from "node:crypto"
+
+test("a spending plugin runs only under a written cap, by the ledger's count and the vendor's own balance, whichever is larger", async () => {
+  const ledger = [{ kind: "run", vendor_use: { tavily_credits: 400, affinity_calls: 990 } }, { kind: "run", vendor_use: { tavily_credits: 20 } }]
+  const limits = { tavily_credits: 500, affinity_calls: 1000, x_usd: 15, openrouter_usd: 5 }
+  const ok = await checkBalances({ plugins: ["tavily"], runsByPlugin: { tavily: 1 }, ledger: [], limits })
+  assert.equal(ok.ok, true)
+  assert.match(ok.lines[0], /tavily: tavily_credits 0\.00 used \(ledger\), \+50\.00 worst case, of 500/)
+  const over = await checkBalances({ plugins: ["tavily"], runsByPlugin: { tavily: 2 }, ledger, limits })
+  assert.equal(over.ok, false)
+  assert.match(over.refusals[0], /tavily: tavily_credits would reach 520\.00 of 500/)
+  assert.equal((await checkBalances({ plugins: ["affinity"], runsByPlugin: { affinity: 3 }, ledger, limits })).ok, false, "990 used + 3 runs of 5 calls is over the firm quota of 1000")
+  // the vendor's own number wins when it is larger
+  const reported = await checkBalances({ plugins: ["tavily"], runsByPlugin: { tavily: 1 }, ledger: [], limits, live: { tavily: async () => 480 } })
+  assert.equal(reported.ok, false)
+  assert.match(reported.lines[0], /vendor reports 480, ledger 0/)
+  // a balance that cannot be read is a refusal, not a guess; a plugin with no written cap is refused; a non-spending plugin is not checked
+  assert.match((await checkBalances({ plugins: ["x"], runsByPlugin: { x: 1 }, limits, live: { x: async () => { throw new Error("401") } } })).refusals[0], /balance could not be read \(401\)/)
+  assert.match((await checkBalances({ plugins: ["tavily"], runsByPlugin: { tavily: 1 }, limits: {} })).refusals[0], /no limit for tavily_credits in caps\.json "vendors"/)
+  assert.deepEqual(await checkBalances({ plugins: ["slack", "linear"], limits: {} }), { ok: true, lines: [], refusals: [] })
+  assert.equal(TAVILY_CREDITS.research, 250)
+  assert.deepEqual(vendorUseOf(["tools.tavily.tavily_search", "tavily_research", "tools.affinity.get_company", "affinity_search", "slack_send"]), { tavily_credits: 252, affinity_calls: 2 })
+})
+
+test("--preflight data defers a case whose clauses name a target, a canary or a seed the store lacks, and says which", () => {
+  const targets = flatten({ slack: { sandbox_channel: "C0SANDBOX" } })
+  const canaries = flatten({ linear_cycle: "Cycle 7q3" })
+  const ok = compileCase("cases/slack/tools-ok.md", `# tools-ok\n- Plugin: slack\n- Skill under test: slack\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Set: wide\n\n## Prompt\np\n\n## Items\n- [SLK-PR01] major · Addressed to the sandbox channel.\n  evidence: target:slack.slack_send_message#1 args.channel_id in @slack.sandbox_channel\n- [SLK-OC01] major · States the cycle.\n  evidence: text:any contains @canary.linear_cycle\n`)
+  const bad = compileCase("cases/slack/tools-bad.md", `# tools-bad\n- Plugin: slack\n- Skill under test: slack\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Set: wide\n- Seed: files=no-such-seed\n\n## Prompt\np\n\n## Items\n- [SLK-PR01] major · Addressed to the self DM.\n  evidence: target:slack.slack_send_message#1 args.channel_id in @slack.self_dm\n- [SLK-OC01] major · States a cycle.\n  evidence: text:any contains @canary.nope\n`)
+  const root = scratch()
+  try {
+    const out = dataPreflight([ok, bad], { targets, canaries, env: { EVALS_STORE: join(root, "store") }, root })
+    assert.deepEqual(out.map((d) => d.case), ["tools-bad", "tools-bad"])
+    assert.match(out[0].why, /@slack\.self_dm, @canary\.nope, which the store lacks/)
+    assert.match(out[1].why, /Seed files=no-such-seed has no directory/)
+    assert.deepEqual(dataPreflight([ok], { targets, canaries, env: { EVALS_STORE: join(root, "store") }, root }), [])
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("a 429 with no model work is a rate limit, not an auth failure, a provider failure or work", () => {
+  const e429 = JSON.stringify({ type: "error", error: { type: "provider.rate-limit", message: "429 rate_limit_error: too many requests" } })
+  assert.equal(rateLimited({ stdout: e429, stderr: "" }), true)
+  assert.equal(rateLimited({ stdout: "", stderr: "Error: 429 Too Many Requests" }), true)
+  assert.equal(rateLimited({ stdout: "", stderr: "Error: service overloaded" }), true)
+  const worked = `${JSON.stringify({ type: "step_finish", part: { cost: 0, tokens: { input: 10, output: 5, cache: { read: 0, write: 0 } } } })}\n${e429}`
+  assert.equal(rateLimited({ stdout: worked, stderr: "" }), false, "a run that did model work is not retried: it spent")
+  assert.equal(rateLimited({ stdout: "", stderr: 'Error: 401 {"error":{"type":"authentication_error","message":"OAuth token has expired"}}' }), false)
+  assert.equal(rateLimited({ stdout: "", stderr: "" }), false)
+  assert.deepEqual(BACKOFF_S, [60, 120, 240])
+})
+
+const marker = (prompt) => `/tmp/evals-fake-429-${createHash("sha256").update(prompt).digest("hex").slice(0, 16)}`
+
+test("a rate-limited run is tried again after a backoff and recorded once; after the last retry it is infra, released, and the model is paused after three in a row", async () => {
+  const once = fixture({ ids: ["demo-a", "demo-b"] })
+  const prompts = ["hello demo-a rate-limit-once", "hello demo-b rate-limit-always"]
+  const recorded = (f, id, text) => {
+    const file = join(f.casesDir, `${id}.md`)
+    const body = readFileSync(file, "utf8").replace(`hello ${id}`, text)
+    writeFileSync(file, body)
+    writeFileSync(join(f.casesDir, `${id}.json`), JSON.stringify(compileCase(`cases/demo/${id}.md`, body)))
+  }
+  try {
+    recorded(once, "demo-a", prompts[0])
+    recorded(once, "demo-b", prompts[1])
+    for (const p of prompts) rmFile(marker(p), { force: true })
+    const caller = { ...once.caller, EVALS_BACKOFF_SCALE: "0.001" }
+    const logs = []
+    const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "rl", model: "mock/m1", auth: "none", scripted: true, cases: "demo-a,demo-b", arm: once.arm, casesDir: once.casesDir, tools: "locked", parallel: 1 }, { caller, log: (l) => logs.push(l) })
+    const a = result.results.find((r) => r.case === "demo-a")
+    const b = result.results.find((r) => r.case === "demo-b")
+    assert.equal(a.rateLimited, undefined, "demo-a succeeded on its second attempt")
+    assert.equal(a.exit, 0, JSON.stringify(result.results))
+    assert.equal(b.infra, "rate-limit", "demo-b never stopped being refused")
+    assert.ok(result.rate_limited >= 4, `${result.rate_limited} rate-limited attempts counted`)
+    assert.ok(logs.some((l) => /was rate-limited \(attempt 1\): trying again after 60 s/.test(l)))
+    assert.ok(logs.some((l) => /three rate-limited runs in a row: paused 30 min/.test(l)))
+    const ledger = readFileSync(join(once.root, "store", "ledger", "runs.jsonl"), "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l))
+    assert.equal(ledger.filter((e) => e.kind === "run").length, 1, "only the run that worked is recorded")
+    assert.equal(ledger.filter((e) => e.kind === "release").reduce((n, e) => n + e.runs, 0), 1, "the exhausted one is released, never billed")
+    const summary = JSON.parse(readFileSync(join(once.root, "store", "raw", "rl", "demo", "demo-b.t1.summary.json"), "utf8"))
+    assert.equal(summary.infra, "rate-limit")
+    assert.equal(summary.attempts, 4)
+  } finally {
+    for (const p of prompts) rmFile(marker(p), { force: true })
+    once.cleanup()
+  }
+})
+
+// ------------------------------------------------------------------------------------------------ home files, integrations, t0
+
+import { snapshotHome, changedHome } from "../src/run/files.mjs"
+import { integrationsFor } from "../src/run/vendor-auth.mjs"
+import { runView, gradeCase } from "../src/grade/grade.mjs"
+import { parseSeed, parseSeedList } from "../src/run/world.mjs"
+import { loadPacks } from "../src/run/lockdown.mjs"
+import { spawnSync } from "node:child_process"
+
+test("files a run wrote under named places of its HOME are recorded, and nothing else of the home is", () => {
+  const home = scratch()
+  try {
+    mkdirSync(join(home, "Plaud"), { recursive: true })
+    mkdirSync(join(home, "Secrets"), { recursive: true })
+    writeFileSync(join(home, "Plaud", "old.txt"), "old")
+    writeFileSync(join(home, "Secrets", "key"), "do not record")
+    const before = snapshotHome(home, ["Plaud"])
+    writeFileSync(join(home, "Plaud", "note.txt"), "the note\n")
+    writeFileSync(join(home, "Plaud", "old.txt"), "changed")
+    writeFileSync(join(home, "Secrets", "key"), "changed too")
+    const changes = changedHome(before, home, ["Plaud"])
+    assert.deepEqual(changes.map((c) => [c.path, c.change]), [["~/Plaud/note.txt", "added"], ["~/Plaud/old.txt", "modified"]])
+    assert.equal(changes[0].text, "the note\n")
+    assert.ok(!JSON.stringify(changes).includes("do not record"), "an unnamed place of the home is not in the record")
+    assert.deepEqual(changedHome(snapshotHome(home, []), home, []), [])
+    const c = compileCase("cases/plaud/tools-export.md", `# tools-export\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Set: wide\n- Home files: Plaud, Downloads/evals\n\n## Prompt\nexport it\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:~/Plaud/** exists\n`)
+    assert.deepEqual(c.home_files, ["Plaud", "Downloads/evals"])
+    assert.throws(() => compileCase("cases/plaud/tools-x.md", `# tools-x\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Home files: ../etc\n\n## Prompt\np\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:a exists\n`), /Home files/)
+    // and a file: clause grades it
+    const view = runView([{ schema: "oc-trace/1", run_id: "t/0", case: "t", exit: 0, summary: { text: { sha256: "0".repeat(64) }, tokens: {} } }], { files: changes })
+    assert.equal(gradeCase(c, view).verdict, "PASS")
+    assert.equal(gradeCase(c, runView([{ schema: "oc-trace/1", run_id: "t/0", case: "t", exit: 0, summary: { text: { sha256: "0".repeat(64) }, tokens: {} } }], { files: [] })).failed.includes("PLD-OC01"), true)
+  } finally {
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
+test("one OpenRouter key serves two entries: both packs name both, and the per-trial export covers them", () => {
+  const packs = loadPacks()
+  for (const id of ["openrouter", "inference"]) assert.deepEqual([].concat(packs.find((p) => p.id === id).integration), ["openrouter", "inference-openrouter"], id)
+  const parse = (seed) => parseSeedList(parseSeed(seed).plugins)
+  assert.deepEqual(integrationsFor("inference", [], packs, parse), ["inference-openrouter", "openrouter"])
+  assert.deepEqual(integrationsFor("slack", [{ seed: "plugins=linear,openrouter" }, { seed: null }], packs, parse), ["inference-openrouter", "linear", "openrouter", "slack"])
+  assert.deepEqual(integrationsFor("unknown", [], [], parse), ["unknown"], "a plugin with no pack is its own integration")
+})
+
+test("evals t0 --plugin checks the named plugin's pack, and refuses one that has none", () => {
+  const run = (...args) => spawnSync(process.execPath, [join(import.meta.dirname, "..", "bin", "evals"), "t0", ...args], { encoding: "utf8", env: { ...process.env, EVALS_PLUGIN_ROOT: "", EVALS_STORE: "/nonexistent-store" } })
+  const ok = run("--plugin", "slack")
+  assert.equal(ok.status, 0, ok.stdout + ok.stderr)
+  assert.match(ok.stdout, /slack/)
+  assert.match(ok.stdout, /P-05 the counts are the tools' own/)
+  const bad = run("--plugin", "nosuchplugin")
+  assert.notEqual(bad.status, 0)
+  assert.match(bad.stderr, /no pack for nosuchplugin/)
+})
+
+// ------------------------------------------------------------------------------------------------ G8: assets, and local writes in a commit plan
+
+import { parseAssets, checkAssets, containerConfig, ASSETS_DIR, containerBackend } from "../src/run/container.mjs"
+import { decideBefore } from "../src/run/guard/logic.mjs"
+import { buildPolicy } from "../src/run/guard/policy.mjs"
+
+test("assets the owner mounts into every trial are validated, found on the host, and given their own variables", () => {
+  const dir = scratch()
+  try {
+    mkdirSync(join(dir, "speech"), { recursive: true })
+    writeFileSync(join(dir, "speech", "model.bin"), "x".repeat(100))
+    mkdirSync(join(dir, "empty"))
+    writeFileSync(join(dir, "browse-bin"), "#!/bin/sh\n")
+    const assets = parseAssets([{ name: "speech", host: join(dir, "speech"), env: { UTILITIES_SPEECH_DIR: "", MODEL: "model.bin" } }, { name: "browse-bin", host: join(dir, "browse-bin") }, { name: "empty", host: join(dir, "empty") }, { name: "gone", host: join(dir, "gone") }])
+    assert.deepEqual(checkAssets(assets).map((r) => [r.name, r.ok]), [["speech", true], ["browse-bin", true], ["empty", false], ["gone", false]])
+    assert.match(checkAssets(assets)[2].why, /is empty/)
+    assert.match(checkAssets(assets)[3].why, /does not exist/)
+    assert.deepEqual(parseAssets(undefined), [])
+    assert.throws(() => parseAssets("x"), /must be a list/)
+    assert.throws(() => parseAssets([{ name: "Bad Name", host: "/x" }]), /lower-case words/)
+    assert.throws(() => parseAssets([{ name: "a", host: "relative" }]), /absolute path/)
+    assert.throws(() => parseAssets([{ name: "a", host: "/x,y" }]), /comma/)
+    assert.throws(() => parseAssets([{ name: "a", host: "/x", env: { V: "../up" } }]), /relative path inside the asset/)
+    assert.throws(() => parseAssets([{ name: "a", host: "/x", env: { "bad name": "" } }]), /relative path inside the asset/)
+    // the configuration reads them from the owner's caps.json, never from a case or an arm
+    const store = join(dir, "store")
+    mkdirSync(store)
+    writeFileSync(join(store, "caps.json"), JSON.stringify({ container: { assets: [{ name: "speech", host: join(dir, "speech"), env: { UTILITIES_SPEECH_DIR: "" } }] } }))
+    const config = containerConfig({ store, env: {} })
+    assert.equal(config.assets[0].name, "speech")
+    assert.equal(ASSETS_DIR, "/opt/evals/assets")
+    assert.equal(containerBackend(config).name, "container")
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test("a commit plan opens a write that touches only the trial's sandbox with `local: true`; any other write needs an extractor", () => {
+  const plan = { actions: ["charts_render", "slack_slack_send_message"], writes: { charts_render: { local: true }, slack_slack_send_message: { extract: "args.channel_id", allow: ["C0SANDBOX"] } } }
+  const policy = buildPolicy({ mode: "commit", commit: plan.writes })
+  const render = policy.writes.find((w) => w.action === "charts_render")
+  assert.equal(render.local, true)
+  assert.equal(decideBefore(policy, "charts_render", { spec: {} }).why, "a write that touches only the trial's own sandbox")
+  assert.equal(decideBefore(policy, "charts_quick", {}).pass, false, "charts_quick was not opened by the plan: deny by default")
+  assert.equal(decideBefore(policy, "slack_send_message", { channel_id: "C0ELSE" }).pass, false)
+  assert.equal(decideBefore(policy, "slack_send_message", { channel_id: "C0SANDBOX" }).pass, true)
+  assert.equal(decideBefore({ ...policy, mode: "refuse" }, "charts_render", {}).why, "left to the ask", "outside the commit set the ask stops it")
+})

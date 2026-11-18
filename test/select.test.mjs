@@ -41,9 +41,10 @@ test("a bare name the case's plugin declares is qualified, unless it is one of O
 
 test("the built-ins are the tested hosts' own: no bash, task, list, todoread or apply_patch, and search is not one", () => {
   assert.deepEqual([...BUILTIN_TOOLS].sort(), [
-    "artifact_create", "artifact_delete", "artifact_read", "artifact_update", "edit", "execute", "experimental_image_generate", "glob", "grep",
+    "artifact_create", "artifact_delete", "artifact_read", "artifact_update", "automation_create", "automation_delete", "automation_list",
+    "automation_pause", "automation_resume", "edit", "execute", "experimental_image_generate", "glob", "grep",
     "list_mcp_resources", "models", "patch", "question", "read", "read_mcp_resource", "schedule_create", "schedule_delete", "schedule_list",
-    "schedule_pause", "schedule_resume", "session_move", "session_rename", "shell", "skill", "subagent", "todowrite", "webfetch", "websearch",
+    "schedule_pause", "schedule_resume", "session_move", "session_rename", "shell", "skill", "subagent", "todowrite", "watch_mcp_event", "webfetch", "websearch",
     "worktree_create", "worktree_list", "worktree_remove", "write",
   ])
   assert.equal(qualify("search", scope), "history.search", "History's search is History's: there is no built-in search")
@@ -108,12 +109,12 @@ test("the built-in list is the pinned @opencode/core registry's tools, and Code 
   const version = JSON.parse(readFileSync(join(coreDir, "package.json"), "utf8")).version
   const built = readdirSync(join(coreDir, "dist", "chunks")).map((f) => readFileSync(join(coreDir, "dist", "chunks", f), "utf8")).join("\n")
   const registered = new Set([...built.matchAll(/name: "([a-z_]+)",/g)].map((m) => m[1]))
-  const MULTI = { artifact: ["artifact_create", "artifact_delete", "artifact_read", "artifact_update"], "mcp-resource": ["list_mcp_resources", "read_mcp_resource"], opencode: ["models", "session_move", "session_rename", "worktree_create", "worktree_list", "worktree_remove"], schedule: ["schedule_create", "schedule_delete", "schedule_list", "schedule_pause", "schedule_resume"], "file-diff": [] }
+  const MULTI = { artifact: ["artifact_create", "artifact_delete", "artifact_read", "artifact_update"], "mcp-resource": ["list_mcp_resources", "read_mcp_resource"], opencode: ["models", "session_move", "session_rename", "worktree_create", "worktree_list", "worktree_remove"], schedule: ["schedule_create", "schedule_delete", "schedule_list", "schedule_pause", "schedule_resume"], automation: ["automation_create", "automation_delete", "automation_list", "automation_pause", "automation_resume"], "mcp-events": ["watch_mcp_event"], "file-diff": [] }
   assert.deepEqual(multi.filter((file) => !(file in MULTI)), [], "a multi-tool plugin file the list does not account for")
   const expected = new Set([...single, ...multi.flatMap((file) => MULTI[file]), "execute"])
   for (const tool of multi.flatMap((file) => MULTI[file])) assert.ok(registered.has(tool), `${version} registers ${tool}`)
   const listed = new Set(BUILTIN_TOOLS)
   for (const tool of expected) assert.ok(listed.has(tool), `${tool} (@opencode/core ${version}) is in BUILTIN_TOOLS`)
   // A name the list holds beyond this version's registry must come from another tested version (artifact_* is 2.2.5+).
-  for (const tool of listed) if (!expected.has(tool)) assert.match(tool, /^artifact_/, `${tool} is in no tested registry`)
+  for (const tool of listed) if (!expected.has(tool)) assert.match(tool, /^(artifact_|schedule_)/, `${tool} is in no tested registry`)
 })

@@ -170,7 +170,9 @@ async function prepareModelAuth(profile, { binary, caller = process.env, horizon
   if (!realHome || !existsSync(join(realHome, ".claude"))) throw new Error("--auth claude-agent: no ~/.claude; sign in with `claude` first")
   if (!caller.CLAUDE_AGENT_SDK_VERSION) throw new Error("--auth claude-agent: set CLAUDE_AGENT_SDK_VERSION (the version the Claude Agent provider runs with)")
   const name = caller.EVALS_AUTH_CREDENTIAL ?? "Claude Agent"
-  const exported = await runToEnd(binary, ["auth", "export", name], { env: caller, timeoutMs: 30_000 })
+  // EVALS_AUTH_STANDALONE=1: the marker is read from a private server, not the background service, for a probe whose caller HOME is a
+  // scratch directory holding a dummy sign-in (the owner's real service is never involved).
+  const exported = await runToEnd(binary, ["auth", "export", name, ...(caller.EVALS_AUTH_STANDALONE ? ["--standalone"] : [])], { env: caller, timeoutMs: 30_000 })
   if (exported.code !== 0 || !exported.stdout.trim()) throw new Error(`--auth claude-agent: \`opencode auth export ${JSON.stringify(name)}\` failed (exit ${exported.code}); is the credential stored?`)
   const credential = exported.stdout
   // The access token alone, held in memory; the caller's file is never written, and nothing of it copied. It is read
