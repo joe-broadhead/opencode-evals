@@ -1,7 +1,10 @@
 // Plugins that run with no account (the owner's decision: GitHub and Jira are not signed in to the evals profile, whatever their clients'
 // risk to the real profile). A plugin's setting is `accounts`:
 //   "signed-in"  the default: its trials hold the evals profile's credential for it
-//   "none"       its cases run with no credential. Its tools exist only after a sign-in, so a call to one is an attempt that finds no tool.
+//   "fake"       GitHub's and Jira's setting: no account and no real endpoint, and still measurable. The harness's own fake MCP server serves the
+//                plugin's released tool list (packs/<id>/mcp.json) and answers from a synthetic fixture; the plugin runs as released, pointed at it
+//                by an MCP override in the sealed config. See src/run/fake-mode.mjs. Its cases are `Data: synthetic`.
+//   "none"       its cases run with no credential and no server. Its tools exist only after a sign-in, so a call to one is an attempt that finds no tool.
 //                Writes stay graded at the declined call (nothing reaches the vendor); reads are graded on tool choice and arguments, and on
 //                an honest "not signed in" answer rather than invented data. A case that reads nothing needs no target and no canary, is not
 //                deferred for lack of a credential, and is not held by the data sign-off (no third party's words reach any model).
@@ -12,7 +15,7 @@ import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { seedPlugins } from "../case/schema.mjs"
 
-export const ACCOUNTS = ["signed-in", "none"]
+export const ACCOUNTS = ["signed-in", "none", "fake"]
 
 function roundConfig(store) {
   try {
@@ -24,16 +27,25 @@ function roundConfig(store) {
   }
 }
 
-/** The plugins that run with no account: the packs' `accounts: "none"`, as the store's round.json overrides them. */
-export function noAccountPlugins({ packs = [], store = null } = {}) {
-  const out = new Set(packs.filter((pack) => pack.accounts === "none").map((pack) => pack.id))
+/** The plugins whose setting is `mode`: the packs' `accounts`, as the store's round.json overrides them. */
+function pluginsWith(mode, { packs = [], store = null } = {}) {
+  const out = new Set(packs.filter((pack) => pack.accounts === mode).map((pack) => pack.id))
   const overrides = store ? roundConfig(store).accounts ?? {} : {}
   for (const [id, value] of Object.entries(overrides)) {
-    if (value === "none") out.add(id)
-    else if (value === "signed-in") out.delete(id)
+    if (value === mode) out.add(id)
+    else if (ACCOUNTS.includes(value)) out.delete(id)
   }
   return out
 }
+
+/** The plugins that run with no account and no server (`accounts: "none"`): not measurable. */
+export const noAccountPlugins = (options) => pluginsWith("none", options)
+
+/** The plugins that run against the harness's fake MCP server (`accounts: "fake"`): no account, no real endpoint, measurable. */
+export const fakePlugins = (options) => pluginsWith("fake", options)
+
+/** The plugins that hold no credential in a trial, of either kind: nothing is asked of the evals profile for them and no vendor host is opened. */
+export const noCredentialPlugins = (options) => new Set([...noAccountPlugins(options), ...fakePlugins(options)])
 
 /** The plugins a case uses: its own and every one its `Seed: plugins=` names. */
 export const pluginsOf = (caseObject) => [...new Set([caseObject.plugin, ...seedPlugins(caseObject.seed)])]

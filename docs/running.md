@@ -110,18 +110,31 @@ and three in a row pause the model for 30 minutes; a spending plugin (Tavily, X,
 supplies a fetcher, from the vendor's own balance. `scripts/wide-skeletons.mjs --plugin <id>` writes one wide skeleton per reachable
 tool, whose prompt is `<<TODO>>` (compile refuses it) so it is written without sight of the tool's description.
 
-## The owner's decisions: the data matrix, no account for GitHub and Jira, the sign-in walk
+## The owner's decisions: the data matrix, GitHub and Jira in fake mode, the sign-in walk
 
 - **Data.** `$EVALS_STORE/data-matrix.json` is `{"real":["claude-agent/*"],"candidate":["claude-agent/*"]}`: real and candidate data go to Claude Haiku and
   Sonnet and to no DeepSeek or other route. `gateCases` reads it that way (test/owner-decisions.test.mjs runs a fixture copy; the repository holds no such file).
-- **GitHub and Jira are not signed in.** Their packs say `accounts: none` (and `$EVALS_STORE/round.json`, `{ "accounts": { "<plugin>": "none" | "signed-in" } }`,
-  overrides any plugin's setting without a commit). A plugin with `accounts: none` runs its cases with **no credential**: `+profile` gives it none and asks the profile
-  for nothing, its hosts are not opened, and `evals phase1` expects no sign-in for it. Its tools exist only after a sign-in, so a call to one is an attempt that finds
-  no tool. **Writes** stay graded at the declined call (nothing reaches the vendor). **Reads** are graded on tool choice and arguments, and on an **honest answer**: an item
-  `<prefix>-NA01` (major) passes on an answer that says the account is not signed in or cannot be reached, and fails on an answer that does not (a result it made up). A
-  `target:` clause on such a plugin and a canary clause are n/a, not unverifiable. Such a case is **not deferred** for lack of a credential, a target or a canary: an unfillable
-  `{{target:...}}` is named (`<github sandbox repo>`), not looked up, and a case whose every plugin has no account reads no one's words, so the data sign-off has nothing to hold
-  (a case that also uses a signed-in plugin is gated by that plugin's data as before). The honest-answer test is a heuristic over the answer's words.
+- **GitHub and Jira are not signed in, and are measured in fake mode.** Their packs say `accounts: fake` (and `$EVALS_STORE/round.json`,
+  `{ "accounts": { "<plugin>": "fake" | "none" | "signed-in" } }`, overrides any plugin's setting without a commit). A fake-mode plugin holds **no credential**:
+  `+profile` gives it none and asks the profile for nothing, its hosts are not opened, `evals phase1` expects no sign-in for it, and the egress proxy refuses
+  `api.github.com`, `api.githubcopilot.com`, `*.atlassian.net` and the vendors' MCP hosts. The plugin runs **as released**; the harness's own fake MCP server
+  (`src/fake/mcp-server.ts`, one per trial, on loopback) stands in for the vendor's:
+  - **What the model sees** is the released tool list: `packs/<id>/mcp.json` holds each tool's name, description, input schema and annotations
+    (`scripts/mcp-catalog.mjs` builds it). GitHub's 98 tools are 91 exact snapshots from github-mcp-server's `__toolsnaps__` (v2.2.0) and 7 remote-only tools that are
+    `derived` (a name, a neutral description, an open schema); Jira's 46 are a signed-in host's Code Mode listing turned back into JSON Schema
+    (`src/fake/ts-signature.mjs`; Array item types are lost in that rendering), and 9 destructive tools the sign-in's scope does not grant are `unserved`, as for a user. The
+    plugin's own tools (`events_list`, GitHub's `api`) are registered by the plugin itself. Vendor example addresses are rewritten to `example.org`.
+  - **Where it points**: the sealed config's `mcp` override names a server `github` or `jira` on the fake's loopback port, which the plugin leaves untouched (its
+    documented rule for a server of its own name; neither plugin has a server-URL option). The batch preflight points it at a closed port, so it makes no request.
+  - **What it answers** comes from a small synthetic fixture (`src/fake/fixtures/<id>.mjs`: org `fabrikam-labs`, repo `quill-notes`; site `quill-labs.invalid`, project QLN), invented
+    names only. A write that ever reached it would answer "Nothing was changed", but writes are still **asked and declined** and graded at the declined call.
+  - **Grading**: a read is graded on tool choice and arguments (`call:`, `target:`), plus an outcome item against the fixture, `text:<span> contains @fixture.<plugin>.<fact>`
+    (every value of a list; a number stands alone, 4 is not 14; the fact must exist in the fixture, checked at compile time), so an answer made up instead of read fails.
+  - **`Data: synthetic`** is the only data a fake-mode plugin's case may declare (compile refuses anything else), so no sign-off is needed and DeepSeek may run them.
+  - **The probe**: `evals p0 fake` shows, per plugin, that the model sees the pack's full tool list, a read returns the fixture's data, a write is asked and declined and never
+    reaches the fake, no request reached the egress proxy at all, and the proxy refuses the vendors' hosts.
+  - **`accounts: none`** stays as a generic setting for any other plugin: no credential and no server. Its tools exist only after a sign-in, so call, target and canary clauses on
+    them are n/a, and the honest-answer item `<prefix>-NA01` (a heuristic over the answer's words) is **minor**. Such a case is not deferred for a credential, a target or a canary.
 - **Slack, X and Google use the apps already configured**: no second Slack app, no second X app, no separate Google client. They are not owner prerequisites; `check-real`
   still runs right after each of their sign-ins, and it is the check that says whether the shared app broke the normal profile.
 - **The owner's sign-in walk: `~/evals-232/bin/signin.sh`** (installed by `scripts/profile/install.sh`). It signs the evals profile into the vendors, one at a time, in the plan's
@@ -156,8 +169,9 @@ rejection shows as `EVALS-ASSERT access` and halts) and `guard: false` stays ref
 Also from the re-check (head 5001f74): the `Data:` minimum is derived from the plugin a case uses and every plugin its `Seed: plugins=` names, the
 highest wins (granola, wisprflow, plaud and affinity read other people's words: `real`; metaview and ashby: `candidate`); a seed's paths are checked at any
 depth (`api/opencode.json`, `sub/AGENTS.md`, any `.claude/`, `.agents/` or `.opencode/` except `.opencode/jobs/` data files); a wide case's blocker may
-not rest on an argument path no signature in the pack declares (`args` on a pack tool, or make it a major item); `evals select <iteration>` writes the trials
-that selected cases and `evals report` judges the baseline on the others by itself (`--no-fresh` for every trial); `evals policy` computes no interval, only
+not rest on an argument path no signature in the pack declares (`args` on a pack tool, or make it a major item); `evals select <iteration>` writes, once, the first-pass
+trial of each **wide** case that did not strictly pass (it refuses to overwrite the list; deep cases and later trials are never recorded) and `evals report` judges the baseline on the
+others by itself, applying the list to wide cases only (`--no-fresh` for every trial; `--cases-dir` for cases outside the repository); `evals policy` computes no interval, only
 `evals report` decides the statistical claim; a URL from `opencode service status` is a running service, so the profile's port is set once.
 
 ## The G0 review's changes (PR #8 at d7b6edf)
@@ -201,7 +215,7 @@ An independent review of the harness found six things that block the first run t
 - **Grammar**: a positive `call:`, `first:` or `before:` glob in a wide case, `absent-arg:`, and a canary that the prompt fills and an item grades are
   compile errors; `canaries.json` values must be random tokens of at least 8 characters.
 - **Which command decides**: `evals report` decides. Its interval is the case-cluster bootstrap (`src/report/cluster.mjs`: cases are the unit, models
-  and trials nested inside), `--selecting <file>` judges the baseline on the trials that did not select a case, and arms labelled `h1` and `cb-h1` get the
+  and trials nested inside), `--selecting <file>` judges the baseline on the trials that did not select a case (wide cases only), and arms labelled `h1` and `cb-h1` get the
   pooled holdout gate (the point estimate must not drop and the lower bound must stay above -5 points; two flipped holdouts hold a plugin). The older
   paired bootstrap is printed beside it. `evals policy` decides ship or hold on comparability and regressions.
 - **The live write probe** (`evals p0 live`, with `EVALS_PROFILE` and the owner's `live-writes.json`): one real write call per plugin at `ask-changes`

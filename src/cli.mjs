@@ -7,13 +7,13 @@
 //   evals lock     --plugin x [--epoch N]
 //   evals scorecard --iteration nx6 [--grading FILE] [--out FILE]
 //   evals policy   --a nx5 --b nx6 [--strict]
-//   evals report   <label>=<it>[,<it>...] ... [--plugin x] [--set all] [--cases ids] [--all-cases] [--detail] [--json]
+//   evals report   <label>=<it>[,<it>...] ... [--plugin x] [--set all] [--cases ids] [--cases-dir DIR] [--all-cases] [--detail] [--json]
 //   evals run      --plugin x --iteration it --model p/m --auth none|env:VAR|claude-agent [--cases ids] [--set tune]
 //                  [--trials K] [--parallel N] [--arm DIR|none] [--world DIR|FILE] [--host 2.2.6] [--dry-run]
 //                  [--isolation container|none] [--unsafe-no-isolation]   (container by default; none needs the flag)
 //                  [--accept-unknown-token-expiry]   (a claude-agent sign-in with no expiry: refused without it)
 //   evals truth    --plugin x --world DIR [--cases-dir DIR] [--set all]   each case's Truth: against the world's truth
-//   evals select   <iteration>   the trials that selected cases (a baseline is judged on the others)
+//   evals select   <iteration> [--plugin x] [--cases-dir DIR]   the wide cases' first-pass trials that selected them (once; a baseline is judged on the others)
 //   evals phase1   [--dry-run] [--from STEP] ...   the credentialed phase's gated order (docs/running.md#phase-1)
 //   evals halt     [--clear]   what halted the wave (a write that completed where none may), and clearing it
 //   evals p0       [a1|a2|a3|a4|a5|c|g|p13|all] [--companions FILE]   the safety probes G0 rests on: scripted model or a capture server, no credential
@@ -27,7 +27,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, mkdtem
 import { tmpdir } from "node:os"
 import { readVersions, extractRelease } from "./pack/release.mjs"
 import { readHalt, clearHalt } from "./run/halt.mjs"
-import { noAccountPlugins, pluginsOf, usesOnlyNoAccount } from "./run/accounts.mjs"
+import { noAccountPlugins, noCredentialPlugins, pluginsOf, usesOnlyNoAccount } from "./run/accounts.mjs"
 import { loadPacks } from "./run/lockdown.mjs"
 import { join, dirname, resolve, basename } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -61,7 +61,7 @@ import { builtinCollisions } from "./grade/select.mjs"
 import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
 import { rawCallArgs } from "./trace/rawArgs.mjs"
 import { loadTargets, loadCanaries } from "./grade/targets.mjs"
-import { compare as compareArms, renderReport, holdoutOf, selectingTrials } from "./report/arms.mjs"
+import { compare as compareArms, renderReport, holdoutOf, selectingTrials, wideCaseIds, caseOfTrial } from "./report/arms.mjs"
 import { runBatch, batchTmp, truthCheck } from "./run/runner.mjs"
 import { loadWorld } from "./run/world.mjs"
 import { renderTruthProblem } from "./case/truth.mjs"
@@ -558,13 +558,19 @@ export async function main(argv) {
       return
     }
     case "select": {
-      // The trials of a graded iteration that did not strictly pass: they selected their cases, so the baseline is judged on the others.
+      // The wide cases' first-pass trials that did not strictly pass: they selected their cases, so the baseline is judged on the others. Recorded
+      // once (an existing list is never overwritten: a second pass would count the first one's fresh trials as selecting), for wide cases only.
       const iteration = segment("iteration", opt.iteration && opt.iteration !== true ? opt.iteration : opt._[0])
       const file = join(storePath(), "results", iteration, "verdicts.json")
       if (!existsSync(file)) throw new Error(`not graded: ${iteration} (run evals grade --iteration ${iteration})`)
-      const list = selectingTrials(JSON.parse(read(file)))
-      write(join(storePath(), "results", iteration, "selecting.json"), json(list))
-      console.log(`${iteration}: ${list.length} selecting trial(s) written to results/${iteration}/selecting.json; evals report reads it for the baseline`)
+      const target = join(storePath(), "results", iteration, "selecting.json")
+      if (existsSync(target)) throw new Error(`${iteration} already has results/${iteration}/selecting.json: it is recorded once, from the first pass, and never overwritten`)
+      const runs = JSON.parse(read(file))
+      const plugin = opt.plugin && opt.plugin !== true ? opt.plugin : runs.find((r) => r.plugin)?.plugin
+      if (!plugin) throw new Error("evals select <iteration> --plugin <id>: the iteration's verdicts do not say which plugin's cases they are")
+      const list = selectingTrials(runs, wideCaseIds(pluginCases(plugin, { dir: opt["cases-dir"] && opt["cases-dir"] !== true ? opt["cases-dir"] : null })))
+      write(target, json(list))
+      console.log(`${iteration}: ${list.length} selecting trial(s) written to results/${iteration}/selecting.json; evals report reads it for the baseline (wide cases only)`)
       return
     }
     case "phase1": {
@@ -578,7 +584,7 @@ export async function main(argv) {
         caller,
         opencode: caller.OPENCODE_BIN ?? caller.EVALS_OPENCODE_BIN ?? "opencode",
         profile: caller.EVALS_PROFILE ?? null,
-        noAccount: noAccountPlugins({ packs: loadPacks(), store }),
+        noAccount: noCredentialPlugins({ packs: loadPacks(), store }),
         vendors: str(opt.vendors)?.split(",").filter(Boolean) ?? [],
         logout: str(opt.logout),
         pilot: Boolean(opt.pilot),
@@ -693,7 +699,7 @@ export async function main(argv) {
       }
       const loaded = arms.map((arm) => ({ ...arm, results: arm.iterations.map((iteration) => ({ iteration, results: verdictsOf(iteration) })) }))
       const plugin = opt.plugin ?? loaded[0].results[0]?.results.find((r) => r.plugin)?.plugin ?? "x"
-      const caseList = pluginCases(plugin)
+      const caseList = pluginCases(plugin, { dir: opt["cases-dir"] && opt["cases-dir"] !== true ? opt["cases-dir"] : null })
       const meta = new Map(caseList.map((c) => [c.id, c]))
       const keep = new Set(selectCases(caseList, { patterns: opt.cases ?? "*", set: opt.set ?? "all" }).selected.map((c) => c.id))
       // A time-window case (`Seed: time=day`) asks about the world's day: a run recorded on another UTC day asked a
@@ -717,8 +723,11 @@ export async function main(argv) {
       }))
       // `--selecting <file>`: a JSON list of `<case>#<model>#<trial>` that selected a case; the baseline is judged on the others (fresh trials).
       // Else the baseline's own `selecting.json` files (`evals select`), read automatically; `--no-fresh` compares on every trial.
-      const own = opt["no-fresh"] ? [] : loaded[0].iterations.map((it) => join(storePath(), "results", it, "selecting.json")).filter((f) => existsSync(f)).flatMap((f) => JSON.parse(read(f)))
-      const selecting = opt.selecting && opt.selecting !== true ? new Set(JSON.parse(read(opt.selecting))) : own.length ? new Set(own) : null
+      // Only wide cases are ever selected by a first pass: an entry for any other case (a deep one) is ignored, whoever wrote the list.
+      const wide = wideCaseIds(caseList)
+      const onlyWide = (list) => list.filter((entry) => wide.has(caseOfTrial(entry)))
+      const own = opt["no-fresh"] ? [] : loaded[0].iterations.map((it) => join(storePath(), "results", it, "selecting.json")).filter((f) => existsSync(f)).flatMap((f) => onlyWide(JSON.parse(read(f))))
+      const selecting = opt.selecting && opt.selecting !== true ? new Set(onlyWide(JSON.parse(read(opt.selecting)))) : own.length ? new Set(own) : null
       const report = compareArms(armsIn, { allCases: Boolean(opt["all-cases"]), resamples: Number(opt.resamples ?? 5000), selecting })
       // Arms labelled `h1` and `cb-h1` (the holdout run of the adopted variants and its concurrent baseline): the pooled gate.
       const h1 = report.rows.find((row) => row.label === "h1")

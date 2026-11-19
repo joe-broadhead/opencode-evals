@@ -174,6 +174,12 @@ test("P0-env: no launcher credential reaches a trial, and the image, video, sear
   assert.equal(result.ok, true, show(result))
 })
 
+test("P0-fake: in fake mode the model sees the pack's full tool list, a read returns the fixture's data, a write is asked and declined, and no request leaves for a real host (GitHub, Jira)", needsBuilds, async () => {
+  const result = await PROBES.fake(env)
+  assert.equal(result.ok, true, show(result))
+  for (const id of ["github", "jira"]) assert.ok(result.checks.some((c) => c.ok && c.name.startsWith(`${id}: no request left the trial`)), id)
+})
+
 test("P0-halt: a write that completes outside commit mode halts the wave: nothing more launches, in the batch or the next", needsBuilds, async () => {
   const result = await PROBES.halt(env)
   assert.equal(result.ok, true, show(result))

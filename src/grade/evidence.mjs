@@ -9,6 +9,7 @@ import { selectCalls } from "./select.mjs"
 import { aliasValues, norm } from "./targets.mjs"
 import { gwsPlanFacts } from "./gws.mjs"
 import { writeIndex, writeOf } from "./writes.mjs"
+import { fixtureFacts } from "../fake/facts.mjs"
 
 const aliasList = (text) => text.split(",").map((part) => part.trim())
 
@@ -144,6 +145,16 @@ export function parseClause(text) {
   //   text:<span> contains @canary.<name>   the answer states the seeded fact (every value, for a list)
   m = /^text:(last-line|any|first-line|first-paragraph)\s+contains\s+@canary\.([A-Za-z0-9_.-]+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: "canary", span: m[1], name: m[2] } }
+
+  //   text:<span> contains @fixture.<plugin>.<fact>   the answer states what the harness's fake server holds (fake mode): an answer
+  //   that was invented, not read from the fixture, does not (every value, for a list). The fact must exist in the fixture.
+  m = /^text:(last-line|any|first-line|first-paragraph)\s+contains\s+@fixture\.([a-z][a-z0-9-]*)\.([A-Za-z0-9_]+)$/.exec(line)
+  if (m) {
+    const facts = fixtureFacts(m[2])
+    if (!facts) return { ok: false, why: `@fixture.${m[2]}.${m[3]}: no fake fixture for ${m[2]} (fake mode: ${fixtureFacts.known().join(", ")})` }
+    if (!(m[3] in facts)) return { ok: false, why: `@fixture.${m[2]}.${m[3]} is not a fact of the ${m[2]} fixture (${Object.keys(facts).join(", ")})` }
+    return { ok: true, clause: { kind: "fixture", span: m[1], plugin: m[2], name: m[3] } }
+  }
 
   m = /^state:([A-Za-z0-9_.-]+)\s+(==|!=)\s+(.+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: "state", path: m[1], op: m[2], value: parseValue(m[3]) } }
@@ -508,6 +519,15 @@ export function evaluateClause(clause, view) {
       const hit = view.events.filter((event) => (event.kind === "tool_result_error" && event.unknown === true) || (event.kind === "tool_result" && event.error_class === "unknown_tool"))
       return hit.length ? { state: "fail", detail: `${hit.length} call(s) named a tool that does not exist` } : { state: "ok", detail: "every call named a tool that exists" }
     }
+    case "fixture": {
+      const value = fixtureFacts(clause.plugin)?.[clause.name]
+      if (value === undefined) return { state: "unverifiable", detail: `@fixture.${clause.plugin}.${clause.name} is not in the fixture` }
+      const span = textSpan(view.answer?.text ?? null, clause.span)
+      if (span === null) return { state: "unverifiable", detail: "answer text not available (private recording absent)" }
+      const values = [].concat(value).map(String)
+      const missing = values.filter((v) => !states(span, v))
+      return missing.length ? { state: "fail", detail: `the answer does not state ${missing.length} of ${values.length} value(s) of @fixture.${clause.plugin}.${clause.name}: it was not read from the fixture` } : { state: "ok", detail: `the answer states @fixture.${clause.plugin}.${clause.name}` }
+    }
     case "canary": {
       const values = view.canaries?.get(clause.name)
       if (!values) return { state: "unverifiable", detail: `@canary.${clause.name} is not in the canaries file` }
@@ -526,4 +546,11 @@ export const sameToolName = (a, b) => {
   const n = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_")
   const [x, y] = [n(a), n(b)]
   return Boolean(x && y) && (x === y || x.endsWith(`_${y}`) || y.endsWith(`_${x}`))
+}
+
+/** Does `text` state `value`? A number stands alone (4 is not 14), anything else is a case-insensitive substring. */
+function states(text, value) {
+  const hay = String(text).toLowerCase()
+  const want = String(value).toLowerCase()
+  return /^\d+$/.test(want) ? new RegExp(`(^|[^0-9])${want}([^0-9]|$)`).test(hay) : hay.includes(want)
 }

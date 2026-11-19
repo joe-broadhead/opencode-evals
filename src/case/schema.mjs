@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 // The compiled case: `oc-case/1`. Strict on purpose — a case that cannot be validated is a case that
 // would fail differently tomorrow.
@@ -52,6 +52,19 @@ export function dataMinimum(caseObject) {
     if (kind && (!best || DATA_KINDS.indexOf(kind) > DATA_KINDS.indexOf(best.kind))) best = { kind, plugin }
   }
   return best
+}
+
+/** The plugins whose pack says `accounts: "fake"`: their cases read the harness's synthetic fixture, so their data is `synthetic` and nothing else. */
+export const fakeModePlugins = () => {
+  const out = new Set()
+  for (const id of packPlugins()) {
+    try {
+      if (JSON.parse(readFileSync(join(PACKS_DIR, id, "pack.json"), "utf8")).accounts === "fake") out.add(id)
+    } catch {
+      // a pack that cannot be read is not in fake mode
+    }
+  }
+  return out
 }
 
 /** The plugins this repository holds a pack for: the round's own corpora (a fixture plugin of a test has none). */
@@ -148,6 +161,7 @@ export function validateCase(caseObject, file = "<case>") {
   }
   if (caseObject.data === undefined && !isLegacyCase(caseObject)) bad(`Data is required (one of ${DATA_KINDS.join(", ")}): it says whose words the case reads, and a case that omits it would be taken for synthetic. Add \`- Data: ...\` to the header`)
   if (!isLegacyCase(caseObject) && packPlugins().has(caseObject.plugin) && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)) bad(`a case declares one of this round's sets (${Object.keys(ROUND_SETS).join(", ")}): \`- Set: ...\`; only the history, x and charts corpora written before it are exempt`)
+  if (caseObject.data !== undefined && caseObject.data !== "synthetic" && fakeModePlugins().has(caseObject.plugin)) bad(`a ${caseObject.plugin} case runs against the harness's synthetic fixture (fake mode): declare \`- Data: synthetic\`, not ${caseObject.data}`)
   const minimum = caseObject.data !== undefined ? dataMinimum(caseObject) : null
   if (minimum && DATA_KINDS.indexOf(caseObject.data) < DATA_KINDS.indexOf(minimum.kind)) bad(`a case that uses ${minimum.plugin}${minimum.plugin === caseObject.plugin ? "" : " (Seed: plugins=)"} reads ${minimum.kind} data${minimum.kind === "candidate" ? " (HR records)" : " (other people's words)"}, not ${caseObject.data}: declare \`- Data: ${minimum.kind}\` (or higher)`)
   if (caseObject.data !== undefined && !DATA_KINDS.includes(caseObject.data)) bad(`Data must be one of ${DATA_KINDS.join(", ")}, not ${JSON.stringify(caseObject.data)}`)

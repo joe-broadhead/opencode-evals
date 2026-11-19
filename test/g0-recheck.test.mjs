@@ -157,33 +157,73 @@ test("5: a blocker in a wide case that rests on an argument path no signature de
 
 // ---------------------------------------------------------------------------------------------- 6: the selecting trials
 
-test("6: evals select records the trials that selected cases, and evals report judges the baseline on the others by itself", () => {
-  const run = (id, trial, pass, model = "m") => ({ case: id, trial, model, verdict: pass ? "PASS" : "FAIL", items: [{ id: "X-PR01", state: pass ? "pass" : "fail", severity: "blocker" }], budget: {} })
-  const runs = [run("c0", 1, false), run("c0", 2, true), run("c1", 1, true), { case: "c2", trial: 1, verdict: "NOT_RUN" }, run("c3", 3, false, "ds")]
-  assert.deepEqual(selectingTrials(runs), ["c0#m#1", "c3#ds#3"])
+const caseBody = (id, set) => `# ${id}\n- Plugin: slack\n- Skill under test: slack\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: seeded\n- Set: ${set}\n\n## Prompt\np\n\n## Items\n- [SLK-TR01] major · It answers.\n  evidence: text:any matches /./\n`
+const writeCases = (dir, specs) => {
+  mkdirSync(dir, { recursive: true })
+  for (const [id, set] of specs) writeFileSync(join(dir, `${id}.json`), JSON.stringify(compileCase(`cases/slack/${id}.md`, caseBody(id, set))))
+}
+const verdict = (id, trial, pass, model = "m") => ({ case: id, plugin: "slack", trial, model, verdict: pass ? "PASS" : "FAIL", items: [{ id: "SLK-TR01", state: pass ? "pass" : "fail", severity: "major" }], budget: {} })
+
+test("6: selectingTrials takes the first-pass trial of each wide case and model, once, and never a deep case's", () => {
+  const wide = new Set(["tools-a", "tools-b", "tools-c"])
+  const runs = [
+    verdict("tools-a", 1, false), verdict("tools-a", 2, false), verdict("tools-a", 3, true), // first fails: recorded once, not the later failure
+    verdict("tools-b", 1, true), verdict("tools-b", 2, false), // first passes: not selected, a later failure is a fresh draw
+    verdict("tools-c", 2, false), verdict("tools-c", 1, false, "ds"), verdict("tools-c", 3, false, "ds"), // per model, lowest trial; order of the file does not matter
+    verdict("deep-x", 1, false), verdict("deep-x", 2, false), // a deep case is never selected
+    { case: "tools-d", trial: 1, verdict: "NOT_RUN" },
+  ]
+  wide.add("tools-d")
+  assert.deepEqual(selectingTrials(runs, wide), ["tools-a#m#1", "tools-c#ds#1", "tools-c#m#2"])
+  assert.deepEqual(selectingTrials(runs, new Set()), [])
+  assert.throws(() => selectingTrials(runs), /needs the set of wide case ids/)
+})
+
+test("6: evals select records the wide cases' first-pass trials once and refuses to overwrite; evals report applies the list to wide cases only", () => {
   const root = scratch()
   try {
     const store = join(root, "store")
+    const casesDir = join(root, "cases")
+    writeCases(casesDir, [["tools-w-one", "wide"], ["tools-w-two", "wide"], ["deep-d-one", "deep"]])
     mkdirSync(join(store, "results", "base1"), { recursive: true })
+    const runs = [verdict("tools-w-one", 1, false), verdict("tools-w-one", 2, true), verdict("tools-w-one", 3, true), verdict("tools-w-two", 1, true), verdict("tools-w-two", 2, true), verdict("tools-w-two", 3, true), verdict("deep-d-one", 1, false), verdict("deep-d-one", 2, true), verdict("deep-d-one", 3, true)]
     writeFileSync(join(store, "results", "base1", "verdicts.json"), JSON.stringify(runs))
     const evals = (...args) => spawnSync(process.execPath, [join(import.meta.dirname, "..", "bin", "evals"), ...args], { encoding: "utf8", env: { PATH: process.env.PATH, EVALS_STORE: store, HOME: root } })
-    const out = evals("select", "base1")
+    const out = evals("select", "base1", "--cases-dir", casesDir)
     assert.equal(out.status, 0, out.stderr)
-    assert.match(out.stdout, /base1: 2 selecting trial\(s\) written to results\/base1\/selecting\.json/)
-    assert.deepEqual(JSON.parse(readFileSync(join(store, "results", "base1", "selecting.json"), "utf8")), ["c0#m#1", "c3#ds#3"])
-    assert.match(evals("select", "nope").stderr, /not graded: nope/)
-    // the report reads it: the same comparison with and without
-    const arm = (label, iteration, outcomes) => ({ label, iterations: [iteration], runs: outcomes.flatMap(([id, list]) => list.map((o, i) => run(id, i + 1, o))) })
-    const base = arm("base", "base1", [["c0", [0, 1, 1]], ["c1", [1, 1, 1]]])
-    const next = arm("next", "n1", [["c0", [1, 1, 1]], ["c1", [1, 1, 1]]])
-    const withAll = compare([base, next]).comparisons[0].cluster
-    const fresh = compare([base, next], { selecting: new Set(JSON.parse(readFileSync(join(store, "results", "base1", "selecting.json"), "utf8"))) }).comparisons[0].cluster
-    assert.equal(fresh.fresh, true)
-    assert.ok(fresh.estimate < withAll.estimate, "the baseline's other trials pass more often than the one that selected the case")
-    const source = readFileSync(join(import.meta.dirname, "..", "src", "cli.mjs"), "utf8")
-    assert.match(source, /selecting\.json/)
-    assert.match(source, /--no-fresh|no-fresh/)
-    assert.equal(summarizeArm(base).cases, 2)
+    assert.match(out.stdout, /base1: 1 selecting trial\(s\) written to results\/base1\/selecting\.json/)
+    const file = join(store, "results", "base1", "selecting.json")
+    assert.deepEqual(JSON.parse(readFileSync(file, "utf8")), ["tools-w-one#m#1"], "the deep case's failed first trial is not recorded")
+    // recorded once: a second select, even after more trials, is refused and leaves the list as it was
+    const again = evals("select", "base1", "--cases-dir", casesDir)
+    assert.notEqual(again.status, 0)
+    assert.match(again.stderr, /already has results\/base1\/selecting\.json: it is recorded once/)
+    assert.deepEqual(JSON.parse(readFileSync(file, "utf8")), ["tools-w-one#m#1"])
+    assert.match(evals("select", "nope", "--cases-dir", casesDir).stderr, /not graded: nope/)
+    // the report: the baseline is judged on the trials that did not select. The wide case's failed first trial is out (so the baseline is 5 of 5 on wide), and
+    // the deep case keeps its failed first trial.
+    mkdirSync(join(store, "results", "n1"), { recursive: true })
+    writeFileSync(join(store, "results", "n1", "verdicts.json"), JSON.stringify(runs.map((r) => ({ ...r, verdict: "PASS", items: [{ id: "SLK-TR01", state: "pass", severity: "major" }] }))))
+    const report = (...extra) => {
+      const r = evals("report", "base=base1", "next=n1", "--plugin", "slack", "--cases-dir", casesDir, "--set", "wide,deep", "--json", "--resamples", "50", ...extra)
+      assert.equal(r.status, 0, r.stderr)
+      return JSON.parse(r.stdout).comparisons[0].cluster
+    }
+    const auto = report()
+    const all = report("--no-fresh")
+    assert.equal(auto.fresh, true, "evals report reads the baseline's selecting.json by itself")
+    assert.equal(all.fresh, false)
+    // next passes everything. Over every trial the baseline is 7 of 9; with the wide case's failed first trial out it is 7 of 8 (the deep case's failure stays),
+    // so the improvement shrinks: the baseline is not inflated by the wide trials taken out and the deep ones left in.
+    assert.ok(auto.estimate < all.estimate, `the automatic read removes the selecting trial: ${auto.estimate} against ${all.estimate}`)
+    // a list that names a deep case's trial (made by hand, or by an older evals select) does not remove it either
+    const hand = join(root, "hand.json")
+    writeFileSync(hand, JSON.stringify(["tools-w-one#m#1", "deep-d-one#m#1"]))
+    assert.equal(report("--selecting", hand).estimate, auto.estimate, "an entry for a deep case is ignored")
+    // with only the deep case's entry nothing is removed at all
+    const deepOnly = join(root, "deep.json")
+    writeFileSync(deepOnly, JSON.stringify(["deep-d-one#m#1"]))
+    assert.equal(report("--selecting", deepOnly).estimate, all.estimate, "a deep case's trial is never taken out")
   } finally {
     rmSync(root, { recursive: true, force: true })
   }

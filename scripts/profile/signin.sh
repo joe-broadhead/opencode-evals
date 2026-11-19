@@ -10,7 +10,7 @@
 #   ~/evals-232/bin/signin.sh --redo         forget what passed
 #   ~/evals-232/bin/signin.sh --yes          no Enter prompts (a vendor's own sign-in still opens its page)
 #
-# GitHub and Jira are NOT signed in: their cases run with no account (`accounts: none`). Slack, X and Google use the apps already configured: no
+# GitHub and Jira are NOT signed in: they run in fake mode (`accounts: fake`): no account, no real endpoint, the harness's own fake MCP server. Slack, X and Google use the apps already configured: no
 # second app or client. OpenRouter and Affinity are new (not in the normal profile): check-real only proves their evals sign-in.
 # On any failure it stops, names the vendor and prints the one-line fix. It prints no token: the sign-in is `opencode auth login` in the evals
 # profile, which handles its own secrets, and check-real prints only PASS or FAIL and the reason.
@@ -41,7 +41,7 @@ done
 known() { local x; for x in $ORDER; do [ "$x" = "$1" ] && return 0; done; return 1; }
 passed() { grep -qx "$1" "$PASSED"; }
 for v in $from $only; do
-  case " $EXCLUDED " in *" $v "*) echo "signin.sh: $v is not signed in: its cases run with no account (accounts: none)" >&2; exit 2 ;; esac
+  case " $EXCLUDED " in *" $v "*) echo "signin.sh: $v is not signed in: they run in fake mode (accounts: fake): no account, no real endpoint" >&2; exit 2 ;; esac
   known "$v" || { echo "signin.sh: no vendor $v: $ORDER" >&2; exit 2; }
 done
 [ "$redo" = 1 ] && : > "$PASSED"
@@ -49,7 +49,7 @@ done
 if [ "$list" = 1 ]; then
   n=0
   for v in $ORDER; do n=$((n+1)); printf '%2d. %-11s %s\n' "$n" "$v" "$(passed "$v" && echo passed || echo "not yet")"; done
-  echo "    (github and jira: not signed in; their cases run with no account)"
+  echo "    (github and jira: not signed in; they run in fake mode)"
   exit 0
 fi
 
@@ -90,4 +90,4 @@ for v in $ORDER; do
   echo "[$n/$total] $v: PASS"
 done
 echo
-echo "signin: every requested vendor is signed in and checked. GitHub and Jira are not signed in (accounts: none). Next: evals phase1"
+echo "signin: every requested vendor is signed in and checked. GitHub and Jira are not signed in (fake mode). Next: evals phase1"

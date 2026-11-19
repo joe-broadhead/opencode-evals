@@ -6,6 +6,7 @@
 
 import { sha256 } from "../util/canonical.mjs"
 import { strictPass } from "../grade/trials.mjs"
+import { inSets } from "../case/sets.mjs"
 import { clusterBootstrap, freshOnly, holdoutGate } from "./cluster.mjs"
 
 /** mulberry32: a small, fast, well-mixed 32-bit generator. Deterministic for a seed. */
@@ -180,11 +181,27 @@ export function renderReport({ rows, common, comparisons }, { detail = false } =
   return lines.join("\n")
 }
 
+/** The ids of the wide cases among `cases` (`Set: wide`, active): the only cases a baseline's first pass selects. */
+export const wideCaseIds = (cases) => new Set(cases.filter((c) => inSets(c, ["wide"])).map((c) => c.id))
+
+/** The case of a `<case>#<model>#<trial>` entry (case ids hold no `#`). */
+export const caseOfTrial = (entry) => String(entry).split("#")[0]
+
 /**
- * The trials that selected cases, from a graded iteration: every trial that did not strictly pass, as `<case>#<model>#<trial>` (trial from
- * 1). A wide case is chosen for a deeper look because a trial of it failed, so the baseline is compared on the other trials only; this list
- * is written beside the iteration's verdicts by `evals select` and read back by `evals report` (G0 re-check 14: no list made by hand).
+ * The trials that selected cases, from a graded iteration, as `<case>#<model>#<trial>` (trial from 1). Only a WIDE case is chosen for a
+ * deeper look, and only by its first pass: the first trial of each wide case and model, recorded when it did not strictly pass. A later
+ * trial of the same case is a fresh draw, and a deep case is never selected, so neither is taken out of the baseline (taking every
+ * non-passing trial out would leave the passing ones and inflate every baseline). `evals select` writes the list once, beside the
+ * iteration's verdicts; `evals report` reads it back for wide cases only.
  */
-export function selectingTrials(runs) {
-  return runs.filter((run) => run.verdict !== "NOT_RUN" && !strictPass(run)).map((run) => `${run.case}#${run.model ?? "model"}#${run.trial}`).sort()
+export function selectingTrials(runs, wide) {
+  if (!(wide instanceof Set)) throw new Error("selectingTrials needs the set of wide case ids (wideCaseIds(cases))")
+  const first = new Map()
+  for (const run of runs) {
+    if (run.verdict === "NOT_RUN" || !wide.has(run.case)) continue
+    const key = `${run.case}#${run.model ?? "model"}`
+    const seen = first.get(key)
+    if (!seen || run.trial < seen.trial) first.set(key, run)
+  }
+  return [...first.values()].filter((run) => !strictPass(run)).map((run) => `${run.case}#${run.model ?? "model"}#${run.trial}`).sort()
 }

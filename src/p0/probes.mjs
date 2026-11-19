@@ -781,4 +781,79 @@ export async function gws(env = {}) {
   }
 }
 
-export const PROBES = { a1, a2, a3, a4, a5, c, g, g8, halt, env: env_, live, p7, gws, p1, p2, p3, p4, p5, p13 }
+// ------------------------------------------------------------------------------------------------------------------ fake
+
+/** Code Mode source listing every tool of a namespace the model can see (no `]`: a scripted call cannot carry one). */
+const listTools = (ns) => `const names = new Array(); let o = 0; for (;;) { const r = await search({ namespace: '${ns}', limit: 100, offset: o }); names.push(...r.items.map((i) => i.path.replace('tools.${ns}.', ''))); if (!r.next) break; o = r.next.offset } return JSON.stringify(names)`
+
+/**
+ * Fake mode (`accounts: "fake"`, GitHub and Jira): the plugin is measured with no account and no real endpoint. Per plugin, one locked trial of the
+ * released build, pointed at the harness's fake MCP server by the sealed config's MCP override, with no credential, shows:
+ *   - the model sees the pack's full tool list (the catalog's tools, and the plugin's own), not the two own tools an unsigned plugin lists alone;
+ *   - a read returns the fixture's data, and the fake's log shows the call it got;
+ *   - a write is asked and declined, never reaching the fake;
+ *   - no request left the trial: nothing reached the egress proxy at all;
+ * and one local trial (shell on, no credential) shows the proxy refuses api.github.com, the vendors' MCP hosts and *.atlassian.net.
+ */
+export async function fake(env = {}) {
+  const { readCatalog, REAL_HOSTS } = await import("../run/fake-mode.mjs")
+  const { OWN_TOOLS } = await import("../../scripts/mcp-catalog.mjs")
+  const fixtures = { github: await import("../fake/fixtures/github.mjs"), jira: await import("../fake/fixtures/jira.mjs") }
+  const reads = {
+    github: execute("return await tools.github.list_issues({ owner: 'fabrikam-labs', repo: 'quill-notes', state: 'OPEN' })"),
+    jira: execute(`return await tools.jira.searchJiraIssuesUsingJql({ cloudId: '${fixtures.jira.CLOUD_ID}', jql: 'project = QLN AND assignee = currentUser()' })`),
+  }
+  const writes = {
+    github: execute("return await tools.github.add_issue_comment({ owner: 'fabrikam-labs', repo: 'quill-notes', issue_number: 1, body: 'me too' })"),
+    jira: execute(`return await tools.jira.addOrEditJiraIssueComment({ cloudId: '${fixtures.jira.CLOUD_ID}', issueIdOrKey: 'QLN-1', commentBody: 'me too' })`),
+  }
+  const checks = []
+  const net = [["github-api", "https://api.github.com/"], ["github-mcp", "https://api.githubcopilot.com/mcp/"], ["atlassian-mcp", "https://mcp.atlassian.com/v2/mcp"], ["atlassian-site", "https://quill-labs.atlassian.net/rest/api/3/myself"]]
+  for (const id of ["github", "jira"]) {
+    const catalog = readCatalog(id)
+    const own = OWN_TOOLS[id]
+    const cases = [{ id: `tools-fake-${id}-list`, prompt: execute(listTools(id)) }, { id: `tools-fake-${id}-read`, prompt: reads[id] }, { id: `tools-fake-${id}-write`, prompt: writes[id] }]
+    const run = await scriptedRun({ plugin: id, cases, arm: soloArm(env.companions, id, {}), options: { iteration: `p0-fake-${id}`, auth: "none" }, tmp: env.tmp })
+    try {
+      const [list, read, write] = cases.map((c) => run.trials[c.id])
+      const seen = (() => {
+        const v = executeValue(list.calls[0])
+        return Array.isArray(v) ? v : []
+      })()
+      const served = catalog.tools.map((t) => t.name)
+      const missing = served.filter((n) => !seen.includes(n))
+      const extra = seen.filter((n) => !served.includes(n) && !own.includes(n))
+      checks.push(ok(`${id}: the model sees the pack's full tool list (${served.length} served, from packs/${id}/mcp.json)`, served.length > 0 && missing.length === 0, missing.length ? `missing ${missing.slice(0, 6).join(", ")} of ${served.length}` : `${seen.length} tools listed`))
+      checks.push(ok(`${id}: nothing is listed that the pack does not hold (the plugin's own tools aside)`, extra.length === 0, extra.slice(0, 6).join(", ")))
+      checks.push(ok(`${id}: the plugin's own tools are there too (it ran as released)`, own.every((n) => seen.includes(n)), `own ${own.join(", ")}`))
+      const facts = fixtures[id].facts
+      const answer = textOf(read.calls[0])
+      const want = id === "github" ? facts.open_issue_titles : facts.assigned_to_ada_keys
+      checks.push(ok(`${id}: a read returns the fixture's data`, want.every((v) => answer.includes(v)), `wanted ${want.join(", ")}; got ${answer.slice(0, 100).replace(/\s+/g, " ")}`))
+      const log = run.trials[cases[1].id].fake[id] ?? []
+      checks.push(ok(`${id}: the fake served the read (its log has the list and the call)`, log.some((e) => e.ev === "tools/list") && log.some((e) => e.ev === "tools/call" && !e.unknown), `${log.length} request(s)`))
+      const wlog = run.trials[cases[2].id].fake[id] ?? []
+      checks.push(ok(`${id}: a write is asked and declined, and never reaches the fake`, (declinedIn(write.calls[0]) || /cannot ask the user|declined|rejected/i.test(textOf(write.calls[0])) || write.analysed.inner.declined >= 1) && !wlog.some((e) => e.ev === "tools/call"), textOf(write.calls[0]).slice(0, 100).replace(/\s+/g, " ")))
+      checks.push(ok(`${id}: the guard saw no write complete and no tool outside the allow-list`, (write.summary?.guard?.committed ?? 0) === 0 && (write.summary?.guard?.refused_tools ?? 0) === 0 && (read.summary?.guard?.refused_tools ?? 0) === 0, JSON.stringify(write.summary?.guard)))
+      checks.push(ok(`${id}: the plugin loaded`, [list, read, write].every((t) => (t.summary?.host_log?.plugin_load_failures ?? []).length === 0), JSON.stringify(list.summary?.host_log?.plugin_load_failures ?? [])))
+      const egress = run.egress ?? {}
+      const hosts = Object.keys({ ...egress.allowed, ...egress.refused, ...egress.failed })
+      checks.push(ok(`${id}: no request left the trial: nothing reached the egress proxy, allowed or refused`, hosts.length === 0, JSON.stringify({ allowed: egress.allowed, refused: egress.refused, failed: egress.failed })))
+    } finally {
+      run.cleanup()
+    }
+    // The local trial: with the shell on and no credential, a curl of each real host is refused by the proxy.
+    const curl = net.map(([name, url]) => ({ id: `curl-${name}`, prompt: mock("shell", { command: `curl -sS -m 6 -o /dev/null -w %{http_code} ${url}; true` }), extra: "- Set: local" }))
+    const probeRun = await scriptedRun({ plugin: id, cases: curl, arm: soloArm(env.companions, id, {}), options: { iteration: `p0-fake-net-${id}`, auth: "none", tools: "local", set: "local" }, tmp: env.tmp })
+    try {
+      const egress = probeRun.egress ?? {}
+      const refusedHosts = Object.keys(egress.refused ?? {})
+      checks.push(ok(`${id}: the proxy refuses ${REAL_HOSTS[id].slice(0, 2).join(", ")} and the vendors' other hosts, and allows nothing`, Object.keys(egress.allowed ?? {}).length === 0 && refusedHosts.length >= 2, JSON.stringify({ allowed: egress.allowed, refused: egress.refused })))
+    } finally {
+      probeRun.cleanup()
+    }
+  }
+  return done("fake", checks)
+}
+
+export const PROBES = { a1, a2, a3, a4, a5, c, g, g8, halt, env: env_, fake, live, p7, gws, p1, p2, p3, p4, p5, p13 }

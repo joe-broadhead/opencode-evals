@@ -427,7 +427,7 @@
       "body_lines": 95
     }
   },
-  "digest": "13e1ee981a3c227c3fc4a10786221912909f0e13400ede60e51d3736936bbb90",
+  "digest": "8c7b2f986466a2c18a5fb184e6f6ae7db025051906dce4088acb3d78e82bc782",
   "access": {
     "key": "access",
     "default": "all"
@@ -438,5 +438,5 @@
     "api.atlassian.com",
     "{target:jira.site}.atlassian.net"
   ],
-  "accounts": "none"
+  "accounts": "fake"
 }

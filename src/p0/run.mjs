@@ -8,7 +8,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import { join } from "node:path"
 import { runBatch } from "../run/runner.mjs"
 import { compileCase } from "../case/compile.mjs"
-import { DATA_MINIMUM } from "../case/schema.mjs"
+import { DATA_MINIMUM, fakeModePlugins } from "../case/schema.mjs"
 import { summarize, DECLINED_MARKER } from "../trace/analyse.mjs"
 
 /** `[[mock:tool:<name>:<json>]]`: the scripted model's one tool call. The arguments may not contain `]`. */
@@ -71,7 +71,7 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
   for (const c of cases) {
     // A probe of a plugin's own tools is a wide case of that plugin (its id `tools-...`), with the least `Data:` its reads allow.
     const own = plugin !== "p0"
-    const text = caseText(c.id, c.prompt, own && !/Set:/.test(c.extra ?? "") ? `- Set: wide\n${c.extra ?? ""}` : c.extra, plugin, own ? DATA_MINIMUM[plugin] ?? "seeded" : "synthetic")
+    const text = caseText(c.id, c.prompt, own && !/Set:/.test(c.extra ?? "") ? `- Set: wide\n${c.extra ?? ""}` : c.extra, plugin, own ? (fakeModePlugins().has(plugin) ? "synthetic" : DATA_MINIMUM[plugin] ?? "seeded") : "synthetic")
     writeFileSync(join(casesDir, `${c.id}.md`), text)
     writeFileSync(join(casesDir, `${c.id}.json`), JSON.stringify(compileCase(`cases/${plugin}/${c.id}.md`, text)))
   }
@@ -97,6 +97,7 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
   }
   const everything = existsSync(raw) ? readdirSync(raw).map((name) => readFileSync(join(raw, name), "utf8")).join("\n") : ""
   for (const c of cases) trials[c.id].mock = readLines(join(raw, `${c.id}.t1.mock.jsonl`)).map((l) => JSON.parse(l))
+  for (const c of cases) trials[c.id].fake = Object.fromEntries(readdirSync(raw).filter((name) => name.startsWith(`${c.id}.t1.fake-`) && name.endsWith(".jsonl")).map((name) => [name.replace(`${c.id}.t1.fake-`, "").replace(/\.jsonl$/, ""), readLines(join(raw, name)).map((l) => JSON.parse(l))]))
   for (const c of cases) trials[c.id].capture = readLines(join(raw, `${c.id}.t1.capture.jsonl`)).map((l) => JSON.parse(l))
   return { root, store, raw, result, log, trials, everything, egress: result.egress ?? null, ledger: readLedgerFile(store), cleanup: () => rmSync(root, { recursive: true, force: true }), keep }
 }

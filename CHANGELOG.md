@@ -6,6 +6,11 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 EVALS-232: the harness for a round that runs every plugin against live accounts (lane L1).
 
+### Fixed
+
+- **`evals select`** recorded every non-passing trial, which inflated every baseline. It now records only the first-pass trial of each wide case, once, refuses to overwrite `selecting.json`, and
+  `evals report` applies the list to wide cases only (deep cases are untouched; `--cases-dir` on both).
+
 ### Added
 
 - **Locked runs** (`--tools locked`, the default): the sealed config removes the shell, file, web and subagent tools, puts an `ask`
@@ -44,8 +49,9 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
   `Seed: plugins=`, seed paths at any depth, the mid-batch HALT re-read tested, an idempotent profile port, wide blockers on undeclared argument paths refused,
   `evals select` and automatic fresh baselines, `@alias` placeholders in the live probes, and the defence-in-depth tests.
 
-- **The owner's decisions**: `accounts: none` (GitHub and Jira run with no credential, graded on tool choice, arguments and an honest "not signed in" answer;
-  never deferred for a credential, target or canary), the data matrix gate tested with a fixture, Slack, X and Google on their existing apps, `phase1` without
+- **The owner's decisions**: GitHub and Jira in **fake mode** (`accounts: fake`: no account, no real endpoint; the harness's own fake MCP server serves each plugin's released tool
+  list from `packs/<id>/mcp.json` and answers from a synthetic fixture; reads graded with `@fixture.<plugin>.<fact>`, writes asked and declined; `Data: synthetic`; probe `evals p0 fake`),
+  `accounts: none` kept for other plugins (honest-answer item minor, call/target/canary clauses n/a), the data matrix gate tested with a fixture, Slack, X and Google on their existing apps, `phase1` without
   GitHub's token step or any sign-in for GitHub or Jira, and `scripts/profile/signin.sh`, the owner's sign-in walk with `check-real` after each vendor.
 
 ### Changed

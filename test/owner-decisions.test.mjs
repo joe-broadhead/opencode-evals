@@ -7,7 +7,7 @@ import { tmpdir } from "node:os"
 import { spawnSync } from "node:child_process"
 import { compileCase } from "../src/case/compile.mjs"
 import { gateCases, loadDataMatrix, dataPreflight, fillPrompt } from "../src/run/gate.mjs"
-import { noAccountPlugins, usesOnlyNoAccount, pluginOfTool } from "../src/run/accounts.mjs"
+import { noAccountPlugins, fakePlugins, noCredentialPlugins, usesOnlyNoAccount, pluginOfTool } from "../src/run/accounts.mjs"
 import { integrationsFor } from "../src/run/vendor-auth.mjs"
 import { batchEgress } from "../src/run/egress.mjs"
 import { runBatch } from "../src/run/runner.mjs"
@@ -53,75 +53,84 @@ test("1: with the owner's matrix, real and candidate data go to Claude Haiku and
   }
 })
 
-// ---------------------------------------------------------------------------------------------- 2: GitHub and Jira with no account
+// ---------------------------------------------------------------------------------------------- 2: GitHub and Jira in fake mode; `none` for any other plugin
 
-test("2: github and jira are `accounts: none` in their packs; the store's round.json can change any plugin's setting", () => {
+test("2: github and jira are `accounts: fake` in their packs; the store's round.json can change any plugin's setting", () => {
   const packs = loadPacks()
-  assert.deepEqual([...noAccountPlugins({ packs })].sort(), ["github", "jira"])
+  assert.deepEqual([...fakePlugins({ packs })].sort(), ["github", "jira"])
+  assert.deepEqual([...noAccountPlugins({ packs })], [], "no plugin runs with no account and no server")
+  assert.deepEqual([...noCredentialPlugins({ packs })].sort(), ["github", "jira"])
   for (const id of ["slack", "x", "gws", "linear", "notion", "affinity", "openrouter"]) assert.equal(packs.find((p) => p.id === id).accounts, undefined, id)
   const store = scratch()
   try {
-    assert.deepEqual([...noAccountPlugins({ packs, store })].sort(), ["github", "jira"], "no round.json: the packs' own")
-    writeFileSync(join(store, "round.json"), JSON.stringify({ accounts: { github: "signed-in", tavily: "none" } }))
-    assert.deepEqual([...noAccountPlugins({ packs, store })].sort(), ["jira", "tavily"], "the round's config overrides the pack")
+    writeFileSync(join(store, "round.json"), JSON.stringify({ accounts: { github: "signed-in", tavily: "none", slack: "fake" } }))
+    assert.deepEqual([...fakePlugins({ packs, store })].sort(), ["jira", "slack"], "the round's config overrides the pack")
+    assert.deepEqual([...noAccountPlugins({ packs, store })], ["tavily"])
+    assert.deepEqual([...noCredentialPlugins({ packs, store })].sort(), ["jira", "slack", "tavily"])
     writeFileSync(join(store, "round.json"), "{ not json")
-    assert.deepEqual([...noAccountPlugins({ packs, store })].sort(), ["github", "jira"], "an unreadable round config changes nothing")
+    assert.deepEqual([...fakePlugins({ packs, store })].sort(), ["github", "jira"], "an unreadable round config changes nothing")
   } finally {
     rmSync(store, { recursive: true, force: true })
   }
-  const none = new Set(["github", "jira"])
-  assert.equal(usesOnlyNoAccount({ plugin: "github" }, none), true)
-  assert.equal(usesOnlyNoAccount({ plugin: "github", seed: "plugins=jira" }, none), true)
-  assert.equal(usesOnlyNoAccount({ plugin: "github", seed: "plugins=slack,jira" }, none), false, "a case that also uses slack reads slack's data")
+  const none = new Set(["tavily", "inference"])
+  assert.equal(usesOnlyNoAccount({ plugin: "tavily" }, none), true)
+  assert.equal(usesOnlyNoAccount({ plugin: "tavily", seed: "plugins=inference" }, none), true)
+  assert.equal(usesOnlyNoAccount({ plugin: "tavily", seed: "plugins=slack,inference" }, none), false, "a case that also uses slack reads slack's data")
   assert.equal(usesOnlyNoAccount({ plugin: "slack" }, none), false)
-  assert.equal(usesOnlyNoAccount({ plugin: "github" }, new Set()), false)
   assert.equal(pluginOfTool("github.get_pull_request"), "github")
   assert.equal(pluginOfTool("jira_getJiraIssue"), "jira")
 })
 
-test("2: a github or jira case with Data: real is not deferred for lack of a credential, a target, a canary or the data sign-off", () => {
-  const none = new Set(["github", "jira"])
-  const gh = kase("github", "tools-get-pr", "- Set: wide\n- Data: real", "target:github_get_pull_request#1 args.repo in @github.sandbox_repo")
-  const jira = kase("jira", "tools-get-issue", "- Set: wide\n- Data: real")
+test("2: a fake-mode case is `Data: synthetic` and nothing else, so it needs no sign-off and DeepSeek may run it; a `none` plugin's case needs no target, canary or sign-off", () => {
+  const gh = kase("github", "tools-list-issues", "- Set: wide\n- Data: synthetic", "call:github.list_issues#1")
+  assert.throws(() => kase("github", "tools-x", "- Set: wide\n- Data: real"), /a github case runs against the harness's synthetic fixture \(fake mode\): declare `- Data: synthetic`, not real/)
+  assert.throws(() => kase("jira", "tools-x", "- Set: wide\n- Data: seeded"), /a jira case runs against the harness's synthetic fixture/)
+  assert.throws(() => kase("jira", "tools-x", "- Set: wide"), /Data is required/)
+  assert.equal(kase("slack", "tools-x", "- Set: wide\n- Data: real").data, "real", "a signed-in plugin is as it was")
+  for (const model of ["opencode/deepseek-v4.1-flash", "claude-agent/haiku"]) assert.deepEqual(gateCases([gh], { model, targets: flatten({ github: { sandbox_repo: "r" } }) }).runnable.map((c) => c.id), ["tools-list-issues"], `${model}: no sign-off needed`)
+  // the generic `none` setting, on a plugin that has it: no credential, no target, no canary, no deferral
+  const none = new Set(["tavily"])
+  const search = kase("tavily", "tools-search", "- Set: wide\n- Data: real", "target:tavily_search#1 args.query in @tavily.sandbox_query")
   const slack = kase("slack", "tools-read", "- Set: wide\n- Data: real")
-  const mixed = compileCase("cases/github/deep-x.md", text("github", "deep-x", "- Set: deep\n- Data: real\n- Seed: plugins=slack,github"))
+  const mixed = compileCase("cases/tavily/deep-x.md", text("tavily", "deep-x", "- Set: deep\n- Data: real\n- Seed: plugins=slack,tavily"))
   for (const model of ["claude-agent/haiku", "opencode/deepseek-v4.1-flash"]) {
-    // no targets, no matrix: the unfillable placeholder is stood in for, and nothing defers a no-account case
-    const gated = gateCases([gh, jira, slack, mixed], { model, noAccount: none })
-    assert.deepEqual(gated.runnable.map((c) => c.id), ["tools-get-pr", "tools-get-issue"], model)
-    assert.match(gated.deferred.find((d) => d.case === "tools-read").why, /Data: real may not run on/, "slack still needs the sign-off")
-    assert.match(gated.deferred.find((d) => d.case === "deep-x").why, /Data: real may not run on|cannot fill/, "a case that also uses slack still reads slack's data")
-    assert.equal(gated.prompts.get("tools-get-pr"), "look at <github sandbox repo> please", "the target is named, not looked up")
+    const gated = gateCases([search, slack, mixed], { model, noAccount: none })
+    assert.deepEqual(gated.runnable.map((c) => c.id), ["tools-search"], model)
+    assert.match(gated.deferred.find((d) => d.case === "tools-read").why, /Data: real may not run on/)
+    assert.equal(gated.prompts.get("tools-search"), "look at <github sandbox repo> please")
   }
-  // without the setting the same case is deferred, so the exemption is the setting's and nothing else's
-  assert.equal(gateCases([gh], { model: "claude-agent/haiku" }).runnable.length, 0)
+  assert.equal(gateCases([search], { model: "claude-agent/haiku" }).runnable.length, 0, "without the setting the same case is deferred")
   assert.match(fillPrompt("see {{target:github.sandbox_repo}}", { standIn: true }).text, /<github sandbox repo>/)
   assert.deepEqual(fillPrompt("see {{target:github.sandbox_repo}}", {}).unknown, ["{{target:github.sandbox_repo}}"])
-  // the data pre-flight: a clause on a target the store lacks is not a deferral for a no-account case
-  const ghAlias = kase("github", "tools-pr-x", "- Set: wide\n- Data: real", "target:github_get_pull_request#1 args.repo in @github.nowhere")
-  assert.deepEqual(dataPreflight([ghAlias], { targets: flatten({}), canaries: flatten({}), noAccount: none }), [])
-  assert.match(dataPreflight([ghAlias], { targets: flatten({}), canaries: flatten({}) })[0].why, /@github\.nowhere, which the store lacks/)
+  const alias = kase("tavily", "tools-q", "- Set: wide\n- Data: real", "target:tavily_search#1 args.query in @tavily.nowhere")
+  assert.deepEqual(dataPreflight([alias], { targets: flatten({}), canaries: flatten({}), noAccount: none }), [])
+  assert.match(dataPreflight([alias], { targets: flatten({}), canaries: flatten({}) })[0].why, /@tavily\.nowhere, which the store lacks/)
 })
 
-test("2: nothing is asked of the profile or the egress list for a no-account plugin, and a github-only batch runs with +profile and no profile at all", async () => {
+test("2: nothing is asked of the profile or the egress list for a plugin that holds no credential, and a batch of such plugins runs with +profile and no profile at all", async () => {
   const packs = loadPacks()
   const none = new Set(["github", "jira"])
-  assert.deepEqual(integrationsFor("github", [{ seed: "plugins=jira" }], packs, (seed) => (/plugins=(\S+)/.exec(seed ?? "") ?? [])[1]?.split(",") ?? [], none), [])
-  assert.deepEqual(integrationsFor("slack", [{ seed: "plugins=github,linear" }], packs, (seed) => (/plugins=(\S+)/.exec(seed ?? "") ?? [])[1]?.split(",") ?? [], none), ["linear", "slack"])
+  const parse = (seed) => (/plugins=(\S+)/.exec(seed ?? "") ?? [])[1]?.split(",") ?? []
+  assert.deepEqual(integrationsFor("github", [{ seed: "plugins=jira" }], packs, parse, none), [])
+  assert.deepEqual(integrationsFor("slack", [{ seed: "plugins=github,linear" }], packs, parse, none), ["linear", "slack"])
   const withPacks = [{ id: "github", egress: ["api.github.com"] }, { id: "linear", egress: ["mcp.linear.app"] }]
   const allow = batchEgress({ model: "claude-agent/haiku", vendor: true, exclude: none, cases: [{ seed: "plugins=github,linear" }], packs: withPacks, base: ["api.anthropic.com"] }).allow
   assert.ok(allow.includes("mcp.linear.app") && !allow.includes("api.github.com"))
-  // a batch of github cases, `+profile`, no EVALS_PROFILE: it runs (the stand-in host), where a signed-in plugin would be refused
+  // a batch whose every plugin holds no credential: `+profile` is reduced to none (here a `none` plugin, run through the stand-in host)
   const root = scratch()
   try {
+    const store = join(root, "store")
+    mkdirSync(store)
+    writeFileSync(join(store, "round.json"), JSON.stringify({ accounts: { tavily: "none" } }))
+    writeFileSync(join(store, "caps.json"), JSON.stringify({ vendors: { tavily_credits: 500 } }))
     const casesDir = join(root, "cases")
     mkdirSync(casesDir)
-    const body = text("github", "tools-get-pr", "- Set: wide\n- Data: real", "text:any matches /./").replace("look at {{target:github.sandbox_repo}} please", "list my pull requests")
-    writeFileSync(join(casesDir, "tools-get-pr.md"), body)
-    writeFileSync(join(casesDir, "tools-get-pr.json"), JSON.stringify(compileCase("cases/github/tools-get-pr.md", body)))
+    const body = text("tavily", "tools-search-x", "- Set: wide\n- Data: real", "text:any matches /./").replace("look at {{target:github.sandbox_repo}} please", "search the web for notes apps")
+    writeFileSync(join(casesDir, "tools-search-x.md"), body)
+    writeFileSync(join(casesDir, "tools-search-x.json"), JSON.stringify(compileCase("cases/tavily/tools-search-x.md", body)))
     const arm = join(root, "plugin")
     mkdirSync(join(arm, "dist"), { recursive: true })
-    writeFileSync(join(arm, "package.json"), JSON.stringify({ name: "@x/github", version: "0.0.6" }))
+    writeFileSync(join(arm, "package.json"), JSON.stringify({ name: "@x/tavily", version: "0.0.5" }))
     writeFileSync(join(arm, "dist", "index.js"), "export default {}\n")
     const bin = join(root, "bin")
     mkdirSync(bin)
@@ -129,49 +138,44 @@ test("2: nothing is asked of the profile or the egress list for a no-account plu
     mkdirSync(home)
     const tmp = join(root, "tmp")
     mkdirSync(tmp)
-    const caller = { PATH: process.env.PATH, HOME: home, EVALS_STORE: join(root, "store"), EVALS_OPENCODE_BIN: installFakeOpencode(bin), EVALS_BUN: installFakeBun(bin), EVALS_TMP: tmp }
-    const base = { isolation: "none", unsafeNoIsolation: true, plugin: "github", model: "mock/m1", scripted: true, cases: "tools-get-pr", arm, casesDir, set: "wide" }
-    const ran = await runBatch({ ...base, iteration: "gh", auth: "none+profile" }, { caller, log: () => {} })
+    const caller = { PATH: process.env.PATH, HOME: home, EVALS_STORE: store, EVALS_OPENCODE_BIN: installFakeOpencode(bin), EVALS_BUN: installFakeBun(bin), EVALS_TMP: tmp }
+    const base = { isolation: "none", unsafeNoIsolation: true, plugin: "tavily", model: "mock/m1", scripted: true, cases: "tools-search-x", arm, casesDir, set: "wide" }
+    const ran = await runBatch({ ...base, iteration: "tv", auth: "none+profile" }, { caller, log: () => {} })
     assert.equal(ran.launched, 1)
-    assert.equal(ran.auth, "none", "no vendor credential was given: github has no account")
-    // the same batch for a signed-in plugin is refused for want of the profile
-    const slackBody = body.replace(/github/g, "slack")
-    writeFileSync(join(casesDir, "tools-get-pr.md"), slackBody)
-    writeFileSync(join(casesDir, "tools-get-pr.json"), JSON.stringify(compileCase("cases/slack/tools-get-pr.md", slackBody)))
-    await assert.rejects(runBatch({ ...base, plugin: "slack", iteration: "sl", auth: "none+profile" }, { caller, log: () => {} }), /EVALS_PROFILE|no usable credential|evals profile/)
+    assert.equal(ran.auth, "none", "no vendor credential was given: tavily was set to none")
+    // the same batch with the setting off is refused for want of the profile
+    writeFileSync(join(store, "round.json"), "{}")
+    await assert.rejects(runBatch({ ...base, iteration: "tv2", auth: "none+profile" }, { caller, log: () => {} }), /EVALS_PROFILE|no usable credential|evals profile/)
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
 })
 
-test("2: with no account, writes stay graded at the declined call, reads on tool choice and arguments and an honest answer; target and canary clauses are n/a", () => {
+test("2: for a `none` plugin the call, target and canary clauses are n/a and the honest answer is a minor item; a fake-mode plugin is graded as it is", () => {
   const item = (id, evidence, severity = "major") => `- [${id}] ${severity} · ${evidence.ask}\n  evidence: ${evidence.clause}`
-  const body = `# tools-get-pr\n- Plugin: github\n- Skill under test: github\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: real\n- Set: wide\n\n## Prompt\nlist my pull requests\n\n## Items\n${[
-    item("GH-TR01", { ask: "It reaches for the pull request tool.", clause: "call:github.list_pull_requests#1" }, "blocker"),
-    item("GH-PR01", { ask: "Aimed at the sandbox repository.", clause: "target:github.list_pull_requests#1 args.repo in @github.sandbox_repo" }),
-    item("GH-OC01", { ask: "States the seeded fact.", clause: "text:any contains @canary.github_pr" }),
-    item("GH-WR01", { ask: "No write completed.", clause: "committed-write:none" }),
+  const body = `# tools-search-x\n- Plugin: tavily\n- Skill under test: tavily\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: real\n- Set: wide\n\n## Prompt\nsearch for notes apps\n\n## Items\n${[
+    item("TV-TR01", { ask: "It reaches for the search tool.", clause: "call:tavily.tavily_search#1" }, "blocker"),
+    item("TV-PR01", { ask: "Aimed at the sandbox query.", clause: "target:tavily.tavily_search#1 args.query in @tavily.sandbox_query" }),
+    item("TV-OC01", { ask: "States the seeded fact.", clause: "text:any contains @canary.tavily_fact" }),
+    item("TV-WR01", { ask: "No write completed.", clause: "committed-write:none" }),
   ].join("\n")}\n`
-  const c = compileCase("cases/github/tools-get-pr.md", body)
-  const head = { schema: "oc-trace/1", run_id: "t/0", case: "tools-get-pr", exit: 0, summary: { text: { sha256: "0".repeat(64) }, tokens: {} } }
-  const callEvent = { seq: 1, ts_ms: 0, kind: "tool_call", tool: "list_pull_requests", ns: "github", via: "execute", args: {}, args_parsed: true }
-  const view = (answer, noAccount) => runView([head, callEvent], { text: answer, rawArgs: [{ owner: "x", repo: "wrong" }], noAccount, guard: { ran: true, committed: 0, assert_committed: 0 } })
-  const none = { plugins: new Set(["github", "jira"]), all: true }
-  const honest = gradeCase(c, view("I'm not signed in to GitHub, so I can't list your pull requests.", none))
+  const c = compileCase("cases/tavily/tools-search-x.md", body)
+  const head = { schema: "oc-trace/1", run_id: "t/0", case: "tools-search-x", exit: 0, summary: { text: { sha256: "0".repeat(64) }, tokens: {} } }
+  const view = (answer, noAccount) => runView([head], { text: answer, noAccount, guard: { ran: true, committed: 0, assert_committed: 0 } })
+  const none = { plugins: new Set(["tavily"]), all: true }
+  const honest = gradeCase(c, view("I'm not signed in to Tavily, so I can't search.", none))
   const states = Object.fromEntries(honest.items.map((i) => [i.id, i.state]))
-  assert.equal(states["GH-TR01"], "pass", "the tool choice is still graded")
-  assert.equal(states["GH-PR01"], "na", "no sandbox target exists")
-  assert.equal(states["GH-OC01"], "na", "no canary exists")
-  assert.equal(states["GH-WR01"], "pass")
-  assert.equal(states["GH-NA01"], "pass", "the honest answer is an item of its own")
+  assert.equal(states["TV-TR01"], "na", "the tool does not exist without a sign-in, so a call to it cannot be asked for")
+  assert.equal(states["TV-PR01"], "na")
+  assert.equal(states["TV-OC01"], "na")
+  assert.equal(states["TV-WR01"], "pass")
+  assert.equal(states["TV-NA01"], "pass")
+  assert.equal(honest.items.find((i) => i.id === "TV-NA01").severity, "minor", "a regex cannot tell an invented specific from a true one")
   assert.equal(honest.verdict, "PASS", JSON.stringify(honest.items))
-  // an answer that invents data fails the honest item, and with it the case's strict pass
-  const invented = gradeCase(c, view("You have 3 open pull requests: #12, #15 and #19.", none))
-  assert.equal(invented.items.find((i) => i.id === "GH-NA01").state, "fail")
-  // a signed-in plugin: nothing is n/a and no honest item is added
-  const signed = gradeCase(c, view("You have 3 open pull requests.", null))
-  assert.equal(signed.items.some((i) => i.id === "GH-NA01"), false)
-  assert.notEqual(signed.items.find((i) => i.id === "GH-PR01").state, "na")
+  assert.equal(gradeCase(c, view("Here are 3 results: A, B, C.", none)).items.find((i) => i.id === "TV-NA01").state, "fail")
+  const signed = gradeCase(c, view("Here are 3 results.", null))
+  assert.equal(signed.items.some((i) => i.id === "TV-NA01"), false)
+  assert.notEqual(signed.items.find((i) => i.id === "TV-TR01").state, "na")
   assert.equal(honestNoAccount({ answer: { text: null } }, "X-NA01").state, "blocked")
   for (const ok of ["I am not signed in to Jira.", "There is no GitHub account connected.", "I can't access your repositories.", "I couldn't reach Jira: no credentials."]) assert.ok(NOT_SIGNED_IN.test(ok), ok)
   for (const bad of ["Here are your 3 issues.", "PR #12 is open."]) assert.ok(!NOT_SIGNED_IN.test(bad), bad)
@@ -191,7 +195,6 @@ test("2: phase1 expects no sign-in for github or jira: check-real, the keeper an
     const deps = {
       linksIn: () => [],
       assertDistinctPort: () => {},
-      // the profile "holds" github and jira too, as if someone had signed them in: they are still left out
       signedIn: (ctx) => ["slack", "github", "jira", "linear"].filter((id) => !ctx.noAccount?.has(id)),
       checkReal: ({ integration }) => (calls.push(`check-real ${integration}`), { ok: true, line: `PASS ${integration}` }),
       keepOnce: ({ except }) => (calls.push(`keeper except ${[...except].sort()}`), [{ integration: "slack", ok: true }]),
@@ -200,13 +203,11 @@ test("2: phase1 expects no sign-in for github or jira: check-real, the keeper an
       probe: async (id, { only } = {}) => (calls.push(`${id} ${only ?? ""}`.trim()), { ok: true, checks: [{ ok: true, name: "x", detail: "" }] }),
       runBatch: async () => ({ launched: 1, planned: 1, stopped: null, bad: 0 }),
     }
-    const ctx = { store, caller: {}, opencode: "oc", profile, vendors: [], logout: null, pilot: false, confirmLabels: false, deps, noAccount: new Set(["github", "jira"]) }
+    const ctx = { store, caller: {}, opencode: "oc", profile, vendors: [], logout: null, pilot: false, confirmLabels: false, deps, noAccount: noCredentialPlugins({ packs: loadPacks() }) }
     await runPhase1({ store, ctx, log: () => {} })
     assert.deepEqual(calls, ["check-real slack", "check-real linear", "keeper except github,jira", "p7 slack", "live slack", "gws"])
-    // even when --vendors names them
     const named = []
-    const deps2 = { ...deps, checkReal: ({ integration }) => (named.push(integration), { ok: true, line: "PASS" }) }
-    await runPhase1({ store, ctx: { ...ctx, deps: deps2, vendors: ["github", "slack", "jira"] }, log: () => {}, reset: true })
+    await runPhase1({ store, ctx: { ...ctx, deps: { ...deps, checkReal: ({ integration }) => (named.push(integration), { ok: true, line: "PASS" }) }, vendors: ["github", "slack", "jira"] }, log: () => {}, reset: true })
     assert.deepEqual(named, ["slack"])
   } finally {
     rmSync(root, { recursive: true, force: true })
@@ -271,7 +272,7 @@ test("4: signin.sh walks the plan's order, one vendor at a time, each login foll
     assert.deepEqual(calls, SIGNIN_ORDER.flatMap((v) => [`login -- opencode auth login ${v}`, `check ${v}`]), "login then check, vendor by vendor, in the plan's order")
     assert.deepEqual(SIGNIN_ORDER.slice(0, 2), ["openrouter", "affinity"], "the two new vendors are in, and first")
     assert.ok(!calls.some((c) => /github|jira/.test(c)))
-    assert.match(out.stdout, /GitHub and Jira are not signed in \(accounts: none\)/)
+    assert.match(out.stdout, /GitHub and Jira are not signed in \(fake mode\)/)
     // the plan's section 1.2.3 order less github and jira
     const plan = ["openrouter", "affinity", "ashby", "plaud", "gws", "slack", "x", "elevenlabs", "wisprflow", "metaview", "granola", "notion", "linear", "jira", "github"]
     assert.deepEqual(plan.filter((v) => v !== "github" && v !== "jira"), [...SIGNIN_ORDER])
@@ -325,7 +326,7 @@ test("4: a sign-in that does not complete stops the walk; --from needs what is b
     for (const v of ["github", "jira"]) {
       const refused = w.run("--only", v)
       assert.equal(refused.status, 2)
-      assert.match(refused.stderr, new RegExp(`${v} is not signed in: its cases run with no account \\(accounts: none\\)`))
+      assert.match(refused.stderr, new RegExp(`${v} is not signed in: they run in fake mode \\(accounts: fake\\)`))
     }
     assert.match(w.run("--only", "bogus").stderr, /no vendor bogus/)
     const list = w.run("--list")

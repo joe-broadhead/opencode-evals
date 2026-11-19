@@ -31,7 +31,8 @@ import { lockdownPolicies, lockdownPermissions, loadPacks, companionOptions, ACC
 import { buildPolicy, installGuard } from "./guard/policy.mjs"
 import { gateCases, seedFiles, dataPreflight, loadDataMatrix } from "./gate.mjs"
 import { resolveCommitPlan } from "./commit-plan.mjs"
-import { noAccountPlugins, pluginsOf } from "./accounts.mjs"
+import { noAccountPlugins, fakePlugins, noCredentialPlugins, pluginsOf } from "./accounts.mjs"
+import { fakeFor, installFake, mcpOverride } from "./fake-mode.mjs"
 import { haltReason, readHalt, writeHalt, haltMessage } from "./halt.mjs"
 import { integrationsFor } from "./vendor-auth.mjs"
 import { checkBalances, vendorUseOf, SPENDING, perRunWorst } from "./balance.mjs"
@@ -216,7 +217,8 @@ export async function modelRoutes({ trial, binary, url, env, cwd, model, timeout
 async function preflightRoute(p) {
   const sandbox = makeSandbox(join(p.batchRoot, "preflight"))
   mkdirSync(join(sandbox.project, ".git"), { recursive: true })
-  const config = sealedConfig({ armDir: p.armDir, options: p.options, model: p.model, scripted: p.scripted, scriptedProvider: p.scriptedProvider, ...p.sealed })
+  // Fake mode: the preflight must not reach for the real MCP servers either, so the fake plugins' servers point at a closed loopback port.
+  const config = sealedConfig({ armDir: p.armDir, options: p.options, model: p.model, scripted: p.scripted, scriptedProvider: p.scriptedProvider, ...p.sealed, ...(p.fakeMcp ? { mcp: p.fakeMcp } : {}) })
   writeConfig(sandbox, config)
   const password = newPassword()
   registerSecrets([password])
@@ -394,6 +396,21 @@ async function startCapture({ trial, ctx, sandbox }) {
   return { proc, url: `http://127.0.0.1:${CAPTURE_PORT}` }
 }
 
+/** Fake mode's MCP server for one plugin, inside the trial on loopback: the harness's own, serving the pack's tool list and a synthetic fixture. */
+async function startFakeMcp({ trial, ctx, sandbox, id, port }) {
+  const dir = join(ctx.harnessDir, "fake")
+  const spec = trial.wrap({ command: ctx.bunBinary, args: [join(dir, "mcp-server.ts"), String(port), join(sandbox.tmp, `fake-${id}.jsonl`), join(dir, `${id}.catalog.json`), join(dir, "fixtures", `${id}.mjs`)], cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp } })
+  const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
+  let exited = false
+  proc.exited.then(() => (exited = true))
+  const up = await trial.ready({ url: `http://127.0.0.1:${port}/health`, timeoutMs: 20_000, exited: () => exited })
+  if (!up.ok) {
+    await stop(proc, { graceMs: 200 })
+    throw new Error(`the fake ${id} MCP server did not start in the trial: ${up.last}`)
+  }
+  return { id, proc, url: `http://127.0.0.1:${port}/mcp` }
+}
+
 /** T1's scripted model server, started for a batch: the harness's own mock, never a model. */
 async function startMock({ batchRoot, caller }) {
   const port = await freePort()
@@ -456,7 +473,11 @@ async function runJob(job, ctx) {
   if (seeded.length) ctx.log(`  ${name}: seeded ${seeded.length} file(s) into the project`)
   const cut = stripForeignLinks(sandbox)
   if (cut.length) ctx.log(`  ${name}: removed ${cut.length} link(s) out of the sandbox that the world's home carried (${cut.slice(0, 3).join(", ")})`)
-  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...ctx.sealed })
+  // Fake mode: a port for each fake plugin the case uses, in the config before the trial starts and served by the fake once it has.
+  const fakeIds = fakeFor(pluginsOf(job.case), ctx.fakeSet ?? new Set())
+  const fakePorts = {}
+  for (const id of fakeIds) fakePorts[id] = await freePort()
+  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...ctx.sealed, ...(fakeIds.length ? { mcp: mcpOverride(fakePorts) } : {}) })
   writeConfig(sandbox, config)
   const password = newPassword()
   // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
@@ -475,6 +496,8 @@ async function runJob(job, ctx) {
     const mockUrl = mock?.url ?? ctx.mockUrl
     let capture = null
     if (ctx.captureServer) capture = await startCapture({ trial, ctx, sandbox })
+    const fakes = []
+    for (const id of fakeIds) fakes.push(await startFakeMcp({ trial, ctx, sandbox, id, port: fakePorts[id] }))
     // A world's own variables go in first and never the sealed ones; the harness's (credential, endpoint) go in last.
     const fromWorld = worldEnv(prepared.env)
     if (fromWorld.dropped.length) ctx.log(`  ${name}: the world's env may not set ${fromWorld.dropped.join(", ")}: ignored`)
@@ -513,6 +536,7 @@ async function runJob(job, ctx) {
       await stop(server?.proc)
       await stop(mock?.proc, { graceMs: 200 })
       await stop(capture?.proc, { graceMs: 200 })
+      for (const f of fakes) await stop(f.proc, { graceMs: 200 })
     }
     // Killing a `docker exec` client leaves what it started running inside: the trial ends here, before anything of
     // its sandbox is read, so nothing it left behind can change the files being recorded.
@@ -569,6 +593,8 @@ async function runJob(job, ctx) {
     // The guard's own log (what it asked, rejected and refused): next to the recording, scrubbed like it, and counted in the summary.
     // The scripted model's own log (a probe's `[[mock:dump]]` reads what reached the model from it), beside the recording, scrubbed like it.
     if (ctx.scripted && existsSync(join(sandbox.tmp, "mock.jsonl"))) writeAtomic(out(".mock.jsonl"), redact(readFileSync(join(sandbox.tmp, "mock.jsonl"), "utf8")))
+    // The fake MCP servers' logs (what the model asked of them), beside the recording, scrubbed like it.
+    for (const id of fakeIds) if (existsSync(join(sandbox.tmp, `fake-${id}.jsonl`))) writeAtomic(out(`.fake-${id}.jsonl`), redact(readFileSync(join(sandbox.tmp, `fake-${id}.jsonl`), "utf8")))
     // The capture server's log (P0-13), beside the recording, scrubbed like it.
     if (ctx.captureServer && existsSync(join(sandbox.tmp, "capture.jsonl"))) writeAtomic(out(".capture.jsonl"), redact(readFileSync(join(sandbox.tmp, "capture.jsonl"), "utf8")))
     const guardLog = guardRecords(join(sandbox.tmp, "guard.jsonl"))
@@ -660,6 +686,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // never goes to an `opencode/*` model, and one the store cannot fill is deferred, each with its reason in the batch record.
   // The plugins that run with no account (GitHub and Jira): their cases hold no credential, need no target, and read no one's words.
   const noAccount = noAccountPlugins({ packs: loadPacks(), store })
+  // Fake mode (GitHub, Jira): no account and no real endpoint, served by the harness's fake MCP server, so measurable. No credential for either kind.
+  const fakeSet = fakePlugins({ packs: loadPacks(), store })
+  const noCredential = noCredentialPlugins({ packs: loadPacks(), store })
   const gated = gateCases(chosen, { model: options.model, targets: loadTargets(caller), canaries: loadCanaries(caller), matrix: loadDataMatrix(caller), noAccount })
   let selected = gated.runnable
   const deferred = [...gated.deferred]
@@ -703,7 +732,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // imported: importing one runs its code.
   const parsedAuth = parseAuth(options.auth ?? caller.EVALS_AUTH)
   // `+profile` gives a trial the evals profile's vendor credentials; a batch whose every plugin runs with no account has none to give.
-  const profile = parsedAuth.vendor && selected.length && selected.every((c) => pluginsOf(c).every((id) => noAccount.has(id))) ? { ...parsedAuth, vendor: false } : parsedAuth
+  const profile = parsedAuth.vendor && selected.length && selected.every((c) => pluginsOf(c).every((id) => noCredential.has(id))) ? { ...parsedAuth, vendor: false } : parsedAuth
   // A key passed through is a secret from the start: a world build's error output is scrubbed of it too.
   if (profile.kind === "env") registerSecrets(profile.names.map((name) => caller[name]))
   const scripted = Boolean(options.scripted)
@@ -732,7 +761,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const isolationName = options.isolation ?? (caller.EVALS_ISOLATION || null) ?? defaultIsolation()
   const baseConfig = isolationName === "container" ? containerConfig({ store, env: caller }) : null
   // Each batch reaches the model's hosts, and the hosts of the credentialed plugins its cases name, and nothing else (R3).
-  const egress = baseConfig ? batchEgress({ model: options.model, vendor: Boolean(profile.vendor), exclude: noAccount, cases: selected, packs: loadPacks(), targets: loadTargets(caller), base: baseConfig.allow, explicit: Boolean(baseConfig.source || caller.EVALS_EGRESS_ALLOW) }) : null
+  const egress = baseConfig ? batchEgress({ model: options.model, vendor: Boolean(profile.vendor), exclude: noCredential, cases: selected, packs: loadPacks(), targets: loadTargets(caller), base: baseConfig.allow, explicit: Boolean(baseConfig.source || caller.EVALS_EGRESS_ALLOW) }) : null
   const isolationSpec = { name: isolationName, live, unsafe: Boolean(options.unsafeNoIsolation), config: baseConfig ? { ...baseConfig, allow: egress.allow } : null }
   if (options.dryRun) {
     log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}`)
@@ -870,7 +899,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const probeEnv = sandboxEnv({ sandbox: probe, config: sealedConfig({ armDir: null, model: options.model }), password: newPassword(), caller })
     // The binaries a trial needs, mounted read-only into a container: the host, a provider's own CLI, the mock's bun.
     const needsClaude = profile.kind === "claude-agent" || options.model.startsWith("claude-agent/")
-    const binaries = { opencode: binary, ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}), ...(scripted || options.captureServer ? { bun: caller.EVALS_BUN ?? "bun" } : {}) }
+    // The fake-mode plugins any selected case uses.
+    const fakeIds = [...new Set(selected.flatMap((c) => fakeFor(pluginsOf(c), fakeSet)))].sort()
+    const binaries = { opencode: binary, ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}), ...(scripted || options.captureServer || fakeIds.length ? { bun: caller.EVALS_BUN ?? "bun" } : {}) }
     await isolation.prepare({ batchRoot, caller, binaries, log })
     if (isolation.confines) facts.isolation_detail = isolation.describe()
     // The harness's scripted model, when asked for: T1's mock server, for the whole batch on loopback, or, in a confined
@@ -894,6 +925,12 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       harnessDir ??= join(batchRoot, "harness")
       mkdirSync(join(harnessDir, "capture"), { recursive: true })
       cpSync(resolve(import.meta.dirname, "..", "p0", "capture-server.ts"), join(harnessDir, "capture", "capture-server.ts"))
+    }
+    // Fake mode: the fake MCP server, its fixtures and the catalogs of the fake plugins the cases use, where the trial's container can read them.
+    if (fakeIds.length) {
+      harnessDir ??= join(batchRoot, "harness")
+      installFake(harnessDir, fakeIds)
+      facts.fake_mode = fakeIds
     }
     let probeDir = null
     if (options.probe) {
@@ -962,7 +999,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // each pack gives its integration (the pack's own id unless it says otherwise).
     const packs = loadPacks()
     const named = [...new Set([plugin, ...selected.flatMap((c) => parseSeedList(parseSeed(c.seed).plugins))])]
-    const needed = integrationsFor(plugin, selected, packs, (seed) => parseSeedList(parseSeed(seed).plugins), noAccount)
+    const needed = integrationsFor(plugin, selected, packs, (seed) => parseSeedList(parseSeed(seed).plugins), noCredential)
     const auth = await prepareAuth(profile, { binary, caller, horizonMs, acceptUnknownExpiry: Boolean(options.acceptUnknownTokenExpiry), needed })
     if (auth.expiry) {
       Object.assign(facts.horizon, auth.expiry)
@@ -991,7 +1028,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       facts.deferred = deferred
       log(`deferred ${deferred.length} case(s): ${deferred.slice(0, 4).map((d) => `${d.case} (${d.why})`).join("; ")}${deferred.length > 4 ? "; …" : ""}`)
     }
-    const routed = await preflightRoute({ batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: scripted && Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs, sealed })
+    const routed = await preflightRoute({ fakeMcp: fakeIds.length ? mcpOverride(Object.fromEntries(fakeIds.map((id) => [id, 9]))) : null, batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: scripted && Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs, sealed })
     if (!routed.ok) throw new Error(`preflight: the model ${options.model} does not route inside a trial within ${routeTimeoutMs / 1000} s, so no run was reserved. The trial's server lists ${routed.listed.length ? routed.listed.slice(0, 12).join(", ") : "no model"}`)
     facts.preflight = { model: options.model, routed_after_ms: routed.waitedMs }
     log(`preflight: ${options.model} routes inside a trial (after ${(routed.waitedMs / 1000).toFixed(1)} s)`)
@@ -1055,6 +1092,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       mounts,
       prompts: gated.prompts,
       captureServer: options.captureServer ?? null,
+      fakeSet,
       redact,
       dollarCap: facts.dollar_cap,
       listPrice: listInfo.price,
