@@ -543,7 +543,12 @@ export function containerBackend(config = containerConfig()) {
         extraEnv.NO_PROXY = extraEnv.no_proxy = noProxy
       }
       if (ca) extraEnv.NODE_EXTRA_CA_CERTS = ca
-      trial.wrap = ({ command, args = [], cwd: dir, env = {} }) => {
+      /**
+       * The command to run a trial's command through `docker exec`. `-i` (the exec client's standard input attached) only when the caller has input to send (`stdin: true`): `docker exec -i`
+       * whose input is closed at once (a /dev/null, an empty pipe) can lose the end-of-file under load, and the command inside then waits for it for ever (`opencode run` reads standard input
+       * when it is not a terminal; `curl --config -` reads its config from it). Found in 2 of ~100 `p0 a1` runs: an idle client, and a readiness probe whose curl outlived `--max-time`.
+       */
+      trial.wrap = ({ command, args = [], cwd: dir, env = {}, stdin = false }) => {
         const mapped = [...state.binaries.values()].find((b) => b.command === command || b.host === command || (isAbsolute(command) && existsSync(command) && realpathSync(command) === b.host))
         const inside = mapped ? mapped.inside : command
         const containerEnv = { ...trialEnv(env), ...extraEnv }
@@ -554,7 +559,7 @@ export function containerBackend(config = containerConfig()) {
         if (bad.length) throw new Error(`refusing to pass ${bad.map((k) => JSON.stringify(k)).join(", ")} into a trial: not a variable name`)
         return {
           command: state.docker,
-          args: ["exec", "-i", "-w", dir ?? cwd ?? root, ...names.flatMap((key) => ["-e", key]), trial.ref, inside, ...args],
+          args: ["exec", ...(stdin ? ["-i"] : []), "-w", dir ?? cwd ?? root, ...names.flatMap((key) => ["-e", key]), trial.ref, inside, ...args],
           // The docker client runs in the batch directory, outside every sandbox, with its own settings.
           cwd: state.batchRoot ?? undefined,
           env: { ...containerEnv, ...state.dockerEnv, PATH: containerEnv.PATH },
@@ -571,8 +576,12 @@ export function containerBackend(config = containerConfig()) {
         const deadline = Date.now() + timeoutMs
         let last = ""
         while (!exited() && !trial.left && Date.now() < deadline) {
-          const args = ["exec", "-i", trial.container, "curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "--max-time", "2", "--noproxy", "*", "--config", "-", ...(directory ? ["-H", `x-opencode-directory: ${directory}`] : []), url]
-          const result = await docker(args, { input: password ? `user = "opencode:${password}"\n` : "", timeoutMs: 10_000 })
+          // The password reaches curl through the shell's own pipe (printf is a builtin: never in an argv) from the environment of this one `docker exec`, so no standard input is attached to it.
+          const curl = ["-s", "-o", "/dev/null", "-w", "%{http_code}", "--max-time", "2", "--noproxy", "*", ...(directory ? ["-H", `x-opencode-directory: ${directory}`] : []), url]
+          const args = password
+            ? ["exec", "-e", "EVALS_READY_PW", trial.container, "sh", "-c", 'printf "user = \\"opencode:%s\\"\\n" "$EVALS_READY_PW" | exec curl --config - "$@"', "sh", ...curl]
+            : ["exec", trial.container, "curl", ...curl]
+          const result = await docker(args, { timeoutMs: 10_000, ...(password ? { env: { ...state.dockerEnv, EVALS_READY_PW: password } } : {}) })
           if (result.stdout.trim() === "200") return { ok: true }
           last = result.stdout.trim() ? `HTTP ${result.stdout.trim()}` : (tail(result.stderr.trim(), 200) || `curl exit ${result.code}`)
           await new Promise((done) => setTimeout(done, 200))

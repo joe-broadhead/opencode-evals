@@ -368,7 +368,10 @@ test("offline: a trial is confined by its flags, and no secret reaches an argv",
   const secret = `tok-${randomBytes(12).toString("hex")}`
   const spec = trial.wrap({ command: f.opencode, args: ["run", "hello"], cwd: f.sandbox.project, env: { HOME: f.sandbox.home, CLAUDE_CODE_OAUTH_TOKEN: secret, OPENCODE_PASSWORD: "pw-123456789", DOCKER_CONFIG: join(f.sandbox.home, ".docker") } })
   assert.equal(spec.command, findBinary(f.docker.file))
-  assert.deepEqual(spec.args.slice(0, 4), ["exec", "-i", "-w", f.sandbox.project])
+  // no standard input is attached by default: `docker exec -i` whose input closes at once can lose the end-of-file, and the command inside waits for it for ever; `stdin: true` attaches it
+  assert.deepEqual(spec.args.slice(0, 3), ["exec", "-w", f.sandbox.project])
+  assert.ok(!spec.args.includes("-i"))
+  assert.deepEqual(trial.wrap({ command: f.opencode, args: ["auth", "import"], cwd: f.sandbox.project, env: { HOME: f.sandbox.home }, stdin: true }).args.slice(0, 4), ["exec", "-i", "-w", f.sandbox.project])
   assert.ok(spec.args.includes("CLAUDE_CODE_OAUTH_TOKEN") && !spec.args.join(" ").includes(secret) && !spec.args.join(" ").includes("pw-123456789"))
   assert.deepEqual(spec.args.slice(-3), ["/opt/evals/bin/opencode", "run", "hello"])
   assert.equal(spec.env.CLAUDE_CODE_OAUTH_TOKEN, secret)
@@ -376,11 +379,21 @@ test("offline: a trial is confined by its flags, and no secret reaches an argv",
   assert.equal(spec.cwd, f.batchRoot, "the client runs outside every sandbox")
   assert.throws(() => trial.wrap({ command: "x", args: [], cwd: f.sandbox.project, env: { "A=b": "1" } }), /not a variable name/)
 
-  // The readiness check hands curl the password on its standard input.
+  // The readiness check hands curl the password through the shell's own pipe, from the environment of its `docker exec` (no argv, and no standard input attached to the exec: a lost end-of-file
+  // there left a curl waiting for ever).
   assert.deepEqual(await trial.ready({ url: "http://127.0.0.1:4100/api/agent", password: "pw-123456789", directory: f.sandbox.project, timeoutMs: 2000 }), { ok: true })
-  const curl = f.docker.calls().find((c) => c.args.includes("curl"))
+  const curl = f.docker.calls().find((c) => c.args.join(" ").includes("curl"))
   assert.equal(curl.args.join(" ").includes("pw-123456789"), false)
-  assert.match(curl.input, /user = "opencode:pw-123456789"/)
+  assert.equal(curl.env.EVALS_READY_PW, "pw-123456789")
+  assert.ok(!curl.args.includes("-i"), "no standard input is attached")
+  assert.ok(curl.args.join(" ").includes("printf") && curl.args.includes("--max-time") && curl.args.includes("2"), "curl is fed by printf in the container's shell and still has its own --max-time")
+  assert.equal(curl.input, "", "nothing on stdin")
+  // without a password curl runs directly
+  assert.deepEqual(await trial.ready({ url: "http://127.0.0.1:4200/v1/models", timeoutMs: 2000 }), { ok: true })
+  const plain = f.docker.calls().filter((c) => c.args.join(" ").includes("curl")).at(-1)
+  assert.equal(plain.args[0], "exec")
+  assert.equal(plain.args[2], "curl", "curl is the command itself, with no shell and no password")
+  assert.equal(plain.env.EVALS_READY_PW, undefined)
   assert.ok(f.docker.calls().every((c) => !c.args.join(" ").includes(secret)), "no argv the backend ran holds the token")
 
   // The stand-in answers `docker inspect`, so the container is not confirmed gone: nothing may be removed yet.
@@ -993,8 +1006,8 @@ test("docker: the Claude Agent provider fills its models only after the server a
     // --standalone: a private server on the scratch home's own database, never the machine's background service.
     const exported = spawnSync("opencode", ["auth", "export", "Claude Agent", "--standalone"], { env: { PATH: process.env.PATH, HOME: home, OPENCODE_DISABLE_AUTOUPDATE: "1" }, encoding: "utf8" })
     assert.match(exported.stdout, /"integrationID":\s*"claude-agent"/)
-    const spec = (args) => trial.wrap({ command: "opencode", args, cwd: sandbox.project, env })
-    const importSpec = spec(["auth", "import", "--standalone"])
+    const spec = (args, stdin = false) => trial.wrap({ command: "opencode", args, cwd: sandbox.project, env, stdin })
+    const importSpec = spec(["auth", "import", "--standalone"], true)
     assert.equal((await runToEnd(importSpec.command, importSpec.args, { cwd: importSpec.cwd, env: importSpec.env, input: exported.stdout, timeoutMs: 60_000 })).code, 0)
     const serveSpec = spec(["serve", "--hostname", "127.0.0.1", "--port", "4100"])
     const server = start(serveSpec.command, serveSpec.args, { cwd: serveSpec.cwd, env: serveSpec.env })

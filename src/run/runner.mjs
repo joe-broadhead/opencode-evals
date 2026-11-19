@@ -516,7 +516,7 @@ async function runJobBody(job, ctx, track) {
     const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}), ...(capture ? { ANTHROPIC_BASE_URL: capture.url } : {}) } })
     // Every host command of the run goes through the trial.
     const exec = (args, options = {}) => {
-      const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env })
+      const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env, stdin: options.input !== undefined && options.input !== null })
       return runToEnd(spec.command, spec.args, { ...options, cwd: spec.cwd, env: spec.env })
     }
     track.phase = "applying the sign-in"
