@@ -3,7 +3,7 @@
 //
 // Format (see cases/x/small-bounded-search.md):
 //   # id
-//   - Key: value            (Plugin, Skill under test, Tier, Source, Decision tested, Data check, Controls, Budget, Expect)
+//   - Key: value            (Plugin, Skill under test, Tier, Source, Decision tested, Data check, Data, Controls, Budget, Expect, Seed, Set)
 //   ## Prompt               free text
 //   ## Items                "- [ID] severity · ask" then indented "key: value" lines
 //   ## Forbidden            the same, and every item is a forbidden action
@@ -33,6 +33,8 @@ const FIELDS = new Map([
   ["set", "set"],
   ["status", "status"],
   ["truth", "truth"],
+  ["data", "data"],
+  ["home files", "homeFiles"],
 ])
 
 const ITEM_KEYS = new Set(["maps_to", "evidence", "evidence_any", "n/a_when", "grader", "where", "note"])

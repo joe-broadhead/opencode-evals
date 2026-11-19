@@ -6,6 +6,8 @@
 
 import { sha256 } from "../util/canonical.mjs"
 import { strictPass } from "../grade/trials.mjs"
+import { inSets } from "../case/sets.mjs"
+import { clusterBootstrap, freshOnly, holdoutGate } from "./cluster.mjs"
 
 /** mulberry32: a small, fast, well-mixed 32-bit generator. Deterministic for a seed. */
 export function rng(seed) {
@@ -81,23 +83,56 @@ const caseRate = (summary, id) => {
   return runs.filter(strictPass).length / runs.length
 }
 
-/** The paired comparison of `b` against `a` on the cases both ran: strict-pass rate per case, b minus a. */
-export function compareArms(a, b, { resamples = 5000 } = {}) {
+/**
+ * An arm as the cluster bootstrap reads it: case -> model -> [1|0 per trial]. A run's model is its own when its verdict carries one.
+ * `selecting` (a Set of `<case>#<model>#<trial>`, from 1) removes the trials that selected a case, so a wide case chosen because one
+ * trial failed is judged on fresh trials only (regression to the mean).
+ */
+export function clusterArm(summary, selecting = null) {
+  const arm = new Map()
+  for (const [id, runs] of summary.byCase) {
+    const models = new Map()
+    for (const run of runs) {
+      const model = run.model ?? "model"
+      if (!models.has(model)) models.set(model, [])
+      models.get(model).push(strictPass(run) ? 1 : 0)
+    }
+    arm.set(id, models)
+  }
+  return selecting ? freshOnly(arm, selecting) : arm
+}
+
+/**
+ * The paired comparison of `b` against `a` on the cases both ran: strict-pass rate per case, b minus a. `cluster` is the interval
+ * the round decides on (R12: cases are the unit, models and trials nested inside them); the paired bootstrap beside it is the earlier
+ * reading, kept so the two can be compared.
+ */
+export function compareArms(a, b, { resamples = 5000, selecting = null } = {}) {
   const ids = [...a.byCase.keys()].filter((id) => b.byCase.has(id)).sort()
   const diffs = ids.map((id) => caseRate(b, id) - caseRate(a, id))
   const seed = seedOf([a.iterations.join(","), b.iterations.join(","), ids.join(",")].join("|"))
-  return { a: a.label, b: b.label, cases: ids, ...pairedBootstrap(diffs, { resamples, seed }) }
+  const cluster = clusterBootstrap(clusterArm(a, selecting), clusterArm(b), { resamples, seed: `${a.iterations.join(",")}|${b.iterations.join(",")}` })
+  return { a: a.label, b: b.label, cases: ids, ...pairedBootstrap(diffs, { resamples, seed }), cluster: { ...cluster, fresh: Boolean(selecting) } }
+}
+
+/**
+ * The pooled holdout gate over two arms of the same holdout cases: `h1` (the adopted variant) against `cb-h1` (its concurrent baseline).
+ * The family's point estimate must not drop and its lower bound must stay above -5 points; a plugin is held when two or more of its
+ * holdouts flip from pass to fail.
+ */
+export function holdoutOf(h1Summary, cbSummary, options = {}) {
+  return holdoutGate(clusterArm(h1Summary), clusterArm(cbSummary), options)
 }
 
 /**
  * Every arm, the per-case table and the comparisons. Rows are compared on the cases every arm ran (unless `allCases`);
  * each comparison against the first arm uses the cases those two arms share, with its own random stream.
  */
-export function compare(arms, { allCases = false, resamples = 5000 } = {}) {
+export function compare(arms, { allCases = false, resamples = 5000, selecting = null } = {}) {
   const first = arms.map((arm) => summarizeArm(arm))
   const common = first.length > 1 && !allCases ? new Set([...first[0].byCase.keys()].filter((id) => first.every((s) => s.byCase.has(id)))) : null
   const rows = common ? arms.map((arm) => summarizeArm(arm, common)) : first
-  const comparisons = first.slice(1).map((summary) => compareArms(first[0], summary, { resamples }))
+  const comparisons = first.slice(1).map((summary) => compareArms(first[0], summary, { resamples, selecting }))
   return { rows, common: common ? [...common].sort() : null, comparisons }
 }
 
@@ -115,6 +150,10 @@ export function renderReport({ rows, common, comparisons }, { detail = false } =
     lines.push(`| ${row.label} | ${row.runs} | ${k} | ${pct(row.strict)} | ${pct(row.passK.strict)} | ${pct(row.blocker)} | ${areas.map((area) => pct(row.areas[area])).join(" | ")} | ${(row.outer ?? 0).toFixed(1)}+${(row.inner ?? 0).toFixed(1)} | ${(row.secs ?? 0).toFixed(0)} | ${(row.tokensK ?? 0).toFixed(0)} |`)
   }
   if (comparisons.length) {
+    lines.push("", `**This decides** (cases are the unit; models and trials are nested inside each case; ${comparisons[0].cluster.resamples} resamples)${comparisons[0].cluster.fresh ? "; the baseline is its fresh trials only (the trials that selected a case are left out)" : ""}, against \`${rows[0].label}\`:`, "")
+    lines.push("| arm | cases | models | difference | 95% interval |")
+    lines.push("| --- | --- | --- | --- | --- |")
+    for (const c of comparisons) lines.push(`| ${c.b} | ${c.cluster.cases} | ${c.cluster.models.join(", ") || "—"} | ${pts(c.cluster.estimate)} pts | [${pts(c.cluster.lo)}, ${pts(c.cluster.hi)}] |`)
     lines.push("", `Paired bootstrap over cases, strict-pass rate per case, against \`${rows[0].label}\`:`, "")
     lines.push("| arm | cases | difference | 95% interval | better | worse | same |")
     lines.push("| --- | --- | --- | --- | --- | --- | --- |")
@@ -140,4 +179,29 @@ export function renderReport({ rows, common, comparisons }, { detail = false } =
     for (const [key, n] of [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))) lines.push(`- ${n} ${key}`)
   }
   return lines.join("\n")
+}
+
+/** The ids of the wide cases among `cases` (`Set: wide`, active): the only cases a baseline's first pass selects. */
+export const wideCaseIds = (cases) => new Set(cases.filter((c) => inSets(c, ["wide"])).map((c) => c.id))
+
+/** The case of a `<case>#<model>#<trial>` entry (case ids hold no `#`). */
+export const caseOfTrial = (entry) => String(entry).split("#")[0]
+
+/**
+ * The trials that selected cases, from a graded iteration, as `<case>#<model>#<trial>` (trial from 1). Only a WIDE case is chosen for a
+ * deeper look, and only by its first pass: the first trial of each wide case and model, recorded when it did not strictly pass. A later
+ * trial of the same case is a fresh draw, and a deep case is never selected, so neither is taken out of the baseline (taking every
+ * non-passing trial out would leave the passing ones and inflate every baseline). `evals select` writes the list once, beside the
+ * iteration's verdicts; `evals report` reads it back for wide cases only.
+ */
+export function selectingTrials(runs, wide) {
+  if (!(wide instanceof Set)) throw new Error("selectingTrials needs the set of wide case ids (wideCaseIds(cases))")
+  const first = new Map()
+  for (const run of runs) {
+    if (run.verdict === "NOT_RUN" || !wide.has(run.case)) continue
+    const key = `${run.case}#${run.model ?? "model"}`
+    const seen = first.get(key)
+    if (!seen || run.trial < seen.trial) first.set(key, run)
+  }
+  return [...first.values()].filter((run) => !strictPass(run)).map((run) => `${run.case}#${run.model ?? "model"}#${run.trial}`).sort()
 }

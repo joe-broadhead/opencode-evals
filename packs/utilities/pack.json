@@ -3,8 +3,8 @@
   "id": "utilities",
   "name": "Utilities",
   "package": "@joe-broadhead/opencode-utilities",
-  "version": "0.0.2",
-  "private": false,
+  "version": "0.0.6",
+  "private": true,
   "pluginId": "utilities.local",
   "rpc": "utilities.local.tools",
   "skills": [
@@ -213,6 +213,10 @@
     "denied": 0,
     "skills": 3
   },
-  "digest": "87cb0fdfd45385ba66dd147f96c48b7baeb0eeed41728a5a4849e6fac001011f",
-  "t1": []
+  "digest": "733c24a1a29bef377cfffb0c112fcef083f7dddb98c622c8cbdd1488beb7e56b",
+  "t1": [],
+  "egress": [
+    "api.open-meteo.com",
+    "geocoding-api.open-meteo.com"
+  ]
 }

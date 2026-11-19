@@ -70,6 +70,7 @@ test("Checkable:, Set: and Status: compile, and a case without them compiles as 
 - Tier: T3
 - Source: test
 - Decision tested: test
+- Data: synthetic
 - Checkable: sessionID, query
 - Set: core, smoke
 - Status: deferred

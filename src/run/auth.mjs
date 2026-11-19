@@ -29,6 +29,7 @@
 import { closeSync, constants, existsSync, fstatSync, mkdirSync, openSync, readSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { runToEnd, removeInside } from "./sandbox.mjs"
+import { vendorCredentials, exportProfile } from "./vendor-auth.mjs"
 
 export const CREDENTIAL_LIMIT = 64 * 1024
 
@@ -108,8 +109,12 @@ export function assertTokenLasts(expiresAt, horizonMs, now = Date.now()) {
 }
 
 export function parseAuth(spec) {
-  const text = String(spec ?? "").trim()
-  if (!text) throw new Error("--auth is required: none, env:<VAR>[,<VAR>...] or claude-agent (see docs/running.md)")
+  const whole = String(spec ?? "").trim()
+  // `<source>+profile`: the same model credential, and the evals profile's vendor credentials as well (R2).
+  const vendor = whole.endsWith("+profile")
+  const text = vendor ? whole.slice(0, -"+profile".length) : whole
+  if (!text) throw new Error("--auth is required: none, env:<VAR>[,<VAR>...] or claude-agent, each optionally with +profile (see docs/running.md)")
+  if (vendor) return { ...parseAuth(text), vendor: true }
   if (text === "none") return { kind: "none" }
   if (text === "claude-agent") return { kind: "claude-agent" }
   if (text.startsWith("env:")) {
@@ -124,7 +129,34 @@ export function parseAuth(spec) {
  * Checks the profile once per batch and returns what each run needs. `binary` is the host the credential is exported
  * with; `caller` is the caller's environment.
  */
-export async function prepareAuth(profile, { binary, caller = process.env, horizonMs = 0, acceptUnknownExpiry = false }) {
+export async function prepareAuth(profile, options) {
+  const base = await prepareModelAuth(profile, options)
+  if (!profile.vendor) return base
+  // `+profile`: the vendor credentials of the evals profile, allow-listed, imported into every trial beside the model's own.
+  const { binary, caller = process.env, horizonMs = 0, acceptUnknownExpiry = false, needed = [] } = options
+  if (!needed.length) throw new Error("--auth +profile: no integration to give the trials (the arm's plugin and the cases' `Seed: plugins=` name none)")
+  const exported = await exportProfile({ binary, profileDir: caller.EVALS_PROFILE })
+  const vendor = vendorCredentials(exported, { needed, horizonMs, acceptUnknownExpiry })
+  const payload = JSON.stringify(vendor.list)
+  return {
+    ...base,
+    profile: `${base.profile}+profile`,
+    get secrets() {
+      return [...(base.secrets ?? []), ...vendor.secrets]
+    },
+    vendor: { integrations: vendor.list.map((c) => c.integrationID).sort(), expiries: vendor.expiries, dropped: vendor.dropped },
+    holdsCredential: true,
+    holdsVendor: true,
+    async apply(context) {
+      await base.apply(context)
+      const { sandbox, env, exec = (args, opts) => runToEnd(binary, args, { cwd: sandbox.home, env, ...opts }) } = context
+      const imported = await exec(["auth", "import", "--standalone"], { cwd: sandbox.home, input: payload, timeoutMs: 60_000 })
+      if (imported.code !== 0) throw new Error(`the vendor credential import into the sandbox failed (exit ${imported.code})`)
+    },
+  }
+}
+
+async function prepareModelAuth(profile, { binary, caller = process.env, horizonMs = 0, acceptUnknownExpiry = false }) {
   if (profile.kind === "none") return { profile: "none", env: {}, secrets: [], forTrial() { return { env: {}, rotated: false } }, async apply() {}, cleanup() {} }
   if (profile.kind === "env") {
     const missing = profile.names.filter((name) => !caller[name])
@@ -138,7 +170,9 @@ export async function prepareAuth(profile, { binary, caller = process.env, horiz
   if (!realHome || !existsSync(join(realHome, ".claude"))) throw new Error("--auth claude-agent: no ~/.claude; sign in with `claude` first")
   if (!caller.CLAUDE_AGENT_SDK_VERSION) throw new Error("--auth claude-agent: set CLAUDE_AGENT_SDK_VERSION (the version the Claude Agent provider runs with)")
   const name = caller.EVALS_AUTH_CREDENTIAL ?? "Claude Agent"
-  const exported = await runToEnd(binary, ["auth", "export", name], { env: caller, timeoutMs: 30_000 })
+  // EVALS_AUTH_STANDALONE=1: the marker is read from a private server, not the background service, for a probe whose caller HOME is a
+  // scratch directory holding a dummy sign-in (the owner's real service is never involved).
+  const exported = await runToEnd(binary, ["auth", "export", name, ...(caller.EVALS_AUTH_STANDALONE ? ["--standalone"] : [])], { env: caller, timeoutMs: 30_000 })
   if (exported.code !== 0 || !exported.stdout.trim()) throw new Error(`--auth claude-agent: \`opencode auth export ${JSON.stringify(name)}\` failed (exit ${exported.code}); is the credential stored?`)
   const credential = exported.stdout
   // The access token alone, held in memory; the caller's file is never written, and nothing of it copied. It is read

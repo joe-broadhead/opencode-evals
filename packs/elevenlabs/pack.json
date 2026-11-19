@@ -3,8 +3,8 @@
   "id": "elevenlabs",
   "name": "ElevenLabs",
   "package": "@joe-broadhead/opencode-elevenlabs",
-  "version": "0.0.4",
-  "private": false,
+  "version": "0.0.9",
+  "private": true,
   "pluginId": "elevenlabs",
   "rpc": "elevenlabs.tools",
   "skills": [
@@ -729,6 +729,13 @@
     {
       "name": "creative_show_flow_results",
       "permission": "elevenlabs_creative_show_flow_results",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "events_list",
+      "permission": "elevenlabs_events_list",
       "effect": "allow",
       "readOnly": true,
       "class": "read"
@@ -1705,12 +1712,15 @@
     "default": "all"
   },
   "counts": {
-    "tools": 238,
-    "reads": 100,
+    "tools": 239,
+    "reads": 101,
     "writes": 138,
     "denied": 0,
     "skills": 3
   },
-  "digest": "17a48786bd04c654813fd8b2e9229070d0a94550d69b47d7b2d59a88795b2462",
-  "t1": []
+  "digest": "f28e154a9781c6b28d9db3ab14267cd8803946b1bd70b79bc89eb9782b67807a",
+  "t1": [],
+  "egress": [
+    "api.us.elevenlabs.io"
+  ]
 }

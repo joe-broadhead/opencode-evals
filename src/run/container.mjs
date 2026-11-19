@@ -76,7 +76,49 @@ export function containerConfig({ store, env = process.env } = {}) {
   }
   if (env.EVALS_EGRESS_ALLOW !== undefined && env.EVALS_EGRESS_ALLOW !== "") allow = env.EVALS_EGRESS_ALLOW.split(",")
   const hosts = [...parseAllow(allow.join(","))].sort()
-  return { allow: hosts, limits, image: env.EVALS_CONTAINER_IMAGE ?? fromFile.image ?? null, docker: env.EVALS_DOCKER ?? "docker", proxyNode: env.EVALS_PROXY_NODE ?? null, source: Object.keys(fromFile).length ? file : null }
+  return { allow: hosts, limits, assets: parseAssets(fromFile.assets), image: env.EVALS_CONTAINER_IMAGE ?? fromFile.image ?? null, docker: env.EVALS_DOCKER ?? "docker", proxyNode: env.EVALS_PROXY_NODE ?? null, source: Object.keys(fromFile).length ? file : null }
+}
+
+/** Where a trial sees an asset the owner mounted (G8): the pinned binary a plugin downloads, a speech model, a managed Chromium. */
+export const ASSETS_DIR = "/opt/evals/assets"
+
+/**
+ * `container.assets` in caps.json: files and directories on the host that every trial gets, read-only, at /opt/evals/assets/<name>,
+ * because the egress allow-list lets a trial download nothing (browse's pinned binary, utilities' ~105 MB of speech models, voice's
+ * engine). `env` maps a variable name to a path inside the asset ("" for the asset itself), set in every trial:
+ *   { "name": "speech", "host": "/path/to/speech-assets", "env": { "UTILITIES_SPEECH_DIR": "" } }
+ */
+export function parseAssets(list) {
+  if (list === undefined || list === null) return []
+  if (!Array.isArray(list)) throw new Error("caps.json container.assets must be a list of { name, host, env? }")
+  return list.map((a, i) => {
+    if (!a || typeof a.name !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(a.name)) throw new Error(`caps.json container.assets[${i}].name must be lower-case words joined by dashes`)
+    if (typeof a.host !== "string" || !isAbsolute(a.host)) throw new Error(`caps.json container.assets[${i}].host must be an absolute path`)
+    if (/[,\n"]/.test(a.host)) throw new Error(`caps.json container.assets[${i}].host has a comma, quote or newline, which a bind mount cannot name`)
+    for (const [key, inner] of Object.entries(a.env ?? {})) if (!NAME.test(key) || typeof inner !== "string" || inner.includes("..") || isAbsolute(inner)) throw new Error(`caps.json container.assets[${i}].env.${key} must map a variable name to a relative path inside the asset`)
+    return { name: a.name, host: a.host, env: a.env ?? {} }
+  })
+}
+
+/** What the assets hold on the host: { name, ok, why, bytes } each, for `evals isolation assets` and probe g8. */
+export function checkAssets(assets = []) {
+  return assets.map((a) => {
+    if (!existsSync(a.host)) return { name: a.name, ok: false, why: `${a.host} does not exist` }
+    const stat = statSync(a.host)
+    let bytes = stat.size
+    if (stat.isDirectory()) {
+      bytes = 0
+      const walk = (dir) => {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+          const path = join(dir, entry.name)
+          if (entry.isDirectory()) walk(path)
+          else if (entry.isFile()) bytes += statSync(path).size
+        }
+      }
+      walk(a.host)
+    }
+    return bytes > 0 ? { name: a.name, ok: true, why: `${bytes} bytes`, bytes } : { name: a.name, ok: false, why: `${a.host} is empty` }
+  })
 }
 
 /** A command on a PATH, as its real absolute path, or null. */
@@ -383,7 +425,7 @@ export function containerBackend(config = containerConfig()) {
     },
 
     /** A trial: its own network and container, with the sandbox (rw) and `mounts` (ro) at their own paths. */
-    async enter({ name, sandbox, mounts = [], cwd }) {
+    async enter({ name, sandbox, mounts = [], cwd, hosts = [], ca = null }) {
       if (!state.prepared || state.tornDown) throw new Error("the container backend is not prepared")
       const root = resolve(sandbox.root)
       for (const path of [root, ...mounts.map((m) => m.host)]) if (/[,\n"]/.test(path)) throw new Error(`a bind mount cannot name ${JSON.stringify(path)}`)
@@ -427,10 +469,15 @@ export function containerBackend(config = containerConfig()) {
           ["--mount", `type=bind,src=${root},dst=${root}`],
           ...mounts.map((m) => ["--mount", `type=bind,src=${resolve(m.host)},dst=${resolve(m.host)},readonly`]),
           ...[...state.binaries.values()].map((b) => ["--mount", `type=bind,src=${b.host},dst=${b.inside},readonly`]),
+          ...(config.assets ?? []).map((a) => ["--mount", `type=bind,src=${a.host},dst=${ASSETS_DIR}/${a.name},readonly`]),
         ].flat()
+        // Fake mode: the vendor's host name is this trial's own loopback address (its /etc/hosts; the trial has no DNS), and the namespaced sysctl lets the
+        // fake bind :443 with every capability dropped.
+        const hostArgs = hosts.length ? ["--sysctl", "net.ipv4.ip_unprivileged_port_start=0", ...hosts.flatMap((h) => ["--add-host", `${h.host}:${h.ip}`])] : []
+        for (const h of hosts) if (!/^[a-z0-9.-]+$/.test(h.host) || !/^127\.\d+\.\d+\.\d+$/.test(h.ip) || h.ip === "127.0.0.1") throw new Error(`a trial maps a host name to its own loopback address only, not ${JSON.stringify(h)}`)
         const uid = typeof process.getuid === "function" ? `${process.getuid()}:${process.getgid()}` : "1000:1000"
         const created = await must(
-          ["run", "-d", "--name", ref, ...labelArgs({ "evals.role": "trial", "evals.trial": name }), "--network", ref, "--hostname", "evals", "--user", uid, "--read-only", "--tmpfs", `/tmp:rw,nosuid,nodev,size=${tmpfs_mb}m`, "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", String(pids), "--memory", `${memory_mb}m`, "--memory-swap", `${memory_mb}m`, "--cpus", String(cpus), ...binds, "--workdir", root, state.image],
+          ["run", "-d", "--name", ref, ...labelArgs({ "evals.role": "trial", "evals.trial": name }), "--network", ref, "--hostname", "evals", "--user", uid, "--read-only", "--tmpfs", `/tmp:rw,nosuid,nodev,size=${tmpfs_mb}m`, "--cap-drop", "ALL", "--security-opt", "no-new-privileges", ...hostArgs, "--pids-limit", String(pids), "--memory", `${memory_mb}m`, "--memory-swap", `${memory_mb}m`, "--cpus", String(cpus), ...binds, "--workdir", root, state.image],
           "starting the trial container",
         )
         trial.container = created.split("\n").pop()
@@ -473,10 +520,20 @@ export function containerBackend(config = containerConfig()) {
       trial.watchdog.unref?.()
 
       /** The command that runs `spec` inside the container; secrets and everything else by name only. */
+      // What fake mode adds to the trial's environment: the per-batch CA (the runtime's own NODE_EXTRA_CA_CERTS: this trial trusts it, nothing else does) and
+      // the mapped host names kept off the egress proxy, so the request goes to the fake on loopback and nowhere else.
+      const extraEnv = {}
+      if (hosts.length) {
+        const noProxy = ["127.0.0.1", "localhost", ...hosts.map((h) => h.host)].join(",")
+        extraEnv.NO_PROXY = extraEnv.no_proxy = noProxy
+      }
+      if (ca) extraEnv.NODE_EXTRA_CA_CERTS = ca
       trial.wrap = ({ command, args = [], cwd: dir, env = {} }) => {
         const mapped = [...state.binaries.values()].find((b) => b.command === command || b.host === command || (isAbsolute(command) && existsSync(command) && realpathSync(command) === b.host))
         const inside = mapped ? mapped.inside : command
-        const containerEnv = trialEnv(env)
+        const containerEnv = { ...trialEnv(env), ...extraEnv }
+        // The mounted assets' own variables: where, inside the trial, each one lives.
+        for (const a of config.assets ?? []) for (const [key, inner] of Object.entries(a.env ?? {})) containerEnv[key] = inner ? `${ASSETS_DIR}/${a.name}/${inner}` : `${ASSETS_DIR}/${a.name}`
         const names = Object.keys(containerEnv)
         const bad = names.filter((key) => !NAME.test(key))
         if (bad.length) throw new Error(`refusing to pass ${bad.map((k) => JSON.stringify(k)).join(", ")} into a trial: not a variable name`)

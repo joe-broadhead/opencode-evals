@@ -7,19 +7,28 @@
 //   evals lock     --plugin x [--epoch N]
 //   evals scorecard --iteration nx6 [--grading FILE] [--out FILE]
 //   evals policy   --a nx5 --b nx6 [--strict]
-//   evals report   <label>=<it>[,<it>...] ... [--plugin x] [--set all] [--cases ids] [--all-cases] [--detail] [--json]
+//   evals report   <label>=<it>[,<it>...] ... [--plugin x] [--set all] [--cases ids] [--cases-dir DIR] [--all-cases] [--detail] [--json]
 //   evals run      --plugin x --iteration it --model p/m --auth none|env:VAR|claude-agent [--cases ids] [--set tune]
 //                  [--trials K] [--parallel N] [--arm DIR|none] [--world DIR|FILE] [--host 2.2.6] [--dry-run]
 //                  [--isolation container|none] [--unsafe-no-isolation]   (container by default; none needs the flag)
 //                  [--accept-unknown-token-expiry]   (a claude-agent sign-in with no expiry: refused without it)
 //   evals truth    --plugin x --world DIR [--cases-dir DIR] [--set all]   each case's Truth: against the world's truth
+//   evals select   <iteration> [--plugin x] [--cases-dir DIR]   the wide cases' first-pass trials that selected them (once; a baseline is judged on the others)
+//   evals phase1   [--dry-run] [--from STEP] ...   the credentialed phase's gated order (docs/running.md#phase-1)
+//   evals halt     [--clear]   what halted the wave (a write that completed where none may), and clearing it
+//   evals p0       [a1|a2|a3|a4|a5|c|g|p13|all] [--companions FILE]   the safety probes G0 rests on: scripted model or a capture server, no credential
 //   evals isolation build|check|sweep   the container backend's image (docker/Dockerfile), its checks, and the removal
 //                  of what a crashed batch left behind
 //   evals t0       [--root DIR] [--json]
 //   evals verify   [--iteration it --plugin x | --all]  re-derive every number, or list the stale iterations
 //   evals selftest run the T-G gold cases over synthetic traces
 
-import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs"
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, mkdtempSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { readVersions, extractRelease } from "./pack/release.mjs"
+import { readHalt, clearHalt } from "./run/halt.mjs"
+import { noAccountPlugins, noCredentialPlugins, pluginsOf, usesOnlyNoAccount } from "./run/accounts.mjs"
+import { loadPacks } from "./run/lockdown.mjs"
 import { join, dirname, resolve, basename } from "node:path"
 import { fileURLToPath } from "node:url"
 import { compileCase, casesDigest, codedShare } from "./case/compile.mjs"
@@ -51,11 +60,12 @@ import { selectCases } from "./case/sets.mjs"
 import { builtinCollisions } from "./grade/select.mjs"
 import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
 import { rawCallArgs } from "./trace/rawArgs.mjs"
-import { compare as compareArms, renderReport } from "./report/arms.mjs"
+import { loadTargets, loadCanaries } from "./grade/targets.mjs"
+import { compare as compareArms, renderReport, holdoutOf, selectingTrials, wideCaseIds, caseOfTrial } from "./report/arms.mjs"
 import { runBatch, batchTmp, truthCheck } from "./run/runner.mjs"
 import { loadWorld } from "./run/world.mjs"
 import { renderTruthProblem } from "./case/truth.mjs"
-import { buildImage, checkIsolation, containerBackend, containerConfig } from "./run/container.mjs"
+import { buildImage, checkIsolation, containerBackend, containerConfig, checkAssets } from "./run/container.mjs"
 import { segment } from "./run/paths.mjs"
 
 const ROOT = resolve(fileURLToPath(new URL("../", import.meta.url)))
@@ -87,12 +97,14 @@ const ensureDir = (dir) => mkdirSync(dir, { recursive: true })
 const listCases = (dir) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".md")).sort() : [])
 
 function compileAll(plugin = "x", { check = false, dir = path("cases", plugin) } = {}) {
+  // The packs a case's tool names are checked against: this repository's, as synced from the releases.
+  const packs = loadPacks()
   const files = listCases(dir)
   if (!files.length) throw new Error(`no cases in ${dir}`)
   // Compile every case before writing any: a broken case must not leave a half-written case set.
   const compiled = files.map((file) => {
     const text = read(join(dir, file))
-    const caseObject = compileCase(dir === path("cases", plugin) ? join("cases", plugin, file) : join("holdouts", plugin, file), text)
+    const caseObject = compileCase(dir === path("cases", plugin) ? join("cases", plugin, file) : join("holdouts", plugin, file), text, { packs })
     const previous = join(dir, file.replace(/\.md$/, ".json"))
     const next = `${json(caseObject)}\n`
     const changed = !existsSync(previous) || read(previous) !== next
@@ -113,7 +125,11 @@ function graderHash() {
     "src/grade/evidence.mjs",
     "src/grade/grade.mjs",
     "src/grade/select.mjs",
+    "src/grade/targets.mjs",
+    "src/grade/gws.mjs",
+    "src/grade/writes.mjs",
     "src/trace/analyse.mjs",
+    "src/trace/normalise.mjs",
     "src/trace/redact.mjs",
     "src/trace/rawArgs.mjs",
     "src/grade/trials.mjs",
@@ -147,8 +163,15 @@ function stateFor(iteration, caseName) {
   return existsSync(file) ? JSON.parse(read(file)) : null
 }
 
+/** Does a case use a clause that reads the call's own arguments from the recording? */
+const RAW_KINDS = new Set(["target", "gws-plan"])
+const needsRawArgs = (caseObject) => (caseObject.items ?? []).some((item) => [...(item.evidence ?? []), ...(item.evidence_any ?? []).flat(), ...(item.na_when ?? [])].some((clause) => RAW_KINDS.has(clause.kind)))
+
 function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir = rawRoot(), plugin = "x") {
   const results = []
+  // The private store's targets and canaries, read once; absent files leave every clause that needs them unverifiable.
+  const targets = loadTargets()
+  const canaries = loadCanaries()
   const pack = readSnapshot(plugin, ROOT)
   const scope = pack ? { ns: plugin, tools: new Set((pack.tools ?? []).map((tool) => tool.name)) } : null
   // Every trial of a case is graded: `<case>.trace.jsonl` (one trial, recorded before trials were kept per file) and
@@ -178,10 +201,17 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
           .find((e) => e.type === "text")
         text = last?.part?.text ?? null
         // The arguments the case declares checkable are read from the recording here, and kept out of every trace.
-        if (caseObject.checkable?.length) rawArgs = rawCallArgs(rawLines)
+        // R6's `target:` and `gws-plan:` read the call's own arguments too, and so does a case that declares keys checkable.
+        if (caseObject.checkable?.length || needsRawArgs(caseObject)) rawArgs = rawCallArgs(rawLines)
       }
+      // The guard's record of the trial, from the run's own summary.
+      const summaryFile = `${rawBase}.summary.json`
+      const guard = existsSync(summaryFile) ? JSON.parse(read(summaryFile)).guard ?? null : null
       const files = existsSync(`${rawBase}.files.json`) ? JSON.parse(read(`${rawBase}.files.json`)) : null
-      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) ?? adapterState(plugin, files), scope, rawArgs, checkable: caseObject.checkable ?? [], files })
+      // The plugins that ran with no account (the pack's `accounts: none`, as the store's round.json overrides it): their cases have no target or canary.
+      const none = noAccountPlugins({ packs: loadPacks(), store: storePath() })
+      const noAccount = none.size && pluginsOf(caseObject).some((id) => none.has(id)) ? { plugins: none, all: usesOnlyNoAccount(caseObject, none) } : null
+      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) ?? adapterState(plugin, files), scope, rawArgs, checkable: caseObject.checkable ?? [], files, targets, canaries, guard, noAccount })
       results.push({ ...gradeCase(caseObject, view), ...(trial ? { trial } : {}) })
     }
   }
@@ -488,6 +518,8 @@ export async function main(argv) {
         `| cost per passing case | ${n.costPerPass.delta === null ? `not computable (cost source: ${n.costSource})` : `${n.costPerPass.delta > 0 ? "+" : ""}${Math.round(n.costPerPass.delta * 100)}%`} |`,
         "",
         `Comparability: ${comparison.why.length ? comparison.why.join("; ") : "every axis but the one under test matches"}.`,
+        "",
+        "This is the ship-or-hold gate on comparability and regressions. It computes no interval: the statistical claim (the case-cluster bootstrap, fresh baseline trials, the holdout gate) is `evals report`'s.",
       ]
       console.log(lines.join("\n"))
       return
@@ -517,9 +549,90 @@ export async function main(argv) {
         unsafeNoIsolation: Boolean(opt["unsafe-no-isolation"]),
         acceptUnknownTokenExpiry: Boolean(opt["accept-unknown-token-expiry"]),
         append: Boolean(opt.append),
+        tools: opt.tools && opt.tools !== true ? opt.tools : undefined,
+        commitPlan: opt["commit-plan"] && opt["commit-plan"] !== true ? opt["commit-plan"] : undefined,
+        preflight: opt.preflight && opt.preflight !== true ? opt.preflight : undefined,
       })
       // A batch with an error, an infra failure, or one the runner stopped is not a clean batch: a script must see that.
       if (result.stopped || result.results?.some((r) => r.error || r.infra)) process.exitCode = 1
+      return
+    }
+    case "select": {
+      // The wide cases' first-pass trials that did not strictly pass: they selected their cases, so the baseline is judged on the others. Recorded
+      // once (an existing list is never overwritten: a second pass would count the first one's fresh trials as selecting), for wide cases only.
+      const iteration = segment("iteration", opt.iteration && opt.iteration !== true ? opt.iteration : opt._[0])
+      const file = join(storePath(), "results", iteration, "verdicts.json")
+      if (!existsSync(file)) throw new Error(`not graded: ${iteration} (run evals grade --iteration ${iteration})`)
+      const target = join(storePath(), "results", iteration, "selecting.json")
+      if (existsSync(target)) throw new Error(`${iteration} already has results/${iteration}/selecting.json: it is recorded once, from the first pass, and never overwritten`)
+      const runs = JSON.parse(read(file))
+      const plugin = opt.plugin && opt.plugin !== true ? opt.plugin : runs.find((r) => r.plugin)?.plugin
+      if (!plugin) throw new Error("evals select <iteration> --plugin <id>: the iteration's verdicts do not say which plugin's cases they are")
+      const list = selectingTrials(runs, wideCaseIds(pluginCases(plugin, { dir: opt["cases-dir"] && opt["cases-dir"] !== true ? opt["cases-dir"] : null })))
+      write(target, json(list))
+      console.log(`${iteration}: ${list.length} selecting trial(s) written to results/${iteration}/selecting.json; evals report reads it for the baseline (wide cases only)`)
+      return
+    }
+    case "phase1": {
+      // The credentialed phase's gated order (docs/running.md#phase-1): each step only if the previous one passed.
+      const { runPhase1, defaultDeps, STEPS } = await import("./phase1.mjs")
+      const caller = process.env
+      const str = (value) => (value && value !== true ? value : null)
+      const store = storePath()
+      const ctx = {
+        store,
+        caller,
+        opencode: caller.OPENCODE_BIN ?? caller.EVALS_OPENCODE_BIN ?? "opencode",
+        profile: caller.EVALS_PROFILE ?? null,
+        noAccount: noCredentialPlugins({ packs: loadPacks(), store }),
+        vendors: str(opt.vendors)?.split(",").filter(Boolean) ?? [],
+        logout: str(opt.logout),
+        pilot: Boolean(opt.pilot),
+        confirmLabels: Boolean(opt["confirm-labels"]),
+      }
+      if (!opt["dry-run"]) ctx.deps = await defaultDeps({ store, caller, companions: str(opt.companions) ?? caller.EVALS_COMPANIONS })
+      const result = await runPhase1({ store, ctx, steps: STEPS, from: str(opt.from), only: str(opt.only), dryRun: Boolean(opt["dry-run"]), reset: Boolean(opt.reset) })
+      if (!result.ok) process.exitCode = 1
+      return
+    }
+    case "halt": {
+      // The wave's safety halt (G0 review 1.1): what the first completed write was, and `--clear` once the owner has read it.
+      const halt = readHalt(storePath())
+      if (!halt) {
+        console.log("no halt: nothing has written where it may not")
+        return
+      }
+      console.log(`HALT since ${halt.at ?? "?"}: ${halt.reason}`)
+      for (const w of halt.writes ?? []) console.log(`  ${w.tool}${w.target !== undefined ? ` at ${JSON.stringify(w.target)}` : ""}${w.call ? ` (call ${w.call})` : ""}: ${w.why}`)
+      if (halt.batch) console.log(`  batch ${halt.batch}, ${halt.trial ?? "?"}, ${halt.plugin ?? "?"} on ${halt.model ?? "?"}`)
+      if (opt.clear) {
+        clearHalt(storePath())
+        console.log("cleared: batches may launch again")
+      } else {
+        console.log("clear it, once read, with: evals halt --clear")
+        process.exitCode = 1
+      }
+      return
+    }
+    case "p0": {
+      // The safety probes G0 rests on (docs/running.md#g0): scripted model, no credential, every trial in a container.
+      const { PROBES } = await import("./p0/probes.mjs")
+      // `all` leaves g8 out when the owner has mounted no assets (container.assets in caps.json): it has nothing to prove then.
+      const hasAssets = containerConfig({ store: storeRoot(), env: process.env }).assets.length > 0
+      const wanted = opt._[0] && opt._[0] !== "all" ? opt._[0].split(",") : Object.keys(PROBES).filter((id) => (id !== "g8" || hasAssets) && (["live", "p7", "gws"].includes(id) ? Boolean(process.env.EVALS_PROFILE) : true))
+      const unknown = wanted.filter((id) => !PROBES[id])
+      if (unknown.length) throw new Error(`unknown probe ${unknown.join(", ")}: ${Object.keys(PROBES).join(", ")}`)
+      const env = { companions: opt.companions && opt.companions !== true ? opt.companions : process.env.EVALS_COMPANIONS, tmp: process.env.EVALS_TMP, store: storeRoot() }
+      let failed = 0
+      for (const id of wanted) {
+        const result = await PROBES[id](env)
+        console.log(`${result.ok ? "PASS" : "FAIL"} P0-${id}${result.actions ? ` (${result.actions} actions)` : ""}`)
+        for (const check of result.checks) console.log(`  ${check.ok ? "ok  " : "FAIL"} ${check.name}${check.ok ? "" : `: ${check.detail}`}`)
+        if (result.note) console.log(`  note: ${result.note}`)
+        if (!result.ok) failed++
+      }
+      console.log(failed ? `${failed} probe(s) failed` : `${wanted.length} probe(s) passed`)
+      if (failed) process.exitCode = 1
       return
     }
     case "truth": {
@@ -554,6 +667,14 @@ export async function main(argv) {
         }
         return
       }
+      if (action === "assets") {
+        // G8: what the owner mounted into every trial (browse's binary, the speech models) is on the host and not empty.
+        const rows = checkAssets(config.assets)
+        for (const row of rows) console.log(`${row.ok ? "ok  " : "FAIL"} ${row.name}: ${row.why}`)
+        console.log(rows.length ? `${rows.filter((r) => r.ok).length}/${rows.length} asset(s) present` : "no assets configured (container.assets in caps.json)")
+        if (rows.some((r) => !r.ok)) process.exitCode = 1
+        return
+      }
       if (action === "sweep") {
         const backend = containerBackend(config)
         backend.client(process.env)
@@ -578,7 +699,7 @@ export async function main(argv) {
       }
       const loaded = arms.map((arm) => ({ ...arm, results: arm.iterations.map((iteration) => ({ iteration, results: verdictsOf(iteration) })) }))
       const plugin = opt.plugin ?? loaded[0].results[0]?.results.find((r) => r.plugin)?.plugin ?? "x"
-      const caseList = pluginCases(plugin)
+      const caseList = pluginCases(plugin, { dir: opt["cases-dir"] && opt["cases-dir"] !== true ? opt["cases-dir"] : null })
       const meta = new Map(caseList.map((c) => [c.id, c]))
       const keep = new Set(selectCases(caseList, { patterns: opt.cases ?? "*", set: opt.set ?? "all" }).selected.map((c) => c.id))
       // A time-window case (`Seed: time=day`) asks about the world's day: a run recorded on another UTC day asked a
@@ -600,17 +721,42 @@ export async function main(argv) {
           results.filter((run) => run.verdict !== "NOT_RUN" && keep.has(run.case)).filter((run) => (sameDay(iteration, run) ? true : (dropped++, false))),
         ),
       }))
-      const report = compareArms(armsIn, { allCases: Boolean(opt["all-cases"]), resamples: Number(opt.resamples ?? 5000) })
+      // `--selecting <file>`: a JSON list of `<case>#<model>#<trial>` that selected a case; the baseline is judged on the others (fresh trials).
+      // Else the baseline's own `selecting.json` files (`evals select`), read automatically; `--no-fresh` compares on every trial.
+      // Only wide cases are ever selected by a first pass: an entry for any other case (a deep one) is ignored, whoever wrote the list.
+      const wide = wideCaseIds(caseList)
+      const onlyWide = (list) => list.filter((entry) => wide.has(caseOfTrial(entry)))
+      const own = opt["no-fresh"] ? [] : loaded[0].iterations.map((it) => join(storePath(), "results", it, "selecting.json")).filter((f) => existsSync(f)).flatMap((f) => onlyWide(JSON.parse(read(f))))
+      const selecting = opt.selecting && opt.selecting !== true ? new Set(onlyWide(JSON.parse(read(opt.selecting)))) : own.length ? new Set(own) : null
+      const report = compareArms(armsIn, { allCases: Boolean(opt["all-cases"]), resamples: Number(opt.resamples ?? 5000), selecting })
+      // Arms labelled `h1` and `cb-h1` (the holdout run of the adopted variants and its concurrent baseline): the pooled gate.
+      const h1 = report.rows.find((row) => row.label === "h1")
+      const cb = report.rows.find((row) => row.label === "cb-h1")
+      const gate = h1 && cb ? holdoutOf(h1, cb) : null
+      if (gate) report.holdout = { ok: gate.ok, pooled: gate.pooled, drops: gate.drops, held: gate.held, flips: gate.flips }
       if (opt.json) {
         console.log(json({ ...report, rows: report.rows.map(({ byCase: _, ...row }) => row), dropped }))
         return
       }
       console.log(`# report, ${plugin}${opt.set ? ` (set ${opt.set})` : ""}\n`)
       console.log(renderReport(report, { detail: Boolean(opt.detail) }))
+      if (gate) console.log(`\n**Holdout gate (h1 against its concurrent baseline cb-h1): ${gate.ok ? "PASS" : "HOLD"}**: pooled ${(gate.pooled.estimate * 100).toFixed(1)} pts, 95% interval [${(gate.pooled.lo * 100).toFixed(1)}, ${(gate.pooled.hi * 100).toFixed(1)}] (it must not drop and its lower bound must stay above -5.0)${gate.held.length ? `; held plugins (two or more holdouts flipped to fail): ${gate.held.join(", ")}` : ""}`)
       if (dropped) console.log(`\n${dropped} time-window run(s) dropped: recorded on another UTC day than their world's.`)
       return
     }
     case "t0": {
+      // `--plugin <id>` names the plugin whose declaration is checked (x by default, as before): its pack against itself and the
+      // family's invariants, and against its checkout's skills and namespace text when `--root` or the configured checkout is there.
+      const id = opt.plugin && opt.plugin !== true ? opt.plugin : "x"
+      if (id !== "x") {
+        if (!allPackIds(ROOT).includes(id)) throw new Error(`no pack for ${id}: ${allPackIds(ROOT).join(", ")}`)
+        const where = opt.root && opt.root !== true ? opt.root : pluginRepo(id)
+        const report = checkPack(readPack(id), where && existsSync(join(where, "package.json")) ? where : null)
+        console.log(opt.json ? json(report) : report.text)
+        if (opt.write) write(path("results", "t0", `${id}.json`), json(report))
+        if (report.failed) process.exitCode = 1
+        return
+      }
       const root = opt.root ?? pluginRepo("x")
       if (!root) {
         const report = checkPack(readPack("x"), null)
@@ -689,7 +835,38 @@ export async function main(argv) {
       let failures = 0
       const drifted = []
       const report = []
+      // `--sync --release <versions>`: each pack from its plugin's RELEASE tag (`git archive`), not the checkout's master. The versions
+      // are a JSON map or a file with `[id]=x.y.z` pairs; `--fetch` fetches the tags first. A plugin with no version is left alone.
+      const releases = opt.release && opt.release !== true ? readVersions(opt.release) : null
+      const scratch = releases ? mkdtempSync(join(process.env.TMPDIR ?? tmpdir(), "evals-release-")) : null
       for (const id of ids) {
+        if (opt.sync && releases) {
+          if (!releases[id]) {
+            console.log(`${id.padEnd(10)} skipped: no release version in ${opt.release}`)
+            continue
+          }
+          let dir
+          try {
+            dir = extractRelease({ id, version: releases[id], repo: pluginRepo(id), into: scratch, fetch: Boolean(opt.fetch) })
+          } catch (error) {
+            // A version not published yet (github's v0.0.8 waits on its release): the pack stays as it is, and the run says so.
+            console.log(`${id.padEnd(10)} NOT SYNCED: ${error.message} (the pack stays at v${readSnapshot(id, ROOT)?.version ?? "?"})`)
+            process.exitCode = 1
+            continue
+          }
+          const before = readSnapshot(id, ROOT)
+          const live = derivePack(id, dir)
+          const problems = familyProblems(live)
+          if (problems.length && !before) {
+            console.log(`${id.padEnd(10)} skipped: not a family pack — ${problems.join("; ")}`)
+            continue
+          }
+          const drift = before ? driftReport(live, before) : null
+          const pack = writePack(id, ROOT, process.env, dir)
+          if (drift?.drift) console.log(renderDrift(id, drift))
+          console.log(`${id.padEnd(10)} v${releases[id]} ${before ? "synced " : "created"}  tools ${pack.counts.tools} (${pack.counts.reads} read, ${pack.counts.writes} write, ${pack.counts.denied} denied${pack.counts.hidden ? `, ${pack.counts.hidden} hidden` : ""})  skills ${pack.counts.skills}  ${pack.digest.slice(0, 12)}${before ? `  was v${before.version}, ${before.counts?.tools} tools` : ""}`)
+          continue
+        }
         if (opt.sync) {
           if (!repoAvailable(id)) {
             console.log(`${id.padEnd(10)} skipped: no checkout (set EVALS_REPO_${id.toUpperCase()} or EVALS_PLUGIN_ROOT)`)

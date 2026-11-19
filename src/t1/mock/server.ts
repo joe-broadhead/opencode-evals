@@ -3,6 +3,7 @@
 //   [[mock:text:SOME TEXT]]   plain text answer
 //   [[mock:slow:N]]           N one-second chunks, then "slow done"
 //   [[mock:tool:NAME:JSON]]   one tool call to NAME with JSON arguments, then text after the tool result
+//   [[mock:dump]]            logs the whole request body (what reaches a model), then a short answer
 // A request without tools (title generation etc.) gets a short text answer.
 // Usage: bun mock/server.ts <port> <logFile>
 import { appendFileSync } from "node:fs"
@@ -30,8 +31,31 @@ function stream(write: (send: (s: string) => void, signal: AbortSignal) => Promi
   }), { headers: { "content-type": "text/event-stream", "cache-control": "no-cache" } })
 }
 
+// The usage block every answer reports. By default a few tokens; EVALS_MOCK_USAGE='{"input":..,"output":..,"cacheRead":..,"cacheWrite":..}'
+// makes it a fixed block, so a probe can price a scripted run at list (P0-C): `input` is the uncached input tokens.
+const fixed = (() => {
+  try {
+    return process.env.EVALS_MOCK_USAGE ? (JSON.parse(process.env.EVALS_MOCK_USAGE) as { input?: number; output?: number; cacheRead?: number; cacheWrite?: number }) : null
+  } catch {
+    return null
+  }
+})()
+const usageBlock = () => {
+  if (!fixed) return { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 }
+  const input = fixed.input ?? 0
+  const read = fixed.cacheRead ?? 0
+  const write = fixed.cacheWrite ?? 0
+  const output = fixed.output ?? 0
+  return {
+    prompt_tokens: input + read + write,
+    completion_tokens: output,
+    total_tokens: input + read + write + output,
+    prompt_tokens_details: { cached_tokens: read },
+    cache_creation_input_tokens: write,
+  }
+}
 const usage = (send: (s: string) => void) =>
-  send(`data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", created: 0, model: "m1", choices: [], usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 } })}\n\n`)
+  send(`data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", created: 0, model: "m1", choices: [], usage: usageBlock() })}\n\n`)
 
 function textAnswer(answer: string, signal: AbortSignal) {
   return stream(async send => {
@@ -66,6 +90,11 @@ const server = Bun.serve({
     const directive = /\[\[mock:(\w+)(?::([^\]]*))?\]\]/.exec(unescaped)
     const kind = directive?.[1] ?? "text"
     const arg = directive?.[2] ?? "hello from mock"
+    // [[mock:dump]]: the whole request body goes in the log, so a probe can read exactly what reaches a model (P0-1).
+    if (kind === "dump") {
+      log({ ev: "dump", body })
+      return textAnswer("dumped", signal)
+    }
     if (kind === "slow") {
       const seconds = Number(arg) || 30
       return stream(async (send, signal) => {

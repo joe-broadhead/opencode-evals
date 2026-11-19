@@ -17,16 +17,29 @@ import { selectCases } from "../case/sets.mjs"
 import { pluginCases } from "../case/load.mjs"
 import { harnessVersion } from "../version.mjs"
 import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf, outstanding, capsFile } from "../cost/ledger.mjs"
-import { assertBatchWithinBudget, projectedRunUsd, monthToDate, budgetCaps } from "../cost/budget.mjs"
+import { isMetered, assertBatchWithinBudget, projectedRunUsd, monthToDate, budgetCaps, assertLaunchWithinRound, estimateRunUsd, roundLimits, tierOf, RoundCapError } from "../cost/budget.mjs"
+import { loadCatalog, loadMapping, resolve as resolvePrice, listPrice } from "../cost/catalog.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
 import { makeSandbox, sealedConfig, sandboxEnv, worldEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, removeInside, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
 import { parseAuth, prepareAuth, readCredential, unknownExpiry } from "./auth.mjs"
-import { loadWorld, parseSeed } from "./world.mjs"
+import { loadWorld, parseSeed, parseSeedList } from "./world.mjs"
 import { checkTruth, renderTruthProblem } from "../case/truth.mjs"
 import { AUTH_ERROR, endedOnAuth } from "./authError.mjs"
-import { materialiseArm, armProvenance } from "./arm.mjs"
-import { snapshotFiles, changedFiles } from "./files.mjs"
+import { materialiseArm, armProvenance, readCompanions, materialiseCompanions, companionsDigest } from "./arm.mjs"
+import { lockdownPolicies, lockdownPermissions, loadPacks, companionOptions, ACCESS } from "./lockdown.mjs"
+import { buildPolicy, installGuard } from "./guard/policy.mjs"
+import { gateCases, seedFiles, dataPreflight, loadDataMatrix } from "./gate.mjs"
+import { resolveCommitPlan } from "./commit-plan.mjs"
+import { noAccountPlugins, fakePlugins, noCredentialPlugins, pluginsOf } from "./accounts.mjs"
+import { FAKE_HOSTS, fakeFor, hostsFor, installFake } from "./fake-mode.mjs"
+import { haltReason, readHalt, writeHalt, haltMessage } from "./halt.mjs"
+import { integrationsFor } from "./vendor-auth.mjs"
+import { checkBalances, vendorUseOf, SPENDING, perRunWorst } from "./balance.mjs"
+import { summarize } from "../trace/analyse.mjs"
+import { loadTargets, loadCanaries } from "../grade/targets.mjs"
+import { batchEgress } from "./egress.mjs"
+import { snapshotFiles, changedFiles, snapshotHome, changedHome, homeLinks } from "./files.mjs"
 import { segment, within, inside } from "./paths.mjs"
 import { selectIsolation, isLive, defaultIsolation } from "./isolation.mjs"
 import { containerConfig, findBinary, markBatchDir } from "./container.mjs"
@@ -142,8 +155,42 @@ export function providerFailed(result = {}) {
   return said.some((text) => NO_ROUTE.test(text))
 }
 
+/**
+ * A run refused for rate (R13): no model work, and an error event or stderr line that says 429, rate limit or overloaded, and is not
+ * a refusal of the credential. Never the model's to be graded on, and not an infrastructure failure either: it is tried again after a
+ * backoff, and three in a row pause the model.
+ */
+const RATE_LIMITED = /\b429\b|rate[_ -]?limit|too many requests|overloaded/i
+export function rateLimited(result = {}) {
+  if (authFailed(result)) return false
+  const { stdout = "", stderr = "" } = result
+  const tokens = billedOf(stdout).tokens
+  if (tokens.input + tokens.output + tokens.cacheRead + tokens.cacheWrite > 0) return false
+  const said = [String(stderr)]
+  for (const line of String(stdout).split("\n")) {
+    try {
+      const event = JSON.parse(line)
+      if (event.type === "error" || event.error) said.push(JSON.stringify(event))
+    } catch {
+      // not an event
+    }
+  }
+  return said.some((text) => RATE_LIMITED.test(text))
+}
+
+/**
+ * Claude Agent reports `isUsingOverage` on its rate-limit events: true means the run drew on the subscription's overage (paid) use,
+ * which the round never buys. Seen in the recording or on stderr, no further trial launches (G0 review 1.3).
+ */
+export const usingOverage = (result = {}) => /"isUsingOverage"\s*:\s*true/.test(`${result.stdout ?? ""}\n${result.stderr ?? ""}`)
+
+/** The backoff before each retry of a rate-limited run, in seconds, and how long three in a row pause the model. */
+export const BACKOFF_S = [60, 120, 240]
+export const PAUSE_S = 30 * 60
+
 /** "auth", "provider", or null: a failure before the model did any work, which is never the model's to be graded on. */
-export const preModelFailure = (result) => (authFailed(result) ? "auth" : providerFailed(result) ? "provider" : null)
+// A rate limit is neither: it is retried after a backoff (rateLimited above), and the host may name it a provider error.
+export const preModelFailure = (result) => (authFailed(result) ? "auth" : rateLimited(result) ? null : providerFailed(result) ? "provider" : null)
 
 /**
  * Waits until `model` is listed by the trial's own server (`opencode models --server`, run inside the trial), or the
@@ -170,11 +217,12 @@ export async function modelRoutes({ trial, binary, url, env, cwd, model, timeout
 async function preflightRoute(p) {
   const sandbox = makeSandbox(join(p.batchRoot, "preflight"))
   mkdirSync(join(sandbox.project, ".git"), { recursive: true })
-  const config = sealedConfig({ armDir: p.armDir, options: p.options, model: p.model, scripted: p.scripted, scriptedProvider: p.scriptedProvider })
+  const config = sealedConfig({ armDir: p.armDir, options: p.options, model: p.model, scripted: p.scripted, scriptedProvider: p.scriptedProvider, ...p.sealed })
   writeConfig(sandbox, config)
   const password = newPassword()
   registerSecrets([password])
-  const trial = await p.isolation.enter({ name: "preflight", sandbox, mounts: p.mounts, cwd: sandbox.project })
+  // Fake mode: the plugins' own vendor hosts are mapped to loopback here too, with nothing listening, so the preflight reaches neither the fake nor the proxy nor the vendor.
+  const trial = await p.isolation.enter({ name: "preflight", sandbox, mounts: p.mounts, cwd: sandbox.project, ...(p.fake ? { hosts: hostsFor(p.fake.ids), ca: p.fake.ca } : {}) })
   let server = null
   let mock = null
   try {
@@ -222,6 +270,72 @@ const billedOf = (stdout) => {
   return { billed_usd: total, cost_source: priced ? "billed" : "unpriced", tokens }
 }
 
+/**
+ * The run's cost at LIST price: its tokens against the catalogue through the model map, whatever was billed (a subscription
+ * bills $0). Null when the catalogue has no price for the model. This is what the round's ceiling counts (R9).
+ */
+export function listUsdOf(tokens, price) {
+  return price ? listPrice(tokens, price) : null
+}
+
+/** The catalogue price of the batch's model, resolved once: `{ price, via }` or `{ price: null, why }`. */
+export function modelPrice(model, caller) {
+  const [provider, ...rest] = String(model ?? "").split("/")
+  const resolved = resolvePrice(loadCatalog(caller), provider, rest.join("/"), loadMapping(caller))
+  return resolved.price ? { price: resolved.price, via: resolved.via } : { price: null, why: resolved.why }
+}
+
+/**
+ * What the host logged about plugins and servers in one trial (its own log file under the sandbox's data dir): the plugins
+ * that failed to load, with the first line of why, and how many warnings it wrote. A plugin that fails to load registers
+ * nothing, silently, so this is where "loaded" is proved.
+ */
+export function hostLogFacts(home) {
+  const file = join(home, ".local", "share", "opencode", "log", "opencode.log")
+  if (!existsSync(file)) return { log: false }
+  const lines = readFileSync(file, "utf8").split("\n")
+  const failed = []
+  let warnings = 0
+  for (const line of lines) {
+    if (!/level=(WARN|ERROR)/.test(line)) continue
+    warnings++
+    const m = /message="failed to load plugin" plugin\.id=(\S+) cause="([^"]{0,300})/.exec(line)
+    if (m) failed.push({ plugin: m[1], why: m[2].replace(/\s+/g, " ") })
+  }
+  return { log: true, warnings, plugin_load_failures: failed }
+}
+
+/** The guard's log lines for one trial (the file is in the trial's tmp, written by the guard plugin inside it). */
+function guardRecords(file) {
+  if (!existsSync(file)) return []
+  return readFileSync(file, "utf8").split("\n").filter(Boolean).map((line) => {
+    try {
+      return JSON.parse(line)
+    } catch {
+      return null
+    }
+  }).filter(Boolean)
+}
+
+/** What the guard saw, in numbers: asks answered, writes refused, assertion failures (EVALS-ASSERT), and whether it ran. */
+export function guardSummary(records) {
+  const count = (kind) => records.filter((r) => r.kind === kind).length
+  const asserts = records.filter((r) => r.kind === "assert")
+  return {
+    ran: records.some((r) => r.kind === "guard_start"),
+    asks: count("ask"),
+    rejected: count("reject"),
+    reject_failed: count("reject_failed"),
+    asks_left_to_run: records.filter((r) => r.kind === "ask" && r.own === true).length,
+    refused_writes: asserts.filter((r) => r.what === "write").length,
+    refused_tools: asserts.filter((r) => r.what === "tool").length,
+    assert_access: asserts.filter((r) => r.what === "access").length,
+    assert_committed: asserts.filter((r) => r.what === "committed").length,
+    committed: count("committed"),
+    write_calls: records.filter((r) => r.kind === "execute_before" && r.write).length,
+  }
+}
+
 const writeAtomic = (file, text) => {
   const tmp = `${file}.tmp-${process.pid}`
   writeFileSync(tmp, text, { mode: 0o600 })
@@ -253,7 +367,7 @@ async function startServer({ binary, cwd, env, password, trial, timeoutMs = 60_0
 const MOCK_PORT = 4200
 const TRIAL_MOCK_URL = `http://127.0.0.1:${MOCK_PORT}/v1`
 async function startTrialMock({ trial, ctx, sandbox }) {
-  const spec = trial.wrap({ command: ctx.bunBinary, args: [join(ctx.harnessDir, "mock", "server.ts"), String(MOCK_PORT), join(sandbox.tmp, "mock.jsonl")], cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp } })
+  const spec = trial.wrap({ command: ctx.bunBinary, args: [join(ctx.harnessDir, "mock", "server.ts"), String(MOCK_PORT), join(sandbox.tmp, "mock.jsonl")], cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp, ...(ctx.caller.EVALS_MOCK_USAGE ? { EVALS_MOCK_USAGE: ctx.caller.EVALS_MOCK_USAGE } : {}) } })
   const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
   let exited = false
   proc.exited.then(() => (exited = true))
@@ -265,12 +379,46 @@ async function startTrialMock({ trial, ctx, sandbox }) {
   return { proc, url: TRIAL_MOCK_URL }
 }
 
+/** P0-13's capture server inside the trial: a stand-in for the Anthropic API on the trial's own loopback, logging what `claude` sends. */
+const CAPTURE_PORT = 4300
+async function startCapture({ trial, ctx, sandbox }) {
+  const args = [join(ctx.harnessDir, "capture", "capture-server.ts"), String(CAPTURE_PORT), join(sandbox.tmp, "capture.jsonl")]
+  if (ctx.captureServer?.toolUse) args.push(JSON.stringify(ctx.captureServer.toolUse))
+  const spec = trial.wrap({ command: ctx.bunBinary, args, cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp } })
+  const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
+  let exited = false
+  proc.exited.then(() => (exited = true))
+  const up = await trial.ready({ url: `http://127.0.0.1:${CAPTURE_PORT}/v1/models`, timeoutMs: 20_000, exited: () => exited })
+  if (!up.ok) {
+    await stop(proc, { graceMs: 200 })
+    throw new Error(`the capture server did not start in the trial: ${up.last}`)
+  }
+  return { proc, url: `http://127.0.0.1:${CAPTURE_PORT}` }
+}
+
+/** Fake mode's MCP server for one plugin, inside the trial on loopback: the harness's own, serving the pack's tool list and a synthetic fixture. */
+async function startFakeMcp({ trial, ctx, sandbox, id, port }) {
+  const dir = join(ctx.harnessDir, "fake")
+  const { ip } = FAKE_HOSTS[id]
+  const leaf = ctx.fake.leaves[id]
+  const spec = trial.wrap({ command: ctx.bunBinary, args: [join(dir, "mcp-server.ts"), String(port), join(sandbox.tmp, `fake-${id}.jsonl`), join(dir, `${id}.catalog.json`), join(dir, "fixtures", `${id}.mjs`), ip, leaf.key, leaf.cert], cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp } })
+  const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
+  let exited = false
+  proc.exited.then(() => (exited = true))
+  const up = await trial.ready({ url: `http://127.0.0.1:${port}/health`, timeoutMs: 20_000, exited: () => exited })
+  if (!up.ok) {
+    await stop(proc, { graceMs: 200 })
+    throw new Error(`the fake ${id} MCP server did not start in the trial: ${up.last}`)
+  }
+  return { id, proc }
+}
+
 /** T1's scripted model server, started for a batch: the harness's own mock, never a model. */
 async function startMock({ batchRoot, caller }) {
   const port = await freePort()
   const home = join(batchRoot, "mock")
   mkdirSync(home, { recursive: true, mode: 0o700 })
-  const proc = start(caller.EVALS_BUN ?? "bun", [resolve(import.meta.dirname, "..", "t1", "mock", "server.ts"), String(port), join(home, "mock.jsonl")], { cwd: home, env: { PATH: caller.PATH ?? "/usr/bin:/bin", HOME: home, TMPDIR: home } })
+  const proc = start(caller.EVALS_BUN ?? "bun", [resolve(import.meta.dirname, "..", "t1", "mock", "server.ts"), String(port), join(home, "mock.jsonl")], { cwd: home, env: { PATH: caller.PATH ?? "/usr/bin:/bin", HOME: home, TMPDIR: home, ...(caller.EVALS_MOCK_USAGE ? { EVALS_MOCK_USAGE: caller.EVALS_MOCK_USAGE } : {}) } })
   const deadline = Date.now() + 15_000
   for (;;) {
     try {
@@ -322,9 +470,15 @@ async function runJob(job, ctx) {
   const sandbox = makeSandbox(root)
   const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
   const cwd = within(root, prepared.cwd, "the working directory")
+  // The case's own files (`Seed: files=`), copied into its project before the world's home is cut of its links.
+  const seeded = seedFiles(job.case.seed, cwd, { env: ctx.caller })
+  if (seeded.length) ctx.log(`  ${name}: seeded ${seeded.length} file(s) into the project`)
   const cut = stripForeignLinks(sandbox)
   if (cut.length) ctx.log(`  ${name}: removed ${cut.length} link(s) out of the sandbox that the world's home carried (${cut.slice(0, 3).join(", ")})`)
-  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider })
+  // Fake mode: the fake plugins this case uses. The sealed config carries no override: each plugin registers its own server at its default URL, and the trial
+  // maps that host name to the fake (a conflicting server of the plugin's own name would switch off its namespace text and tool filter).
+  const fakeIds = fakeFor(pluginsOf(job.case), ctx.fakeSet ?? new Set())
+  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...ctx.sealed })
   writeConfig(sandbox, config)
   const password = newPassword()
   // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
@@ -337,14 +491,18 @@ async function runJob(job, ctx) {
   let gone = false
   try {
     // The trial: under `container`, its own container and network, with the sandbox mounted at its own path.
-    trial = await ctx.isolation.enter({ name, sandbox, mounts: ctx.mounts, cwd })
+    trial = await ctx.isolation.enter({ name, sandbox, mounts: ctx.mounts, cwd, ...(fakeIds.length ? { hosts: hostsFor(fakeIds), ca: ctx.fake.ca } : {}) })
     let mock = null
     if (ctx.scripted && ctx.mockInTrial) mock = await startTrialMock({ trial, ctx, sandbox })
     const mockUrl = mock?.url ?? ctx.mockUrl
+    let capture = null
+    if (ctx.captureServer) capture = await startCapture({ trial, ctx, sandbox })
+    const fakes = []
+    for (const id of fakeIds) fakes.push(await startFakeMcp({ trial, ctx, sandbox, id, port: await freePort() }))
     // A world's own variables go in first and never the sealed ones; the harness's (credential, endpoint) go in last.
     const fromWorld = worldEnv(prepared.env)
     if (fromWorld.dropped.length) ctx.log(`  ${name}: the world's env may not set ${fromWorld.dropped.join(", ")}: ignored`)
-    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
+    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}), ...(capture ? { ANTHROPIC_BASE_URL: capture.url } : {}) } })
     // Every host command of the run goes through the trial.
     const exec = (args, options = {}) => {
       const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env })
@@ -352,9 +510,12 @@ async function runJob(job, ctx) {
     }
     await ctx.auth.apply({ sandbox, env, exec })
     const before = snapshotFiles(cwd)
+    const homeBefore = snapshotHome(sandbox.home, job.case.home_files)
     const started = Date.now()
     let server = null
+    let serverStderr = ""
     let result
+    const fakeStatus = {}
     try {
       server = await startServer({ binary: ctx.binary, cwd, env, password, trial })
       // A provider can fill its model list after the server answers (the Claude Agent provider probes `claude` first):
@@ -367,13 +528,23 @@ async function runJob(job, ctx) {
       } else {
         // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
         const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
-        result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, job.case.prompt], { timeoutMs: ctx.timeoutMs })
+        result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs })
+        // Fake mode: what each fake plugin says of itself once the run is over (its own status RPC, as a client of this trial's server), kept beside the recording:
+        // the probe compares it with what a signed-in user's plugin says (state connected, source `plugin`: no conflict).
+        for (const id of fakeIds) {
+          const status = await exec(["api", "--server", server.url, "post", `/api/rpc/${ctx.fake.rpc[id]}/status`, "-d", JSON.stringify({ input: {} })], { timeoutMs: 30_000 })
+          fakeStatus[id] = status.stdout
+        }
       }
     } catch (error) {
       result = { code: null, stdout: "", stderr: String(error.message ?? error), timedOut: false, error: String(error.message ?? error) }
     } finally {
+      // What the host printed while it ran (a plugin that failed to load says so here), kept for the summary, scrubbed there.
+      serverStderr = server?.proc?.output?.().stderr ?? ""
       await stop(server?.proc)
       await stop(mock?.proc, { graceMs: 200 })
+      await stop(capture?.proc, { graceMs: 200 })
+      for (const f of fakes) await stop(f.proc, { graceMs: 200 })
     }
     // Killing a `docker exec` client leaves what it started running inside: the trial ends here, before anything of
     // its sandbox is read, so nothing it left behind can change the files being recorded.
@@ -395,6 +566,7 @@ async function runJob(job, ctx) {
       utc_hour: new Date(started).getUTCHours(),
       ...(prepared.session ? { continued: true } : {}),
       // Scrubbed, then cut: a secret straddling the cut would leave its tail in the summary otherwise.
+      server_stderr: redact(String(serverStderr).slice(-6000)),
       stderr: redact(`${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}${killed ? `\n[evals run] killed: ${killed.reason}` : ""}`).slice(-4000),
       started_at: new Date(started).toISOString(),
       runner: RUNNER,
@@ -408,6 +580,7 @@ async function runJob(job, ctx) {
       // The model call was refused its credential, or never reached a model (no route): an infrastructure failure,
       // never graded as the model's.
       ...(preModelFailure(result) ? { infra: preModelFailure(result) } : {}),
+      ...(usingOverage(result) ? { overage: true } : {}),
       ...(fromWorld.dropped.length ? { world_env_ignored: fromWorld.dropped } : {}),
       ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
       world: ctx.worldInfo,
@@ -418,11 +591,31 @@ async function runJob(job, ctx) {
     }
     // The sandbox is hostile once a run has been in it: a working directory it replaced with a link out of the sandbox
     // is not walked, so no file outside the sandbox can reach the files record.
-    const files = inside(root, cwd) ? changedFiles(before, cwd) : []
+    const files = [...(inside(root, cwd) ? changedFiles(before, cwd) : []), ...(job.case.home_files?.length ? changedHome(homeBefore, sandbox.home, job.case.home_files) : [])]
+    const linked = job.case.home_files?.length ? homeLinks(sandbox.home, job.case.home_files) : []
+    if (linked.length) summary.home_links_refused = linked
     if (!inside(root, cwd)) summary.files_refused = "the working directory no longer resolves inside the sandbox"
     // Every file written for the run is scrubbed of its secrets first: the recording, the summary, the files record.
     const out = (suffix) => within(ctx.rawDir, join(ctx.rawDir, `${name}${suffix}`), "a recording")
     writeAtomic(out(".jsonl"), redact(result.stdout ?? ""))
+    // The guard's own log (what it asked, rejected and refused): next to the recording, scrubbed like it, and counted in the summary.
+    // The scripted model's own log (a probe's `[[mock:dump]]` reads what reached the model from it), beside the recording, scrubbed like it.
+    if (ctx.scripted && existsSync(join(sandbox.tmp, "mock.jsonl"))) writeAtomic(out(".mock.jsonl"), redact(readFileSync(join(sandbox.tmp, "mock.jsonl"), "utf8")))
+    // The fake MCP servers' logs (what the model asked of them), beside the recording, scrubbed like it.
+    for (const [id, status] of Object.entries(fakeStatus)) writeAtomic(out(`.fake-${id}.status.json`), redact(status))
+    for (const id of fakeIds) if (existsSync(join(sandbox.tmp, `fake-${id}.jsonl`))) writeAtomic(out(`.fake-${id}.jsonl`), redact(readFileSync(join(sandbox.tmp, `fake-${id}.jsonl`), "utf8")))
+    // The capture server's log (P0-13), beside the recording, scrubbed like it.
+    if (ctx.captureServer && existsSync(join(sandbox.tmp, "capture.jsonl"))) writeAtomic(out(".capture.jsonl"), redact(readFileSync(join(sandbox.tmp, "capture.jsonl"), "utf8")))
+    const guardLog = guardRecords(join(sandbox.tmp, "guard.jsonl"))
+    if (guardLog.length) writeAtomic(out(".guard.jsonl"), redact(`${guardLog.map((r) => JSON.stringify(r)).join("\n")}\n`))
+    summary.guard = guardSummary(guardLog)
+    // A write that completed where none may (G0 review 1.1): the runner reads it from the outcome and halts the wave.
+    const halt = haltReason(guardLog)
+    if (halt) summary.halt = halt
+    summary.host_log = hostLogFacts(sandbox.home)
+    // A plugin that failed to load registers nothing, silently, and its cases would be graded as the model's failure (boxd and gws did
+    // exactly that before their files were copied): infra, never graded, and the batch stops (G0 review 1.6).
+    if (!summary.infra && summary.host_log.plugin_load_failures?.length) summary.infra = "plugin"
     writeAtomic(out(".summary.json"), redact(`${JSON.stringify(summary, null, 1)}\n`))
     writeAtomic(out(".files.json"), redact(`${JSON.stringify(files, null, 1)}\n`))
     // Only once the trial is confirmed gone is its sandbox touched: removed, or kept and scrubbed.
@@ -430,6 +623,31 @@ async function runJob(job, ctx) {
     if (!gone) ctx.log(`  ${name}: the trial's container is still there: its sandbox is kept, not removed`)
     if (!ctx.keep && gone) removeSandbox(within(ctx.batchRoot, root, "the sandbox"))
     const cost = billedOf(result.stdout ?? "")
+    // What this run's own tool calls spent at vendors that bill for reads (R14), counted from the recording.
+    try {
+      const calls = summarize((result.stdout ?? "").split("\n").filter(Boolean), result.stderr ?? "").calls
+      cost.vendor_use = vendorUseOf(calls.flatMap((call) => [call.tool, ...(call.inner ?? [])]))
+    } catch {
+      // a recording that does not parse spent nothing we can count
+    }
+    // Rate-limited with retries left: nothing is recorded, nothing is released (the reservation stays for the retry), and the
+    // caller backs off. After the last retry it is an infrastructure failure like a refused credential, and is released.
+    if (!summary.infra && rateLimited(result)) {
+      if ((job.attempt ?? 0) < BACKOFF_S.length) return { case: id, trial: job.trial, rateLimited: true, exit: summary.exit, durationMs, ...(halt ? { halt } : {}) }
+      summary.infra = "rate-limit"
+      writeAtomic(out(".summary.json"), redact(`${JSON.stringify({ ...summary, attempts: (job.attempt ?? 0) + 1 }, null, 1)}\n`))
+    }
+    // Priced at list as well as billed: a subscription run bills $0, and the round's ceiling counts list price (R9).
+    cost.list_usd = listUsdOf(cost.tokens, ctx.listPrice)
+    cost.tier = tierOf(job.case)
+    // A run that did model work and reported no tokens (or whose model has no list price) would add $0 to what the round has spent:
+    // it is counted at the estimate, marked, and returned as an error so the batch's record names it (G0 review 1.3).
+    const reportedNothing = isMetered(ctx.model) && !summary.infra && (cost.list_usd === null || Object.values(cost.tokens ?? {}).every((n) => !n))
+    if (reportedNothing) {
+      const estimate = ctx.estimateUsd?.(cost.tier) ?? null
+      cost.list_usd = estimate
+      cost.usage_missing = true
+    }
     if (summary.infra) {
       // Never graded. A failure before the model did any work spent nothing: its reservation goes back, so it can be
       // rerun from the reserve. A run cut short after the model worked (its sign-in revoked mid-run) did spend: it is
@@ -437,10 +655,10 @@ async function runJob(job, ctx) {
       const worked = cost.billed_usd > 0 || Object.values(cost.tokens ?? {}).some((n) => n > 0)
       if (worked) recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, infra: summary.infra, ...cost })
       else release(ctx.store, ctx.batch, 1)
-      return { case: id, trial: job.trial, exit: summary.exit, durationMs, infra: summary.infra, ...(worked ? { spent: true } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
+      return { case: id, trial: job.trial, exit: summary.exit, durationMs, infra: summary.infra, ...(halt ? { halt } : {}), ...(worked ? { spent: true } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
     }
     recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
-    return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(killed ? { killed: killed.reason } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
+    return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(halt ? { halt } : {}), ...(summary.overage ? { overage: true } : {}), ...(cost.usage_missing ? { usage_missing: true, error: `the run reported no tokens: counted at the estimate ($${cost.list_usd ?? "unknown"})` } : {}), ...(killed ? { killed: killed.reason } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
   } finally {
     // The trial ends on every path (idempotent); a credentials file goes on every path, a run that failed, threw or was
     // interrupted included; a kept sandbox keeps no secret.
@@ -467,10 +685,32 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   if (!Number.isInteger(trials) || trials < 1) throw new Error("--trials must be a whole number of at least 1")
   if (!Number.isInteger(parallel) || parallel < 1) throw new Error("--parallel must be a whole number of at least 1")
   const store = options.store ?? storeRoot(caller)
+  const halted = readHalt(store)
+  if (halted) throw new Error(haltMessage(halted))
   // The repository's cases and the store's private holdouts, or exactly the directory --cases-dir names.
   const caseList = pluginCases(plugin, { dir: options.casesDir ?? null, env: caller })
   if (!caseList.length) throw new Error(`no compiled cases for ${plugin}${options.casesDir ? ` in ${options.casesDir}` : ""}`)
-  const { selected } = selectCases(caseList, { patterns: options.cases ?? "*", set: options.set ?? "tune" })
+  const { selected: chosen } = selectCases(caseList, { patterns: options.cases ?? "*", set: options.set ?? "tune" })
+  // What may run on this model, with its placeholders filled from the private store (R5): a case that reads a third party's words
+  // never goes to an `opencode/*` model, and one the store cannot fill is deferred, each with its reason in the batch record.
+  // The plugins that run with no account (GitHub and Jira): their cases hold no credential, need no target, and read no one's words.
+  const noAccount = noAccountPlugins({ packs: loadPacks(), store })
+  // Fake mode (GitHub, Jira): no account and no real endpoint, served by the harness's fake MCP server, so measurable. No credential for either kind.
+  const fakeSet = fakePlugins({ packs: loadPacks(), store })
+  const noCredential = noCredentialPlugins({ packs: loadPacks(), store })
+  const gated = gateCases(chosen, { model: options.model, targets: loadTargets(caller), canaries: loadCanaries(caller), matrix: loadDataMatrix(caller), noAccount })
+  let selected = gated.runnable
+  const deferred = [...gated.deferred]
+  // `--preflight data` (R10): a case whose clauses name a target, a canary or a seed the store lacks would only be BLOCKED later, so it
+  // is deferred now, each with the missing name. Re-run before every variant batch and before h1, so a drifted store is seen at once.
+  if (options.preflight) {
+    if (options.preflight !== "data") throw new Error(`--preflight must be data, not ${JSON.stringify(options.preflight)}`)
+    const found = dataPreflight(selected, { targets: loadTargets(caller), canaries: loadCanaries(caller), env: caller, noAccount })
+    deferred.push(...found)
+    const skip = new Set(found.map((d) => d.case))
+    selected = selected.filter((c) => !skip.has(c.id))
+  }
+  if (!selected.length) throw new Error(`nothing to run: all ${chosen.length} selected case(s) are deferred (${deferred.slice(0, 3).map((d) => `${d.case}: ${d.why}`).join("; ")}${deferred.length > 3 ? "; …" : ""})`)
   const rawDir = within(rawRoot(caller), join(rawRoot(caller), iteration, plugin), "the recordings directory")
   const jobs = plan({ cases: selected, trials, recorded: recordedTrials(rawDir), append: Boolean(options.append) })
 
@@ -478,10 +718,16 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   //   { "package": "../opencode-history", "options": { "access": "ask-changes" } }
   let armSpec = options.arm
   let pluginOptions = options.options ? JSON.parse(options.options) : null
+  let companionSpec = null
+  let companionBase = null
+  let guardWanted = null
   if (armSpec && armSpec !== "none" && armSpec.endsWith(".json")) {
     const manifest = JSON.parse(readFileSync(armSpec, "utf8"))
     if (pluginOptions && manifest.options) throw new Error(`${armSpec} sets options; --options would override them: pass one`)
     pluginOptions = pluginOptions ?? manifest.options ?? null
+    companionSpec = manifest.companions ?? null
+    companionBase = dirname(resolve(armSpec))
+    if (manifest.guard !== undefined) guardWanted = Boolean(manifest.guard)
     armSpec = manifest.package === "none" ? "none" : resolve(dirname(resolve(armSpec)), manifest.package)
   }
   const armSource = armSpec === "none" ? null : armSpec ?? pluginRepo(plugin, caller)
@@ -493,15 +739,39 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // Live or not is decided by what the run would be given: a credential, and the config the harness seals. Only the
   // harness's own scripted model with no credential is not live. Decided, and refused, before a world module is
   // imported: importing one runs its code.
-  const profile = parseAuth(options.auth ?? caller.EVALS_AUTH)
+  const parsedAuth = parseAuth(options.auth ?? caller.EVALS_AUTH)
+  // `+profile` gives a trial the evals profile's vendor credentials; a batch whose every plugin runs with no account has none to give.
+  const profile = parsedAuth.vendor && selected.length && selected.every((c) => pluginsOf(c).every((id) => noCredential.has(id))) ? { ...parsedAuth, vendor: false } : parsedAuth
   // A key passed through is a secret from the start: a world build's error output is scrubbed of it too.
   if (profile.kind === "env") registerSecrets(profile.names.map((name) => caller[name]))
   const scripted = Boolean(options.scripted)
+  // The guard is what stops a write that resolves to `allow`, turns away an ask nobody answers, and records one that completes. It is
+  // switched off only to probe the host alone, so a trial that holds any credential never runs without it (G0 review 1.6).
+  const holdsCredential = profile.kind !== "none" || Boolean(profile.vendor)
+  if (holdsCredential && (guardWanted === false || (options.guardMode && !["refuse", "commit"].includes(options.guardMode)))) throw new Error(`the guard cannot be switched off (\"guard\": false, or a guard mode of ${JSON.stringify(options.guardMode ?? "off")}) in a run that holds a credential (--auth ${options.auth ?? caller.EVALS_AUTH}): that setting is for probes with no credential`)
+  // What the model may do: `locked` (the default) removes the shell, file, web and subagent tools and makes every write an
+  // ask; `local` keeps them, for the credential-free arm only (G1): it is refused with any vendor credential.
+  const toolsMode = options.tools ?? "locked"
+  if (!["locked", "local"].includes(toolsMode)) throw new Error(`--tools must be locked or local, not ${JSON.stringify(toolsMode)}`)
+  if (toolsMode === "local" && profile.vendor) throw new Error("--tools local keeps the shell and the file tools, and is refused with a vendor credential (+profile): run the local set with no profile")
+  // The set and the arm must agree: a `local` case measures shell-first behaviour and needs the credential-free arm; every other
+  // case runs locked. A commit case really writes, and only with a commit plan (the guard's in-scope list and the asks it opens).
+  const localCases = selected.filter((c) => (c.sets ?? []).includes("local"))
+  if (toolsMode === "local" && localCases.length !== selected.length) throw new Error(`--tools local runs only cases in set local (${selected.length - localCases.length} selected case(s) are not: ${selected.filter((c) => !(c.sets ?? []).includes("local")).slice(0, 3).map((c) => c.id).join(", ")})`)
+  if (toolsMode === "locked" && localCases.length) throw new Error(`${localCases.length} selected case(s) are in set local (${localCases.slice(0, 3).map((c) => c.id).join(", ")}): run them with --tools local and no +profile`)
+  const commitCases = selected.filter((c) => (c.sets ?? []).includes("commit"))
+  if (commitCases.length && !options.commitPlan) throw new Error(`${commitCases.length} selected case(s) are in set commit (${commitCases.slice(0, 3).map((c) => c.id).join(", ")}): they really write, and run only with --commit-plan <file> naming what they may write`)
+  if (options.commitPlan && commitCases.length !== selected.length) throw new Error("--commit-plan runs only cases in set commit: every other case stays at the ask")
+  // The plan names @aliases of targets.json only; they are resolved here, and a literal or an unknown alias is refused.
+  const commitPlan = options.commitPlan ? resolveCommitPlan(JSON.parse(readFileSync(options.commitPlan, "utf8")), loadTargets(caller)) : null
   if (scripted && options.model !== SCRIPTED_MODEL) throw new Error(`--scripted runs the harness's scripted model, ${SCRIPTED_MODEL}: --model ${options.model} is not it`)
   const live = isLive({ auth: profile.kind, model: options.model, config: sealedConfig({ armDir: null, model: options.model, scripted }) })
   // Every run is confined in a container unless the caller names another backend: the scripted model can call tools too.
   const isolationName = options.isolation ?? (caller.EVALS_ISOLATION || null) ?? defaultIsolation()
-  const isolationSpec = { name: isolationName, live, unsafe: Boolean(options.unsafeNoIsolation), config: isolationName === "container" ? containerConfig({ store, env: caller }) : null }
+  const baseConfig = isolationName === "container" ? containerConfig({ store, env: caller }) : null
+  // Each batch reaches the model's hosts, and the hosts of the credentialed plugins its cases name, and nothing else (R3).
+  const egress = baseConfig ? batchEgress({ model: options.model, vendor: Boolean(profile.vendor), exclude: noCredential, cases: selected, packs: loadPacks(), targets: loadTargets(caller), base: baseConfig.allow, explicit: Boolean(baseConfig.source || caller.EVALS_EGRESS_ALLOW) }) : null
+  const isolationSpec = { name: isolationName, live, unsafe: Boolean(options.unsafeNoIsolation), config: baseConfig ? { ...baseConfig, allow: egress.allow } : null }
   if (options.dryRun) {
     log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}`)
     let refused = false
@@ -603,7 +873,11 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     if (interrupted) return
     interrupted = reason
     stopped = `interrupted by ${reason}`
-    log(`evals run: ${stopped}; stopping every run this batch started`)
+    try {
+      log(`evals run: ${stopped}; stopping every run this batch started`)
+    } catch {
+      // a closed output must not keep the batch from stopping
+    }
     await killAll()
     // Killing a `docker exec` client does not stop what it started inside: every trial container, its network and the
     // proxy are removed before the batch is written up.
@@ -619,12 +893,21 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const handlers = {
     SIGINT: () => onInterrupt("SIGINT", 130),
     SIGTERM: () => onInterrupt("SIGTERM", 143),
+    // A handler that logs must never throw into itself: a log line to a closed pipe is an error, which would call this handler again, for ever.
     uncaughtException: (error) => {
-      log(`evals run: ${error?.stack ?? error}`)
+      try {
+        log(`evals run: ${error?.stack ?? error}`)
+      } catch {
+        // nobody is reading the output: the batch is stopped all the same
+      }
       onInterrupt("an uncaught error", 1)
     },
     unhandledRejection: (error) => {
-      log(`evals run: ${error?.stack ?? error}`)
+      try {
+        log(`evals run: ${error?.stack ?? error}`)
+      } catch {
+        // as above
+      }
       onInterrupt("an unhandled rejection", 1)
     },
   }
@@ -638,7 +921,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const probeEnv = sandboxEnv({ sandbox: probe, config: sealedConfig({ armDir: null, model: options.model }), password: newPassword(), caller })
     // The binaries a trial needs, mounted read-only into a container: the host, a provider's own CLI, the mock's bun.
     const needsClaude = profile.kind === "claude-agent" || options.model.startsWith("claude-agent/")
-    const binaries = { opencode: binary, ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}), ...(scripted ? { bun: caller.EVALS_BUN ?? "bun" } : {}) }
+    // The fake-mode plugins any selected case uses.
+    const fakeIds = [...new Set(selected.flatMap((c) => fakeFor(pluginsOf(c), fakeSet)))].sort()
+    const binaries = { opencode: binary, ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}), ...(scripted || options.captureServer || fakeIds.length ? { bun: caller.EVALS_BUN ?? "bun" } : {}) }
     await isolation.prepare({ batchRoot, caller, binaries, log })
     if (isolation.confines) facts.isolation_detail = isolation.describe()
     // The harness's scripted model, when asked for: T1's mock server, for the whole batch on loopback, or, in a confined
@@ -647,12 +932,44 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // container), not in the process environment, which the plugin under test shares and could rewrite before the
     // provider reads it.
     let harnessDir = null
+    // The guard is on in every locked trial unless the arm file says `"guard": false` (a probe of the host alone).
+    const guardOn = guardWanted ?? (toolsMode === "locked" || holdsCredential)
+    if (scripted || guardOn) harnessDir = join(batchRoot, "harness")
     if (scripted) {
       if (!isolation.confines) mock = await startMock({ batchRoot, caller })
-      harnessDir = join(batchRoot, "harness")
       cpSync(resolve(import.meta.dirname, "..", "t1", "mock"), join(harnessDir, "mock"), { recursive: true })
       writeFileSync(join(harnessDir, "mock", "provider", "endpoint.json"), `${JSON.stringify({ url: mock?.url ?? TRIAL_MOCK_URL })}\n`, { mode: 0o444 })
       facts.scripted = true
+    }
+    if (options.captureServer) {
+      // P0-13: only with a dummy credential, never one that reaches anything: the capture server is the model's whole world.
+      if (profile.vendor || (profile.kind === "env" && profile.names.some((name) => !/^(CLAUDE_CODE_OAUTH_TOKEN|CLAUDE_AGENT_SDK_VERSION)$/.test(name)))) throw new Error("--capture-server is for the Claude surface probe: no vendor credential")
+      harnessDir ??= join(batchRoot, "harness")
+      mkdirSync(join(harnessDir, "capture"), { recursive: true })
+      cpSync(resolve(import.meta.dirname, "..", "p0", "capture-server.ts"), join(harnessDir, "capture", "capture-server.ts"))
+    }
+    // Fake mode: the fake MCP server, its fixtures and the catalogs of the fake plugins the cases use, where the trial's container can read them.
+    let fake = null
+    if (fakeIds.length) {
+      harnessDir ??= join(batchRoot, "harness")
+      if (!isolation.confines) throw new Error(`fake mode (${fakeIds.join(", ")}) needs --isolation container: it maps the vendor's host name to the fake inside the trial, which an unconfined run cannot do`)
+      fake = { ids: fakeIds, ...installFake(harnessDir, fakeIds), rpc: Object.fromEntries(fakeIds.map((id) => [id, loadPacks().find((pack) => pack.id === id).pluginId])) }
+      facts.fake_mode = fakeIds
+    }
+    let probeDir = null
+    if (options.probe) {
+      // The probe plugin only asks the host about permissions and calls no vendor, but it is for runs whose credentials are dummies: none, or
+      // a scratch profile read in standalone mode (EVALS_AUTH_STANDALONE: the enforced-path probe of P0-A2).
+      if ((profile.kind !== "none" || profile.vendor) && !(profile.kind === "none" && caller.EVALS_AUTH_STANDALONE)) throw new Error("--probe installs the permission probe plugin and is for runs with no credential")
+      harnessDir ??= join(batchRoot, "harness")
+      probeDir = join(harnessDir, "probe")
+      cpSync(resolve(import.meta.dirname, "probe"), probeDir, { recursive: true })
+    }
+    let guardDir = null
+    if (guardOn) {
+      const guardMode = commitPlan ? "commit" : options.guardMode ?? "refuse"
+      guardDir = installGuard(harnessDir, buildPolicy({ mode: guardMode, commit: commitPlan?.writes ?? {}, plans: commitPlan?.plans ?? null, locked: toolsMode === "locked" }))
+      facts.guard = { mode: guardMode }
     }
     // The probe is a trial of its own: under `container`, it proves a container starts before anything is reserved.
     const probeTrial = await isolation.enter({ name: "probe", sandbox: probe, mounts: [], cwd: probe.home })
@@ -671,7 +988,13 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const built = armProvenance(armDir, armSource ? resolve(armSource) : null)
     // The options are an axis of their own: an access mode changes what the plugin allows. Recorded by digest (an
     // option can be a secret), with the access value beside it.
-    const arm = { ...built, provenance: { ...built.provenance, options: digestOf(pluginOptions ?? {}), ...(pluginOptions?.access ? { access: pluginOptions.access } : {}) } }
+    // Every plugin of a locked trial, the arm and its companions alike, runs at ask-changes with its caps. An explicit
+    // access other than ask-changes is refused whenever the run holds any credential; with none, a probe may ask for it.
+    const wantsAccess = pluginOptions?.access
+    if (toolsMode === "locked" && wantsAccess && wantsAccess !== ACCESS && (profile.kind !== "none" || profile.vendor)) throw new Error(`the arm's options set access ${JSON.stringify(wantsAccess)}: a locked trial that holds a credential runs every plugin at ${ACCESS}`)
+    if (toolsMode === "locked" && armDir) pluginOptions = { ...companionOptions(plugin, pluginOptions ?? {}), ...(wantsAccess && profile.kind === "none" && !profile.vendor ? { access: wantsAccess } : {}) }
+    const companions = toolsMode === "locked" || companionSpec ? materialiseCompanions(readCompanions(companionSpec, { base: companionBase ?? process.cwd(), exclude: [plugin] }), join(batchRoot, "companions"), { options: (id, extra) => ({ ...companionOptions(id, extra), ...(profile.kind === "none" && !profile.vendor && wantsAccess ? { access: wantsAccess } : {}) }) }) : []
+    const arm = { ...built, provenance: { ...built.provenance, options: digestOf(pluginOptions ?? {}), ...(pluginOptions?.access ? { access: pluginOptions.access } : {}), companions: companionsDigest(companions), companion_list: companions.map((c) => `${c.id}@${c.version}`) } }
     Object.assign(facts, { opencode, isolation: isolation.name, ...(isolation.unsafe ? { unsafe_no_isolation: true } : {}), arm: { arm: arm.arm, sha256: arm.sha256, version: arm.version } })
 
     // The world must be current, and built by the build under test.
@@ -696,7 +1019,12 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const rounds = Math.ceil(jobs.length / parallel)
     const horizonMs = (timeoutMs + overheadMs) * rounds
     facts.horizon = { timeout_s: timeoutMs / 1000, run_overhead_s: overheadMs / 1000, rounds }
-    const auth = await prepareAuth(profile, { binary, caller, horizonMs, acceptUnknownExpiry: Boolean(options.acceptUnknownTokenExpiry) })
+    // The integrations a `+profile` batch holds: the arm's plugin and every plugin its cases name in `Seed: plugins=`, by the id
+    // each pack gives its integration (the pack's own id unless it says otherwise).
+    const packs = loadPacks()
+    const named = [...new Set([plugin, ...selected.flatMap((c) => parseSeedList(parseSeed(c.seed).plugins))])]
+    const needed = integrationsFor(plugin, selected, packs, (seed) => parseSeedList(parseSeed(seed).plugins), noCredential)
+    const auth = await prepareAuth(profile, { binary, caller, horizonMs, acceptUnknownExpiry: Boolean(options.acceptUnknownTokenExpiry), needed })
     if (auth.expiry) {
       Object.assign(facts.horizon, auth.expiry)
       log("WARNING: --accept-unknown-token-expiry: the sign-in's expiry is unknown, so this batch is not checked against it; a trial refused authentication stops the batch")
@@ -710,8 +1038,21 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     if (keepRoot && auth.holdsCredential) log(`warning: --keep-credentials: the kept sandboxes under ${batchRoot} hold the imported credential; delete them when you are done`)
     // The model must route inside a trial before anything is reserved: one trial, no prompt, no model call.
     const routeTimeoutMs = Number(caller.EVALS_ROUTE_TIMEOUT_S || 60) * 1000
-    const mounts = [armDir, harnessDir].filter(Boolean).map((host) => ({ host, ro: true }))
-    const routed = await preflightRoute({ batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs })
+    const mounts = [armDir, harnessDir, ...companions.map((c) => c.dir)].filter(Boolean).map((host) => ({ host, ro: true }))
+    // What the trial's sealed config adds to the arm: its companions, the guard, and the lockdown rules.
+    const sealed = {
+      companions: companions.map((c) => ({ dir: c.dir, options: c.options })),
+      guardDir,
+      lockdown: toolsMode === "locked" ? { policies: lockdownPolicies(), permissions: lockdownPermissions({ commit: commitPlan?.actions ?? [], ...(options.noWriteAsks ? { packs: [] } : {}) }) } : null,
+      // Eval-only plugins a probe asks for (src/run/probe): they ask the host about permissions and call no vendor.
+      extraPlugins: probeDir ? [probeDir] : [],
+    }
+    facts.tools = toolsMode
+    if (deferred.length) {
+      facts.deferred = deferred
+      log(`deferred ${deferred.length} case(s): ${deferred.slice(0, 4).map((d) => `${d.case} (${d.why})`).join("; ")}${deferred.length > 4 ? "; …" : ""}`)
+    }
+    const routed = await preflightRoute({ fake, batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: scripted && Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs, sealed })
     if (!routed.ok) throw new Error(`preflight: the model ${options.model} does not route inside a trial within ${routeTimeoutMs / 1000} s, so no run was reserved. The trial's server lists ${routed.listed.length ? routed.listed.slice(0, 12).join(", ") : "no model"}`)
     facts.preflight = { model: options.model, routed_after_ms: routed.waitedMs }
     log(`preflight: ${options.model} routes inside a trial (after ${(routed.waitedMs / 1000).toFixed(1)} s)`)
@@ -721,7 +1062,36 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // for its runs cannot be held to the dollar cap: the run caps alone apply to it, and that is said.
     const dollarCaps = budgetCaps(caller)
     const price = projectedRunUsd(store, options.model, caller)
-    reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller, perRunUsd: price.usd, priceBasis: price.basis, check: () => assertBatchWithinBudget(store, { runs: jobs.length, perRunUsd: price.usd, basis: price.basis }, caller) })
+    // The round's list-price ceiling (R9): a model priced at $0 by its subscription is still counted at list price. With a
+    // ceiling or cap set, a run with no estimate cannot be held to it and is refused, and so is a batch whose first run
+    // would already cross it. The batch reserves its runs at the mean estimate of its tiers; each launch is checked below.
+    const roundLimit = roundLimits(store, caller)
+    const listInfo = modelPrice(options.model, caller)
+    let perRunListUsd = null
+    // Fail closed (G0 review 1.3): a model that bills is never launched with no ceiling or cap, and none is launched with no catalogue
+    // price, since a run with no list cost would add 0 to what the round has spent.
+    const metered = isMetered(options.model)
+    if (metered && roundLimit.limit === null) throw new RoundCapError(`no round ceiling or cap is set: cannot hold ${options.model} to anything. Set EVALS_ROUND_CEILING_USD (the phase's) or EVALS_ROUND_CAP_USD / round_cap_usd in caps.json`)
+    if (metered && !listInfo.price) throw new RoundCapError(`${roundLimit.binds}: no catalogue price for ${options.model} (${listInfo.why}): a run of it would count as $0. Map it in the model map (EVALS_MODEL_MAP) to a priced model`)
+    if (roundLimit.limit !== null) {
+      const estimates = jobs.map((job) => estimateRunUsd(store, options.model, tierOf(job.case), caller))
+      const missing = estimates.find((e) => e.usd === null)
+      if (missing) throw new RoundCapError(`${roundLimit.binds}: cannot hold ${options.model} to $${roundLimit.limit}: ${missing.basis}`)
+      perRunListUsd = estimates.reduce((n, e) => n + e.usd, 0) / Math.max(1, estimates.length)
+      assertLaunchWithinRound(store, { model: options.model, tier: tierOf(jobs[0].case), running: 0 }, caller)
+    }
+    // Vendors that bill for reads (R14): each spending plugin the batch names must stay under its written cap, by the ledger's count
+    // and, when the caller supplies fetchers, by the vendor's own balance.
+    const spenders = named.filter((id) => SPENDING[id])
+    if (spenders.length) {
+      const capsFileText = existsSync(capsFile(store, caller)) ? JSON.parse(readFileSync(capsFile(store, caller), "utf8")) : {}
+      const balances = await checkBalances({ plugins: spenders, runsByPlugin: Object.fromEntries(spenders.map((id) => [id, jobs.length])), ledger: readLedger(store), limits: capsFileText.vendors ?? {}, live: options.balanceFetchers ?? {} })
+      for (const line of balances.lines) log(`vendor budget: ${line}`)
+      if (!balances.ok) throw new Error(`vendor budget: ${balances.refusals.join("; ")}`)
+      facts.vendor_budget = balances.lines
+    }
+    reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller, perRunUsd: price.usd, priceBasis: price.basis, perRunListUsd, vendorPerRun: spenders.length ? Object.fromEntries(spenders.map((id) => [SPENDING[id], perRunWorst(SPENDING[id])])) : null, check: () => assertBatchWithinBudget(store, { runs: jobs.length, perRunUsd: price.usd, basis: price.basis }, caller) })
+    facts.round = roundLimit.limit === null ? { enforced: false } : { enforced: true, limit: roundLimit.limit, binds: roundLimit.binds, per_run_list_usd: perRunListUsd, list_price: listInfo.price ? "catalogue" : `none (${listInfo.why})` }
     facts.dollar_cap = price.usd === null ? { enforceable: false, why: price.basis } : { enforceable: true, per_run_usd: price.usd, basis: price.basis }
     log(`reserved ${jobs.length} run(s) as ${reservation.batch}: ${plugin} at ${reservation.used.per_plugin_month + jobs.length}/${caps.per_plugin_month} this month`)
     log(price.usd === null ? `dollar cap: NOT ENFORCEABLE for this batch (${price.basis}); the run caps alone apply` : `dollar cap: $${dollarCaps.model_usd} a month, this batch at $${price.usd.toFixed(4)} a run (${price.basis}); $${reservation.dollars.projected.toFixed(2)} with what is billed and reserved`)
@@ -738,20 +1108,36 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       mockUrl: mock?.url ?? null,
       routeTimeoutMs,
       scripted,
-      mockInTrial: Boolean(harnessDir) && isolation.confines,
+      mockInTrial: scripted && Boolean(harnessDir) && isolation.confines,
       harnessDir,
+      sealed,
       bunBinary: caller.EVALS_BUN ?? "bun",
-      scriptedProvider: harnessDir ? join(harnessDir, "mock", "provider") : undefined,
-      mounts: [armDir, harnessDir].filter(Boolean).map((host) => ({ host, ro: true })),
+      scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined,
+      mounts,
+      prompts: gated.prompts,
+      captureServer: options.captureServer ?? null,
+      fakeSet,
+      fake,
       redact,
       dollarCap: facts.dollar_cap,
+      listPrice: listInfo.price,
+      estimateUsd: (tier) => estimateRunUsd(store, options.model, tier, caller).usd,
     }
-    Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo })
+    Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo, ...(auth.vendor ? { vendor: auth.vendor } : {}) })
+    if (egress && (egress.plugins.length || egress.skipped.length)) facts.egress_plan = { allow: isolationSpec.config?.allow, why: egress.why, plugins: egress.plugins, ...(egress.skipped.length ? { skipped: egress.skipped } : {}) }
     let next = 0
     let running = 0
+    let rateStreak = 0
+    let pausedUntil = 0
     const worker = async () => {
       for (;;) {
         if (stopped) return
+        // Another batch of the wave may have halted it since this one started.
+        const marked = readHalt(store)
+        if (marked) {
+          stopped = haltMessage(marked)
+          return
+        }
         const index = next++
         if (index >= jobs.length) return
         const job = jobs[index]
@@ -779,6 +1165,17 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
             return
           }
         }
+        // The round's list-price ceiling, per launch: what the round has spent at list price, with the other batches' reserved
+        // runs and this one's runs in flight, plus this run, must stay within the phase ceiling and the hard cap.
+        if (roundLimit.limit !== null || metered) {
+          try {
+            assertLaunchWithinRound(store, { model: options.model, tier: tierOf(job.case), running, batch: reservation.batch }, caller)
+          } catch (error) {
+            if (!(error instanceof RoundCapError)) throw error
+            stopped = error.message
+            return
+          }
+        }
         // The sign-in as it is now: something outside may have rotated it since the last trial. A sign-in that cannot be
         // read is this trial's infra: auth, and no further trial launches; its run goes back to the reserve.
         let trialAuth
@@ -799,12 +1196,49 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
         }
         launched++
         running++
-        const outcome = await runJob({ ...job, authEnv: trialAuth.env }, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: redact(String(error.message ?? error)) }))
+        // A rate-limited run is tried again after 60, 120 and 240 s (R13), and counts as nothing until it ends otherwise; three
+        // rate-limited runs in a row, across the batch, pause the model for 30 minutes. Delays scale by EVALS_BACKOFF_SCALE (tests).
+        const scale = Number(caller.EVALS_BACKOFF_SCALE ?? 1)
+        const nap = (seconds) => new Promise((done) => setTimeout(done, seconds * 1000 * scale))
+        let outcome
+        for (let attempt = 0; ; attempt++) {
+          if (pausedUntil > Date.now()) await new Promise((done) => setTimeout(done, pausedUntil - Date.now()))
+          outcome = await runJob({ ...job, attempt, authEnv: trialAuth.env }, ctx).catch((error) => ({ case: job.case.id, trial: job.trial, error: redact(String(error.message ?? error)) }))
+          if (!outcome.rateLimited) {
+            rateStreak = 0
+            break
+          }
+          rateStreak++
+          facts.rate_limited = (facts.rate_limited ?? 0) + 1
+          if (rateStreak >= 3) {
+            pausedUntil = Date.now() + PAUSE_S * 1000 * scale
+            facts.model_paused = (facts.model_paused ?? 0) + 1
+            log(`  ${options.model}: three rate-limited runs in a row: paused ${PAUSE_S / 60} min`)
+            rateStreak = 0
+          }
+          log(`  ${job.case.id}.t${job.trial} was rate-limited (attempt ${attempt + 1}): trying again after ${BACKOFF_S[attempt]} s`)
+          await nap(BACKOFF_S[attempt])
+        }
         running--
         results.push(outcome)
         log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.infra ? ` INFRA ${outcome.infra}` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)
+        // A write that completed where none may (G0 review 1.1): nothing more launches, in this batch or any other of the wave.
+        if (outcome.halt && !facts.halted) {
+          const info = { reason: outcome.halt.reason, writes: outcome.halt.writes, batch: reservation.batch, iteration, plugin, model: options.model, trial: `${job.case.id}.t${job.trial}` }
+          writeHalt(store, info)
+          facts.halted = info
+          stopped = `HALT: ${job.case.id}.t${job.trial}: ${outcome.halt.reason}; no further trial launched in any batch (the store's HALT file holds it)`
+          log(`  ${stopped}`)
+        }
+        // The subscription's overage is paid use the round never buys: stop at once (G0 review 1.3).
+        if (outcome.overage && !stopped) {
+          facts.overage = true
+          stopped = `${job.case.id}.t${job.trial} drew on the subscription's overage (isUsingOverage: true): no further trial launched`
+        }
+        if (outcome.usage_missing) facts.usage_missing = (facts.usage_missing ?? 0) + 1
         // A credential refused once, or a model that does not route, will fail again: no new trial after the first.
         if (outcome.infra === "auth" && !stopped) stopped = `${job.case.id}.t${job.trial} was refused authentication (infra: auth): no further trial launched; refresh the sign-in and rerun the released runs`
+        if (outcome.infra === "plugin" && !stopped) stopped = `${job.case.id}.t${job.trial}: a plugin failed to load in the trial (infra: plugin): no further trial launched; its cases would be graded as the model's failure. The host's own log names it in the trial's summary (host_log.plugin_load_failures)`
         if (outcome.infra === "provider" && !stopped) stopped = `${job.case.id}.t${job.trial} never reached its model (infra: provider): no further trial launched; rerun the released runs once the provider routes`
       }
     }

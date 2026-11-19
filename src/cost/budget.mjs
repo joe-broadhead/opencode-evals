@@ -6,7 +6,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
-import { ledgerMonth, loadCaps, readLedger, usage, outstanding, capsFile } from "./ledger.mjs"
+import { ledgerMonth, loadCaps, readLedger, usage, outstanding, outstandingList, capsFile } from "./ledger.mjs"
 import { loadCatalog, loadMapping, resolve as resolvePrice, listPrice } from "./catalog.mjs"
 
 const dollars = (env, name, fallback) => {
@@ -161,4 +161,97 @@ export function runCapLines(store, month = new Date().toISOString().slice(0, 7))
   const entries = readLedger(store)
   const plugins = [...new Set(entries.filter((entry) => entry.kind === "reserve" && entry.month === month).map((entry) => entry.plugin))].sort()
   return plugins.map((plugin) => `${plugin}: ${usage(entries, { month, plugin, iteration: null }).per_plugin_month} of ${caps.per_plugin_month} runs`)
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------- R9
+// The round's list-price ceiling. A subscription run bills $0, so the dollar cap above never sees a Claude run; every
+// run is therefore also priced at LIST (its tokens against the frozen catalogue, through the model map), the sum goes
+// in the ledger, and each LAUNCH checks it: what the round has spent at list price, plus what other batches' reserved
+// runs are expected to cost, plus this run and the ones of this batch still running, must stay within the phase ceiling
+// (`EVALS_ROUND_CEILING_USD`, the lead sets it per phase) and the hard cap (`EVALS_ROUND_CAP_USD`, or `round_cap_usd` in
+// caps.json). A run with no estimate cannot be held to the cap, so while a cap is set it is refused, never taken as $0.
+
+export class RoundCapError extends Error {
+  constructor(message) {
+    super(message)
+    this.name = "RoundCapError"
+  }
+}
+
+/** The tier a case is priced as: deep for the multi-step and commit sets, wide for the rest. */
+export const tierOf = (caseObject) => ((caseObject?.sets ?? []).some((name) => name === "deep" || name === "commit") ? "deep" : "wide")
+
+/** Does a model of this id bill? Everything but the harness's own scripted model (`mock/...`). */
+export const isMetered = (model) => !String(model ?? "").startsWith("mock/")
+
+/** The ceiling, the hard cap and the one that binds. `limit` is null when neither is set. */
+export function roundLimits(store, env = process.env) {
+  const file = capsFile(store, env)
+  const fromFile = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {}
+  const ceiling = env.EVALS_ROUND_CEILING_USD !== undefined && env.EVALS_ROUND_CEILING_USD !== "" ? dollars(env, "EVALS_ROUND_CEILING_USD", 0) : null
+  const capEnv = env.EVALS_ROUND_CAP_USD !== undefined && env.EVALS_ROUND_CAP_USD !== ""
+  const cap = capEnv ? dollars(env, "EVALS_ROUND_CAP_USD", 0) : typeof fromFile.round_cap_usd === "number" ? fromFile.round_cap_usd : null
+  const set = [ceiling, cap].filter((value) => value !== null)
+  return { ceiling, cap, limit: set.length ? Math.min(...set) : null, binds: ceiling !== null && (cap === null || ceiling <= cap) ? "phase ceiling" : "round cap" }
+}
+
+/** What the round has spent at list price: every recorded run's `list_usd`, in every month. */
+export function listSpent(store) {
+  const runs = readLedger(store).filter((entry) => entry.kind === "run")
+  return { usd: runs.reduce((sum, entry) => sum + (typeof entry.list_usd === "number" ? entry.list_usd : 0), 0), runs: runs.length, unpriced: runs.filter((entry) => isMetered(entry.model) && typeof entry.list_usd !== "number").length }
+}
+
+/** Runs of a model and tier needed before the measured mean replaces the table's estimate. */
+export const MIN_MEASURED_RUNS = 5
+
+/** Runs of a model and tier after which the plain mean replaces the margin. */
+export const MEASURED_ENOUGH = 30
+
+/**
+ * What one run of `model` at `tier` is expected to cost at list price: the mean of this round's recorded runs once there
+ * are enough of them (the pilot's measured means replace the table), else `estimate_run_usd[model][tier]` in caps.json,
+ * else `EVALS_ASSUMED_RUN_USD`, else the mean of fewer measured runs. Null when none of them exists.
+ */
+export function estimateRunUsd(store, model, tier, env = process.env) {
+  const runs = readLedger(store).filter((entry) => entry.kind === "run" && entry.model === model && (entry.tier ?? "wide") === tier && typeof entry.list_usd === "number")
+  const costs = runs.map((entry) => entry.list_usd).sort((a, b) => a - b)
+  const mean = costs.length ? costs.reduce((n, x) => n + x, 0) / costs.length : null
+  // A mean of a few runs is a noisy basis for a ceiling: until MEASURED_ENOUGH runs are in, the larger of the mean and the 75th
+  // percentile is used (G0 review 3.6), and only then the mean.
+  if (mean !== null && costs.length >= MEASURED_ENOUGH) return { usd: mean, basis: `the mean list cost of ${costs.length} recorded ${tier} run(s) of ${model}` }
+  if (mean !== null && costs.length >= MIN_MEASURED_RUNS) {
+    const p75 = costs[Math.min(costs.length - 1, Math.ceil(0.75 * costs.length) - 1)]
+    return { usd: Math.max(mean, p75), basis: `the 75th-percentile list cost of ${costs.length} recorded ${tier} run(s) of ${model} (a margin until ${MEASURED_ENOUGH} are in)` }
+  }
+  const file = capsFile(store, env)
+  const table = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")).estimate_run_usd?.[model]?.[tier] : undefined
+  if (typeof table === "number" && Number.isFinite(table) && table >= 0) return { usd: table, basis: `estimate_run_usd[${model}][${tier}] in ${file}` }
+  if (env.EVALS_ASSUMED_RUN_USD !== undefined && env.EVALS_ASSUMED_RUN_USD !== "") return { usd: dollars(env, "EVALS_ASSUMED_RUN_USD", 0), basis: "assumed (EVALS_ASSUMED_RUN_USD)" }
+  if (mean !== null) return { usd: Math.max(mean, costs.at(-1)), basis: `the largest list cost of ${costs.length} recorded ${tier} run(s) of ${model} (fewer than ${MIN_MEASURED_RUNS})` }
+  return { usd: null, basis: `no estimate for ${model} at tier ${tier}: no recorded run, no estimate_run_usd entry, no EVALS_ASSUMED_RUN_USD` }
+}
+
+/**
+ * The per-launch check. Throws RoundCapError (naming the ceiling that binds) when one more run would cross it; returns
+ * the projection otherwise. `running` is this batch's runs in flight, `batch` its id (its own reservation is not counted:
+ * its runs are checked one by one, here). With no ceiling and no cap set, nothing is checked.
+ */
+export function assertLaunchWithinRound(store, { model, tier = "wide", running = 0, batch = null }, env = process.env) {
+  const limits = roundLimits(store, env)
+  // Fail closed (G0 review 1.3): a model that bills (a subscription model bills $0 and still counts at list price) is never launched
+  // with no ceiling and no cap to hold it to. Only the harness's own scripted model, which bills nothing, is exempt.
+  if (limits.limit === null && !isMetered(model)) return { enforced: false, metered: false }
+  if (limits.limit === null) throw new RoundCapError(`no round ceiling or cap is set: cannot hold ${model} to anything. Set EVALS_ROUND_CEILING_USD (the phase's) or EVALS_ROUND_CAP_USD / round_cap_usd in caps.json`)
+  const estimate = estimateRunUsd(store, model, tier, env)
+  if (estimate.usd === null) throw new RoundCapError(`${limits.binds}: cannot hold ${model} to $${limits.limit}: ${estimate.basis}`)
+  const spent = listSpent(store)
+  // A recorded run with no list cost (no catalogue price, or no tokens reported) is a hole in the sum, so the cap cannot be trusted.
+  if (spent.unpriced > 0) throw new RoundCapError(`${limits.binds}: ${spent.unpriced} recorded run(s) have no list price, so what the round has spent is not known: price them (the model map and the catalogue) before launching more`)
+  const others = outstandingList(readLedger(store).filter((entry) => entry.batch !== batch))
+  const projected = spent.usd + others.usd + estimate.usd * (running + 1)
+  if (projected > limits.limit) {
+    throw new RoundCapError(`${limits.binds}: the next ${model} run would take the round to $${projected.toFixed(2)} of $${limits.limit} at list price ($${spent.usd.toFixed(2)} spent over ${spent.runs} run(s), $${others.usd.toFixed(2)} reserved by other batches, $${(estimate.usd * (running + 1)).toFixed(2)} for ${running + 1} run(s) of ${model} at ${estimate.basis})`)
+  }
+  return { enforced: true, limit: limits.limit, binds: limits.binds, spent: spent.usd, others: others.usd, estimate: estimate.usd, projected, basis: estimate.basis }
 }

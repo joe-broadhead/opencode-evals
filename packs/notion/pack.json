@@ -4,7 +4,7 @@
   "id": "notion",
   "name": "Notion",
   "package": "@joe-broadhead/opencode-notion",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "private": true,
   "pluginId": "notion.workspace",
   "skills": [
@@ -588,9 +588,12 @@
       "body_lines": 94
     }
   },
-  "digest": "60158386f0e7ff85feb27e851d2e863874fbb409257634ff5eeb7bca60a2da97",
+  "digest": "9db9f17f6cb581273331381e62782789160fdcde0498c5833a7b88235e9540c3",
   "access": {
     "key": "access",
     "default": "all"
-  }
+  },
+  "egress": [
+    "mcp.notion.com"
+  ]
 }

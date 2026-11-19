@@ -5,7 +5,7 @@
   "id": "granola",
   "name": "Granola",
   "package": "@joe-broadhead/opencode-granola",
-  "version": "0.0.2",
+  "version": "0.0.6",
   "private": true,
   "skills": [
     "granola",
@@ -150,7 +150,8 @@
       "permission": "granola_sign_out",
       "effect": "allow",
       "readOnly": false,
-      "class": "write"
+      "class": "write",
+      "hidden": true
     },
     {
       "name": "export_markdown",
@@ -165,6 +166,7 @@
     "reads": 11,
     "writes": 10,
     "denied": 0,
+    "hidden": 1,
     "skills": 2
   },
   "schema": "oc-pack/1",
@@ -182,9 +184,13 @@
       "body_lines": 41
     }
   },
-  "digest": "e1629a5028f78a91410012341007095f0f1d88b41e264d3f1a9baee8d1f4980a",
+  "digest": "cad7d0860cffde9db4376fda634adfd5edeb8781bfcb95d7d9a89b5d38691e08",
   "access": {
     "key": "access",
     "default": "all"
-  }
+  },
+  "egress": [
+    "mcp.granola.ai",
+    "mcp-auth.granola.ai"
+  ]
 }

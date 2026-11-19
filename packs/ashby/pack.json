@@ -4,7 +4,7 @@
   "id": "ashby",
   "name": "Ashby",
   "package": "@joe-broadhead/opencode-ashby",
-  "version": "0.0.2",
+  "version": "0.0.6",
   "private": true,
   "pluginId": "ashby.recruiting",
   "skills": [
@@ -147,9 +147,13 @@
       "body_lines": 66
     }
   },
-  "digest": "319f06cd9dd229b9233479db464d8d669cf18c43b1922744a9dd9010da1df597",
+  "digest": "97487ec293713b952736a384b4fbbf2ed47e943d937706d72398ca3f3ffe317f",
   "access": {
     "key": "access",
     "default": "all"
-  }
+  },
+  "egress": [
+    "mcp.ashbyhq.com",
+    "mcp-auth.ashbyhq.com"
+  ]
 }

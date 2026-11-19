@@ -3,8 +3,8 @@
   "id": "charts",
   "name": "Charts",
   "package": "@joe-broadhead/opencode-charts",
-  "version": "0.0.2",
-  "private": false,
+  "version": "0.0.7",
+  "private": true,
   "pluginId": "charts",
   "rpc": "charts.tools",
   "skills": [
@@ -14,15 +14,15 @@
   "skill_meta": {
     "charts": {
       "name": "charts",
-      "description_sha256": "5884a6c987807ecabd813b54b741567974eb3465678a1e9d30302af6199f9dbd",
-      "description_chars": 340,
-      "body_lines": 44
+      "description_sha256": "955c91a3c616c139e34c5f6bc27b9fb950ec32b8b7f0705ce7d69833adfd25d4",
+      "description_chars": 577,
+      "body_lines": 114
     },
     "charts-cookbook": {
       "name": "charts-cookbook",
-      "description_sha256": "b50ad3dc61013e06e2843b4235084aa486c73129874d1731fb9fcc5b18a687a5",
-      "description_chars": 278,
-      "body_lines": 779
+      "description_sha256": "6e7bfce7d552a2b0780962e753ba3603dae61cf397d8db57fc908f7be311be5d",
+      "description_chars": 414,
+      "body_lines": 1013
     }
   },
   "tools": [
@@ -50,6 +50,27 @@
     {
       "name": "update",
       "permission": "charts_update",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "board",
+      "permission": "charts_board",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "table",
+      "permission": "charts_table",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "diagram",
+      "permission": "charts_diagram",
       "effect": "allow",
       "readOnly": false,
       "class": "write"
@@ -95,12 +116,13 @@
     "default": "all"
   },
   "counts": {
-    "tools": 9,
+    "tools": 12,
     "reads": 5,
-    "writes": 4,
+    "writes": 7,
     "denied": 0,
     "skills": 2
   },
-  "digest": "15aed4aa457f44aa6697f88138ff7738089a26e2d39217e6b8e72bf54bebde48",
-  "t1": []
+  "digest": "5ef6ca422fc21143fde6316655a4cf4ab6d59a6b08bd79e52701a282cb54061e",
+  "t1": [],
+  "egress": []
 }

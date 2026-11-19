@@ -26,7 +26,7 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--plugin <id>` | required | the pack id; the cases are `cases/<id>/*.json` in this repository and the private holdouts in `$EVALS_STORE/holdouts/<id>/` (`--cases-dir` for exactly one other directory) |
 | `--iteration <name>` | required | the recordings go to `$EVALS_STORE/raw/<name>/<plugin>/` |
 | `--model <provider>/<model>[#variant]` | required | the model every run uses |
-| `--auth <profile>` | required (or `EVALS_AUTH`) | where the model credential comes from: below |
+| `--auth <profile>[+profile]` | required (or `EVALS_AUTH`) | where the model credential comes from: below; `+profile` adds the evals profile's vendor credentials, allow-listed |
 | `--cases <ids>` | `*` | ids and `prefix*` globs, comma separated |
 | `--set <sets>` | `tune` | `tune`, `holdout`, `tools`, `all`, or a comma list (see [design.md](design.md#reports-over-arms)) |
 | `--trials <k>` | `1` | runs per case; each is `<case>.t<k>`, and one trial never ships |
@@ -43,6 +43,8 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--accept-unknown-token-expiry` | off | with `--auth claude-agent`, run on a sign-in whose expiry is unknown (`expiresAt` null or absent) instead of refusing it ([Credentials](#credentials)) |
 | `--unsafe-no-isolation` | off | with `--isolation none`, launch anyway: the agent can reach the whole filesystem. It means nothing with `container`, and is refused there |
 | `--dry-run` | off | print the plan, the caps and the isolation; launch and reserve nothing |
+| `--tools locked\|local` | `locked` | `locked` removes the shell, file, web and subagent tools, asks every write and installs the guard ([Locked runs](#locked-runs-and-the-safety-gate-g0)); `local` keeps them, for the credential-free arm (cases in set `local`) only |
+| `--commit-plan <file>` | none | the commit set only (cases in set `commit`): a JSON file in the private store naming the write actions that become `allow`, each one's target extractor and the aliases it may touch, and the plan registry for plan-committed writes (gws) |
 | `--keep` | off | keep the sandboxes (for debugging the runner); with `--auth claude-agent` it is refused unless `--keep-credentials` is given too, because a kept sandbox holds the imported OpenCode credential (a marker; the access token is scrubbed from every kept file) |
 
 ## Arms
@@ -58,6 +60,183 @@ two together, so an `ask-changes` arm is a file and not a flag someone forgets:
 option can be a secret), with the `access` value beside it. They are a provenance axis of their own, `options`:
 two arms that differ only in access compare with `evals policy --axis options`, and an options difference refuses
 a comparison on any other axis. A batch from before options were recorded ran with none.
+
+## Locked runs and the safety gate G0
+
+Every run is **locked** unless it says `--tools local`. A trial that holds a vendor credential keeps it in its own `auth.json` and
+environment; a model with a shell, a file read, a web fetch or a subagent could read it and call the vendor directly, past every
+plugin's `ask-changes`. So the sealed config (`src/run/lockdown.mjs`):
+
+- **removes** `shell`, `read`, `grep`, `glob`, `write`, `edit`, `patch`, `webfetch`, `websearch`, `subagent` and
+  `experimental_image_generate` (and the host's `schedule_*`, `worktree_*`, `session_*` and MCP-resource tools), by a blanket
+  permission `deny` of each tool's own name: that is what takes a tool out of the list the model is offered. A policy
+  `tool.use deny` with resource `<tool>:*` and a `websearch.use` deny are the second lock. (A policy alone removes nothing: it is a
+  call-time check on `<tool>:<input>`, found by probe on OpenCode 2.3.2.) Code Mode keeps a `fetch`, which asks the `webfetch`
+  permission, so it is denied too; `process`, `Bun` and `globalThis` do not exist there, so no token is readable from it;
+- puts an `ask` rule on **every write action of every pack**, and on Tavily's `research` and `crawl` (spending "reads"), which
+  `opencode run` rejects. Only the commit set turns its own named actions into `allow`;
+- installs every other plugin as a **companion** at `access: ask-changes` with its caps (`companions` in an arm file: a map from a
+  plugin id to a built directory, or the path of a file holding one); an arm file cannot raise the access while the run holds any
+  credential (`+profile` counts);
+- installs **the guard** (`src/run/guard`): a write that resolves to `allow` is turned into a deny (`EVALS-ASSERT access`); a write
+  that completes is logged (`EVALS-ASSERT committed`); an ask from a session no run owns is rejected at once (the "global" one:
+  `opencode run --server` answers none), and one still pending after 3 s is rejected. `execute.before` fires before the tool asks,
+  so outside the commit set the guard does not refuse there: that would stop the ask, and a write graded as "asked and declined"
+  would never be asked. In the commit set it does refuse, for a write with no declared target extractor or a target outside the
+  allowed aliases, and for a plan commit (gws: only the `planId`) of a plan it did not see made for an in-sandbox target.
+
+`evals p0 [a1|a2|a3|a4|a5|c|g|g8|halt|live|p7|gws|env|p1|p2|p3|p4|p5|p13|all] [--companions FILE]` runs the probes the gate rests on, with the scripted model, no credential
+and every trial in a container: **a1** shell/file/web/subagent tools refused, no egress, a canary credential in no output;
+**a2** all 24 plugins at ask-changes, every write action asks (at access `all` too), the local writes decline end to end;
+**a3** a foreign-session ask is rejected within 5 s (and hangs without the guard); **a4** Tavily research and crawl are
+confirm-only; **a5** gws commits ask, and the guard's plan registry; **c** the token-priced round ceiling refuses the second
+launch; **g** the guard is deny-by-default at access `all`, and the suite fails without it.
+
+The other probes: **env** a trial's environment is built from an allow-list, never inherited: the launcher's shell holds `OPENCODE_API_KEY`, `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `GH_TOKEN` and 16 more canaries, and the trial sees none of them by name or value (a positive control shows the one `--auth` credential, masked), and the image, video, search, fetch and subagent tools are refused by name with no connection reaching the proxy; **p1** what reaches the model (the request body dumped in the locked and the open arm, saved under `$EVALS_STORE/p0/`);
+**p2** `search()` returns the full description and the signature; **p3** what the model sees when an inner call fails; **p4** the
+guard's hook reaches inner calls and, in commit mode, refuses an out-of-scope write there while an in-scope one passes to its
+rule; **p5** what `auth import` accepts (an oauth credential needs a refresh token, so a trial gets the placeholder `evals-no-refresh`;
+import merges); **p13** the Claude Agent surface: a capture server on the trial's loopback (`--capture-server`, an Anthropic-API
+stand-in, no model call) shows the request holds only the host's three MCP tools and no Claude Code built-in, and a Bash `tool_use`
+it sends is answered "No such tool available: Bash"; **g8** the owner's assets (`container.assets` in `caps.json`: browse's pinned
+binary, utilities' speech models, voice's engine) are on the host and mounted read-only in every trial (`evals isolation assets`
+checks the host half). The probes that need a credential (P0-6 keeper timing, P0-6b the GitHub token, P0-6c logout, P0-7 egress and
+data) and the paid pilot (P0-8) are not here: they run after the owner's sign-ins.
+
+Other run flags: `--preflight data` defers a case whose clauses name a target, a canary or a seed the store lacks, with the missing
+name; a rate-limited run (429, with no model work) is tried again after 60, 120 and 240 s and is `infra: rate-limit` after the last,
+and three in a row pause the model for 30 minutes; a spending plugin (Tavily, X, Affinity, OpenRouter) runs only under a cap in
+`caps.json` `vendors` (`tavily_credits`, `affinity_calls`, `x_usd`, `openrouter_usd`), counted from the ledger and, when the caller
+supplies a fetcher, from the vendor's own balance. `scripts/wide-skeletons.mjs --plugin <id>` writes one wide skeleton per reachable
+tool, whose prompt is `<<TODO>>` (compile refuses it) so it is written without sight of the tool's description.
+
+## The owner's decisions: the data matrix, GitHub and Jira in fake mode, the sign-in walk
+
+- **Data.** `$EVALS_STORE/data-matrix.json` is `{"real":["claude-agent/*"],"candidate":["claude-agent/*"]}`: real and candidate data go to Claude Haiku and
+  Sonnet and to no DeepSeek or other route. `gateCases` reads it that way (test/owner-decisions.test.mjs runs a fixture copy; the repository holds no such file).
+- **GitHub and Jira are not signed in, and are measured in fake mode.** Their packs say `accounts: fake` (and `$EVALS_STORE/round.json`,
+  `{ "accounts": { "<plugin>": "fake" | "none" | "signed-in" } }`, overrides any plugin's setting without a commit). A fake-mode plugin holds **no credential**:
+  `+profile` gives it none and asks the profile for nothing, its hosts are not opened, `evals phase1` expects no sign-in for it, and the egress proxy refuses
+  `api.github.com`, `api.githubcopilot.com`, `*.atlassian.net` and the vendors' MCP hosts. The plugin runs **as released**; the harness's own fake MCP server
+  (`src/fake/mcp-server.ts`, one per trial, on loopback) stands in for the vendor's:
+  - **What the model sees** is the released tool list: `packs/<id>/mcp.json` holds each tool's name, description, input schema and annotations
+    (`scripts/mcp-catalog.mjs` builds it). GitHub's 98 tools are 91 exact snapshots from github-mcp-server's `__toolsnaps__` (v2.2.0) and 7 remote-only tools that are
+    `derived` (a name, a neutral description, an open schema); Jira's 46 are a signed-in host's Code Mode listing turned back into JSON Schema
+    (`src/fake/ts-signature.mjs`; Array item types are lost in that rendering), and 9 destructive tools the sign-in's scope does not grant are `unserved`, as for a user. The
+    plugin's own tools (`events_list`, GitHub's `api`) are registered by the plugin itself. Vendor example addresses are rewritten to `example.org`.
+  - **Where it points: nowhere new.** The plugin registers its own server at its **default** vendor URL (GitHub `https://api.githubcopilot.com/mcp/`, Jira
+    `https://mcp.atlassian.com/v2/mcp?tools=all`), so it sees no conflict and runs exactly as released: its namespace description, tool filter, status and tools RPC are a
+    signed-in user's. (A server of the plugin's own name in the config, such as a loopback override, is a `conflict` to both plugins: they drop that text and the filter.)
+    The trial reaches the fake by name resolution, not by configuration: the container's `/etc/hosts` maps the vendor's host to the fake plugin's own loopback address
+    (`--add-host`; `127.0.0.2` for GitHub, `127.0.0.3` for Jira; the trial has no DNS), `NO_PROXY` keeps that host off the egress proxy, and the fake answers TLS on `:443` with a
+    certificate of a **per-batch CA** (`src/run/fake-ca.mjs`, made with `openssl` in the batch's directory): name-constrained to the fake hosts, its private key deleted as soon as the
+    leaves are signed, handed to a trial only as that trial's `NODE_EXTRA_CA_CERTS`, and never added to the machine's trust store or the image. `--isolation none` is refused for a
+    fake plugin (only a container can map the name). The batch preflight maps the same names to a loopback address with nothing listening, so it reaches neither the fake nor the vendor.
+  - **What it answers** comes from a small synthetic fixture (`src/fake/fixtures/<id>.mjs`: org `fabrikam-labs`, repo `quill-notes`; site `quill-labs.invalid`, project QLN), invented
+    names only. A write that ever reached it would answer "Nothing was changed", but writes are still **asked and declined** and graded at the declined call.
+  - **Grading**: a read is graded on tool choice and arguments (`call:`, `target:`), plus an outcome item against the fixture, `text:<span> contains @fixture.<plugin>.<fact>`
+    (every value of a list; a number stands alone, 4 is not 14; the fact must exist in the fixture, checked at compile time), so an answer made up instead of read fails.
+  - **`Data: synthetic`** is the only data a fake-mode plugin's case may declare (compile refuses anything else), so no sign-off is needed and DeepSeek may run them.
+  - **The probe**: `evals p0 fake` shows, per plugin, that the model sees the pack's full tool list; that the plugin ran as released (the namespace line of the Code Mode catalog the
+    model was given is the text the plugin's own source gives a signed-in user, with the tool count, and the plugin's own status RPC, read in the trial, says `connected` with its
+    own server on the default URL, not `conflict`); that every request the fake got carried the vendor's host name; that a read returns the fixture's data; that a write is asked and
+    declined and never reaches the fake; that no request reached the egress proxy at all; and that the proxy refuses the vendors' hosts.
+  - **`accounts: none`** stays as a generic setting for any other plugin: no credential and no server. Its tools exist only after a sign-in, so call, target and canary clauses on
+    them are n/a, and the honest-answer item `<prefix>-NA01` (a heuristic over the answer's words) is **minor**. Such a case is not deferred for a credential, a target or a canary.
+- **Slack, X and Google use the apps already configured**: no second Slack app, no second X app, no separate Google client. They are not owner prerequisites; `check-real`
+  still runs right after each of their sign-ins, and it is the check that says whether the shared app broke the normal profile.
+- **The owner's sign-in walk: `~/evals-232/bin/signin.sh`** (installed by `scripts/profile/install.sh`). It signs the evals profile into the vendors, one at a time, in the plan's
+  section 1.2.3 order less GitHub and Jira: OpenRouter, Affinity, Ashby, Plaud, Google (`gws`), Slack, X, ElevenLabs, Wispr Flow, Metaview, Granola, Notion, Linear. Each is the
+  normal `opencode auth login <vendor>` flow in the evals profile (`evals-profile.sh`), followed at once by `check-real.sh <vendor>` against the **normal** profile. On any
+  failure it stops, names the vendor, and prints one line: `Fix: sign <vendor> back in on your NORMAL profile (opencode auth login <vendor>), then run signin.sh --from <vendor>.`
+  OpenRouter and Affinity are new (not in the normal profile): `check-real` proves their evals sign-in alone. It prints no token (a token-shaped run in a tool's output is masked).
+  `--list` shows the order and what has passed (state in `$EVALS_STORE/signin-passed`), `--from <vendor>` resumes, `--only <vendor>` does one, `--redo` forgets. When it ends, run `evals phase1`.
+
+## Phase 1: the credentialed phase's first steps, gated
+
+`evals phase1` is the G0 re-check's section D as one executable sequence. Each step runs only if the one before it passed (recorded in
+`$EVALS_STORE/phase1.json`, so a stopped run resumes with `--from <step>`), the first failure stops everything after it with the sentence that
+says what to do, and a HALT in the store stops it whichever step is next. `evals phase1 --dry-run` prints the order and what each step needs.
+
+| # | Step | What it does | A failure means |
+| --- | --- | --- | --- |
+| 1 | `preflight` | no HALT; the profile exists on its own service port with no link; `targets.json` is in the store | fix the profile or the store |
+| 2 | `check-real` | after each vendor's sign-in (`--vendors a,b`, else the sign-in walk's vendors; never GitHub or Jira): the real profile still works and the tokens differ | sign the real profile back in for that vendor and sign in no more |
+| 3 | `keeper` | P0-6: one identity read per signed-in vendor; a due token's expiry must move | the token did not read or refresh |
+| 4 | `p6c` | P0-6c: `auth logout` of one vendor, only with `--logout <vendor>`; watch the egress log | (skipped unless asked) |
+| 5 | `p7` | P0-7: one scripted read per plugin (`live-reads.json`), the real egress hosts written to `egress-hosts.json`, none refused | a host is missing from the plugin's pack `egress`, or the read failed |
+| 6 | `live` | `p0 live`: one real write per plugin (`live-writes.json`), guard on, one plugin at a time; declined is the pass | a completed write is a HALT: `evals halt` |
+| 7 | `gws` | one real gws plan-and-commit in commit mode (`live-gws.json`) | the plan registry did not behave |
+| 8 | `pilot` | P0-8, paid, last: only with `--pilot --confirm-labels` (the lead has read the cases' `Data:` labels and `Seed: plugins=`), a ceiling set, `pilot.json` | stops at a person's step until confirmed |
+
+`live-reads.json`, `live-writes.json` and `live-gws.json` live in the private store and hold `@alias` placeholders (resolved from `targets.json` at
+run time), never an id: `{ "slack": { "code": "return await tools.slack.slack_send_message({ channel_id: '@slack.sandbox_channel', text: 'x' })" } }`.
+The guard-off pass the first review asked for is not needed (with the guard on any failure of the config ask, the plugin's ask or `opencode run`'s
+rejection shows as `EVALS-ASSERT access` and halts) and `guard: false` stays refused with a credential.
+
+Also from the re-check (head 5001f74): the `Data:` minimum is derived from the plugin a case uses and every plugin its `Seed: plugins=` names, the
+highest wins (granola, wisprflow, plaud and affinity read other people's words: `real`; metaview and ashby: `candidate`); a seed's paths are checked at any
+depth (`api/opencode.json`, `sub/AGENTS.md`, any `.claude/`, `.agents/` or `.opencode/` except `.opencode/jobs/` data files); a wide case's blocker may
+not rest on an argument path no signature in the pack declares (`args` on a pack tool, or make it a major item); `evals select <iteration>` writes, once, the first-pass
+trial of each **wide** case that did not strictly pass (it refuses to overwrite the list; deep cases and later trials are never recorded) and `evals report` judges the baseline on the
+others by itself, applying the list to wide cases only (`--no-fresh` for every trial; `--cases-dir` for cases outside the repository); `evals policy` computes no interval, only
+`evals report` decides the statistical claim; a URL from `opencode service status` is a running service, so the profile's port is set once.
+
+## The G0 review's changes (PR #8 at d7b6edf)
+
+An independent review of the harness found six things that block the first run that holds a credential, and twelve more. All are in; each blocker has a test that fails if it regresses.
+
+- **A completed write halts the wave.** After every trial the runner reads the guard's log (`src/run/halt.mjs`). Outside commit mode any
+  completed write, any write that resolved to `allow` at the permission decision, or an ask the guard could not reject is a halt; in commit
+  mode a write that completed with no `execute.before` pass for an in-scope target is. The runner launches nothing more, writes
+  `$EVALS_STORE/HALT` (the batch, the trial, the tool, the target) so every other batch of the wave refuses to start, and says what was
+  written where. `evals halt` shows it; `evals halt --clear` is the owner's, once read. Probe `halt` runs a write that really completes.
+- **The cost cap fails closed.** A model that bills is refused when no ceiling or cap is set (`EVALS_ROUND_CEILING_USD`, `EVALS_ROUND_CAP_USD`,
+  `round_cap_usd`), when it has no catalogue price, and when a recorded run of it has no list cost; only the scripted `mock/` model is exempt.
+  A run that did model work and reported no tokens is counted at the estimate, marked `usage_missing` and returned as an error. A recording
+  that says `"isUsingOverage": true` stops the batch (paid overage is never bought). Until 30 runs of a model and tier are recorded the estimate
+  is the larger of their mean and 75th percentile. The X, OpenRouter and Inference caps count from the ledger like Tavily's and Affinity's:
+  cumulative across the round, with other batches' reserved runs at their worst case ($0.25 an X call, $0.10 an OpenRouter call).
+- **`Data:` is required** on every case (a compile error to omit it), and a plugin that reads HR records (metaview, ashby) must say `candidate`.
+  The history, x and charts corpora written before the header are legacy: history is `own`, x is `real`, charts is `synthetic`. `real` and
+  `candidate` cases run on no model, DeepSeek or Claude, unless `$EVALS_STORE/data-matrix.json` lists it: `{ "real": ["claude-agent/*"],
+  "candidate": ["claude-agent/sonnet"] }`. A case of a plugin with a pack also declares a round set.
+- **`"guard": false`** (or a guard mode other than refuse and commit) is refused whenever the trial holds any credential, `+profile` included.
+- **The profile starts its own service**: `evals-profile.sh` and `exportProfile` give the profile a port of its own (47950, else the next free
+  one), set with `opencode service set port` in the profile only, and never the real service's. `check-real` and the keeper refuse a profile whose
+  port is the real one's, or has none. The keeper reads each credential's `expires` before and after its identity read and fails a token that was
+  due and did not move. A batch exports the profile once, so a vendor whose tokens last an hour (Atlassian, Google, Notion) needs batches shorter
+  than about 50 minutes. `check-real` says that a distinct token is not a distinct grant: the end of the round is `auth logout` in the profile.
+- **`evals privacy --scan`** catches the token shapes: `sk-ant-` (API keys and Claude OAuth), `sk-proj-`/`sk-or-`, `xoxb-`/`xoxp-`/`xoxe`/`xapp-`,
+  `ghp_`/`gho_`/`ghu_`/`ghs_`/`ghr_`/`github_pat_`, `ya29.` and Google refresh tokens, JWTs, `lin_oauth_`, `ntn_`, `secret_`, Atlassian `ATATT`,
+  AWS keys, Tavily and ElevenLabs keys, a `Bearer` token of any length, an OAuth access or refresh token field, and private key blocks. A value that
+  is obviously made up (`0123456789`, `abcdefghij`, `dummy`, `canary`, `example`) is not flagged, and a hex digest never is.
+- **A plugin that failed to load** (the host's own log) is `infra: plugin`: never graded, and the batch stops.
+- **Seeds** may not carry `opencode.json*`, `AGENTS.md`, `CLAUDE.md`, or anything under `.claude/`, `.agents/` or `.opencode/` (but `.opencode/jobs/` data
+  files). **`Home files:`** names may not start with a dot, and a link is never followed or recorded.
+- **The commit plan names `@alias`es of `targets.json` only**; a literal, an unknown alias, or `actions` that differ from `writes` fails the run.
+  `local: true` is the one write with no target (it touches only the trial's own sandbox).
+- **The guard has an allow-list tripwire**: in a locked trial a tool other than `execute`, `skill`, `question`, `todowrite` and the plugins' own is
+  refused at `execute.before` and logged (`refused_tools`), whatever it is, so a core tool a later version adds stays out.
+- **P0-A2 runs the enforced path**: `+profile` with a dummy credential from a scratch profile and an arm file that names no `access`, so a regression of
+  the runner's default shows end to end.
+- **Grammar**: a positive `call:`, `first:` or `before:` glob in a wide case, `absent-arg:`, and a canary that the prompt fills and an item grades are
+  compile errors; `canaries.json` values must be random tokens of at least 8 characters.
+- **Which command decides**: `evals report` decides. Its interval is the case-cluster bootstrap (`src/report/cluster.mjs`: cases are the unit, models
+  and trials nested inside), `--selecting <file>` judges the baseline on the trials that did not select a case (wide cases only), and arms labelled `h1` and `cb-h1` get the
+  pooled holdout gate (the point estimate must not drop and the lower bound must stay above -5 points; two flipped holdouts hold a plugin). The older
+  paired bootstrap is printed beside it. `evals policy` decides ship or hold on comparability and regressions.
+- **The live write probe** (`evals p0 live`, with `EVALS_PROFILE` and the owner's `live-writes.json`): one real write call per plugin at `ask-changes`
+  against its sandbox, each declined end to end with the guard on. The review's second pass with the guard off conflicts with the refusal above, so that
+  half is the credential-free P0-g gold run.
+- **Host sources**: `oc-src/2.3.1` sits beside `oc-src/2.3.2` (outside the scratch directory). Both hold `DESCRIPTION_LIMIT = 500` for the text `search()`
+  returns (`@opencode/core/dist/chunks/instance-gxs71cxp.js`, `generate-gxs71cxp.js`).
+
+The round's list-price ceiling (`EVALS_ROUND_CEILING_USD`, the phase's; `EVALS_ROUND_CAP_USD` or `round_cap_usd` in `caps.json`, the
+hard cap) is checked **before every launch**: what the round has spent at list price (every run's tokens against the frozen catalogue,
+through the model map: a subscription bills $0 and is counted anyway), plus the other batches' reserved runs, this batch's runs in
+flight and this run, must stay under it. A run with no estimate (`estimate_run_usd[model][tier]` in `caps.json`, replaced by the
+measured mean after five runs) cannot be held to the cap and is refused while one is set.
 
 ## Isolation
 

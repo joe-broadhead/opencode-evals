@@ -28,9 +28,15 @@ export function recomputeCounts(pack) {
     reads: tools.filter((tool) => tool.class === "read").length,
     writes: tools.filter((tool) => tool.class === "write").length,
     denied: tools.filter((tool) => tool.effect === "deny").length,
+    // Declared but hidden by the plugin at runtime: unreachable, so no case is expected for them (omitted when there are none,
+    // so a pack with none keeps the digest it always had).
+    ...(tools.some((tool) => tool.hidden) ? { hidden: tools.filter((tool) => tool.hidden).length } : {}),
     skills: (pack.skills ?? []).length,
   }
 }
+
+/** The tools a model can reach: every declared tool the plugin does not hide. */
+export const reachableTools = (pack) => (pack.tools ?? []).filter((tool) => !tool.hidden)
 
 const T1_KINDS = new Set(["asked", "refused", "capped", "allowed"])
 

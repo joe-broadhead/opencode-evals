@@ -29,16 +29,17 @@ is a compile error, so a broken case never reaches a run. `cases/x/small-bounded
 - Source: <where the case came from>
 - Decision tested: <one sentence>
 - Data check: <what the world must hold for the case to mean anything>   (optional)
+- Data: synthetic | seeded | own | real | candidate                      (optional: what the case reads, below)
 - Controls: no-skill (expect fail: <ITEM>); old-version (expect pass)    (optional)
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000           (optional)
-- Seed: cwd=api time=day                                                 (optional, read by the runner's world)
+- Seed: cwd=api time=day plugins=slack,linear files=jobs-nightly         (optional: pairs split on spaces; a comma stays in its value)
 - Holdout: true                                                          (optional)
 - Checkable: sessionID, query, sql, command                              (optional: below)
-- Set: core, smoke                                                       (optional: the plugin's own run sets)
+- Set: wide | route | deep | commit | hooks | local, or the plugin's own (core, smoke)   (optional, a comma list)
 - Status: active | retired | deferred                                    (optional; default active)
 
 ## Prompt
-<what the user types>
+<what the user types; `{{target:<alias>}}` and `{{canary:<name>}}` are filled at run time from the private store>
 
 ## Items
 - [<ID>] blocker|major|minor · <what must be observable>
@@ -76,6 +77,14 @@ The clauses, each one observable in a trace:
 | `budget:<name> <op> <n>` | `outer_calls` (every tool call the model made: skill loads, Code Mode's `execute`, direct tools), `inner_calls` (every call the code inside an `execute` made), `billed_calls`, `tokens`, `wall_ms`, `turns`, `cost_usd` |
 | `cost:matches-appended [tolerance <n>]` | the answer's cost line matches the plugin's appended one |
 | `state:<path> ==\|!= <value>` | the final state, from the case's oracle file |
+| `target:<tool>#<n> args.<key> in @<alias>[,@<alias>]` | every value of the call's argument (a list included) is one of the alias's values in `$EVALS_STORE/targets.json`; the value is read from the private recording; unverifiable without it or without the alias |
+| `gws-plan:#<n> op == <operation>` | the n-th `gws_plan` call asked for this operation (`!=` too) |
+| `gws-plan:#<n> target in @<alias>[,@<alias>]` | what that plan would touch is inside the alias: a mail's `To`, `Cc` and `Bcc` (decoded from the Gmail `raw`), else the file, calendar, sheet, document or list ids it names; a plan whose target cannot be read is unverifiable |
+| `absent-write:<plugin>` | no call, declined or not, of any write tool of the plugin (the packs' `class: write`) |
+| `committed-write:none` | no write completed: the guard's record when it ran, and a direct write call the trace shows `ok` |
+| `guard:clean` | the guard ran and logged no refused write, no `EVALS-ASSERT access` and no committed write; unverifiable when it did not run |
+| `unknown-tool:none` | no call named a tool that does not exist (Code Mode's `Unknown tool …`, the host's `No tool named …`) |
+| `text:<span> contains @canary.<name>` | the answer states the seeded fact in `$EVALS_STORE/canaries.json` (every value of a list; case-insensitive) |
 | `file:<glob> exists\|absent\|changed\|deleted` | a file the run wrote in its working directory (`*` within a directory, `**` across) |
 | `file:<glob> matches\|not-matches /re/` | the text of the files it wrote (64 KB at most each) |
 
@@ -97,6 +106,27 @@ A trace reduces every free-text argument to a shape, so a session id, a query, a
 cannot be compared from it. A case that needs to compare one declares its key: `Checkable: sessionID, query`. For
 those keys, and only for them, the grader reads the value from the private recording at grade time (call by call, in
 the trace's order); the trace still holds only the shape. Without the recording, such a clause is unverifiable.
+
+**Conventions** (settled for EVALS-232; `evals compile` enforces them):
+
+- *Item ids* are `<PREFIX>-<AREA><nn>`; the areas are `TR` skill, `RT` routing, `OC` outcome, `PR` arguments or process, `CT`
+  citation, `WR` write, `DT` date window, `ER` error recovery, `EF` efficiency, `RL` reliability, `SF` safety, `RB` robustness.
+- *Case ids* say what a case is for, and the `Set:` header must agree: `wide` is `tools-<tool>` (a paraphrase twin
+  `tools-<tool>-p`); `route` is `route-<slug>` (`route-no-<n>` should-not-call, `route-<topic>-<n>` overlap routing); `deep`
+  is `deep-<slug>` (`deep-x-<slug>` cross-plugin); `commit` is `commit-<slug>`; `hooks` is `hook-<slug>`; `local` (the
+  credential-free arm: shell and file tools on) takes any id and is combined with another set (`Set: route, local`). Any
+  other lower-case set name is the plugin's own. `tune`, `holdout`, `tools` and `all` are `--set` families and cannot be
+  declared.
+- *Holdouts* are `Holdout: true` with the id `hold-<plugin>-<n>-<slug>`, written into `$EVALS_STORE/holdouts/<plugin>/` only.
+- A case in one of this round's sets is in no family: `--set tune` and `--set all` never select it, so a default run cannot
+  start a `commit` case (which really writes) or a `local` one (which needs the credential-free arm). Name the set.
+- `Data:` says what the case reads. `synthetic`, `seeded` (made by the owner for the round) and `own` (the owner's own data,
+  no third party) may run on any provider; `real` (a third party's words) and `candidate` (interviews, HR records) never run
+  on an `opencode/*` model, and need the owner's sign-off for Claude. The runner skips them for `opencode/*`.
+- `Seed: files=<name>[,<name>]` copies `fixtures/seeds/<name>/` (tracked) or `$EVALS_STORE/seeds/<name>/` (private) into the
+  trial's project before it starts. A seed is a directory of plain files, no links; a name is one path segment.
+- A tool name in a clause is `[A-Za-z0-9_.*-]+`: hyphens (`notion-search`) and camel case (`getJiraIssue`) are fine, and
+  case matters.
 
 A tool is a name, a glob (`x_*`), a namespace (`history.*`) or a qualified name (`history.read`). A plugin tool reaches
 a run two ways, inside Code Mode's `execute` (ns `history`, tool `read`) or as a direct tool (`history_read`); a

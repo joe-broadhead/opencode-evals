@@ -1,0 +1,10 @@
+{
+  "name": "opencode-evals-probe",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "An eval-only OpenCode plugin: asks the host's permission system about an action and reports what it decided, so the harness can prove how the sealed config resolves every write. It calls no vendor and writes nothing.",
+  "exports": {
+    ".": "./plugin.ts"
+  }
+}

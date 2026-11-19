@@ -3,8 +3,8 @@
   "id": "tavily",
   "name": "Tavily",
   "package": "@joe-broadhead/opencode-tavily",
-  "version": "0.0.1",
-  "private": false,
+  "version": "0.0.5",
+  "private": true,
   "pluginId": "tavily.web",
   "rpc": "tavily.web.tools",
   "skills": [
@@ -73,6 +73,10 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "35c2d9232f4698a58f2f038b1bbef7dca2e95a66fcc226b11ca6114d572a2091",
-  "t1": []
+  "digest": "981a81f7be0e075151042d8462f80f3f14691d79969b3bbb6673ac981dcaabef",
+  "t1": [],
+  "egress": [
+    "mcp.tavily.com",
+    "api.tavily.com"
+  ]
 }

@@ -3,8 +3,8 @@
   "id": "browse",
   "name": "Browse",
   "package": "@joe-broadhead/opencode-browse",
-  "version": "0.0.1",
-  "private": false,
+  "version": "0.0.4",
+  "private": true,
   "pluginId": "browse",
   "rpc": "browse.tools",
   "skills": [
@@ -164,6 +164,7 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "d5797a6f0e8fb3592fb1b3319b6f3b8a694b81be96a0b408c275ddb0c29660ff",
-  "t1": []
+  "digest": "229fadd5c399c6f01d04e7ea2159dc4d9c22c52d645c0d9c10651e07f97be7fb",
+  "t1": [],
+  "egress": []
 }

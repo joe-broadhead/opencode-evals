@@ -6,6 +6,12 @@
 // being scored as a defect.
 
 import { selectCalls } from "./select.mjs"
+import { aliasValues, norm } from "./targets.mjs"
+import { gwsPlanFacts } from "./gws.mjs"
+import { writeIndex, writeOf } from "./writes.mjs"
+import { fixtureFacts } from "../fake/facts.mjs"
+
+const aliasList = (text) => text.split(",").map((part) => part.trim())
 
 const RE = /^\/(.+)\/([a-z]*)$/
 
@@ -39,7 +45,7 @@ export function parseClause(text) {
 
   let m
   // call:<tool>#<n> [args.<key> <op> <value>]
-  m = /^call:([a-z0-9_.*]+)#(\d+)(?:\s+(args\.[A-Za-z0-9_.]+)\s+(\S+)(?:\s+(.+))?)?$/.exec(line)
+  m = /^call:([A-Za-z0-9_.*-]+)#(\d+)(?:\s+(args\.[A-Za-z0-9_.-]+)\s+(\S+)(?:\s+(.+))?)?$/.exec(line)
   if (m) {
     const clause = { kind: "call", tool: m[1], n: Number(m[2]), arg: m[3] ?? null }
     if (m[3]) {
@@ -55,7 +61,7 @@ export function parseClause(text) {
   }
 
   // absent-arg:<tool> args.<key> <op> <value>: no call of the tool passed an argument that satisfies the comparison.
-  m = /^absent-arg:([a-z0-9_.*]+)\s+(args\.[A-Za-z0-9_.]+)\s+(\S+)(?:\s+(.+))?$/.exec(line)
+  m = /^absent-arg:([A-Za-z0-9_.*-]+)\s+(args\.[A-Za-z0-9_.-]+)\s+(\S+)(?:\s+(.+))?$/.exec(line)
   if (m) {
     const operator = op(m[3])
     if (!operator) return { ok: false, why: `unknown operator ${JSON.stringify(m[3])} in "${line}"` }
@@ -66,13 +72,13 @@ export function parseClause(text) {
     return { ok: true, clause: { kind: "absent-arg", tool: m[1], arg: m[2], op: operator, value: parseValue(m[4]) } }
   }
 
-  m = /^absent:([a-z0-9_.*]+)(?:#(\d+))?$/.exec(line)
+  m = /^absent:([A-Za-z0-9_.*-]+)(?:#(\d+))?$/.exec(line)
   if (m) return { ok: true, clause: { kind: "absent", tool: m[1], n: m[2] ? Number(m[2]) : null } }
 
-  m = /^count:([a-z0-9_.*]+)\s+(<=|>=|==|<|>)\s+(\d+)$/.exec(line)
+  m = /^count:([A-Za-z0-9_.*-]+)\s+(<=|>=|==|<|>)\s+(\d+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: "count", tool: m[1], op: m[2], value: Number(m[3]) } }
 
-  m = /^counts:([a-z0-9_.*]+)#(\d+)\.([a-z_]+)\s+(<=|>=|==|<|>)\s+(\d+)$/.exec(line)
+  m = /^counts:([A-Za-z0-9_.*-]+)#(\d+)\.([a-z_]+)\s+(<=|>=|==|<|>)\s+(\d+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: "counts", tool: m[1], n: Number(m[2]), key: m[3], op: m[4], value: Number(m[5]) } }
 
   m = /^text:(last-line|any|first-line|first-paragraph)\s+count\s+(\/.+\/[a-z]*)\s+(<=|>=|==|<|>)\s+(\d+)$/.exec(line)
@@ -100,16 +106,16 @@ export function parseClause(text) {
   }
 
   // Order: the first call (skill loads and the `execute` wrapper aside), and one call before another.
-  m = /^first:([a-z0-9_.*-]+)$/.exec(line)
+  m = /^first:([A-Za-z0-9_.*-]+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: "first", tool: m[1] } }
 
-  m = /^before:([a-z0-9_.*-]+),([a-z0-9_.*-]+)$/.exec(line)
+  m = /^before:([A-Za-z0-9_.*-]+),([A-Za-z0-9_.*-]+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: "before", tool: m[1], other: m[2] } }
 
-  m = /^(absent-)?skill:([a-z0-9_.-]+)$/.exec(line)
+  m = /^(absent-)?skill:([A-Za-z0-9_.-]+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: m[1] ? "absent-skill" : "skill", skill: m[2] } }
 
-  m = /^(absent-)?declined:([a-z0-9_.-]+)$/.exec(line)
+  m = /^(absent-)?declined:([A-Za-z0-9_.-]+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: m[1] ? "absent-declined" : "declined", tool: m[2] } }
 
   m = /^budget:([a-z_]+)\s+(<=|>=|==|<|>)\s+(\d+(?:\.\d+)?)$/.exec(line)
@@ -117,6 +123,38 @@ export function parseClause(text) {
 
   m = /^cost:matches-appended(?:\s+tolerance\s+(\d+(?:\.\d+)?))?$/.exec(line)
   if (m) return { ok: true, clause: { kind: "cost", tolerance: m[1] ? Number(m[1]) : 0.0011 } }
+
+  // R6 (EVALS-232): clauses over the sandbox targets, the plan of a Google Workspace write, the guard and the answer's canaries.
+  //   target:<tool>#<n> args.<path> in @<alias>[,@<alias>]   every value of the call's argument is one of the alias's values
+  m = /^target:([A-Za-z0-9_.*-]+)#(\d+)\s+(args\.[A-Za-z0-9_.-]+)\s+in\s+(@[A-Za-z0-9_.-]+(?:\s*,\s*@[A-Za-z0-9_.-]+)*)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "target", tool: m[1], n: Number(m[2]), arg: m[3], aliases: aliasList(m[4]) } }
+  //   gws-plan:#<n> op == <operation>   |   gws-plan:#<n> target in @<alias>[,@<alias>]
+  m = /^gws-plan:#(\d+)\s+op\s+(==|!=)\s+([A-Za-z0-9_.+-]+)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "gws-plan", n: Number(m[1]), what: "op", op: m[2], value: m[3] } }
+  m = /^gws-plan:#(\d+)\s+target\s+in\s+(@[A-Za-z0-9_.-]+(?:\s*,\s*@[A-Za-z0-9_.-]+)*)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "gws-plan", n: Number(m[1]), what: "target", aliases: aliasList(m[2]) } }
+  //   absent-write:<ns>   no call of any write tool of the plugin, declined or not
+  m = /^absent-write:([A-Za-z0-9_-]+)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "absent-write", ns: m[1] } }
+  //   committed-write:none   no write call was committed (declined and refused ones are not)
+  if (line === "committed-write:none") return { ok: true, clause: { kind: "committed-write" } }
+  //   guard:clean   the guard ran and refused no in-scope write, saw no access assertion and no committed write outside the set
+  if (line === "guard:clean") return { ok: true, clause: { kind: "guard" } }
+  //   unknown-tool:none   no call named a tool that does not exist
+  if (line === "unknown-tool:none") return { ok: true, clause: { kind: "unknown-tool" } }
+  //   text:<span> contains @canary.<name>   the answer states the seeded fact (every value, for a list)
+  m = /^text:(last-line|any|first-line|first-paragraph)\s+contains\s+@canary\.([A-Za-z0-9_.-]+)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "canary", span: m[1], name: m[2] } }
+
+  //   text:<span> contains @fixture.<plugin>.<fact>   the answer states what the harness's fake server holds (fake mode): an answer
+  //   that was invented, not read from the fixture, does not (every value, for a list). The fact must exist in the fixture.
+  m = /^text:(last-line|any|first-line|first-paragraph)\s+contains\s+@fixture\.([a-z][a-z0-9-]*)\.([A-Za-z0-9_]+)$/.exec(line)
+  if (m) {
+    const facts = fixtureFacts(m[2])
+    if (!facts) return { ok: false, why: `@fixture.${m[2]}.${m[3]}: no fake fixture for ${m[2]} (fake mode: ${fixtureFacts.known().join(", ")})` }
+    if (!(m[3] in facts)) return { ok: false, why: `@fixture.${m[2]}.${m[3]} is not a fact of the ${m[2]} fixture (${Object.keys(facts).join(", ")})` }
+    return { ok: true, clause: { kind: "fixture", span: m[1], plugin: m[2], name: m[3] } }
+  }
 
   m = /^state:([A-Za-z0-9_.-]+)\s+(==|!=)\s+(.+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: "state", path: m[1], op: m[2], value: parseValue(m[3]) } }
@@ -424,6 +462,81 @@ export function evaluateClause(clause, view) {
       const ok = compare(value, clause.value.value, clause.op)
       return { state: ok ? "ok" : "fail", detail: `state ${clause.path} = ${JSON.stringify(value)} ${ok ? "satisfies" : "violates"} ${clause.op} ${JSON.stringify(clause.value.value)}` }
     }
+    case "target": {
+      const calls = selectCalls(view.calls, clause.tool, view.scope)
+      const call = calls[clause.n - 1]
+      if (!call) return { state: "fail", detail: `${clause.tool}#${clause.n} was not called (${calls.length} total)` }
+      const allowed = aliasValues(view.targets, clause.aliases)
+      if (!allowed) return { state: "unverifiable", detail: `${clause.aliases.join(", ")} is not in the targets file` }
+      if (call.raw_args === undefined) return { state: "unverifiable", detail: `${clause.tool}#${clause.n}: the recording is not available, so the argument cannot be read` }
+      const label = clause.arg.replace(/^args\./, "")
+      const resolved = rawArgState(call.raw_args, clause.arg)
+      if (resolved.state === "missing") return { state: "fail", detail: `${label} was not passed` }
+      if (resolved.state === "opaque") return { state: "unverifiable", detail: `${label} is a variable (${resolved.why})` }
+      const values = (Array.isArray(resolved.value) ? resolved.value : [resolved.value]).map(norm)
+      const ok = values.length > 0 && values.every((value) => allowed.map(norm).includes(value))
+      return { state: ok ? "ok" : "fail", detail: `${label} (${values.length} value(s)) ${ok ? "is" : "is not"} in ${clause.aliases.join(", ")}` }
+    }
+    case "gws-plan": {
+      const calls = selectCalls(view.calls, "gws.plan", view.scope)
+      const call = calls[clause.n - 1]
+      if (!call) return { state: "fail", detail: `gws_plan #${clause.n} was not called (${calls.length} total)` }
+      if (call.raw_args === undefined) return { state: "unverifiable", detail: `gws_plan #${clause.n}: the recording is not available, so the plan request cannot be read` }
+      const facts = gwsPlanFacts(call.raw_args)
+      if (clause.what === "op") {
+        if (!facts.operation) return { state: "unverifiable", detail: `gws_plan #${clause.n}: ${facts.why ?? "no operation"}` }
+        const ok = clause.op === "==" ? facts.operation === clause.value : facts.operation !== clause.value
+        return { state: ok ? "ok" : "fail", detail: `gws_plan #${clause.n} operation ${facts.operation} ${ok ? "satisfies" : "violates"} ${clause.op} ${clause.value}` }
+      }
+      const allowed = aliasValues(view.targets, clause.aliases)
+      if (!allowed) return { state: "unverifiable", detail: `${clause.aliases.join(", ")} is not in the targets file` }
+      if (!facts.targets.length) return { state: "unverifiable", detail: `gws_plan #${clause.n}: ${facts.why ?? "no target"}` }
+      const set = new Set(allowed.map(norm))
+      const outside = facts.targets.filter((target) => !set.has(norm(target)))
+      return { state: outside.length ? "fail" : "ok", detail: `gws_plan #${clause.n} names ${facts.targets.length} target(s); ${outside.length ? `${outside.length} outside` : "all inside"} ${clause.aliases.join(", ")}` }
+    }
+    case "absent-write": {
+      const index = writeIndex()
+      const hit = view.calls.filter((call) => writeOf(call, index) === clause.ns)
+      return hit.length ? { state: "fail", detail: `${hit.length} write call(s) of ${clause.ns}: ${[...new Set(hit.map((c) => c.tool))].join(", ")}` } : { state: "ok", detail: `no write call of ${clause.ns}` }
+    }
+    case "committed-write": {
+      // The guard's own record settles it when it ran (it sees every completed write, inner calls included); a direct write
+      // call that the trace shows completed settles it too.
+      const index = writeIndex()
+      const direct = view.calls.filter((call) => call.via !== "execute" && writeOf(call, index) && call.status === "ok")
+      if (direct.length) return { state: "fail", detail: `${direct.map((c) => c.tool).join(", ")} completed` }
+      if (view.guard?.ran) return view.guard.committed > 0 ? { state: "fail", detail: `the guard saw ${view.guard.committed} write call(s) complete` } : { state: "ok", detail: "the guard saw no write complete" }
+      const written = view.calls.filter((call) => writeOf(call, index))
+      return written.length ? { state: "unverifiable", detail: `${written.length} write call(s) and no guard record, so whether any was committed is unknown` } : { state: "ok", detail: "no write call was made" }
+    }
+    case "guard": {
+      if (!view.guard?.ran) return { state: "unverifiable", detail: "the guard did not run in this trial" }
+      const bad = [view.guard.refused_writes, view.guard.assert_access, view.guard.assert_committed ?? 0].reduce((a, b) => a + (b || 0), 0)
+      return bad ? { state: "fail", detail: `the guard logged ${view.guard.refused_writes} refused write(s), ${view.guard.assert_access} access assertion(s), ${view.guard.assert_committed ?? 0} committed write(s)` } : { state: "ok", detail: "the guard refused and asserted nothing" }
+    }
+    case "unknown-tool": {
+      const hit = view.events.filter((event) => (event.kind === "tool_result_error" && event.unknown === true) || (event.kind === "tool_result" && event.error_class === "unknown_tool"))
+      return hit.length ? { state: "fail", detail: `${hit.length} call(s) named a tool that does not exist` } : { state: "ok", detail: "every call named a tool that exists" }
+    }
+    case "fixture": {
+      const value = fixtureFacts(clause.plugin)?.[clause.name]
+      if (value === undefined) return { state: "unverifiable", detail: `@fixture.${clause.plugin}.${clause.name} is not in the fixture` }
+      const span = textSpan(view.answer?.text ?? null, clause.span)
+      if (span === null) return { state: "unverifiable", detail: "answer text not available (private recording absent)" }
+      const values = [].concat(value).map(String)
+      const missing = values.filter((v) => !states(span, v))
+      return missing.length ? { state: "fail", detail: `the answer does not state ${missing.length} of ${values.length} value(s) of @fixture.${clause.plugin}.${clause.name}: it was not read from the fixture` } : { state: "ok", detail: `the answer states @fixture.${clause.plugin}.${clause.name}` }
+    }
+    case "canary": {
+      const values = view.canaries?.get(clause.name)
+      if (!values) return { state: "unverifiable", detail: `@canary.${clause.name} is not in the canaries file` }
+      const span = textSpan(view.answer?.text ?? null, clause.span)
+      if (span === null) return { state: "unverifiable", detail: "answer text not available (private recording absent)" }
+      const haystack = String(span).toLowerCase()
+      const missing = values.filter((value) => !haystack.includes(String(value).toLowerCase()))
+      return missing.length ? { state: "fail", detail: `the answer does not state ${missing.length} of ${values.length} value(s) of @canary.${clause.name}` } : { state: "ok", detail: `the answer states @canary.${clause.name}` }
+    }
     default:
       return { state: "unverifiable", detail: `unknown clause kind ${clause.kind}` }
   }
@@ -433,4 +546,11 @@ export const sameToolName = (a, b) => {
   const n = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_")
   const [x, y] = [n(a), n(b)]
   return Boolean(x && y) && (x === y || x.endsWith(`_${y}`) || y.endsWith(`_${x}`))
+}
+
+/** Does `text` state `value`? A number stands alone (4 is not 14), anything else is a case-insensitive substring. */
+function states(text, value) {
+  const hay = String(text).toLowerCase()
+  const want = String(value).toLowerCase()
+  return /^\d+$/.test(want) ? new RegExp(`(^|[^0-9])${want}([^0-9]|$)`).test(hay) : hay.includes(want)
 }

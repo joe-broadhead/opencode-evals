@@ -19,6 +19,11 @@ const AREA_NAMES = {
   RL: "reliability",
   SF: "safety",
   RB: "robustness",
+  RT: "routing",
+  CT: "citation",
+  WR: "write",
+  DT: "date window",
+  ER: "error recovery",
 }
 
 const areaOf = (id) => id.split("-")[1]?.slice(0, 2) ?? "??"

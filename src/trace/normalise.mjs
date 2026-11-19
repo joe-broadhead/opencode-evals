@@ -218,6 +218,7 @@ export function events({ rawLines, stderr, caseName, iteration, price = null }) 
     if (detail.kind !== "errored") continue
     push("tool_result_error", null, {
       tool: detail.tool ? String(detail.tool).split(".").pop() : null,
+      ...(detail.unknown ? { unknown: true } : {}),
       http_status: detail.status ?? null,
       shape: shape(detail.message ?? "").slice(0, 80),
     })
@@ -238,6 +239,7 @@ export function classifyError(message) {
   const text = String(message ?? "")
   if (/\(HTTP 5\d\d\)/.test(text)) return "upstream"
   if (/\(HTTP 4\d\d\)/.test(text)) return "client"
+  if (/no tool named|unknown tool/i.test(text)) return "unknown_tool"
   if (/permission|rejected/i.test(text)) return "permission"
   if (/abort|cancel/i.test(text)) return "cancelled"
   if (/not found|unknown/i.test(text)) return "not_found"

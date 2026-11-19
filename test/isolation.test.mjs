@@ -590,11 +590,15 @@ const hostProcesses = (needle) =>
     })
 
 /** Host `docker exec` clients aimed at a container of some evals batch (argv, not a substring of any command line). */
+// The docker exec clients THIS process started (in-process batches: its children). Not every client on the host: another batch, a probe or a second test run
+// on the same machine has its own, and a test that asked for "none anywhere" failed whenever the host was busy with other work.
 const dockerExecClients = () =>
   readdirSync("/proc")
     .filter((p) => /^\d+$/.test(p))
     .filter((p) => {
       try {
+        const stat = readFileSync(`/proc/${p}/stat`, "utf8")
+        if (Number(stat.slice(stat.lastIndexOf(")") + 2).split(" ")[1]) !== process.pid) return false
         const argv = readFileSync(`/proc/${p}/cmdline`, "utf8").split("\0")
         return /(^|\/)docker$/.test(argv[0]) && argv[1] === "exec" && argv.some((arg) => /^evals-b[0-9a-f]{10}-t\d+$/.test(arg))
       } catch {
@@ -781,6 +785,7 @@ const caseText = (id, prompt, evidence = "text:any matches /\\beight\\b/") => `#
 - Tier: T3
 - Source: test
 - Decision tested: the answer names the number
+- Data: synthetic
 
 ## Prompt
 ${prompt}
@@ -1032,7 +1037,10 @@ test("docker: a sweep removes a dead runner's batch directory and nothing else",
       if (body) writeFileSync(join(f.tmp, name, ".evals-batch.json"), body)
     }
     const sweep = spawnSync(process.execPath, [BIN, "isolation", "sweep"], { env: f.caller, encoding: "utf8" })
-    assert.match(sweep.stdout, /removed 2 container\(s\), 2 network\(s\) and 1 batch directory left by batches whose runner is gone/, sweep.stdout + sweep.stderr)
+    // Counted by what this test owns, not by what the sweep reports: any batch that starts on the host sweeps the dead runners' containers first (that is its
+    // prepare), so on a busy host the sweep this test runs may find them already gone. Its own directory is in this test's own tmp, which no other sweep reads.
+    assert.match(sweep.stdout, /removed \d+ container\(s\), \d+ network\(s\) and 1 batch director(y|ies) left by batches whose runner is gone/, sweep.stdout + sweep.stderr)
+    assert.deepEqual(leftovers(`label=evals.pid=${a.proc.pid}`), { containers: "", networks: "" }, "the dead runner's containers and networks are gone, by whichever sweep got there first")
     assert.equal(existsSync(join(f.tmp, deadDir)), false, "the dead runner's directory is gone")
     for (const name of [liveDir, "evals-run-lookalike-000001", "evals-run-copied-000002", "evals-run-alive-000003"]) assert.ok(existsSync(join(f.tmp, name)), `${name} survives`)
     assert.equal(await b.exited, 0, b.out())

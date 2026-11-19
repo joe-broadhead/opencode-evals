@@ -3,8 +3,8 @@
   "id": "gws",
   "name": "Google Workspace",
   "package": "@joe-broadhead/opencode-gws",
-  "version": "0.0.3",
-  "private": false,
+  "version": "0.0.10",
+  "private": true,
   "pluginId": "google-workspace.gws",
   "rpc": "google-workspace.gws.tools",
   "skills": [
@@ -122,6 +122,19 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "0d8411173806631e48df0371987a08297fc395ec4768d00bf27e94593183e956",
-  "t1": []
+  "digest": "6ecac7d04596fee185b574da6f4a69fc5ff482bff881e5f857b5cd6a4b4250d7",
+  "t1": [],
+  "egress": [
+    "www.googleapis.com",
+    "oauth2.googleapis.com",
+    "gmail.googleapis.com",
+    "sheets.googleapis.com",
+    "docs.googleapis.com",
+    "drive.googleapis.com",
+    "calendar.googleapis.com",
+    "tasks.googleapis.com",
+    "people.googleapis.com",
+    "slides.googleapis.com",
+    "chat.googleapis.com"
+  ]
 }

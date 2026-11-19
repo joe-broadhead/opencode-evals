@@ -4,6 +4,69 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 ## [Unreleased]
 
+EVALS-232: the harness for a round that runs every plugin against live accounts (lane L1).
+
+### Fixed
+
+- **Fake mode runs the plugins as released.** A loopback `mcp` override was a `conflict` to both plugins (no namespace description, no tool filter, status `conflict`). Each now registers its own
+  server at its default URL; the trial maps that host to the fake (`--add-host`, `NO_PROXY`) and the fake answers TLS with a per-batch, name-constrained CA trusted only in the trial
+  (`NODE_EXTRA_CA_CERTS`). `p0 fake` asserts the namespace text (from the plugin's source), the status (`connected`, own server) and the vendor host in every request.
+- **An `evals` command whose output nobody reads spun at 100% CPU for ever**: EPIPE on stdout was an uncaught error, and the batch's handler logged to the same closed pipe, which raised it again.
+  Leaked runners of killed test runs slowed every later probe (`p0 env` and `p3` failed under that load). Output is dropped when no one reads it (`src/stdio.mjs`), the handlers cannot throw into themselves,
+  and two docker tests no longer assert machine-wide facts (other batches' sweeps and exec clients).
+- **`evals select`** recorded every non-passing trial, which inflated every baseline. It now records only the first-pass trial of each wide case, once, refuses to overwrite `selecting.json`, and
+  `evals report` applies the list to wide cases only (deep cases are untouched; `--cases-dir` on both).
+
+### Added
+
+- **Locked runs** (`--tools locked`, the default): the sealed config removes the shell, file, web and subagent tools, puts an `ask`
+  on every write action of every pack and on Tavily's research and crawl, installs every other plugin at `ask-changes`
+  (`companions` in an arm file) and installs **the guard**. `--tools local` keeps the shell for the credential-free arm, for cases
+  in set `local` only. Found on 2.3.2: a `tool.use` policy removes nothing (a blanket permission deny of the tool's own name does),
+  Code Mode has a `fetch` (it asks `webfetch`, which is denied), and `execute.before` fires before the ask.
+- **`evals p0`**: the seven probes the safety gate G0 rests on (shell/file/web tools, 24 plugins at ask-changes, a foreign-session
+  ask, spending reads, gws plans, the cost ceiling, the guard's gold suite), each with the scripted model and no credential.
+- **`--auth <source>+profile`**: the evals profile's vendor credentials, cut to an allow-list of fields (the refresh token is a
+  placeholder: import insists on one), the access token and its encoded forms scrubbed, expiry checked against the batch.
+  `scripts/profile/` holds `check-real.sh`, `keeper.mjs` and `evals-profile.sh`.
+- **The round's list-price ceiling** (`EVALS_ROUND_CEILING_USD`, `EVALS_ROUND_CAP_USD`), checked before every launch, with
+  `list_usd` and `tier` on every ledger run and `estimate_run_usd` per model and tier.
+- **Case format**: the clauses `target:`, `gws-plan:`, `absent-write:`, `committed-write:none`, `guard:clean`, `unknown-tool:none`
+  and `text:... contains @canary.*`; tool names with hyphens and camel case; item areas RT, CT, WR, DT, ER; the `Data:` header;
+  the `Set:` values `wide`, `route`, `deep`, `commit`, `hooks`, `local` with their id shapes; holdout ids `hold-<plugin>-<n>-<slug>`;
+  `{{target:...}}` and `{{canary:...}}` placeholders; `Seed: files=` and `Seed: plugins=a,b`.
+- **`evals pack --sync --release <versions>`**: packs from a release tag (`git archive`), hidden tools marked, account templates
+  kept apart. Per-pack `egress` for the per-batch allow-list.
+- **R7 skeletons** (`scripts/wide-skeletons.mjs`), **R10** `--preflight data`, **R13** rate-limit backoff and pause, **R14** vendor
+  budgets (`caps.json` `vendors`), `evals t0 --plugin`, `Home files:` (files a run wrote under named places of its HOME), `container.assets`
+  and `evals isolation assets` (G8), a compile-time check that every tool a clause names exists in the plugin's pack, and the probes
+  p1 to p5, p13 and g8.
+- Cluster-bootstrap statistics, fresh-trial baselines, the pooled holdout gate and the adoption screen (`src/report/cluster.mjs`).
+
+- **Probe `env`** and an environment tripwire: `sandboxEnv` refuses to start a trial holding a credential-shaped variable that `--auth` did not give, a world's env cannot set one, and `experimental_video_generate` joins the locked tools.
+
+- **The G0 review's 18 changes** (docs/running.md#the-g0-reviews-changes-pr-8-at-d7b6edf): the safety halt (`evals halt`), a cost cap that fails closed
+  with cumulative vendor caps, a mandatory `Data:` and the owner's data-matrix sign-off, `guard: false` refused with a credential, the profile's own service
+  port, privacy-scan token shapes, plugin-load failure as infra, seed and home-file limits, a commit plan tied to `targets.json`, a guard allow-list
+  tripwire, P0-A2 on the enforced path, grammar checks, `evals report` on the cluster bootstrap, the live write probe, and 2.3.1 sources.
+
+- **`evals phase1`**: the G0 re-check's section D as one gated sequence (preflight, check-real, keeper, P0-6b, P0-6c, P0-7, `p0 live`, gws plan-and-commit,
+  the paid pilot), each step only if the previous one passed, with `--dry-run`, `--from`, and a HALT stopping it. And the re-check's eight changes: `Data:` derived from
+  `Seed: plugins=`, seed paths at any depth, the mid-batch HALT re-read tested, an idempotent profile port, wide blockers on undeclared argument paths refused,
+  `evals select` and automatic fresh baselines, `@alias` placeholders in the live probes, and the defence-in-depth tests.
+
+- **The owner's decisions**: GitHub and Jira in **fake mode** (`accounts: fake`: no account, no real endpoint; the harness's own fake MCP server serves each plugin's released tool
+  list from `packs/<id>/mcp.json` and answers from a synthetic fixture; reads graded with `@fixture.<plugin>.<fact>`, writes asked and declined; `Data: synthetic`; probe `evals p0 fake`: the plugin runs on its default URL, the trial maps the vendor host to the fake over TLS with a per-batch CA),
+  `accounts: none` kept for other plugins (honest-answer item minor, call/target/canary clauses n/a), the data matrix gate tested with a fixture, Slack, X and Google on their existing apps, `phase1` without
+  GitHub's token step or any sign-in for GitHub or Jira, and `scripts/profile/signin.sh`, the owner's sign-in walk with `check-real` after each vendor.
+
+### Changed
+
+- Every plugin's pack is re-synced to the release in the family's upgrade script (github stays at v0.0.6 until v0.0.8 is tagged).
+- A materialised plugin carries what its package.json `files` lists: boxd's `guest/` and gws's `manifest/` were missing, so neither
+  loaded in a trial. ElevenLabs takes `sessionCreditCap: 1` (the plugin refuses 0).
+- `evals run` writes `host_log` (plugin load failures from the host's own log), `guard`, `server_stderr` and the batch's egress plan.
+
 ## [0.1.0] - 2026-11-14
 
 The first Release. Install it with `npm install --save-dev github:joe-broadhead/opencode-evals#v0.1.0`; evals is not on npm.

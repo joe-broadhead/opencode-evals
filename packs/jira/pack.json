@@ -4,7 +4,7 @@
   "id": "jira",
   "name": "Jira",
   "package": "@joe-broadhead/opencode-jira",
-  "version": "0.0.2",
+  "version": "0.0.5",
   "private": true,
   "pluginId": "jira.issues",
   "skills": [
@@ -244,6 +244,13 @@
       "class": "read"
     },
     {
+      "name": "events_list",
+      "permission": "jira_events_list",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
       "name": "downloadJiraIssueAttachment",
       "permission": "jira_downloadJiraIssueAttachment",
       "effect": "allow",
@@ -399,8 +406,8 @@
     }
   ],
   "counts": {
-    "tools": 55,
-    "reads": 33,
+    "tools": 56,
+    "reads": 34,
     "writes": 22,
     "denied": 0,
     "skills": 2
@@ -420,9 +427,16 @@
       "body_lines": 95
     }
   },
-  "digest": "fa1f7c282c48ff0f22706dd8ebc2b6c00b7b52bd906280b44effb8b7b5df6aef",
+  "digest": "8c7b2f986466a2c18a5fb184e6f6ae7db025051906dce4088acb3d78e82bc782",
   "access": {
     "key": "access",
     "default": "all"
-  }
+  },
+  "egress": [
+    "mcp.atlassian.com",
+    "auth.atlassian.com",
+    "api.atlassian.com",
+    "{target:jira.site}.atlassian.net"
+  ],
+  "accounts": "fake"
 }

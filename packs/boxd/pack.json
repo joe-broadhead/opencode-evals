@@ -3,8 +3,8 @@
   "id": "boxd",
   "name": "boxd",
   "package": "@joe-broadhead/opencode-boxd",
-  "version": "0.0.2",
-  "private": false,
+  "version": "0.1.2",
+  "private": true,
   "pluginId": "boxd.machines",
   "rpc": "boxd.machines.tools",
   "skills": [
@@ -13,9 +13,9 @@
   "skill_meta": {
     "boxd": {
       "name": "boxd",
-      "description_sha256": "1ff72f3273a17e135d781c0b0c93cd55fb907bbe058e97dfe7ee629554475010",
-      "description_chars": 203,
-      "body_lines": 95
+      "description_sha256": "a895c8ad10e63d3f52ccb132b2e9d30572afcfcd6362890dd57531d9b9433c09",
+      "description_chars": 241,
+      "body_lines": 94
     }
   },
   "tools": [
@@ -29,6 +29,13 @@
     {
       "name": "job",
       "permission": "boxd_job",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "read",
+      "permission": "boxd_read",
       "effect": "allow",
       "readOnly": true,
       "class": "read"
@@ -69,8 +76,22 @@
       "class": "write"
     },
     {
-      "name": "image",
-      "permission": "boxd_image",
+      "name": "reassign",
+      "permission": "boxd_reassign",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "golden",
+      "permission": "boxd_golden",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "exec",
+      "permission": "boxd_exec",
       "effect": "allow",
       "readOnly": false,
       "class": "write"
@@ -88,12 +109,13 @@
     "default": "all"
   },
   "counts": {
-    "tools": 9,
-    "reads": 2,
-    "writes": 7,
+    "tools": 12,
+    "reads": 3,
+    "writes": 9,
     "denied": 0,
     "skills": 1
   },
-  "digest": "b9901716bd2136f100e1490fbfd8d4c250d6b2b4056b00af199502a8b578eb4b",
-  "t1": []
+  "digest": "058a18129d3170886aeb0ccd3883840be5d6fe581fadb673d10aa1ffd68d5e58",
+  "t1": [],
+  "egress": []
 }

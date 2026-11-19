@@ -4,8 +4,8 @@
   "id": "affinity",
   "name": "Affinity",
   "package": "@joe-broadhead/opencode-affinity",
-  "version": "0.0.1",
-  "private": false,
+  "version": "0.0.6",
+  "private": true,
   "pluginId": "affinity.crm",
   "skills": [
     "affinity",
@@ -609,9 +609,12 @@
       "body_lines": 84
     }
   },
-  "digest": "5fcd0f8f4132a1409f6bf83760ec763dd318853c1707eec3a8f8e5ff7d2f0464",
+  "digest": "745390ccaae52bb81083c9982da47e66551e031aa229e47d40d5c2d6ad265386",
   "access": {
     "key": "access",
     "default": "all"
-  }
+  },
+  "egress": [
+    "mcp.affinity.co"
+  ]
 }

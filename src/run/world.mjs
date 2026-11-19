@@ -41,13 +41,30 @@ import { tail } from "./secrets.mjs"
 /** A digest of a file or a directory tree: what records which private overlay a world was built with. */
 const digestOfPath = (path) => (statSync(path).isDirectory() ? treeDigest(path) : sha256(readFileSync(path)))
 
-export const parseSeed = (seed) =>
-  Object.fromEntries(
-    String(seed ?? "")
-      .split(/[\s,]+/)
-      .filter((part) => part.includes("="))
-      .map((part) => [part.slice(0, part.indexOf("=")), part.slice(part.indexOf("=") + 1)]),
-  )
+/**
+ * `Seed: cwd=api time=day plugins=slack,linear files=jobs-nightly`: key=value pairs split on whitespace. A comma belongs to
+ * its value (`plugins=slack,linear` is one list, read with parseSeedList); a comma after a value and a space before the next
+ * pair (`cwd=api, time=day`) still separates them, and a word with no `=` continues the list before it (`plugins=a, b`).
+ */
+export function parseSeed(seed) {
+  const out = {}
+  let key = null
+  for (const word of String(seed ?? "").split(/\s+/).filter(Boolean)) {
+    const at = word.indexOf("=")
+    if (at > 0 && /^[A-Za-z][A-Za-z0-9_-]*$/.test(word.slice(0, at))) {
+      if (key) out[key] = out[key].replace(/,+$/, "")
+      key = word.slice(0, at)
+      out[key] = word.slice(at + 1)
+    } else if (key) {
+      out[key] = `${out[key].endsWith(",") ? out[key] : `${out[key]},`}${word}`
+    }
+  }
+  if (key) out[key] = out[key].replace(/,+$/, "")
+  return out
+}
+
+/** A seed value that is a list (`slack,linear`) as its words. */
+export const parseSeedList = (value) => String(value ?? "").split(",").map((part) => part.trim()).filter(Boolean)
 
 const STAMP = ".evals-world.json"
 

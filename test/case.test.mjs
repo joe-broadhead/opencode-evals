@@ -9,6 +9,7 @@ const good = `# demo
 - Skill under test: x
 - Tier: T3
 - Decision tested: one capped read
+- Data: synthetic
 - Budget: outer_calls <= 4, billed_calls <= 2
 
 ## Prompt
