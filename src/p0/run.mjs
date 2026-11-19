@@ -20,12 +20,13 @@ export const mock = (tool, args = {}) => {
 /** A Code Mode `execute` that runs this code. The code may not contain `]`: use `.map(...)` and `.join(...)`, not indexing. */
 export const execute = (code) => mock("execute", { code })
 
-const caseText = (id, prompt, extra) => `# ${id}
-- Plugin: p0
-- Skill under test: p0
+const caseText = (id, prompt, extra, plugin = "p0") => `# ${id}
+- Plugin: ${plugin}
+- Skill under test: ${plugin}
 - Tier: T3
 - Source: probe
 - Decision tested: probe
+- Data: synthetic
 ${extra ?? ""}
 ## Prompt
 ${prompt}
@@ -62,14 +63,14 @@ const readLines = (file) => (existsSync(file) ? readFileSync(file, "utf8").split
  *   caller     extra environment for the runner (EVALS_ROUND_CEILING_USD, EVALS_MOCK_USAGE, …)
  *   options    extra runBatch options (tools, guardMode, noWriteAsks, probe, auth, trials, parallel, …)
  */
-export async function scriptedRun({ cases, arm = { package: "none" }, caller = {}, options = {}, tmp, env = process.env, keep = false, prepare = null } = {}) {
+export async function scriptedRun({ cases, arm = { package: "none" }, caller = {}, options = {}, tmp, env = process.env, keep = false, prepare = null, plugin = "p0" } = {}) {
   const root = mkdtempSync(join(tmp ?? env.TMPDIR ?? "/tmp", "evals-p0-"))
   const casesDir = join(root, "cases")
   mkdirSync(casesDir)
   for (const c of cases) {
-    const text = caseText(c.id, c.prompt, c.extra)
+    const text = caseText(c.id, c.prompt, c.extra, plugin)
     writeFileSync(join(casesDir, `${c.id}.md`), text)
-    writeFileSync(join(casesDir, `${c.id}.json`), JSON.stringify(compileCase(`cases/p0/${c.id}.md`, text)))
+    writeFileSync(join(casesDir, `${c.id}.json`), JSON.stringify(compileCase(`cases/${plugin}/${c.id}.md`, text)))
   }
   const armFile = join(root, "arm.json")
   writeFileSync(armFile, `${JSON.stringify(arm)}\n`)
@@ -81,8 +82,8 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
   if (prepare) await prepare(root, callerEnv)
   const log = []
   const iteration = options.iteration ?? "p0"
-  const result = await runBatch({ plugin: "p0", iteration, model: "mock/m1", auth: "none", scripted: true, isolation: "container", casesDir, set: "all", arm: armFile, ...options, store: undefined }, { caller: callerEnv, log: (line) => log.push(line) })
-  const raw = join(store, "raw", iteration, "p0")
+  const result = await runBatch({ plugin, iteration, model: "mock/m1", auth: "none", scripted: true, isolation: "container", casesDir, set: "all", arm: armFile, ...options, store: undefined }, { caller: callerEnv, log: (line) => log.push(line) })
+  const raw = join(store, "raw", iteration, plugin)
   const trials = {}
   for (const c of cases) {
     const base = join(raw, `${c.id}.t1`)

@@ -63,7 +63,16 @@ export function planIdOf(result, idPath = "planId") {
  * write: execute.before fires before the tool asks, so a refusal here would stop the ask from ever happening).
  * In the commit set a write passes only for a declared extractor and an allowed target, a plan commit only for a recorded plan.
  */
+/** Is `tool` one a locked trial may call: Code Mode's `execute`, `skill`, `question`, or a tool of a pack's plugin (`<plugin>_...`)? */
+export const toolAllowed = (tools, tool) => {
+  const name = String(tool).replace(/^mcp[._-]/, "")
+  return tools.exact.includes(name) || tools.prefixes.some((prefix) => name.startsWith(`${prefix}_`) || name.startsWith(`${prefix}.`))
+}
+
 export function decideBefore(policy, tool, input, plans = new Map()) {
+  // The allow-list tripwire (G0 review 3.1): the lockdown removes the core tools it knows by name, and a core tool a later version adds
+  // stays available. In a locked trial a tool outside this list is refused and logged, whatever it is.
+  if (policy.tools && !toolAllowed(policy.tools, tool)) return { pass: false, why: "a core tool outside the locked allow-list", tool: true, write: null, committer: false }
   const write = matchWrite(policy, tool)
   const committer = isIn(policy.plans?.committers, tool)
   if (!write && !committer) return { pass: true, why: "not a write", write, committer }

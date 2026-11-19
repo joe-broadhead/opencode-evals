@@ -39,6 +39,7 @@ const caseText = (truth) => `# t-case
 - Tier: T3
 - Source: test
 - Decision tested: test
+- Data: synthetic
 ${truth}
 ## Prompt
 p

@@ -22,6 +22,7 @@ const caseText = (id, extra = "") => `# ${id}
 - Tier: T3
 - Source: test
 - Decision tested: the answer names the number
+- Data: synthetic
 ${extra}
 ## Prompt
 how many for ${id}?
@@ -60,7 +61,11 @@ function fixture({ cases = [["demo-a", "- Seed: cwd=api"], ["demo-b", ""], ["hol
   const store = join(root, "store")
   const tmp = join(root, "tmp")
   mkdirSync(tmp)
-  const caller = { PATH: process.env.PATH, HOME: home, EVALS_STORE: store, EVALS_OPENCODE_BIN: fake, EVALS_BUN: bun, EVALS_TMP: tmp, EVALS_SECRET_PROBE: "leak", OPENCODE_SERVER_PASSWORD: "the-real-one", ANTHROPIC_API_KEY: "sk-not-for-the-run" }
+  // A model that bills is never launched with no ceiling or no catalogue price (G0 review 1.3): the stand-in host's Claude runs are priced
+  // from a one-model catalogue, held to a generous ceiling, and counted at a small estimate when the stand-in reports no tokens.
+  const catalog = join(root, "models.json")
+  writeFileSync(catalog, JSON.stringify({ anthropic: { models: { "claude-haiku-5-5": { cost: { input: 1, output: 5, cache_read: 0.1, cache_write: 1.25 } } } } }))
+  const caller = { PATH: process.env.PATH, HOME: home, EVALS_STORE: store, EVALS_OPENCODE_BIN: fake, EVALS_BUN: bun, EVALS_TMP: tmp, EVALS_SECRET_PROBE: "leak", OPENCODE_SERVER_PASSWORD: "the-real-one", ANTHROPIC_API_KEY: "sk-not-for-the-run", EVALS_MODELS_CATALOG: catalog, EVALS_ROUND_CEILING_USD: "100000", EVALS_ASSUMED_RUN_USD: "0.01" }
   return { root, casesDir, arm, home, store, tmp, caller, cleanup: () => rmSync(root, { recursive: true, force: true }) }
 }
 
@@ -970,12 +975,12 @@ test("the scrubber masks a secret by its exact value, in text and in files, keep
 test("a batch with no price for its runs says the dollar cap is not enforceable for it, in the log and the summary", async () => {
   const f = fixture()
   const lines = []
-  await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "np", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller: f.caller, log: (line) => lines.push(line) })
+  await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "np", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller: { ...f.caller, EVALS_ASSUMED_RUN_USD: "", EVALS_ROUND_CEILING_USD: "" }, log: (line) => lines.push(line) })
   assert.ok(lines.some((line) => /dollar cap: NOT ENFORCEABLE for this batch .*the run caps alone apply/.test(line)))
   const summary = JSON.parse(readFileSync(join(f.store, "raw", "np", "demo", "demo-b.t1.summary.json"), "utf8"))
   assert.equal(summary.dollar_cap.enforceable, false)
   // With an assumed price the cap is enforced, and recorded with its basis.
-  await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "ap", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller: { ...f.caller, EVALS_ASSUMED_RUN_USD: "0.5" }, ...quiet })
+  await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "ap", model: "mock/m1", auth: "none", scripted: true, cases: "demo-b", arm: f.arm, casesDir: f.casesDir }, { caller: { ...f.caller, EVALS_ASSUMED_RUN_USD: "0.5", EVALS_ROUND_CEILING_USD: "" }, ...quiet })
   const priced = JSON.parse(readFileSync(join(f.store, "raw", "ap", "demo", "demo-b.t1.summary.json"), "utf8"))
   assert.deepEqual(priced.dollar_cap, { enforceable: true, per_run_usd: 0.5, basis: "assumed (EVALS_ASSUMED_RUN_USD)" })
   f.cleanup()
@@ -1186,5 +1191,32 @@ test("a run whose sign-in is revoked after the model worked is infra: auth and n
   const graded = JSON.parse(readFileSync(join(f.store, "results", "midrev", "verdicts.json"), "utf8")).find((v) => v.case === "a-revoked")
   assert.equal(graded.verdict, "NOT_RUN")
   assert.equal(graded.infra, "auth")
+  f.cleanup()
+})
+
+test("G0: a run that reports no tokens is counted at the estimate and marked; overage stops the batch; both are in the ledger and the record", async () => {
+  const f = fixture()
+  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
+  const rewrite = (id, text) => {
+    const file = join(f.casesDir, `${id}.md`)
+    const body = readFileSync(file, "utf8").replace(`how many for ${id}?`, text)
+    writeFileSync(file, body)
+    writeFileSync(join(f.casesDir, `${id}.json`), JSON.stringify(compileCase(`cases/demo/${id}.md`, body)))
+  }
+  rewrite("demo-a", "how many for demo-a? no-usage")
+  rewrite("demo-b", "how many for demo-b? overage")
+  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "nousage", model: "claude-agent/haiku", auth: "claude-agent", cases: "demo-a,demo-b", arm: f.arm, casesDir: f.casesDir, parallel: 1 }, { caller, ...quiet })
+  const a = result.results.find((r) => r.case === "demo-a")
+  assert.equal(a.usage_missing, true, JSON.stringify(result.results))
+  assert.match(a.error, /the run reported no tokens: counted at the estimate \(\$0\.01\)/)
+  assert.equal(result.usage_missing, 1)
+  const ledger = readLedger(f.store).filter((e) => e.kind === "run")
+  assert.equal(ledger.find((e) => e.case === "demo-a").list_usd, 0.01, "counted at the estimate, not at $0")
+  assert.equal(ledger.find((e) => e.case === "demo-a").usage_missing, true)
+  // the second case's recording says it drew on overage: the batch stops there, and says why
+  const b = result.results.find((r) => r.case === "demo-b")
+  assert.equal(b.overage, true)
+  assert.equal(result.overage, true)
+  assert.match(result.stopped, /demo-b\.t1 drew on the subscription's overage \(isUsingOverage: true\)/)
   f.cleanup()
 })

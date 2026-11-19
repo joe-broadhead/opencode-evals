@@ -64,7 +64,7 @@ test("compile refuses a case that names a shared tool bare, and writes nothing",
   const store = mkdtempSync(join(tmpdir(), "evals-collide-"))
   const dir = join(store, "holdouts", "history")
   mkdirSync(dir, { recursive: true })
-  writeFileSync(join(dir, "ambiguous.md"), "# ambiguous\n- Plugin: history\n- Skill under test: history-recall\n- Tier: T3\n- Source: test\n- Decision tested: test\n\n## Prompt\np\n\n## Items\n- [H-OC01] blocker · It read the session it found.\n  evidence: call:read#1\n")
+  writeFileSync(join(dir, "ambiguous.md"), "# ambiguous\n- Plugin: history\n- Skill under test: history-recall\n- Tier: T3\n- Source: test\n- Decision tested: test\n- Data: synthetic\n\n## Prompt\np\n\n## Items\n- [H-OC01] blocker · It read the session it found.\n  evidence: call:read#1\n")
   const out = spawnSync(process.execPath, [join(import.meta.dirname, "..", "bin", "evals"), "compile", "--plugin", "history", "--holdouts"], { encoding: "utf8", env: { PATH: process.env.PATH, EVALS_STORE: store } })
   assert.notEqual(out.status, 0)
   assert.match(out.stderr, /ambiguous: read/)

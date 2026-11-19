@@ -25,6 +25,7 @@ const CASE = `# demo-answer
 - Tier: T3
 - Source: test
 - Decision tested: the answer names the number
+- Data: synthetic
 
 ## Prompt
 how many?

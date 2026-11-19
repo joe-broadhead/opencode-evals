@@ -192,7 +192,7 @@ const caseText = (id, header = "", item = "- [LIN-WR01] blocker · Nothing commi
 - Tier: T3
 - Source: test
 - Decision tested: the write is declined
-${header}
+${/Data:/.test(header) ? "" : "- Data: synthetic\n"}${/Set:/.test(header) ? "" : "- Set: local\n"}${header}
 ## Prompt
 create an issue
 
@@ -211,7 +211,8 @@ test("the item areas RT, CT, WR, DT and ER compile, and an unknown one is refuse
 test("the Data: header compiles to `data`, and only the five kinds are accepted", () => {
   for (const kind of ["synthetic", "seeded", "own", "real", "candidate"]) assert.equal(compileCase("cases/linear/x.md", caseText("tools-x", `- Data: ${kind}`)).data, kind)
   assert.equal(compileCase("cases/linear/x.md", caseText("tools-x", "- Data: Real")).data, "real", "case-insensitive")
-  assert.equal("data" in compileCase("cases/linear/x.md", caseText("tools-x")), false, "absent when not declared")
+  assert.throws(() => compileCase("cases/linear/x.md", caseText("tools-x").replace("- Data: synthetic\n", "")), /Data is required/, "a case that omits it does not compile")
+  assert.throws(() => compileCase("cases/metaview/tools-x.md", caseText("tools-x", "- Data: seeded").replace("- Plugin: linear", "- Plugin: metaview")), /metaview case reads candidate data/, "HR records are candidate data whatever the case says")
   assert.throws(() => compileCase("cases/linear/x.md", caseText("tools-x", "- Data: secret")), /Data must be one of/)
 })
 
@@ -223,7 +224,8 @@ test("the Set: values this round reserves require their id shape; plugin-own set
   assert.deepEqual(set("commit-linear-issue", "commit").sets, ["commit"])
   assert.deepEqual(set("hook-date-line", "hooks").sets, ["hooks"])
   assert.deepEqual(set("anything-at-all", "local").sets, ["local"])
-  assert.deepEqual(set("some-case", "core, smoke").sets, ["core", "smoke"], "a plugin's own set")
+  assert.deepEqual(set("some-case", "core, smoke, local").sets, ["core", "smoke", "local"], "a plugin's own set, beside a round set")
+  assert.throws(() => set("some-case", "core, smoke"), /declares one of this round's sets/, "a plugin's own set alone is no round set: a pack plugin's case names one")
   assert.throws(() => set("deep-x", "wide"), /set wide/)
   assert.throws(() => set("tools-x", "deep"), /set deep/)
   assert.throws(() => set("tools-x", "holdout"), /set "holdout"/)
@@ -243,7 +245,7 @@ test("a holdout's id is hold-<plugin>-<n>-<slug>; history's ho- ids are the one 
 
 test("a compiled synthetic holdout set is selected by --set holdout and by no other set", () => {
   const mk = (id, header) => compileCase(`cases/linear/${id}.md`, caseText(id, header))
-  const cases = [mk("hold-linear-1-a", "- Holdout: true\n- Data: synthetic"), mk("tools-save-issue", "- Set: wide"), mk("deep-x", "- Set: deep"), mk("tune-me", "")]
+  const cases = [mk("hold-linear-1-a", "- Holdout: true\n- Data: synthetic"), mk("tools-save-issue", "- Set: wide"), mk("deep-x", "- Set: deep"), compileCase("cases/history/tune-me.md", caseText("tune-me", "- Set: core").replace(/linear/g, "history"))]
   assert.deepEqual(selectCases(cases, { set: "holdout" }).selected.map((c) => c.id), ["hold-linear-1-a"])
   assert.deepEqual(selectCases(cases, { set: "wide" }).selected.map((c) => c.id), ["tools-save-issue"])
   assert.deepEqual(selectCases(cases, { set: "deep" }).selected.map((c) => c.id), ["deep-x"])

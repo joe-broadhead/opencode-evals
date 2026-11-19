@@ -12,11 +12,19 @@
 import { join } from "node:path"
 import { homedir } from "node:os"
 import { IDENTITY, RECHECK_HOURS, realEnv, profileEnv, run, activeCredential, digestsOf, logRound } from "./profile-lib.mjs"
+import { assertDistinctPort } from "../../src/run/service-port.mjs"
 
 export function checkReal({ integration, opencode = "opencode", profile, store, env = process.env, exec = run, now = new Date() }) {
   const real = realEnv(env)
   const evals = profileEnv(profile, env)
   const fail = (reason) => ({ ok: false, line: `FAIL ${integration}: ${reason}. Stop signing in further vendors: sign the real profile back in for ${integration}; its evals runs then use no credential.` })
+
+  // 0. The evals profile's service is not the real one's: sharing its port would mean talking to the owner's own sign-ins.
+  try {
+    assertDistinctPort({ opencode, profileEnv: evals, realEnv: real, exec, env })
+  } catch (error) {
+    return fail(error.message)
+  }
 
   // 1. The real profile still reads.
   const route = IDENTITY[integration]
@@ -47,7 +55,9 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
   const hours = RECHECK_HOURS[integration]
   const recheck = hours ? new Date(now.getTime() + hours * 3_600_000).toISOString() : null
   if (store) logRound(store, { event: "check-real", integration, result: "PASS", provisional: Boolean(hours), recheck_at: recheck })
-  return { ok: true, line: `PASS ${integration}: ${identity}; ${compared}${hours ? `; provisional: the real refresh chain is checked again by ${recheck} (repeat on days 1 and 2)` : ""}` }
+  // A different token string is not a different grant: a GitHub OAuth app, for one, hands every sign-in the same grant under a new string,
+  // so revoking the evals profile's grant would sign the owner out. The end of the round is `auth logout` in the evals profile, never a revoke.
+  return { ok: true, line: `PASS ${integration}: ${identity}; ${compared}${hours ? `; provisional: the real refresh chain is checked again by ${recheck} (repeat on days 1 and 2)` : ""}. A distinct token does not prove a distinct grant: end the round with \`auth logout\` in the evals profile only, never by revoking a grant` }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

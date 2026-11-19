@@ -17,7 +17,7 @@ import { selectCases } from "../case/sets.mjs"
 import { pluginCases } from "../case/load.mjs"
 import { harnessVersion } from "../version.mjs"
 import { reserve, release, recordRun, readLedger, loadCaps, checkCaps, monthOf, outstanding, capsFile } from "../cost/ledger.mjs"
-import { assertBatchWithinBudget, projectedRunUsd, monthToDate, budgetCaps, assertLaunchWithinRound, estimateRunUsd, roundLimits, tierOf, RoundCapError } from "../cost/budget.mjs"
+import { isMetered, assertBatchWithinBudget, projectedRunUsd, monthToDate, budgetCaps, assertLaunchWithinRound, estimateRunUsd, roundLimits, tierOf, RoundCapError } from "../cost/budget.mjs"
 import { loadCatalog, loadMapping, resolve as resolvePrice, listPrice } from "../cost/catalog.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
@@ -29,13 +29,15 @@ import { AUTH_ERROR, endedOnAuth } from "./authError.mjs"
 import { materialiseArm, armProvenance, readCompanions, materialiseCompanions, companionsDigest } from "./arm.mjs"
 import { lockdownPolicies, lockdownPermissions, loadPacks, companionOptions, ACCESS } from "./lockdown.mjs"
 import { buildPolicy, installGuard } from "./guard/policy.mjs"
-import { gateCases, seedFiles, dataPreflight } from "./gate.mjs"
+import { gateCases, seedFiles, dataPreflight, loadDataMatrix } from "./gate.mjs"
+import { resolveCommitPlan } from "./commit-plan.mjs"
+import { haltReason, readHalt, writeHalt, haltMessage } from "./halt.mjs"
 import { integrationsFor } from "./vendor-auth.mjs"
-import { checkBalances, vendorUseOf, SPENDING } from "./balance.mjs"
+import { checkBalances, vendorUseOf, SPENDING, perRunWorst } from "./balance.mjs"
 import { summarize } from "../trace/analyse.mjs"
 import { loadTargets, loadCanaries } from "../grade/targets.mjs"
 import { batchEgress } from "./egress.mjs"
-import { snapshotFiles, changedFiles, snapshotHome, changedHome } from "./files.mjs"
+import { snapshotFiles, changedFiles, snapshotHome, changedHome, homeLinks } from "./files.mjs"
 import { segment, within, inside } from "./paths.mjs"
 import { selectIsolation, isLive, defaultIsolation } from "./isolation.mjs"
 import { containerConfig, findBinary, markBatchDir } from "./container.mjs"
@@ -173,6 +175,12 @@ export function rateLimited(result = {}) {
   }
   return said.some((text) => RATE_LIMITED.test(text))
 }
+
+/**
+ * Claude Agent reports `isUsingOverage` on its rate-limit events: true means the run drew on the subscription's overage (paid) use,
+ * which the round never buys. Seen in the recording or on stderr, no further trial launches (G0 review 1.3).
+ */
+export const usingOverage = (result = {}) => /"isUsingOverage"\s*:\s*true/.test(`${result.stdout ?? ""}\n${result.stderr ?? ""}`)
 
 /** The backoff before each retry of a rate-limited run, in seconds, and how long three in a row pause the model. */
 export const BACKOFF_S = [60, 120, 240]
@@ -317,6 +325,7 @@ export function guardSummary(records) {
     reject_failed: count("reject_failed"),
     asks_left_to_run: records.filter((r) => r.kind === "ask" && r.own === true).length,
     refused_writes: asserts.filter((r) => r.what === "write").length,
+    refused_tools: asserts.filter((r) => r.what === "tool").length,
     assert_access: asserts.filter((r) => r.what === "access").length,
     assert_committed: asserts.filter((r) => r.what === "committed").length,
     committed: count("committed"),
@@ -538,6 +547,7 @@ async function runJob(job, ctx) {
       // The model call was refused its credential, or never reached a model (no route): an infrastructure failure,
       // never graded as the model's.
       ...(preModelFailure(result) ? { infra: preModelFailure(result) } : {}),
+      ...(usingOverage(result) ? { overage: true } : {}),
       ...(fromWorld.dropped.length ? { world_env_ignored: fromWorld.dropped } : {}),
       ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
       world: ctx.worldInfo,
@@ -549,6 +559,8 @@ async function runJob(job, ctx) {
     // The sandbox is hostile once a run has been in it: a working directory it replaced with a link out of the sandbox
     // is not walked, so no file outside the sandbox can reach the files record.
     const files = [...(inside(root, cwd) ? changedFiles(before, cwd) : []), ...(job.case.home_files?.length ? changedHome(homeBefore, sandbox.home, job.case.home_files) : [])]
+    const linked = job.case.home_files?.length ? homeLinks(sandbox.home, job.case.home_files) : []
+    if (linked.length) summary.home_links_refused = linked
     if (!inside(root, cwd)) summary.files_refused = "the working directory no longer resolves inside the sandbox"
     // Every file written for the run is scrubbed of its secrets first: the recording, the summary, the files record.
     const out = (suffix) => within(ctx.rawDir, join(ctx.rawDir, `${name}${suffix}`), "a recording")
@@ -561,7 +573,13 @@ async function runJob(job, ctx) {
     const guardLog = guardRecords(join(sandbox.tmp, "guard.jsonl"))
     if (guardLog.length) writeAtomic(out(".guard.jsonl"), redact(`${guardLog.map((r) => JSON.stringify(r)).join("\n")}\n`))
     summary.guard = guardSummary(guardLog)
+    // A write that completed where none may (G0 review 1.1): the runner reads it from the outcome and halts the wave.
+    const halt = haltReason(guardLog)
+    if (halt) summary.halt = halt
     summary.host_log = hostLogFacts(sandbox.home)
+    // A plugin that failed to load registers nothing, silently, and its cases would be graded as the model's failure (boxd and gws did
+    // exactly that before their files were copied): infra, never graded, and the batch stops (G0 review 1.6).
+    if (!summary.infra && summary.host_log.plugin_load_failures?.length) summary.infra = "plugin"
     writeAtomic(out(".summary.json"), redact(`${JSON.stringify(summary, null, 1)}\n`))
     writeAtomic(out(".files.json"), redact(`${JSON.stringify(files, null, 1)}\n`))
     // Only once the trial is confirmed gone is its sandbox touched: removed, or kept and scrubbed.
@@ -579,13 +597,21 @@ async function runJob(job, ctx) {
     // Rate-limited with retries left: nothing is recorded, nothing is released (the reservation stays for the retry), and the
     // caller backs off. After the last retry it is an infrastructure failure like a refused credential, and is released.
     if (!summary.infra && rateLimited(result)) {
-      if ((job.attempt ?? 0) < BACKOFF_S.length) return { case: id, trial: job.trial, rateLimited: true, exit: summary.exit, durationMs }
+      if ((job.attempt ?? 0) < BACKOFF_S.length) return { case: id, trial: job.trial, rateLimited: true, exit: summary.exit, durationMs, ...(halt ? { halt } : {}) }
       summary.infra = "rate-limit"
       writeAtomic(out(".summary.json"), redact(`${JSON.stringify({ ...summary, attempts: (job.attempt ?? 0) + 1 }, null, 1)}\n`))
     }
     // Priced at list as well as billed: a subscription run bills $0, and the round's ceiling counts list price (R9).
     cost.list_usd = listUsdOf(cost.tokens, ctx.listPrice)
     cost.tier = tierOf(job.case)
+    // A run that did model work and reported no tokens (or whose model has no list price) would add $0 to what the round has spent:
+    // it is counted at the estimate, marked, and returned as an error so the batch's record names it (G0 review 1.3).
+    const reportedNothing = isMetered(ctx.model) && !summary.infra && (cost.list_usd === null || Object.values(cost.tokens ?? {}).every((n) => !n))
+    if (reportedNothing) {
+      const estimate = ctx.estimateUsd?.(cost.tier) ?? null
+      cost.list_usd = estimate
+      cost.usage_missing = true
+    }
     if (summary.infra) {
       // Never graded. A failure before the model did any work spent nothing: its reservation goes back, so it can be
       // rerun from the reserve. A run cut short after the model worked (its sign-in revoked mid-run) did spend: it is
@@ -593,10 +619,10 @@ async function runJob(job, ctx) {
       const worked = cost.billed_usd > 0 || Object.values(cost.tokens ?? {}).some((n) => n > 0)
       if (worked) recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, infra: summary.infra, ...cost })
       else release(ctx.store, ctx.batch, 1)
-      return { case: id, trial: job.trial, exit: summary.exit, durationMs, infra: summary.infra, ...(worked ? { spent: true } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
+      return { case: id, trial: job.trial, exit: summary.exit, durationMs, infra: summary.infra, ...(halt ? { halt } : {}), ...(worked ? { spent: true } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
     }
     recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
-    return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(killed ? { killed: killed.reason } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
+    return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(halt ? { halt } : {}), ...(summary.overage ? { overage: true } : {}), ...(cost.usage_missing ? { usage_missing: true, error: `the run reported no tokens: counted at the estimate ($${cost.list_usd ?? "unknown"})` } : {}), ...(killed ? { killed: killed.reason } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
   } finally {
     // The trial ends on every path (idempotent); a credentials file goes on every path, a run that failed, threw or was
     // interrupted included; a kept sandbox keeps no secret.
@@ -623,13 +649,15 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   if (!Number.isInteger(trials) || trials < 1) throw new Error("--trials must be a whole number of at least 1")
   if (!Number.isInteger(parallel) || parallel < 1) throw new Error("--parallel must be a whole number of at least 1")
   const store = options.store ?? storeRoot(caller)
+  const halted = readHalt(store)
+  if (halted) throw new Error(haltMessage(halted))
   // The repository's cases and the store's private holdouts, or exactly the directory --cases-dir names.
   const caseList = pluginCases(plugin, { dir: options.casesDir ?? null, env: caller })
   if (!caseList.length) throw new Error(`no compiled cases for ${plugin}${options.casesDir ? ` in ${options.casesDir}` : ""}`)
   const { selected: chosen } = selectCases(caseList, { patterns: options.cases ?? "*", set: options.set ?? "tune" })
   // What may run on this model, with its placeholders filled from the private store (R5): a case that reads a third party's words
   // never goes to an `opencode/*` model, and one the store cannot fill is deferred, each with its reason in the batch record.
-  const gated = gateCases(chosen, { model: options.model, targets: loadTargets(caller), canaries: loadCanaries(caller) })
+  const gated = gateCases(chosen, { model: options.model, targets: loadTargets(caller), canaries: loadCanaries(caller), matrix: loadDataMatrix(caller) })
   let selected = gated.runnable
   const deferred = [...gated.deferred]
   // `--preflight data` (R10): a case whose clauses name a target, a canary or a seed the store lacks would only be BLOCKED later, so it
@@ -674,6 +702,10 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // A key passed through is a secret from the start: a world build's error output is scrubbed of it too.
   if (profile.kind === "env") registerSecrets(profile.names.map((name) => caller[name]))
   const scripted = Boolean(options.scripted)
+  // The guard is what stops a write that resolves to `allow`, turns away an ask nobody answers, and records one that completes. It is
+  // switched off only to probe the host alone, so a trial that holds any credential never runs without it (G0 review 1.6).
+  const holdsCredential = profile.kind !== "none" || Boolean(profile.vendor)
+  if (holdsCredential && (guardWanted === false || (options.guardMode && !["refuse", "commit"].includes(options.guardMode)))) throw new Error(`the guard cannot be switched off (\"guard\": false, or a guard mode of ${JSON.stringify(options.guardMode ?? "off")}) in a run that holds a credential (--auth ${options.auth ?? caller.EVALS_AUTH}): that setting is for probes with no credential`)
   // What the model may do: `locked` (the default) removes the shell, file, web and subagent tools and makes every write an
   // ask; `local` keeps them, for the credential-free arm only (G1): it is refused with any vendor credential.
   const toolsMode = options.tools ?? "locked"
@@ -687,7 +719,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const commitCases = selected.filter((c) => (c.sets ?? []).includes("commit"))
   if (commitCases.length && !options.commitPlan) throw new Error(`${commitCases.length} selected case(s) are in set commit (${commitCases.slice(0, 3).map((c) => c.id).join(", ")}): they really write, and run only with --commit-plan <file> naming what they may write`)
   if (options.commitPlan && commitCases.length !== selected.length) throw new Error("--commit-plan runs only cases in set commit: every other case stays at the ask")
-  const commitPlan = options.commitPlan ? JSON.parse(readFileSync(options.commitPlan, "utf8")) : null
+  // The plan names @aliases of targets.json only; they are resolved here, and a literal or an unknown alias is refused.
+  const commitPlan = options.commitPlan ? resolveCommitPlan(JSON.parse(readFileSync(options.commitPlan, "utf8")), loadTargets(caller)) : null
   if (scripted && options.model !== SCRIPTED_MODEL) throw new Error(`--scripted runs the harness's scripted model, ${SCRIPTED_MODEL}: --model ${options.model} is not it`)
   const live = isLive({ auth: profile.kind, model: options.model, config: sealedConfig({ armDir: null, model: options.model, scripted }) })
   // Every run is confined in a container unless the caller names another backend: the scripted model can call tools too.
@@ -842,7 +875,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // provider reads it.
     let harnessDir = null
     // The guard is on in every locked trial unless the arm file says `"guard": false` (a probe of the host alone).
-    const guardOn = guardWanted ?? toolsMode === "locked"
+    const guardOn = guardWanted ?? (toolsMode === "locked" || holdsCredential)
     if (scripted || guardOn) harnessDir = join(batchRoot, "harness")
     if (scripted) {
       if (!isolation.confines) mock = await startMock({ batchRoot, caller })
@@ -859,7 +892,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     }
     let probeDir = null
     if (options.probe) {
-      if (profile.kind !== "none" || profile.vendor) throw new Error("--probe installs the permission probe plugin and is for runs with no credential")
+      // The probe plugin only asks the host about permissions and calls no vendor, but it is for runs whose credentials are dummies: none, or
+      // a scratch profile read in standalone mode (EVALS_AUTH_STANDALONE: the enforced-path probe of P0-A2).
+      if ((profile.kind !== "none" || profile.vendor) && !(profile.kind === "none" && caller.EVALS_AUTH_STANDALONE)) throw new Error("--probe installs the permission probe plugin and is for runs with no credential")
       harnessDir ??= join(batchRoot, "harness")
       probeDir = join(harnessDir, "probe")
       cpSync(resolve(import.meta.dirname, "probe"), probeDir, { recursive: true })
@@ -867,7 +902,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     let guardDir = null
     if (guardOn) {
       const guardMode = commitPlan ? "commit" : options.guardMode ?? "refuse"
-      guardDir = installGuard(harnessDir, buildPolicy({ mode: guardMode, commit: commitPlan?.writes ?? {}, plans: commitPlan?.plans ?? null }))
+      guardDir = installGuard(harnessDir, buildPolicy({ mode: guardMode, commit: commitPlan?.writes ?? {}, plans: commitPlan?.plans ?? null, locked: toolsMode === "locked" }))
       facts.guard = { mode: guardMode }
     }
     // The probe is a trial of its own: under `container`, it proves a container starts before anything is reserved.
@@ -967,6 +1002,11 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const roundLimit = roundLimits(store, caller)
     const listInfo = modelPrice(options.model, caller)
     let perRunListUsd = null
+    // Fail closed (G0 review 1.3): a model that bills is never launched with no ceiling or cap, and none is launched with no catalogue
+    // price, since a run with no list cost would add 0 to what the round has spent.
+    const metered = isMetered(options.model)
+    if (metered && roundLimit.limit === null) throw new RoundCapError(`no round ceiling or cap is set: cannot hold ${options.model} to anything. Set EVALS_ROUND_CEILING_USD (the phase's) or EVALS_ROUND_CAP_USD / round_cap_usd in caps.json`)
+    if (metered && !listInfo.price) throw new RoundCapError(`${roundLimit.binds}: no catalogue price for ${options.model} (${listInfo.why}): a run of it would count as $0. Map it in the model map (EVALS_MODEL_MAP) to a priced model`)
     if (roundLimit.limit !== null) {
       const estimates = jobs.map((job) => estimateRunUsd(store, options.model, tierOf(job.case), caller))
       const missing = estimates.find((e) => e.usd === null)
@@ -984,7 +1024,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       if (!balances.ok) throw new Error(`vendor budget: ${balances.refusals.join("; ")}`)
       facts.vendor_budget = balances.lines
     }
-    reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller, perRunUsd: price.usd, priceBasis: price.basis, perRunListUsd, check: () => assertBatchWithinBudget(store, { runs: jobs.length, perRunUsd: price.usd, basis: price.basis }, caller) })
+    reservation = reserve(store, { plugin, iteration, runs: jobs.length, model: options.model, env: caller, perRunUsd: price.usd, priceBasis: price.basis, perRunListUsd, vendorPerRun: spenders.length ? Object.fromEntries(spenders.map((id) => [SPENDING[id], perRunWorst(SPENDING[id])])) : null, check: () => assertBatchWithinBudget(store, { runs: jobs.length, perRunUsd: price.usd, basis: price.basis }, caller) })
     facts.round = roundLimit.limit === null ? { enforced: false } : { enforced: true, limit: roundLimit.limit, binds: roundLimit.binds, per_run_list_usd: perRunListUsd, list_price: listInfo.price ? "catalogue" : `none (${listInfo.why})` }
     facts.dollar_cap = price.usd === null ? { enforceable: false, why: price.basis } : { enforceable: true, per_run_usd: price.usd, basis: price.basis }
     log(`reserved ${jobs.length} run(s) as ${reservation.batch}: ${plugin} at ${reservation.used.per_plugin_month + jobs.length}/${caps.per_plugin_month} this month`)
@@ -1013,6 +1053,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       redact,
       dollarCap: facts.dollar_cap,
       listPrice: listInfo.price,
+      estimateUsd: (tier) => estimateRunUsd(store, options.model, tier, caller).usd,
     }
     Object.assign(facts, { auth: auth.profile, world: ctx.worldInfo, ...(auth.vendor ? { vendor: auth.vendor } : {}) })
     if (egress && (egress.plugins.length || egress.skipped.length)) facts.egress_plan = { allow: isolationSpec.config?.allow, why: egress.why, plugins: egress.plugins, ...(egress.skipped.length ? { skipped: egress.skipped } : {}) }
@@ -1023,6 +1064,12 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const worker = async () => {
       for (;;) {
         if (stopped) return
+        // Another batch of the wave may have halted it since this one started.
+        const marked = readHalt(store)
+        if (marked) {
+          stopped = haltMessage(marked)
+          return
+        }
         const index = next++
         if (index >= jobs.length) return
         const job = jobs[index]
@@ -1052,7 +1099,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
         }
         // The round's list-price ceiling, per launch: what the round has spent at list price, with the other batches' reserved
         // runs and this one's runs in flight, plus this run, must stay within the phase ceiling and the hard cap.
-        if (roundLimit.limit !== null) {
+        if (roundLimit.limit !== null || metered) {
           try {
             assertLaunchWithinRound(store, { model: options.model, tier: tierOf(job.case), running, batch: reservation.batch }, caller)
           } catch (error) {
@@ -1107,8 +1154,23 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
         running--
         results.push(outcome)
         log(`  [${results.length}/${jobs.length}] ${job.case.id}.t${job.trial} exit=${outcome.exit ?? "?"}${outcome.durationMs ? ` ${Math.round(outcome.durationMs / 1000)}s` : ""}${outcome.infra ? ` INFRA ${outcome.infra}` : ""}${outcome.error ? ` ERROR ${outcome.error}` : ""}`)
+        // A write that completed where none may (G0 review 1.1): nothing more launches, in this batch or any other of the wave.
+        if (outcome.halt && !facts.halted) {
+          const info = { reason: outcome.halt.reason, writes: outcome.halt.writes, batch: reservation.batch, iteration, plugin, model: options.model, trial: `${job.case.id}.t${job.trial}` }
+          writeHalt(store, info)
+          facts.halted = info
+          stopped = `HALT: ${job.case.id}.t${job.trial}: ${outcome.halt.reason}; no further trial launched in any batch (the store's HALT file holds it)`
+          log(`  ${stopped}`)
+        }
+        // The subscription's overage is paid use the round never buys: stop at once (G0 review 1.3).
+        if (outcome.overage && !stopped) {
+          facts.overage = true
+          stopped = `${job.case.id}.t${job.trial} drew on the subscription's overage (isUsingOverage: true): no further trial launched`
+        }
+        if (outcome.usage_missing) facts.usage_missing = (facts.usage_missing ?? 0) + 1
         // A credential refused once, or a model that does not route, will fail again: no new trial after the first.
         if (outcome.infra === "auth" && !stopped) stopped = `${job.case.id}.t${job.trial} was refused authentication (infra: auth): no further trial launched; refresh the sign-in and rerun the released runs`
+        if (outcome.infra === "plugin" && !stopped) stopped = `${job.case.id}.t${job.trial}: a plugin failed to load in the trial (infra: plugin): no further trial launched; its cases would be graded as the model's failure. The host's own log names it in the trial's summary (host_log.plugin_load_failures)`
         if (outcome.infra === "provider" && !stopped) stopped = `${job.case.id}.t${job.trial} never reached its model (infra: provider): no further trial launched; rerun the released runs once the provider routes`
       }
     }

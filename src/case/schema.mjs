@@ -1,3 +1,5 @@
+import { existsSync, readdirSync } from "node:fs"
+import { join } from "node:path"
 // The compiled case: `oc-case/1`. Strict on purpose — a case that cannot be validated is a case that
 // would fail differently tomorrow.
 
@@ -19,6 +21,26 @@ export const CASE_ID = /^[a-z0-9][a-z0-9-]{0,119}$/
  */
 export const DATA_KINDS = ["synthetic", "seeded", "own", "real", "candidate"]
 export const THIRD_PARTY_DATA = ["real", "candidate"]
+
+/**
+ * The corpora written before the `Data:` header and the round sets existed (history, x, charts, and p0, the harness's own probes): a case of one of them that declares
+ * no round set is a legacy case, and its data is what the corpus always held: history reads the owner's own sessions, x reads other
+ * people's public posts (so `real`: nothing a third party wrote goes to a model without the owner's sign-off), charts draws made-up data.
+ * Every other case, and every legacy-plugin case in a round set, must declare `Data:` and a round set.
+ */
+export const LEGACY_DATA = Object.freeze({ history: "own", x: "real", charts: "synthetic", p0: "synthetic" })
+
+/** The least a plugin's cases may declare: a plugin that reads HR records is `candidate` data whatever a case says. */
+export const DATA_MINIMUM = Object.freeze({ metaview: "candidate", ashby: "candidate" })
+
+/** The plugins this repository holds a pack for: the round's own corpora (a fixture plugin of a test has none). */
+const PACKS_DIR = join(import.meta.dirname, "..", "..", "packs")
+export const packPlugins = () => new Set(existsSync(PACKS_DIR) ? readdirSync(PACKS_DIR) : [])
+
+export const isLegacyCase = (caseObject) => caseObject.plugin in LEGACY_DATA && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)
+
+/** What a case reads: its `Data:`, else what a legacy corpus always held, else (never reached: compile refuses it) `real`. */
+export const dataOf = (caseObject) => caseObject.data ?? LEGACY_DATA[caseObject.plugin] ?? "real"
 
 /**
  * The sets this round reserves (`Set:`), each with the id shape it requires, so an id says what a case is for:
@@ -90,7 +112,17 @@ export function validateCase(caseObject, file = "<case>") {
     if (!/^[a-z][a-z0-9-]*$/.test(name) || FAMILY_SETS.includes(name)) bad(`set ${JSON.stringify(name)} must be a lower-case name, not ${FAMILY_SETS.join(", ")}`)
     if (ROUND_SETS[name] && !ROUND_SETS[name].test(caseObject.id)) bad(`a case in set ${name} has an id like ${String(ROUND_SETS[name].source).replace(/^\^|\$$/g, "").replace(/\[a-z0-9\]\[a-z0-9-\]\*/, "<slug>")}, not ${JSON.stringify(caseObject.id)}`)
   }
-  for (const name of caseObject.home_files ?? []) if (!/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(name) || name.split("/").some((part) => part === "." || part === "..")) bad(`Home files ${JSON.stringify(name)} must be a path of names under the home (no .., no leading /)`)
+  for (const name of caseObject.home_files ?? []) if (!/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(name) || name.split("/").some((part) => part === "." || part === ".." || part.startsWith("."))) bad(`Home files ${JSON.stringify(name)} must be a path of visible names under the home (no .., no leading /, and no name that starts with a dot: .local/share/opencode holds the host's log and database)`)
+  // A canary the prompt fills and an item grades is satisfied by echoing the question.
+  const filled = new Set([...String(caseObject.prompt ?? "").matchAll(/\{\{canary:([A-Za-z0-9_.-]+)\}\}/g)].map((m) => m[1]))
+  for (const item of caseObject.items ?? []) {
+    for (const clause of [...(item.evidence ?? []), ...(item.evidence_any ?? []).flat(), ...(item.na_when ?? [])]) {
+      if (clause?.kind === "canary" && filled.has(clause.name)) bad(`${item.id}: the prompt fills {{canary:${clause.name}}} and this item grades @canary.${clause.name}: an answer that echoes the question passes. Grade a canary the prompt does not carry`)
+    }
+  }
+  if (caseObject.data === undefined && !isLegacyCase(caseObject)) bad(`Data is required (one of ${DATA_KINDS.join(", ")}): it says whose words the case reads, and a case that omits it would be taken for synthetic. Add \`- Data: ...\` to the header`)
+  if (!isLegacyCase(caseObject) && packPlugins().has(caseObject.plugin) && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)) bad(`a case declares one of this round's sets (${Object.keys(ROUND_SETS).join(", ")}): \`- Set: ...\`; only the history, x and charts corpora written before it are exempt`)
+  if (caseObject.data !== undefined && DATA_MINIMUM[caseObject.plugin] && DATA_KINDS.indexOf(caseObject.data) < DATA_KINDS.indexOf(DATA_MINIMUM[caseObject.plugin])) bad(`a ${caseObject.plugin} case reads ${DATA_MINIMUM[caseObject.plugin]} data (HR records), not ${caseObject.data}: declare \`- Data: ${DATA_MINIMUM[caseObject.plugin]}\``)
   if (caseObject.data !== undefined && !DATA_KINDS.includes(caseObject.data)) bad(`Data must be one of ${DATA_KINDS.join(", ")}, not ${JSON.stringify(caseObject.data)}`)
   if (caseObject.holdout && !holdoutId(caseObject.plugin).test(caseObject.id) && !(caseObject.plugin === "history" && /^ho-/.test(caseObject.id))) bad(`a holdout's id is hold-${caseObject.plugin}-<n>-<slug>, not ${JSON.stringify(caseObject.id)}`)
   for (const claim of caseObject.truth ?? []) if (typeof claim?.path !== "string" || !("value" in claim)) bad("a truth is {path, value}")

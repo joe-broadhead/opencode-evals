@@ -34,6 +34,11 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
 
 - **Probe `env`** and an environment tripwire: `sandboxEnv` refuses to start a trial holding a credential-shaped variable that `--auth` did not give, a world's env cannot set one, and `experimental_video_generate` joins the locked tools.
 
+- **The G0 review's 18 changes** (docs/running.md#the-g0-reviews-changes-pr-8-at-d7b6edf): the safety halt (`evals halt`), a cost cap that fails closed
+  with cumulative vendor caps, a mandatory `Data:` and the owner's data-matrix sign-off, `guard: false` refused with a credential, the profile's own service
+  port, privacy-scan token shapes, plugin-load failure as infra, seed and home-file limits, a commit plan tied to `targets.json`, a guard allow-list
+  tripwire, P0-A2 on the enforced path, grammar checks, `evals report` on the cluster bootstrap, the live write probe, and 2.3.1 sources.
+
 ### Changed
 
 - Every plugin's pack is re-synced to the release in the family's upgrade script (github stays at v0.0.6 until v0.0.8 is tagged).

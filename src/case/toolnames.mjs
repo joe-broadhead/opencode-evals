@@ -72,6 +72,15 @@ export function toolNameProblems(caseObject, packs) {
   const siblings = packs.filter((p) => p.id !== own.id)
   const problems = []
   const seen = new Set()
+  const wide = sets.includes("wide")
+  for (const item of caseObject.items ?? []) {
+    for (const clause of clausesOf(item)) {
+      // A wide case is one request for one tool: `call:*#1` (or `slack.*`) passes on any call at all, `skill` included.
+      if (wide && ["call", "first", "before"].includes(clause.kind)) for (const name of [clause.tool, clause.kind === "before" ? clause.other : null]) if (name && String(name).includes("*")) problems.push(`${item.id}: ${clause.kind}:${name} is a positive glob in a wide case: it passes on any tool's call. Name the tool`)
+      // Nothing checks an argument path against the tool's input (the packs carry no schema), so a misspelt `absent-arg:` path passes for ever.
+      if (clause.kind === "absent-arg") problems.push(`${item.id}: absent-arg:${clause.tool} cannot be checked against the tool's signature, so a misspelt path would pass for ever. Use absent:, count: or target:, which fail when the path is wrong`)
+    }
+  }
   for (const item of caseObject.items ?? []) {
     for (const clause of clausesOf(item)) {
       if (clause.kind === "absent-write" && !packs.some((p) => p.id === clause.ns)) problems.push(`${item.id}: absent-write:${clause.ns} names no plugin`)

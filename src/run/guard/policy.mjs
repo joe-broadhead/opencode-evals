@@ -30,7 +30,7 @@ export function namesOf(pack, tool) {
  * The policy: `mode` "refuse" (no write passes), "commit" (only `commit[<permission>] = { extract, allow }` passes, and a plan
  * commit only for a plan made in scope: `plans`) or "log" (probes: observe only). `packs` defaults to every pack here.
  */
-export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {}, plans = null } = {}) {
+export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {}, plans = null, locked = false } = {}) {
   const writes = []
   const actions = new Set()
   for (const pack of packs) {
@@ -41,7 +41,11 @@ export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {},
       writes.push({ names: namesOf(pack, tool), action: tool.permission, ...(declared ? { ...(declared.extract ? { extract: declared.extract } : {}), ...(declared.allow ? { allow: declared.allow } : {}), ...(declared.local === true ? { local: true } : {}) } : {}) })
     }
   }
-  return { mode, writes, actions: [...actions].sort(), ...(plans ? { plans } : {}) }
+  // A locked trial calls only `execute`, `skill`, `question`, `todowrite` and the tools of the plugins installed (their ids, namespaces and
+  // RPC names, and the eval-only probe's): anything else is refused at execute.before and logged (G0 review 3.1).
+  const prefixes = new Set(["evalsprobe"])
+  for (const pack of packs) for (const prefix of [pack.id, String(pack.pluginId ?? "").split(".")[0], String(pack.rpc ?? "").split(".")[0]]) if (prefix) prefixes.add(prefix)
+  return { mode, writes, actions: [...actions].sort(), ...(plans ? { plans } : {}), ...(locked ? { tools: { exact: ["execute", "skill", "question", "todowrite"], prefixes: [...prefixes].sort() } } : {}) }
 }
 
 /** Copies the guard into `into/guard` and writes its policy read-only beside it. Returns the guard's directory. */

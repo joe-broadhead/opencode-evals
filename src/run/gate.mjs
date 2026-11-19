@@ -7,9 +7,9 @@
 //                cannot fill is deferred, each with its reason, never silently dropped
 //   seedFiles    `Seed: files=<name>[,<name>]`: a directory of plain files copied into the trial's project before it starts
 
-import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, statSync } from "node:fs"
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs"
 import { join, resolve } from "node:path"
-import { THIRD_PARTY_DATA } from "../case/schema.mjs"
+import { THIRD_PARTY_DATA, dataOf } from "../case/schema.mjs"
 import { parseSeed, parseSeedList } from "./world.mjs"
 import { segment, inside } from "./paths.mjs"
 import { storeRoot } from "../store.mjs"
@@ -36,6 +36,26 @@ export function fillPrompt(prompt, { targets = null, canaries = null } = {}) {
   return { text, unknown }
 }
 
+/**
+ * The owner's data-matrix sign-off: `$EVALS_STORE/data-matrix.json`, `{ "real": ["claude-agent/*"], "candidate": ["claude-agent/sonnet"] }`:
+ * for each kind of third-party data, the models (a trailing `*` matches a prefix) that may read it. No file, or no entry, is no
+ * model: nothing a third party wrote goes to any model, DeepSeek or Claude, by default.
+ */
+export function loadDataMatrix(env = process.env) {
+  const file = join(storeRoot(env), "data-matrix.json")
+  if (!existsSync(file)) return {}
+  try {
+    const matrix = JSON.parse(readFileSync(file, "utf8"))
+    return Object.fromEntries(Object.entries(matrix).filter(([kind, models]) => THIRD_PARTY_DATA.includes(kind) && Array.isArray(models)).map(([kind, models]) => [kind, models.filter((m) => typeof m === "string")]))
+  } catch {
+    // An unreadable sign-off allows nothing.
+    return {}
+  }
+}
+
+/** Is `model` listed for this kind of data in the matrix? */
+export const signedOff = (matrix, kind, model) => (matrix?.[kind] ?? []).some((entry) => (entry.endsWith("*") ? String(model).startsWith(entry.slice(0, -1)) : entry === model))
+
 /** Does a model of this id belong to the provider that must never see a third party's words? */
 export const isDeepSeekRoute = (model) => String(model ?? "").startsWith("opencode/")
 
@@ -43,13 +63,14 @@ export const isDeepSeekRoute = (model) => String(model ?? "").startsWith("openco
  * Splits the selected cases into those that may run on `model` and those deferred, each deferred one with why. A case with
  * `Data: real|candidate` is refused for an `opencode/*` model; a case with a placeholder the store cannot fill is deferred.
  */
-export function gateCases(cases, { model, targets = null, canaries = null } = {}) {
+export function gateCases(cases, { model, targets = null, canaries = null, matrix = {} } = {}) {
   const runnable = []
   const deferred = []
   const prompts = new Map()
   for (const c of cases) {
-    if (THIRD_PARTY_DATA.includes(c.data) && isDeepSeekRoute(model)) {
-      deferred.push({ case: c.id, why: `Data: ${c.data} never runs on ${model} (a third party's words stay off DeepSeek)` })
+    const data = dataOf(c)
+    if (THIRD_PARTY_DATA.includes(data) && !signedOff(matrix, data, model)) {
+      deferred.push({ case: c.id, why: `Data: ${data} may not run on ${model}: the owner's data-matrix sign-off ($EVALS_STORE/data-matrix.json) does not list it for ${data} data${isDeepSeekRoute(model) ? " (a third party's words stay off DeepSeek unless it says so)" : ""}` })
       continue
     }
     const filled = fillPrompt(c.prompt, { targets, canaries })
@@ -74,6 +95,21 @@ export function seedDir(name, { root = resolve(import.meta.dirname, "..", ".."),
 }
 
 const SEED_LIMIT = 8 * 1024 * 1024
+
+/**
+ * What a seed may not carry: the host loads configuration and code from the project, so a seed holding `opencode.json`, an instruction
+ * file, or anything under `.claude/`, `.agents/` or `.opencode/` (but a job file under `.opencode/jobs/`, which the jobs plugin reads as
+ * data) would change what the trial is, not what it is asked (G0 review 1.6).
+ */
+export function seedRefusal(rel) {
+  const parts = rel.split("/")
+  const top = parts[0]
+  if (/^opencode\.jsonc?$/i.test(top) || /^opencode\.json/i.test(top)) return `${rel} is host configuration`
+  if (/^(AGENTS|CLAUDE)\.md$/i.test(top)) return `${rel} is an instruction file the host loads`
+  if (top === ".claude" || top === ".agents") return `${rel} is under ${top}/, which the host loads`
+  if (top === ".opencode" && !(parts[1] === "jobs" && parts.length > 2 && /\.(md|json|txt)$/i.test(rel))) return `${rel} is under .opencode/, which the host loads (only .opencode/jobs/ data files are allowed)`
+  return null
+}
 
 /** Every file under a directory, with a refusal for a link or a total over the limit. */
 function walk(dir, found = [], total = { bytes: 0 }) {
@@ -102,6 +138,10 @@ export function seedFiles(seed, project, options = {}) {
     const dir = seedDir(name, options)
     if (!dir) throw new Error(`Seed files=${name}: no directory fixtures/seeds/${name} in the repository or seeds/${name} in the store`)
     const files = walk(dir)
+    for (const file of files) {
+      const refusal = seedRefusal(file.slice(dir.length + 1))
+      if (refusal) throw new Error(`the seed ${name} cannot be copied into a project: ${refusal}`)
+    }
     mkdirSync(project, { recursive: true })
     cpSync(dir, project, { recursive: true, force: true, verbatimSymlinks: false })
     for (const file of files) {

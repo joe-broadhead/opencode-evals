@@ -173,3 +173,8 @@ test("P0-env: no launcher credential reaches a trial, and the image, video, sear
   const result = await PROBES.env(env)
   assert.equal(result.ok, true, show(result))
 })
+
+test("P0-halt: a write that completes outside commit mode halts the wave: nothing more launches, in the batch or the next", needsBuilds, async () => {
+  const result = await PROBES.halt(env)
+  assert.equal(result.ok, true, show(result))
+})

@@ -118,6 +118,9 @@ if (args[0] === "run") {
   event("tool_use", { tool: "skill", state: { status: "completed", input: { id: "demo" }, output: "<skill_content/>" + leak } }, 1)
   event("text", { text: "the answer is eight (" + prompt.length + " chars asked)" + leak }, 2)
   const billed = /cost=([0-9]+(?:[.][0-9]+)?)/.exec(prompt)
+  // A run that did its work and reported no usage at all; and one whose rate-limit event says it is drawing on paid overage.
+  if (prompt.includes("overage")) console.log(JSON.stringify({ type: "rate_limit_event", rate_limit_info: { status: "allowed_warning", isUsingOverage: true } }))
+  if (prompt.includes("no-usage")) process.exit(0)
   event("step_finish", { cost: billed ? Number(billed[1]) : 0, tokens: { input: 10, output: 5, cache: { read: 100, write: 0 } } }, 3)
   process.exit(0)
 }

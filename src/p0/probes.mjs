@@ -113,8 +113,21 @@ export async function a2(env = {}) {
   const checks = []
   const asAll = (access) => fullArm(env.companions, { options: { access } })
   const evaluate = [{ id: "evaluate", prompt: execute(askAll(actions)) }, { id: "rules", prompt: execute("return await tools.evalsprobe.agent_rules({})") }]
-  // 1: ask-changes, the way every credentialed trial runs.
-  const r1 = await scriptedRun({ cases: evaluate, arm: asAll("ask-changes"), options: { probe: true, iteration: "p0-a2-ask" }, caller: env.caller, tmp: env.tmp })
+  // 1: the enforced path, the way every credentialed trial runs (G0 review 3.2): `+profile` with a dummy credential from a scratch
+  // profile, and an arm file that names no `access` at all, so the access each plugin applies is the runner's own default. If that
+  // default regressed to `all`, the `<id>_*` rules below would not be asks and this probe would fail.
+  const prepare = async (root, callerEnv) => {
+    const { execFileSync } = await import("node:child_process")
+    const { mkdirSync: mk } = await import("node:fs")
+    const { profileEnv } = await import("../run/vendor-auth.mjs")
+    const profile = join(root, "profile")
+    mk(profile, { recursive: true })
+    const bin = process.env.EVALS_OPENCODE_BIN ?? process.env.OPENCODE_BIN_2_3_2 ?? "opencode"
+    const credential = JSON.stringify([{ id: "cred_p0dummyp0dummyp0dummy00", integrationID: "p0", label: "dummy", active: true, value: { type: "key", key: "p0-dummy-not-a-real-key-0000" } }])
+    execFileSync(bin, ["auth", "import", "--standalone"], { input: credential, env: profileEnv(profile, callerEnv), stdio: ["pipe", "pipe", "pipe"] })
+    Object.assign(callerEnv, { EVALS_PROFILE: profile, EVALS_AUTH_STANDALONE: "1", EVALS_REAL_HOME: root })
+  }
+  const r1 = await scriptedRun({ cases: evaluate, arm: fullArm(env.companions, { options: {} }), prepare, options: { probe: true, iteration: "p0-a2-ask", auth: "none+profile" }, caller: env.caller, tmp: env.tmp })
   // 2: every plugin at access all: the config's own ask rules must still hold, which is what makes the gate independent of each plugin.
   const r2 = await scriptedRun({ cases: [evaluate[0]], arm: asAll("all"), options: { probe: true, iteration: "p0-a2-all" }, caller: env.caller, tmp: env.tmp })
   // 3: the write tools that exist with no credential, called for real: each must decline end to end.
@@ -148,6 +161,7 @@ export async function a2(env = {}) {
       // The decline is recorded two ways: in the call's result, and on the run's stderr ("permission requested: X; auto-rejecting").
       const declined = declinedIn(call) || /declined|cannot ask the user|rejected/i.test(textOf(call)) || trial.analysed.inner.declined >= 1 || /permission requested/.test(trial.summary?.stderr ?? "")
       checks.push(ok(`${id} is declined, not run`, unknown ? true : declined, unknown ? `the tool does not exist without a sign-in (${textOf(call).slice(0, 70).replace(/\s+/g, " ")})` : textOf(call).slice(0, 110).replace(/\s+/g, " ")))
+      checks.push(ok(`${id}: the guard's tool allow-list refused nothing the model legitimately called`, (trial.summary?.guard?.refused_tools ?? 0) === 0, JSON.stringify(trial.summary?.guard)))
       checks.push(ok(`${id}: the guard saw no write complete`, (trial.summary?.guard?.committed ?? 0) === 0 && (trial.summary?.guard?.assert_committed ?? 0) === 0, JSON.stringify(trial.summary?.guard)))
     }
     return done("a2", checks, { actions: actions.length })
@@ -330,7 +344,10 @@ export async function p13(env = {}) {
     wf(join(root, ".claude", ".credentials.json"), JSON.stringify({ claudeAiOauth: { accessToken: dummy, refreshToken: "dummy-refresh", expiresAt: Date.now() + 10 * 3_600_000 } }), { mode: 0o600 })
     const marker = JSON.stringify([{ id: "cred_p13dummymarker0000000", integrationID: "claude-agent", label: "Claude Agent", active: true, value: { type: "external", methodID: "claude-login" } }])
     execFileSync(bin, ["auth", "import", "--standalone"], { input: marker, env: { PATH: callerEnv.PATH, HOME: root, ...xdg, OPENCODE_DISABLE_AUTOUPDATE: "1" }, stdio: ["pipe", "pipe", "pipe"] })
-    Object.assign(callerEnv, xdg, { OPENCODE_DISABLE_AUTOUPDATE: "1", EVALS_AUTH_STANDALONE: "1", CLAUDE_AGENT_SDK_VERSION: process.env.CLAUDE_AGENT_SDK_VERSION ?? "0.3.301" })
+    // The capture server answers the model call, so nothing is billed; but a model that bills is never launched with no ceiling or price
+    // (G0 review 1.3), so the probe gives itself a one-model catalogue and a ceiling it will never come near.
+    wf(join(root, "models.json"), JSON.stringify({ anthropic: { models: { "claude-haiku-5-5": { cost: { input: 1, output: 5, cache_read: 0.1, cache_write: 1.25 } } } } }))
+    Object.assign(callerEnv, xdg, { OPENCODE_DISABLE_AUTOUPDATE: "1", EVALS_AUTH_STANDALONE: "1", CLAUDE_AGENT_SDK_VERSION: process.env.CLAUDE_AGENT_SDK_VERSION ?? "0.3.301", EVALS_MODELS_CATALOG: join(root, "models.json"), EVALS_ROUND_CEILING_USD: "100", EVALS_ASSUMED_RUN_USD: "0.01" })
   }
   const toolUse = { name: "Bash", input: { command: "curl -sS https://slack.com/api/auth.test" } }
   const run = await scriptedRun({
@@ -452,10 +469,14 @@ export async function p4(env = {}) {
   const dir = join(env.tmp ?? ".", `evals-p0-p4-${Math.random().toString(36).slice(2, 8)}`)
   mk(dir, { recursive: true })
   const plan = join(dir, "commit-plan.json")
-  wf(plan, JSON.stringify({ actions: ["jobs_create"], writes: { jobs_create: { extract: "args.name", allow: ["in-scope"] } } }))
+  // The plan names an @alias of targets.json; the runner resolves it. `in-scope` is the sandbox value the owner's targets file holds.
+  const store = join(dir, "store")
+  mk(store, { recursive: true })
+  wf(join(store, "targets.json"), JSON.stringify({ jobs: { sandbox_name: "in-scope" } }))
+  wf(plan, JSON.stringify({ actions: ["jobs_create"], writes: { jobs_create: { extract: "args.name", allow: ["@jobs.sandbox_name"] } } }))
   const create = (name) => execute(`return await tools.jobs.create({name:'${name}',schedule:{every:'1h'},agent:'build',action:{type:'prompt',text:'hi'}})`)
   const cases = [{ id: "commit-in", prompt: create("in-scope"), extra: "- Set: commit" }, { id: "commit-out", prompt: create("elsewhere"), extra: "- Set: commit" }]
-  const run = await scriptedRun({ cases, arm: soloArm(env.companions, "jobs", {}), options: { iteration: "p0-p4", commitPlan: plan, set: "commit", auth: "none" }, caller: env.caller, tmp: env.tmp })
+  const run = await scriptedRun({ cases, arm: soloArm(env.companions, "jobs", {}), options: { iteration: "p0-p4", commitPlan: plan, set: "commit", auth: "none", store }, caller: env.caller, tmp: env.tmp })
   try {
     const guard = (id) => run.trials[id].guard
     const inn = textOf(run.trials["commit-in"].calls[0])
@@ -559,7 +580,7 @@ export async function env_(env = {}) {
     checks.push(ok("the intended credential's value is in no recording either (masked everywhere)", !everything.includes(wanted.EVALS_PROBE_KEY), ""))
     for (const tool of BILLED_CORE_TOOLS) {
       const call = locked.trials[tool.replace(/_/g, "-")].calls[0]
-      checks.push(ok(`${tool} is denied by name in a locked run`, call && refused(call) && /No tool named|Permission denied/i.test(textOf(call)), call ? `${call.status}: ${textOf(call).slice(0, 100).replace(/\s+/g, " ")}` : "no call recorded"))
+      checks.push(ok(`${tool} is denied by name in a locked run`, call && refused(call) && /No tool named|Permission denied|EVALS-ASSERT tool/i.test(textOf(call)), call ? `${call.status}: ${textOf(call).slice(0, 100).replace(/\s+/g, " ")}` : "no call recorded"))
     }
     const config = { policies: (await import("../run/lockdown.mjs")).lockdownPolicies(), permissions: (await import("../run/lockdown.mjs")).lockdownPermissions() }
     const { lockdownProblems } = await import("../run/lockdown.mjs")
@@ -576,4 +597,72 @@ export async function env_(env = {}) {
   }
 }
 
-export const PROBES = { a1, a2, a3, a4, a5, c, g, g8, env: env_, p1, p2, p3, p4, p5, p13 }
+// ------------------------------------------------------------------------------------------------------------------ halt
+
+/** G0 review 1.1: a write that completes outside commit mode halts the wave: nothing more launches, in this batch or the next. */
+export async function halt(env = {}) {
+  const { mkdtempSync, rmSync } = await import("node:fs")
+  const { readHalt } = await import("../run/halt.mjs")
+  const store = mkdtempSync(join(env.tmp ?? "/tmp", "evals-p0-halt-"))
+  // The config's asks are taken away, the plugin is at access all and the guard only logs: the one setting in which a write completes.
+  const create = (name) => execute(`return await tools.jobs.create({name:'${name}',schedule:{every:'1h'},agent:'build',action:{type:'prompt',text:'hi'}})`)
+  const cases = [{ id: "first-write", prompt: create("first") }, { id: "second-write", prompt: create("second") }, { id: "third-write", prompt: create("third") }]
+  const options = { probe: true, noWriteAsks: true, guardMode: "log", iteration: "p0-halt", parallel: 1, store, auth: "none" }
+  const run = await scriptedRun({ cases, arm: soloArm(env.companions, "jobs", { access: "all" }), options, tmp: env.tmp })
+  let again = ""
+  try {
+    await scriptedRun({ cases: [cases[0]], arm: soloArm(env.companions, "jobs", { access: "all" }), options: { ...options, iteration: "p0-halt-next" }, tmp: env.tmp })
+  } catch (error) {
+    again = error.message
+  }
+  try {
+    const marked = readHalt(run.store)
+    const first = run.trials["first-write"]
+    return done("halt", [
+      ok("the first write completed (the guard logged it)", (first.summary?.guard?.committed ?? 0) === 1, JSON.stringify(first.summary?.guard)),
+      ok("the runner halted the wave on it: nothing more launched in the batch", run.result.launched === 1 && /HALT/.test(String(run.result.stopped)), `launched ${run.result.launched} of ${run.result.planned}; ${String(run.result.stopped).slice(0, 160)}`),
+      ok("it says what was written", /jobs_create completed outside commit mode/.test(String(run.result.stopped)) || /jobs_create completed outside commit mode/.test(String(marked?.reason)), String(marked?.reason).slice(0, 160)),
+      ok("the store's HALT marker holds the batch, the trial and the write", Boolean(marked?.batch) && marked.trial === "first-write.t1" && marked.writes?.[0]?.tool === "jobs_create", JSON.stringify(marked ?? null).slice(0, 200)),
+      ok("another batch of the wave refuses to start while it stands", /the wave is halted/.test(again), again.slice(0, 160)),
+    ])
+  } finally {
+    run.cleanup()
+    rmSync(store, { recursive: true, force: true })
+  }
+}
+
+// ------------------------------------------------------------------------------------------------------------------ live
+
+/**
+ * G0 review 1.2(c), the only evidence for what a real vendor tool body does at `ask-changes`: one real write call per plugin against its
+ * sandbox, each declined end to end, with the guard on; and one real gws plan-and-commit in commit mode. It needs what no credential-free
+ * probe has: a signed-in evals profile (EVALS_PROFILE) and the owner's `live-writes.json` in the store:
+ *   { "slack": { "code": "return await tools.slack.slack_send_message({ channel_id: '<sandbox>', text: 'x' })", "action": "slack_slack_send_message" }, ... }
+ * `code` is what Code Mode runs (the owner writes the sandbox's own ids, which this repository never holds); `action` the permission it must ask.
+ * It is not part of `p0 all` until the profile is there. The review also asked for a second pass with the guard off; a run that holds a
+ * credential refuses `"guard": false` (G0 review 1.6), so that pass is the credential-free P0-g gold run instead.
+ */
+export async function live(env = {}) {
+  const { existsSync: exists, readFileSync: read } = await import("node:fs")
+  const profile = process.env.EVALS_PROFILE
+  const file = join(env.store ?? ".", "live-writes.json")
+  if (!profile || !exists(file)) return done("live", [ok("a signed-in evals profile (EVALS_PROFILE) and live-writes.json in the store", false, `${profile ? "" : "EVALS_PROFILE is not set; "}${exists(file) ? "" : `${file} does not exist`}`)])
+  const spec = JSON.parse(read(file, "utf8"))
+  const checks = []
+  for (const [id, entry] of Object.entries(spec)) {
+    if (id === "_note") continue
+    const run = await scriptedRun({ plugin: id, cases: [{ id: `live-${slug(id)}`, prompt: execute(entry.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-live-${slug(id)}`, auth: "none+profile" }, caller: { EVALS_PROFILE: profile, ...env.caller }, tmp: env.tmp })
+    try {
+      const trial = run.trials[`live-${slug(id)}`]
+      const call = trial.calls[0]
+      checks.push(ok(`${id}: the real write call is declined, not run`, declinedIn(call) || /cannot ask the user|declined|rejected/i.test(textOf(call)) || trial.analysed.inner.declined >= 1, textOf(call).slice(0, 120).replace(/\s+/g, " ")))
+      checks.push(ok(`${id}: the guard saw no write complete`, (trial.summary?.guard?.committed ?? 0) === 0 && (trial.summary?.guard?.assert_committed ?? 0) === 0, JSON.stringify(trial.summary?.guard)))
+      checks.push(ok(`${id}: the plugin loaded`, (trial.summary?.host_log?.plugin_load_failures ?? []).length === 0, JSON.stringify(trial.summary?.host_log?.plugin_load_failures ?? [])))
+    } finally {
+      run.cleanup()
+    }
+  }
+  return done("live", checks.length ? checks : [ok("live-writes.json names at least one plugin", false, file)])
+}
+
+export const PROBES = { a1, a2, a3, a4, a5, c, g, g8, halt, env: env_, live, p1, p2, p3, p4, p5, p13 }

@@ -15,12 +15,39 @@ const ROOT = join(import.meta.dirname, "..", "..")
 /** Paths that may never be committed, whatever is in them. */
 export const FORBIDDEN_PATHS = [/^traces\//, /^results\//, /^private\//, /^holdouts\//, /\.trace\.jsonl$/, /\.jsonl$/i, /^node_modules\//, /^\.env/]
 
+const SYNTHETIC = /0123456789|abcdefghij|ABCDEFGHIJ|dummy|canary|example|placeholder|fixture|not-a-(token|key|secret)|redacted/i
+
+/**
+ * Token shapes, each a vendor's own prefix and the characters that follow it. Written so the same source works for JavaScript and for
+ * `git grep -E` (no lookahead, no lazy quantifier). A normal hex digest (sha256, a commit id) holds none of these prefixes.
+ */
+export const TOKEN_SHAPES = [
+  ["token-anthropic", "an Anthropic API key or Claude OAuth token (sk-ant-)", /\bsk-ant-[A-Za-z0-9_-]{16,}/g],
+  ["token-sk", "an API key (sk-, sk-proj-, sk-or-v1-)", /\bsk-(proj|or|svcacct)-[A-Za-z0-9_-]{16,}/g],
+  ["token-slack", "a Slack token (xoxb-, xoxp-, xoxa-, xoxe-, xoxr-, xapp-)", /\b(xox[abeprs]|xapp)-[A-Za-z0-9.-]{10,}/g],
+  ["token-github", "a GitHub token (ghp_, gho_, ghu_, ghs_, ghr_, github_pat_)", /\b(gh[opusr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})/g],
+  ["token-google", "a Google OAuth access or refresh token (ya29., 1//)", /\b(ya29\.[A-Za-z0-9_-]{20,}|1\/\/0[A-Za-z0-9_-]{30,})/g],
+  ["token-jwt", "a JSON Web Token", /\beyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g],
+  ["token-linear", "a Linear token (lin_oauth_, lin_api_)", /\blin_(oauth|api)_[A-Za-z0-9]{16,}/g],
+  ["token-notion", "a Notion token (ntn_, secret_)", /\b(ntn_[A-Za-z0-9]{16,}|secret_[A-Za-z0-9]{32,})/g],
+  ["token-atlassian", "an Atlassian API token (ATATT)", /\bAT(ATT|CTT)[A-Za-z0-9_=-]{20,}/g],
+  ["token-aws", "an AWS access key id", /\b(AKIA|ASIA)[0-9A-Z]{16}\b/g],
+  ["token-vendor-key", "a vendor API key (tvly-, sk_ of ElevenLabs, AIza of Google)", /\b(tvly-[A-Za-z0-9]{16,}|sk_[a-f0-9]{30,}|AIza[A-Za-z0-9_-]{30,})/g],
+  ["token-bearer", "a Bearer token of any length", /\bBearer[ \t]+[A-Za-z0-9._~+\/=-]{8,}/g],
+  ["token-oauth-field", "an OAuth access or refresh token value", /["']?(access|refresh|id)[_-]?token["']?[ \t]*[:=][ \t]*["'][A-Za-z0-9._~+\/=-]{24,}["']/gi],
+  ["private-key", "a private key block", /-----BEGIN [A-Z ]*PRIVATE KEY-----/g],
+]
+
 const PATTERNS = [
   { id: "home-path", re: /\/Users\/[A-Za-z0-9._-]+|\/private\/var\/|\/home\/[A-Za-z0-9._-]+\//g, why: "a machine-local absolute path" },
   { id: "email", re: /[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.[a-z]{2,})/g, why: "an email address", allow: (match, domain) => /(^|\.)(example\.(com|org|net)|users\.noreply\.github\.com)$/.test(domain) },
   // A status id is 19 digits; a shorter one is a fixture in a test.
   { id: "x-status", re: /x\.com\/[A-Za-z0-9_]+\/status\/[0-9]{8,}/g, why: "a real post link" },
+  // A value that is obviously made up: a run of sequential digits or letters, or a word that says so. A real secret is random, and
+  // never holds `0123456789` or `abcdefghij`; tests and docs write theirs that way so the scan can tell them apart.
   { id: "credential", re: /\b(sk-[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{20,}|xoxb-[A-Za-z0-9-]{10,}|Bearer\s+[A-Za-z0-9._-]{20,})/g, why: "a credential-shaped string" },
+  // Token shapes by vendor (G0 review 3.5): each fails a scan of a tree or a history that holds one.
+  ...TOKEN_SHAPES.map(([id, why, re]) => ({ id, why, re, allow: (match) => SYNTHETIC.test(match) || (id === "token-bearer" && !/[0-9]/.test(match.replace(/^Bearer\s+/, ""))) })),
   { id: "private-store", re: /evals-lab\/private|evalruns\/[a-z0-9]{2,}\/|opencode-release\/review/g, why: "a path into the private store" },
 
 ]

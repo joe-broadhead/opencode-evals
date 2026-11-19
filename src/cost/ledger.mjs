@@ -205,7 +205,7 @@ const append = (store, entry) => appendFileSync(ledgerFile(store), `${JSON.strin
  * Checks every cap and reserves `runs` runs, in one locked step, before anything is launched. Returns the batch id.
  * `check` (the dollar budget) runs inside the same lock, so two runners cannot both spend the last dollars.
  */
-export function reserve(store, { plugin, iteration, runs, model = null, now = new Date(), env = process.env, check = null, perRunUsd = null, priceBasis = null, perRunListUsd = null }) {
+export function reserve(store, { plugin, iteration, runs, model = null, now = new Date(), env = process.env, check = null, perRunUsd = null, priceBasis = null, perRunListUsd = null, vendorPerRun = null }) {
   const caps = loadCaps(store, env)
   const month = monthOf(now)
   return withLock(store, () => {
@@ -213,7 +213,7 @@ export function reserve(store, { plugin, iteration, runs, model = null, now = ne
     const used = checkCaps(readLedger(store), caps, { month, plugin, iteration, runs })
     const batch = `${iteration}-${now.toISOString().replace(/[^0-9]/g, "").slice(0, 14)}-${randomBytes(3).toString("hex")}`
     // What each run is expected to cost, so another batch's dollar check counts these runs before they bill.
-    append(store, { kind: "reserve", batch, at: now.toISOString(), month, iteration, plugin, runs, model, per_run_usd: typeof perRunUsd === "number" ? perRunUsd : null, price_basis: priceBasis, per_run_list_usd: typeof perRunListUsd === "number" ? perRunListUsd : null })
+    append(store, { kind: "reserve", batch, at: now.toISOString(), month, iteration, plugin, runs, model, per_run_usd: typeof perRunUsd === "number" ? perRunUsd : null, price_basis: priceBasis, per_run_list_usd: typeof perRunListUsd === "number" ? perRunListUsd : null, ...(vendorPerRun ? { vendor_per_run: vendorPerRun } : {}) })
     return { batch, month, caps, used, dollars }
   })
 }
@@ -265,6 +265,25 @@ export function outstandingList(entries) {
     else unpriced += left
   }
   return { usd, runs, unpriced }
+}
+
+/**
+ * What the reserved runs that have not run yet are expected to use of a vendor's budget (`field`: tavily_credits, x_usd, ...), at the
+ * worst case per run each batch was reserved with: left = reserved - released - recorded, in every month.
+ */
+export function outstandingVendor(entries, field) {
+  const released = new Map()
+  const recorded = new Map()
+  for (const entry of entries) {
+    if (entry.kind === "release") released.set(entry.batch, (released.get(entry.batch) ?? 0) + entry.runs)
+    if (entry.kind === "run") recorded.set(entry.batch, (recorded.get(entry.batch) ?? 0) + 1)
+  }
+  let total = 0
+  for (const entry of entries) {
+    if (entry.kind !== "reserve" || typeof entry.vendor_per_run?.[field] !== "number") continue
+    total += Math.max(0, entry.runs - (released.get(entry.batch) ?? 0) - (recorded.get(entry.batch) ?? 0)) * entry.vendor_per_run[field]
+  }
+  return total
 }
 
 export const recordRun = (store, entry) => withLock(store, () => append(store, { kind: "run", at: new Date().toISOString(), ...entry }))

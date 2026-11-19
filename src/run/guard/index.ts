@@ -21,7 +21,7 @@
 // can run the logic against a stand-in.
 
 import { appendFileSync } from "node:fs"
-import { loadPolicy, matchWrite, isIn, planIdOf, decideBefore, judgePlan } from "./logic.mjs"
+import { loadPolicy, matchWrite, isIn, planIdOf, decideBefore, judgePlan, pick } from "./logic.mjs"
 
 const OUT = () => process.env.EVALS_GUARD_OUT ?? (process.env.TMPDIR ? `${process.env.TMPDIR}/guard.jsonl` : "")
 
@@ -62,8 +62,8 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
         const decision = decideBefore(policy, event.tool, event.input, plans)
         record("execute_before", { tool: event.tool, call: event.id, session: event.sessionID, write: Boolean(decision.write) || decision.committer, pass: decision.pass, why: decision.why })
         if (!decision.pass) {
-          record("assert", { what: "write", tool: event.tool, why: decision.why })
-          throw new Error(`EVALS-ASSERT write: ${event.tool} refused (${decision.why})`)
+          record("assert", { what: (decision as any).tool ? "tool" : "write", tool: event.tool, why: decision.why })
+          throw new Error(`EVALS-ASSERT ${(decision as any).tool ? "tool" : "write"}: ${event.tool} refused (${decision.why})`)
         }
       })
 
@@ -79,7 +79,7 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
           }
         }
         if ((write || committer) && event.status === "completed") {
-          record("committed", { tool: event.tool, call: event.id, session: event.sessionID, mode: policy.mode })
+          record("committed", { tool: event.tool, call: event.id, session: event.sessionID, mode: policy.mode, ...(write?.extract ? { target: pick(event.input, write.extract) } : {}) })
           if (policy.mode === "refuse") record("assert", { what: "committed", tool: event.tool })
         }
       })

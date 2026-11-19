@@ -85,7 +85,7 @@ plugin's `ask-changes`. So the sealed config (`src/run/lockdown.mjs`):
   would never be asked. In the commit set it does refuse, for a write with no declared target extractor or a target outside the
   allowed aliases, and for a plan commit (gws: only the `planId`) of a plan it did not see made for an in-sandbox target.
 
-`evals p0 [a1|a2|a3|a4|a5|c|g|g8|env|p1|p2|p3|p4|p5|p13|all] [--companions FILE]` runs the probes the gate rests on, with the scripted model, no credential
+`evals p0 [a1|a2|a3|a4|a5|c|g|g8|halt|live|env|p1|p2|p3|p4|p5|p13|all] [--companions FILE]` runs the probes the gate rests on, with the scripted model, no credential
 and every trial in a container: **a1** shell/file/web/subagent tools refused, no egress, a canary credential in no output;
 **a2** all 24 plugins at ask-changes, every write action asks (at access `all` too), the local writes decline end to end;
 **a3** a foreign-session ask is rejected within 5 s (and hangs without the guard); **a4** Tavily research and crawl are
@@ -109,6 +109,56 @@ and three in a row pause the model for 30 minutes; a spending plugin (Tavily, X,
 `caps.json` `vendors` (`tavily_credits`, `affinity_calls`, `x_usd`, `openrouter_usd`), counted from the ledger and, when the caller
 supplies a fetcher, from the vendor's own balance. `scripts/wide-skeletons.mjs --plugin <id>` writes one wide skeleton per reachable
 tool, whose prompt is `<<TODO>>` (compile refuses it) so it is written without sight of the tool's description.
+
+## The G0 review's changes (PR #8 at d7b6edf)
+
+An independent review of the harness found six things that block the first run that holds a credential, and twelve more. All are in; each blocker has a test that fails if it regresses.
+
+- **A completed write halts the wave.** After every trial the runner reads the guard's log (`src/run/halt.mjs`). Outside commit mode any
+  completed write, any write that resolved to `allow` at the permission decision, or an ask the guard could not reject is a halt; in commit
+  mode a write that completed with no `execute.before` pass for an in-scope target is. The runner launches nothing more, writes
+  `$EVALS_STORE/HALT` (the batch, the trial, the tool, the target) so every other batch of the wave refuses to start, and says what was
+  written where. `evals halt` shows it; `evals halt --clear` is the owner's, once read. Probe `halt` runs a write that really completes.
+- **The cost cap fails closed.** A model that bills is refused when no ceiling or cap is set (`EVALS_ROUND_CEILING_USD`, `EVALS_ROUND_CAP_USD`,
+  `round_cap_usd`), when it has no catalogue price, and when a recorded run of it has no list cost; only the scripted `mock/` model is exempt.
+  A run that did model work and reported no tokens is counted at the estimate, marked `usage_missing` and returned as an error. A recording
+  that says `"isUsingOverage": true` stops the batch (paid overage is never bought). Until 30 runs of a model and tier are recorded the estimate
+  is the larger of their mean and 75th percentile. The X, OpenRouter and Inference caps count from the ledger like Tavily's and Affinity's:
+  cumulative across the round, with other batches' reserved runs at their worst case ($0.25 an X call, $0.10 an OpenRouter call).
+- **`Data:` is required** on every case (a compile error to omit it), and a plugin that reads HR records (metaview, ashby) must say `candidate`.
+  The history, x and charts corpora written before the header are legacy: history is `own`, x is `real`, charts is `synthetic`. `real` and
+  `candidate` cases run on no model, DeepSeek or Claude, unless `$EVALS_STORE/data-matrix.json` lists it: `{ "real": ["claude-agent/*"],
+  "candidate": ["claude-agent/sonnet"] }`. A case of a plugin with a pack also declares a round set.
+- **`"guard": false`** (or a guard mode other than refuse and commit) is refused whenever the trial holds any credential, `+profile` included.
+- **The profile starts its own service**: `evals-profile.sh` and `exportProfile` give the profile a port of its own (47950, else the next free
+  one), set with `opencode service set port` in the profile only, and never the real service's. `check-real` and the keeper refuse a profile whose
+  port is the real one's, or has none. The keeper reads each credential's `expires` before and after its identity read and fails a token that was
+  due and did not move. A batch exports the profile once, so a vendor whose tokens last an hour (Atlassian, Google, Notion) needs batches shorter
+  than about 50 minutes. `check-real` says that a distinct token is not a distinct grant: the end of the round is `auth logout` in the profile.
+- **`evals privacy --scan`** catches the token shapes: `sk-ant-` (API keys and Claude OAuth), `sk-proj-`/`sk-or-`, `xoxb-`/`xoxp-`/`xoxe`/`xapp-`,
+  `ghp_`/`gho_`/`ghu_`/`ghs_`/`ghr_`/`github_pat_`, `ya29.` and Google refresh tokens, JWTs, `lin_oauth_`, `ntn_`, `secret_`, Atlassian `ATATT`,
+  AWS keys, Tavily and ElevenLabs keys, a `Bearer` token of any length, an OAuth access or refresh token field, and private key blocks. A value that
+  is obviously made up (`0123456789`, `abcdefghij`, `dummy`, `canary`, `example`) is not flagged, and a hex digest never is.
+- **A plugin that failed to load** (the host's own log) is `infra: plugin`: never graded, and the batch stops.
+- **Seeds** may not carry `opencode.json*`, `AGENTS.md`, `CLAUDE.md`, or anything under `.claude/`, `.agents/` or `.opencode/` (but `.opencode/jobs/` data
+  files). **`Home files:`** names may not start with a dot, and a link is never followed or recorded.
+- **The commit plan names `@alias`es of `targets.json` only**; a literal, an unknown alias, or `actions` that differ from `writes` fails the run.
+  `local: true` is the one write with no target (it touches only the trial's own sandbox).
+- **The guard has an allow-list tripwire**: in a locked trial a tool other than `execute`, `skill`, `question`, `todowrite` and the plugins' own is
+  refused at `execute.before` and logged (`refused_tools`), whatever it is, so a core tool a later version adds stays out.
+- **P0-A2 runs the enforced path**: `+profile` with a dummy credential from a scratch profile and an arm file that names no `access`, so a regression of
+  the runner's default shows end to end.
+- **Grammar**: a positive `call:`, `first:` or `before:` glob in a wide case, `absent-arg:`, and a canary that the prompt fills and an item grades are
+  compile errors; `canaries.json` values must be random tokens of at least 8 characters.
+- **Which command decides**: `evals report` decides. Its interval is the case-cluster bootstrap (`src/report/cluster.mjs`: cases are the unit, models
+  and trials nested inside), `--selecting <file>` judges the baseline on the trials that did not select a case, and arms labelled `h1` and `cb-h1` get the
+  pooled holdout gate (the point estimate must not drop and the lower bound must stay above -5 points; two flipped holdouts hold a plugin). The older
+  paired bootstrap is printed beside it. `evals policy` decides ship or hold on comparability and regressions.
+- **The live write probe** (`evals p0 live`, with `EVALS_PROFILE` and the owner's `live-writes.json`): one real write call per plugin at `ask-changes`
+  against its sandbox, each declined end to end with the guard on. The review's second pass with the guard off conflicts with the refusal above, so that
+  half is the credential-free P0-g gold run.
+- **Host sources**: `oc-src/2.3.1` sits beside `oc-src/2.3.2` (outside the scratch directory). Both hold `DESCRIPTION_LIMIT = 500` for the text `search()`
+  returns (`@opencode/core/dist/chunks/instance-gxs71cxp.js`, `generate-gxs71cxp.js`).
 
 The round's list-price ceiling (`EVALS_ROUND_CEILING_USD`, the phase's; `EVALS_ROUND_CAP_USD` or `round_cap_usd` in `caps.json`, the
 hard cap) is checked **before every launch**: what the round has spent at list price (every run's tokens against the frozen catalogue,

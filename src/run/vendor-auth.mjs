@@ -13,6 +13,7 @@
 import { randomBytes } from "node:crypto"
 import { join } from "node:path"
 import { runToEnd } from "./sandbox.mjs"
+import { ensureServicePort, assertDistinctPort } from "./service-port.mjs"
 
 /** What a trial gets in place of a refresh token: import insists on one, and no vendor accepts this. */
 export const REFRESH_PLACEHOLDER = "evals-no-refresh"
@@ -113,7 +114,14 @@ export function vendorCredentials(exportedJson, { needed, now = Date.now(), hori
 /** Exports the evals profile with its own environment (every integration: the allow-list cuts it down). */
 export async function exportProfile({ binary, profileDir, caller = process.env }) {
   if (!profileDir) throw new Error("--auth +profile: set EVALS_PROFILE to the evals profile's directory")
-  const out = await runToEnd(binary, ["auth", "export"], { env: profileEnv(profileDir, caller), timeoutMs: 60_000 })
+  const penv = profileEnv(profileDir, caller)
+  // The profile runs its own service, on its own port, never the real service's (G0 review 4.1).
+  const realHomeEnv = { ...caller, HOME: caller.EVALS_REAL_HOME ?? caller.HOME }
+  for (const key of Object.keys(realHomeEnv)) if (/^(OPENCODE_|XDG_)/.test(key)) delete realHomeEnv[key]
+  ensureServicePort({ opencode: binary, profileEnv: penv, realEnv: realHomeEnv, env: caller })
+  assertDistinctPort({ opencode: binary, profileEnv: penv, realEnv: realHomeEnv, env: caller })
+  // EVALS_AUTH_STANDALONE=1 reads the profile from a private server instead of its background service (a probe's scratch profile).
+  const out = await runToEnd(binary, ["auth", "export", ...(caller.EVALS_AUTH_STANDALONE ? ["--standalone"] : [])], { env: penv, timeoutMs: 60_000 })
   if (out.code !== 0 || !out.stdout.trim()) throw new Error(`--auth +profile: \`opencode auth export\` of the evals profile failed (exit ${out.code}); is ${profileDir} signed in?`)
   return out.stdout
 }

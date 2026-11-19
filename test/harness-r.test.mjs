@@ -9,7 +9,8 @@ import { tmpdir } from "node:os"
 import { Buffer } from "node:buffer"
 import { allowListed, vendorCredentials, secretsOf, REFRESH_PLACEHOLDER, profileEnv } from "../src/run/vendor-auth.mjs"
 import { redactor, expand, registerSecrets, scrub } from "../src/run/secrets.mjs"
-import { fillPrompt, gateCases, seedFiles, seedDir, placeholdersIn } from "../src/run/gate.mjs"
+import { fillPrompt, gateCases, seedFiles, seedDir, placeholdersIn, loadDataMatrix, seedRefusal } from "../src/run/gate.mjs"
+import { dataOf } from "../src/case/schema.mjs"
 import { batchEgress, fillHost, modelHosts } from "../src/run/egress.mjs"
 import { readCompanions, materialiseArm, materialiseCompanions, runtimePaths, companionsDigest } from "../src/run/arm.mjs"
 import { roundLimits, estimateRunUsd, assertLaunchWithinRound, RoundCapError, tierOf, listSpent, MIN_MEASURED_RUNS } from "../src/cost/budget.mjs"
@@ -89,20 +90,21 @@ test("a secret is scrubbed in base64, base64url, URL-encoded, JSON-escaped and l
 
 // ------------------------------------------------------------------------------------------------ R5: placeholders, data, seeds
 
-const mkCase = (id, header = "", prompt = "list my issues") => compileCase(`cases/linear/${id}.md`, `# ${id}
+const mkCaseText = (id, header = "", prompt = "list my issues") => `# ${id}
 - Plugin: linear
 - Skill under test: linear
 - Tier: T3
 - Source: test
 - Decision tested: x
-${header}
+${/Data:/.test(header) ? "" : "- Data: synthetic\n"}${/Set:/.test(header) ? "" : "- Set: local\n"}${header}
 ## Prompt
 ${prompt}
 
 ## Items
 - [LIN-OC01] major · It answers the question asked.
   evidence: text:any matches /./
-`)
+`
+const mkCase = (id, header, prompt) => compileCase(`cases/linear/${id}.md`, mkCaseText(id, header, prompt))
 
 test("placeholders are filled from the store at run time, and a prompt that cannot be filled is deferred, never sent", () => {
   const targets = flatten({ slack: { sandbox_channel: "C0SANDBOX" }, linear: { team_key: ["EVL"] } })
@@ -112,15 +114,38 @@ test("placeholders are filled from the store at run time, and a prompt that cann
   assert.deepEqual(fillPrompt("no placeholders", {}), { text: "no placeholders", unknown: [] })
   assert.deepEqual(placeholdersIn("{{target:a.b}} {{canary:c}} {{other:x}}").map((p) => p.text), ["{{target:a.b}}", "{{canary:c}}"])
   const cases = [mkCase("tools-a", "", "send to {{target:slack.sandbox_channel}}"), mkCase("tools-b", "", "send to {{target:slack.missing}}"), mkCase("tools-c", "- Data: real"), mkCase("tools-d", "- Data: candidate"), mkCase("tools-e", "- Data: synthetic")]
+  // Nothing a third party wrote goes to any model by default: Claude and DeepSeek alike need the owner's data-matrix sign-off.
   const claude = gateCases(cases, { model: "claude-agent/haiku", targets })
-  assert.deepEqual(claude.runnable.map((c) => c.id), ["tools-a", "tools-c", "tools-d", "tools-e"])
+  assert.deepEqual(claude.runnable.map((c) => c.id), ["tools-a", "tools-e"])
   assert.match(claude.deferred.find((d) => d.case === "tools-b").why, /cannot fill \{\{target:slack\.missing\}\}/)
+  assert.match(claude.deferred.find((d) => d.case === "tools-c").why, /Data: real may not run on claude-agent\/haiku: the owner's data-matrix sign-off .* does not list it for real data/)
+  assert.match(claude.deferred.find((d) => d.case === "tools-d").why, /Data: candidate may not run on claude-agent\/haiku/)
   assert.equal(claude.prompts.get("tools-a"), "send to C0SANDBOX")
   const deepseek = gateCases(cases, { model: "opencode/deepseek-v4.1-flash", targets })
   assert.deepEqual(deepseek.runnable.map((c) => c.id), ["tools-a", "tools-e"])
-  assert.match(deepseek.deferred.find((d) => d.case === "tools-c").why, /Data: real never runs on opencode\/deepseek/)
-  assert.match(deepseek.deferred.find((d) => d.case === "tools-d").why, /Data: candidate never runs/)
-  assert.equal(gateCases([mkCase("tools-x", "- Data: real")], { model: "claude-agent/sonnet" }).runnable.length, 1, "Claude may read real data, with the owner's sign-off")
+  assert.match(deepseek.deferred.find((d) => d.case === "tools-c").why, /a third party's words stay off DeepSeek unless it says so/)
+  // The sign-off lists models per kind of data; a trailing * matches a prefix.
+  const matrix = { real: ["claude-agent/*"], candidate: ["claude-agent/sonnet"] }
+  assert.deepEqual(gateCases(cases, { model: "claude-agent/haiku", targets, matrix }).runnable.map((c) => c.id), ["tools-a", "tools-c", "tools-e"], "real is signed off for any claude-agent model, candidate for sonnet only")
+  assert.deepEqual(gateCases(cases, { model: "claude-agent/sonnet", targets, matrix }).runnable.map((c) => c.id), ["tools-a", "tools-c", "tools-d", "tools-e"])
+  assert.deepEqual(gateCases(cases, { model: "opencode/deepseek-v4.1-flash", targets, matrix }).runnable.map((c) => c.id), ["tools-a", "tools-e"], "the matrix does not list DeepSeek")
+  assert.deepEqual(gateCases(cases, { model: "opencode/deepseek-v4.1-flash", targets, matrix: { real: ["opencode/*"] } }).runnable.map((c) => c.id), ["tools-a", "tools-c", "tools-e"], "an explicit entry is the owner's switch")
+  // The sign-off file is the owner's, in the store; none means none.
+  const root = scratch()
+  try {
+    assert.deepEqual(loadDataMatrix({ EVALS_STORE: join(root, "none") }), {})
+    mkdirSync(join(root, "store"))
+    writeFileSync(join(root, "store", "data-matrix.json"), JSON.stringify({ real: ["claude-agent/*"], synthetic: ["x"], candidate: "not a list" }))
+    assert.deepEqual(loadDataMatrix({ EVALS_STORE: join(root, "store") }), { real: ["claude-agent/*"] }, "only third-party kinds, only lists")
+    writeFileSync(join(root, "store", "data-matrix.json"), "{ not json")
+    assert.deepEqual(loadDataMatrix({ EVALS_STORE: join(root, "store") }), {}, "an unreadable sign-off allows nothing")
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+  // A legacy corpus's case that omits Data: takes what the corpus always held: x reads other people's posts, so it is real.
+  const legacy = compileCase("cases/x/legacy.md", mkCaseText("legacy", "").replace(/- Plugin: linear/, "- Plugin: x").replace("- Set: local\n", "").replace("- Data: synthetic\n", ""))
+  assert.equal(dataOf(legacy), "real")
+  assert.deepEqual(gateCases([legacy], { model: "claude-agent/haiku" }).runnable, [])
 })
 
 test("Seed: files= copies a seed's plain files into the project, and refuses a link, an unknown name and a path", () => {
@@ -221,13 +246,16 @@ test("the per-launch check: spent + other batches' reserved runs + this batch's 
     assert.deepEqual(outstandingList([{ kind: "reserve", batch: "x", runs: 5, per_run_list_usd: 2 }, { kind: "run", batch: "x" }, { kind: "release", batch: "x", runs: 1 }]), { usd: 6, runs: 3, unpriced: 0 })
     // a run with no estimate cannot be held to the ceiling while one is set, and is not checked when none is
     assert.throws(() => assertLaunchWithinRound(store, { model: "m/unpriced", tier: "wide", running: 0 }, env), /cannot hold m\/unpriced to \$10: no estimate for m\/unpriced at tier wide/)
-    assert.deepEqual(assertLaunchWithinRound(store, { model: "m/unpriced", tier: "wide", running: 0 }, {}), { enforced: false })
+    // fail closed (G0 review 1.3): with no ceiling and no cap a model that bills is refused, and only the scripted model is exempt
+    assert.throws(() => assertLaunchWithinRound(store, { model: "m/unpriced", tier: "wide", running: 0 }, {}), /no round ceiling or cap is set: cannot hold m\/unpriced to anything/)
+    assert.throws(() => assertLaunchWithinRound(store, { model: "claude-agent/haiku", tier: "wide", running: 0 }, {}), /no round ceiling or cap is set/)
+    assert.deepEqual(assertLaunchWithinRound(store, { model: "mock/m1", tier: "wide", running: 0 }, {}), { enforced: false, metered: false })
     // the measured mean replaces the table once enough runs are in
     const runs = Array.from({ length: MIN_MEASURED_RUNS }, (_, i) => ({ kind: "run", batch: `b${i}`, model: "m/a", tier: "wide", list_usd: 3 }))
     ledgerWith(store, runs)
     const estimate = estimateRunUsd(store, "m/a", "wide", {})
     assert.equal(estimate.usd, 3)
-    assert.match(estimate.basis, /mean list cost of 5 recorded wide run/)
+    assert.match(estimate.basis, /75th-percentile list cost of 5 recorded wide run/)
     assert.equal(estimateRunUsd(store, "m/a", "deep", {}).usd, 2, "deep still has only the table")
     assert.equal(estimateRunUsd(store, "m/other", "wide", { EVALS_ASSUMED_RUN_USD: "0.5" }).usd, 0.5)
   } finally {
@@ -299,7 +327,7 @@ test("a materialised plugin carries what its package.json lists (guest/, manifes
 
 test("what the guard saw and what the host logged about plugins are summarised, and a plugin that failed to load is named", () => {
   const records = [{ kind: "guard_start" }, { kind: "ask", own: true }, { kind: "ask", own: false }, { kind: "reject" }, { kind: "assert", what: "write" }, { kind: "assert", what: "access" }, { kind: "assert", what: "committed" }, { kind: "committed" }, { kind: "execute_before", write: true }]
-  assert.deepEqual(guardSummary(records), { ran: true, asks: 2, rejected: 1, reject_failed: 0, asks_left_to_run: 1, refused_writes: 1, assert_access: 1, assert_committed: 1, committed: 1, write_calls: 1 })
+  assert.deepEqual(guardSummary(records), { ran: true, asks: 2, rejected: 1, reject_failed: 0, asks_left_to_run: 1, refused_writes: 1, refused_tools: 0, assert_access: 1, assert_committed: 1, committed: 1, write_calls: 1 })
   assert.equal(guardSummary([]).ran, false)
   const home = scratch()
   try {
@@ -325,7 +353,7 @@ function fixture({ extra = "", ids = ["demo-a", "demo-b"] } = {}) {
   const root = scratch()
   const casesDir = join(root, "cases")
   mkdirSync(casesDir)
-  const text = (id, header) => `# ${id}\n- Plugin: demo\n- Skill under test: demo\n- Tier: T3\n- Source: test\n- Decision tested: x\n${header}\n## Prompt\nhello ${id}\n\n## Items\n- [D-OC01] blocker · It says something.\n  evidence: text:any matches /./\n`
+  const text = (id, header) => `# ${id}\n- Plugin: demo\n- Skill under test: demo\n- Tier: T3\n- Source: test\n- Decision tested: x\n- Data: synthetic\n${header}\n## Prompt\nhello ${id}\n\n## Items\n- [D-OC01] blocker · It says something.\n  evidence: text:any matches /./\n`
   for (const [id, header] of [[ids[0], extra], [ids[1], ""]]) {
     writeFileSync(join(casesDir, `${id}.md`), text(id, header))
     writeFileSync(join(casesDir, `${id}.json`), JSON.stringify(compileCase(`cases/demo/${id}.md`, text(id, header))))
@@ -416,7 +444,7 @@ test("a locked run that holds any credential runs every plugin at ask-changes, a
     // a case a model may not see is deferred, with its reason (and a batch with nothing left to run is refused, naming them)
     const real = fixture({ extra: "- Data: real" })
     try {
-      await assert.rejects(runBatch({ ...UNCONFINED, plugin: "demo", iteration: "d1", model: "opencode/deepseek-v4.1-flash", auth: "none", cases: "demo-a", arm: real.arm, casesDir: real.casesDir, set: "tune", tools: "local" }, { caller: real.caller, ...quiet }), /nothing to run: all 1 selected case\(s\) are deferred \(demo-a: Data: real never runs on opencode\/deepseek-v4\.1-flash/)
+      await assert.rejects(runBatch({ ...UNCONFINED, plugin: "demo", iteration: "d1", model: "opencode/deepseek-v4.1-flash", auth: "none", cases: "demo-a", arm: real.arm, casesDir: real.casesDir, set: "tune", tools: "local" }, { caller: real.caller, ...quiet }), /nothing to run: all 1 selected case\(s\) are deferred \(demo-a: Data: real may not run on opencode\/deepseek-v4\.1-flash/)
     } finally {
       real.cleanup()
     }
@@ -452,14 +480,14 @@ test("a spending plugin runs only under a written cap, by the ledger's count and
   assert.match((await checkBalances({ plugins: ["tavily"], runsByPlugin: { tavily: 1 }, limits: {} })).refusals[0], /no limit for tavily_credits in caps\.json "vendors"/)
   assert.deepEqual(await checkBalances({ plugins: ["slack", "linear"], limits: {} }), { ok: true, lines: [], refusals: [] })
   assert.equal(TAVILY_CREDITS.research, 250)
-  assert.deepEqual(vendorUseOf(["tools.tavily.tavily_search", "tavily_research", "tools.affinity.get_company", "affinity_search", "slack_send"]), { tavily_credits: 252, affinity_calls: 2 })
+  assert.deepEqual(vendorUseOf(["tools.tavily.tavily_search", "tavily_research", "tools.affinity.get_company", "affinity_search", "slack_send"]), { tavily_credits: 252, affinity_calls: 2, x_usd: 0, openrouter_usd: 0 })
 })
 
 test("--preflight data defers a case whose clauses name a target, a canary or a seed the store lacks, and says which", () => {
   const targets = flatten({ slack: { sandbox_channel: "C0SANDBOX" } })
   const canaries = flatten({ linear_cycle: "Cycle 7q3" })
-  const ok = compileCase("cases/slack/tools-ok.md", `# tools-ok\n- Plugin: slack\n- Skill under test: slack\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Set: wide\n\n## Prompt\np\n\n## Items\n- [SLK-PR01] major · Addressed to the sandbox channel.\n  evidence: target:slack.slack_send_message#1 args.channel_id in @slack.sandbox_channel\n- [SLK-OC01] major · States the cycle.\n  evidence: text:any contains @canary.linear_cycle\n`)
-  const bad = compileCase("cases/slack/tools-bad.md", `# tools-bad\n- Plugin: slack\n- Skill under test: slack\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Set: wide\n- Seed: files=no-such-seed\n\n## Prompt\np\n\n## Items\n- [SLK-PR01] major · Addressed to the self DM.\n  evidence: target:slack.slack_send_message#1 args.channel_id in @slack.self_dm\n- [SLK-OC01] major · States a cycle.\n  evidence: text:any contains @canary.nope\n`)
+  const ok = compileCase("cases/slack/tools-ok.md", `# tools-ok\n- Plugin: slack\n- Skill under test: slack\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: synthetic\n- Set: wide\n\n## Prompt\np\n\n## Items\n- [SLK-PR01] major · Addressed to the sandbox channel.\n  evidence: target:slack.slack_send_message#1 args.channel_id in @slack.sandbox_channel\n- [SLK-OC01] major · States the cycle.\n  evidence: text:any contains @canary.linear_cycle\n`)
+  const bad = compileCase("cases/slack/tools-bad.md", `# tools-bad\n- Plugin: slack\n- Skill under test: slack\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: synthetic\n- Set: wide\n- Seed: files=no-such-seed\n\n## Prompt\np\n\n## Items\n- [SLK-PR01] major · Addressed to the self DM.\n  evidence: target:slack.slack_send_message#1 args.channel_id in @slack.self_dm\n- [SLK-OC01] major · States a cycle.\n  evidence: text:any contains @canary.nope\n`)
   const root = scratch()
   try {
     const out = dataPreflight([ok, bad], { targets, canaries, env: { EVALS_STORE: join(root, "store") }, root })
@@ -547,9 +575,9 @@ test("files a run wrote under named places of its HOME are recorded, and nothing
     assert.equal(changes[0].text, "the note\n")
     assert.ok(!JSON.stringify(changes).includes("do not record"), "an unnamed place of the home is not in the record")
     assert.deepEqual(changedHome(snapshotHome(home, []), home, []), [])
-    const c = compileCase("cases/plaud/tools-export.md", `# tools-export\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Set: wide\n- Home files: Plaud, Downloads/evals\n\n## Prompt\nexport it\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:~/Plaud/** exists\n`)
+    const c = compileCase("cases/plaud/tools-export.md", `# tools-export\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: synthetic\n- Set: wide\n- Home files: Plaud, Downloads/evals\n\n## Prompt\nexport it\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:~/Plaud/** exists\n`)
     assert.deepEqual(c.home_files, ["Plaud", "Downloads/evals"])
-    assert.throws(() => compileCase("cases/plaud/tools-x.md", `# tools-x\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Home files: ../etc\n\n## Prompt\np\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:a exists\n`), /Home files/)
+    assert.throws(() => compileCase("cases/plaud/tools-x.md", `# tools-x\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: synthetic\n- Home files: ../etc\n\n## Prompt\np\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:a exists\n`), /Home files/)
     // and a file: clause grades it
     const view = runView([{ schema: "oc-trace/1", run_id: "t/0", case: "t", exit: 0, summary: { text: { sha256: "0".repeat(64) }, tokens: {} } }], { files: changes })
     assert.equal(gradeCase(c, view).verdict, "PASS")

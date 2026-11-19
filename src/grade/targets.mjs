@@ -47,7 +47,13 @@ export function loadTargets(env = process.env) {
 /** The canaries as a Map name -> [values], or null when the file is absent. */
 export function loadCanaries(env = process.env) {
   const data = readJson(join(storeDir(env), "canaries.json"))
-  return data ? flatten(data) : null
+  const canaries = data ? flatten(data) : null
+  if (canaries) {
+    // A canary is a random token: a short or repetitive one is found in ordinary text, and then a case that grades it proves nothing.
+    const weak = [...canaries].filter(([, values]) => values.some((v) => String(v).length < 8 || new Set(String(v)).size < 5)).map(([name]) => name)
+    if (weak.length) throw new Error(`canaries.json: ${weak.sort().join(", ")} must be random tokens of at least 8 characters (with at least 5 different ones): a short canary is found in ordinary text`)
+  }
+  return canaries
 }
 
 /** An alias list (`@gws.doc,@gws.sheet`) as its values, or null when any alias is unknown. */

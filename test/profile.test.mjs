@@ -18,6 +18,8 @@ const exported = (integration, access, refresh) => JSON.stringify([cred(integrat
 function stand({ real, evals, identity = 0, realHome = "/real", evalsHome = "/evals" }) {
   const calls = []
   const exec = (command, args, { env }) => {
+    // The evals profile has its own service port, apart from the real one's (G0 review 4.1).
+    if (args[0] === "service" && args[1] === "get") return { code: 0, stdout: env.HOME === evalsHome ? "47950\n" : "49374\n", stderr: "" }
     calls.push({ args, home: env.HOME })
     if (args[0] === "api") return identity === 0 ? { code: 0, stdout: '{"ok":true}', stderr: "" } : { code: identity, stdout: "", stderr: "boom" }
     if (args[0] === "auth" && args[1] === "export") {
@@ -86,6 +88,7 @@ test("check-real logs its result to the round log, with no token in it", () => {
 test("the keeper reads once per signed-in integration, through the evals profile only, and reports failures", () => {
   const calls = []
   const exec = (command, args, { env }) => {
+    if (args[0] === "service" && args[1] === "get") return { code: 0, stdout: env.HOME === "/evals" ? "47950\n" : "49374\n", stderr: "" }
     calls.push({ args: args.join(" "), home: env.HOME })
     if (args[0] === "auth") return /linear|jira/.test(args[2]) ? { code: 0, stdout: exported(args[2], `tok-${args[2]}-0001`), stderr: "" } : { code: 1, stdout: "", stderr: "" }
     return args[2].includes("jira") ? { code: 1, stdout: "", stderr: "" } : { code: 0, stdout: "{}", stderr: "" }

@@ -781,6 +781,7 @@ const caseText = (id, prompt, evidence = "text:any matches /\\beight\\b/") => `#
 - Tier: T3
 - Source: test
 - Decision tested: the answer names the number
+- Data: synthetic
 
 ## Prompt
 ${prompt}

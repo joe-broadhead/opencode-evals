@@ -1,7 +1,7 @@
 // The files a run wrote: the working directory before and after, compared by digest. Kept beside the recording
 // (`<case>.t<k>.files.json`, private like it) so a case can grade a script or a note the agent wrote; never traced.
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
+import { existsSync, lstatSync, readdirSync, readFileSync, statSync } from "node:fs"
 import { join, relative } from "node:path"
 import { sha256 } from "../util/canonical.mjs"
 
@@ -47,10 +47,32 @@ export function snapshotHome(home, names = []) {
   const out = new Map()
   for (const name of names) {
     const base = join(home, name)
+    // A link is never followed: a trial with a shell could aim `~/Plaud` at a path of the host and have its contents recorded.
+    if (homeLinks(home, [name]).length) continue
     for (const [rel, file] of snapshotFiles(base)) out.set(`~/${name}/${rel}`, file)
-    if (existsSync(base) && statSync(base).isFile()) out.set(`~/${name}`, { sha256: sha256(readFileSync(base)), bytes: statSync(base).size })
+    if (existsSync(base) && lstatSync(base).isFile()) out.set(`~/${name}`, { sha256: sha256(readFileSync(base)), bytes: statSync(base).size })
   }
   return out
+}
+
+/** The named places that are symbolic links (or lie behind one): refused, never read. */
+export function homeLinks(home, names = []) {
+  const found = []
+  for (const name of names) {
+    let at = home
+    for (const part of name.split("/")) {
+      at = join(at, part)
+      try {
+        if (lstatSync(at).isSymbolicLink()) {
+          found.push(name)
+          break
+        }
+      } catch {
+        break
+      }
+    }
+  }
+  return found
 }
 
 export function changedHome(before, home, names = []) {

@@ -13,6 +13,7 @@
 //                  [--isolation container|none] [--unsafe-no-isolation]   (container by default; none needs the flag)
 //                  [--accept-unknown-token-expiry]   (a claude-agent sign-in with no expiry: refused without it)
 //   evals truth    --plugin x --world DIR [--cases-dir DIR] [--set all]   each case's Truth: against the world's truth
+//   evals halt     [--clear]   what halted the wave (a write that completed where none may), and clearing it
 //   evals p0       [a1|a2|a3|a4|a5|c|g|p13|all] [--companions FILE]   the safety probes G0 rests on: scripted model or a capture server, no credential
 //   evals isolation build|check|sweep   the container backend's image (docker/Dockerfile), its checks, and the removal
 //                  of what a crashed batch left behind
@@ -23,6 +24,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { readVersions, extractRelease } from "./pack/release.mjs"
+import { readHalt, clearHalt } from "./run/halt.mjs"
 import { loadPacks } from "./run/lockdown.mjs"
 import { join, dirname, resolve, basename } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -56,7 +58,7 @@ import { builtinCollisions } from "./grade/select.mjs"
 import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
 import { rawCallArgs } from "./trace/rawArgs.mjs"
 import { loadTargets, loadCanaries } from "./grade/targets.mjs"
-import { compare as compareArms, renderReport } from "./report/arms.mjs"
+import { compare as compareArms, renderReport, holdoutOf } from "./report/arms.mjs"
 import { runBatch, batchTmp, truthCheck } from "./run/runner.mjs"
 import { loadWorld } from "./run/world.mjs"
 import { renderTruthProblem } from "./case/truth.mjs"
@@ -547,12 +549,31 @@ export async function main(argv) {
       if (result.stopped || result.results?.some((r) => r.error || r.infra)) process.exitCode = 1
       return
     }
+    case "halt": {
+      // The wave's safety halt (G0 review 1.1): what the first completed write was, and `--clear` once the owner has read it.
+      const halt = readHalt(storePath())
+      if (!halt) {
+        console.log("no halt: nothing has written where it may not")
+        return
+      }
+      console.log(`HALT since ${halt.at ?? "?"}: ${halt.reason}`)
+      for (const w of halt.writes ?? []) console.log(`  ${w.tool}${w.target !== undefined ? ` at ${JSON.stringify(w.target)}` : ""}${w.call ? ` (call ${w.call})` : ""}: ${w.why}`)
+      if (halt.batch) console.log(`  batch ${halt.batch}, ${halt.trial ?? "?"}, ${halt.plugin ?? "?"} on ${halt.model ?? "?"}`)
+      if (opt.clear) {
+        clearHalt(storePath())
+        console.log("cleared: batches may launch again")
+      } else {
+        console.log("clear it, once read, with: evals halt --clear")
+        process.exitCode = 1
+      }
+      return
+    }
     case "p0": {
       // The safety probes G0 rests on (docs/running.md#g0): scripted model, no credential, every trial in a container.
       const { PROBES } = await import("./p0/probes.mjs")
       // `all` leaves g8 out when the owner has mounted no assets (container.assets in caps.json): it has nothing to prove then.
       const hasAssets = containerConfig({ store: storeRoot(), env: process.env }).assets.length > 0
-      const wanted = opt._[0] && opt._[0] !== "all" ? opt._[0].split(",") : Object.keys(PROBES).filter((id) => id !== "g8" || hasAssets)
+      const wanted = opt._[0] && opt._[0] !== "all" ? opt._[0].split(",") : Object.keys(PROBES).filter((id) => (id !== "g8" || hasAssets) && (id !== "live" || process.env.EVALS_PROFILE))
       const unknown = wanted.filter((id) => !PROBES[id])
       if (unknown.length) throw new Error(`unknown probe ${unknown.join(", ")}: ${Object.keys(PROBES).join(", ")}`)
       const env = { companions: opt.companions && opt.companions !== true ? opt.companions : process.env.EVALS_COMPANIONS, tmp: process.env.EVALS_TMP, store: storeRoot() }
@@ -654,13 +675,21 @@ export async function main(argv) {
           results.filter((run) => run.verdict !== "NOT_RUN" && keep.has(run.case)).filter((run) => (sameDay(iteration, run) ? true : (dropped++, false))),
         ),
       }))
-      const report = compareArms(armsIn, { allCases: Boolean(opt["all-cases"]), resamples: Number(opt.resamples ?? 5000) })
+      // `--selecting <file>`: a JSON list of `<case>#<model>#<trial>` that selected a case; the baseline is judged on the others (fresh trials).
+      const selecting = opt.selecting && opt.selecting !== true ? new Set(JSON.parse(read(opt.selecting))) : null
+      const report = compareArms(armsIn, { allCases: Boolean(opt["all-cases"]), resamples: Number(opt.resamples ?? 5000), selecting })
+      // Arms labelled `h1` and `cb-h1` (the holdout run of the adopted variants and its concurrent baseline): the pooled gate.
+      const h1 = report.rows.find((row) => row.label === "h1")
+      const cb = report.rows.find((row) => row.label === "cb-h1")
+      const gate = h1 && cb ? holdoutOf(h1, cb) : null
+      if (gate) report.holdout = { ok: gate.ok, pooled: gate.pooled, drops: gate.drops, held: gate.held, flips: gate.flips }
       if (opt.json) {
         console.log(json({ ...report, rows: report.rows.map(({ byCase: _, ...row }) => row), dropped }))
         return
       }
       console.log(`# report, ${plugin}${opt.set ? ` (set ${opt.set})` : ""}\n`)
       console.log(renderReport(report, { detail: Boolean(opt.detail) }))
+      if (gate) console.log(`\n**Holdout gate (h1 against its concurrent baseline cb-h1): ${gate.ok ? "PASS" : "HOLD"}**: pooled ${(gate.pooled.estimate * 100).toFixed(1)} pts, 95% interval [${(gate.pooled.lo * 100).toFixed(1)}, ${(gate.pooled.hi * 100).toFixed(1)}] (it must not drop and its lower bound must stay above -5.0)${gate.held.length ? `; held plugins (two or more holdouts flipped to fail): ${gate.held.join(", ")}` : ""}`)
       if (dropped) console.log(`\n${dropped} time-window run(s) dropped: recorded on another UTC day than their world's.`)
       return
     }
