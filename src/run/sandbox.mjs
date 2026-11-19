@@ -56,12 +56,19 @@ const PASS_THROUGH = ["LANG", "TZ", "TERM", "HTTPS_PROXY", "HTTP_PROXY", "https_
  */
 export const SEALED_ENV = /^(HOME|PATH|TMPDIR|TMP|TEMP|USER|LOGNAME|SHELL|SPIKE_MOCK_URL|NO_PROXY|no_proxy|HTTPS?_PROXY|https?_proxy|ALL_PROXY|all_proxy|SSL_CERT_FILE|NODE_EXTRA_CA_CERTS|NODE_OPTIONS|NODE_PATH|LD_PRELOAD|LD_LIBRARY_PATH|DYLD_.*|BUN_.*|OPENCODE_.*|XDG_.*|CLAUDE_.*|ANTHROPIC_.*|DOCKER_.*)$/
 
+/**
+ * A variable whose name says it holds a credential. A trial's environment is built from an allow-list, never by inheritance from
+ * the launching shell, so none of these can arrive from there; a world may not set one either, and only the run's own `extra`
+ * (the credential its `--auth` named) may carry one. `OPENCODE_PASSWORD` is the run's own server password, set by the harness.
+ */
+export const CREDENTIAL_SHAPED = /(^|_)(API_?KEY|ACCESS_?KEY|SECRET|TOKEN|PASSWORD|PASSWD|CREDENTIALS?|AUTH|BEARER|PRIVATE_?KEY|SESSION_?KEY|COOKIE)(_|$)|^(GH|GITHUB|NPM|SLACK|AWS|AZURE|GOOGLE|GCP|OPENAI|ANTHROPIC|OPENROUTER|TAVILY|ELEVENLABS|LINEAR|NOTION|JIRA|ATLASSIAN|X|TWITTER)_/i
+
 /** A world's environment, without the harness's own variables: { env, dropped } (the names it tried to set). */
 export function worldEnv(env = {}) {
   const kept = {}
   const dropped = []
   for (const [key, value] of Object.entries(env ?? {})) {
-    if (SEALED_ENV.test(key)) dropped.push(key)
+    if (SEALED_ENV.test(key) || CREDENTIAL_SHAPED.test(key)) dropped.push(key)
     else if (value !== undefined && value !== null) kept[key] = String(value)
   }
   return { env: kept, dropped: dropped.sort() }
@@ -99,6 +106,10 @@ export function sandboxEnv({ sandbox, config, password, caller = process.env, wo
     EVALS_GUARD_OUT: join(sandbox.tmp, "guard.jsonl"),
     ...extra,
   })
+  // The tripwire: the environment is built from nothing, so a credential-shaped name can only have come from `extra`. If one came
+  // from anywhere else (a PASS_THROUGH entry, a future edit that copies the caller's environment), refuse to start the run.
+  const stray = Object.keys(env).filter((key) => CREDENTIAL_SHAPED.test(key) && !(key in extra) && key !== "OPENCODE_PASSWORD")
+  if (stray.length) throw new Error(`the trial environment holds credential-shaped variables that were not given by --auth: ${stray.sort().join(", ")}`)
   return env
 }
 

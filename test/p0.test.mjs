@@ -150,3 +150,26 @@ test("P0-1 to P0-5: the surface dump, search, errors, the hook's reach and impor
     assert.equal(result.ok, true, `${id}: ${show(result)}`)
   }
 })
+
+test("a trial's environment is built from an allow-list: no launcher credential is inherited, and a world cannot set one", async () => {
+  const { sandboxEnv, worldEnv, CREDENTIAL_SHAPED } = await import("../src/run/sandbox.mjs")
+  const { LAUNCHER_CREDENTIALS, BILLED_CORE_TOOLS } = await import("../src/p0/probes.mjs")
+  const caller = { PATH: "/usr/bin", LANG: "C", ...Object.fromEntries(LAUNCHER_CREDENTIALS.map((n) => [n, `canary-${n}`])) }
+  const built = sandboxEnv({ sandbox: { home: "/h", tmp: "/t" }, config: {}, password: "p", caller })
+  for (const name of LAUNCHER_CREDENTIALS) assert.equal(name in built, false, name)
+  assert.equal(Object.values(built).some((v) => String(v).startsWith("canary-")), false)
+  // only what `--auth` names comes in, through `extra`
+  assert.equal(sandboxEnv({ sandbox: { home: "/h", tmp: "/t" }, config: {}, password: "p", caller, extra: { TAVILY_API_KEY: "given" } }).TAVILY_API_KEY, "given")
+  // a world's own env may not carry a credential-shaped name either
+  const world = worldEnv({ GH_TOKEN: "x", MY_SERVICE_PASSWORD: "x", WORLD_NOTE: "kept" })
+  assert.deepEqual(Object.keys(world.env), ["WORLD_NOTE"])
+  assert.deepEqual(world.dropped, ["GH_TOKEN", "MY_SERVICE_PASSWORD"])
+  assert.ok(LAUNCHER_CREDENTIALS.filter((n) => n !== "SSH_AUTH_SOCK").every((n) => CREDENTIAL_SHAPED.test(n)))
+  // every billed core tool is a locked tool
+  for (const tool of BILLED_CORE_TOOLS) assert.ok(LOCKED_TOOLS.includes(tool), tool)
+})
+
+test("P0-env: no launcher credential reaches a trial, and the image, video, search, fetch and subagent tools are denied by name", live, async () => {
+  const result = await PROBES.env(env)
+  assert.equal(result.ok, true, show(result))
+})

@@ -522,4 +522,58 @@ export async function g8(env = {}) {
   }
 }
 
-export const PROBES = { a1, a2, a3, a4, a5, c, g, g8, p1, p2, p3, p4, p5, p13 }
+// ------------------------------------------------------------------------------------------------------------------ env
+
+/** Credentials a launching shell may hold (the owner's does hold OPENCODE_API_KEY and TAVILY_API_KEY): none may reach a trial. */
+export const LAUNCHER_CREDENTIALS = ["OPENCODE_API_KEY", "ANTHROPIC_API_KEY", "TAVILY_API_KEY", "GH_TOKEN", "GITHUB_TOKEN", "OPENROUTER_API_KEY", "OPENAI_API_KEY", "ELEVENLABS_API_KEY", "SLACK_BOT_TOKEN", "LINEAR_API_KEY", "NOTION_TOKEN", "X_BEARER_TOKEN", "AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "GOOGLE_APPLICATION_CREDENTIALS", "NPM_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN", "OPENCODE_SERVER_PASSWORD", "SSH_AUTH_SOCK", "MY_SERVICE_PASSWORD"]
+
+/** Core tools that bill a provider or reach outward: each must be denied by name in a locked run. */
+export const BILLED_CORE_TOOLS = ["experimental_image_generate", "experimental_video_generate", "websearch", "webfetch", "subagent"]
+
+export async function env_(env = {}) {
+  const { sandboxEnv, CREDENTIAL_SHAPED } = await import("../run/sandbox.mjs")
+  const values = Object.fromEntries(LAUNCHER_CREDENTIALS.map((name, i) => [name, `CANARY-${name.toLowerCase().replace(/_/g, "-")}-${Math.random().toString(36).slice(2, 12)}${i}x`]))
+  const wanted = { EVALS_PROBE_KEY: `probe-intended-credential-${Math.random().toString(36).slice(2, 14)}` }
+  const checks = []
+  // Pure: the environment builder, given a caller that holds every canary, yields none (and refuses to start if one slipped in).
+  const built = sandboxEnv({ sandbox: { home: "/h", tmp: "/t" }, config: {}, password: "p", caller: { PATH: "/usr/bin", LANG: "C", ...values } })
+  checks.push(ok("sandboxEnv, given a caller holding every canary, passes none of them on", LAUNCHER_CREDENTIALS.every((n) => !(n in built)) && !Object.values(built).some((v) => Object.values(values).includes(v)), `${Object.keys(built).length} variables built from nothing`))
+  checks.push(ok("every credential-shaped name is recognised (so the tripwire and a world's env filter cover them)", LAUNCHER_CREDENTIALS.filter((n) => n !== "SSH_AUTH_SOCK").every((n) => CREDENTIAL_SHAPED.test(n)), LAUNCHER_CREDENTIALS.filter((n) => !CREDENTIAL_SHAPED.test(n)).join(", ")))
+  const cases = [
+    { id: "printenv", prompt: mock("shell", { command: "printenv" }), extra: "- Set: local" },
+  ]
+  // In the credential-free arm (the shell left on, to look), with every canary in the launcher's environment and one intended credential.
+  const local = await scriptedRun({ cases, arm: { package: "none" }, caller: { ...values, ...wanted }, options: { auth: "env:EVALS_PROBE_KEY", iteration: "p0-env-local", tools: "local", set: "local" }, tmp: env.tmp })
+  // Locked: every billed or outward core tool is refused by name, with the same launcher environment.
+  const lockedCases = BILLED_CORE_TOOLS.map((tool) => ({ id: tool.replace(/_/g, "-"), prompt: mock(tool, tool === "subagent" ? { agent: "general", description: "d", prompt: "p" } : tool === "webfetch" ? { url: "https://opencode.ai" } : tool === "websearch" ? { query: "x" } : { prompt: "a small red square" }) }))
+  const locked = await scriptedRun({ cases: lockedCases, arm: { package: "none" }, caller: { ...values, ...wanted }, options: { auth: "none", iteration: "p0-env-locked" }, tmp: env.tmp })
+  try {
+    const shown = textOf(local.trials.printenv.calls[0])
+    const names = shown.split("\n").map((line) => line.split("=")[0]).filter(Boolean)
+    const leakedNames = LAUNCHER_CREDENTIALS.filter((n) => names.includes(n))
+    checks.push(ok("positive control: the intended credential (--auth env:EVALS_PROBE_KEY) is in the trial's environment, masked", names.includes("EVALS_PROBE_KEY") && !shown.includes(wanted.EVALS_PROBE_KEY), `${names.length} variables printed`))
+    checks.push(ok(`none of the ${LAUNCHER_CREDENTIALS.length} launcher credentials is in the trial's environment (by name)`, leakedNames.length === 0, leakedNames.join(", ") || `${names.length} names: ${names.filter((n) => !/^(OPENCODE_|XDG_)/.test(n)).sort().join(" ")}`))
+    const everything = local.everything + locked.everything + local.log.join("\n") + locked.log.join("\n")
+    const leakedValues = Object.entries(values).filter(([, v]) => everything.includes(v)).map(([n]) => n)
+    checks.push(ok("no launcher credential's value is in any recording, summary or log", leakedValues.length === 0, leakedValues.join(", ") || `${everything.length} bytes searched`))
+    checks.push(ok("the intended credential's value is in no recording either (masked everywhere)", !everything.includes(wanted.EVALS_PROBE_KEY), ""))
+    for (const tool of BILLED_CORE_TOOLS) {
+      const call = locked.trials[tool.replace(/_/g, "-")].calls[0]
+      checks.push(ok(`${tool} is denied by name in a locked run`, call && refused(call) && /No tool named|Permission denied/i.test(textOf(call)), call ? `${call.status}: ${textOf(call).slice(0, 100).replace(/\s+/g, " ")}` : "no call recorded"))
+    }
+    const config = { policies: (await import("../run/lockdown.mjs")).lockdownPolicies(), permissions: (await import("../run/lockdown.mjs")).lockdownPermissions() }
+    const { lockdownProblems } = await import("../run/lockdown.mjs")
+    checks.push(ok("the sealed config denies each of them as a permission and as a policy", lockdownProblems(config).length === 0 && BILLED_CORE_TOOLS.every((t) => config.permissions.some((p) => p.action === t && p.resource === "*" && p.effect === "deny") && config.policies.some((p) => p.action === "tool.use" && p.resource === `${t}:*` && p.effect === "deny")), lockdownProblems(config).slice(0, 2).join("; ")))
+    for (const [label, run] of [["local", local], ["locked", locked]]) {
+      const egress = run.egress ?? {}
+      const hosts = Object.keys({ ...egress.allowed, ...egress.refused, ...egress.failed })
+      checks.push(ok(`${label}: no connection of any kind reached the egress proxy (no job reached a provider)`, hosts.length === 0, JSON.stringify({ allowed: egress.allowed, refused: egress.refused, failed: egress.failed })))
+    }
+    return done("env", checks, { names: names.filter((n) => !/^(OPENCODE_|XDG_)/.test(n)).sort() })
+  } finally {
+    local.cleanup()
+    locked.cleanup()
+  }
+}
+
+export const PROBES = { a1, a2, a3, a4, a5, c, g, g8, env: env_, p1, p2, p3, p4, p5, p13 }

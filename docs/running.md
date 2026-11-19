@@ -85,14 +85,14 @@ plugin's `ask-changes`. So the sealed config (`src/run/lockdown.mjs`):
   would never be asked. In the commit set it does refuse, for a write with no declared target extractor or a target outside the
   allowed aliases, and for a plan commit (gws: only the `planId`) of a plan it did not see made for an in-sandbox target.
 
-`evals p0 [a1|a2|a3|a4|a5|c|g|g8|p1|p2|p3|p4|p5|p13|all] [--companions FILE]` runs the probes the gate rests on, with the scripted model, no credential
+`evals p0 [a1|a2|a3|a4|a5|c|g|g8|env|p1|p2|p3|p4|p5|p13|all] [--companions FILE]` runs the probes the gate rests on, with the scripted model, no credential
 and every trial in a container: **a1** shell/file/web/subagent tools refused, no egress, a canary credential in no output;
 **a2** all 24 plugins at ask-changes, every write action asks (at access `all` too), the local writes decline end to end;
 **a3** a foreign-session ask is rejected within 5 s (and hangs without the guard); **a4** Tavily research and crawl are
 confirm-only; **a5** gws commits ask, and the guard's plan registry; **c** the token-priced round ceiling refuses the second
 launch; **g** the guard is deny-by-default at access `all`, and the suite fails without it.
 
-The other probes: **p1** what reaches the model (the request body dumped in the locked and the open arm, saved under `$EVALS_STORE/p0/`);
+The other probes: **env** a trial's environment is built from an allow-list, never inherited: the launcher's shell holds `OPENCODE_API_KEY`, `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `GH_TOKEN` and 16 more canaries, and the trial sees none of them by name or value (a positive control shows the one `--auth` credential, masked), and the image, video, search, fetch and subagent tools are refused by name with no connection reaching the proxy; **p1** what reaches the model (the request body dumped in the locked and the open arm, saved under `$EVALS_STORE/p0/`);
 **p2** `search()` returns the full description and the signature; **p3** what the model sees when an inner call fails; **p4** the
 guard's hook reaches inner calls and, in commit mode, refuses an out-of-scope write there while an in-scope one passes to its
 rule; **p5** what `auth import` accepts (an oauth credential needs a refresh token, so a trial gets the placeholder `evals-no-refresh`;

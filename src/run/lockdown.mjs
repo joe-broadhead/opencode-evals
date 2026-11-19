@@ -18,7 +18,7 @@ import { join, resolve } from "node:path"
 export const PACKS_DIR = resolve(import.meta.dirname, "..", "..", "packs")
 
 /** The shell, file, web and subagent tools (and the image tool, which calls a vendor): removed from every credentialed trial. */
-export const LOCKED_TOOLS = Object.freeze(["shell", "read", "grep", "glob", "write", "edit", "patch", "webfetch", "websearch", "subagent", "experimental_image_generate"])
+export const LOCKED_TOOLS = Object.freeze(["shell", "read", "grep", "glob", "write", "edit", "patch", "webfetch", "websearch", "subagent", "experimental_image_generate", "experimental_video_generate"])
 
 /**
  * Host tools the plan did not name that can still reach beyond the plugin under test: a schedule runs a prompt or a

@@ -32,6 +32,8 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
   p1 to p5, p13 and g8.
 - Cluster-bootstrap statistics, fresh-trial baselines, the pooled holdout gate and the adoption screen (`src/report/cluster.mjs`).
 
+- **Probe `env`** and an environment tripwire: `sandboxEnv` refuses to start a trial holding a credential-shaped variable that `--auth` did not give, a world's env cannot set one, and `experimental_video_generate` joins the locked tools.
+
 ### Changed
 
 - Every plugin's pack is re-synced to the release in the family's upgrade script (github stays at v0.0.6 until v0.0.8 is tagged).
