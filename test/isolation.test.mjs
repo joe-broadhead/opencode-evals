@@ -296,7 +296,7 @@ test("a trial's environment: the container's PATH, the proxy, loopback unproxied
 // ---------------------------------------------------------------- the backend against a stand-in docker
 
 /** A stand-in `docker`: records argv and stdin, answers what the backend asks, fails a call matching FAIL. */
-function fakeDocker(dir, { version = "29.1.3", image = true, fail = null } = {}) {
+function fakeDocker(dir, { version = "29.1.3", image = true, fail = null, overlap = 0 } = {}) {
   const log = join(dir, "docker.jsonl")
   const file = join(dir, "docker")
   writeFileSync(
@@ -310,6 +310,8 @@ fs.appendFileSync(${JSON.stringify(log)}, JSON.stringify({ args, input, env: pro
 const line = args.join(" ")
 const fail = ${JSON.stringify(fail)}
 if (fail && line.includes(fail)) { process.stderr.write("refused by the stand-in\\n"); process.exit(1) }
+const overlap = ${JSON.stringify(overlap)}
+if (overlap && line.startsWith("network create --internal")) { const seen = fs.existsSync(${JSON.stringify(join(dir, "overlaps"))}) ? Number(fs.readFileSync(${JSON.stringify(join(dir, "overlaps"))}, "utf8")) : 0; if (seen < overlap) { fs.writeFileSync(${JSON.stringify(join(dir, "overlaps"))}, String(seen + 1)); process.stderr.write("Error response from daemon: cannot create network abc (br-abc): conflicts with network def (br-def): networks have overlapping IPv4\\n"); process.exit(1) } }
 if (args[0] === "version") { console.log(${JSON.stringify(version)}); process.exit(0) }
 if (args[0] === "inspect" && fs.existsSync(${JSON.stringify(join(dir, "gone"))})) { process.stderr.write("Error: No such object\\n"); process.exit(1) }
 if (args[0] === "image") { if (${image}) { console.log("sha256:fake"); process.exit(0) } process.stderr.write("No such image\\n"); process.exit(1) }
@@ -396,6 +398,28 @@ test("offline: a trial is confined by its flags, and no secret reaches an argv",
   assert.deepEqual(f.backend.egress().refused, { "example.com": { count: 2, why: ["not-allowed"] } })
   assert.deepEqual(f.backend.egress().allowed, { "api.anthropic.com": 1 })
   f.cleanup()
+})
+
+test("offline: a trial network that collides with another batch's (overlapping IPv4) is created again; any other error, or eight collisions, still fails", async () => {
+  const f = offlineFixture({ overlap: 3 })
+  await f.backend.prepare({ batchRoot: f.batchRoot, caller: f.caller, binaries: {} })
+  const trial = await f.backend.enter({ name: "case.t1", sandbox: f.sandbox, cwd: f.sandbox.project })
+  assert.ok(trial.container, "the trial started after three collisions")
+  assert.equal(f.docker.calls().filter((c) => c.args.join(" ").startsWith("network create --internal")).length, 4, "three refused, the fourth made it")
+  await f.backend.teardown()
+  f.cleanup()
+  const stuck = offlineFixture({ overlap: 99 })
+  await stuck.backend.prepare({ batchRoot: stuck.batchRoot, caller: stuck.caller, binaries: {} })
+  await assert.rejects(stuck.backend.enter({ name: "case.t1", sandbox: stuck.sandbox, cwd: stuck.sandbox.project }), /creating the trial network failed: .*networks have overlapping IPv4/)
+  assert.equal(stuck.docker.calls().filter((c) => c.args.join(" ").startsWith("network create --internal")).length, 8, "eight attempts, then the error")
+  await stuck.backend.teardown()
+  stuck.cleanup()
+  const other = offlineFixture({ fail: "network create --internal" })
+  await other.backend.prepare({ batchRoot: other.batchRoot, caller: other.caller, binaries: {} })
+  await assert.rejects(other.backend.enter({ name: "case.t1", sandbox: other.sandbox, cwd: other.sandbox.project }), /creating the trial network failed: refused by the stand-in/)
+  assert.equal(other.docker.calls().filter((c) => c.args.join(" ").startsWith("network create --internal")).length, 1, "an error that is not a collision is not retried")
+  await other.backend.teardown()
+  other.cleanup()
 })
 
 test("offline: a trial that fails to start leaves no network; old Docker, no image and root are refused", async () => {

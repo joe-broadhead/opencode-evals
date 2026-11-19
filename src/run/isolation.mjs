@@ -57,6 +57,10 @@ const none = () => ({
         return null
       },
       async leave() {},
+      // No container to ask.
+      async diagnose() {
+        return null
+      },
       // Unconfined, a run's processes are its process groups, ended before anything is removed.
       async gone() {
         return true

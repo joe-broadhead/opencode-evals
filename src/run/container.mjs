@@ -299,6 +299,21 @@ export function containerBackend(config = containerConfig()) {
     if (result.code !== 0) throw new Error(`${what} failed: ${tail((result.stderr || result.stdout).trim(), 400)}`)
     return result.stdout.trim()
   }
+  /**
+   * `docker network create`, tried again when the daemon says two networks were created at the same moment with the same subnet (`networks have overlapping IPv4`, `Pool overlaps with other one on this
+   * address space`): another batch on the same host (a second lane, a second `p0`) allocated the address as this one did. Found in 1 of 30 `p0 a1` runs with two running at once: the trial's network
+   * failed to create and its job threw, with no summary. A new attempt gets the next free subnet; any other error is the first one's.
+   */
+  const mustNetwork = async (args, what, options) => {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await must(args, what, options)
+      } catch (error) {
+        if (attempt >= 8 || !/overlapping IPv4|overlaps with other one|Pool overlaps/i.test(String(error?.message ?? error))) throw error
+        await new Promise((done) => setTimeout(done, 150 + Math.floor(Math.random() * 600)))
+      }
+    }
+  }
 
   /**
    * Removes everything a batch whose runner is gone left behind, and everything labelled with this batch when `own`:
@@ -409,7 +424,7 @@ export function containerBackend(config = containerConfig()) {
       if (!node) throw new Error(`--isolation container: no Node for the egress proxy (${config.proxyNode ?? process.execPath})`)
       state.shas.proxy_node = await sha256File(node)
       state.prepared = true
-      await must(["network", "create", "--driver", "bridge", ...labelArgs({ "evals.role": "egress" }), egressNet], "creating the egress network")
+      await mustNetwork(["network", "create", "--driver", "bridge", ...labelArgs({ "evals.role": "egress" }), egressNet], "creating the egress network")
       await must(
         ["run", "-d", "--name", proxyName, ...labelArgs({ "evals.role": "proxy" }), "--network", egressNet, "--user", "65534:65534", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "128", "--memory", "256m", "--cpus", "1", "--mount", `type=bind,src=${node},dst=${CONTAINER_BIN}/node,readonly`, "-e", `EVALS_EGRESS_ALLOW=${config.allow.join(",")}`, "-e", `EVALS_EGRESS_MAX_PER_CLIENT=${config.limits.tunnels_per_trial}`, "-e", `EVALS_EGRESS_MAX_TOTAL=${config.limits.tunnels_total}`, state.image, `${CONTAINER_BIN}/node`, "/opt/evals/egress-proxy.mjs", String(PROXY_PORT)],
         "starting the egress proxy",
@@ -462,7 +477,7 @@ export function containerBackend(config = containerConfig()) {
       trial.leave = leave
       try {
         trial.network = ref
-        await must(["network", "create", "--internal", "-o", "com.docker.network.bridge.gateway_mode_ipv4=isolated", "-o", "com.docker.network.bridge.gateway_mode_ipv6=isolated", ...labelArgs({ "evals.role": "trial", "evals.trial": name }), ref], "creating the trial network")
+        await mustNetwork(["network", "create", "--internal", "-o", "com.docker.network.bridge.gateway_mode_ipv4=isolated", "-o", "com.docker.network.bridge.gateway_mode_ipv6=isolated", ...labelArgs({ "evals.role": "trial", "evals.trial": name }), ref], "creating the trial network")
         await must(["network", "connect", "--alias", "egress", ref, proxyName], "joining the proxy to the trial network")
         const { memory_mb, cpus, pids, tmpfs_mb } = config.limits
         const binds = [
@@ -577,6 +592,37 @@ export function containerBackend(config = containerConfig()) {
         const result = await docker(["exec", trial.container, "cat", "/sys/fs/cgroup/memory.events"], { timeoutMs: 10_000 })
         const kills = (/^oom_kill (\d+)/m.exec(result.stdout) ?? [])[1]
         return kills === undefined ? null : Number(kills)
+      }
+
+      /**
+       * What Docker says of this trial's container while it still exists, for a trial that ended without a summary or with a signal: its state (status, exit code, OOM kill, error, start and
+       * finish times), the memory events, and the last lines the container logged. Never throws: what cannot be read is said so.
+       */
+      trial.diagnose = async () => {
+        const asked = { at: new Date().toISOString() }
+        try {
+          if (trial.left) return { ...asked, left: trial.leftFor ?? "left", note: "the container was already removed" }
+          const state = await docker(["inspect", "--format", "{{json .State}}", trial.ref], { timeoutMs: 15_000 })
+          if (state.code === 0) {
+            try {
+              const s = JSON.parse(state.stdout)
+              asked.state = { status: s.Status, running: s.Running, exit_code: s.ExitCode, oom_killed: s.OOMKilled, error: s.Error || null, started_at: s.StartedAt, finished_at: s.FinishedAt }
+            } catch {
+              asked.state = { raw: tail(state.stdout.trim(), 400) }
+            }
+          } else {
+            asked.state = { unavailable: tail(state.stderr.trim(), 300) || `docker inspect exited ${state.code}` }
+          }
+          const logs = await docker(["logs", "--tail", "40", trial.ref], { timeoutMs: 15_000 })
+          asked.log_tail = tail(`${logs.stdout}${logs.stderr}`.trim(), 3000)
+          asked.oom_kills = await trial.oomKills()
+          // What is running inside, and for how long (a client that never reached its model shows as a process, or as none)
+          const ps = await docker(["exec", trial.container ?? trial.ref, "ps", "-eo", "pid,stat,etime,pcpu,rss,args"], { timeoutMs: 10_000 })
+          if (ps.code === 0) asked.processes = tail(ps.stdout.trim(), 3000)
+        } catch (error) {
+          asked.error = String(error?.message ?? error)
+        }
+        return asked
       }
 
       trial.describe = () => ({ container: trial.ref, setup_ms: trial.timings.setup_ms, teardown_ms: trial.timings.teardown_ms, ...(trial.killed ? { killed: trial.killed } : {}) })

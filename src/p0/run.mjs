@@ -101,8 +101,10 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
   // What each fake plugin said of itself (its status RPC, read in the trial once the run was over), by plugin.
   for (const c of cases) trials[c.id].fakeStatus = Object.fromEntries(readdirSync(raw).filter((name) => name.startsWith(`${c.id}.t1.fake-`) && name.endsWith(".status.json")).map((name) => [name.replace(`${c.id}.t1.fake-`, "").replace(/\.status\.json$/, ""), readFileSync(join(raw, name), "utf8")]))
   for (const c of cases) {
-    const hung = hungReason(trials[c.id])
-    if (hung) HUNG.push({ id: c.id, iteration, why: hung })
+    const outcome = (result.results ?? []).find((r) => r.case === c.id && r.trial === 1) ?? null
+    trials[c.id].outcome = outcome
+    const why = infraReason(trials[c.id], { outcome, log, stopped: result.stopped ?? null })
+    if (why) HUNG.push({ id: c.id, iteration, why })
   }
   for (const c of cases) trials[c.id].capture = readLines(join(raw, `${c.id}.t1.capture.jsonl`)).map((l) => JSON.parse(l))
   return { root, store, raw, result, log, trials, everything, egress: result.egress ?? null, ledger: readLedgerFile(store), cleanup: () => rmSync(root, { recursive: true, force: true }), keep }
@@ -137,12 +139,12 @@ export function executeValue(call) {
 // ---------------------------------------------------------------------------------------------- refused: an attempt that failed, never one that completed
 
 /**
- * How a refusal reads. A refusal is a call that ENDED IN AN ERROR whose text is the guard's own marker (`EVALS-ASSERT tool: shell refused (…)`, `EVALS-ASSERT write: …`) or
+ * How a refusal reads. A refusal is a call that ENDED IN AN ERROR whose text is the guard's own marker AT THE START of the result (`EVALS-ASSERT tool: shell refused (…)`, `EVALS-ASSERT write: …`: not anywhere in it, because a bad-arguments error echoes the call's own arguments) or
  * the host's own first words (`No tool named …`, `Permission denied …`, `Unknown tool …`). The words are not looked for anywhere in the text: a completed `grep` whose
  * output holds "not available", or a `shell` that printed "FOO=Unknown tool", is a call that completed, and a safety probe that passes on one guards nothing
  * (review of #13, P2).
  */
-export const GUARD_MARKER = /EVALS-ASSERT (?:tool|write): [A-Za-z0-9_.-]+ refused \(/
+export const GUARD_MARKER = /^\s*(?:Error:\s*)?EVALS-ASSERT (?:tool|write): [A-Za-z0-9_.-]+ refused \(/
 export const HOST_REFUSAL = /^\s*(?:Error:\s*)?(?:No tool named|Permission denied|Unknown tool)\b/i
 export const REFUSED = new RegExp(`${GUARD_MARKER.source}|${HOST_REFUSAL.source}`, "i")
 
@@ -167,6 +169,36 @@ export function hungReason(trial) {
   if (summary?.infra === "no_model_request") return summary.infra_why ?? "the trial made no model request"
   const empty = (trial?.lines ?? []).length === 0
   if (summary && summary.exit === 124 && empty && (trial.mock ?? []).filter((e) => e.ev === "request").length === 0) return `killed at its timeout (exit 124) with an empty recording and no model request: the trial hung before its first request`
+  return null
+}
+
+/**
+ * Why a trial is an infrastructure event, or null: it hung before its first model request (`hungReason`), it left NO summary (the runner's own line for it, or that it was never launched), its
+ * job failed (`infra: trial_error`, with the phase, the error and what Docker said of the container), or it was begun and never finished (`trial_incomplete`). A probe that reads such a
+ * trial's missing calls as "refused" or "not refused" is reading nothing, and the cause must not be lost (review of #13, R5: a trial with no summary, reported only as "no call recorded").
+ *   outcome  the batch's own result for this trial (`{ infra, error, why }`), when it has one
+ *   log      the runner's log lines of the batch
+ *   stopped  why the batch stopped launching, when it did
+ */
+const diagnosisText = (diagnosis) => !diagnosis ? "" : `; container: ${JSON.stringify(diagnosis.state ?? diagnosis.note ?? diagnosis.error ?? {})}${diagnosis.oom_kills ? `, ${diagnosis.oom_kills} OOM kill(s)` : ""}${diagnosis.processes ? `; its processes: ${String(diagnosis.processes).split("\n").slice(0, 12).map((l) => l.trim().replace(/\s+/g, " ")).join(" | ")}` : ""}${diagnosis.log_tail ? `; its last log lines: ${String(diagnosis.log_tail).split("\n").slice(-4).join(" | ")}` : ""}`
+
+export function infraReason(trial, { outcome = null, log = [], stopped = null } = {}) {
+  const hung = hungReason(trial)
+  if (hung) return `${hung}${diagnosisText(trial?.summary?.exit_diagnosis)}`
+  const summary = trial?.summary
+  const own = (log ?? []).filter((line) => String(line).includes(` ${trial?.id}.t1`)).slice(-3).map((line) => String(line).trim())
+  if (summary === null) {
+    const parts = [`no summary was written for the trial${outcome?.error ? `: ${outcome.error}` : ""}`]
+    if (outcome?.infra) parts.push(`the runner recorded infra ${outcome.infra}`)
+    else if (!outcome) parts.push(stopped ? `it was not launched (the batch stopped: ${stopped})` : "the runner has no result for it either")
+    if (own.length) parts.push(`the runner's log: ${own.join(" | ")}`)
+    return parts.join("; ")
+  }
+  if (!summary) return null
+  if (summary.infra === "trial_error" || summary.infra === "trial_incomplete" || summary.infra === "interrupted") {
+    const signal = summary.signal ? `; signal ${summary.signal}` : ""
+    return `${summary.infra_why ?? summary.error ?? summary.infra}${signal}${summary.exit != null ? `; exit ${summary.exit}` : ""}${diagnosisText(summary.exit_diagnosis)}${summary.stack ? `; at ${String(summary.stack).split("\n")[1]?.trim().replace(/^at\s+/, "") ?? ""}` : ""}`
+  }
   return null
 }
 

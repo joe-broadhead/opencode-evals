@@ -150,6 +150,31 @@ test("a trial whose client makes no model request is killed at its deadline and 
   }
 })
 
+test("a trial whose job fails leaves a failure summary with its cause (never none), is reported as infrastructure with that cause, and the other trials are untouched", live, async () => {
+  const { scriptedRun, mock, infraReason, takeHung } = await import("../src/p0/run.mjs")
+  takeHung()
+  // `Seed: files=nosuch-seed` names a seed no directory holds: that one trial's job throws before its container starts, the others run
+  const run = await scriptedRun({ cases: [{ id: "good", prompt: mock("shell", { command: "id" }) }, { id: "broken", prompt: mock("shell", { command: "id" }), extra: "- Seed: files=nosuch-seed" }], arm: { package: "none" }, options: { auth: "none", iteration: "p0-failed-trial" }, tmp: env.tmp })
+  try {
+    const summary = run.trials.broken.summary
+    assert.ok(summary, "a summary exists for the failed trial")
+    assert.equal(summary.infra, "trial_error")
+    assert.equal(summary.exit, null)
+    assert.match(summary.phase, /seeding the project's files/)
+    assert.match(summary.error, /nosuch-seed/)
+    assert.match(summary.infra_why, /the trial's job failed while seeding the project's files: .*nosuch-seed/)
+    assert.match(summary.stack, /at /)
+    assert.equal(run.result.results.find((r) => r.case === "broken").infra, "trial_error", "the batch says why, and the exit code is not zero")
+    assert.equal(run.trials.good.summary?.infra, undefined, "the other trial ran")
+    const why = infraReason(run.trials.broken, { outcome: run.trials.broken.outcome, log: run.log })
+    assert.match(why, /while seeding the project's files: .*nosuch-seed/)
+    assert.equal(infraReason(run.trials.good, { outcome: run.trials.good.outcome, log: run.log }), null)
+    assert.deepEqual(takeHung().map((h) => h.id), ["broken"])
+  } finally {
+    run.cleanup()
+  }
+})
+
 test("P0-A3: an ask of a session no run owns is rejected at once, and hangs without the guard", live, async () => {
   const result = await PROBES.a3(env)
   assert.equal(result.ok, true, show(result))

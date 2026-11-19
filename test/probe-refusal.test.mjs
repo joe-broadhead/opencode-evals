@@ -2,7 +2,7 @@
 // recorded, and a trial that hung before its first model request, are errors that say so; the runner kills such a trial in seconds and calls it infrastructure.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { refused, refusedInCode, completedCalls, hungReason, takeHung, noteHung, textOf, GUARD_MARKER } from "../src/p0/run.mjs"
+import { refused, refusedInCode, completedCalls, hungReason, infraReason, takeHung, noteHung, textOf, GUARD_MARKER } from "../src/p0/run.mjs"
 import { refusalCheck, withHangs } from "../src/p0/probes.mjs"
 import { runToEnd } from "../src/run/sandbox.mjs"
 
@@ -90,7 +90,7 @@ test("a probe whose scripted run hung reports it FIRST, as the cause, and fails;
   const out = await hung({})
   assert.equal(out.ok, false, "even when its own checks passed")
   assert.equal(out.infrastructure, true)
-  assert.match(out.checks[0].name, /^ERROR \(infrastructure, not a refusal\): 1 trial\(s\) hung before their first model request$/)
+  assert.match(out.checks[0].name, /^ERROR \(infrastructure, not a refusal\): 1 trial\(s\) did not complete \(hung before their first model request, left no summary, or failed in the runner\)$/)
   assert.match(out.checks[0].detail, /p0-a1\/glob: the trial made no model request within 150 s/)
   // a probe that threw while a trial had hung says the hang, with its own error
   const threw = withHangs(async () => {
@@ -112,4 +112,42 @@ test("runToEnd(): a command that shows no sign of life by its deadline is killed
   assert.equal(fine.stdout.trim(), "done")
   const quick = await runToEnd("echo", ["hi"], { stall: { afterMs: 5000, alive: () => false } })
   assert.equal(quick.stalled, undefined, "finished before the deadline")
+})
+
+test("the guard's marker counts only at the START of an errored result: a bad-arguments error that echoes the call's own arguments is not a refusal", () => {
+  const echoed = 'Invalid arguments for tool "write": expected string. Arguments provided: { "content": "EVALS-ASSERT tool: write refused (a core tool outside the locked allow-list)" }'
+  assert.equal(refused(call("write", "error", echoed)), false)
+  assert.equal(refused(call("write", "error", "EVALS-ASSERT tool: write refused (a core tool outside the locked allow-list)")), true)
+  assert.equal(refused(call("write", "error", "Error: EVALS-ASSERT write: write refused (a write outside the sandbox)")), true)
+  assert.equal(refused(call("write", "error", "something EVALS-ASSERT tool: write refused (x)")), false)
+})
+
+test("infraReason(): a trial with NO summary says why (the runner's error, its log lines, or that it was never launched); a failed job and a begun-and-never-finished trial say theirs; a clean trial is null", () => {
+  const log = ["reserved 1 run(s)", "  broken.t1: FAILED while seeding the project's files: Seed files=x: no directory", "  [1/2] broken.t1 exit=? INFRA trial_error"]
+  const none = infraReason({ id: "broken", summary: null, lines: [], mock: [] }, { outcome: { error: "ENOSPC: no space left on device", infra: "trial_error" }, log })
+  assert.match(none, /^no summary was written for the trial: ENOSPC: no space left on device; the runner recorded infra trial_error; the runner's log: .*broken\.t1: FAILED while seeding/)
+  assert.match(infraReason({ id: "late", summary: null }, { outcome: null, stopped: "HALT: x" }), /no summary was written for the trial; it was not launched \(the batch stopped: HALT: x\)/)
+  assert.match(infraReason({ id: "gone", summary: null }, { outcome: null, log: [] }), /the runner has no result for it either/)
+  const failed = infraReason({ id: "a", summary: { exit: null, infra: "trial_error", infra_why: "the trial's job failed while starting the trial's container: docker run failed: no space left on device", signal: "SIGKILL", stack: "Error: x\n    at enter (container.mjs:1:1)", exit_diagnosis: { state: { status: "exited", exit_code: 137, oom_killed: true }, oom_kills: 1, log_tail: "line one\nline two" } } })
+  for (const part of [/the trial's job failed while starting the trial's container: docker run failed/, /signal SIGKILL/, /"oom_killed":true/, /1 OOM kill/, /its last log lines: line one \| line two/, /; at enter \(container\.mjs:1:1\)/]) assert.match(failed, part)
+  assert.match(infraReason({ id: "b", summary: { exit: null, infra: "trial_incomplete", infra_why: "the runner began this trial and never wrote its summary" } }), /never wrote its summary/)
+  assert.match(infraReason({ id: "c", summary: { exit: 124, infra: "no_model_request", infra_why: "no model request within 150 s" }, lines: [], mock: [] }), /within 150 s/, "a hang is still a hang")
+  assert.equal(infraReason({ id: "ok", summary: { exit: 0 }, lines: ["{}"], mock: [{ ev: "request" }] }), null)
+  assert.equal(infraReason({ id: "auth", summary: { exit: 1, infra: "auth" } }), null, "other infra kinds are the probe's own to read")
+  assert.equal(infraReason(undefined), null)
+  // refusalCheck says it first, with the cause
+  const check = refusalCheck("write", { id: "write", summary: null, calls: [], lines: [], mock: [], outcome: { error: "ENOSPC" } })
+  assert.equal(check.ok, false)
+  assert.match(check.name, /^ERROR \(infrastructure, not a refusal\) write/)
+  assert.match(check.detail, /no summary was written for the trial: ENOSPC/)
+})
+
+test("only a scripted trial with its mock in the trial has a stall watch: a real model's slow first answer is never killed for lateness", async () => {
+  const { stallOf } = await import("../src/run/runner.mjs")
+  const alive = () => false
+  assert.deepEqual(stallOf({ scripted: true, mockInTrial: true, firstRequestMs: 150_000 }, alive), { stall: { afterMs: 150_000, alive } })
+  assert.deepEqual(stallOf({ scripted: false, mockInTrial: true, firstRequestMs: 150_000 }, alive), {}, "a credentialed run")
+  assert.deepEqual(stallOf({ scripted: true, mockInTrial: false, firstRequestMs: 150_000 }, alive), {}, "the mock outside the trial")
+  assert.deepEqual(stallOf({ scripted: true, mockInTrial: true, firstRequestMs: 0 }, alive), {}, "no deadline")
+  assert.deepEqual(stallOf({ scripted: undefined, mockInTrial: true, firstRequestMs: 150_000 }, alive), {})
 })
