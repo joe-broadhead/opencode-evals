@@ -529,6 +529,7 @@ async function runJobBody(job, ctx, track) {
     let result
     const fakeStatus = {}
     let noRequest = null
+    let clientRestarts = []
     track.phase = "starting the host's server and running the model"
     try {
       server = await startServer({ binary: ctx.binary, cwd, env, password, trial })
@@ -550,7 +551,18 @@ async function runJobBody(job, ctx, track) {
             return false
           }
         }
-        result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...stallOf(ctx, sawRequest) })
+        const runClient = () => exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...stallOf(ctx, sawRequest) })
+        // An idle client: `opencode run` alive, the server up, the mock never asked (found in 2 of ~100 `p0 a1` runs; the processes were all asleep at 0 % CPU). It is replaced ONCE, and the
+        // restart is written into the summary with what the container showed at that moment and reported by the probe: a hang that happens again is infra `no_model_request`, as before.
+        const restarts = []
+        result = await runClient()
+        while (result.stalled && ctx.scripted && ctx.mockInTrial && !sawRequest() && restarts.length < (ctx.clientRestarts ?? 1)) {
+          restarts.push({ attempt: restarts.length + 1, after_ms: ctx.firstRequestMs, diagnosis: await trial.diagnose?.(), stderr: redact(String(result.stderr ?? "").slice(-1000)) })
+          await trial.killClients?.()
+          ctx.log(`  ${name}: the client made no model request within ${Math.round(ctx.firstRequestMs / 1000)} s (an idle \`opencode run\` against a live server): restarting it, once`)
+          result = await runClient()
+        }
+        clientRestarts = restarts
         if (ctx.scripted && ctx.mockInTrial && (result.stalled || (result.timedOut && !String(result.stdout ?? "").trim())) && !sawRequest()) {
           noRequest = `the trial made no model request${result.stalled ? ` within ${Math.round(ctx.firstRequestMs / 1000)} s` : ` before its ${Math.round(ctx.timeoutMs / 1000)} s timeout`}: the host's server was up and the client never got as far as its model (an infrastructure hang, not a refusal, not a model's failure)`
           result = { ...result, error: noRequest }
@@ -621,6 +633,7 @@ async function runJobBody(job, ctx, track) {
       ...(preModelFailure(result) ? { infra: preModelFailure(result) } : {}),
       ...(noRequest ? { infra: "no_model_request", infra_why: noRequest } : {}),
       ...(noExitWhy ? { infra: "trial_error", infra_why: noExitWhy } : {}),
+      ...(clientRestarts.length ? { client_restarts: clientRestarts } : {}),
       ...(usingOverage(result) ? { overage: true } : {}),
       ...(fromWorld.dropped.length ? { world_env_ignored: fromWorld.dropped } : {}),
       ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
@@ -1210,7 +1223,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       isolation,
       mockUrl: mock?.url ?? null,
       routeTimeoutMs,
-      firstRequestMs: Number(caller.EVALS_FIRST_REQUEST_S || 150) * 1000,
+      firstRequestMs: Number(caller.EVALS_FIRST_REQUEST_S || 90) * 1000,
+      clientRestarts: Number(caller.EVALS_CLIENT_RESTARTS ?? 1),
       scripted,
       mockInTrial: scripted && Boolean(harnessDir) && isolation.confines,
       harnessDir,

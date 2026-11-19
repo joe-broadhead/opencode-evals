@@ -143,6 +143,11 @@ test("a trial whose client makes no model request is killed at its deadline and 
     assert.equal(summary.exit, 124)
     assert.match(summary.stderr, /\[evals run\] the trial made no model request/)
     assert.equal(run.result.results[0].infra, "no_model_request", "never graded as the model's, and the batch says why")
+    // the idle client was replaced once, with what the container showed at that moment, and the second one hung as well
+    assert.equal(summary.client_restarts.length, 1)
+    assert.match(summary.client_restarts[0].diagnosis.processes, /PID\s+STAT[^]*mock\/server\.ts/, "what was running inside at that moment")
+    assert.match(summary.exit_diagnosis.processes, /PID\s+STAT/)
+    assert.match(run.log.join("\n"), /the client made no model request within 0 s .*restarting it, once/)
     assert.equal(hungReason(run.trials.hang) !== null, true)
     assert.deepEqual(takeHung().map((h) => h.id), ["hang"])
   } finally {

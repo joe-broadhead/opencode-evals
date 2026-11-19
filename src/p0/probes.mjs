@@ -12,7 +12,7 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
-import { scriptedRun, mock, execute, textOf, executeValue, refused, refusedInCode, completedCalls, hungReason, infraReason, takeHung, declinedIn } from "./run.mjs"
+import { scriptedRun, mock, execute, textOf, executeValue, refused, refusedInCode, completedCalls, hungReason, infraReason, takeHung, takeNotes, declinedIn } from "./run.mjs"
 import { writeActions, loadPacks } from "../run/lockdown.mjs"
 import { decideBefore, planIdOf } from "../run/guard/logic.mjs"
 
@@ -916,6 +916,7 @@ const PROBE_FUNCTIONS = { a1, a2, a3, a4, a5, c, g, g8, halt, env: env_, fake, l
  */
 export const withHangs = (fn) => async (env) => {
   takeHung()
+  takeNotes()
   let result
   try {
     result = await fn(env)
@@ -924,6 +925,9 @@ export const withHangs = (fn) => async (env) => {
     if (hung.length) throw new Error(`ERROR (infrastructure): ${hung.map((h) => `${h.id}: ${h.why}`).join("; ")} (the probe's own error: ${error.message})`, { cause: error })
     throw error
   }
+  // A client restarted once (and then answered) is a pass that says so: the restart is in the output, and in the trial's summary, never quiet.
+  const restarted = takeNotes()
+  if (restarted.length) result = { ...result, checks: [...result.checks, ok(`NOTE (infrastructure): ${restarted.length} trial(s) needed their client restarted once, and then ran`, true, restarted.map((n) => `${n.iteration}/${n.id}: ${n.why}`).join("; "))] }
   const hung = takeHung()
   if (!hung.length) return result
   return { ...result, ok: false, infrastructure: true, checks: [ok(`ERROR (infrastructure, not a refusal): ${hung.length} trial(s) did not complete (hung before their first model request, left no summary, or failed in the runner)`, false, hung.map((h) => `${h.iteration}/${h.id}: ${h.why}`).join("; ")), ...result.checks] }

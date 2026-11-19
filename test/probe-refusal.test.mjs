@@ -2,7 +2,7 @@
 // recorded, and a trial that hung before its first model request, are errors that say so; the runner kills such a trial in seconds and calls it infrastructure.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { refused, refusedInCode, completedCalls, hungReason, infraReason, takeHung, noteHung, textOf, GUARD_MARKER } from "../src/p0/run.mjs"
+import { refused, refusedInCode, completedCalls, hungReason, infraReason, takeHung, noteHung, noteRestart, takeNotes, textOf, GUARD_MARKER } from "../src/p0/run.mjs"
 import { refusalCheck, withHangs } from "../src/p0/probes.mjs"
 import { runToEnd } from "../src/run/sandbox.mjs"
 
@@ -150,4 +150,21 @@ test("only a scripted trial with its mock in the trial has a stall watch: a real
   assert.deepEqual(stallOf({ scripted: true, mockInTrial: false, firstRequestMs: 150_000 }, alive), {}, "the mock outside the trial")
   assert.deepEqual(stallOf({ scripted: true, mockInTrial: true, firstRequestMs: 0 }, alive), {}, "no deadline")
   assert.deepEqual(stallOf({ scripted: undefined, mockInTrial: true, firstRequestMs: 150_000 }, alive), {})
+})
+
+test("a client restarted once and then answered is a PASS that says so (a NOTE with the container's processes); a hang that happens again still fails", async () => {
+  takeHung()
+  takeNotes()
+  const restarted = withHangs(async () => {
+    noteRestart({ id: "websearch", iteration: "p0-a1", why: "its client made no model request within 90 s and was restarted once; container: {\"status\":\"running\"}" })
+    return { ok: true, checks: [{ name: "websearch is refused", ok: true, detail: "" }] }
+  })
+  const out = await restarted({})
+  assert.equal(out.ok, true, "the probe passed")
+  const note = out.checks.at(-1)
+  assert.equal(note.ok, true)
+  assert.match(note.name, /^NOTE \(infrastructure\): 1 trial\(s\) needed their client restarted once, and then ran$/)
+  assert.match(note.detail, /p0-a1\/websearch: its client made no model request within 90 s and was restarted once/)
+  // notes do not leak into the next probe
+  assert.deepEqual((await withHangs(async () => ({ ok: true, checks: [] }))({})).checks, [])
 })

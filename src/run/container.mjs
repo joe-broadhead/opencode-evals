@@ -625,6 +625,12 @@ export function containerBackend(config = containerConfig()) {
         return asked
       }
 
+      /** Ends the `opencode run` clients inside the container (a killed `docker exec` leaves its command running there), before a stalled one is replaced. Never throws. */
+      trial.killClients = async () => {
+        if (trial.left) return
+        await docker(["exec", trial.container ?? trial.ref, "pkill", "-9", "-f", "opencode run --server"], { timeoutMs: 10_000 })
+      }
+
       trial.describe = () => ({ container: trial.ref, setup_ms: trial.timings.setup_ms, teardown_ms: trial.timings.teardown_ms, ...(trial.killed ? { killed: trial.killed } : {}) })
       return trial
     },

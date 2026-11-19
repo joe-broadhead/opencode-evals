@@ -105,6 +105,8 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
     trials[c.id].outcome = outcome
     const why = infraReason(trials[c.id], { outcome, log, stopped: result.stopped ?? null })
     if (why) HUNG.push({ id: c.id, iteration, why })
+    const restarts = trials[c.id].summary?.client_restarts ?? []
+    if (restarts.length) NOTES.push({ id: c.id, iteration, why: `its client made no model request within ${Math.round(restarts[0].after_ms / 1000)} s and was restarted ${restarts.length === 1 ? "once" : `${restarts.length} times`}${diagnosisText(restarts[0].diagnosis)}` })
   }
   for (const c of cases) trials[c.id].capture = readLines(join(raw, `${c.id}.t1.capture.jsonl`)).map((l) => JSON.parse(l))
   return { root, store, raw, result, log, trials, everything, egress: result.egress ?? null, ledger: readLedgerFile(store), cleanup: () => rmSync(root, { recursive: true, force: true }), keep }
@@ -201,6 +203,13 @@ export function infraReason(trial, { outcome = null, log = [], stopped = null } 
   }
   return null
 }
+
+const NOTES = []
+/** The trials of every scripted run since the last call whose client was restarted once (an idle `opencode run` that never asked its model), as `[{ id, iteration, why }]`: passed, and said. */
+export function takeNotes() {
+  return NOTES.splice(0, NOTES.length)
+}
+export const noteRestart = (entry) => void NOTES.push(entry)
 
 const HUNG = []
 /** Records a hung trial for the probe wrapper (scriptedRun does it itself). */
