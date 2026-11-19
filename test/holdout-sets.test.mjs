@@ -7,6 +7,7 @@ import { tmpdir } from "node:os"
 import { spawnSync } from "node:child_process"
 import { compileCase } from "../src/case/compile.mjs"
 import { selectCases, parseSets, inSets, isHoldout, familyOf, setCounts } from "../src/case/sets.mjs"
+import { validateCase } from "../src/case/schema.mjs"
 
 const ROOT = join(import.meta.dirname, "..")
 const header = (id, { holdout = false, set = null, data = "seeded" } = {}) =>
@@ -115,4 +116,17 @@ test("the CLI: evals report over --set local, the default and --set all never co
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
+})
+
+test("Holdout: is `true` or `false` and nothing else: True, TRUE, yes and 1 are a compile error, not an ordinary case a tuner could be given", () => {
+  for (const spelling of ["True", "TRUE", "yes", "1", "y", "on", " "]) {
+    const text = header("hold-slack-9-x", { set: "local" }).replace("- Set: local\n", `- Holdout: ${spelling}\n- Set: local\n`)
+    assert.throws(() => compileCase("cases/slack/hold-slack-9-x.md", text), /Holdout: is `true` or `false`, not/, `Holdout: ${spelling}`)
+  }
+  assert.equal(compileCase("cases/slack/hold-slack-9-x.md", header("hold-slack-9-x", { holdout: true, set: "local" })).holdout, true)
+  assert.equal(compileCase("cases/slack/hold-slack-9-x.md", header("hold-slack-9-x", { set: "local" }).replace("- Set: local\n", "- Holdout: false\n- Set: local\n")).holdout, false)
+  assert.equal(isHoldout({ id: "hold-slack-9-x", holdout: false }), true, "a hold- id is a holdout whatever the header says")
+  // a hand-edited compiled case with the flag as a string is refused when it is read, not returned to a tuner
+  const edited = { ...holdouts[0], holdout: "true" }
+  assert.throws(() => validateCase(edited, "cases/slack/hold-slack-1-local.json"), /holdout must be true or false, not "true"/)
 })

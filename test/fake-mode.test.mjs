@@ -387,3 +387,25 @@ test("fake GitHub: search reads created:, updated:, assignee:, is:open and the o
   // what it cannot read it says
   for (const bad of ["foo:bar", "created:lastweek", "is:weird", "no:milestone", "updated:>=banana"]) assert.match(ghSearch("search_issues", bad), /^ERR Invalid search/, bad)
 })
+
+test("fake Jira: OR joins groups of AND (AND binds tighter), a dangling AND or OR and parentheses are errors, and a quoted `and` is not a clause break", () => {
+  // the reviewer's query: it used to read one clause with the value `Done OR status = "To Do"` and return nothing
+  assert.deepEqual(jql('project = QLN AND status = Done OR status = "To Do"'), ["QLN-2", "QLN-3", "QLN-4", "QLN-6"], "QLN-4 and QLN-6 are Done, QLN-2 and QLN-3 are To Do")
+  assert.deepEqual(jql('status = Done OR status = "In Progress" ORDER BY created'), ["QLN-1", "QLN-4", "QLN-5", "QLN-6"], "the fixture's order; ORDER BY is ignored")
+  assert.deepEqual(jql('assignee = currentUser() AND status = "In Progress" OR priority = Highest'), ["QLN-1", "QLN-5"], "(a AND b) OR c")
+  assert.deepEqual(jql('priority = Highest OR priority = Low OR status = "In Review"'), ["QLN-1", "QLN-3", "QLN-6", "QLN-7"])
+  assert.deepEqual(jql('summary ~ "sync and retry" OR status = Done'), ["QLN-4", "QLN-6"], "an `and` inside quotes is the value's")
+  assert.deepEqual(jql('status in (Done, "To Do") AND priority = Low'), ["QLN-3", "QLN-6"], "a list's own parentheses are not a group")
+  for (const bad of ["(status = Done OR status = \"To Do\")", "NOT status = Done", "status = Done OR", "OR status = Done", "status = Done AND", "status = Done OR OR status = Low"]) assert.match(jql(bad), /^ERR The fake does not understand/, bad)
+})
+
+test("fake GitHub: OR joins groups, a comma in label:, assignee: and author: is OR, and parentheses and a lone OR are errors, never an empty list", () => {
+  assert.deepEqual(ghSearch("search_issues", "label:bug OR label:documentation"), [1, 2, 3, 4])
+  assert.deepEqual(ghSearch("search_issues", "label:bug,documentation"), [1, 2, 3, 4], "GitHub's own comma form")
+  assert.deepEqual(ghSearch("search_issues", "label:bug,documentation is:open"), [1, 2, 3])
+  assert.deepEqual(ghSearch("search_issues", "is:open label:sync OR is:closed label:bug"), [1, 4, 5], "(open and sync) or (closed and bug)")
+  assert.deepEqual(ghSearch("search_issues", "assignee:ada-lantern,bo-marlowe is:open"), [1, 2, 5])
+  assert.deepEqual(ghSearch("search_issues", "author:ada-lantern,cy-whitlock"), [2, 3, 5, 6])
+  assert.deepEqual(ghSearch("search_pull_requests", "is:merged OR is:draft"), [8, 9])
+  for (const bad of ["(label:bug OR label:documentation)", "label:bug OR", "OR label:bug", "label:bug OR OR label:sync"]) assert.match(ghSearch("search_issues", bad), /^ERR Invalid search/, bad)
+})

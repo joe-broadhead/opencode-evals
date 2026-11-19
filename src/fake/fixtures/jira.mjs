@@ -118,11 +118,55 @@ function dateFilter(field, op, valueRaw) {
 }
 
 /** The part of JQL the fake understands: clauses joined by AND, each `field = | != | ~ | in (...) value`, or `created | updated >= | > | <= | < | = date`; ORDER BY is ignored. */
+/** `text` split at the unquoted, unparenthesised word `AND` or `OR` (any case): `summary ~ "a and b" AND status in (x, y)` is two clauses. */
+export function splitTop(text, word) {
+  const parts = []
+  let depth = 0
+  let quote = null
+  let from = 0
+  const re = new RegExp(`^\\s+${word}\\s+`, "i")
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+    if (quote) {
+      if (c === quote && text[i - 1] !== "\\") quote = null
+    } else if (c === '"' || c === "'") quote = c
+    else if (c === "(") depth++
+    else if (c === ")") depth--
+    else if (depth === 0 && /\s/.test(c)) {
+      const m = re.exec(text.slice(i))
+      if (m) {
+        parts.push(text.slice(from, i))
+        i += m[0].length - 1
+        from = i + 1
+      }
+    }
+  }
+  parts.push(text.slice(from))
+  return parts
+}
+
+/**
+ * JQL as the fake reads it: groups joined by OR, each group clauses joined by AND (AND binds tighter, as in Jira); the answer is every issue any group returns, in the fixture's order.
+ * Parentheses around a group and NOT are refused with an error, never an empty list.
+ */
 export function runJql(jql) {
   const where = String(jql ?? "").replace(/\border\s+by\b.*$/i, "").trim()
   if (!where) return { issues }
+  if (/(^|\s)(and|or)\s*$/i.test(where) || /^\s*(and|or)\s/i.test(where)) return { error: `The fake does not understand the JQL: AND or OR with nothing on one side: ${where}` }
+  const groups = splitTop(where, "or")
+  if (groups.length === 1) return runAnd(where)
+  const found = new Set()
+  for (const group of groups) {
+    const r = runAnd(group.trim())
+    if (r.error) return r
+    for (const issue of r.issues) found.add(issue)
+  }
+  return { issues: issues.filter((i) => found.has(i)) }
+}
+
+function runAnd(where) {
   let list = issues
-  for (const raw of where.split(/\s+and\s+/i)) {
+  for (const raw of splitTop(where, "and")) {
     const m = /^(\w+)\s*(>=|<=|!=|=|>|<|~|\bnot in\b|\bin\b|\bis\b)\s*(.+)$/i.exec(raw.trim())
     if (!m) return { error: `The fake does not understand the JQL clause: ${raw}` }
     const [, field, opRaw, valueRaw] = m

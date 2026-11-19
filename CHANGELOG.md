@@ -8,6 +8,12 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
 
 ### Fixed
 
+- **`refused()` could pass a call that completed** (review of #13). A refusal is now a call that ended in an error and carries the guard's own marker (`EVALS-ASSERT tool: … refused (`) or the host's first words; a completed call never is,
+  whatever its output says. `p0 a1` passes only when a write was attempted and refused with none completed; "no call recorded" is an ERROR that says the call was never made; a trial that hung before its first model request is
+  reported first, as the cause, by every probe. The runner kills a scripted trial that has made no model request within `EVALS_FIRST_REQUEST_S` (150 s) and records it as infrastructure (`no_model_request`: never graded, its run
+  released), instead of waiting out the 420 s timeout.
+- **The legacy exemption is a frozen list of case ids** (`src/case/legacy-cases.json`), not a rule about the plugin: a new History, X or Charts case, or a `Plugin: p0` case, meets every round rule. `Holdout:` is `true` or `false`.
+- **The fake Jira and GitHub servers read `OR`** (and a comma in `label:`), and refuse parentheses, `NOT` and a dangling `OR` with an error instead of returning nothing.
 - **`evals compile` refuses a literal `<placeholder>` in a prompt** (104 lane cases had them); `- Angle brackets: <h1>, </h1>` lists the tokens a prompt really quotes. The History, X and Charts corpora written before the round are exempt.
 - **The fake Jira reads `resolved`/`resolutiondate`, `resolution` (`Unresolved`), `statusCategory`, `is EMPTY|NULL`, and Jira's date functions** (`startOfDay/Week/Month/Year()` and `endOf…`, with increments; weeks start on
   Monday; now is fixed), so a "done this week" case can be asked and graded; the fake GitHub reads `merged:` and gives a merged pull request its `closed_at`.

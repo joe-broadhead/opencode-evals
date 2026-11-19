@@ -51,3 +51,29 @@ test("the History, X and Charts corpora written before the round are left as the
   // but a round case of the same plugin is not exempt
   assert.throws(() => compileCase("cases/x/tools-a.md", text("search <X test topic>", { plugin: "x", id: "tools-a" })), /literal placeholder/)
 })
+
+test("the legacy exemption is a frozen list of case ids, not a rule about the plugin: a new History, X or Charts case meets every round rule, and p0 is no plugin to hide behind", () => {
+  const legacy = JSON.parse(readFileSync(join(ROOT, "src", "case", "legacy-cases.json"), "utf8"))
+  // the list is the corpus as it stood: every committed case of the three plugins, and nothing else
+  for (const plugin of ["history", "x", "charts"]) {
+    const files = readdirSync(join(ROOT, "cases", plugin)).filter((f) => f.endsWith(".md")).map((f) => f.replace(/\.md$/, "")).sort()
+    assert.deepEqual(legacy.cases[plugin], files, `${plugin}: the list is the corpus`)
+  }
+  assert.equal(legacy.cases.p0, undefined)
+  const body = (plugin, id, extra = "") => `# ${id}\n- Plugin: ${plugin}\n- Skill under test: ${plugin}\n- Tier: T3\n- Source: t\n- Decision tested: x\n${extra}\n## Prompt\nsearch <X test topic> and <another gap>\n\n## Items\n- [XX-OC01] major · It answers.\n  evidence: text:any matches /./\n`
+  // the reviewer's cases: a brand-new x, history and charts case with no Set, no Data and two <placeholders> used to compile
+  for (const plugin of ["x", "history", "charts"]) {
+    assert.throws(() => compileCase(`cases/${plugin}/brand-new.md`, body(plugin, "brand-new")), /Data is required|literal placeholder/, `a new ${plugin} case`)
+    assert.throws(() => compileCase(`cases/${plugin}/brand-new.md`, body(plugin, "brand-new", "- Data: synthetic\n")), /literal placeholder/, `a new ${plugin} case with a Data but a placeholder`)
+  }
+  // p0 is the harness's own probes: it has to declare its data like anyone, and its prompt is checked
+  assert.throws(() => compileCase("cases/p0/shell-curl.md", body("p0", "shell-curl")), /Data is required|literal placeholder/)
+  assert.throws(() => compileCase("cases/p0/shell-curl.md", body("p0", "shell-curl", "- Data: synthetic\n")), /literal placeholder/)
+  // a listed case is as it was; the same id in a round set is not exempt
+  const firstX = legacy.cases.x.find((id) => /<X test/.test(readFileSync(join(ROOT, "cases", "x", `${id}.md`), "utf8").split("## Prompt")[1]?.split("##")[0] ?? ""))
+  assert.ok(firstX, "an x case with a gap")
+  assert.doesNotThrow(() => compileCase(`cases/x/${firstX}.md`, readFileSync(join(ROOT, "cases", "x", `${firstX}.md`), "utf8")))
+  assert.throws(() => compileCase(`cases/x/${firstX}.md`, readFileSync(join(ROOT, "cases", "x", `${firstX}.md`), "utf8").replace("\n## Prompt", "\n- Set: deep\n\n## Prompt")), /a case in set deep has an id like deep-<slug>|Data is required|placeholder/)
+  // an id not in the list is new, however it is spelt like an old one
+  assert.throws(() => compileCase(`cases/x/${firstX}-v2.md`, readFileSync(join(ROOT, "cases", "x", `${firstX}.md`), "utf8").replace(`# ${firstX}`, `# ${firstX}-v2`)), /Data is required|literal placeholder/)
+})

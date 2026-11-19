@@ -251,9 +251,11 @@ test("7: @aliases in a live probe's code are resolved from targets.json; an unkn
 
 test("8: dataOf never answers below a plugin's minimum, and defaults to real; assertLaunchWithinRound refuses on its own, past the runner's check", () => {
   assert.equal(dataOf({ plugin: "slack", data: undefined }), "real", "no label, no legacy corpus: real")
-  assert.equal(dataOf({ plugin: "x" }), "real")
-  assert.equal(dataOf({ plugin: "history" }), "own")
-  assert.equal(dataOf({ plugin: "charts" }), "synthetic")
+  assert.equal(dataOf({ plugin: "x" }), "real", "an unlisted case has no legacy default")
+  assert.equal(dataOf({ plugin: "x", id: "bookmark-asks-first" }), "real")
+  assert.equal(dataOf({ plugin: "history", id: "audit-tree-cost" }), "own", "a listed History case")
+  assert.equal(dataOf({ plugin: "history", id: "not-on-the-list" }), "real", "a new History case that omits Data is real (and compile refuses it)")
+  assert.equal(dataOf({ plugin: "charts", id: "add-zoom" }), "synthetic")
   assert.equal(dataOf({ plugin: "granola", data: "synthetic" }), "real")
   assert.equal(dataOf({ plugin: "slack", data: "seeded", seed: "plugins=ashby" }), "candidate")
   assert.equal(dataOf({ plugin: "slack", data: "candidate" }), "candidate")

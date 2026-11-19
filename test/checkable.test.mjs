@@ -64,7 +64,7 @@ test("an argument that was not passed satisfies !=, not-matches and excludes, an
 })
 
 test("Checkable:, Set: and Status: compile, and a case without them compiles as before", () => {
-  const text = `# c
+  const text = `# audit-tree-cost
 - Plugin: history
 - Skill under test: history-recall
 - Tier: T3

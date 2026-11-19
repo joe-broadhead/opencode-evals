@@ -516,6 +516,7 @@ async function runJob(job, ctx) {
     let serverStderr = ""
     let result
     const fakeStatus = {}
+    let noRequest = null
     try {
       server = await startServer({ binary: ctx.binary, cwd, env, password, trial })
       // A provider can fill its model list after the server answers (the Claude Agent provider probes `claude` first):
@@ -528,7 +529,19 @@ async function runJob(job, ctx) {
       } else {
         // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
         const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
-        result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs })
+        // A scripted trial whose client has not asked the model for anything by `firstRequestMs` is hung, not slow: killed then, and said to be (infra: no_model_request).
+        const sawRequest = () => {
+          try {
+            return /"ev":"request"/.test(readFileSync(join(sandbox.tmp, "mock.jsonl"), "utf8"))
+          } catch {
+            return false
+          }
+        }
+        result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...(ctx.scripted && ctx.mockInTrial && ctx.firstRequestMs ? { stall: { afterMs: ctx.firstRequestMs, alive: sawRequest } } : {}) })
+        if (ctx.scripted && ctx.mockInTrial && (result.stalled || (result.timedOut && !String(result.stdout ?? "").trim())) && !sawRequest()) {
+          noRequest = `the trial made no model request${result.stalled ? ` within ${Math.round(ctx.firstRequestMs / 1000)} s` : ` before its ${Math.round(ctx.timeoutMs / 1000)} s timeout`}: the host's server was up and the client never got as far as its model (an infrastructure hang, not a refusal, not a model's failure)`
+          result = { ...result, error: noRequest }
+        }
         // Fake mode: what each fake plugin says of itself once the run is over (its own status RPC, as a client of this trial's server), kept beside the recording:
         // the probe compares it with what a signed-in user's plugin says (state connected, source `plugin`: no conflict).
         for (const id of fakeIds) {
@@ -556,7 +569,7 @@ async function runJob(job, ctx) {
     const detail = trial.describe()
     const killed = trial.killed
     const summary = {
-      exit: result.timedOut ? 124 : result.code,
+      exit: result.timedOut || result.stalled ? 124 : result.code,
       durationMs,
       trial: job.trial,
       case: id,
@@ -567,7 +580,7 @@ async function runJob(job, ctx) {
       ...(prepared.session ? { continued: true } : {}),
       // Scrubbed, then cut: a secret straddling the cut would leave its tail in the summary otherwise.
       server_stderr: redact(String(serverStderr).slice(-6000)),
-      stderr: redact(`${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}${killed ? `\n[evals run] killed: ${killed.reason}` : ""}`).slice(-4000),
+      stderr: redact(`${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}${killed ? `\n[evals run] killed: ${killed.reason}` : ""}${noRequest ? `\n[evals run] ${noRequest}` : ""}`).slice(-4000),
       started_at: new Date(started).toISOString(),
       runner: RUNNER,
       runner_version: ctx.runnerVersion,
@@ -580,6 +593,7 @@ async function runJob(job, ctx) {
       // The model call was refused its credential, or never reached a model (no route): an infrastructure failure,
       // never graded as the model's.
       ...(preModelFailure(result) ? { infra: preModelFailure(result) } : {}),
+      ...(noRequest ? { infra: "no_model_request", infra_why: noRequest } : {}),
       ...(usingOverage(result) ? { overage: true } : {}),
       ...(fromWorld.dropped.length ? { world_env_ignored: fromWorld.dropped } : {}),
       ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
@@ -1107,6 +1121,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       isolation,
       mockUrl: mock?.url ?? null,
       routeTimeoutMs,
+      firstRequestMs: Number(caller.EVALS_FIRST_REQUEST_S || 150) * 1000,
       scripted,
       mockInTrial: scripted && Boolean(harnessDir) && isolation.confines,
       harnessDir,

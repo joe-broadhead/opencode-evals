@@ -23,12 +23,12 @@ export const DATA_KINDS = ["synthetic", "seeded", "own", "real", "candidate"]
 export const THIRD_PARTY_DATA = ["real", "candidate"]
 
 /**
- * The corpora written before the `Data:` header and the round sets existed (history, x, charts, and p0, the harness's own probes): a case of one of them that declares
+ * The corpora written before the `Data:` header and the round sets existed (history, x and charts): a case of one of them that declares
  * no round set is a legacy case, and its data is what the corpus always held: history reads the owner's own sessions, x reads other
  * people's public posts (so `real`: nothing a third party wrote goes to a model without the owner's sign-off), charts draws made-up data.
  * Every other case, and every legacy-plugin case in a round set, must declare `Data:` and a round set.
  */
-export const LEGACY_DATA = Object.freeze({ history: "own", x: "real", charts: "synthetic", p0: "synthetic" })
+export const LEGACY_DATA = Object.freeze({ history: "own", x: "real", charts: "synthetic" })
 
 /**
  * The least a plugin's cases may declare, because of what the plugin reads: other people's words (meetings, recordings, CRM notes) are
@@ -71,11 +71,28 @@ export const fakeModePlugins = () => {
 const PACKS_DIR = join(import.meta.dirname, "..", "..", "packs")
 export const packPlugins = () => new Set(existsSync(PACKS_DIR) ? readdirSync(PACKS_DIR) : [])
 
-export const isLegacyCase = (caseObject) => caseObject.plugin in LEGACY_DATA && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)
+/**
+ * The legacy cases are a FROZEN LIST (`src/case/legacy-cases.json`), not a rule about the plugin: a new History, X or Charts case meets every round rule, whatever else is true of it
+ * (review of #13: a new `x` case with two `<placeholders>` and no `Data:` compiled, and so did a case with `Plugin: p0`). A case is legacy only when its id is in the list for its
+ * plugin (or a History private holdout, `ho-…`, which only the owner writes and no tuner ever sees) and it declares no round set.
+ */
+const LEGACY_FILE = join(import.meta.dirname, "legacy-cases.json")
+const legacyList = (() => {
+  try {
+    return JSON.parse(readFileSync(LEGACY_FILE, "utf8"))
+  } catch {
+    return { cases: {}, patterns: {} }
+  }
+})()
+export const legacyIds = (plugin) => new Set(legacyList.cases?.[plugin] ?? [])
+export const isLegacyCase = (caseObject) =>
+  caseObject.plugin in LEGACY_DATA &&
+  !(caseObject.sets ?? []).some((name) => name in ROUND_SETS) &&
+  (legacyIds(caseObject.plugin).has(caseObject.id) || (legacyList.patterns?.[caseObject.plugin] ?? []).some((pattern) => new RegExp(pattern).test(String(caseObject.id ?? ""))))
 
 /** What a case reads: its `Data:`, else what a legacy corpus always held, else (never reached: compile refuses it) `real`. */
 export const dataOf = (caseObject) => {
-  const declared = caseObject.data ?? LEGACY_DATA[caseObject.plugin] ?? "real"
+  const declared = caseObject.data ?? (isLegacyCase(caseObject) ? LEGACY_DATA[caseObject.plugin] : undefined) ?? "real"
   // Never below what the plugins a case uses read, whatever its label says (defence in depth: compile refuses the case first).
   const minimum = dataMinimum(caseObject)
   return minimum && DATA_KINDS.indexOf(declared) < DATA_KINDS.indexOf(minimum.kind) ? minimum.kind : declared
@@ -148,6 +165,7 @@ export function validateCase(caseObject, file = "<case>") {
     const value = caseObject.budgets[budget]
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) bad(`budget ${budget} must be a non-negative number`)
   }
+  if (caseObject.holdout !== undefined && typeof caseObject.holdout !== "boolean") bad(`holdout must be true or false, not ${JSON.stringify(caseObject.holdout)}`)
   if (caseObject.expect && !["pass", "fail", "na"].includes(caseObject.expect)) bad("expect must be pass, fail or na")
   for (const key of caseObject.checkable ?? []) if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) bad(`checkable ${JSON.stringify(key)} must be an argument name`)
   for (const name of caseObject.sets ?? []) {

@@ -100,6 +100,10 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
   for (const c of cases) trials[c.id].fake = Object.fromEntries(readdirSync(raw).filter((name) => name.startsWith(`${c.id}.t1.fake-`) && name.endsWith(".jsonl")).map((name) => [name.replace(`${c.id}.t1.fake-`, "").replace(/\.jsonl$/, ""), readLines(join(raw, name)).map((l) => JSON.parse(l))]))
   // What each fake plugin said of itself (its status RPC, read in the trial once the run was over), by plugin.
   for (const c of cases) trials[c.id].fakeStatus = Object.fromEntries(readdirSync(raw).filter((name) => name.startsWith(`${c.id}.t1.fake-`) && name.endsWith(".status.json")).map((name) => [name.replace(`${c.id}.t1.fake-`, "").replace(/\.status\.json$/, ""), readFileSync(join(raw, name), "utf8")]))
+  for (const c of cases) {
+    const hung = hungReason(trials[c.id])
+    if (hung) HUNG.push({ id: c.id, iteration, why: hung })
+  }
   for (const c of cases) trials[c.id].capture = readLines(join(raw, `${c.id}.t1.capture.jsonl`)).map((l) => JSON.parse(l))
   return { root, store, raw, result, log, trials, everything, egress: result.egress ?? null, ledger: readLedgerFile(store), cleanup: () => rmSync(root, { recursive: true, force: true }), keep }
 }
@@ -130,6 +134,46 @@ export function executeValue(call) {
   }
 }
 
-/** How the host refused a call: the shell, file, web and subagent tools are absent or denied, and Code Mode has no process. */
-export const REFUSED = /No tool named|Permission denied|is currently available|not available|Unknown identifier|EVALS-ASSERT|Unknown tool|was rejected|cannot ask the user/i
-export const refused = (call) => Boolean(call) && (call.status === "error" || REFUSED.test(textOf(call))) && REFUSED.test(textOf(call))
+// ---------------------------------------------------------------------------------------------- refused: an attempt that failed, never one that completed
+
+/**
+ * How a refusal reads. A refusal is a call that ENDED IN AN ERROR whose text is the guard's own marker (`EVALS-ASSERT tool: shell refused (…)`, `EVALS-ASSERT write: …`) or
+ * the host's own first words (`No tool named …`, `Permission denied …`, `Unknown tool …`). The words are not looked for anywhere in the text: a completed `grep` whose
+ * output holds "not available", or a `shell` that printed "FOO=Unknown tool", is a call that completed, and a safety probe that passes on one guards nothing
+ * (review of #13, P2).
+ */
+export const GUARD_MARKER = /EVALS-ASSERT (?:tool|write): [A-Za-z0-9_.-]+ refused \(/
+export const HOST_REFUSAL = /^\s*(?:Error:\s*)?(?:No tool named|Permission denied|Unknown tool)\b/i
+export const REFUSED = new RegExp(`${GUARD_MARKER.source}|${HOST_REFUSAL.source}`, "i")
+
+/** An attempted call the guard or the host refused, and that did not complete: status `error` AND a refusal's own words. */
+export const refused = (call) => Boolean(call) && call.status === "error" && (GUARD_MARKER.test(textOf(call)) || HOST_REFUSAL.test(textOf(call)))
+
+/** An `execute` whose script tried a tool or a global and returned what the host answered (`refused: Permission denied: webfetch`): the script's own catch, with the host's words after it. */
+export const refusedInCode = (call) => Boolean(call) && call.tool === "execute" && /^refused: (?:Permission denied|Unknown identifier|No tool named|Unknown tool)\b/.test(textOf(call).trim())
+
+/** Did any call of the trial COMPLETE (other than Code Mode's own `execute`, whose completion says nothing of what its code tried)? */
+export const completedCalls = (trial) => (trial?.calls ?? []).filter((call) => call.tool !== "execute" && call.status !== "error")
+
+// ---------------------------------------------------------------------------------------------- a trial that never reached its model
+
+/**
+ * Why a trial is an infrastructure event and not an answer, or null. A trial that hung before its first model request (the client and its own server inside the trial made
+ * no progress: found in 1 of 360 under load, killed at the 420 s timeout with an empty recording) has said nothing about any guarantee; a probe that reads its missing call as
+ * "refused" or "not refused" is reading nothing.
+ */
+export function hungReason(trial) {
+  const summary = trial?.summary
+  if (summary?.infra === "no_model_request") return summary.infra_why ?? "the trial made no model request"
+  const empty = (trial?.lines ?? []).length === 0
+  if (summary && summary.exit === 124 && empty && (trial.mock ?? []).filter((e) => e.ev === "request").length === 0) return `killed at its timeout (exit 124) with an empty recording and no model request: the trial hung before its first request`
+  return null
+}
+
+const HUNG = []
+/** Records a hung trial for the probe wrapper (scriptedRun does it itself). */
+export const noteHung = (entry) => void HUNG.push(entry)
+/** The hung trials of every scripted run since the last call, as `[{ id, why }]`. A probe wrapper reads them once the probe returns, and reports them first, as the cause. */
+export function takeHung() {
+  return HUNG.splice(0, HUNG.length)
+}

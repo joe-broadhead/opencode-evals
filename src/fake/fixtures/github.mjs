@@ -106,10 +106,27 @@ const KNOWN = "is, state, type, label, author, assignee, no, in, repo, org, user
  * own repository exists), `in:title|body`, and plain words. Anything else is refused as GitHub refuses an invalid qualifier. Returns `{ test(item, kind) }` or `{ error }`.
  */
 export function parseQuery(query) {
+  const all = terms(query)
+  if (all.some((t) => /^-?\(|\)$/.test(t))) return { error: "Invalid search: the fake does not read parentheses in a query (use OR between whole groups, or a comma inside label:)" }
+  // `a b OR c d` is (a and b) or (c and d), as the search reads it; a lone OR has nothing to join.
+  const groups = [[]]
+  for (const t of all) {
+    if (t === "OR") groups.push([])
+    else groups.at(-1).push(t)
+  }
+  if (groups.length === 1) return parseGroup(all)
+  if (groups.some((g) => !g.length)) return { error: "Invalid search: OR needs a term on each side" }
+  const parsed = groups.map((g) => parseGroup(g))
+  const bad = parsed.find((p) => p.error)
+  if (bad) return bad
+  return { test: (item, kind) => parsed.some((p) => p.test(item, kind)) }
+}
+
+function parseGroup(list) {
   const tests = []
   const words = []
   let inFields = ["title", "body"]
-  for (const raw of terms(query)) {
+  for (const raw of list) {
     const negate = raw.startsWith("-")
     const term = negate ? raw.slice(1) : raw
     const q = /^([a-z]+):(.+)$/i.exec(term)
@@ -135,14 +152,15 @@ export function parseQuery(query) {
       case "type":
         add((i, kind) => (value === "pr" ? kind === "pr" : kind === "issue"))
         break
+      // A comma inside a value is OR (`label:bug,docs`), as in GitHub's own search.
       case "label":
-        add((i) => (i.labels ?? []).some((l) => (l.name ?? l).toLowerCase() === value.toLowerCase()))
+        add((i) => value.split(",").some((one) => (i.labels ?? []).some((l) => (l.name ?? l).toLowerCase() === one.trim().toLowerCase())))
         break
       case "author":
-        add((i) => i.user?.login === value || (value === "@me" && i.user?.login === people.ada.login))
+        add((i) => value.split(",").some((one) => i.user?.login === one.trim() || (one.trim() === "@me" && i.user?.login === people.ada.login)))
         break
       case "assignee":
-        add((i) => i.assignee?.login === value || (value === "@me" && i.assignee?.login === people.ada.login))
+        add((i) => value.split(",").some((one) => i.assignee?.login === one.trim() || (one.trim() === "@me" && i.assignee?.login === people.ada.login)))
         break
       case "no":
         if (value !== "assignee" && value !== "label") return { error: `Invalid search: no:${value} (the fake understands no:assignee and no:label)` }
