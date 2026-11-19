@@ -8,6 +8,12 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
 
 ### Fixed
 
+- **Fake mode runs the plugins as released.** A loopback `mcp` override was a `conflict` to both plugins (no namespace description, no tool filter, status `conflict`). Each now registers its own
+  server at its default URL; the trial maps that host to the fake (`--add-host`, `NO_PROXY`) and the fake answers TLS with a per-batch, name-constrained CA trusted only in the trial
+  (`NODE_EXTRA_CA_CERTS`). `p0 fake` asserts the namespace text (from the plugin's source), the status (`connected`, own server) and the vendor host in every request.
+- **An `evals` command whose output nobody reads spun at 100% CPU for ever**: EPIPE on stdout was an uncaught error, and the batch's handler logged to the same closed pipe, which raised it again.
+  Leaked runners of killed test runs slowed every later probe (`p0 env` and `p3` failed under that load). Output is dropped when no one reads it (`src/stdio.mjs`), the handlers cannot throw into themselves,
+  and two docker tests no longer assert machine-wide facts (other batches' sweeps and exec clients).
 - **`evals select`** recorded every non-passing trial, which inflated every baseline. It now records only the first-pass trial of each wide case, once, refuses to overwrite `selecting.json`, and
   `evals report` applies the list to wide cases only (deep cases are untouched; `--cases-dir` on both).
 
@@ -50,7 +56,7 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
   `evals select` and automatic fresh baselines, `@alias` placeholders in the live probes, and the defence-in-depth tests.
 
 - **The owner's decisions**: GitHub and Jira in **fake mode** (`accounts: fake`: no account, no real endpoint; the harness's own fake MCP server serves each plugin's released tool
-  list from `packs/<id>/mcp.json` and answers from a synthetic fixture; reads graded with `@fixture.<plugin>.<fact>`, writes asked and declined; `Data: synthetic`; probe `evals p0 fake`),
+  list from `packs/<id>/mcp.json` and answers from a synthetic fixture; reads graded with `@fixture.<plugin>.<fact>`, writes asked and declined; `Data: synthetic`; probe `evals p0 fake`: the plugin runs on its default URL, the trial maps the vendor host to the fake over TLS with a per-batch CA),
   `accounts: none` kept for other plugins (honest-answer item minor, call/target/canary clauses n/a), the data matrix gate tested with a fixture, Slack, X and Google on their existing apps, `phase1` without
   GitHub's token step or any sign-in for GitHub or Jira, and `scripts/profile/signin.sh`, the owner's sign-in walk with `check-real` after each vendor.
 

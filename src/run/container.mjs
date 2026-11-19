@@ -425,7 +425,7 @@ export function containerBackend(config = containerConfig()) {
     },
 
     /** A trial: its own network and container, with the sandbox (rw) and `mounts` (ro) at their own paths. */
-    async enter({ name, sandbox, mounts = [], cwd }) {
+    async enter({ name, sandbox, mounts = [], cwd, hosts = [], ca = null }) {
       if (!state.prepared || state.tornDown) throw new Error("the container backend is not prepared")
       const root = resolve(sandbox.root)
       for (const path of [root, ...mounts.map((m) => m.host)]) if (/[,\n"]/.test(path)) throw new Error(`a bind mount cannot name ${JSON.stringify(path)}`)
@@ -471,9 +471,13 @@ export function containerBackend(config = containerConfig()) {
           ...[...state.binaries.values()].map((b) => ["--mount", `type=bind,src=${b.host},dst=${b.inside},readonly`]),
           ...(config.assets ?? []).map((a) => ["--mount", `type=bind,src=${a.host},dst=${ASSETS_DIR}/${a.name},readonly`]),
         ].flat()
+        // Fake mode: the vendor's host name is this trial's own loopback address (its /etc/hosts; the trial has no DNS), and the namespaced sysctl lets the
+        // fake bind :443 with every capability dropped.
+        const hostArgs = hosts.length ? ["--sysctl", "net.ipv4.ip_unprivileged_port_start=0", ...hosts.flatMap((h) => ["--add-host", `${h.host}:${h.ip}`])] : []
+        for (const h of hosts) if (!/^[a-z0-9.-]+$/.test(h.host) || !/^127\.\d+\.\d+\.\d+$/.test(h.ip) || h.ip === "127.0.0.1") throw new Error(`a trial maps a host name to its own loopback address only, not ${JSON.stringify(h)}`)
         const uid = typeof process.getuid === "function" ? `${process.getuid()}:${process.getgid()}` : "1000:1000"
         const created = await must(
-          ["run", "-d", "--name", ref, ...labelArgs({ "evals.role": "trial", "evals.trial": name }), "--network", ref, "--hostname", "evals", "--user", uid, "--read-only", "--tmpfs", `/tmp:rw,nosuid,nodev,size=${tmpfs_mb}m`, "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", String(pids), "--memory", `${memory_mb}m`, "--memory-swap", `${memory_mb}m`, "--cpus", String(cpus), ...binds, "--workdir", root, state.image],
+          ["run", "-d", "--name", ref, ...labelArgs({ "evals.role": "trial", "evals.trial": name }), "--network", ref, "--hostname", "evals", "--user", uid, "--read-only", "--tmpfs", `/tmp:rw,nosuid,nodev,size=${tmpfs_mb}m`, "--cap-drop", "ALL", "--security-opt", "no-new-privileges", ...hostArgs, "--pids-limit", String(pids), "--memory", `${memory_mb}m`, "--memory-swap", `${memory_mb}m`, "--cpus", String(cpus), ...binds, "--workdir", root, state.image],
           "starting the trial container",
         )
         trial.container = created.split("\n").pop()
@@ -516,10 +520,18 @@ export function containerBackend(config = containerConfig()) {
       trial.watchdog.unref?.()
 
       /** The command that runs `spec` inside the container; secrets and everything else by name only. */
+      // What fake mode adds to the trial's environment: the per-batch CA (the runtime's own NODE_EXTRA_CA_CERTS: this trial trusts it, nothing else does) and
+      // the mapped host names kept off the egress proxy, so the request goes to the fake on loopback and nowhere else.
+      const extraEnv = {}
+      if (hosts.length) {
+        const noProxy = ["127.0.0.1", "localhost", ...hosts.map((h) => h.host)].join(",")
+        extraEnv.NO_PROXY = extraEnv.no_proxy = noProxy
+      }
+      if (ca) extraEnv.NODE_EXTRA_CA_CERTS = ca
       trial.wrap = ({ command, args = [], cwd: dir, env = {} }) => {
         const mapped = [...state.binaries.values()].find((b) => b.command === command || b.host === command || (isAbsolute(command) && existsSync(command) && realpathSync(command) === b.host))
         const inside = mapped ? mapped.inside : command
-        const containerEnv = trialEnv(env)
+        const containerEnv = { ...trialEnv(env), ...extraEnv }
         // The mounted assets' own variables: where, inside the trial, each one lives.
         for (const a of config.assets ?? []) for (const [key, inner] of Object.entries(a.env ?? {})) containerEnv[key] = inner ? `${ASSETS_DIR}/${a.name}/${inner}` : `${ASSETS_DIR}/${a.name}`
         const names = Object.keys(containerEnv)

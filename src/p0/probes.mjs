@@ -384,7 +384,7 @@ export async function p13(env = {}) {
 // ------------------------------------------------------------------------------------------------------------------ p1 to p5
 
 /** The plugin build for one id, from a companions file, as an arm with no companions. */
-function soloArm(companions, id, options = {}) {
+export function soloArm(companions, id, options = {}) {
   const arm = fullArm(companions, { arm: id, options })
   delete arm.companions
   return arm
@@ -787,11 +787,36 @@ export async function gws(env = {}) {
 const listTools = (ns) => `const names = new Array(); let o = 0; for (;;) { const r = await search({ namespace: '${ns}', limit: 100, offset: o }); names.push(...r.items.map((i) => i.path.replace('tools.${ns}.', ''))); if (!r.next) break; o = r.next.offset } return JSON.stringify(names)`
 
 /**
+ * The Code Mode namespace text a signed-in user's plugin gives the model, from the plugin's own source (not from anything the harness wrote): Jira's constant,
+ * GitHub's function at the access the trial runs at. Run by Bun, which imports the TypeScript as it stands in the build's directory.
+ */
+export async function namespaceTextOf(id, dir, { access = "ask-changes" } = {}) {
+  const { spawnSync } = await import("node:child_process")
+  const code = {
+    jira: `import { NAMESPACE_DESCRIPTION } from ${JSON.stringify(join(dir, "src", "constants.ts"))}\nconsole.log(JSON.stringify(NAMESPACE_DESCRIPTION))`,
+    github: `import { namespaceDescription } from ${JSON.stringify(join(dir, "src", "api", "tool.ts"))}\nconsole.log(JSON.stringify(namespaceDescription({ enterprise: false, access: ${JSON.stringify(access)} })))`,
+  }[id]
+  if (!code) return null
+  const out = spawnSync(process.env.EVALS_BUN ?? "bun", ["-e", code], { encoding: "utf8", cwd: dir, timeout: 60_000 })
+  if (out.status !== 0) return null
+  return JSON.parse(out.stdout.trim())
+}
+
+/** The `jira`/`github` line of the Code Mode catalog in a dumped request: `{ tools, shown, text }`, or null when the model's request holds none. */
+export function namespaceLine(body, id) {
+  const all = (body?.messages ?? []).map((m) => (typeof m.content === "string" ? m.content : JSON.stringify(m.content))).join("\n") + "\n" + (body?.tools ?? []).map((t) => String(t.function?.description ?? t.description ?? "")).join("\n")
+  const m = new RegExp(`^- ${id} \\((\\d+) tools?, (\\d+|none) shown\\) // (.*)$`, "m").exec(all)
+  return m ? { tools: Number(m[1]), shown: m[2], text: m[3] } : null
+}
+
+/**
  * Fake mode (`accounts: "fake"`, GitHub and Jira): the plugin is measured with no account and no real endpoint. Per plugin, one locked trial of the
  * released build, pointed at the harness's fake MCP server by the sealed config's MCP override, with no credential, shows:
  *   - the model sees the pack's full tool list (the catalog's tools, and the plugin's own), not the two own tools an unsigned plugin lists alone;
  *   - a read returns the fixture's data, and the fake's log shows the call it got;
  *   - a write is asked and declined, never reaching the fake;
+ *   - the plugin runs as released, on its DEFAULT vendor URL (no override in the config, so no `conflict`): its namespace description is the text its own source gives a
+ *     signed-in user, its status RPC says `connected` with its own server as the source, and the fake's log shows the vendor's host name in each request's Host header;
  *   - no request left the trial: nothing reached the egress proxy at all;
  * and one local trial (shell on, no credential) shows the proxy refuses api.github.com, the vendors' MCP hosts and *.atlassian.net.
  */
@@ -812,10 +837,10 @@ export async function fake(env = {}) {
   for (const id of ["github", "jira"]) {
     const catalog = readCatalog(id)
     const own = OWN_TOOLS[id]
-    const cases = [{ id: `tools-fake-${id}-list`, prompt: execute(listTools(id)) }, { id: `tools-fake-${id}-read`, prompt: reads[id] }, { id: `tools-fake-${id}-write`, prompt: writes[id] }]
+    const cases = [{ id: `tools-fake-${id}-list`, prompt: execute(listTools(id)) }, { id: `tools-fake-${id}-read`, prompt: reads[id] }, { id: `tools-fake-${id}-write`, prompt: writes[id] }, { id: `tools-fake-${id}-dump`, prompt: "[[mock:dump]] what do you have" }]
     const run = await scriptedRun({ plugin: id, cases, arm: soloArm(env.companions, id, {}), options: { iteration: `p0-fake-${id}`, auth: "none" }, tmp: env.tmp })
     try {
-      const [list, read, write] = cases.map((c) => run.trials[c.id])
+      const [list, read, write, dump] = cases.map((c) => run.trials[c.id])
       const seen = (() => {
         const v = executeValue(list.calls[0])
         return Array.isArray(v) ? v : []
@@ -836,6 +861,23 @@ export async function fake(env = {}) {
       checks.push(ok(`${id}: a write is asked and declined, and never reaches the fake`, (declinedIn(write.calls[0]) || /cannot ask the user|declined|rejected/i.test(textOf(write.calls[0])) || write.analysed.inner.declined >= 1) && !wlog.some((e) => e.ev === "tools/call"), textOf(write.calls[0]).slice(0, 100).replace(/\s+/g, " ")))
       checks.push(ok(`${id}: the guard saw no write complete and no tool outside the allow-list`, (write.summary?.guard?.committed ?? 0) === 0 && (write.summary?.guard?.refused_tools ?? 0) === 0 && (read.summary?.guard?.refused_tools ?? 0) === 0, JSON.stringify(write.summary?.guard)))
       checks.push(ok(`${id}: the plugin loaded`, [list, read, write].every((t) => (t.summary?.host_log?.plugin_load_failures ?? []).length === 0), JSON.stringify(list.summary?.host_log?.plugin_load_failures ?? [])))
+      // As released: the namespace text, the status and the host the requests carried.
+      const { FAKE_HOSTS } = await import("../run/fake-mode.mjs")
+      const status = (() => {
+        try {
+          return JSON.parse(list.fakeStatus?.[id] ?? "").output ?? null
+        } catch {
+          return null
+        }
+      })()
+      const expected = await namespaceTextOf(id, soloArm(env.companions, id, {}).package, { access: status?.access ?? "ask-changes" })
+      const line = namespaceLine(dump.mock.find((e) => e.ev === "dump")?.body, id)
+      checks.push(ok(`${id}: the model sees the plugin's namespace description, as a signed-in user's plugin gives it (the text of its own source, ${expected ? expected.length : "?"} chars)`, Boolean(expected) && Boolean(line) && line.text === expected, line ? (line.text === expected ? "same text" : `got: ${line.text.slice(0, 120)}`) : "no ${id} line in the Code Mode catalog the model was given"))
+      checks.push(ok(`${id}: the catalog line counts the pack's tools (${served.length} served + ${own.length} own)`, Boolean(line) && line.tools === served.length + own.length, line ? `${line.tools} tools, ${line.shown} shown` : "no line"))
+      checks.push(ok(`${id}: the plugin's status is connected, not conflict, and its server is its own, on the default URL`, status?.state === "connected" && (id === "github" || (status.source?.type === "plugin" && status.source?.url === "https://mcp.atlassian.com/v2/mcp?tools=all")) && (id === "jira" ? status.tools === served.length : status.tools?.visible === served.length), JSON.stringify({ state: status?.state, source: status?.source, tools: status?.tools })))
+      const flog = [...(list.fake[id] ?? []), ...(read.fake[id] ?? [])]
+      const carried = flog.filter((e) => e.ev === "initialize" || e.ev === "tools/list" || e.ev === "tools/call")
+      checks.push(ok(`${id}: every request the fake got carried the vendor's own host name (${FAKE_HOSTS[id].host}), so the plugin ran on its default URL`, carried.length >= 3 && carried.every((e) => e.host === FAKE_HOSTS[id].host), `${carried.length} request(s); hosts ${[...new Set(carried.map((e) => e.host))].join(", ")}`))
       const egress = run.egress ?? {}
       const hosts = Object.keys({ ...egress.allowed, ...egress.refused, ...egress.failed })
       checks.push(ok(`${id}: no request left the trial: nothing reached the egress proxy, allowed or refused`, hosts.length === 0, JSON.stringify({ allowed: egress.allowed, refused: egress.refused, failed: egress.failed })))

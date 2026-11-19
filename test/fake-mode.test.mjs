@@ -1,13 +1,14 @@
 // Fake mode (`accounts: fake`, GitHub and Jira): the catalogs, the fixtures, the `@fixture` clause, the override and the fake MCP server over HTTP.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, readFileSync, rmSync, existsSync, writeFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, readdirSync, rmSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { spawn, spawnSync } from "node:child_process"
 import { parseSignature } from "../src/fake/ts-signature.mjs"
 import { OWN_TOOLS, catalogProblems, githubCatalog } from "../scripts/mcp-catalog.mjs"
-import { readCatalog, mcpOverride, installFake, fakeFor, REAL_HOSTS } from "../src/run/fake-mode.mjs"
+import { readCatalog, installFake, fakeFor, hostsFor, FAKE_HOSTS, REAL_HOSTS } from "../src/run/fake-mode.mjs"
+import { makeFakeCa } from "../src/run/fake-ca.mjs"
 import { fixtureFacts } from "../src/fake/facts.mjs"
 import * as githubFixture from "../src/fake/fixtures/github.mjs"
 import * as jiraFixture from "../src/fake/fixtures/jira.mjs"
@@ -127,21 +128,50 @@ test("compile refuses an @fixture clause for an unknown plugin or fact, and a fa
   assert.throws(() => compile("text:any contains @fixture.github.me", "github", "real"), /declare `- Data: synthetic`/)
 })
 
-test("the MCP override names the plugin's own server and points at the fake on loopback; the sealed config carries it", () => {
-  const override = mcpOverride({ github: 4101, jira: 4102 })
-  assert.deepEqual(override, { github: { type: "remote", url: "http://127.0.0.1:4101/mcp" }, jira: { type: "remote", url: "http://127.0.0.1:4102/mcp" } })
-  assert.deepEqual(sealedConfig({ armDir: null, model: "mock/m1", mcp: override }).mcp, override)
-  assert.equal(sealedConfig({ armDir: null, model: "mock/m1" }).mcp, undefined)
+test("fake mode adds no MCP server to the config: the plugin registers its own at its default URL, and the trial maps that host to the fake", () => {
+  // A server of the plugin's own name in the config is a `conflict` to both plugins (no namespace text, no tool filter): nothing may put one there.
+  for (const mcp of [undefined, { github: { type: "remote", url: "http://127.0.0.1:1/mcp" } }]) assert.equal(sealedConfig({ armDir: null, model: "mock/m1", mcp }).mcp, undefined)
   assert.deepEqual(fakeFor(["github", "slack", "jira"], new Set(["github", "jira"])), ["github", "jira"])
+  assert.deepEqual(hostsFor(["jira", "github"]), [{ id: "jira", host: "mcp.atlassian.com", ip: "127.0.0.3" }, { id: "github", host: "api.githubcopilot.com", ip: "127.0.0.2" }])
+  // each plugin's own loopback address, never 127.0.0.1 (the trial's own server and the mock live there)
+  assert.equal(new Set(Object.values(FAKE_HOSTS).map((h) => h.ip)).size, 2)
+  for (const { ip } of Object.values(FAKE_HOSTS)) assert.match(ip, /^127\.0\.0\.[2-9]$/)
   for (const hosts of Object.values(REAL_HOSTS)) assert.ok(hosts.length >= 3)
+  for (const [id, { host }] of Object.entries(FAKE_HOSTS)) assert.ok(REAL_HOSTS[id].includes(host), `${host} is a host the proxy refuses`)
 })
 
-test("installFake copies the server, the fixtures and the catalogs of the plugins asked for, and nothing else", () => {
+test("the per-batch CA signs the fake hosts only, keeps no key, and a leaf is good for its own host name alone", () => {
+  const dir = scratch()
+  try {
+    const { ca, leaves } = makeFakeCa(dir, { github: "api.githubcopilot.com", jira: "mcp.atlassian.com" })
+    assert.deepEqual(readdirSync(dir).filter((f) => f === "ca.key"), [], "the CA's private key is deleted once the leaves are signed")
+    const verify = (cert, host) => spawnSync("openssl", ["verify", "-CAfile", ca, "-verify_hostname", host, cert], { encoding: "utf8" })
+    assert.equal(verify(leaves.jira.cert, "mcp.atlassian.com").status, 0)
+    assert.equal(verify(leaves.github.cert, "api.githubcopilot.com").status, 0)
+    assert.notEqual(verify(leaves.jira.cert, "api.githubcopilot.com").status, 0, "a leaf names its own host")
+    const text = spawnSync("openssl", ["x509", "-in", ca, "-noout", "-text"], { encoding: "utf8" }).stdout
+    assert.match(text, /Name Constraints: critical\s+Permitted:\s+DNS:api\.githubcopilot\.com\s+DNS:mcp\.atlassian\.com/, "the CA may sign only the fake hosts")
+    assert.match(text, /CA:TRUE, pathlen:0/)
+    assert.throws(() => makeFakeCa(join(dir, "x"), { a: "bad host;rm" }), /not a host name/)
+    assert.throws(() => makeFakeCa(join(dir, "y"), {}), /no host/)
+    // a second batch's CA is another CA: nothing carries over
+    const other = makeFakeCa(join(dir, "other"), { jira: "mcp.atlassian.com" })
+    assert.notEqual(readFileSync(other.ca, "utf8"), readFileSync(ca, "utf8"))
+    assert.notEqual(verify(other.leaves.jira.cert, "mcp.atlassian.com").status, 0, "a leaf of another batch's CA is not trusted by this one")
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test("installFake copies the server, the fixtures and the catalogs of the plugins asked for, makes the batch's CA, and refuses a plugin it holds no catalog or host for", () => {
   const dir = scratch()
   try {
     const out = installFake(dir, ["github"])
-    for (const f of ["mcp-server.ts", "github.catalog.json", "fixtures/github.mjs"]) assert.ok(existsSync(join(out, f)), f)
-    assert.equal(existsSync(join(out, "jira.catalog.json")), false)
+    for (const f of ["mcp-server.ts", "github.catalog.json", "fixtures/github.mjs", "tls/ca.pem", "tls/github.key", "tls/github.pem"]) assert.ok(existsSync(join(out.dir, f)), f)
+    assert.equal(existsSync(join(out.dir, "jira.catalog.json")), false)
+    assert.equal(existsSync(join(out.dir, "tls", "ca.key")), false)
+    assert.equal(out.ca, join(out.dir, "tls", "ca.pem"))
+    assert.deepEqual(Object.keys(out.leaves), ["github"])
     assert.throws(() => installFake(dir, ["slack"]), /packs\/slack\/mcp\.json does not exist/)
   } finally {
     rmSync(dir, { recursive: true, force: true })
@@ -173,12 +203,43 @@ test("the fake server speaks MCP over HTTP: it lists the pack's tools, answers f
     const unknown = await (await rpc({ method: "tools/call", params: { name: "no_such_tool", arguments: {} } })).json()
     assert.match(unknown.error.message, /Unknown tool/)
     assert.equal((await fetch(`http://127.0.0.1:${port}/mcp`, { method: "GET" })).status, 405)
-    assert.equal((await fetch(`http://127.0.0.1:${port}/elsewhere`)).status, 404)
+    assert.equal((await fetch(`http://127.0.0.1:${port}/.well-known/oauth-protected-resource`)).status, 404, "no discovery document: a client finds no sign-in to do")
+    // the vendors' own paths answer, whatever they are (/v2/mcp for Jira, /mcp/ for GitHub)
+    for (const path of ["/v2/mcp?tools=all", "/mcp/"]) assert.equal((await (await fetch(`http://127.0.0.1:${port}${path}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 9, method: "ping" }) })).json()).id, 9, path)
     const entries = readFileSync(log, "utf8").trim().split("\n").map((l) => JSON.parse(l))
     assert.deepEqual(entries.filter((e) => e.ev === "tools/call").map((e) => e.tool), ["list_issues", "add_issue_comment", "no_such_tool"])
     assert.equal(entries.find((e) => e.tool === "no_such_tool").unknown, true)
   } finally {
     proc.kill()
     rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test("fake mode needs a confined trial: --isolation none is refused for a fake plugin, since only a container can map the vendor's host name to the fake", async () => {
+  const { mkdirSync, writeFileSync: write } = await import("node:fs")
+  const { runBatch } = await import("../src/run/runner.mjs")
+  const { installFakeOpencode, installFakeBun } = await import("./helpers/fake-opencode.mjs")
+  const root = scratch()
+  try {
+    const store = join(root, "store")
+    mkdirSync(store)
+    const casesDir = join(root, "cases")
+    mkdirSync(casesDir)
+    const text = body("call:github.list_issues#1", "github").replace("how many open issues are there", "list the open issues of fabrikam-labs/quill-notes")
+    write(join(casesDir, "tools-fixture-x.json"), JSON.stringify(compileCase("cases/github/tools-fixture-x.md", text)))
+    const arm = join(root, "plugin")
+    mkdirSync(join(arm, "dist"), { recursive: true })
+    write(join(arm, "package.json"), JSON.stringify({ name: "@x/github", version: "0.0.8" }))
+    write(join(arm, "dist", "index.js"), "export default {}\n")
+    const bin = join(root, "bin")
+    mkdirSync(bin)
+    const home = join(root, "user")
+    mkdirSync(home)
+    const tmp = join(root, "tmp")
+    mkdirSync(tmp)
+    const caller = { PATH: process.env.PATH, HOME: home, EVALS_STORE: store, EVALS_OPENCODE_BIN: installFakeOpencode(bin), EVALS_BUN: installFakeBun(bin), EVALS_TMP: tmp }
+    await assert.rejects(runBatch({ isolation: "none", unsafeNoIsolation: true, plugin: "github", model: "mock/m1", scripted: true, cases: "tools-fixture-x", arm, casesDir, set: "wide", iteration: "fk", auth: "none" }, { caller, log: () => {} }), /fake mode \(github\) needs --isolation container/)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
   }
 })

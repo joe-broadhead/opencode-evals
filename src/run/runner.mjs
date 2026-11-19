@@ -32,7 +32,7 @@ import { buildPolicy, installGuard } from "./guard/policy.mjs"
 import { gateCases, seedFiles, dataPreflight, loadDataMatrix } from "./gate.mjs"
 import { resolveCommitPlan } from "./commit-plan.mjs"
 import { noAccountPlugins, fakePlugins, noCredentialPlugins, pluginsOf } from "./accounts.mjs"
-import { fakeFor, installFake, mcpOverride } from "./fake-mode.mjs"
+import { FAKE_HOSTS, fakeFor, hostsFor, installFake } from "./fake-mode.mjs"
 import { haltReason, readHalt, writeHalt, haltMessage } from "./halt.mjs"
 import { integrationsFor } from "./vendor-auth.mjs"
 import { checkBalances, vendorUseOf, SPENDING, perRunWorst } from "./balance.mjs"
@@ -217,12 +217,12 @@ export async function modelRoutes({ trial, binary, url, env, cwd, model, timeout
 async function preflightRoute(p) {
   const sandbox = makeSandbox(join(p.batchRoot, "preflight"))
   mkdirSync(join(sandbox.project, ".git"), { recursive: true })
-  // Fake mode: the preflight must not reach for the real MCP servers either, so the fake plugins' servers point at a closed loopback port.
-  const config = sealedConfig({ armDir: p.armDir, options: p.options, model: p.model, scripted: p.scripted, scriptedProvider: p.scriptedProvider, ...p.sealed, ...(p.fakeMcp ? { mcp: p.fakeMcp } : {}) })
+  const config = sealedConfig({ armDir: p.armDir, options: p.options, model: p.model, scripted: p.scripted, scriptedProvider: p.scriptedProvider, ...p.sealed })
   writeConfig(sandbox, config)
   const password = newPassword()
   registerSecrets([password])
-  const trial = await p.isolation.enter({ name: "preflight", sandbox, mounts: p.mounts, cwd: sandbox.project })
+  // Fake mode: the plugins' own vendor hosts are mapped to loopback here too, with nothing listening, so the preflight reaches neither the fake nor the proxy nor the vendor.
+  const trial = await p.isolation.enter({ name: "preflight", sandbox, mounts: p.mounts, cwd: sandbox.project, ...(p.fake ? { hosts: hostsFor(p.fake.ids), ca: p.fake.ca } : {}) })
   let server = null
   let mock = null
   try {
@@ -399,7 +399,9 @@ async function startCapture({ trial, ctx, sandbox }) {
 /** Fake mode's MCP server for one plugin, inside the trial on loopback: the harness's own, serving the pack's tool list and a synthetic fixture. */
 async function startFakeMcp({ trial, ctx, sandbox, id, port }) {
   const dir = join(ctx.harnessDir, "fake")
-  const spec = trial.wrap({ command: ctx.bunBinary, args: [join(dir, "mcp-server.ts"), String(port), join(sandbox.tmp, `fake-${id}.jsonl`), join(dir, `${id}.catalog.json`), join(dir, "fixtures", `${id}.mjs`)], cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp } })
+  const { ip } = FAKE_HOSTS[id]
+  const leaf = ctx.fake.leaves[id]
+  const spec = trial.wrap({ command: ctx.bunBinary, args: [join(dir, "mcp-server.ts"), String(port), join(sandbox.tmp, `fake-${id}.jsonl`), join(dir, `${id}.catalog.json`), join(dir, "fixtures", `${id}.mjs`), ip, leaf.key, leaf.cert], cwd: sandbox.tmp, env: { HOME: sandbox.tmp, TMPDIR: sandbox.tmp } })
   const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
   let exited = false
   proc.exited.then(() => (exited = true))
@@ -408,7 +410,7 @@ async function startFakeMcp({ trial, ctx, sandbox, id, port }) {
     await stop(proc, { graceMs: 200 })
     throw new Error(`the fake ${id} MCP server did not start in the trial: ${up.last}`)
   }
-  return { id, proc, url: `http://127.0.0.1:${port}/mcp` }
+  return { id, proc }
 }
 
 /** T1's scripted model server, started for a batch: the harness's own mock, never a model. */
@@ -473,11 +475,10 @@ async function runJob(job, ctx) {
   if (seeded.length) ctx.log(`  ${name}: seeded ${seeded.length} file(s) into the project`)
   const cut = stripForeignLinks(sandbox)
   if (cut.length) ctx.log(`  ${name}: removed ${cut.length} link(s) out of the sandbox that the world's home carried (${cut.slice(0, 3).join(", ")})`)
-  // Fake mode: a port for each fake plugin the case uses, in the config before the trial starts and served by the fake once it has.
+  // Fake mode: the fake plugins this case uses. The sealed config carries no override: each plugin registers its own server at its default URL, and the trial
+  // maps that host name to the fake (a conflicting server of the plugin's own name would switch off its namespace text and tool filter).
   const fakeIds = fakeFor(pluginsOf(job.case), ctx.fakeSet ?? new Set())
-  const fakePorts = {}
-  for (const id of fakeIds) fakePorts[id] = await freePort()
-  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...ctx.sealed, ...(fakeIds.length ? { mcp: mcpOverride(fakePorts) } : {}) })
+  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...ctx.sealed })
   writeConfig(sandbox, config)
   const password = newPassword()
   // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
@@ -490,14 +491,14 @@ async function runJob(job, ctx) {
   let gone = false
   try {
     // The trial: under `container`, its own container and network, with the sandbox mounted at its own path.
-    trial = await ctx.isolation.enter({ name, sandbox, mounts: ctx.mounts, cwd })
+    trial = await ctx.isolation.enter({ name, sandbox, mounts: ctx.mounts, cwd, ...(fakeIds.length ? { hosts: hostsFor(fakeIds), ca: ctx.fake.ca } : {}) })
     let mock = null
     if (ctx.scripted && ctx.mockInTrial) mock = await startTrialMock({ trial, ctx, sandbox })
     const mockUrl = mock?.url ?? ctx.mockUrl
     let capture = null
     if (ctx.captureServer) capture = await startCapture({ trial, ctx, sandbox })
     const fakes = []
-    for (const id of fakeIds) fakes.push(await startFakeMcp({ trial, ctx, sandbox, id, port: fakePorts[id] }))
+    for (const id of fakeIds) fakes.push(await startFakeMcp({ trial, ctx, sandbox, id, port: await freePort() }))
     // A world's own variables go in first and never the sealed ones; the harness's (credential, endpoint) go in last.
     const fromWorld = worldEnv(prepared.env)
     if (fromWorld.dropped.length) ctx.log(`  ${name}: the world's env may not set ${fromWorld.dropped.join(", ")}: ignored`)
@@ -514,6 +515,7 @@ async function runJob(job, ctx) {
     let server = null
     let serverStderr = ""
     let result
+    const fakeStatus = {}
     try {
       server = await startServer({ binary: ctx.binary, cwd, env, password, trial })
       // A provider can fill its model list after the server answers (the Claude Agent provider probes `claude` first):
@@ -527,6 +529,12 @@ async function runJob(job, ctx) {
         // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
         const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
         result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs })
+        // Fake mode: what each fake plugin says of itself once the run is over (its own status RPC, as a client of this trial's server), kept beside the recording:
+        // the probe compares it with what a signed-in user's plugin says (state connected, source `plugin`: no conflict).
+        for (const id of fakeIds) {
+          const status = await exec(["api", "--server", server.url, "post", `/api/rpc/${ctx.fake.rpc[id]}/status`, "-d", JSON.stringify({ input: {} })], { timeoutMs: 30_000 })
+          fakeStatus[id] = status.stdout
+        }
       }
     } catch (error) {
       result = { code: null, stdout: "", stderr: String(error.message ?? error), timedOut: false, error: String(error.message ?? error) }
@@ -594,6 +602,7 @@ async function runJob(job, ctx) {
     // The scripted model's own log (a probe's `[[mock:dump]]` reads what reached the model from it), beside the recording, scrubbed like it.
     if (ctx.scripted && existsSync(join(sandbox.tmp, "mock.jsonl"))) writeAtomic(out(".mock.jsonl"), redact(readFileSync(join(sandbox.tmp, "mock.jsonl"), "utf8")))
     // The fake MCP servers' logs (what the model asked of them), beside the recording, scrubbed like it.
+    for (const [id, status] of Object.entries(fakeStatus)) writeAtomic(out(`.fake-${id}.status.json`), redact(status))
     for (const id of fakeIds) if (existsSync(join(sandbox.tmp, `fake-${id}.jsonl`))) writeAtomic(out(`.fake-${id}.jsonl`), redact(readFileSync(join(sandbox.tmp, `fake-${id}.jsonl`), "utf8")))
     // The capture server's log (P0-13), beside the recording, scrubbed like it.
     if (ctx.captureServer && existsSync(join(sandbox.tmp, "capture.jsonl"))) writeAtomic(out(".capture.jsonl"), redact(readFileSync(join(sandbox.tmp, "capture.jsonl"), "utf8")))
@@ -864,7 +873,11 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     if (interrupted) return
     interrupted = reason
     stopped = `interrupted by ${reason}`
-    log(`evals run: ${stopped}; stopping every run this batch started`)
+    try {
+      log(`evals run: ${stopped}; stopping every run this batch started`)
+    } catch {
+      // a closed output must not keep the batch from stopping
+    }
     await killAll()
     // Killing a `docker exec` client does not stop what it started inside: every trial container, its network and the
     // proxy are removed before the batch is written up.
@@ -880,12 +893,21 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const handlers = {
     SIGINT: () => onInterrupt("SIGINT", 130),
     SIGTERM: () => onInterrupt("SIGTERM", 143),
+    // A handler that logs must never throw into itself: a log line to a closed pipe is an error, which would call this handler again, for ever.
     uncaughtException: (error) => {
-      log(`evals run: ${error?.stack ?? error}`)
+      try {
+        log(`evals run: ${error?.stack ?? error}`)
+      } catch {
+        // nobody is reading the output: the batch is stopped all the same
+      }
       onInterrupt("an uncaught error", 1)
     },
     unhandledRejection: (error) => {
-      log(`evals run: ${error?.stack ?? error}`)
+      try {
+        log(`evals run: ${error?.stack ?? error}`)
+      } catch {
+        // as above
+      }
       onInterrupt("an unhandled rejection", 1)
     },
   }
@@ -927,9 +949,11 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       cpSync(resolve(import.meta.dirname, "..", "p0", "capture-server.ts"), join(harnessDir, "capture", "capture-server.ts"))
     }
     // Fake mode: the fake MCP server, its fixtures and the catalogs of the fake plugins the cases use, where the trial's container can read them.
+    let fake = null
     if (fakeIds.length) {
       harnessDir ??= join(batchRoot, "harness")
-      installFake(harnessDir, fakeIds)
+      if (!isolation.confines) throw new Error(`fake mode (${fakeIds.join(", ")}) needs --isolation container: it maps the vendor's host name to the fake inside the trial, which an unconfined run cannot do`)
+      fake = { ids: fakeIds, ...installFake(harnessDir, fakeIds), rpc: Object.fromEntries(fakeIds.map((id) => [id, loadPacks().find((pack) => pack.id === id).pluginId])) }
       facts.fake_mode = fakeIds
     }
     let probeDir = null
@@ -1028,7 +1052,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       facts.deferred = deferred
       log(`deferred ${deferred.length} case(s): ${deferred.slice(0, 4).map((d) => `${d.case} (${d.why})`).join("; ")}${deferred.length > 4 ? "; …" : ""}`)
     }
-    const routed = await preflightRoute({ fakeMcp: fakeIds.length ? mcpOverride(Object.fromEntries(fakeIds.map((id) => [id, 9]))) : null, batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: scripted && Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs, sealed })
+    const routed = await preflightRoute({ fake, batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: scripted && Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs, sealed })
     if (!routed.ok) throw new Error(`preflight: the model ${options.model} does not route inside a trial within ${routeTimeoutMs / 1000} s, so no run was reserved. The trial's server lists ${routed.listed.length ? routed.listed.slice(0, 12).join(", ") : "no model"}`)
     facts.preflight = { model: options.model, routed_after_ms: routed.waitedMs }
     log(`preflight: ${options.model} routes inside a trial (after ${(routed.waitedMs / 1000).toFixed(1)} s)`)
@@ -1093,6 +1117,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       prompts: gated.prompts,
       captureServer: options.captureServer ?? null,
       fakeSet,
+      fake,
       redact,
       dollarCap: facts.dollar_cap,
       listPrice: listInfo.price,

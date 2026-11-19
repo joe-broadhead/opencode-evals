@@ -98,6 +98,8 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
   const everything = existsSync(raw) ? readdirSync(raw).map((name) => readFileSync(join(raw, name), "utf8")).join("\n") : ""
   for (const c of cases) trials[c.id].mock = readLines(join(raw, `${c.id}.t1.mock.jsonl`)).map((l) => JSON.parse(l))
   for (const c of cases) trials[c.id].fake = Object.fromEntries(readdirSync(raw).filter((name) => name.startsWith(`${c.id}.t1.fake-`) && name.endsWith(".jsonl")).map((name) => [name.replace(`${c.id}.t1.fake-`, "").replace(/\.jsonl$/, ""), readLines(join(raw, name)).map((l) => JSON.parse(l))]))
+  // What each fake plugin said of itself (its status RPC, read in the trial once the run was over), by plugin.
+  for (const c of cases) trials[c.id].fakeStatus = Object.fromEntries(readdirSync(raw).filter((name) => name.startsWith(`${c.id}.t1.fake-`) && name.endsWith(".status.json")).map((name) => [name.replace(`${c.id}.t1.fake-`, "").replace(/\.status\.json$/, ""), readFileSync(join(raw, name), "utf8")]))
   for (const c of cases) trials[c.id].capture = readLines(join(raw, `${c.id}.t1.capture.jsonl`)).map((l) => JSON.parse(l))
   return { root, store, raw, result, log, trials, everything, egress: result.egress ?? null, ledger: readLedgerFile(store), cleanup: () => rmSync(root, { recursive: true, force: true }), keep }
 }

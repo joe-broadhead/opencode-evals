@@ -26,7 +26,7 @@ export const SCRIPTED_MODEL = "mock/m1"
  * and the model. Nothing else. The scripted provider comes last: the host applies plugins in order, so a plugin under
  * test that registers a provider called `mock` of its own is overridden by the harness's, never the reverse.
  */
-export function sealedConfig({ armDir, options, model, scripted = false, scriptedProvider = SCRIPTED_PROVIDER, companions = [], guardDir = null, lockdown = null, extraPlugins = [], mcp = null }) {
+export function sealedConfig({ armDir, options, model, scripted = false, scriptedProvider = SCRIPTED_PROVIDER, companions = [], guardDir = null, lockdown = null, extraPlugins = [] }) {
   const config = {
     plugins: [
       ...(armDir ? [{ package: armDir, ...(options ? { options } : {}) }] : []),
@@ -41,8 +41,6 @@ export function sealedConfig({ armDir, options, model, scripted = false, scripte
   }
   // `lockdown` is { policies, permissions } from lockdown.mjs: the tools a credentialed trial never has, and every
   // write and spending action as an ask.
-  // Fake mode's MCP override: servers named as a plugin's own, pointing at the harness's fake on loopback (src/run/fake-mode.mjs).
-  if (mcp && Object.keys(mcp).length) config.mcp = mcp
   if (lockdown?.policies?.length) config.policies = lockdown.policies
   if (lockdown?.permissions?.length) config.permissions = lockdown.permissions
   return config

@@ -124,15 +124,23 @@ tool, whose prompt is `<<TODO>>` (compile refuses it) so it is written without s
     `derived` (a name, a neutral description, an open schema); Jira's 46 are a signed-in host's Code Mode listing turned back into JSON Schema
     (`src/fake/ts-signature.mjs`; Array item types are lost in that rendering), and 9 destructive tools the sign-in's scope does not grant are `unserved`, as for a user. The
     plugin's own tools (`events_list`, GitHub's `api`) are registered by the plugin itself. Vendor example addresses are rewritten to `example.org`.
-  - **Where it points**: the sealed config's `mcp` override names a server `github` or `jira` on the fake's loopback port, which the plugin leaves untouched (its
-    documented rule for a server of its own name; neither plugin has a server-URL option). The batch preflight points it at a closed port, so it makes no request.
+  - **Where it points: nowhere new.** The plugin registers its own server at its **default** vendor URL (GitHub `https://api.githubcopilot.com/mcp/`, Jira
+    `https://mcp.atlassian.com/v2/mcp?tools=all`), so it sees no conflict and runs exactly as released: its namespace description, tool filter, status and tools RPC are a
+    signed-in user's. (A server of the plugin's own name in the config, such as a loopback override, is a `conflict` to both plugins: they drop that text and the filter.)
+    The trial reaches the fake by name resolution, not by configuration: the container's `/etc/hosts` maps the vendor's host to the fake plugin's own loopback address
+    (`--add-host`; `127.0.0.2` for GitHub, `127.0.0.3` for Jira; the trial has no DNS), `NO_PROXY` keeps that host off the egress proxy, and the fake answers TLS on `:443` with a
+    certificate of a **per-batch CA** (`src/run/fake-ca.mjs`, made with `openssl` in the batch's directory): name-constrained to the fake hosts, its private key deleted as soon as the
+    leaves are signed, handed to a trial only as that trial's `NODE_EXTRA_CA_CERTS`, and never added to the machine's trust store or the image. `--isolation none` is refused for a
+    fake plugin (only a container can map the name). The batch preflight maps the same names to a loopback address with nothing listening, so it reaches neither the fake nor the vendor.
   - **What it answers** comes from a small synthetic fixture (`src/fake/fixtures/<id>.mjs`: org `fabrikam-labs`, repo `quill-notes`; site `quill-labs.invalid`, project QLN), invented
     names only. A write that ever reached it would answer "Nothing was changed", but writes are still **asked and declined** and graded at the declined call.
   - **Grading**: a read is graded on tool choice and arguments (`call:`, `target:`), plus an outcome item against the fixture, `text:<span> contains @fixture.<plugin>.<fact>`
     (every value of a list; a number stands alone, 4 is not 14; the fact must exist in the fixture, checked at compile time), so an answer made up instead of read fails.
   - **`Data: synthetic`** is the only data a fake-mode plugin's case may declare (compile refuses anything else), so no sign-off is needed and DeepSeek may run them.
-  - **The probe**: `evals p0 fake` shows, per plugin, that the model sees the pack's full tool list, a read returns the fixture's data, a write is asked and declined and never
-    reaches the fake, no request reached the egress proxy at all, and the proxy refuses the vendors' hosts.
+  - **The probe**: `evals p0 fake` shows, per plugin, that the model sees the pack's full tool list; that the plugin ran as released (the namespace line of the Code Mode catalog the
+    model was given is the text the plugin's own source gives a signed-in user, with the tool count, and the plugin's own status RPC, read in the trial, says `connected` with its
+    own server on the default URL, not `conflict`); that every request the fake got carried the vendor's host name; that a read returns the fixture's data; that a write is asked and
+    declined and never reaches the fake; that no request reached the egress proxy at all; and that the proxy refuses the vendors' hosts.
   - **`accounts: none`** stays as a generic setting for any other plugin: no credential and no server. Its tools exist only after a sign-in, so call, target and canary clauses on
     them are n/a, and the honest-answer item `<prefix>-NA01` (a heuristic over the answer's words) is **minor**. Such a case is not deferred for a credential, a target or a canary.
 - **Slack, X and Google use the apps already configured**: no second Slack app, no second X app, no separate Google client. They are not owner prerequisites; `check-real`
