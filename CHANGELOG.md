@@ -39,6 +39,11 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
   port, privacy-scan token shapes, plugin-load failure as infra, seed and home-file limits, a commit plan tied to `targets.json`, a guard allow-list
   tripwire, P0-A2 on the enforced path, grammar checks, `evals report` on the cluster bootstrap, the live write probe, and 2.3.1 sources.
 
+- **`evals phase1`**: the G0 re-check's section D as one gated sequence (preflight, check-real, keeper, P0-6b, P0-6c, P0-7, `p0 live`, gws plan-and-commit,
+  the paid pilot), each step only if the previous one passed, with `--dry-run`, `--from`, and a HALT stopping it. And the re-check's eight changes: `Data:` derived from
+  `Seed: plugins=`, seed paths at any depth, the mid-batch HALT re-read tested, an idempotent profile port, wide blockers on undeclared argument paths refused,
+  `evals select` and automatic fresh baselines, `@alias` placeholders in the live probes, and the defence-in-depth tests.
+
 ### Changed
 
 - Every plugin's pack is re-synced to the release in the family's upgrade script (github stays at v0.0.6 until v0.0.8 is tagged).

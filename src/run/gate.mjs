@@ -69,7 +69,8 @@ export function gateCases(cases, { model, targets = null, canaries = null, matri
   const prompts = new Map()
   for (const c of cases) {
     const data = dataOf(c)
-    if (THIRD_PARTY_DATA.includes(data) && !signedOff(matrix, data, model)) {
+    // The harness's own scripted model reads nothing: a probe may hand it a call against third-party data, and no model sees the answer.
+    if (THIRD_PARTY_DATA.includes(data) && !String(model).startsWith("mock/") && !signedOff(matrix, data, model)) {
       deferred.push({ case: c.id, why: `Data: ${data} may not run on ${model}: the owner's data-matrix sign-off ($EVALS_STORE/data-matrix.json) does not list it for ${data} data${isDeepSeekRoute(model) ? " (a third party's words stay off DeepSeek unless it says so)" : ""}` })
       continue
     }
@@ -103,11 +104,16 @@ const SEED_LIMIT = 8 * 1024 * 1024
  */
 export function seedRefusal(rel) {
   const parts = rel.split("/")
-  const top = parts[0]
-  if (/^opencode\.jsonc?$/i.test(top) || /^opencode\.json/i.test(top)) return `${rel} is host configuration`
-  if (/^(AGENTS|CLAUDE)\.md$/i.test(top)) return `${rel} is an instruction file the host loads`
-  if (top === ".claude" || top === ".agents") return `${rel} is under ${top}/, which the host loads`
-  if (top === ".opencode" && !(parts[1] === "jobs" && parts.length > 2 && /\.(md|json|txt)$/i.test(rel))) return `${rel} is under .opencode/, which the host loads (only .opencode/jobs/ data files are allowed)`
+  const base = parts[parts.length - 1]
+  // At any depth: the host loads a project's configuration from the directory it starts in and every one above it, and a seed's `cwd=api`
+  // is a documented key, so `api/opencode.json` and `sub/AGENTS.md` load as surely as the top-level ones (G0 re-check, C7).
+  if (/^opencode\.json/i.test(base)) return `${rel} is host configuration`
+  if (/^(AGENTS|CLAUDE)\.md$/i.test(base)) return `${rel} is an instruction file the host loads`
+  for (let i = 0; i < parts.length - 1; i++) {
+    const dir = parts[i]
+    if (dir === ".claude" || dir === ".agents") return `${rel} is under ${dir}/, which the host loads`
+    if (dir === ".opencode" && !(parts[i + 1] === "jobs" && i + 2 < parts.length - 0 && parts.length > i + 2 && /\.(md|json|txt)$/i.test(base))) return `${rel} is under .opencode/, which the host loads (only .opencode/jobs/ data files are allowed)`
+  }
   return null
 }
 

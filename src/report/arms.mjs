@@ -179,3 +179,12 @@ export function renderReport({ rows, common, comparisons }, { detail = false } =
   }
   return lines.join("\n")
 }
+
+/**
+ * The trials that selected cases, from a graded iteration: every trial that did not strictly pass, as `<case>#<model>#<trial>` (trial from
+ * 1). A wide case is chosen for a deeper look because a trial of it failed, so the baseline is compared on the other trials only; this list
+ * is written beside the iteration's verdicts by `evals select` and read back by `evals report` (G0 re-check 14: no list made by hand).
+ */
+export function selectingTrials(runs) {
+  return runs.filter((run) => run.verdict !== "NOT_RUN" && !strictPass(run)).map((run) => `${run.case}#${run.model ?? "model"}#${run.trial}`).sort()
+}

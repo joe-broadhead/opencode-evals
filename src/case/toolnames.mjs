@@ -77,6 +77,16 @@ export function toolNameProblems(caseObject, packs) {
     for (const clause of clausesOf(item)) {
       // A wide case is one request for one tool: `call:*#1` (or `slack.*`) passes on any call at all, `skill` included.
       if (wide && ["call", "first", "before"].includes(clause.kind)) for (const name of [clause.tool, clause.kind === "before" ? clause.other : null]) if (name && String(name).includes("*")) problems.push(`${item.id}: ${clause.kind}:${name} is a positive glob in a wide case: it passes on any tool's call. Name the tool`)
+      // A blocker in a wide case that rests on an argument path nothing can check (the packs carry no input schema, so `args.chnl` passes
+      // the compiler and then never matches) is refused, unless the pack declares the argument (`args` on the tool). `target:` and a `call:`
+      // with an argument fail or are unverifiable at grade time, the safe direction, but a blocker that is always unverifiable proves nothing.
+      if (wide && item.severity === "blocker" && (clause.kind === "target" || (clause.kind === "call" && clause.arg))) {
+        const arg = clause.kind === "target" ? clause.arg : typeof clause.arg === "string" ? clause.arg : clause.arg?.path ?? ""
+        const first = String(arg).replace(/^args\./, "").split(/[.\s=<>!]/)[0]
+        const pack = packs.find((p) => p.id === caseObject.plugin)
+        const tool = (pack?.tools ?? []).find((t) => namesOfTool(pack, t).some((n) => norm(n) === norm(clause.tool)))
+        if (!(tool?.args ?? []).includes(first)) problems.push(`${item.id}: a blocker in a wide case rests on the argument \`${first}\` of ${clause.tool}, which no signature in the pack declares: a misspelt path would never match. Make it a major item, or declare the tool's \`args\` in its pack`)
+      }
       // Nothing checks an argument path against the tool's input (the packs carry no schema), so a misspelt `absent-arg:` path passes for ever.
       if (clause.kind === "absent-arg") problems.push(`${item.id}: absent-arg:${clause.tool} cannot be checked against the tool's signature, so a misspelt path would pass for ever. Use absent:, count: or target:, which fail when the path is wrong`)
     }

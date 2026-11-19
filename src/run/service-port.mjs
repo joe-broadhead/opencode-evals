@@ -34,10 +34,18 @@ export function getServicePort({ opencode, env, exec = runCommand }) {
   return out.code === 0 && Number.isInteger(n) && n > 0 && n < 65536 ? n : null
 }
 
-/** Is the profile's own service up (so its port being busy is its own doing)? */
-export function serviceRunning({ opencode, env, exec = runCommand }) {
+/**
+ * Is the profile's own service up on `port`? `opencode service status` prints `stopped`, or, for a running service, just its URL
+ * (`http://127.0.0.1:47951`), so a URL on the profile's own port is "running" (G0 re-check 5.1: without it a wrapper called twice saw its
+ * own service as a stranger on the port and moved to another each time). The words of older versions still count.
+ */
+export function serviceRunning({ opencode, env, port = null, exec = runCommand }) {
   const out = exec(opencode, ["service", "status"], { env })
-  return out.code === 0 && /running|started|active|listening/i.test(String(out.stdout)) && !/not running|stopped/i.test(String(out.stdout))
+  const text = String(out.stdout ?? "").trim()
+  if (out.code !== 0 || /not running|stopped/i.test(text)) return false
+  const url = /https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):(\d+)/i.exec(text)
+  if (url) return port === null || Number(url[1]) === port
+  return /running|started|active|listening/i.test(text)
 }
 
 /** The real service's port: its configuration, else EVALS_REAL_SERVICE_PORT, else the default the host reports. */
@@ -55,7 +63,7 @@ export function realServicePort({ opencode, realEnv, exec = runCommand, env = pr
 export function ensureServicePort({ opencode, profileEnv, realEnv, exec = runCommand, isFree = portIsFree, preferred = EVALS_PORT, env = process.env }) {
   const real = realServicePort({ opencode, realEnv, exec, env })
   const mine = getServicePort({ opencode, env: profileEnv, exec })
-  if (mine && mine !== real && (isFree(mine) || serviceRunning({ opencode, env: profileEnv, exec }))) return { port: mine, real, changed: false }
+  if (mine && mine !== real && (isFree(mine) || serviceRunning({ opencode, env: profileEnv, port: mine, exec }))) return { port: mine, real, changed: false }
   let port = null
   for (let candidate = preferred; candidate < preferred + SEARCH_SPAN; candidate++) {
     if (candidate === real || candidate === mine) continue

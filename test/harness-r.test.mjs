@@ -575,9 +575,9 @@ test("files a run wrote under named places of its HOME are recorded, and nothing
     assert.equal(changes[0].text, "the note\n")
     assert.ok(!JSON.stringify(changes).includes("do not record"), "an unnamed place of the home is not in the record")
     assert.deepEqual(changedHome(snapshotHome(home, []), home, []), [])
-    const c = compileCase("cases/plaud/tools-export.md", `# tools-export\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: synthetic\n- Set: wide\n- Home files: Plaud, Downloads/evals\n\n## Prompt\nexport it\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:~/Plaud/** exists\n`)
+    const c = compileCase("cases/plaud/tools-export.md", `# tools-export\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: real\n- Set: wide\n- Home files: Plaud, Downloads/evals\n\n## Prompt\nexport it\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:~/Plaud/** exists\n`)
     assert.deepEqual(c.home_files, ["Plaud", "Downloads/evals"])
-    assert.throws(() => compileCase("cases/plaud/tools-x.md", `# tools-x\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: synthetic\n- Home files: ../etc\n\n## Prompt\np\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:a exists\n`), /Home files/)
+    assert.throws(() => compileCase("cases/plaud/tools-x.md", `# tools-x\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: real\n- Home files: ../etc\n\n## Prompt\np\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:a exists\n`), /Home files/)
     // and a file: clause grades it
     const view = runView([{ schema: "oc-trace/1", run_id: "t/0", case: "t", exit: 0, summary: { text: { sha256: "0".repeat(64) }, tokens: {} } }], { files: changes })
     assert.equal(gradeCase(c, view).verdict, "PASS")

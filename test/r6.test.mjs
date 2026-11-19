@@ -212,7 +212,7 @@ test("the Data: header compiles to `data`, and only the five kinds are accepted"
   for (const kind of ["synthetic", "seeded", "own", "real", "candidate"]) assert.equal(compileCase("cases/linear/x.md", caseText("tools-x", `- Data: ${kind}`)).data, kind)
   assert.equal(compileCase("cases/linear/x.md", caseText("tools-x", "- Data: Real")).data, "real", "case-insensitive")
   assert.throws(() => compileCase("cases/linear/x.md", caseText("tools-x").replace("- Data: synthetic\n", "")), /Data is required/, "a case that omits it does not compile")
-  assert.throws(() => compileCase("cases/metaview/tools-x.md", caseText("tools-x", "- Data: seeded").replace("- Plugin: linear", "- Plugin: metaview")), /metaview case reads candidate data/, "HR records are candidate data whatever the case says")
+  assert.throws(() => compileCase("cases/metaview/tools-x.md", caseText("tools-x", "- Data: seeded").replace("- Plugin: linear", "- Plugin: metaview")), /a case that uses metaview reads candidate data/, "HR records are candidate data whatever the case says")
   assert.throws(() => compileCase("cases/linear/x.md", caseText("tools-x", "- Data: secret")), /Data must be one of/)
 })
 

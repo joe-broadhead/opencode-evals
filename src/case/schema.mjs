@@ -30,8 +30,29 @@ export const THIRD_PARTY_DATA = ["real", "candidate"]
  */
 export const LEGACY_DATA = Object.freeze({ history: "own", x: "real", charts: "synthetic", p0: "synthetic" })
 
-/** The least a plugin's cases may declare: a plugin that reads HR records is `candidate` data whatever a case says. */
-export const DATA_MINIMUM = Object.freeze({ metaview: "candidate", ashby: "candidate" })
+/**
+ * The least a plugin's cases may declare, because of what the plugin reads: other people's words (meetings, recordings, CRM notes) are
+ * `real`, HR records are `candidate`. A case's own label is the writer's word, so the minimum is derived: the highest over the case's
+ * plugin and every plugin its `Seed: plugins=` names (G0 re-check 3.1). Slack, gws and the other plugins whose reads can be sandbox-only
+ * have none: their cases say `seeded` or `synthetic` when the data is the owner's own sandbox.
+ */
+export const DATA_MINIMUM = Object.freeze({ metaview: "candidate", ashby: "candidate", granola: "real", wisprflow: "real", plaud: "real", affinity: "real" })
+
+/** The plugins a `Seed:` line names (`plugins=a,b`, with the spaces `Seed: plugins=a, b files=x` allows). */
+export function seedPlugins(seed) {
+  const m = /(?:^|\s)plugins=([^=]*?)(?=\s+[A-Za-z][A-Za-z0-9_-]*=|$)/.exec(String(seed ?? ""))
+  return m ? m[1].split(/[\s,]+/).filter(Boolean) : []
+}
+
+/** The lowest `Data:` a case may declare, and the plugin that sets it: `{ kind, plugin }` or null. */
+export function dataMinimum(caseObject) {
+  let best = null
+  for (const plugin of [caseObject.plugin, ...seedPlugins(caseObject.seed)]) {
+    const kind = DATA_MINIMUM[plugin]
+    if (kind && (!best || DATA_KINDS.indexOf(kind) > DATA_KINDS.indexOf(best.kind))) best = { kind, plugin }
+  }
+  return best
+}
 
 /** The plugins this repository holds a pack for: the round's own corpora (a fixture plugin of a test has none). */
 const PACKS_DIR = join(import.meta.dirname, "..", "..", "packs")
@@ -40,7 +61,12 @@ export const packPlugins = () => new Set(existsSync(PACKS_DIR) ? readdirSync(PAC
 export const isLegacyCase = (caseObject) => caseObject.plugin in LEGACY_DATA && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)
 
 /** What a case reads: its `Data:`, else what a legacy corpus always held, else (never reached: compile refuses it) `real`. */
-export const dataOf = (caseObject) => caseObject.data ?? LEGACY_DATA[caseObject.plugin] ?? "real"
+export const dataOf = (caseObject) => {
+  const declared = caseObject.data ?? LEGACY_DATA[caseObject.plugin] ?? "real"
+  // Never below what the plugins a case uses read, whatever its label says (defence in depth: compile refuses the case first).
+  const minimum = dataMinimum(caseObject)
+  return minimum && DATA_KINDS.indexOf(declared) < DATA_KINDS.indexOf(minimum.kind) ? minimum.kind : declared
+}
 
 /**
  * The sets this round reserves (`Set:`), each with the id shape it requires, so an id says what a case is for:
@@ -122,7 +148,8 @@ export function validateCase(caseObject, file = "<case>") {
   }
   if (caseObject.data === undefined && !isLegacyCase(caseObject)) bad(`Data is required (one of ${DATA_KINDS.join(", ")}): it says whose words the case reads, and a case that omits it would be taken for synthetic. Add \`- Data: ...\` to the header`)
   if (!isLegacyCase(caseObject) && packPlugins().has(caseObject.plugin) && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)) bad(`a case declares one of this round's sets (${Object.keys(ROUND_SETS).join(", ")}): \`- Set: ...\`; only the history, x and charts corpora written before it are exempt`)
-  if (caseObject.data !== undefined && DATA_MINIMUM[caseObject.plugin] && DATA_KINDS.indexOf(caseObject.data) < DATA_KINDS.indexOf(DATA_MINIMUM[caseObject.plugin])) bad(`a ${caseObject.plugin} case reads ${DATA_MINIMUM[caseObject.plugin]} data (HR records), not ${caseObject.data}: declare \`- Data: ${DATA_MINIMUM[caseObject.plugin]}\``)
+  const minimum = caseObject.data !== undefined ? dataMinimum(caseObject) : null
+  if (minimum && DATA_KINDS.indexOf(caseObject.data) < DATA_KINDS.indexOf(minimum.kind)) bad(`a case that uses ${minimum.plugin}${minimum.plugin === caseObject.plugin ? "" : " (Seed: plugins=)"} reads ${minimum.kind} data${minimum.kind === "candidate" ? " (HR records)" : " (other people's words)"}, not ${caseObject.data}: declare \`- Data: ${minimum.kind}\` (or higher)`)
   if (caseObject.data !== undefined && !DATA_KINDS.includes(caseObject.data)) bad(`Data must be one of ${DATA_KINDS.join(", ")}, not ${JSON.stringify(caseObject.data)}`)
   if (caseObject.holdout && !holdoutId(caseObject.plugin).test(caseObject.id) && !(caseObject.plugin === "history" && /^ho-/.test(caseObject.id))) bad(`a holdout's id is hold-${caseObject.plugin}-<n>-<slug>, not ${JSON.stringify(caseObject.id)}`)
   for (const claim of caseObject.truth ?? []) if (typeof claim?.path !== "string" || !("value" in claim)) bad("a truth is {path, value}")

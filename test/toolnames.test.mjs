@@ -28,7 +28,7 @@ do it
 ${evidence.map((e) => `  evidence: ${e}`).join("\n")}
 `)
 
-const check = (plugin, id, header, ...evidence) => toolNameProblems(mk(plugin, id, header, evidence), packs)
+const check = (plugin, id, header, ...evidence) => toolNameProblems(mk(plugin, id, plugin === "granola" ? `${header}\n- Data: real` : header, evidence), packs)
 
 test("a tool the plugin has, by any of its names, is fine; one it lacks is a problem that names the version", () => {
   assert.deepEqual(check("slack", "tools-slack-send-message", "- Set: wide", "absent:slack_send_message", "absent:slack.slack_send_message", "declined:slack_slack_send_message", "count:slack_search_users <= 2"), [])

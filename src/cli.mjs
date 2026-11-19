@@ -13,6 +13,8 @@
 //                  [--isolation container|none] [--unsafe-no-isolation]   (container by default; none needs the flag)
 //                  [--accept-unknown-token-expiry]   (a claude-agent sign-in with no expiry: refused without it)
 //   evals truth    --plugin x --world DIR [--cases-dir DIR] [--set all]   each case's Truth: against the world's truth
+//   evals select   <iteration>   the trials that selected cases (a baseline is judged on the others)
+//   evals phase1   [--dry-run] [--from STEP] ...   the credentialed phase's gated order (docs/running.md#phase-1)
 //   evals halt     [--clear]   what halted the wave (a write that completed where none may), and clearing it
 //   evals p0       [a1|a2|a3|a4|a5|c|g|p13|all] [--companions FILE]   the safety probes G0 rests on: scripted model or a capture server, no credential
 //   evals isolation build|check|sweep   the container backend's image (docker/Dockerfile), its checks, and the removal
@@ -58,7 +60,7 @@ import { builtinCollisions } from "./grade/select.mjs"
 import { pluginCases, privateHoldoutsDir } from "./case/load.mjs"
 import { rawCallArgs } from "./trace/rawArgs.mjs"
 import { loadTargets, loadCanaries } from "./grade/targets.mjs"
-import { compare as compareArms, renderReport, holdoutOf } from "./report/arms.mjs"
+import { compare as compareArms, renderReport, holdoutOf, selectingTrials } from "./report/arms.mjs"
 import { runBatch, batchTmp, truthCheck } from "./run/runner.mjs"
 import { loadWorld } from "./run/world.mjs"
 import { renderTruthProblem } from "./case/truth.mjs"
@@ -512,6 +514,8 @@ export async function main(argv) {
         `| cost per passing case | ${n.costPerPass.delta === null ? `not computable (cost source: ${n.costSource})` : `${n.costPerPass.delta > 0 ? "+" : ""}${Math.round(n.costPerPass.delta * 100)}%`} |`,
         "",
         `Comparability: ${comparison.why.length ? comparison.why.join("; ") : "every axis but the one under test matches"}.`,
+        "",
+        "This is the ship-or-hold gate on comparability and regressions. It computes no interval: the statistical claim (the case-cluster bootstrap, fresh baseline trials, the holdout gate) is `evals report`'s.",
       ]
       console.log(lines.join("\n"))
       return
@@ -549,6 +553,37 @@ export async function main(argv) {
       if (result.stopped || result.results?.some((r) => r.error || r.infra)) process.exitCode = 1
       return
     }
+    case "select": {
+      // The trials of a graded iteration that did not strictly pass: they selected their cases, so the baseline is judged on the others.
+      const iteration = segment("iteration", opt.iteration && opt.iteration !== true ? opt.iteration : opt._[0])
+      const file = join(storePath(), "results", iteration, "verdicts.json")
+      if (!existsSync(file)) throw new Error(`not graded: ${iteration} (run evals grade --iteration ${iteration})`)
+      const list = selectingTrials(JSON.parse(read(file)))
+      write(join(storePath(), "results", iteration, "selecting.json"), json(list))
+      console.log(`${iteration}: ${list.length} selecting trial(s) written to results/${iteration}/selecting.json; evals report reads it for the baseline`)
+      return
+    }
+    case "phase1": {
+      // The credentialed phase's gated order (docs/running.md#phase-1): each step only if the previous one passed.
+      const { runPhase1, defaultDeps, STEPS } = await import("./phase1.mjs")
+      const caller = process.env
+      const str = (value) => (value && value !== true ? value : null)
+      const store = storePath()
+      const ctx = {
+        store,
+        caller,
+        opencode: caller.OPENCODE_BIN ?? caller.EVALS_OPENCODE_BIN ?? "opencode",
+        profile: caller.EVALS_PROFILE ?? null,
+        vendors: str(opt.vendors)?.split(",").filter(Boolean) ?? [],
+        logout: str(opt.logout),
+        pilot: Boolean(opt.pilot),
+        confirmLabels: Boolean(opt["confirm-labels"]),
+      }
+      if (!opt["dry-run"]) ctx.deps = await defaultDeps({ store, caller, companions: str(opt.companions) ?? caller.EVALS_COMPANIONS })
+      const result = await runPhase1({ store, ctx, steps: STEPS, from: str(opt.from), only: str(opt.only), dryRun: Boolean(opt["dry-run"]), reset: Boolean(opt.reset) })
+      if (!result.ok) process.exitCode = 1
+      return
+    }
     case "halt": {
       // The wave's safety halt (G0 review 1.1): what the first completed write was, and `--clear` once the owner has read it.
       const halt = readHalt(storePath())
@@ -573,7 +608,7 @@ export async function main(argv) {
       const { PROBES } = await import("./p0/probes.mjs")
       // `all` leaves g8 out when the owner has mounted no assets (container.assets in caps.json): it has nothing to prove then.
       const hasAssets = containerConfig({ store: storeRoot(), env: process.env }).assets.length > 0
-      const wanted = opt._[0] && opt._[0] !== "all" ? opt._[0].split(",") : Object.keys(PROBES).filter((id) => (id !== "g8" || hasAssets) && (id !== "live" || process.env.EVALS_PROFILE))
+      const wanted = opt._[0] && opt._[0] !== "all" ? opt._[0].split(",") : Object.keys(PROBES).filter((id) => (id !== "g8" || hasAssets) && (["live", "p7", "gws"].includes(id) ? Boolean(process.env.EVALS_PROFILE) : true))
       const unknown = wanted.filter((id) => !PROBES[id])
       if (unknown.length) throw new Error(`unknown probe ${unknown.join(", ")}: ${Object.keys(PROBES).join(", ")}`)
       const env = { companions: opt.companions && opt.companions !== true ? opt.companions : process.env.EVALS_COMPANIONS, tmp: process.env.EVALS_TMP, store: storeRoot() }
@@ -676,7 +711,9 @@ export async function main(argv) {
         ),
       }))
       // `--selecting <file>`: a JSON list of `<case>#<model>#<trial>` that selected a case; the baseline is judged on the others (fresh trials).
-      const selecting = opt.selecting && opt.selecting !== true ? new Set(JSON.parse(read(opt.selecting))) : null
+      // Else the baseline's own `selecting.json` files (`evals select`), read automatically; `--no-fresh` compares on every trial.
+      const own = opt["no-fresh"] ? [] : loaded[0].iterations.map((it) => join(storePath(), "results", it, "selecting.json")).filter((f) => existsSync(f)).flatMap((f) => JSON.parse(read(f)))
+      const selecting = opt.selecting && opt.selecting !== true ? new Set(JSON.parse(read(opt.selecting))) : own.length ? new Set(own) : null
       const report = compareArms(armsIn, { allCases: Boolean(opt["all-cases"]), resamples: Number(opt.resamples ?? 5000), selecting })
       // Arms labelled `h1` and `cb-h1` (the holdout run of the adopted variants and its concurrent baseline): the pooled gate.
       const h1 = report.rows.find((row) => row.label === "h1")

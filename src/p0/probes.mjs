@@ -642,18 +642,56 @@ export async function halt(env = {}) {
  * It is not part of `p0 all` until the profile is there. The review also asked for a second pass with the guard off; a run that holds a
  * credential refuses `"guard": false` (G0 review 1.6), so that pass is the credential-free P0-g gold run instead.
  */
+/** `@slack.sandbox_channel` in a live probe's code, replaced by that target's value from targets.json: the file holds aliases, never ids. */
+export function resolveAliases(code, targets) {
+  const missing = []
+  const out = String(code).replace(/(?<![A-Za-z0-9_.@])@([A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)+)/g, (whole, name) => {
+    const value = targets?.get(name)?.[0]
+    if (value === undefined || value === null) {
+      missing.push(whole)
+      return whole
+    }
+    return String(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'")
+  })
+  return { code: out, missing: [...new Set(missing)] }
+}
+
+/** One plugin's entry of a live-*.json file, with its aliases resolved: { code } or { error }. */
+function liveEntry(entry, targets) {
+  const resolved = resolveAliases(entry.code, targets)
+  return resolved.missing.length ? { error: `${resolved.missing.join(", ")} not in targets.json` } : { code: resolved.code }
+}
+
+/**
+ * G0 review 1.2(c), the only evidence for what a real vendor tool body does at `ask-changes`: one real write call per plugin against its
+ * sandbox, each declined end to end, with the guard on. It needs what no credential-free probe has: a signed-in evals profile (EVALS_PROFILE)
+ * and the owner's `live-writes.json` in the store:
+ *   { "slack": { "code": "return await tools.slack.slack_send_message({ channel_id: '@slack.sandbox_channel', text: 'x' })" }, ... }
+ * `code` is what Code Mode runs. It holds `@alias` placeholders, resolved from targets.json at run time, never an id (this repository never
+ * holds one). `env.only` runs one plugin (phase 1 runs them one at a time); a completed write is a HALT, a declined one is the pass. It is not
+ * part of `p0 all` until the profile is there. The review's guard-off pass conflicts with refusing `"guard": false` with a credential, so that
+ * half is the credential-free P0-g gold run.
+ */
 export async function live(env = {}) {
   const { existsSync: exists, readFileSync: read } = await import("node:fs")
+  const { loadTargets } = await import("../grade/targets.mjs")
   const profile = process.env.EVALS_PROFILE
   const file = join(env.store ?? ".", "live-writes.json")
   if (!profile || !exists(file)) return done("live", [ok("a signed-in evals profile (EVALS_PROFILE) and live-writes.json in the store", false, `${profile ? "" : "EVALS_PROFILE is not set; "}${exists(file) ? "" : `${file} does not exist`}`)])
   const spec = JSON.parse(read(file, "utf8"))
+  const targets = loadTargets({ EVALS_STORE: env.store })
   const checks = []
   for (const [id, entry] of Object.entries(spec)) {
-    if (id === "_note") continue
-    const run = await scriptedRun({ plugin: id, cases: [{ id: `live-${slug(id)}`, prompt: execute(entry.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-live-${slug(id)}`, auth: "none+profile" }, caller: { EVALS_PROFILE: profile, ...env.caller }, tmp: env.tmp })
+    if (id === "_note" || (env.only && env.only !== id)) continue
+    const resolved = liveEntry(entry, targets)
+    if (resolved.error) {
+      checks.push(ok(`${id}: the aliases in its code resolve`, false, resolved.error))
+      continue
+    }
+    const name = `tools-live-${slug(id)}`
+    const run = await scriptedRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-live-${slug(id)}`, auth: "none+profile" }, caller: { EVALS_PROFILE: profile, ...env.caller }, tmp: env.tmp })
     try {
-      const trial = run.trials[`live-${slug(id)}`]
+      const trial = run.trials[name]
       const call = trial.calls[0]
       checks.push(ok(`${id}: the real write call is declined, not run`, declinedIn(call) || /cannot ask the user|declined|rejected/i.test(textOf(call)) || trial.analysed.inner.declined >= 1, textOf(call).slice(0, 120).replace(/\s+/g, " ")))
       checks.push(ok(`${id}: the guard saw no write complete`, (trial.summary?.guard?.committed ?? 0) === 0 && (trial.summary?.guard?.assert_committed ?? 0) === 0, JSON.stringify(trial.summary?.guard)))
@@ -662,7 +700,85 @@ export async function live(env = {}) {
       run.cleanup()
     }
   }
-  return done("live", checks.length ? checks : [ok("live-writes.json names at least one plugin", false, file)])
+  return done("live", checks.length ? checks : [ok("live-writes.json names the plugin asked for", false, `${file}${env.only ? `: no entry ${env.only}` : ""}`)])
 }
 
-export const PROBES = { a1, a2, a3, a4, a5, c, g, g8, halt, env: env_, live, p1, p2, p3, p4, p5, p13 }
+/**
+ * P0-7, the real host list: one scripted READ per plugin with the evals profile's credentials (`live-reads.json`, the same shape as
+ * live-writes.json, read tools only), the batch's egress log recorded. Hosts the proxy refused are the plugin's missing `egress`; hosts it
+ * allowed are the list. Writes `$EVALS_STORE/egress-hosts.json`. X and OpenRouter reads cost money at the worst-case constants: one read each.
+ */
+export async function p7(env = {}) {
+  const { existsSync: exists, readFileSync: read, writeFileSync: write } = await import("node:fs")
+  const { loadTargets } = await import("../grade/targets.mjs")
+  const profile = process.env.EVALS_PROFILE
+  const file = join(env.store ?? ".", "live-reads.json")
+  if (!profile || !exists(file)) return done("p7", [ok("a signed-in evals profile (EVALS_PROFILE) and live-reads.json in the store", false, `${profile ? "" : "EVALS_PROFILE is not set; "}${exists(file) ? "" : `${file} does not exist`}`)])
+  const spec = JSON.parse(read(file, "utf8"))
+  const targets = loadTargets({ EVALS_STORE: env.store })
+  const checks = []
+  const hosts = {}
+  for (const [id, entry] of Object.entries(spec)) {
+    if (id === "_note" || (env.only && env.only !== id)) continue
+    const resolved = liveEntry(entry, targets)
+    if (resolved.error) {
+      checks.push(ok(`${id}: the aliases in its code resolve`, false, resolved.error))
+      continue
+    }
+    const name = `tools-live-read-${slug(id)}`
+    const run = await scriptedRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-p7-${slug(id)}`, auth: "none+profile" }, caller: { EVALS_PROFILE: profile, ...env.caller }, tmp: env.tmp })
+    try {
+      const call = run.trials[name].calls[0]
+      const egress = run.egress ?? {}
+      hosts[id] = { allowed: Object.keys(egress.allowed ?? {}).sort(), refused: Object.keys(egress.refused ?? {}).sort() }
+      checks.push(ok(`${id}: the read completed`, call && call.status !== "error" && !/Permission denied|declined|cannot ask|Unknown tool|No tool named|Error/i.test(textOf(call)), textOf(call).slice(0, 120).replace(/\s+/g, " ")))
+      checks.push(ok(`${id}: no host was refused (its pack's egress list is complete)`, hosts[id].refused.length === 0, `allowed ${hosts[id].allowed.join(", ") || "none"}; refused ${hosts[id].refused.join(", ") || "none"}`))
+      checks.push(ok(`${id}: the guard saw no write`, (run.trials[name].summary?.guard?.committed ?? 0) === 0 && (run.trials[name].summary?.guard?.write_calls ?? 0) === 0, JSON.stringify(run.trials[name].summary?.guard)))
+    } finally {
+      run.cleanup()
+    }
+  }
+  if (Object.keys(hosts).length) write(join(env.store, "egress-hosts.json"), `${JSON.stringify(hosts, null, 1)}\n`)
+  return done("p7", checks.length ? checks : [ok("live-reads.json names the plugin asked for", false, file)])
+}
+
+/**
+ * The one real-body check for the `gws_plan` registry: a real plan and its commit in commit mode, against the owner's sandbox folder and
+ * self address. `live-gws.json`: { "code": "const plan = await tools.gws.plan(an alias of the sandbox folder); return await tools.gws.write({ planId: plan.planId })",
+ * "plan": <a commit plan naming @aliases, as --commit-plan takes> }. The plan registry allows only a plan the guard saw made for an in-sandbox target.
+ */
+export async function gws(env = {}) {
+  const { existsSync: exists, readFileSync: read, writeFileSync: write, mkdtempSync: mkd } = await import("node:fs")
+  const { loadTargets } = await import("../grade/targets.mjs")
+  const profile = process.env.EVALS_PROFILE
+  const file = join(env.store ?? ".", "live-gws.json")
+  if (!profile || !exists(file)) return done("gws", [ok("a signed-in evals profile and live-gws.json in the store", false, `${profile ? "" : "EVALS_PROFILE is not set; "}${exists(file) ? "" : `${file} does not exist`}`)])
+  const spec = JSON.parse(read(file, "utf8"))
+  const targets = loadTargets({ EVALS_STORE: env.store })
+  const resolved = liveEntry(spec, targets)
+  if (resolved.error) return done("gws", [ok("the aliases in live-gws.json resolve", false, resolved.error)])
+  const dir = mkd(join(env.tmp ?? "/tmp", "evals-p0-gws-"))
+  const planFile = join(dir, "commit-plan.json")
+  write(planFile, JSON.stringify(spec.plan))
+  // The batch resolves the plan's @aliases from its own store: a scratch one holding the owner's targets.json (and nothing else of the store).
+  const { cpSync: copy, mkdirSync: mk } = await import("node:fs")
+  const scratchStore = join(dir, "store")
+  mk(scratchStore, { recursive: true })
+  copy(join(env.store, "targets.json"), join(scratchStore, "targets.json"))
+  const name = "commit-live-gws"
+  const run = await scriptedRun({ plugin: "gws", cases: [{ id: name, prompt: execute(resolved.code), extra: "- Set: commit" }], arm: fullArm(env.companions, { arm: "gws", options: {} }), options: { iteration: "p0-gws", auth: "none+profile", commitPlan: planFile, set: "commit", store: scratchStore }, caller: { EVALS_PROFILE: profile, ...env.caller }, tmp: env.tmp })
+  try {
+    const trial = run.trials[name]
+    const guard = trial.summary?.guard ?? {}
+    return done("gws", [
+      ok("the plan was made and the guard saw it in scope", trial.guard.some((r) => r.kind === "plan" && r.in_scope === true), JSON.stringify(trial.guard.filter((r) => r.kind === "plan"))),
+      ok("the commit passed the registry and completed once (the one write the plan allows)", guard.committed === 1 && guard.refused_writes === 0, JSON.stringify(guard)),
+      ok("nothing else was written and no tool outside the allow-list was called", (guard.assert_access ?? 0) === 0 && (guard.refused_tools ?? 0) === 0, JSON.stringify(guard)),
+      ok("the plugin loaded", (trial.summary?.host_log?.plugin_load_failures ?? []).length === 0, JSON.stringify(trial.summary?.host_log?.plugin_load_failures ?? [])),
+    ])
+  } finally {
+    run.cleanup()
+  }
+}
+
+export const PROBES = { a1, a2, a3, a4, a5, c, g, g8, halt, env: env_, live, p7, gws, p1, p2, p3, p4, p5, p13 }

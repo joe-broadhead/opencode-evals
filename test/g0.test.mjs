@@ -148,8 +148,8 @@ test("BLOCKER 3: Data: is required; HR plugins are candidate data; a legacy corp
   assert.throws(() => compileCase("cases/slack/tools-send.md", text("- Set: wide")), /Data is required \(one of synthetic, seeded, own, real, candidate\)/)
   assert.equal(compileCase("cases/slack/tools-send.md", text("- Set: wide\n- Data: seeded")).data, "seeded")
   assert.throws(() => compileCase("cases/slack/tools-send.md", text("- Data: seeded")), /declares one of this round's sets/)
-  assert.throws(() => compileCase("cases/metaview/tools-x.md", text("- Set: wide\n- Data: real", "metaview", "tools-x")), /metaview case reads candidate data/)
-  assert.throws(() => compileCase("cases/ashby/tools-x.md", text("- Set: wide\n- Data: synthetic", "ashby", "tools-x")), /ashby case reads candidate data/)
+  assert.throws(() => compileCase("cases/metaview/tools-x.md", text("- Set: wide\n- Data: real", "metaview", "tools-x")), /a case that uses metaview reads candidate data/)
+  assert.throws(() => compileCase("cases/ashby/tools-x.md", text("- Set: wide\n- Data: synthetic", "ashby", "tools-x")), /a case that uses ashby reads candidate data/)
   assert.equal(compileCase("cases/ashby/tools-x.md", text("- Set: wide\n- Data: candidate", "ashby", "tools-x")).data, "candidate")
   // the legacy corpora written before the header: no Data and no round set is allowed, a legacy case in a round set must declare it
   assert.equal(compileCase("cases/history/core-a.md", text("", "history", "core-a")).plugin, "history")
@@ -187,7 +187,7 @@ test("a plugin that failed to load is infra, never graded, and stops the batch",
 
 test("a seed may not bring configuration, instructions or code; .opencode/jobs data files are the one exception", () => {
   for (const bad of ["opencode.json", "opencode.jsonc", "opencode.json.bak", "AGENTS.md", "CLAUDE.md", ".claude/settings.json", ".agents/skill/SKILL.md", ".opencode/plugins/x.ts", ".opencode/opencode.json", ".opencode/agents/a.md", ".opencode/jobs/run.sh"]) assert.ok(seedRefusal(bad), bad)
-  for (const good of [".opencode/jobs/nightly.md", ".opencode/jobs/a/b.json", "README.md", "src/app.ts", "docs/AGENTS.md.txt", "notes/CLAUDE.md"]) assert.equal(seedRefusal(good), null, good)
+  for (const good of [".opencode/jobs/nightly.md", ".opencode/jobs/a/b.json", "README.md", "src/app.ts", "docs/AGENTS.md.txt", "notes/CLAUDE.md.txt"]) assert.equal(seedRefusal(good), null, good)
   const root = scratch()
   try {
     const seeds = join(root, "fixtures", "seeds")
@@ -205,7 +205,7 @@ test("a seed may not bring configuration, instructions or code; .opencode/jobs d
 })
 
 test("Home files: names that start with a dot are refused at compile, and a link is never followed or recorded", () => {
-  const text = (name) => `# tools-export\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: seeded\n- Set: wide\n- Home files: ${name}\n\n## Prompt\np\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:a exists\n`
+  const text = (name) => `# tools-export\n- Plugin: plaud\n- Skill under test: plaud\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: real\n- Set: wide\n- Home files: ${name}\n\n## Prompt\np\n\n## Items\n- [PLD-OC01] major · It wrote the note.\n  evidence: file:a exists\n`
   for (const bad of [".local/share/opencode", ".ssh", "Plaud/.hidden", ".config"]) assert.throws(() => compileCase("cases/plaud/tools-export.md", text(bad)), /visible names under the home/, bad)
   assert.equal(compileCase("cases/plaud/tools-export.md", text("Plaud")).home_files[0], "Plaud")
   const root = scratch()
