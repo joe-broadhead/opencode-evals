@@ -120,11 +120,20 @@ test("evals-profile.sh builds an empty profile, links nothing, and refuses to ru
   const root = mkdtempSync(join(tmpdir(), "evals-profile-sh-"))
   try {
     const profile = join(root, "profile")
-    const env = { PATH: process.env.PATH, EVALS_PROFILE: profile, EVALS_STORE: join(root, "store"), HOME: "/real-home", OPENCODE_SERVER_PASSWORD: "x", XDG_DATA_HOME: "/real-home/.local/share" }
+    // A stub `opencode` first on PATH, recording its arguments and the HOME each call ran with: the script gives the profile its own service port with
+    // `opencode service set port`, and the machine running this test (CI, a laptop without OpenCode) need not have the real one.
+    const bin = join(root, "bin")
+    const record = join(root, "opencode-calls.txt")
+    mkdirSync(bin)
+    writeFileSync(join(bin, "opencode"), `#!/bin/sh\nprintf '%s|%s\\n' "$HOME" "$*" >> ${JSON.stringify(record)}\ncase "$1 $2" in\n  "service get") exit 1 ;;\n  "service set") exit 0 ;;\n  "service status") echo stopped; exit 0 ;;\nesac\nexit 0\n`, { mode: 0o755 })
+    const env = { PATH: `${bin}:${process.env.PATH}`, EVALS_PROFILE: profile, EVALS_STORE: join(root, "store"), HOME: "/real-home", OPENCODE_SERVER_PASSWORD: "x", XDG_DATA_HOME: "/real-home/.local/share" }
     const out = spawnSync("bash", [join(SCRIPT, "evals-profile.sh"), "--", "sh", "-c", 'printf "%s|%s|%s|%s|%s" "$HOME" "$OPENCODE_TEST_HOME" "$CLAUDE_CONFIG_DIR" "$OPENCODE_DISABLE_CLAUDE_CODE" "${XDG_DATA_HOME}"'], { env, encoding: "utf8" })
     assert.equal(out.status, 0, out.stderr)
     assert.equal(out.stdout, `${profile}|${profile}|${profile}/.claude|1|${profile}/.local/share`)
     assert.ok(existsSync(join(profile, ".claude")))
+    const calls = readFileSync(record, "utf8").trim().split("\n").map((line) => ({ home: line.split("|")[0], args: line.split("|").slice(1).join("|") }))
+    assert.ok(calls.some((c) => /^service set port \d+$/.test(c.args)), `the profile is given its own service port: ${JSON.stringify(calls)}`)
+    assert.ok(calls.filter((c) => c.args.startsWith("service set")).every((c) => c.home === profile), "set only inside the profile, never on the real home")
     assert.deepEqual(readdirLinks(profile), [], "find -type l prints nothing")
     assert.deepEqual(JSON.parse(readFileSync(join(profile, ".config", "opencode", "opencode.json"), "utf8")).policies, profileConfig().policies)
     symlinkSync("/real-home", join(profile, ".claude-link"))
