@@ -95,6 +95,9 @@ export const dataOf = (caseObject) => {
 export const ROUND_SETS = { wide: /^tools-[a-z0-9][a-z0-9-]*$/, route: /^route-[a-z0-9][a-z0-9-]*$/, deep: /^deep-[a-z0-9][a-z0-9-]*$/, commit: /^commit-[a-z0-9][a-z0-9-]*$/, hooks: /^hook-[a-z0-9][a-z0-9-]*$/, local: /./ }
 export const FAMILY_SETS = ["tune", "holdout", "tools", "all"]
 
+/** A holdout: `Holdout: true`, or an id that starts `hold-`. It needs none of this round's sets or their id prefixes (src/case/sets.mjs keeps it out of every selection but its own). */
+const holdsOut = (caseObject) => caseObject.holdout === true || /^hold-/.test(String(caseObject.id ?? ""))
+
 /** A holdout's id: `hold-<plugin>-<n>-<slug>`. History's earlier `ho-` ids are the one exception. */
 export const holdoutId = (plugin) => new RegExp(`^hold-${String(plugin).replace(/[^a-z0-9-]/gi, "")}-\\d+-[a-z0-9][a-z0-9-]*$`)
 
@@ -149,7 +152,7 @@ export function validateCase(caseObject, file = "<case>") {
   for (const key of caseObject.checkable ?? []) if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) bad(`checkable ${JSON.stringify(key)} must be an argument name`)
   for (const name of caseObject.sets ?? []) {
     if (!/^[a-z][a-z0-9-]*$/.test(name) || FAMILY_SETS.includes(name)) bad(`set ${JSON.stringify(name)} must be a lower-case name, not ${FAMILY_SETS.join(", ")}`)
-    if (ROUND_SETS[name] && !ROUND_SETS[name].test(caseObject.id)) bad(`a case in set ${name} has an id like ${String(ROUND_SETS[name].source).replace(/^\^|\$$/g, "").replace(/\[a-z0-9\]\[a-z0-9-\]\*/, "<slug>")}, not ${JSON.stringify(caseObject.id)}`)
+    if (ROUND_SETS[name] && !holdsOut(caseObject) && !ROUND_SETS[name].test(caseObject.id)) bad(`a case in set ${name} has an id like ${String(ROUND_SETS[name].source).replace(/^\^|\$$/g, "").replace(/\[a-z0-9\]\[a-z0-9-\]\*/, "<slug>")}, not ${JSON.stringify(caseObject.id)}`)
   }
   for (const name of caseObject.home_files ?? []) if (!/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(name) || name.split("/").some((part) => part === "." || part === ".." || part.startsWith("."))) bad(`Home files ${JSON.stringify(name)} must be a path of visible names under the home (no .., no leading /, and no name that starts with a dot: .local/share/opencode holds the host's log and database)`)
   // A canary the prompt fills and an item grades is satisfied by echoing the question.
@@ -160,7 +163,7 @@ export function validateCase(caseObject, file = "<case>") {
     }
   }
   if (caseObject.data === undefined && !isLegacyCase(caseObject)) bad(`Data is required (one of ${DATA_KINDS.join(", ")}): it says whose words the case reads, and a case that omits it would be taken for synthetic. Add \`- Data: ...\` to the header`)
-  if (!isLegacyCase(caseObject) && packPlugins().has(caseObject.plugin) && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)) bad(`a case declares one of this round's sets (${Object.keys(ROUND_SETS).join(", ")}): \`- Set: ...\`; only the history, x and charts corpora written before it are exempt`)
+  if (!holdsOut(caseObject) && !isLegacyCase(caseObject) && packPlugins().has(caseObject.plugin) && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)) bad(`a case declares one of this round's sets (${Object.keys(ROUND_SETS).join(", ")}): \`- Set: ...\`; only the history, x and charts corpora written before it are exempt`)
   if (caseObject.data !== undefined && caseObject.data !== "synthetic" && fakeModePlugins().has(caseObject.plugin)) bad(`a ${caseObject.plugin} case runs against the harness's synthetic fixture (fake mode): declare \`- Data: synthetic\`, not ${caseObject.data}`)
   const minimum = caseObject.data !== undefined ? dataMinimum(caseObject) : null
   if (minimum && DATA_KINDS.indexOf(caseObject.data) < DATA_KINDS.indexOf(minimum.kind)) bad(`a case that uses ${minimum.plugin}${minimum.plugin === caseObject.plugin ? "" : " (Seed: plugins=)"} reads ${minimum.kind} data${minimum.kind === "candidate" ? " (HR records)" : " (other people's words)"}, not ${caseObject.data}: declare \`- Data: ${minimum.kind}\` (or higher)`)

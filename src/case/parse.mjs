@@ -35,6 +35,7 @@ const FIELDS = new Map([
   ["truth", "truth"],
   ["data", "data"],
   ["home files", "homeFiles"],
+  ["angle brackets", "angleBrackets"],
 ])
 
 const ITEM_KEYS = new Set(["maps_to", "evidence", "evidence_any", "n/a_when", "grader", "where", "note"])

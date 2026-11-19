@@ -28,7 +28,7 @@ evals report base=v0-a v1=v1-a --plugin history --set tune
 | `--model <provider>/<model>[#variant]` | required | the model every run uses |
 | `--auth <profile>[+profile]` | required (or `EVALS_AUTH`) | where the model credential comes from: below; `+profile` adds the evals profile's vendor credentials, allow-listed |
 | `--cases <ids>` | `*` | ids and `prefix*` globs, comma separated |
-| `--set <sets>` | `tune` | `tune`, `holdout`, `tools`, `all`, or a comma list (see [design.md](design.md#reports-over-arms)) |
+| `--set <sets>` | `tune` | `tune`, `holdout`, `tools`, `all` (= `tune` and `tools`), or a comma list (see [design.md](design.md#reports-over-arms)). Holdouts are returned only when `holdout` is named: no other set, `all` included, reaches one. `evals report h1=… cb-h1=…` takes `--set holdout` |
 | `--trials <k>` | `1` | runs per case; each is `<case>.t<k>`, and one trial never ships |
 | `--parallel <n>` | `4` | runs at once; each gets its own server (and, under `container`, its own container and network: at most 8) |
 | `--arm <dir>` \| `<file>.json` \| `none` | the plugin's checkout | a built plugin (`dist/`, `skills/`, `package.json`), copied once per batch; a JSON arm file names one and its options; `none` is the no-plugin control |
@@ -120,8 +120,10 @@ tool, whose prompt is `<<TODO>>` (compile refuses it) so it is written without s
   `api.github.com`, `api.githubcopilot.com`, `*.atlassian.net` and the vendors' MCP hosts. The plugin runs **as released**; the harness's own fake MCP server
   (`src/fake/mcp-server.ts`, one per trial, on loopback) stands in for the vendor's:
   - **What the model sees** is the released tool list: `packs/<id>/mcp.json` holds each tool's name, description, input schema and annotations
-    (`scripts/mcp-catalog.mjs` builds it). GitHub's 98 tools are 91 exact snapshots from github-mcp-server's `__toolsnaps__` (v2.2.0) and 7 remote-only tools that are
-    `derived` (a name, a neutral description, an open schema); Jira's 46 are a signed-in host's Code Mode listing turned back into JSON Schema
+    (`scripts/mcp-catalog.mjs` builds it). GitHub's 98 tools are 91 exact snapshots from github-mcp-server's `__toolsnaps__` (v2.2.0) and the 7 tools of the hosted server that the open-source one lacks, each with the best text there is
+    (`packs/github/mcp-extras.json`, the catalog's `source` says which): `check_dependency_vulnerabilities` is a signed-in host's own listing (exact); `get_copilot_space`, `list_copilot_spaces`,
+    `github_support_docs_search` and `create_pull_request_with_copilot` are the README's title and parameters (not the full description, which GitHub does not publish); `issue_artifact_read` and
+    `issue_artifact_write` have no public listing and stay `derived` stand-ins (a name, a neutral description, an open schema): keep them out of scoring and tuning. Jira's 46 are a signed-in host's Code Mode listing turned back into JSON Schema
     (`src/fake/ts-signature.mjs`; Array item types are lost in that rendering), and 9 destructive tools the sign-in's scope does not grant are `unserved`, as for a user. The
     plugin's own tools (`events_list`, GitHub's `api`) are registered by the plugin itself. Vendor example addresses are rewritten to `example.org`.
   - **Where it points: nowhere new.** The plugin registers its own server at its **default** vendor URL (GitHub `https://api.githubcopilot.com/mcp/`, Jira
@@ -133,7 +135,7 @@ tool, whose prompt is `<<TODO>>` (compile refuses it) so it is written without s
     leaves are signed, handed to a trial only as that trial's `NODE_EXTRA_CA_CERTS`, and never added to the machine's trust store or the image. `--isolation none` is refused for a
     fake plugin (only a container can map the name). The batch preflight maps the same names to a loopback address with nothing listening, so it reaches neither the fake nor the vendor.
   - **What it answers** comes from a small synthetic fixture (`src/fake/fixtures/<id>.mjs`: org `fabrikam-labs`, repo `quill-notes`; site `quill-labs.invalid`, project QLN), invented
-    names only. A write that ever reached it would answer "Nothing was changed", but writes are still **asked and declined** and graded at the declined call.
+    names only. Its queries are real enough to grade a query, not only the issues a case names: Jira's JQL (`field = | != | ~ | in | is`, and `created`/`updated` with `>= > <= < =` on `"YYYY-MM-DD"`, `"YYYY-MM-DD HH:mm"`, `-7d`, `now()`; a bare date is that day's midnight) and GitHub's issue and pull request search (`is:`, `state:`, `label:`, `assignee:`, `author:`, `no:`, `created:`/`updated:`/`closed:` as `D`, `>D`, `<=D`, `a..b`, `repo:`/`org:`); a clause it cannot read is an error, never an empty list. "Now" is fixed (2026-09-17 12:00 UTC). A write that ever reached it would answer "Nothing was changed", but writes are still **asked and declined** and graded at the declined call.
   - **Grading**: a read is graded on tool choice and arguments (`call:`, `target:`), plus an outcome item against the fixture, `text:<span> contains @fixture.<plugin>.<fact>`
     (every value of a list; a number stands alone, 4 is not 14; the fact must exist in the fixture, checked at compile time), so an answer made up instead of read fails.
   - **`Data: synthetic`** is the only data a fake-mode plugin's case may declare (compile refuses anything else), so no sign-off is needed and DeepSeek may run them.
@@ -213,7 +215,7 @@ An independent review of the harness found six things that block the first run t
   is obviously made up (`0123456789`, `abcdefghij`, `dummy`, `canary`, `example`) is not flagged, and a hex digest never is.
 - **A plugin that failed to load** (the host's own log) is `infra: plugin`: never graded, and the batch stops.
 - **Seeds** may not carry `opencode.json*`, `AGENTS.md`, `CLAUDE.md`, or anything under `.claude/`, `.agents/` or `.opencode/` (but `.opencode/jobs/` data
-  files). **`Home files:`** names may not start with a dot, and a link is never followed or recorded.
+  files). **`Home files:`** names may not start with a dot, and a link is never followed or recorded. **A prompt may not hold a literal `<placeholder>`** (`<github sandbox repo>`, `<your channel>`): `evals compile` refuses it and names it; write the value, or use `{{target:<plugin>.<name>}}` / `{{canary:<name>}}` for one the store fills. A prompt that really quotes angle brackets (HTML, a shell redirect) lists each quoted token in `- Angle brackets: <h1>, </h1>`; a listed token the prompt does not contain is an error too. The History, X and Charts corpora written before this round are exempt (their `<X test topic: ...>` gaps are filled from their own worlds).
 - **The commit plan names `@alias`es of `targets.json` only**; a literal, an unknown alias, or `actions` that differ from `writes` fails the run.
   `local: true` is the one write with no target (it touches only the trial's own sandbox).
 - **The guard has an allow-list tripwire**: in a locked trial a tool other than `execute`, `skill`, `question`, `todowrite` and the plugins' own is

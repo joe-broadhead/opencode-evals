@@ -3,7 +3,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { spawn } from "node:child_process"
 import { join } from "node:path"
-import { readFileSync } from "node:fs"
+import { readFileSync, existsSync } from "node:fs"
 
 const ROOT = join(import.meta.dirname, "..")
 
@@ -96,4 +96,68 @@ test("evals run whose reader is gone ends: the batch is not left spinning in its
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
+})
+
+// ---------------------------------------------------------------------------------------------- only a closed reader is tolerated
+
+const run = (args, { stdout, stderr = "pipe" }) =>
+  new Promise((done) => {
+    const child = spawn(process.execPath, args, { cwd: ROOT, stdio: ["ignore", stdout, stderr] })
+    let err = ""
+    child.stderr?.on("data", (d) => (err += d))
+    child.on("exit", (code, signal) => done({ code: code ?? signal, err }))
+  })
+
+test("a disk-full write error is not hidden: the command exits non-zero with the message (only a closed reader is tolerated)", { skip: !existsSync("/dev/full") ? "no /dev/full on this platform" : false }, async () => {
+  const { openSync, closeSync } = await import("node:fs")
+  const fd = openSync("/dev/full", "w")
+  try {
+    // a command that prints and succeeds: with its stdout on a full disk it must not say 0
+    const full = await run([join(ROOT, "bin", "evals"), "selftest"], { stdout: fd })
+    assert.notEqual(full.code, 0, "exit code")
+    assert.match(full.err, /evals: cannot write to stdout: ENOSPC: no space left on device/)
+    assert.equal((full.err.match(/cannot write to stdout/g) ?? []).length, 1, "said once")
+  } finally {
+    closeSync(fd)
+  }
+  // the same command with its reader gone: tolerated, exit 0
+  const gone = await new Promise((done) => {
+    const child = spawn(process.execPath, [join(ROOT, "bin", "evals"), "selftest"], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] })
+    child.stdout.destroy()
+    child.stderr.destroy()
+    child.on("exit", (code, signal) => done(code ?? signal))
+  })
+  assert.equal(gone, 0, "a closed reader is not an error")
+})
+
+test("ignoreStdioErrors: EPIPE, ECONNRESET and a destroyed stream are dropped; any other code sets the exit code, says so once, and survives a later exit(0)", async () => {
+  const { EventEmitter } = await import("node:events")
+  const { ignoreStdioErrors, CLOSED_READER } = await import("../src/stdio.mjs")
+  assert.deepEqual([...CLOSED_READER].sort(), ["ECONNRESET", "EPIPE", "ERR_STREAM_DESTROYED"])
+  const make = () => {
+    const proc = new EventEmitter()
+    proc.exitCode = undefined
+    const out = new EventEmitter()
+    const err = new EventEmitter()
+    const said = []
+    ignoreStdioErrors({ proc, streams: [["stdout", out], ["stderr", err]], say: (line) => said.push(line) })
+    return { proc, out, err, said }
+  }
+  const a = make()
+  for (const code of ["EPIPE", "ECONNRESET", "ERR_STREAM_DESTROYED"]) a.out.emit("error", Object.assign(new Error(code), { code }))
+  assert.equal(a.proc.exitCode, undefined)
+  assert.deepEqual(a.said, [])
+  const b = make()
+  b.out.emit("error", Object.assign(new Error("ENOSPC: no space left on device, write"), { code: "ENOSPC" }))
+  b.out.emit("error", Object.assign(new Error("EIO: i/o error, write"), { code: "EIO" }))
+  assert.equal(b.proc.exitCode, 1)
+  assert.deepEqual(b.said, ["evals: cannot write to stdout: ENOSPC: no space left on device, write\n"], "once per stream")
+  b.err.emit("error", Object.assign(new Error("EBADF"), { code: "EBADF" }))
+  assert.equal(b.said.length, 2)
+  b.proc.exitCode = 0
+  b.proc.emit("exit", 0)
+  assert.equal(b.proc.exitCode, 1, "a command that sets 0 afterwards still ends non-zero")
+  const c = make()
+  c.out.emit("error", Object.assign(new Error("boom"), { code: "EIO" }))
+  assert.equal(c.proc.exitCode, 1)
 })

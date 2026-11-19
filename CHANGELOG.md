@@ -8,6 +8,18 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
 
 ### Fixed
 
+- **`evals compile` refuses a literal `<placeholder>` in a prompt** (104 lane cases had them); `- Angle brackets: <h1>, </h1>` lists the tokens a prompt really quotes. The History, X and Charts corpora written before the round are exempt.
+- **The fake Jira reads `resolved`/`resolutiondate`, `resolution` (`Unresolved`), `statusCategory`, `is EMPTY|NULL`, and Jira's date functions** (`startOfDay/Week/Month/Year()` and `endOf…`, with increments; weeks start on
+  Monday; now is fixed), so a "done this week" case can be asked and graded; the fake GitHub reads `merged:` and gives a merged pull request its `closed_at`.
+- **`setCounts` returned NaN for the round sets** (`counts.round++` on a key that does not exist); it now counts every `Set:` name as a number and a holdout as a holdout only. The History and
+  Charts tests no longer pin their corpora's case counts (a pull request that adds a case broke the harness's own tests); they derive the expectations from the compiled cases.
+- **Holdouts are in no selection but their own.** A holdout (`Holdout: true` or a `hold-` id) needs no round set or id prefix (the holdout lane had to give 84 of them `Set: local`, which made them one
+  `--set local` away from a tuner), and `--set` of any value, `all` included (now `tune` and `tools`), a round set, a plugin's set or a `--cases` glob never returns one; only a selection naming `holdout` does.
+- **The fake Jira and GitHub servers read dates.** JQL `created`/`updated` with `>=`, `>`, `<=`, `<`, `=` (a bare date is that day's midnight, as Jira reads it; `-7d`, `now()`), and GitHub search
+  `created:`, `updated:`, `closed:` (`D`, `>D`, `<=D`, `a..b`, whole days), `assignee:` (`@me`), `author:`, `no:`, `is:open|closed|merged|draft|pr`, `label:` (quoted, `-label:`), `repo:`/`org:`; what they cannot
+  read is an error, never an empty answer.
+- **The seven stand-in GitHub tools** have the best text there is: one exact (a signed-in host's listing), four from the open-source README (title and parameters); two stay stand-ins (no public listing).
+- **The closed-pipe fix hid real write errors.** Only a closed reader (EPIPE, ECONNRESET) is tolerated now; a disk-full or other write error says so on stderr once and the command exits non-zero.
 - **Fake mode runs the plugins as released.** A loopback `mcp` override was a `conflict` to both plugins (no namespace description, no tool filter, status `conflict`). Each now registers its own
   server at its default URL; the trial maps that host to the fake (`--add-host`, `NO_PROXY`) and the fake answers TLS with a per-batch, name-constrained CA trusted only in the trial
   (`NODE_EXTRA_CA_CERTS`). `p0 fake` asserts the namespace text (from the plugin's source), the status (`connected`, own server) and the vendor host in every request.

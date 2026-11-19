@@ -250,7 +250,7 @@ test("a compiled synthetic holdout set is selected by --set holdout and by no ot
   assert.deepEqual(selectCases(cases, { set: "wide" }).selected.map((c) => c.id), ["tools-save-issue"])
   assert.deepEqual(selectCases(cases, { set: "deep" }).selected.map((c) => c.id), ["deep-x"])
   assert.deepEqual(selectCases(cases, { set: "tune" }).selected.map((c) => c.id), ["tune-me"], "tune never picks up a round set's case: a commit case really writes")
-  assert.deepEqual(selectCases(cases, { set: "all" }).selected.map((c) => c.id), ["hold-linear-1-a", "tools-save-issue", "tune-me"], "nor does all")
+  assert.deepEqual(selectCases(cases, { set: "all" }).selected.map((c) => c.id), ["tools-save-issue", "tune-me"], "nor does all: it is tune and tools")
   const commit = [mk("commit-linear-issue", "- Set: commit")]
   assert.throws(() => selectCases(commit, { set: "tune" }), /no case matches/)
   assert.deepEqual(selectCases(commit, { set: "commit" }).selected.map((c) => c.id), ["commit-linear-issue"])

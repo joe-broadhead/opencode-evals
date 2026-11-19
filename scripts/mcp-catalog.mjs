@@ -29,19 +29,20 @@ const humanize = (name) => name.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/
 /** The annotations a tool without a published snapshot gets, from what the pack knows. */
 const annotationsOf = (tool) => ({ readOnlyHint: Boolean(tool.readOnly), ...(tool.effect === "deny" || /^(delete|remove)/i.test(tool.name) ? { destructiveHint: true } : {}) })
 
-export function githubCatalog(pack, snaps, meta = {}) {
+export function githubCatalog(pack, snaps, meta = {}, extras = null) {
   const tools = []
+  const extra = new Map((extras?.tools ?? []).map((t) => [t.name, t]))
   for (const tool of pack.tools) {
     if (OWN_TOOLS.github.includes(tool.name)) continue
     const snap = snaps[tool.name]
+    const more = extra.get(tool.name)
     if (snap) tools.push({ name: tool.name, description: snap.description, inputSchema: snap.inputSchema, annotations: snap.annotations ?? annotationsOf(tool), source: "snapshot" })
+    // A tool of the hosted server that the open-source snapshots lack, with whatever GitHub publishes of it (packs/github/mcp-extras.json).
+    else if (more) tools.push({ name: tool.name, description: more.description, inputSchema: more.inputSchema, annotations: annotationsOf(tool), source: more.source })
     else tools.push({ name: tool.name, description: `${humanize(tool.name)}.`, inputSchema: OPEN_SCHEMA, annotations: annotationsOf(tool), source: "derived" })
   }
-  return { schema: "oc-mcp-catalog/1", plugin: "github", server: "github", pack_version: pack.version, provenance: { snapshots: meta.snapshots ?? "github/github-mcp-server __toolsnaps__", derived: "tools the hosted server lists and the open-source server's snapshots lack: a name, a neutral description and an open schema" }, tools, unserved: [] }
+  return { schema: "oc-mcp-catalog/1", plugin: "github", server: "github", pack_version: pack.version, provenance: { snapshots: meta.snapshots ?? "github/github-mcp-server __toolsnaps__", ...(extras?.provenance ?? {}), derived: extras?.provenance?.derived ?? "tools the hosted server lists and the open-source server's snapshots lack: a name, a neutral description and an open schema" }, tools, unserved: [] }
 }
-
-/** The vendor's own example addresses (an `acme.com` address) are rewritten to the reserved example.org, so the catalog holds no address the privacy scan would flag. */
-const neutral = (text) => text.replace(/\b([A-Za-z0-9._-]+)@acme\.com\b/g, "$1@example.org")
 
 export function jiraCatalog(pack, signatures, meta = {}) {
   const byName = new Map()
@@ -85,7 +86,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   let catalog
   if (kind === "github") {
     const snaps = Object.fromEntries(readdirSync(input).filter((f) => f.endsWith(".json")).map((f) => [f.replace(/\.json$/, ""), JSON.parse(readFileSync(join(input, f), "utf8"))]))
-    catalog = githubCatalog(pack, snaps, { snapshots: "github/github-mcp-server v2.2.0, pkg/github/__toolsnaps__" })
+    const extrasFile = join(ROOT, "packs", "github", "mcp-extras.json")
+    catalog = githubCatalog(pack, snaps, { snapshots: "github/github-mcp-server v2.2.0, pkg/github/__toolsnaps__" }, existsSync(extrasFile) ? JSON.parse(readFileSync(extrasFile, "utf8")) : null)
   } else {
     catalog = jiraCatalog(pack, JSON.parse(readFileSync(input, "utf8")), { listing: "OpenCode 2.3.2, opencode-jira, a signed-in host's Code Mode listing (descriptions in full; argument types as rendered, Array item types lost)" })
   }
@@ -95,5 +97,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1)
   }
   writeFileSync(join(ROOT, "packs", kind, "mcp.json"), `${JSON.stringify(catalog, null, 1)}\n`)
-  console.log(`${kind}: ${catalog.tools.length} tool(s) served${catalog.unserved.length ? `, ${catalog.unserved.length} unserved (${catalog.unserved.join(", ")})` : ""}; ${catalog.tools.filter((t) => t.source === "derived").length} derived`)
+  console.log(`${kind}: ${catalog.tools.length} tool(s) served${catalog.unserved.length ? `, ${catalog.unserved.length} unserved (${catalog.unserved.join(", ")})` : ""}; ${["snapshot", "host-listing", "readme", "derived", ].map((k) => `${catalog.tools.filter((t) => t.source === k).length} ${k}`).filter((t) => !t.startsWith("0 ")).join(", ")}`)
 }

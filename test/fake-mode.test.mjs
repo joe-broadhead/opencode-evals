@@ -9,6 +9,7 @@ import { parseSignature } from "../src/fake/ts-signature.mjs"
 import { OWN_TOOLS, catalogProblems, githubCatalog } from "../scripts/mcp-catalog.mjs"
 import { readCatalog, installFake, fakeFor, hostsFor, FAKE_HOSTS, REAL_HOSTS } from "../src/run/fake-mode.mjs"
 import { makeFakeCa } from "../src/run/fake-ca.mjs"
+import { parseWhen } from "../src/fake/fixtures/when.mjs"
 import { fixtureFacts } from "../src/fake/facts.mjs"
 import * as githubFixture from "../src/fake/fixtures/github.mjs"
 import * as jiraFixture from "../src/fake/fixtures/jira.mjs"
@@ -64,7 +65,25 @@ test("each catalog serves exactly its pack's tools, less the plugin's own and th
   const github = readCatalog("github")
   assert.match(catalogProblems({ ...github, tools: github.tools.slice(1) }, pack("github"))[0], /is a tool of the pack the catalog does not serve/)
   assert.match(catalogProblems({ ...github, tools: [...github.tools, { ...github.tools[0], name: "invented_tool" }] }, pack("github"))[0], /is served and is not a tool of the pack/)
+  // The seven tools of the hosted server that the open-source snapshots lack are all served, each with the best text there is, and the catalog says where from:
+  // one is a signed-in host's own listing (exact), four are the open-source README's title and parameters, two have no public listing and stay stand-ins.
+  const by = (source) => github.tools.filter((t) => t.source === source).map((t) => t.name).sort()
+  assert.equal(by("snapshot").length, 91)
+  assert.deepEqual(by("host-listing"), ["check_dependency_vulnerabilities"])
+  assert.deepEqual(by("readme"), ["create_pull_request_with_copilot", "get_copilot_space", "github_support_docs_search", "list_copilot_spaces"])
+  assert.deepEqual(by("derived"), ["issue_artifact_read", "issue_artifact_write"], "the stand-ins: keep out of scoring and tuning until GitHub publishes them")
+  const tool = (name) => github.tools.find((t) => t.name === name)
+  assert.deepEqual(tool("check_dependency_vulnerabilities").inputSchema.required.sort(), ["dependencies", "owner", "repo"])
+  assert.equal(tool("check_dependency_vulnerabilities").inputSchema.properties.dependencies.items.properties.ecosystem.enum.includes("gomod"), true)
+  assert.deepEqual(tool("create_pull_request_with_copilot").inputSchema.required, ["owner", "repo", "problem_statement", "title"], "base_ref is optional")
+  assert.deepEqual(tool("get_copilot_space").inputSchema.required, ["owner", "name"])
+  assert.deepEqual(tool("list_copilot_spaces").inputSchema.properties, {})
+  assert.equal(tool("github_support_docs_search").inputSchema.required[0], "query")
+  for (const name of [...by("host-listing"), ...by("readme")]) assert.doesNotMatch(tool(name).description, /^[A-Z][a-z]+( [a-z]+)*\.$/, `${name} has the published text, not a humanised name`)
+  assert.equal(tool("create_pull_request_with_copilot").annotations.readOnlyHint, false)
   // a pack tool with no snapshot is derived, and says so
+  const withExtras = githubCatalog({ version: "0", tools: [{ name: "from_readme", readOnly: true }, { name: "no_text", readOnly: true }] }, {}, {}, { provenance: {}, tools: [{ name: "from_readme", description: "Published.", inputSchema: { type: "object", properties: {} }, source: "readme" }] })
+  assert.deepEqual(withExtras.tools.map((t) => [t.name, t.source, t.description]), [["from_readme", "readme", "Published."], ["no_text", "derived", "No text."]])
   const derived = githubCatalog({ version: "0", tools: [{ name: "brand_new_read", readOnly: true }] }, {})
   assert.equal(derived.tools[0].source, "derived")
   assert.equal(derived.tools[0].annotations.readOnlyHint, true)
@@ -167,7 +186,7 @@ test("installFake copies the server, the fixtures and the catalogs of the plugin
   const dir = scratch()
   try {
     const out = installFake(dir, ["github"])
-    for (const f of ["mcp-server.ts", "github.catalog.json", "fixtures/github.mjs", "tls/ca.pem", "tls/github.key", "tls/github.pem"]) assert.ok(existsSync(join(out.dir, f)), f)
+    for (const f of ["mcp-server.ts", "github.catalog.json", "fixtures/github.mjs", "fixtures/when.mjs", "tls/ca.pem", "tls/github.key", "tls/github.pem"]) assert.ok(existsSync(join(out.dir, f)), f)
     assert.equal(existsSync(join(out.dir, "jira.catalog.json")), false)
     assert.equal(existsSync(join(out.dir, "tls", "ca.key")), false)
     assert.equal(out.ca, join(out.dir, "tls", "ca.pem"))
@@ -242,4 +261,129 @@ test("fake mode needs a confined trial: --isolation none is refused for a fake p
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
+})
+
+// ------------------------------------------------------------------------------------------------ the fakes' query languages
+
+const jql = (q, extra = {}) => {
+  const out = jiraFixture.call("searchJiraIssuesUsingJql", { jql: q, ...extra })
+  return out.isError ? `ERR ${out.text}` : JSON.parse(out.text).issues?.map((i) => i.key) ?? JSON.parse(out.text)
+}
+
+test("fake Jira: JQL filters on created and updated, so a date-window case is graded on the query and not only on the issues it names", () => {
+  // the window case: the answer is what the query returns, so a wrong window gives another list
+  assert.deepEqual(jql('project = QLN AND created >= "2026-09-01" AND created <= "2026-09-10"'), ["QLN-1", "QLN-2"])
+  assert.deepEqual(jql('project = QLN AND created >= "2026-09-01" AND created <= "2026-09-10"'), jiraFixture.facts.created_sept_1_to_10_keys)
+  assert.deepEqual(jql("created >= 2026-09-11 ORDER BY created DESC"), jiraFixture.facts.created_sept_11_on_keys)
+  assert.deepEqual(jql('created < "2026-09-01"'), jiraFixture.facts.created_before_sept_1_keys)
+  assert.notDeepEqual(jql('created >= "2026-09-03" AND created <= "2026-09-10"'), jql('created >= "2026-09-01" AND created <= "2026-09-10"'), "a window that starts after QLN-1 was created returns a different answer")
+  // a bare date is that day's midnight, as Jira reads it: <= the 16th stops before QLN-7 (10:05 on the 16th); a time brings it in
+  assert.ok(!jql('created <= "2026-09-16"').includes("QLN-7"))
+  assert.ok(jql('created <= "2026-09-16 23:59"').includes("QLN-7"))
+  assert.ok(jql('created >= "2026-09-16T10:05:00Z"').includes("QLN-7"))
+  assert.ok(!jql('created > "2026-09-16 10:05"').includes("QLN-7"))
+  // = on a day is the whole day
+  assert.deepEqual(jql("created = 2026-09-05"), ["QLN-2"])
+  assert.deepEqual(jql('created != "2026-09-05"').length, 6)
+  // updated, and together with the other fields
+  assert.deepEqual(jql('updated >= "2026-09-16" AND status = "In Progress"'), ["QLN-5"])
+  assert.deepEqual(jql("updated = 2026-09-16"), jiraFixture.facts.updated_sept_16_keys)
+  assert.deepEqual(jql("assignee = currentUser() AND created >= -30d"), ["QLN-1", "QLN-5"], "-30d counts back from the fake's fixed now")
+  assert.deepEqual(jql("created >= -2d"), ["QLN-7"], "now is 2026-09-17 12:00: QLN-7 (the 16th) is inside two days")
+  assert.deepEqual(jql("created >= -1d"), [], "and outside one")
+  // the count mode agrees
+  assert.equal(JSON.parse(jiraFixture.call("searchJiraIssuesUsingJql", { jql: 'created >= "2026-09-01" AND created <= "2026-09-10"', searchResultMode: "count" }).text).count, 2)
+  // what it cannot read it says, never an empty list that would look like an answer
+  for (const bad of ['created >= "last week"', "created >= startOfFortnight()", "created >= 2026-13-45", "status > 3", "created ~ 5", "resolved is maybe"]) assert.match(jql(bad), /^ERR The fake does not understand/, bad)
+})
+
+test("fake Jira: resolved, resolutiondate, resolution and statusCategory, with Jira's date functions, so a \"done this week\" case can be asked and graded", () => {
+  const f = jiraFixture.facts
+  // "done this week": now is Thursday 2026-09-17 12:00 UTC, the week starts on Monday the 14th
+  assert.deepEqual(jql("statusCategory = Done AND resolved >= startOfWeek()"), ["QLN-6"])
+  assert.deepEqual(jql("resolved >= startOfWeek()"), f.resolved_this_week_keys)
+  assert.deepEqual(jql("resolved >= -7d"), f.resolved_last_7_days_keys)
+  assert.deepEqual(jql('resolutiondate >= "2026-09-01" AND resolutiondate <= "2026-09-10"'), f.resolved_before_sept_10_keys, "resolutiondate is resolved")
+  assert.deepEqual(jql("resolved >= startOfWeek(-1w) AND resolved < startOfWeek()"), [], "last week: nothing was resolved then")
+  assert.deepEqual(jql("resolved >= startOfMonth()"), ["QLN-4", "QLN-6"], "QLN-4 was resolved on the 1st")
+  assert.deepEqual(jql('resolved >= "2026-09-01" AND resolved <= endOfWeek()'), ["QLN-4", "QLN-6"])
+  // an issue with no resolution has no date: no comparison matches it, and is EMPTY / is NULL do
+  assert.deepEqual(jql("resolved is EMPTY"), ["QLN-1", "QLN-2", "QLN-3", "QLN-5", "QLN-7"])
+  assert.deepEqual(jql("resolved is NULL"), jql("resolved is EMPTY"))
+  assert.deepEqual(jql("resolved is not EMPTY"), ["QLN-4", "QLN-6"])
+  assert.ok(!jql("resolved <= endOfYear()").includes("QLN-1"))
+  assert.equal(jql("resolution = Unresolved").length, Number(f.unresolved_count))
+  assert.deepEqual(jql("resolution = Done"), f.done_keys)
+  assert.deepEqual(jql("statusCategory = Done"), f.done_keys)
+  assert.deepEqual(jql('statusCategory in ("To Do", "In Progress")').length, 5)
+  assert.deepEqual(jql("statusCategory != Done AND resolution is EMPTY").length, 5)
+  assert.deepEqual(jql("assignee is EMPTY"), ["QLN-3"])
+  assert.deepEqual(jql("assignee is not EMPTY").length, 6)
+  // the date functions
+  const at = (t) => new Date(parseWhen(t).start).toISOString()
+  assert.equal(at("startOfWeek()"), "2026-09-14T00:00:00.000Z")
+  assert.equal(at("startOfWeek(-1w)"), "2026-09-07T00:00:00.000Z")
+  assert.equal(at("endOfWeek()"), "2026-09-20T23:59:59.999Z")
+  assert.equal(at("startOfDay()"), "2026-09-17T00:00:00.000Z")
+  assert.equal(at("startOfMonth(-1M)"), "2026-08-01T00:00:00.000Z")
+  assert.equal(at("startOfYear()"), "2026-01-01T00:00:00.000Z")
+  assert.equal(at('startOfWeek("-1")'), "2026-09-07T00:00:00.000Z", "a bare increment counts in the function's own unit")
+  assert.equal(at("-1M"), "2026-08-17T12:00:00.000Z")
+  assert.equal(at("+1d"), "2026-09-18T12:00:00.000Z")
+  assert.equal(parseWhen("startOfFoo()"), null)
+  // the returned issues carry the dates
+  const six = JSON.parse(jiraFixture.call("getJiraIssue", { issueIdOrKey: "QLN-6" }).text)
+  assert.equal(six.resolved, "2026-09-14T15:00:00Z")
+  assert.equal(six.resolution, "Done")
+})
+
+const ghSearch = (tool, query) => {
+  const out = githubFixture.call(tool, { query })
+  return out.isError ? `ERR ${out.text}` : JSON.parse(out.text).items.map((i) => i.number)
+}
+
+test("fake GitHub: search reads created:, updated:, assignee:, is:open and the other qualifiers, as GitHub does, and refuses what it cannot read", () => {
+  const f = githubFixture.facts
+  assert.deepEqual(ghSearch("search_issues", "repo:fabrikam-labs/quill-notes is:open"), [1, 2, 3, 5])
+  assert.deepEqual(ghSearch("search_issues", "is:closed"), [4, 6])
+  assert.deepEqual(ghSearch("search_issues", "assignee:ada-lantern is:open"), [1, 5])
+  assert.deepEqual(ghSearch("search_issues", "assignee:@me is:open"), [1, 5])
+  assert.deepEqual(ghSearch("search_issues", "no:assignee"), [3])
+  assert.deepEqual(ghSearch("search_issues", "author:bo-marlowe"), [1, 4])
+  assert.deepEqual(ghSearch("search_issues", 'label:"good first issue"'), [3], "a quoted label with spaces")
+  assert.deepEqual(ghSearch("search_issues", "label:bug -label:sync"), [2, 4])
+  assert.deepEqual(ghSearch("search_issues", "is:open sync in:title"), [1])
+  // dates: a date alone is a whole day, as in GitHub
+  assert.deepEqual(ghSearch("search_issues", "created:2026-09-01..2026-09-10"), f.created_sept_1_to_10_issue_numbers.map(Number))
+  assert.deepEqual(ghSearch("search_issues", "created:>2026-09-10"), f.created_after_sept_10_issue_numbers.map(Number))
+  assert.deepEqual(ghSearch("search_issues", "created:<=2026-09-05"), [1, 2, 4, 6], "<= takes all of the 5th")
+  assert.deepEqual(ghSearch("search_issues", "created:<2026-09-05"), [1, 4, 6], "< stops before the 5th")
+  assert.deepEqual(ghSearch("search_issues", "created:>=2026-09-05"), [2, 3, 5])
+  assert.deepEqual(ghSearch("search_issues", "created:2026-09-05"), [2])
+  assert.deepEqual(ghSearch("search_issues", "created:2026-09-11..*"), [3, 5])
+  assert.deepEqual(ghSearch("search_issues", "created:*..2026-09-01"), [4, 6], "to the 1st: #4 (Aug 21) and #6 (Aug 30)")
+  assert.deepEqual(ghSearch("search_issues", "updated:>=2026-09-12"), [1, 5])
+  assert.deepEqual(ghSearch("search_issues", "is:closed closed:>=2026-09-02"), f.closed_since_sept_2_issue_numbers.map(Number))
+  assert.deepEqual(ghSearch("search_issues", "closed:2026-09-01..2026-09-03"), [4, 6])
+  assert.deepEqual(ghSearch("search_issues", "is:open closed:>=2026-01-01"), [], "an open issue has no closing date")
+  // merged: is the pull request's own date, and a merged pull request is closed on it
+  assert.deepEqual(ghSearch("search_pull_requests", "merged:>=2026-08-30"), f.merged_pr_numbers.map(Number))
+  assert.deepEqual(ghSearch("search_pull_requests", "is:merged merged:2026-09-01"), [9])
+  assert.deepEqual(ghSearch("search_pull_requests", "merged:<2026-08-30"), [])
+  assert.deepEqual(ghSearch("search_pull_requests", "is:open merged:>=2026-01-01"), [])
+  assert.deepEqual(ghSearch("search_pull_requests", "closed:2026-09-01"), [9])
+  assert.deepEqual(ghSearch("search_issues", "created:2026-09-02T09:14:00Z"), [1], "an instant")
+  assert.notDeepEqual(ghSearch("search_issues", "created:2026-09-03..2026-09-10"), ghSearch("search_issues", "created:2026-09-01..2026-09-10"), "a window is the query's, not a fixed list")
+  // pull requests
+  assert.deepEqual(ghSearch("search_pull_requests", "is:open updated:2026-09-16"), f.updated_sept_16_pr_numbers.map(Number))
+  assert.deepEqual(ghSearch("search_pull_requests", "is:merged"), [9])
+  assert.deepEqual(ghSearch("search_pull_requests", "is:draft"), [8])
+  assert.deepEqual(ghSearch("search_pull_requests", "is:open author:ada-lantern"), [7])
+  assert.deepEqual(ghSearch("search_issues", "is:pr"), [], "search_issues is issues only")
+  // the only repository, organisation and user are the fixture's
+  assert.deepEqual(ghSearch("search_issues", "repo:someone/else"), [])
+  assert.deepEqual(ghSearch("search_issues", "org:fabrikam-labs is:open").length, 4)
+  assert.deepEqual(ghSearch("search_issues", "org:other-org"), [])
+  // what it cannot read it says
+  for (const bad of ["foo:bar", "created:lastweek", "is:weird", "no:milestone", "updated:>=banana"]) assert.match(ghSearch("search_issues", bad), /^ERR Invalid search/, bad)
 })
