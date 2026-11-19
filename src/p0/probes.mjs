@@ -278,7 +278,7 @@ export async function c(env = {}) {
   writeFileSync(join(store, "caps.json"), JSON.stringify({ estimate_run_usd: { "mock/m1": { wide: 0.04, deep: 0.04 } } }))
   const caller = { EVALS_ROUND_CEILING_USD: "0.05", EVALS_MODELS_CATALOG: catalog, EVALS_MODEL_MAP: map, EVALS_MOCK_USAGE: JSON.stringify({ input: 0, output: 2000, cacheRead: 200000, cacheWrite: 20000 }), ...env.caller }
   const cases = [{ id: "one", prompt: "[[mock:text:one]]" }, { id: "two", prompt: "[[mock:text:two]]" }]
-  const run = await scriptedRun({ cases, arm: { package: "none" }, caller, options: { iteration: "p0-c", parallel: 1, store }, tmp: env.tmp })
+  const run = await scriptedRun({ cases, arm: { package: "none" }, caller, options: { iteration: "p0-c", parallel: 1, store }, tmp: env.tmp, expectStop: true })
   try {
     const runs = run.ledger.filter((e) => e.kind === "run")
     const first = runs[0]
@@ -296,7 +296,7 @@ export async function c(env = {}) {
     // A third batch: refused before anything is reserved.
     let refusedBatch = ""
     try {
-      await scriptedRun({ cases: [{ id: "three", prompt: "[[mock:text:three]]" }], arm: { package: "none" }, caller, options: { iteration: "p0-c-again", store }, tmp: env.tmp })
+      await scriptedRun({ cases: [{ id: "three", prompt: "[[mock:text:three]]" }], arm: { package: "none" }, caller, options: { iteration: "p0-c-again", store }, tmp: env.tmp, expectStop: true })
     } catch (error) {
       refusedBatch = String(error.message)
     }
@@ -617,10 +617,10 @@ export async function halt(env = {}) {
   const create = (name) => execute(`return await tools.jobs.create({name:'${name}',schedule:{every:'1h'},agent:'build',action:{type:'prompt',text:'hi'}})`)
   const cases = [{ id: "first-write", prompt: create("first") }, { id: "second-write", prompt: create("second") }, { id: "third-write", prompt: create("third") }]
   const options = { probe: true, noWriteAsks: true, guardMode: "log", iteration: "p0-halt", parallel: 1, store, auth: "none" }
-  const run = await scriptedRun({ cases, arm: soloArm(env.companions, "jobs", { access: "all" }), options, tmp: env.tmp })
+  const run = await scriptedRun({ cases, arm: soloArm(env.companions, "jobs", { access: "all" }), options, tmp: env.tmp, expectStop: true })
   let again = ""
   try {
-    await scriptedRun({ cases: [cases[0]], arm: soloArm(env.companions, "jobs", { access: "all" }), options: { ...options, iteration: "p0-halt-next" }, tmp: env.tmp })
+    await scriptedRun({ cases: [cases[0]], arm: soloArm(env.companions, "jobs", { access: "all" }), options: { ...options, iteration: "p0-halt-next" }, tmp: env.tmp, expectStop: true })
   } catch (error) {
     again = error.message
   }

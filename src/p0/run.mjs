@@ -64,7 +64,7 @@ const readLines = (file) => (existsSync(file) ? readFileSync(file, "utf8").split
  *   caller     extra environment for the runner (EVALS_ROUND_CEILING_USD, EVALS_MOCK_USAGE, …)
  *   options    extra runBatch options (tools, guardMode, noWriteAsks, probe, auth, trials, parallel, …)
  */
-export async function scriptedRun({ cases, arm = { package: "none" }, caller = {}, options = {}, tmp, env = process.env, keep = false, prepare = null, plugin = "p0" } = {}) {
+export async function scriptedRun({ cases, arm = { package: "none" }, caller = {}, options = {}, tmp, env = process.env, keep = false, prepare = null, plugin = "p0", expectStop = false } = {}) {
   const root = mkdtempSync(join(tmp ?? env.TMPDIR ?? "/tmp", "evals-p0-"))
   const casesDir = join(root, "cases")
   mkdirSync(casesDir)
@@ -103,7 +103,7 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
   for (const c of cases) {
     const outcome = (result.results ?? []).find((r) => r.case === c.id && r.trial === 1) ?? null
     trials[c.id].outcome = outcome
-    const why = infraReason(trials[c.id], { outcome, log, stopped: result.stopped ?? null })
+    const why = infraReason(trials[c.id], { outcome, log, stopped: result.stopped ?? null, expectStop })
     if (why) HUNG.push({ id: c.id, iteration, why })
     const restarts = trials[c.id].summary?.client_restarts ?? []
     if (restarts.length) NOTES.push({ id: c.id, iteration, why: `its client made no model request within ${Math.round(restarts[0].after_ms / 1000)} s and was restarted ${restarts.length === 1 ? "once" : `${restarts.length} times`}${diagnosisText(restarts[0].diagnosis)}` })
@@ -181,15 +181,18 @@ export function hungReason(trial) {
  *   outcome  the batch's own result for this trial (`{ infra, error, why }`), when it has one
  *   log      the runner's log lines of the batch
  *   stopped  why the batch stopped launching, when it did
+ *   expectStop  the probe expects the batch to stop (a cap, a halt): a trial it never launched is then no event
  */
 const diagnosisText = (diagnosis) => !diagnosis ? "" : `; container: ${JSON.stringify(diagnosis.state ?? diagnosis.note ?? diagnosis.error ?? {})}${diagnosis.oom_kills ? `, ${diagnosis.oom_kills} OOM kill(s)` : ""}${diagnosis.processes ? `; its processes: ${String(diagnosis.processes).split("\n").slice(0, 12).map((l) => l.trim().replace(/\s+/g, " ")).join(" | ")}` : ""}${diagnosis.log_tail ? `; its last log lines: ${String(diagnosis.log_tail).split("\n").slice(-4).join(" | ")}` : ""}`
 
-export function infraReason(trial, { outcome = null, log = [], stopped = null } = {}) {
+export function infraReason(trial, { outcome = null, log = [], stopped = null, expectStop = false } = {}) {
   const hung = hungReason(trial)
   if (hung) return `${hung}${diagnosisText(trial?.summary?.exit_diagnosis)}`
   const summary = trial?.summary
   const own = (log ?? []).filter((line) => String(line).includes(` ${trial?.id}.t1`)).slice(-3).map((line) => String(line).trim())
   if (summary === null) {
+    // A batch the probe expects to stop (a cap, a halt) leaves later trials unlaunched on purpose: that is the guarantee under test, not an event.
+    if (expectStop && !outcome && stopped) return null
     const parts = [`no summary was written for the trial${outcome?.error ? `: ${outcome.error}` : ""}`]
     if (outcome?.infra) parts.push(`the runner recorded infra ${outcome.infra}`)
     else if (!outcome) parts.push(stopped ? `it was not launched (the batch stopped: ${stopped})` : "the runner has no result for it either")

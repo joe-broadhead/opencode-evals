@@ -8,7 +8,7 @@
 //   { name, confines, maxParallel?, prepare({ batchRoot, caller, binaries, log }), enter({ name, sandbox, mounts, cwd }),
 //     teardown(), describe(), egress()? }
 // and a trial, what enter() returns, is
-//   { wrap({ command, args, cwd, env }), port(attempt), ready({ url, password, directory, timeoutMs, exited }),
+//   { wrap({ command, args, cwd, env, stdin }), port(attempt), ready({ url, password, directory, timeoutMs, exited }),
 //     oomKills(), leave({ reason }), describe(), killed }
 //   confines   true when the run's processes cannot reach the host filesystem outside what the backend mounts;
 //   wrap       turns a host command (serve, run, auth import, --version) into the command that runs it confined;

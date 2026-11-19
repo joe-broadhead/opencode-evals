@@ -230,7 +230,7 @@ async function preflightRoute(p) {
     const mockUrl = mock?.url ?? p.mockUrl
     const env = sandboxEnv({ sandbox, config, password, caller: p.caller, extra: { ...p.auth.env, ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
     const exec = (args, options = {}) => {
-      const spec = trial.wrap({ command: p.binary, args, cwd: options.cwd ?? sandbox.project, env: options.env ?? env })
+      const spec = trial.wrap({ command: p.binary, args, cwd: options.cwd ?? sandbox.project, env: options.env ?? env, stdin: options.input !== undefined && options.input !== null })
       return runToEnd(spec.command, spec.args, { ...options, cwd: spec.cwd, env: spec.env })
     }
     await p.auth.apply({ sandbox, env, exec })
