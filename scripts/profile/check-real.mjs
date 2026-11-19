@@ -11,7 +11,7 @@
 
 import { join } from "node:path"
 import { homedir } from "node:os"
-import { IDENTITY, RECHECK_HOURS, realEnv, profileEnv, run, activeCredential, digestsOf, logRound } from "./profile-lib.mjs"
+import { IDENTITY, RECHECK_HOURS, NOT_IN_REAL, realEnv, profileEnv, run, activeCredential, digestsOf, logRound } from "./profile-lib.mjs"
 import { assertDistinctPort } from "../../src/run/service-port.mjs"
 
 export function checkReal({ integration, opencode = "opencode", profile, store, env = process.env, exec = run, now = new Date() }) {
@@ -24,6 +24,24 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
     assertDistinctPort({ opencode, profileEnv: evals, realEnv: real, exec, env })
   } catch (error) {
     return fail(error.message)
+  }
+
+  // A vendor the real profile does not hold (OpenRouter, Affinity): nothing of the owner's can be signed out. The evals sign-in must be there and,
+  // where the vendor has an identity tool, must read through the evals profile's own service.
+  if (NOT_IN_REAL.includes(integration)) {
+    const held = exec(opencode, ["auth", "export", integration], { env: real })
+    if (!(held.code === 0 && activeCredential(held.stdout, integration))) {
+      const mine = exec(opencode, ["auth", "export", integration], { env: evals })
+      const credential = mine.code === 0 ? activeCredential(mine.stdout, integration) : null
+      if (!credential) return fail("the evals profile holds no credential for it (sign it in first)")
+      const route = IDENTITY[integration]
+      if (route) {
+        const read = exec(opencode, ["api", "post", `/api/rpc/${route}`, "--data", "{}"], { env: evals })
+        if (read.code !== 0 || /"error"\s*:/.test(read.stdout.slice(0, 400))) return fail(`the evals profile's identity read (${route.split("/")[1]}) failed (exit ${read.code})`)
+      }
+      if (store) logRound(store, { event: "check-real", integration, result: "PASS", provisional: false, not_in_real: true })
+      return { ok: true, line: `PASS ${integration}: not in the real profile, so there is nothing to sign out of; the evals sign-in is held${route ? " and reads" : ""}` }
+    }
   }
 
   // 1. The real profile still reads.

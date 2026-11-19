@@ -10,6 +10,7 @@
 import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs"
 import { join, resolve } from "node:path"
 import { THIRD_PARTY_DATA, dataOf } from "../case/schema.mjs"
+import { usesOnlyNoAccount } from "./accounts.mjs"
 import { parseSeed, parseSeedList } from "./world.mjs"
 import { segment, inside } from "./paths.mjs"
 import { storeRoot } from "../store.mjs"
@@ -23,11 +24,13 @@ export const placeholdersIn = (prompt) => [...String(prompt ?? "").matchAll(PLAC
  * Fills a prompt. `targets` and `canaries` are Maps name -> [values] (grade/targets.mjs). A list's first value is the one a
  * prompt names. Returns { text, unknown: [placeholder text] }: a prompt with any unknown is not sent.
  */
-export function fillPrompt(prompt, { targets = null, canaries = null } = {}) {
+export function fillPrompt(prompt, { targets = null, canaries = null, standIn = false } = {}) {
   const unknown = []
   const text = String(prompt ?? "").replace(PLACEHOLDER, (whole, kind, name) => {
     const values = (kind === "target" ? targets : canaries)?.get(name)
     if (!values?.length) {
+      // A case that runs with no account reads and writes nothing real: its sandbox target is named, not looked up (no target is needed).
+      if (standIn) return `<${name.replace(/[._-]+/g, " ")}>`
       unknown.push(whole)
       return whole
     }
@@ -63,18 +66,20 @@ export const isDeepSeekRoute = (model) => String(model ?? "").startsWith("openco
  * Splits the selected cases into those that may run on `model` and those deferred, each deferred one with why. A case with
  * `Data: real|candidate` is refused for an `opencode/*` model; a case with a placeholder the store cannot fill is deferred.
  */
-export function gateCases(cases, { model, targets = null, canaries = null, matrix = {} } = {}) {
+export function gateCases(cases, { model, targets = null, canaries = null, matrix = {}, noAccount = null } = {}) {
   const runnable = []
   const deferred = []
   const prompts = new Map()
   for (const c of cases) {
     const data = dataOf(c)
     // The harness's own scripted model reads nothing: a probe may hand it a call against third-party data, and no model sees the answer.
-    if (THIRD_PARTY_DATA.includes(data) && !String(model).startsWith("mock/") && !signedOff(matrix, data, model)) {
+    // A case whose every plugin runs with no account reads no one's words, so the sign-off has nothing to hold (and it is no credential's to want).
+    const reads = !usesOnlyNoAccount(c, noAccount)
+    if (reads && THIRD_PARTY_DATA.includes(data) && !String(model).startsWith("mock/") && !signedOff(matrix, data, model)) {
       deferred.push({ case: c.id, why: `Data: ${data} may not run on ${model}: the owner's data-matrix sign-off ($EVALS_STORE/data-matrix.json) does not list it for ${data} data${isDeepSeekRoute(model) ? " (a third party's words stay off DeepSeek unless it says so)" : ""}` })
       continue
     }
-    const filled = fillPrompt(c.prompt, { targets, canaries })
+    const filled = fillPrompt(c.prompt, { targets, canaries, standIn: !reads })
     if (filled.unknown.length) {
       deferred.push({ case: c.id, why: `the store cannot fill ${[...new Set(filled.unknown)].join(", ")} (targets.json or canaries.json)` })
       continue
@@ -166,16 +171,18 @@ export function seedFiles(seed, project, options = {}) {
  * [{ case, why }]. This is the offline half; reading the live sandbox data through scripted reads needs the credentials and runs
  * in the pilot.
  */
-export function dataPreflight(cases, { targets = null, canaries = null, env = process.env, root } = {}) {
+export function dataPreflight(cases, { targets = null, canaries = null, env = process.env, root, noAccount = null } = {}) {
   const deferred = []
   for (const c of cases) {
     const missing = new Set()
+    // A case that runs with no account needs no target and no canary: its clauses on them are not applicable, not missing.
+    const needsData = !usesOnlyNoAccount(c, noAccount)
     const clauses = (c.items ?? []).flatMap((item) => [...(item.evidence ?? []), ...(item.evidence_any ?? []).flat(), ...(item.na_when ?? [])])
     for (const clause of clauses) {
       for (const alias of clause.aliases ?? []) if (!targets?.get(String(alias).replace(/^@/, ""))) missing.add(alias)
       if (clause.kind === "canary" && !canaries?.get(clause.name)) missing.add(`@canary.${clause.name}`)
     }
-    if (missing.size) deferred.push({ case: c.id, why: `its clauses name ${[...missing].join(", ")}, which the store lacks` })
+    if (needsData && missing.size) deferred.push({ case: c.id, why: `its clauses name ${[...missing].join(", ")}, which the store lacks` })
     for (const name of parseSeedList(parseSeed(c.seed).files)) {
       let dir = null
       try {

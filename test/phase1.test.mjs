@@ -67,7 +67,7 @@ const run = async (w, s, extra = {}, options = {}) => {
 }
 
 test("the order is section D's: sign-in checks, keeper, GitHub, logout, egress, live writes, gws, the paid pilot last", () => {
-  assert.deepEqual(ids, ["preflight", "check-real", "keeper", "p6b", "p6c", "p7", "live", "gws", "pilot"])
+  assert.deepEqual(ids, ["preflight", "check-real", "keeper", "p6c", "p7", "live", "gws", "pilot"])
   for (const step of STEPS) assert.ok(step.title && step.needs, step.id)
 })
 
@@ -80,11 +80,11 @@ test("every step runs, in order, when each passes; a step needing a person stops
     assert.equal(r.stopped.id, "pilot")
     assert.equal(r.stopped.manual, true)
     assert.match(r.stopped.message, /THE LEAD'S STEP: the pilot spends money/)
-    assert.deepEqual(s.calls, ["check-real linear", "check-real slack", "keeper", "p7 slack", "p7 linear", "live slack", "live linear", "gws"], "p6b and p6c read or skip; the one-plugin-at-a-time probes run in the file's order")
+    assert.deepEqual(s.calls, ["check-real linear", "check-real slack", "keeper", "p7 slack", "p7 linear", "live slack", "live linear", "gws"], "p6c skips (no --logout); the one-plugin-at-a-time probes run in the file's order")
     assert.deepEqual(r.ran.map((x) => x.id), ids)
     assert.ok(r.lines.some((l) => /nothing after pilot ran/.test(l)))
     const state = readState(w.store)
-    assert.deepEqual(Object.keys(state.steps).filter((k) => state.steps[k].ok), ids.slice(0, 8))
+    assert.deepEqual(Object.keys(state.steps).filter((k) => state.steps[k].ok), ids.slice(0, 7))
     // with the lead's confirmation, a ceiling and a plan, the pilot runs
     const done = await run(w, s, { pilot: true, confirmLabels: true }, { from: "pilot" })
     assert.equal(done.ok, true, JSON.stringify(done.stopped))
@@ -213,7 +213,7 @@ test("preflight refuses a missing profile, a link, a missing targets file; check
   }
 })
 
-test("GitHub's token type and the logout are recorded; logout runs only when asked; the pilot needs a ceiling", async () => {
+test("the logout runs only when asked, and the pilot needs a ceiling", async () => {
   const w = world()
   try {
     const s = stand({ github: "key" })
@@ -223,8 +223,6 @@ test("GitHub's token type and the logout are recorded; logout runs only when ask
     const asked = await run(w, s, { logout: "ashby" }, { only: "p6c" })
     assert.equal(asked.ok, true)
     assert.ok(s.calls.includes("logout ashby"))
-    const gh = await run(w, s, {}, { only: "p6b" })
-    assert.ok(gh.lines.some((l) => /key-type credential/.test(l)))
     const noCeiling = await run(w, s, { pilot: true, confirmLabels: true, caller: {} }, { only: "pilot" })
     assert.match(noCeiling.stopped.message, /no EVALS_ROUND_CEILING_USD/)
   } finally {

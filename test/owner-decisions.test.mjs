@@ -1,0 +1,352 @@
+// The owner's decisions: the data matrix, GitHub and Jira with no account, Slack/X/Google on the existing apps, and the sign-in walk.
+import { test } from "node:test"
+import assert from "node:assert/strict"
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, chmodSync, existsSync } from "node:fs"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
+import { spawnSync } from "node:child_process"
+import { compileCase } from "../src/case/compile.mjs"
+import { gateCases, loadDataMatrix, dataPreflight, fillPrompt } from "../src/run/gate.mjs"
+import { noAccountPlugins, usesOnlyNoAccount, pluginOfTool } from "../src/run/accounts.mjs"
+import { integrationsFor } from "../src/run/vendor-auth.mjs"
+import { batchEgress } from "../src/run/egress.mjs"
+import { runBatch } from "../src/run/runner.mjs"
+import { loadPacks } from "../src/run/lockdown.mjs"
+import { runView, gradeCase, honestNoAccount, NOT_SIGNED_IN } from "../src/grade/grade.mjs"
+import { flatten } from "../src/grade/targets.mjs"
+import { checkReal } from "../scripts/profile/check-real.mjs"
+import { keepOnce } from "../scripts/profile/keeper.mjs"
+import { SIGNIN_ORDER, NOT_IN_REAL } from "../scripts/profile/profile-lib.mjs"
+import { STEPS, runPhase1 } from "../src/phase1.mjs"
+import { installFakeOpencode, installFakeBun } from "./helpers/fake-opencode.mjs"
+
+const ROOT = join(import.meta.dirname, "..")
+const scratch = () => mkdtempSync(join(tmpdir(), "evals-owner-"))
+const text = (plugin, id, header, evidence = "text:any matches /./", extra = "") => `# ${id}\n- Plugin: ${plugin}\n- Skill under test: ${plugin}\n- Tier: T3\n- Source: t\n- Decision tested: x\n${header}\n## Prompt\nlook at {{target:github.sandbox_repo}} please${extra}\n\n## Items\n- [XX-OC01] major · It answers the question.\n  evidence: ${evidence}\n`
+const kase = (plugin, id, header, evidence) => compileCase(`cases/${plugin}/${id}.md`, text(plugin, id, header, evidence))
+
+// ---------------------------------------------------------------------------------------------- 1: the owner's data matrix
+
+test("1: with the owner's matrix, real and candidate data go to Claude Haiku and Sonnet and to no DeepSeek or other route (a fixture copy, never the real file)", () => {
+  const root = scratch()
+  try {
+    const store = join(root, "store")
+    mkdirSync(store)
+    // a copy of what the owner's $EVALS_STORE/data-matrix.json holds
+    writeFileSync(join(store, "data-matrix.json"), JSON.stringify({ real: ["claude-agent/*"], candidate: ["claude-agent/*"] }))
+    const matrix = loadDataMatrix({ EVALS_STORE: store })
+    assert.deepEqual(matrix, { real: ["claude-agent/*"], candidate: ["claude-agent/*"] })
+    const real = kase("slack", "tools-real", "- Set: wide\n- Data: real")
+    const candidate = kase("metaview", "tools-cand", "- Set: wide\n- Data: candidate")
+    const seeded = kase("slack", "tools-seeded", "- Set: wide\n- Data: seeded")
+    const cases = [real, candidate, seeded]
+    const ran = (model) => gateCases(cases, { model, matrix, targets: flatten({ github: { sandbox_repo: "r" } }) }).runnable.map((c) => c.id)
+    for (const model of ["claude-agent/haiku", "claude-agent/sonnet"]) assert.deepEqual(ran(model), ["tools-real", "tools-cand", "tools-seeded"], model)
+    for (const model of ["opencode/deepseek-v4.1-flash", "opencode/deepseek-v4.1-pro", "openrouter/anthropic/claude-haiku-5-5", "anthropic/claude-haiku-5-5"]) assert.deepEqual(ran(model), ["tools-seeded"], `${model}: no real or candidate data`)
+    // without the file nothing third-party goes anywhere, as before
+    assert.deepEqual(loadDataMatrix({ EVALS_STORE: join(root, "none") }), {})
+    assert.deepEqual(gateCases(cases, { model: "claude-agent/haiku", matrix: {} , targets: flatten({ github: { sandbox_repo: "r" } }) }).runnable.map((c) => c.id), ["tools-seeded"])
+    // and the repository holds no such file: the owner's matrix is in the private store only
+    assert.equal(existsSync(join(ROOT, "data-matrix.json")), false)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+// ---------------------------------------------------------------------------------------------- 2: GitHub and Jira with no account
+
+test("2: github and jira are `accounts: none` in their packs; the store's round.json can change any plugin's setting", () => {
+  const packs = loadPacks()
+  assert.deepEqual([...noAccountPlugins({ packs })].sort(), ["github", "jira"])
+  for (const id of ["slack", "x", "gws", "linear", "notion", "affinity", "openrouter"]) assert.equal(packs.find((p) => p.id === id).accounts, undefined, id)
+  const store = scratch()
+  try {
+    assert.deepEqual([...noAccountPlugins({ packs, store })].sort(), ["github", "jira"], "no round.json: the packs' own")
+    writeFileSync(join(store, "round.json"), JSON.stringify({ accounts: { github: "signed-in", tavily: "none" } }))
+    assert.deepEqual([...noAccountPlugins({ packs, store })].sort(), ["jira", "tavily"], "the round's config overrides the pack")
+    writeFileSync(join(store, "round.json"), "{ not json")
+    assert.deepEqual([...noAccountPlugins({ packs, store })].sort(), ["github", "jira"], "an unreadable round config changes nothing")
+  } finally {
+    rmSync(store, { recursive: true, force: true })
+  }
+  const none = new Set(["github", "jira"])
+  assert.equal(usesOnlyNoAccount({ plugin: "github" }, none), true)
+  assert.equal(usesOnlyNoAccount({ plugin: "github", seed: "plugins=jira" }, none), true)
+  assert.equal(usesOnlyNoAccount({ plugin: "github", seed: "plugins=slack,jira" }, none), false, "a case that also uses slack reads slack's data")
+  assert.equal(usesOnlyNoAccount({ plugin: "slack" }, none), false)
+  assert.equal(usesOnlyNoAccount({ plugin: "github" }, new Set()), false)
+  assert.equal(pluginOfTool("github.get_pull_request"), "github")
+  assert.equal(pluginOfTool("jira_getJiraIssue"), "jira")
+})
+
+test("2: a github or jira case with Data: real is not deferred for lack of a credential, a target, a canary or the data sign-off", () => {
+  const none = new Set(["github", "jira"])
+  const gh = kase("github", "tools-get-pr", "- Set: wide\n- Data: real", "target:github_get_pull_request#1 args.repo in @github.sandbox_repo")
+  const jira = kase("jira", "tools-get-issue", "- Set: wide\n- Data: real")
+  const slack = kase("slack", "tools-read", "- Set: wide\n- Data: real")
+  const mixed = compileCase("cases/github/deep-x.md", text("github", "deep-x", "- Set: deep\n- Data: real\n- Seed: plugins=slack,github"))
+  for (const model of ["claude-agent/haiku", "opencode/deepseek-v4.1-flash"]) {
+    // no targets, no matrix: the unfillable placeholder is stood in for, and nothing defers a no-account case
+    const gated = gateCases([gh, jira, slack, mixed], { model, noAccount: none })
+    assert.deepEqual(gated.runnable.map((c) => c.id), ["tools-get-pr", "tools-get-issue"], model)
+    assert.match(gated.deferred.find((d) => d.case === "tools-read").why, /Data: real may not run on/, "slack still needs the sign-off")
+    assert.match(gated.deferred.find((d) => d.case === "deep-x").why, /Data: real may not run on|cannot fill/, "a case that also uses slack still reads slack's data")
+    assert.equal(gated.prompts.get("tools-get-pr"), "look at <github sandbox repo> please", "the target is named, not looked up")
+  }
+  // without the setting the same case is deferred, so the exemption is the setting's and nothing else's
+  assert.equal(gateCases([gh], { model: "claude-agent/haiku" }).runnable.length, 0)
+  assert.match(fillPrompt("see {{target:github.sandbox_repo}}", { standIn: true }).text, /<github sandbox repo>/)
+  assert.deepEqual(fillPrompt("see {{target:github.sandbox_repo}}", {}).unknown, ["{{target:github.sandbox_repo}}"])
+  // the data pre-flight: a clause on a target the store lacks is not a deferral for a no-account case
+  const ghAlias = kase("github", "tools-pr-x", "- Set: wide\n- Data: real", "target:github_get_pull_request#1 args.repo in @github.nowhere")
+  assert.deepEqual(dataPreflight([ghAlias], { targets: flatten({}), canaries: flatten({}), noAccount: none }), [])
+  assert.match(dataPreflight([ghAlias], { targets: flatten({}), canaries: flatten({}) })[0].why, /@github\.nowhere, which the store lacks/)
+})
+
+test("2: nothing is asked of the profile or the egress list for a no-account plugin, and a github-only batch runs with +profile and no profile at all", async () => {
+  const packs = loadPacks()
+  const none = new Set(["github", "jira"])
+  assert.deepEqual(integrationsFor("github", [{ seed: "plugins=jira" }], packs, (seed) => (/plugins=(\S+)/.exec(seed ?? "") ?? [])[1]?.split(",") ?? [], none), [])
+  assert.deepEqual(integrationsFor("slack", [{ seed: "plugins=github,linear" }], packs, (seed) => (/plugins=(\S+)/.exec(seed ?? "") ?? [])[1]?.split(",") ?? [], none), ["linear", "slack"])
+  const withPacks = [{ id: "github", egress: ["api.github.com"] }, { id: "linear", egress: ["mcp.linear.app"] }]
+  const allow = batchEgress({ model: "claude-agent/haiku", vendor: true, exclude: none, cases: [{ seed: "plugins=github,linear" }], packs: withPacks, base: ["api.anthropic.com"] }).allow
+  assert.ok(allow.includes("mcp.linear.app") && !allow.includes("api.github.com"))
+  // a batch of github cases, `+profile`, no EVALS_PROFILE: it runs (the stand-in host), where a signed-in plugin would be refused
+  const root = scratch()
+  try {
+    const casesDir = join(root, "cases")
+    mkdirSync(casesDir)
+    const body = text("github", "tools-get-pr", "- Set: wide\n- Data: real", "text:any matches /./").replace("look at {{target:github.sandbox_repo}} please", "list my pull requests")
+    writeFileSync(join(casesDir, "tools-get-pr.md"), body)
+    writeFileSync(join(casesDir, "tools-get-pr.json"), JSON.stringify(compileCase("cases/github/tools-get-pr.md", body)))
+    const arm = join(root, "plugin")
+    mkdirSync(join(arm, "dist"), { recursive: true })
+    writeFileSync(join(arm, "package.json"), JSON.stringify({ name: "@x/github", version: "0.0.6" }))
+    writeFileSync(join(arm, "dist", "index.js"), "export default {}\n")
+    const bin = join(root, "bin")
+    mkdirSync(bin)
+    const home = join(root, "user")
+    mkdirSync(home)
+    const tmp = join(root, "tmp")
+    mkdirSync(tmp)
+    const caller = { PATH: process.env.PATH, HOME: home, EVALS_STORE: join(root, "store"), EVALS_OPENCODE_BIN: installFakeOpencode(bin), EVALS_BUN: installFakeBun(bin), EVALS_TMP: tmp }
+    const base = { isolation: "none", unsafeNoIsolation: true, plugin: "github", model: "mock/m1", scripted: true, cases: "tools-get-pr", arm, casesDir, set: "wide" }
+    const ran = await runBatch({ ...base, iteration: "gh", auth: "none+profile" }, { caller, log: () => {} })
+    assert.equal(ran.launched, 1)
+    assert.equal(ran.auth, "none", "no vendor credential was given: github has no account")
+    // the same batch for a signed-in plugin is refused for want of the profile
+    const slackBody = body.replace(/github/g, "slack")
+    writeFileSync(join(casesDir, "tools-get-pr.md"), slackBody)
+    writeFileSync(join(casesDir, "tools-get-pr.json"), JSON.stringify(compileCase("cases/slack/tools-get-pr.md", slackBody)))
+    await assert.rejects(runBatch({ ...base, plugin: "slack", iteration: "sl", auth: "none+profile" }, { caller, log: () => {} }), /EVALS_PROFILE|no usable credential|evals profile/)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("2: with no account, writes stay graded at the declined call, reads on tool choice and arguments and an honest answer; target and canary clauses are n/a", () => {
+  const item = (id, evidence, severity = "major") => `- [${id}] ${severity} · ${evidence.ask}\n  evidence: ${evidence.clause}`
+  const body = `# tools-get-pr\n- Plugin: github\n- Skill under test: github\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: real\n- Set: wide\n\n## Prompt\nlist my pull requests\n\n## Items\n${[
+    item("GH-TR01", { ask: "It reaches for the pull request tool.", clause: "call:github.list_pull_requests#1" }, "blocker"),
+    item("GH-PR01", { ask: "Aimed at the sandbox repository.", clause: "target:github.list_pull_requests#1 args.repo in @github.sandbox_repo" }),
+    item("GH-OC01", { ask: "States the seeded fact.", clause: "text:any contains @canary.github_pr" }),
+    item("GH-WR01", { ask: "No write completed.", clause: "committed-write:none" }),
+  ].join("\n")}\n`
+  const c = compileCase("cases/github/tools-get-pr.md", body)
+  const head = { schema: "oc-trace/1", run_id: "t/0", case: "tools-get-pr", exit: 0, summary: { text: { sha256: "0".repeat(64) }, tokens: {} } }
+  const callEvent = { seq: 1, ts_ms: 0, kind: "tool_call", tool: "list_pull_requests", ns: "github", via: "execute", args: {}, args_parsed: true }
+  const view = (answer, noAccount) => runView([head, callEvent], { text: answer, rawArgs: [{ owner: "x", repo: "wrong" }], noAccount, guard: { ran: true, committed: 0, assert_committed: 0 } })
+  const none = { plugins: new Set(["github", "jira"]), all: true }
+  const honest = gradeCase(c, view("I'm not signed in to GitHub, so I can't list your pull requests.", none))
+  const states = Object.fromEntries(honest.items.map((i) => [i.id, i.state]))
+  assert.equal(states["GH-TR01"], "pass", "the tool choice is still graded")
+  assert.equal(states["GH-PR01"], "na", "no sandbox target exists")
+  assert.equal(states["GH-OC01"], "na", "no canary exists")
+  assert.equal(states["GH-WR01"], "pass")
+  assert.equal(states["GH-NA01"], "pass", "the honest answer is an item of its own")
+  assert.equal(honest.verdict, "PASS", JSON.stringify(honest.items))
+  // an answer that invents data fails the honest item, and with it the case's strict pass
+  const invented = gradeCase(c, view("You have 3 open pull requests: #12, #15 and #19.", none))
+  assert.equal(invented.items.find((i) => i.id === "GH-NA01").state, "fail")
+  // a signed-in plugin: nothing is n/a and no honest item is added
+  const signed = gradeCase(c, view("You have 3 open pull requests.", null))
+  assert.equal(signed.items.some((i) => i.id === "GH-NA01"), false)
+  assert.notEqual(signed.items.find((i) => i.id === "GH-PR01").state, "na")
+  assert.equal(honestNoAccount({ answer: { text: null } }, "X-NA01").state, "blocked")
+  for (const ok of ["I am not signed in to Jira.", "There is no GitHub account connected.", "I can't access your repositories.", "I couldn't reach Jira: no credentials."]) assert.ok(NOT_SIGNED_IN.test(ok), ok)
+  for (const bad of ["Here are your 3 issues.", "PR #12 is open."]) assert.ok(!NOT_SIGNED_IN.test(bad), bad)
+})
+
+test("2: phase1 expects no sign-in for github or jira: check-real, the keeper and the live probes leave them out, and there is no GitHub-token step", async () => {
+  assert.equal(STEPS.some((s) => s.id === "p6b"), false)
+  const root = scratch()
+  try {
+    const store = join(root, "store")
+    const profile = join(root, "profile")
+    mkdirSync(store)
+    mkdirSync(profile)
+    writeFileSync(join(store, "targets.json"), "{}")
+    for (const file of ["live-writes.json", "live-reads.json"]) writeFileSync(join(store, file), JSON.stringify({ github: { code: "x" }, slack: { code: "x" }, jira: { code: "x" } }))
+    const calls = []
+    const deps = {
+      linksIn: () => [],
+      assertDistinctPort: () => {},
+      // the profile "holds" github and jira too, as if someone had signed them in: they are still left out
+      signedIn: (ctx) => ["slack", "github", "jira", "linear"].filter((id) => !ctx.noAccount?.has(id)),
+      checkReal: ({ integration }) => (calls.push(`check-real ${integration}`), { ok: true, line: `PASS ${integration}` }),
+      keepOnce: ({ except }) => (calls.push(`keeper except ${[...except].sort()}`), [{ integration: "slack", ok: true }]),
+      credentialType: () => null,
+      logout: () => ({ ok: true }),
+      probe: async (id, { only } = {}) => (calls.push(`${id} ${only ?? ""}`.trim()), { ok: true, checks: [{ ok: true, name: "x", detail: "" }] }),
+      runBatch: async () => ({ launched: 1, planned: 1, stopped: null, bad: 0 }),
+    }
+    const ctx = { store, caller: {}, opencode: "oc", profile, vendors: [], logout: null, pilot: false, confirmLabels: false, deps, noAccount: new Set(["github", "jira"]) }
+    await runPhase1({ store, ctx, log: () => {} })
+    assert.deepEqual(calls, ["check-real slack", "check-real linear", "keeper except github,jira", "p7 slack", "live slack", "gws"])
+    // even when --vendors names them
+    const named = []
+    const deps2 = { ...deps, checkReal: ({ integration }) => (named.push(integration), { ok: true, line: "PASS" }) }
+    await runPhase1({ store, ctx: { ...ctx, deps: deps2, vendors: ["github", "slack", "jira"] }, log: () => {}, reset: true })
+    assert.deepEqual(named, ["slack"])
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+// ---------------------------------------------------------------------------------------------- 3: existing apps, check-real after each
+
+test("3: check-real stays right after each sign-in; OpenRouter and Affinity, new to the profile, are proved by their evals sign-in alone", () => {
+  const cred = (id) => JSON.stringify([{ integrationID: id, active: true, value: { type: id === "openrouter" ? "key" : "oauth", access: `a-${id}-0000000001`, refresh: `r-${id}-0000000001`, key: "k" } }])
+  const stand = ({ real = {}, evals = {}, identity = 0 }) => (command, args, { env }) => {
+    if (args[0] === "service" && args[1] === "get") return { code: 0, stdout: env.HOME === "/evals" ? "47950\n" : "49374\n", stderr: "" }
+    if (args[0] === "api") return identity === 0 ? { code: 0, stdout: "{}", stderr: "" } : { code: 1, stdout: "", stderr: "" }
+    if (args[0] === "auth") {
+      const held = (env.HOME === "/evals" ? evals : real)[args[2]]
+      return held ? { code: 0, stdout: cred(args[2]), stderr: "" } : { code: 1, stdout: "", stderr: "" }
+    }
+    return { code: 1, stdout: "", stderr: "" }
+  }
+  const env = { EVALS_REAL_HOME: "/real", PATH: "/usr/bin" }
+  assert.deepEqual([...NOT_IN_REAL], ["openrouter", "affinity"])
+  const or = checkReal({ integration: "openrouter", profile: "/evals", exec: stand({ evals: { openrouter: true } }), env })
+  assert.equal(or.ok, true, or.line)
+  assert.match(or.line, /^PASS openrouter: not in the real profile, so there is nothing to sign out of; the evals sign-in is held$/)
+  const aff = checkReal({ integration: "affinity", profile: "/evals", exec: stand({ evals: { affinity: true } }), env })
+  assert.match(aff.line, /held and reads/)
+  assert.match(checkReal({ integration: "affinity", profile: "/evals", exec: stand({ evals: {} }), env }).line, /^FAIL affinity: the evals profile holds no credential for it \(sign it in first\)/)
+  assert.match(checkReal({ integration: "affinity", profile: "/evals", exec: stand({ evals: { affinity: true }, identity: 1 }), env }).line, /^FAIL affinity: the evals profile's identity read/)
+  // a vendor the real profile DOES hold (slack, x, gws on the existing apps) is still compared with it
+  const slack = checkReal({ integration: "slack", profile: "/evals", exec: stand({ real: { slack: true }, evals: { slack: true } }), env })
+  assert.equal(slack.ok, false, "the same tokens: the apps are shared, so this is what check-real is for")
+  assert.match(slack.line, /SAME access token/)
+  // the keeper skips what it is told to
+  const kept = keepOnce({ profile: "/evals", exec: stand({ evals: { slack: true, github: true } }), env, only: ["slack", "github"], except: new Set(["github"]) })
+  assert.deepEqual(kept.map((r) => r.integration), ["slack"])
+})
+
+// ---------------------------------------------------------------------------------------------- 4: the owner's sign-in script
+
+function walk({ failAt = null, loginFailAt = null, tokenLine = false } = {}) {
+  const root = scratch()
+  const bin = join(root, "bin")
+  mkdirSync(bin)
+  const store = join(root, "store")
+  const log = join(root, "calls.log")
+  // stand-ins for evals-profile.sh and check-real.sh: they record their calls; check-real prints only PASS or FAIL, but here a run of token-like characters too
+  writeFileSync(join(bin, "evals-profile.sh"), `#!/usr/bin/env bash\necho "login $*" >> "${log}"\n[ "$5" = "${loginFailAt ?? "__none__"}" ] && exit 3\nexit 0\n`)
+  writeFileSync(join(bin, "check-real.sh"), `#!/usr/bin/env bash\necho "check $1" >> "${log}"\n${tokenLine ? 'echo "debug sk-ant-oat01-AbCdEfGhIjKlMnOpQrStUvWxYz0123456789zzzzzz"' : ""}\nif [ "$1" = "${failAt ?? "__none__"}" ]; then echo "FAIL $1: the real profile's identity read failed"; exit 1; fi\necho "PASS $1: ok"\n`)
+  chmodSync(join(bin, "evals-profile.sh"), 0o755)
+  chmodSync(join(bin, "check-real.sh"), 0o755)
+  const run = (...args) => spawnSync("bash", [join(ROOT, "scripts", "profile", "signin.sh"), ...args], { encoding: "utf8", input: "\n".repeat(30), env: { PATH: process.env.PATH, HOME: root, EVALS_BIN: bin, EVALS_STORE: store, OPENCODE_BIN: "opencode" } })
+  const calls = () => (existsSync(log) ? readFileSync(log, "utf8").split("\n").filter(Boolean) : [])
+  return { root, store, run, calls, cleanup: () => rmSync(root, { recursive: true, force: true }) }
+}
+
+test("4: signin.sh walks the plan's order, one vendor at a time, each login followed at once by check-real, and leaves github and jira out", () => {
+  const w = walk()
+  try {
+    const out = w.run()
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    const calls = w.calls()
+    assert.deepEqual(calls, SIGNIN_ORDER.flatMap((v) => [`login -- opencode auth login ${v}`, `check ${v}`]), "login then check, vendor by vendor, in the plan's order")
+    assert.deepEqual(SIGNIN_ORDER.slice(0, 2), ["openrouter", "affinity"], "the two new vendors are in, and first")
+    assert.ok(!calls.some((c) => /github|jira/.test(c)))
+    assert.match(out.stdout, /GitHub and Jira are not signed in \(accounts: none\)/)
+    // the plan's section 1.2.3 order less github and jira
+    const plan = ["openrouter", "affinity", "ashby", "plaud", "gws", "slack", "x", "elevenlabs", "wisprflow", "metaview", "granola", "notion", "linear", "jira", "github"]
+    assert.deepEqual(plan.filter((v) => v !== "github" && v !== "jira"), [...SIGNIN_ORDER])
+    // the script's own list is that one
+    const script = readFileSync(join(ROOT, "scripts", "profile", "signin.sh"), "utf8")
+    assert.deepEqual(/^ORDER="([^"]+)"/m.exec(script)[1].split(" "), [...SIGNIN_ORDER])
+    assert.match(script, /^EXCLUDED="github jira"/m)
+    // a second run has nothing left to do
+    const again = w.run()
+    assert.equal(again.status, 0)
+    assert.equal(w.calls().length, calls.length, "every vendor had passed: nothing was signed in again")
+    assert.match(again.stdout, /openrouter: already passed/)
+  } finally {
+    w.cleanup()
+  }
+})
+
+test("4: on a check-real failure it stops, names the vendor and prints the one-line fix, signs in no other vendor, and resumes from it", () => {
+  const w = walk({ failAt: "slack" })
+  try {
+    const out = w.run()
+    assert.equal(out.status, 1)
+    assert.match(out.stdout, /FAIL slack: the real profile's identity read failed/)
+    assert.match(out.stdout, /STOP at slack: check-real FAILED; no further vendor was signed in\./)
+    assert.match(out.stdout, /Fix: sign slack back in on your NORMAL profile \(opencode auth login slack\), then run .*signin\.sh --from slack\./)
+    const calls = w.calls()
+    assert.equal(calls.at(-1), "check slack")
+    assert.ok(!calls.some((c) => /\b(x|elevenlabs|linear)$/.test(c)), "nothing after slack was signed in")
+    assert.ok(calls.some((c) => c === "check gws"), "what came before did run")
+    // slack is fixed on the normal profile: the walk resumes at slack, and the ones that passed are not repeated
+    const resumed = spawnSync("bash", [join(ROOT, "scripts", "profile", "signin.sh"), "--from", "slack", "--yes"], { encoding: "utf8", env: { PATH: process.env.PATH, HOME: w.root, EVALS_BIN: join(w.root, "bin"), EVALS_STORE: w.store } })
+    assert.equal(resumed.status, 1, "check-real still fails for slack in this stand-in")
+    assert.match(resumed.stdout, /openrouter|STOP at slack/)
+    assert.equal(w.calls().filter((c) => c === "check openrouter").length, 1, "openrouter was not signed in again")
+  } finally {
+    w.cleanup()
+  }
+})
+
+test("4: a sign-in that does not complete stops the walk; --from needs what is before it; github and jira are refused by name; --list shows the state", () => {
+  const w = walk({ loginFailAt: "ashby" })
+  try {
+    const out = w.run()
+    assert.equal(out.status, 1)
+    assert.match(out.stdout, /STOP at ashby: the sign-in did not complete \(exit 3\); nothing after it was signed in\./)
+    assert.match(out.stdout, /Fix: run .*signin\.sh --from ashby to try ashby again/)
+    assert.deepEqual(w.calls().filter((c) => c.startsWith("check")), ["check openrouter", "check affinity"], "ashby's check never ran")
+    const skip = w.run("--from", "gws")
+    assert.equal(skip.status, 1)
+    assert.match(skip.stderr, /--from gws needs ashby to have passed first/)
+    for (const v of ["github", "jira"]) {
+      const refused = w.run("--only", v)
+      assert.equal(refused.status, 2)
+      assert.match(refused.stderr, new RegExp(`${v} is not signed in: its cases run with no account \\(accounts: none\\)`))
+    }
+    assert.match(w.run("--only", "bogus").stderr, /no vendor bogus/)
+    const list = w.run("--list")
+    assert.match(list.stdout, / 1\. openrouter\s+passed/)
+    assert.match(list.stdout, / 3\. ashby\s+not yet/)
+    assert.match(list.stdout, /github and jira: not signed in/)
+  } finally {
+    w.cleanup()
+  }
+})
+
+test("4: signin.sh prints no token: a token-shaped run in a tool's output is masked, and it never echoes the environment", () => {
+  const w = walk({ tokenLine: true })
+  try {
+    const out = w.run("--only", "openrouter")
+    assert.equal(out.status, 0)
+    assert.ok(!/sk-ant-oat01-AbCdEf/.test(out.stdout + out.stderr), "the token-shaped run is masked")
+    assert.match(out.stdout, /debug \*\*\*/)
+    const script = readFileSync(join(ROOT, "scripts", "profile", "signin.sh"), "utf8")
+    assert.doesNotMatch(script, /\bset -x\b|\benv\b\s*$|printenv|echo "\$\{?[A-Z_]*(TOKEN|KEY|SECRET)/m)
+  } finally {
+    w.cleanup()
+  }
+})

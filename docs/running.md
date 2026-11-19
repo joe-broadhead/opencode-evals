@@ -110,6 +110,27 @@ and three in a row pause the model for 30 minutes; a spending plugin (Tavily, X,
 supplies a fetcher, from the vendor's own balance. `scripts/wide-skeletons.mjs --plugin <id>` writes one wide skeleton per reachable
 tool, whose prompt is `<<TODO>>` (compile refuses it) so it is written without sight of the tool's description.
 
+## The owner's decisions: the data matrix, no account for GitHub and Jira, the sign-in walk
+
+- **Data.** `$EVALS_STORE/data-matrix.json` is `{"real":["claude-agent/*"],"candidate":["claude-agent/*"]}`: real and candidate data go to Claude Haiku and
+  Sonnet and to no DeepSeek or other route. `gateCases` reads it that way (test/owner-decisions.test.mjs runs a fixture copy; the repository holds no such file).
+- **GitHub and Jira are not signed in.** Their packs say `accounts: none` (and `$EVALS_STORE/round.json`, `{ "accounts": { "<plugin>": "none" | "signed-in" } }`,
+  overrides any plugin's setting without a commit). A plugin with `accounts: none` runs its cases with **no credential**: `+profile` gives it none and asks the profile
+  for nothing, its hosts are not opened, and `evals phase1` expects no sign-in for it. Its tools exist only after a sign-in, so a call to one is an attempt that finds
+  no tool. **Writes** stay graded at the declined call (nothing reaches the vendor). **Reads** are graded on tool choice and arguments, and on an **honest answer**: an item
+  `<prefix>-NA01` (major) passes on an answer that says the account is not signed in or cannot be reached, and fails on an answer that does not (a result it made up). A
+  `target:` clause on such a plugin and a canary clause are n/a, not unverifiable. Such a case is **not deferred** for lack of a credential, a target or a canary: an unfillable
+  `{{target:...}}` is named (`<github sandbox repo>`), not looked up, and a case whose every plugin has no account reads no one's words, so the data sign-off has nothing to hold
+  (a case that also uses a signed-in plugin is gated by that plugin's data as before). The honest-answer test is a heuristic over the answer's words.
+- **Slack, X and Google use the apps already configured**: no second Slack app, no second X app, no separate Google client. They are not owner prerequisites; `check-real`
+  still runs right after each of their sign-ins, and it is the check that says whether the shared app broke the normal profile.
+- **The owner's sign-in walk: `~/evals-232/bin/signin.sh`** (installed by `scripts/profile/install.sh`). It signs the evals profile into the vendors, one at a time, in the plan's
+  section 1.2.3 order less GitHub and Jira: OpenRouter, Affinity, Ashby, Plaud, Google (`gws`), Slack, X, ElevenLabs, Wispr Flow, Metaview, Granola, Notion, Linear. Each is the
+  normal `opencode auth login <vendor>` flow in the evals profile (`evals-profile.sh`), followed at once by `check-real.sh <vendor>` against the **normal** profile. On any
+  failure it stops, names the vendor, and prints one line: `Fix: sign <vendor> back in on your NORMAL profile (opencode auth login <vendor>), then run signin.sh --from <vendor>.`
+  OpenRouter and Affinity are new (not in the normal profile): `check-real` proves their evals sign-in alone. It prints no token (a token-shaped run in a tool's output is masked).
+  `--list` shows the order and what has passed (state in `$EVALS_STORE/signin-passed`), `--from <vendor>` resumes, `--only <vendor>` does one, `--redo` forgets. When it ends, run `evals phase1`.
+
 ## Phase 1: the credentialed phase's first steps, gated
 
 `evals phase1` is the G0 re-check's section D as one executable sequence. Each step runs only if the one before it passed (recorded in
@@ -119,14 +140,13 @@ says what to do, and a HALT in the store stops it whichever step is next. `evals
 | # | Step | What it does | A failure means |
 | --- | --- | --- | --- |
 | 1 | `preflight` | no HALT; the profile exists on its own service port with no link; `targets.json` is in the store | fix the profile or the store |
-| 2 | `check-real` | after each vendor's sign-in (`--vendors a,b`, else the vendors the profile holds): the real profile still works and the tokens differ | sign the real profile back in for that vendor and sign in no more |
+| 2 | `check-real` | after each vendor's sign-in (`--vendors a,b`, else the sign-in walk's vendors; never GitHub or Jira): the real profile still works and the tokens differ | sign the real profile back in for that vendor and sign in no more |
 | 3 | `keeper` | P0-6: one identity read per signed-in vendor; a due token's expiry must move | the token did not read or refresh |
-| 4 | `p6b` | P0-6b: what GitHub's credential in the evals profile is (a fine-grained token, or sign GitHub in last) | (records it) |
-| 5 | `p6c` | P0-6c: `auth logout` of one vendor, only with `--logout <vendor>`; watch the egress log | (skipped unless asked) |
-| 6 | `p7` | P0-7: one scripted read per plugin (`live-reads.json`), the real egress hosts written to `egress-hosts.json`, none refused | a host is missing from the plugin's pack `egress`, or the read failed |
-| 7 | `live` | `p0 live`: one real write per plugin (`live-writes.json`), guard on, one plugin at a time; declined is the pass | a completed write is a HALT: `evals halt` |
-| 8 | `gws` | one real gws plan-and-commit in commit mode (`live-gws.json`) | the plan registry did not behave |
-| 9 | `pilot` | P0-8, paid, last: only with `--pilot --confirm-labels` (the lead has read the cases' `Data:` labels and `Seed: plugins=`), a ceiling set, `pilot.json` | stops at a person's step until confirmed |
+| 4 | `p6c` | P0-6c: `auth logout` of one vendor, only with `--logout <vendor>`; watch the egress log | (skipped unless asked) |
+| 5 | `p7` | P0-7: one scripted read per plugin (`live-reads.json`), the real egress hosts written to `egress-hosts.json`, none refused | a host is missing from the plugin's pack `egress`, or the read failed |
+| 6 | `live` | `p0 live`: one real write per plugin (`live-writes.json`), guard on, one plugin at a time; declined is the pass | a completed write is a HALT: `evals halt` |
+| 7 | `gws` | one real gws plan-and-commit in commit mode (`live-gws.json`) | the plan registry did not behave |
+| 8 | `pilot` | P0-8, paid, last: only with `--pilot --confirm-labels` (the lead has read the cases' `Data:` labels and `Seed: plugins=`), a ceiling set, `pilot.json` | stops at a person's step until confirmed |
 
 `live-reads.json`, `live-writes.json` and `live-gws.json` live in the private store and hold `@alias` placeholders (resolved from `targets.json` at
 run time), never an id: `{ "slack": { "code": "return await tools.slack.slack_send_message({ channel_id: '@slack.sandbox_channel', text: 'x' })" } }`.

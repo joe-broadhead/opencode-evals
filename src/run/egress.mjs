@@ -30,10 +30,11 @@ export function fillHost(entry, targets) {
  * The batch's allow-list. `base` is what the container backend would use (the owner's `caps.json` or environment, else the Claude
  * hosts); `explicit` says the owner set it, which makes it the ceiling the computed list is cut to. Returns { allow, why, skipped }.
  */
-export function batchEgress({ model, vendor = false, cases = [], packs = [], targets = null, base = [], explicit = false }) {
+export function batchEgress({ model, vendor = false, cases = [], packs = [], targets = null, base = [], explicit = false, exclude = null }) {
   const hosts = modelHosts(model)
   const skipped = []
-  const plugins = vendor ? [...new Set(cases.flatMap((c) => parseSeedList(parseSeed(c.seed).plugins)))].sort() : []
+  // A plugin that runs with no account holds no credential, so its hosts are not opened for it.
+  const plugins = vendor ? [...new Set(cases.flatMap((c) => parseSeedList(parseSeed(c.seed).plugins)))].filter((id) => !exclude?.has(id)).sort() : []
   const vendorHosts = []
   for (const id of plugins) {
     const pack = packs.find((p) => p.id === id)

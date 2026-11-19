@@ -6,13 +6,15 @@
 //   check-real  after each vendor's sign-in to the evals profile: the REAL profile still works and the tokens differ (FAIL: sign the real
 //               profile back in for that vendor and sign in no more)
 //   keeper      P0-6: one identity read per signed-in vendor, a due token's expiry must move
-//   p6b         P0-6b: does GitHub take a fine-grained token (what the evals profile holds for it)
 //   p6c         P0-6c: `auth logout` of one vendor of the evals profile, only when asked (`--logout <vendor>`)
 //   p7          P0-7: one scripted READ per plugin; the real egress hosts, recorded; no host refused
 //   live        `p0 live`: one real write per plugin, guard on, one plugin at a time; declined is the pass, a completed write a HALT
 //   gws         one real gws plan-and-commit in commit mode against the owner's sandbox
 //   pilot       P0-8, the paid pilot, last: only with `--pilot --confirm-labels` (the lead has read the cases' Data: labels and
 //               Seed: plugins=) and a ceiling set
+//
+// GitHub and Jira are not signed in (the owner's decision: `accounts: none` in their packs, or the store's round.json): no step below expects a
+// sign-in for either, and their cases run with no credential. P0-6b (GitHub's token) is not a step any more.
 //
 // Nothing here runs a credential step by itself without being asked: `evals phase1` is the owner's or the lead's command, and
 // `--dry-run` prints this order and what each step needs.
@@ -74,7 +76,7 @@ export const STEPS = [
     title: "after each vendor's sign-in, check-real: the real profile still works and its tokens differ",
     needs: "--vendors a,b (or the vendors the profile holds), each signed in to the evals profile",
     async run(ctx) {
-      const vendors = ctx.vendors.length ? ctx.vendors : ctx.deps.signedIn(ctx)
+      const vendors = (ctx.vendors.length ? ctx.vendors : ctx.deps.signedIn(ctx)).filter((id) => !ctx.noAccount?.has(id))
       if (!vendors.length) return fail("the evals profile holds no signed-in vendor: sign one in with evals-profile.sh, then rerun")
       const lines = []
       for (const integration of vendors) {
@@ -90,21 +92,11 @@ export const STEPS = [
     title: "P0-6, the keeper: one identity read per signed-in vendor, and a due token's expiry moves",
     needs: "the vendors signed in",
     async run(ctx) {
-      const results = ctx.deps.keepOnce({ opencode: ctx.opencode, profile: ctx.profile, store: ctx.store, env: ctx.caller })
+      const results = ctx.deps.keepOnce({ opencode: ctx.opencode, profile: ctx.profile, store: ctx.store, env: ctx.caller, except: ctx.noAccount })
       if (!results.length) return fail("the keeper found no signed-in vendor to read")
       const lines = results.map((r) => `${r.ok ? "ok  " : "FAIL"} ${r.integration}${r.due ? (r.refreshed ? " (was due, refreshed)" : " (was due)") : ""}${r.why ? `: ${r.why}` : ""}`)
       const failed = results.filter((r) => !r.ok)
       return failed.length ? fail(`the keeper failed for ${failed.map((r) => r.integration).join(", ")}: its token did not read or did not refresh`, lines) : pass(lines)
-    },
-  },
-  {
-    id: "p6b",
-    title: "P0-6b, GitHub's token: a fine-grained token if the profile holds one, else sign GitHub in last",
-    needs: "nothing (read-only)",
-    async run(ctx) {
-      const type = ctx.deps.credentialType(ctx, "github")
-      if (type === null) return pass("github is not signed in to the evals profile: sign it in last (the plan's rule when no fine-grained token is held)")
-      return pass(type === "key" ? "github holds a key-type credential (a fine-grained token): the evals profile uses it" : `github holds a ${type} credential, not a fine-grained token: sign in last, and read the repo scope before the commit set`)
     },
   },
   {
@@ -122,7 +114,7 @@ export const STEPS = [
     title: "P0-7: one scripted read per plugin, the real egress hosts recorded, none refused",
     needs: "$EVALS_STORE/live-reads.json (read calls, @alias placeholders), the vendor caps in caps.json",
     async run(ctx) {
-      const plugins = entriesOf(ctx.store, "live-reads.json")
+      const plugins = entriesOf(ctx.store, "live-reads.json").filter((id) => !ctx.noAccount?.has(id))
       if (!plugins.length) return fail(`${join(ctx.store, "live-reads.json")} names no plugin: write one read per signed-in plugin (X and OpenRouter reads cost money: one each)`)
       const lines = []
       for (const only of plugins) {
@@ -140,7 +132,7 @@ export const STEPS = [
     title: "p0 live: one real write per plugin at ask-changes, guard on, one plugin at a time; declined is the pass",
     needs: "$EVALS_STORE/live-writes.json (write calls with @alias placeholders)",
     async run(ctx) {
-      const plugins = entriesOf(ctx.store, "live-writes.json")
+      const plugins = entriesOf(ctx.store, "live-writes.json").filter((id) => !ctx.noAccount?.has(id))
       if (!plugins.length) return fail(`${join(ctx.store, "live-writes.json")} names no plugin`)
       const lines = []
       for (const only of plugins) {
@@ -197,7 +189,7 @@ export async function defaultDeps({ store, caller, companions }) {
     checkReal,
     keepOnce,
     assertDistinctPort: (ctx) => assertDistinctPort({ opencode: ctx.opencode, profileEnv: lib.profileEnv(ctx.profile, ctx.caller), realEnv: lib.realEnv(ctx.caller), env: ctx.caller }),
-    signedIn: (ctx) => Object.keys(lib.IDENTITY).filter((id) => {
+    signedIn: (ctx) => lib.SIGNIN_ORDER.filter((id) => !ctx.noAccount?.has(id)).filter((id) => {
       const out = lib.run(ctx.opencode, ["auth", "export", id], { env: lib.profileEnv(ctx.profile, ctx.caller) })
       return out.code === 0 && lib.activeCredential(out.stdout, id)
     }),

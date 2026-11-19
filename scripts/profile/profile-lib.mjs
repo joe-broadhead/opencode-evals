@@ -26,6 +26,16 @@ export const IDENTITY = Object.freeze({
   x: "x.posts.tools/x_get_usage_credits",
 })
 
+/**
+ * The order the evals profile is signed in, one vendor at a time, each followed by check-real (the plan's section 1.2.3, less the two the
+ * owner decided not to sign in: GitHub and Jira run with no account, `accounts: none`). Slack, X and Google use the apps already configured:
+ * no second app or client. The first two are not in the real profile at all.
+ */
+export const SIGNIN_ORDER = Object.freeze(["openrouter", "affinity", "ashby", "plaud", "gws", "slack", "x", "elevenlabs", "wisprflow", "metaview", "granola", "notion", "linear"])
+
+/** Vendors the real profile does not hold (new for the round): there is nothing of the owner's to sign out of, so check-real has no real token to compare. */
+export const NOT_IN_REAL = Object.freeze(["openrouter", "affinity"])
+
 /** How soon after a sign-in the real profile's own refresh must be seen to work again, by vendor (§1.2.3 rule 3), in hours. */
 export const RECHECK_HOURS = Object.freeze({ gws: 1, jira: 1, notion: 1, slack: 12, linear: 24 })
 

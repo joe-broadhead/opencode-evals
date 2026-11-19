@@ -44,6 +44,10 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
   `Seed: plugins=`, seed paths at any depth, the mid-batch HALT re-read tested, an idempotent profile port, wide blockers on undeclared argument paths refused,
   `evals select` and automatic fresh baselines, `@alias` placeholders in the live probes, and the defence-in-depth tests.
 
+- **The owner's decisions**: `accounts: none` (GitHub and Jira run with no credential, graded on tool choice, arguments and an honest "not signed in" answer;
+  never deferred for a credential, target or canary), the data matrix gate tested with a fixture, Slack, X and Google on their existing apps, `phase1` without
+  GitHub's token step or any sign-in for GitHub or Jira, and `scripts/profile/signin.sh`, the owner's sign-in walk with `check-real` after each vendor.
+
 ### Changed
 
 - Every plugin's pack is re-synced to the release in the family's upgrade script (github stays at v0.0.6 until v0.0.8 is tagged).

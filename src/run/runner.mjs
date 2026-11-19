@@ -31,6 +31,7 @@ import { lockdownPolicies, lockdownPermissions, loadPacks, companionOptions, ACC
 import { buildPolicy, installGuard } from "./guard/policy.mjs"
 import { gateCases, seedFiles, dataPreflight, loadDataMatrix } from "./gate.mjs"
 import { resolveCommitPlan } from "./commit-plan.mjs"
+import { noAccountPlugins, pluginsOf } from "./accounts.mjs"
 import { haltReason, readHalt, writeHalt, haltMessage } from "./halt.mjs"
 import { integrationsFor } from "./vendor-auth.mjs"
 import { checkBalances, vendorUseOf, SPENDING, perRunWorst } from "./balance.mjs"
@@ -657,14 +658,16 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const { selected: chosen } = selectCases(caseList, { patterns: options.cases ?? "*", set: options.set ?? "tune" })
   // What may run on this model, with its placeholders filled from the private store (R5): a case that reads a third party's words
   // never goes to an `opencode/*` model, and one the store cannot fill is deferred, each with its reason in the batch record.
-  const gated = gateCases(chosen, { model: options.model, targets: loadTargets(caller), canaries: loadCanaries(caller), matrix: loadDataMatrix(caller) })
+  // The plugins that run with no account (GitHub and Jira): their cases hold no credential, need no target, and read no one's words.
+  const noAccount = noAccountPlugins({ packs: loadPacks(), store })
+  const gated = gateCases(chosen, { model: options.model, targets: loadTargets(caller), canaries: loadCanaries(caller), matrix: loadDataMatrix(caller), noAccount })
   let selected = gated.runnable
   const deferred = [...gated.deferred]
   // `--preflight data` (R10): a case whose clauses name a target, a canary or a seed the store lacks would only be BLOCKED later, so it
   // is deferred now, each with the missing name. Re-run before every variant batch and before h1, so a drifted store is seen at once.
   if (options.preflight) {
     if (options.preflight !== "data") throw new Error(`--preflight must be data, not ${JSON.stringify(options.preflight)}`)
-    const found = dataPreflight(selected, { targets: loadTargets(caller), canaries: loadCanaries(caller), env: caller })
+    const found = dataPreflight(selected, { targets: loadTargets(caller), canaries: loadCanaries(caller), env: caller, noAccount })
     deferred.push(...found)
     const skip = new Set(found.map((d) => d.case))
     selected = selected.filter((c) => !skip.has(c.id))
@@ -698,7 +701,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // Live or not is decided by what the run would be given: a credential, and the config the harness seals. Only the
   // harness's own scripted model with no credential is not live. Decided, and refused, before a world module is
   // imported: importing one runs its code.
-  const profile = parseAuth(options.auth ?? caller.EVALS_AUTH)
+  const parsedAuth = parseAuth(options.auth ?? caller.EVALS_AUTH)
+  // `+profile` gives a trial the evals profile's vendor credentials; a batch whose every plugin runs with no account has none to give.
+  const profile = parsedAuth.vendor && selected.length && selected.every((c) => pluginsOf(c).every((id) => noAccount.has(id))) ? { ...parsedAuth, vendor: false } : parsedAuth
   // A key passed through is a secret from the start: a world build's error output is scrubbed of it too.
   if (profile.kind === "env") registerSecrets(profile.names.map((name) => caller[name]))
   const scripted = Boolean(options.scripted)
@@ -727,7 +732,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const isolationName = options.isolation ?? (caller.EVALS_ISOLATION || null) ?? defaultIsolation()
   const baseConfig = isolationName === "container" ? containerConfig({ store, env: caller }) : null
   // Each batch reaches the model's hosts, and the hosts of the credentialed plugins its cases name, and nothing else (R3).
-  const egress = baseConfig ? batchEgress({ model: options.model, vendor: Boolean(profile.vendor), cases: selected, packs: loadPacks(), targets: loadTargets(caller), base: baseConfig.allow, explicit: Boolean(baseConfig.source || caller.EVALS_EGRESS_ALLOW) }) : null
+  const egress = baseConfig ? batchEgress({ model: options.model, vendor: Boolean(profile.vendor), exclude: noAccount, cases: selected, packs: loadPacks(), targets: loadTargets(caller), base: baseConfig.allow, explicit: Boolean(baseConfig.source || caller.EVALS_EGRESS_ALLOW) }) : null
   const isolationSpec = { name: isolationName, live, unsafe: Boolean(options.unsafeNoIsolation), config: baseConfig ? { ...baseConfig, allow: egress.allow } : null }
   if (options.dryRun) {
     log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}`)
@@ -957,7 +962,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // each pack gives its integration (the pack's own id unless it says otherwise).
     const packs = loadPacks()
     const named = [...new Set([plugin, ...selected.flatMap((c) => parseSeedList(parseSeed(c.seed).plugins))])]
-    const needed = integrationsFor(plugin, selected, packs, (seed) => parseSeedList(parseSeed(seed).plugins))
+    const needed = integrationsFor(plugin, selected, packs, (seed) => parseSeedList(parseSeed(seed).plugins), noAccount)
     const auth = await prepareAuth(profile, { binary, caller, horizonMs, acceptUnknownExpiry: Boolean(options.acceptUnknownTokenExpiry), needed })
     if (auth.expiry) {
       Object.assign(facts.horizon, auth.expiry)

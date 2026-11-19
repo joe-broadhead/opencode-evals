@@ -17,7 +17,7 @@ import { assertDistinctPort } from "../../src/run/service-port.mjs"
 export const REFRESH_WINDOW_MS = 15 * 60_000
 
 /** One pass: which integrations the profile is signed into, and whether each identity read worked. */
-export function keepOnce({ opencode = "opencode", profile, store, env = process.env, only = null, exec = run, now = Date.now() } = {}) {
+export function keepOnce({ opencode = "opencode", profile, store, env = process.env, only = null, except = null, exec = run, now = Date.now() } = {}) {
   const penv = profileEnv(profile, env)
   // Never through the real service's port.
   assertDistinctPort({ opencode, profileEnv: penv, realEnv: realEnv(env), exec, env })
@@ -29,6 +29,8 @@ export function keepOnce({ opencode = "opencode", profile, store, env = process.
   }
   for (const [integration, route] of Object.entries(IDENTITY)) {
     if (only && !only.includes(integration)) continue
+    // A plugin that runs with no account (GitHub, Jira) is not signed in, and is not read.
+    if (except?.has(integration)) continue
     const before = expiryOf(integration)
     if (!before.present) continue
     const read = exec(opencode, ["api", "post", `/api/rpc/${route}`, "--data", "{}"], { env: penv })

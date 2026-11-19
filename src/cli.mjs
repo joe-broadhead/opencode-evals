@@ -27,6 +27,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, mkdtem
 import { tmpdir } from "node:os"
 import { readVersions, extractRelease } from "./pack/release.mjs"
 import { readHalt, clearHalt } from "./run/halt.mjs"
+import { noAccountPlugins, pluginsOf, usesOnlyNoAccount } from "./run/accounts.mjs"
 import { loadPacks } from "./run/lockdown.mjs"
 import { join, dirname, resolve, basename } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -207,7 +208,10 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
       const summaryFile = `${rawBase}.summary.json`
       const guard = existsSync(summaryFile) ? JSON.parse(read(summaryFile)).guard ?? null : null
       const files = existsSync(`${rawBase}.files.json`) ? JSON.parse(read(`${rawBase}.files.json`)) : null
-      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) ?? adapterState(plugin, files), scope, rawArgs, checkable: caseObject.checkable ?? [], files, targets, canaries, guard })
+      // The plugins that ran with no account (the pack's `accounts: none`, as the store's round.json overrides it): their cases have no target or canary.
+      const none = noAccountPlugins({ packs: loadPacks(), store: storePath() })
+      const noAccount = none.size && pluginsOf(caseObject).some((id) => none.has(id)) ? { plugins: none, all: usesOnlyNoAccount(caseObject, none) } : null
+      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) ?? adapterState(plugin, files), scope, rawArgs, checkable: caseObject.checkable ?? [], files, targets, canaries, guard, noAccount })
       results.push({ ...gradeCase(caseObject, view), ...(trial ? { trial } : {}) })
     }
   }
@@ -574,6 +578,7 @@ export async function main(argv) {
         caller,
         opencode: caller.OPENCODE_BIN ?? caller.EVALS_OPENCODE_BIN ?? "opencode",
         profile: caller.EVALS_PROFILE ?? null,
+        noAccount: noAccountPlugins({ packs: loadPacks(), store }),
         vendors: str(opt.vendors)?.split(",").filter(Boolean) ?? [],
         logout: str(opt.logout),
         pilot: Boolean(opt.pilot),

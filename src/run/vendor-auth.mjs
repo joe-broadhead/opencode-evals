@@ -131,7 +131,8 @@ export async function exportProfile({ binary, profileDir, caller = process.env }
  * pack gives its integration (its own id unless the pack says otherwise: OpenRouter's one key serves two entries, the MCP server's
  * and `inference-openrouter`, so both of its packs name both).
  */
-export function integrationsFor(plugin, cases, packs, parse) {
-  const named = [...new Set([plugin, ...cases.flatMap((c) => parse(c.seed))])]
+export function integrationsFor(plugin, cases, packs, parse, noAccount = null) {
+  // A plugin that runs with no account is never signed in, so nothing is asked of the profile for it.
+  const named = [...new Set([plugin, ...cases.flatMap((c) => parse(c.seed))])].filter((id) => !noAccount?.has(id))
   return [...new Set(named.flatMap((id) => [].concat(packs.find((p) => p.id === id)?.integration ?? id)))].sort()
 }
