@@ -230,7 +230,7 @@ async function preflightRoute(p) {
     const mockUrl = mock?.url ?? p.mockUrl
     const env = sandboxEnv({ sandbox, config, password, caller: p.caller, extra: { ...p.auth.env, ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}) } })
     const exec = (args, options = {}) => {
-      const spec = trial.wrap({ command: p.binary, args, cwd: options.cwd ?? sandbox.project, env: options.env ?? env })
+      const spec = trial.wrap({ command: p.binary, args, cwd: options.cwd ?? sandbox.project, env: options.env ?? env, stdin: options.input !== undefined && options.input !== null })
       return runToEnd(spec.command, spec.args, { ...options, cwd: spec.cwd, env: spec.env })
     }
     await p.auth.apply({ sandbox, env, exec })
@@ -462,15 +462,23 @@ export function truthCheck(cases, world) {
   return checkTruth(claiming, data)
 }
 
-async function runJob(job, ctx) {
+/**
+ * The stall watch of a trial's `opencode run`: only a SCRIPTED trial with its mock in the trial has one. A real model's slow first answer is a slow answer, never a hang, so a credentialed
+ * run gets none and is never killed for its first request's lateness (review of #13, R3).
+ */
+export const stallOf = (ctx, sawRequest) => (ctx.scripted && ctx.mockInTrial && ctx.firstRequestMs ? { stall: { afterMs: ctx.firstRequestMs, alive: sawRequest } } : {})
+
+async function runJobBody(job, ctx, track) {
   const id = segment("case id", job.case.id)
   const name = `${id}.t${job.trial}`
   // Every path this run writes or removes is checked against the root it belongs to.
   const root = within(join(ctx.batchRoot, "runs"), join(ctx.batchRoot, "runs", name), "the sandbox")
   const sandbox = makeSandbox(root)
+  track.phase = "preparing the world"
   const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
   const cwd = within(root, prepared.cwd, "the working directory")
   // The case's own files (`Seed: files=`), copied into its project before the world's home is cut of its links.
+  track.phase = "seeding the project's files"
   const seeded = seedFiles(job.case.seed, cwd, { env: ctx.caller })
   if (seeded.length) ctx.log(`  ${name}: seeded ${seeded.length} file(s) into the project`)
   const cut = stripForeignLinks(sandbox)
@@ -491,7 +499,10 @@ async function runJob(job, ctx) {
   let gone = false
   try {
     // The trial: under `container`, its own container and network, with the sandbox mounted at its own path.
+    track.phase = "starting the trial's container"
     trial = await ctx.isolation.enter({ name, sandbox, mounts: ctx.mounts, cwd, ...(fakeIds.length ? { hosts: hostsFor(fakeIds), ca: ctx.fake.ca } : {}) })
+    track.trial = trial
+    track.phase = "starting the trial's mock, capture and fake servers"
     let mock = null
     if (ctx.scripted && ctx.mockInTrial) mock = await startTrialMock({ trial, ctx, sandbox })
     const mockUrl = mock?.url ?? ctx.mockUrl
@@ -505,9 +516,10 @@ async function runJob(job, ctx) {
     const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}), ...(capture ? { ANTHROPIC_BASE_URL: capture.url } : {}) } })
     // Every host command of the run goes through the trial.
     const exec = (args, options = {}) => {
-      const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env })
+      const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env, stdin: options.input !== undefined && options.input !== null })
       return runToEnd(spec.command, spec.args, { ...options, cwd: spec.cwd, env: spec.env })
     }
+    track.phase = "applying the sign-in"
     await ctx.auth.apply({ sandbox, env, exec })
     const before = snapshotFiles(cwd)
     const homeBefore = snapshotHome(sandbox.home, job.case.home_files)
@@ -516,6 +528,9 @@ async function runJob(job, ctx) {
     let serverStderr = ""
     let result
     const fakeStatus = {}
+    let noRequest = null
+    let clientRestarts = []
+    track.phase = "starting the host's server and running the model"
     try {
       server = await startServer({ binary: ctx.binary, cwd, env, password, trial })
       // A provider can fill its model list after the server answers (the Claude Agent provider probes `claude` first):
@@ -528,7 +543,30 @@ async function runJob(job, ctx) {
       } else {
         // `Seed: continue=<key>` continues a session the world holds, in the sandbox's own copy of it.
         const session = prepared.session ? ["--session", prepared.session] : ["--title", `eval ${id} t${job.trial}`]
-        result = await exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs })
+        // A scripted trial whose client has not asked the model for anything by `firstRequestMs` is hung, not slow: killed then, and said to be (infra: no_model_request).
+        const sawRequest = () => {
+          try {
+            return /"ev":"request"/.test(readFileSync(join(sandbox.tmp, "mock.jsonl"), "utf8"))
+          } catch {
+            return false
+          }
+        }
+        const runClient = () => exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...stallOf(ctx, sawRequest) })
+        // An idle client: `opencode run` alive, the server up, the mock never asked (found in 2 of ~100 `p0 a1` runs; the processes were all asleep at 0 % CPU). It is replaced ONCE, and the
+        // restart is written into the summary with what the container showed at that moment and reported by the probe: a hang that happens again is infra `no_model_request`, as before.
+        const restarts = []
+        result = await runClient()
+        while (result.stalled && ctx.scripted && ctx.mockInTrial && !sawRequest() && restarts.length < (ctx.clientRestarts ?? 1)) {
+          restarts.push({ attempt: restarts.length + 1, after_ms: ctx.firstRequestMs, diagnosis: await trial.diagnose?.(), stderr: redact(String(result.stderr ?? "").slice(-1000)) })
+          await trial.killClients?.()
+          ctx.log(`  ${name}: the client made no model request within ${Math.round(ctx.firstRequestMs / 1000)} s (an idle \`opencode run\` against a live server): restarting it, once`)
+          result = await runClient()
+        }
+        clientRestarts = restarts
+        if (ctx.scripted && ctx.mockInTrial && (result.stalled || (result.timedOut && !String(result.stdout ?? "").trim())) && !sawRequest()) {
+          noRequest = `the trial made no model request${result.stalled ? ` within ${Math.round(ctx.firstRequestMs / 1000)} s` : ` before its ${Math.round(ctx.timeoutMs / 1000)} s timeout`}: the host's server was up and the client never got as far as its model (an infrastructure hang, not a refusal, not a model's failure)`
+          result = { ...result, error: noRequest }
+        }
         // Fake mode: what each fake plugin says of itself once the run is over (its own status RPC, as a client of this trial's server), kept beside the recording:
         // the probe compares it with what a signed-in user's plugin says (state connected, source `plugin`: no conflict).
         for (const id of fakeIds) {
@@ -546,17 +584,30 @@ async function runJob(job, ctx) {
       await stop(capture?.proc, { graceMs: 200 })
       for (const f of fakes) await stop(f.proc, { graceMs: 200 })
     }
+    track.result = result
+    track.phase = "recording the trial"
+    // A command that ended by a signal or an OOM kill, with no exit code of its own: what Docker says of the container is read now, while it exists.
+    const oomNow = await trial.oomKills()
+    const diagnosis = (result.code === null && !result.timedOut && !result.stalled) || oomNow || noRequest ? await trial.diagnose?.() : null
     // Killing a `docker exec` client leaves what it started running inside: the trial ends here, before anything of
     // its sandbox is read, so nothing it left behind can change the files being recorded.
-    const oomKills = await trial.oomKills()
+    const oomKills = oomNow
     await trial.leave({ reason: result.timedOut ? "timeout" : "end" })
     // An interrupted run is not a recording: nothing is written for it, and the batch's own cleanup removes its sandbox.
     if (ctx.interrupted()) throw new Error(`interrupted by ${ctx.interrupted()}`)
     const durationMs = Date.now() - started
     const detail = trial.describe()
     const killed = trial.killed
+    // A run that ended with no exit code of its own (a signal, an OOM kill, a client or server that failed to run) and was not stopped by the runner is an infrastructure event with its cause,
+    // not a trial the model failed.
+    const reported = String(result.error ?? "").trim() || tail(String(result.stderr ?? ""), 300).trim() || "no error was reported"
+    const noExitWhy = !preModelFailure(result) && !noRequest && !killed && result.code === null && !result.timedOut && !result.stalled
+      ? redact(`the run ended with no exit code${result.signal ? ` (signal ${result.signal})` : ""}: ${reported}${diagnosis ? `; container: ${JSON.stringify(diagnosis.state ?? diagnosis.note ?? {})}` : ""}`)
+      : null
     const summary = {
-      exit: result.timedOut ? 124 : result.code,
+      exit: result.timedOut || result.stalled ? 124 : result.code,
+      ...(result.signal ? { signal: result.signal } : {}),
+      ...(diagnosis ? { exit_diagnosis: diagnosis } : {}),
       durationMs,
       trial: job.trial,
       case: id,
@@ -567,7 +618,7 @@ async function runJob(job, ctx) {
       ...(prepared.session ? { continued: true } : {}),
       // Scrubbed, then cut: a secret straddling the cut would leave its tail in the summary otherwise.
       server_stderr: redact(String(serverStderr).slice(-6000)),
-      stderr: redact(`${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}${killed ? `\n[evals run] killed: ${killed.reason}` : ""}`).slice(-4000),
+      stderr: redact(`${result.stderr ?? ""}${result.timedOut ? `\n[evals run] killed after ${ctx.timeoutMs} ms` : ""}${killed ? `\n[evals run] killed: ${killed.reason}` : ""}${noRequest ? `\n[evals run] ${noRequest}` : ""}`).slice(-4000),
       started_at: new Date(started).toISOString(),
       runner: RUNNER,
       runner_version: ctx.runnerVersion,
@@ -580,6 +631,9 @@ async function runJob(job, ctx) {
       // The model call was refused its credential, or never reached a model (no route): an infrastructure failure,
       // never graded as the model's.
       ...(preModelFailure(result) ? { infra: preModelFailure(result) } : {}),
+      ...(noRequest ? { infra: "no_model_request", infra_why: noRequest } : {}),
+      ...(noExitWhy ? { infra: "trial_error", infra_why: noExitWhy } : {}),
+      ...(clientRestarts.length ? { client_restarts: clientRestarts } : {}),
       ...(usingOverage(result) ? { overage: true } : {}),
       ...(fromWorld.dropped.length ? { world_env_ignored: fromWorld.dropped } : {}),
       ...(ctx.isolation.unsafe ? { unsafe_no_isolation: true } : {}),
@@ -659,6 +713,10 @@ async function runJob(job, ctx) {
     }
     recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, ...cost })
     return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(halt ? { halt } : {}), ...(summary.overage ? { overage: true } : {}), ...(cost.usage_missing ? { usage_missing: true, error: `the run reported no tokens: counted at the estimate ($${cost.list_usd ?? "unknown"})` } : {}), ...(killed ? { killed: killed.reason } : {}), ...(result.error ? { error: redact(result.error) } : {}) }
+  } catch (error) {
+    // What Docker says of the container is read before the finally block removes it, and goes with the error to the failure summary.
+    track.diagnosis = trial ? await trial.diagnose?.().catch(() => null) : null
+    throw error
   } finally {
     // The trial ends on every path (idempotent); a credentials file goes on every path, a run that failed, threw or was
     // interrupted included; a kept sandbox keeps no secret.
@@ -666,6 +724,64 @@ async function runJob(job, ctx) {
     if (trial && !gone) gone = await trial.gone()
     ctx.auth.cleanup({ sandbox, gone: trial ? gone : true })
     if (ctx.keep && (gone || !trial)) scrubTree(root, redactorNow())
+  }
+}
+
+/**
+ * One trial, with the promise that it ends in a summary on disk, never in silence. The summary is first a stub (`infra: trial_incomplete`: the runner began this trial and never finished it,
+ * as when it was killed), then the trial's own; a trial whose job throws gets a failure summary in place of the stub with the phase it reached, the error and its stack, what Docker
+ * said of the container (state, exit code, OOM, the last log lines) and the host's own stderr, and is reported as `infra: trial_error`: never graded, never lost, and its reservation
+ * goes back unless the model had already worked (found in 1 of 50 `p0 a1` runs: a trial with no summary, whose cause was lost).
+ */
+async function runJob(job, ctx) {
+  const id = segment("case id", job.case.id)
+  const name = `${id}.t${job.trial}`
+  const file = within(ctx.rawDir, join(ctx.rawDir, `${name}.summary.json`), "a recording")
+  const base = { trial: job.trial, case: id, arm: ctx.arm?.arm, model: ctx.model, batch: ctx.batch, started_at: new Date().toISOString(), runner: RUNNER, runner_version: ctx.runnerVersion }
+  const track = { phase: "starting", trial: null, result: null, diagnosis: null }
+  const redact = redactor(ctx.auth.secrets ?? [])
+  const write = (summary) => writeAtomic(file, redact(`${JSON.stringify(summary, null, 1)}\n`))
+  try {
+    write({ exit: null, incomplete: true, infra: "trial_incomplete", infra_why: "the runner began this trial and never wrote its summary: it was stopped, or crashed, before the trial ended", ...base })
+  } catch {
+    // a store that cannot be written to fails the trial below, with the same cause
+  }
+  try {
+    return await runJobBody(job, ctx, track)
+  } catch (error) {
+    const message = redact(String(error?.message ?? error))
+    const interrupted = /^interrupted by /.test(message)
+    const modelRan = Boolean(track.result?.stdout)
+    const summary = {
+      exit: track.result ? (track.result.timedOut || track.result.stalled ? 124 : track.result.code ?? null) : null,
+      ...(track.result?.signal ? { signal: track.result.signal } : {}),
+      ...base,
+      infra: interrupted ? "interrupted" : "trial_error",
+      infra_why: `${interrupted ? "the batch was interrupted" : "the trial's job failed"} while ${track.phase}: ${message}`,
+      phase: track.phase,
+      error: message,
+      stack: redact(String(error?.stack ?? "").split("\n").slice(0, 10).join("\n")),
+      ...(track.diagnosis ? { exit_diagnosis: track.diagnosis } : {}),
+      ...(track.result ? { stderr: redact(String(track.result.stderr ?? "").slice(-4000)), model_ran: modelRan } : {}),
+    }
+    try {
+      write(summary)
+      if (track.result?.stdout) writeAtomic(within(ctx.rawDir, join(ctx.rawDir, `${name}.jsonl`), "a recording"), redact(track.result.stdout))
+    } catch (writing) {
+      ctx.log(`  ${name}: could not write the failure summary: ${redact(String(writing?.message ?? writing))}`)
+    }
+    ctx.log(`  ${name}: FAILED while ${track.phase}: ${message}${track.diagnosis?.state ? ` (container ${JSON.stringify(track.diagnosis.state)})` : ""}`)
+    if (!interrupted) {
+      // A failure before the model did any work spent nothing: its reservation goes back. One after it did is recorded at what it billed.
+      if (modelRan) {
+        try {
+          recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: null, infra: summary.infra, ...billedOf(track.result.stdout) })
+        } catch {
+          // the record is the ledger's: an unreadable recording spent nothing we can count
+        }
+      } else release(ctx.store, ctx.batch, 1)
+    }
+    return { case: id, trial: job.trial, exit: summary.exit, infra: summary.infra, error: message, why: summary.infra_why }
   }
 }
 
@@ -1107,6 +1223,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       isolation,
       mockUrl: mock?.url ?? null,
       routeTimeoutMs,
+      firstRequestMs: Number(caller.EVALS_FIRST_REQUEST_S || 90) * 1000,
+      clientRestarts: Number(caller.EVALS_CLIENT_RESTARTS ?? 1),
       scripted,
       mockInTrial: scripted && Boolean(harnessDir) && isolation.confines,
       harnessDir,

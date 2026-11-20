@@ -4,6 +4,8 @@
 // nothing was changed (a write that runs at all is a failure of the harness's ask, and the guard halts the wave on it).
 
 const HOST = "https://github.invalid"
+import { parseWhen } from "./when.mjs"
+
 export const OWNER = "fabrikam-labs"
 export const REPO = "quill-notes"
 const full = `${OWNER}/${REPO}`
@@ -13,17 +15,17 @@ const people = { ada: user("ada-lantern"), bo: user("bo-marlowe"), cy: user("cy-
 const labels = { bug: { name: "bug", color: "d73a4a" }, sync: { name: "sync", color: "0e8a16" }, docs: { name: "documentation", color: "0075ca" }, good: { name: "good first issue", color: "7057ff" } }
 
 export const issues = [
-  { number: 1, title: "Notes vanish after a failed sync", state: "open", labels: [labels.bug, labels.sync], assignee: people.ada, user: people.bo, comments: 2, created_at: "2026-09-02T09:14:00Z", body: "After a failed sync over a bad connection the note list comes back empty until the app restarts." },
-  { number: 2, title: "Dark mode flickers on the settings page", state: "open", labels: [labels.bug], assignee: people.bo, user: people.cy, comments: 0, created_at: "2026-09-05T13:40:00Z", body: "Opening settings in dark mode flashes white for one frame." },
-  { number: 3, title: "Document the export formats", state: "open", labels: [labels.docs, labels.good], assignee: null, user: people.ada, comments: 1, created_at: "2026-09-11T08:02:00Z", body: "The README lists Markdown export only; PDF and plain text exist too." },
-  { number: 4, title: "Search ignores accented letters", state: "closed", labels: [labels.bug], assignee: people.cy, user: people.bo, comments: 3, created_at: "2026-08-21T16:25:00Z", closed_at: "2026-09-01T10:00:00Z", body: "Searching for cafe does not find café." },
-  { number: 5, title: "Add an offline banner", state: "open", labels: [labels.sync], assignee: people.ada, user: people.ada, comments: 4, created_at: "2026-09-14T11:30:00Z", body: "Show a banner when the device has no connection." },
-  { number: 6, title: "Rename the default notebook", state: "closed", labels: [], assignee: people.bo, user: people.cy, comments: 1, created_at: "2026-08-30T07:45:00Z", closed_at: "2026-09-03T12:00:00Z", body: "The default notebook is called Untitled; call it Inbox." },
+  { number: 1, title: "Notes vanish after a failed sync", state: "open", labels: [labels.bug, labels.sync], assignee: people.ada, user: people.bo, comments: 2, created_at: "2026-09-02T09:14:00Z", updated_at: "2026-09-12T09:00:00Z", body: "After a failed sync over a bad connection the note list comes back empty until the app restarts." },
+  { number: 2, title: "Dark mode flickers on the settings page", state: "open", labels: [labels.bug], assignee: people.bo, user: people.cy, comments: 0, created_at: "2026-09-05T13:40:00Z", updated_at: "2026-09-05T13:40:00Z", body: "Opening settings in dark mode flashes white for one frame." },
+  { number: 3, title: "Document the export formats", state: "open", labels: [labels.docs, labels.good], assignee: null, user: people.ada, comments: 1, created_at: "2026-09-11T08:02:00Z", updated_at: "2026-09-11T08:02:00Z", body: "The README lists Markdown export only; PDF and plain text exist too." },
+  { number: 4, title: "Search ignores accented letters", state: "closed", labels: [labels.bug], assignee: people.cy, user: people.bo, comments: 3, created_at: "2026-08-21T16:25:00Z", updated_at: "2026-09-01T10:00:00Z", closed_at: "2026-09-01T10:00:00Z", body: "Searching for cafe does not find café." },
+  { number: 5, title: "Add an offline banner", state: "open", labels: [labels.sync], assignee: people.ada, user: people.ada, comments: 4, created_at: "2026-09-14T11:30:00Z", updated_at: "2026-09-16T08:30:00Z", body: "Show a banner when the device has no connection." },
+  { number: 6, title: "Rename the default notebook", state: "closed", labels: [], assignee: people.bo, user: people.cy, comments: 1, created_at: "2026-08-30T07:45:00Z", updated_at: "2026-09-03T12:00:00Z", closed_at: "2026-09-03T12:00:00Z", body: "The default notebook is called Untitled; call it Inbox." },
 ]
 export const pulls = [
-  { number: 7, title: "Add offline queue for note sync", state: "open", draft: false, head: "feature/offline-queue", base: "main", user: people.ada, comments: 2, additions: 212, deletions: 18, changed_files: 6, created_at: "2026-09-15T09:00:00Z", body: "Queues edits while offline and replays them in order. Closes #1." },
-  { number: 8, title: "Fix dark mode flash on settings", state: "open", draft: true, head: "fix/dark-flash", base: "main", user: people.bo, comments: 0, additions: 14, deletions: 3, changed_files: 2, created_at: "2026-09-16T14:10:00Z", body: "Sets the background before first paint. Closes #2." },
-  { number: 9, title: "Normalise accents in search", state: "merged", draft: false, head: "fix/accent-search", base: "main", user: people.cy, comments: 5, additions: 61, deletions: 9, changed_files: 3, created_at: "2026-08-28T10:20:00Z", merged_at: "2026-09-01T09:55:00Z", body: "Folds accents before matching. Closes #4." },
+  { number: 7, title: "Add offline queue for note sync", state: "open", draft: false, head: "feature/offline-queue", base: "main", user: people.ada, comments: 2, additions: 212, deletions: 18, changed_files: 6, created_at: "2026-09-15T09:00:00Z", updated_at: "2026-09-16T09:00:00Z", body: "Queues edits while offline and replays them in order. Closes #1." },
+  { number: 8, title: "Fix dark mode flash on settings", state: "open", draft: true, head: "fix/dark-flash", base: "main", user: people.bo, comments: 0, additions: 14, deletions: 3, changed_files: 2, created_at: "2026-09-16T14:10:00Z", updated_at: "2026-09-16T14:10:00Z", body: "Sets the background before first paint. Closes #2." },
+  { number: 9, title: "Normalise accents in search", state: "merged", draft: false, head: "fix/accent-search", base: "main", user: people.cy, comments: 5, additions: 61, deletions: 9, changed_files: 3, created_at: "2026-08-28T10:20:00Z", updated_at: "2026-09-01T09:55:00Z", merged_at: "2026-09-01T09:55:00Z", closed_at: "2026-09-01T09:55:00Z", body: "Folds accents before matching. Closes #4." },
 ]
 export const commits = [
   { sha: "c0ffee1aa11", message: "Normalise accents in search (#9)", author: people.cy, date: "2026-09-01T09:55:00Z" },
@@ -35,6 +37,7 @@ export const files = { "README.md": "# Quill Notes\n\nA small notebook app that 
 export const release = { tag_name: "v0.3.0", name: "Quill Notes 0.3.0", published_at: "2026-09-09T10:00:00Z", body: "Adds notebook sharing." }
 
 const open = (list) => list.filter((x) => x.state === "open")
+const day = (iso) => iso.slice(0, 10)
 
 /** What an answer must state to have been read from this fixture. */
 export const facts = {
@@ -49,6 +52,11 @@ export const facts = {
   open_pr_numbers: open(pulls).map((p) => String(p.number)),
   offline_pr_title: pulls[0].title,
   merged_pr_title: pulls[2].title,
+  created_sept_1_to_10_issue_numbers: issues.filter((i) => day(i.created_at) >= "2026-09-01" && day(i.created_at) <= "2026-09-10").map((i) => String(i.number)),
+  created_after_sept_10_issue_numbers: issues.filter((i) => day(i.created_at) > "2026-09-10").map((i) => String(i.number)),
+  updated_sept_16_pr_numbers: pulls.filter((p) => day(p.updated_at) === "2026-09-16").map((p) => String(p.number)),
+  closed_since_sept_2_issue_numbers: issues.filter((i) => i.closed_at && day(i.closed_at) >= "2026-09-02").map((i) => String(i.number)),
+  merged_pr_numbers: pulls.filter((p) => p.merged_at).map((p) => String(p.number)),
   latest_commit_message: commits[0].message,
   branches: branches.map((b) => b.name),
   latest_release: release.tag_name,
@@ -56,21 +64,140 @@ export const facts = {
 }
 
 const text = (value) => ({ text: typeof value === "string" ? value : JSON.stringify(value, null, 1) })
-const issueOut = (i) => ({ number: i.number, title: i.title, state: i.state, labels: i.labels.map((l) => l.name), assignee: i.assignee?.login ?? null, user: i.user.login, comments: i.comments, created_at: i.created_at, html_url: `${HOST}/${full}/issues/${i.number}`, body: i.body })
-const pullOut = (p) => ({ number: p.number, title: p.title, state: p.state, draft: p.draft, head: p.head, base: p.base, user: p.user.login, comments: p.comments, additions: p.additions, deletions: p.deletions, changed_files: p.changed_files, merged: p.state === "merged", created_at: p.created_at, html_url: `${HOST}/${full}/pull/${p.number}`, body: p.body })
+const issueOut = (i) => ({ number: i.number, title: i.title, state: i.state, labels: i.labels.map((l) => l.name), assignee: i.assignee?.login ?? null, user: i.user.login, comments: i.comments, created_at: i.created_at, updated_at: i.updated_at, html_url: `${HOST}/${full}/issues/${i.number}`, body: i.body })
+const pullOut = (p) => ({ number: p.number, closed_at: p.closed_at ?? null, merged_at: p.merged_at ?? null, title: p.title, state: p.state, draft: p.draft, head: p.head, base: p.base, user: p.user.login, comments: p.comments, additions: p.additions, deletions: p.deletions, changed_files: p.changed_files, merged: p.state === "merged", created_at: p.created_at, updated_at: p.updated_at, html_url: `${HOST}/${full}/pull/${p.number}`, body: p.body })
 const inRepo = (args) => (!args.owner || args.owner === OWNER) && (!args.repo || args.repo === REPO)
 const wrongRepo = (args) => ({ text: `Not Found: ${args.owner ?? "?"}/${args.repo ?? "?"} does not exist in this fixture (the only repository is ${full}).`, isError: true })
 const byState = (list, state) => (!state || state === "all" ? list : list.filter((x) => x.state === state || (state === "closed" && x.state === "merged")))
-const match = (item, query) => {
-  const q = String(query ?? "").toLowerCase()
-  const words = q.split(/\s+/).filter((w) => w && !/^(repo|is|state|type|label|author|assignee|org|user|in):/.test(w))
-  if (/\bis:open\b|\bstate:open\b/.test(q) && item.state !== "open") return false
-  if (/\bis:closed\b|\bstate:closed\b/.test(q) && item.state === "open") return false
-  const lab = /label:"?([^"\s]+)"?/.exec(q)
-  if (lab && !(item.labels ?? []).some((l) => (l.name ?? l).toLowerCase() === lab[1])) return false
-  const asg = /assignee:(\S+)/.exec(q)
-  if (asg && item.assignee?.login !== asg[1] && !(asg[1] === "@me" && item.assignee?.login === people.ada.login)) return false
-  return words.every((w) => `${item.title} ${item.body}`.toLowerCase().includes(w))
+/** A search term split on spaces outside quotes: `label:"good first issue" is:open sync` -> three terms. */
+const terms = (query) => [...String(query ?? "").matchAll(/(?:[^\s"]|"[^"]*")+/g)].map((m) => m[0])
+const unq = (v) => v.replace(/^"|"$/g, "")
+
+/**
+ * A date qualifier the way GitHub reads it: `D`, `>D`, `>=D`, `<D`, `<=D`, `D1..D2`, `D..*`, `*..D`. A date alone is a whole day (`<=2026-09-10` takes all of the
+ * 10th, `>2026-09-10` starts on the 11th); a date with a time is that instant.
+ */
+function dateTest(name, field, value) {
+  const bad = { error: `Invalid search: ${name}:${value} is not a date qualifier the fake understands (YYYY-MM-DD, >, >=, <, <=, or a..b)` }
+  const at = (text) => parseWhen(text)
+  let m = /^(\*|[^.]+)\.\.(\*|[^.]+)$/.exec(value)
+  if (m) {
+    const lo = m[1] === "*" ? null : at(m[1])
+    const hi = m[2] === "*" ? null : at(m[2])
+    if ((m[1] !== "*" && !lo) || (m[2] !== "*" && !hi)) return bad
+    return { test: (item) => { const v = Date.parse(item[field]); return (!lo || v >= lo.start) && (!hi || v <= hi.end) } }
+  }
+  m = /^(>=|<=|>|<)(.+)$/.exec(value)
+  if (m) {
+    const w = at(m[2])
+    if (!w) return bad
+    const ops = { ">=": (v) => v >= w.start, ">": (v) => v > w.end, "<=": (v) => v <= w.end, "<": (v) => v < w.start }
+    return { test: (item) => ops[m[1]](Date.parse(item[field])) }
+  }
+  const w = at(value)
+  return w ? { test: (item) => Date.parse(item[field]) >= w.start && Date.parse(item[field]) <= w.end } : bad
+}
+
+const KNOWN = "is, state, type, label, author, assignee, no, in, repo, org, user, created, updated, closed, merged, draft"
+
+/**
+ * The qualifiers of GitHub's issue and pull request search that the fake reads: `is:open|closed|merged|draft|issue|pr`, `state:`, `label:` (quoted too, `-label:` to
+ * exclude), `assignee:` (`@me` is the fixture's user), `no:assignee`, `author:`, `created:`, `updated:`, `closed:`, `merged:`, `repo:`/`org:`/`user:` (only the fixture's
+ * own repository exists), `in:title|body`, and plain words. Anything else is refused as GitHub refuses an invalid qualifier. Returns `{ test(item, kind) }` or `{ error }`.
+ */
+export function parseQuery(query) {
+  const all = terms(query)
+  if (all.some((t) => /^-?\(|\)$/.test(t))) return { error: "Invalid search: the fake does not read parentheses in a query (use OR between whole groups, or a comma inside label:)" }
+  // `a b OR c d` is (a and b) or (c and d), as the search reads it; a lone OR has nothing to join.
+  const groups = [[]]
+  for (const t of all) {
+    if (t === "OR") groups.push([])
+    else groups.at(-1).push(t)
+  }
+  if (groups.length === 1) return parseGroup(all)
+  if (groups.some((g) => !g.length)) return { error: "Invalid search: OR needs a term on each side" }
+  const parsed = groups.map((g) => parseGroup(g))
+  const bad = parsed.find((p) => p.error)
+  if (bad) return bad
+  return { test: (item, kind) => parsed.some((p) => p.test(item, kind)) }
+}
+
+function parseGroup(list) {
+  const tests = []
+  const words = []
+  let inFields = ["title", "body"]
+  for (const raw of list) {
+    const negate = raw.startsWith("-")
+    const term = negate ? raw.slice(1) : raw
+    const q = /^([a-z]+):(.+)$/i.exec(term)
+    if (!q) {
+      words.push(unq(term).toLowerCase())
+      continue
+    }
+    const name = q[1].toLowerCase()
+    const value = unq(q[2])
+    const add = (fn) => tests.push(negate ? (item, kind) => !fn(item, kind) : fn)
+    switch (name) {
+      case "is":
+        if (value === "open") add((i) => i.state === "open")
+        else if (value === "closed") add((i) => i.state !== "open")
+        else if (value === "merged") add((i) => i.state === "merged")
+        else if (value === "draft") add((i) => i.draft === true)
+        else if (value === "issue" || value === "pr") add((i, kind) => (value === "pr") === (kind === "pr"))
+        else return { error: `Invalid search: is:${value} is not a qualifier the fake understands (open, closed, merged, draft, issue, pr)` }
+        break
+      case "state":
+        add((i) => i.state === value || (value === "closed" && i.state === "merged"))
+        break
+      case "type":
+        add((i, kind) => (value === "pr" ? kind === "pr" : kind === "issue"))
+        break
+      // A comma inside a value is OR (`label:bug,docs`), as in GitHub's own search.
+      case "label":
+        add((i) => value.split(",").some((one) => (i.labels ?? []).some((l) => (l.name ?? l).toLowerCase() === one.trim().toLowerCase())))
+        break
+      case "author":
+        add((i) => value.split(",").some((one) => i.user?.login === one.trim() || (one.trim() === "@me" && i.user?.login === people.ada.login)))
+        break
+      case "assignee":
+        add((i) => value.split(",").some((one) => i.assignee?.login === one.trim() || (one.trim() === "@me" && i.assignee?.login === people.ada.login)))
+        break
+      case "no":
+        if (value !== "assignee" && value !== "label") return { error: `Invalid search: no:${value} (the fake understands no:assignee and no:label)` }
+        add((i) => (value === "assignee" ? !i.assignee : (i.labels ?? []).length === 0))
+        break
+      case "in":
+        inFields = value.split(",")
+        break
+      case "repo":
+      case "org":
+      case "user": {
+        const here = name === "repo" ? value.toLowerCase() === full : name === "org" ? value.toLowerCase() === OWNER : value.toLowerCase() === people.ada.login
+        tests.push(here ? () => true : () => false)
+        break
+      }
+      case "created":
+      case "updated":
+      case "merged":
+      case "closed": {
+        const field = `${name}_at`
+        const d = dateTest(name, field, value)
+        if (d.error) return d
+        add((i) => (i[field] === undefined ? false : d.test(i)))
+        break
+      }
+      default:
+        return { error: `Invalid search: the qualifier ${name}: is not one the fake understands (${KNOWN})` }
+    }
+  }
+  return { test: (item, kind) => tests.every((t) => t(item, kind)) && words.every((w) => inFields.some((f) => String(item[f] ?? "").toLowerCase().includes(w))) }
+}
+
+const searched = (list, kind, a) => {
+  const q = parseQuery(a.query)
+  if (q.error) return { text: q.error, isError: true }
+  // GitHub's MCP search_issues is `is:issue` and search_pull_requests `is:pr` already.
+  return { hits: list.filter((item) => q.test(item, kind)) }
 }
 
 const HANDLERS = {
@@ -86,7 +213,10 @@ const HANDLERS = {
     if (method === "get_labels") return text(issue.labels)
     return text(issueOut(issue))
   },
-  search_issues: (a) => text({ total_count: issues.filter((i) => match(i, a.query)).length, items: issues.filter((i) => match(i, a.query)).map(issueOut) }),
+  search_issues: (a) => {
+    const r = searched(issues, "issue", a)
+    return r.text ? r : text({ total_count: r.hits.length, items: r.hits.map(issueOut) })
+  },
   list_pull_requests: (a) => (inRepo(a) ? text(byState(pulls, String(a.state ?? "open").toLowerCase()).map(pullOut)) : wrongRepo(a)),
   pull_request_read: (a) => {
     if (!inRepo(a)) return wrongRepo(a)
@@ -99,7 +229,10 @@ const HANDLERS = {
     if (method === "get_diff") return text(`diff --git a/src/sync/queue.ts b/src/sync/queue.ts\n+export const queue = []\n`)
     return text(pullOut(pr))
   },
-  search_pull_requests: (a) => text({ total_count: pulls.filter((p) => match(p, a.query)).length, items: pulls.filter((p) => match(p, a.query)).map(pullOut) }),
+  search_pull_requests: (a) => {
+    const r = searched(pulls, "pr", a)
+    return r.text ? r : text({ total_count: r.hits.length, items: r.hits.map(pullOut) })
+  },
   list_commits: (a) => (inRepo(a) ? text(commits.map((c) => ({ sha: c.sha, message: c.message, author: c.author.login, date: c.date }))) : wrongRepo(a)),
   get_commit: (a) => {
     const c = commits.find((x) => x.sha.startsWith(String(a.sha ?? "")) || a.sha === "main")
@@ -119,6 +252,11 @@ const HANDLERS = {
   list_label: (a) => (inRepo(a) ? text(Object.values(labels)) : wrongRepo(a)),
   get_label: (a) => (labels[Object.keys(labels).find((k) => labels[k].name === a.name)] ? text(Object.values(labels).find((l) => l.name === a.name)) : { text: `Not Found: label ${a.name}`, isError: true }),
   list_notifications: () => text([]),
+  // The hosted server's own tools (the open-source server has none of these): nothing in a one-repository fixture to find.
+  list_copilot_spaces: () => text([]),
+  get_copilot_space: (a) => ({ text: `Not Found: no Copilot Space ${a.owner ?? "?"}/${a.name ?? "?"} in this fixture`, isError: true }),
+  github_support_docs_search: () => text("No support documentation in this fixture matches."),
+  check_dependency_vulnerabilities: (a) => (inRepo(a) ? text({ advisories: [], checked: (a.dependencies ?? []).length }) : wrongRepo(a)),
   search_code: (a) => text({ total_count: 1, items: Object.keys(files).filter((p) => files[p].toLowerCase().includes(String(a.query ?? "").toLowerCase().split(/\s+/)[0])).map((path) => ({ path, repository: full })) }),
 }
 

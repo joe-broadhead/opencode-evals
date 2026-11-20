@@ -23,12 +23,12 @@ export const DATA_KINDS = ["synthetic", "seeded", "own", "real", "candidate"]
 export const THIRD_PARTY_DATA = ["real", "candidate"]
 
 /**
- * The corpora written before the `Data:` header and the round sets existed (history, x, charts, and p0, the harness's own probes): a case of one of them that declares
+ * The corpora written before the `Data:` header and the round sets existed (history, x and charts): a case of one of them that declares
  * no round set is a legacy case, and its data is what the corpus always held: history reads the owner's own sessions, x reads other
  * people's public posts (so `real`: nothing a third party wrote goes to a model without the owner's sign-off), charts draws made-up data.
  * Every other case, and every legacy-plugin case in a round set, must declare `Data:` and a round set.
  */
-export const LEGACY_DATA = Object.freeze({ history: "own", x: "real", charts: "synthetic", p0: "synthetic" })
+export const LEGACY_DATA = Object.freeze({ history: "own", x: "real", charts: "synthetic" })
 
 /**
  * The least a plugin's cases may declare, because of what the plugin reads: other people's words (meetings, recordings, CRM notes) are
@@ -71,11 +71,28 @@ export const fakeModePlugins = () => {
 const PACKS_DIR = join(import.meta.dirname, "..", "..", "packs")
 export const packPlugins = () => new Set(existsSync(PACKS_DIR) ? readdirSync(PACKS_DIR) : [])
 
-export const isLegacyCase = (caseObject) => caseObject.plugin in LEGACY_DATA && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)
+/**
+ * The legacy cases are a FROZEN LIST (`src/case/legacy-cases.json`), not a rule about the plugin: a new History, X or Charts case meets every round rule, whatever else is true of it
+ * (review of #13: a new `x` case with two `<placeholders>` and no `Data:` compiled, and so did a case with `Plugin: p0`). A case is legacy only when its id is in the list for its
+ * plugin (or a History private holdout, `ho-…`, which only the owner writes and no tuner ever sees) and it declares no round set.
+ */
+const LEGACY_FILE = join(import.meta.dirname, "legacy-cases.json")
+const legacyList = (() => {
+  try {
+    return JSON.parse(readFileSync(LEGACY_FILE, "utf8"))
+  } catch {
+    return { cases: {}, patterns: {} }
+  }
+})()
+export const legacyIds = (plugin) => new Set(legacyList.cases?.[plugin] ?? [])
+export const isLegacyCase = (caseObject) =>
+  caseObject.plugin in LEGACY_DATA &&
+  !(caseObject.sets ?? []).some((name) => name in ROUND_SETS) &&
+  (legacyIds(caseObject.plugin).has(caseObject.id) || (legacyList.patterns?.[caseObject.plugin] ?? []).some((pattern) => new RegExp(pattern).test(String(caseObject.id ?? ""))))
 
 /** What a case reads: its `Data:`, else what a legacy corpus always held, else (never reached: compile refuses it) `real`. */
 export const dataOf = (caseObject) => {
-  const declared = caseObject.data ?? LEGACY_DATA[caseObject.plugin] ?? "real"
+  const declared = caseObject.data ?? (isLegacyCase(caseObject) ? LEGACY_DATA[caseObject.plugin] : undefined) ?? "real"
   // Never below what the plugins a case uses read, whatever its label says (defence in depth: compile refuses the case first).
   const minimum = dataMinimum(caseObject)
   return minimum && DATA_KINDS.indexOf(declared) < DATA_KINDS.indexOf(minimum.kind) ? minimum.kind : declared
@@ -94,6 +111,9 @@ export const dataOf = (caseObject) => {
  */
 export const ROUND_SETS = { wide: /^tools-[a-z0-9][a-z0-9-]*$/, route: /^route-[a-z0-9][a-z0-9-]*$/, deep: /^deep-[a-z0-9][a-z0-9-]*$/, commit: /^commit-[a-z0-9][a-z0-9-]*$/, hooks: /^hook-[a-z0-9][a-z0-9-]*$/, local: /./ }
 export const FAMILY_SETS = ["tune", "holdout", "tools", "all"]
+
+/** A holdout: `Holdout: true`, or an id that starts `hold-`. It needs none of this round's sets or their id prefixes (src/case/sets.mjs keeps it out of every selection but its own). */
+const holdsOut = (caseObject) => caseObject.holdout === true || /^hold-/.test(String(caseObject.id ?? ""))
 
 /** A holdout's id: `hold-<plugin>-<n>-<slug>`. History's earlier `ho-` ids are the one exception. */
 export const holdoutId = (plugin) => new RegExp(`^hold-${String(plugin).replace(/[^a-z0-9-]/gi, "")}-\\d+-[a-z0-9][a-z0-9-]*$`)
@@ -145,11 +165,12 @@ export function validateCase(caseObject, file = "<case>") {
     const value = caseObject.budgets[budget]
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) bad(`budget ${budget} must be a non-negative number`)
   }
+  if (caseObject.holdout !== undefined && typeof caseObject.holdout !== "boolean") bad(`holdout must be true or false, not ${JSON.stringify(caseObject.holdout)}`)
   if (caseObject.expect && !["pass", "fail", "na"].includes(caseObject.expect)) bad("expect must be pass, fail or na")
   for (const key of caseObject.checkable ?? []) if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) bad(`checkable ${JSON.stringify(key)} must be an argument name`)
   for (const name of caseObject.sets ?? []) {
     if (!/^[a-z][a-z0-9-]*$/.test(name) || FAMILY_SETS.includes(name)) bad(`set ${JSON.stringify(name)} must be a lower-case name, not ${FAMILY_SETS.join(", ")}`)
-    if (ROUND_SETS[name] && !ROUND_SETS[name].test(caseObject.id)) bad(`a case in set ${name} has an id like ${String(ROUND_SETS[name].source).replace(/^\^|\$$/g, "").replace(/\[a-z0-9\]\[a-z0-9-\]\*/, "<slug>")}, not ${JSON.stringify(caseObject.id)}`)
+    if (ROUND_SETS[name] && !holdsOut(caseObject) && !ROUND_SETS[name].test(caseObject.id)) bad(`a case in set ${name} has an id like ${String(ROUND_SETS[name].source).replace(/^\^|\$$/g, "").replace(/\[a-z0-9\]\[a-z0-9-\]\*/, "<slug>")}, not ${JSON.stringify(caseObject.id)}`)
   }
   for (const name of caseObject.home_files ?? []) if (!/^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*$/.test(name) || name.split("/").some((part) => part === "." || part === ".." || part.startsWith("."))) bad(`Home files ${JSON.stringify(name)} must be a path of visible names under the home (no .., no leading /, and no name that starts with a dot: .local/share/opencode holds the host's log and database)`)
   // A canary the prompt fills and an item grades is satisfied by echoing the question.
@@ -160,7 +181,7 @@ export function validateCase(caseObject, file = "<case>") {
     }
   }
   if (caseObject.data === undefined && !isLegacyCase(caseObject)) bad(`Data is required (one of ${DATA_KINDS.join(", ")}): it says whose words the case reads, and a case that omits it would be taken for synthetic. Add \`- Data: ...\` to the header`)
-  if (!isLegacyCase(caseObject) && packPlugins().has(caseObject.plugin) && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)) bad(`a case declares one of this round's sets (${Object.keys(ROUND_SETS).join(", ")}): \`- Set: ...\`; only the history, x and charts corpora written before it are exempt`)
+  if (!holdsOut(caseObject) && !isLegacyCase(caseObject) && packPlugins().has(caseObject.plugin) && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)) bad(`a case declares one of this round's sets (${Object.keys(ROUND_SETS).join(", ")}): \`- Set: ...\`; only the history, x and charts corpora written before it are exempt`)
   if (caseObject.data !== undefined && caseObject.data !== "synthetic" && fakeModePlugins().has(caseObject.plugin)) bad(`a ${caseObject.plugin} case runs against the harness's synthetic fixture (fake mode): declare \`- Data: synthetic\`, not ${caseObject.data}`)
   const minimum = caseObject.data !== undefined ? dataMinimum(caseObject) : null
   if (minimum && DATA_KINDS.indexOf(caseObject.data) < DATA_KINDS.indexOf(minimum.kind)) bad(`a case that uses ${minimum.plugin}${minimum.plugin === caseObject.plugin ? "" : " (Seed: plugins=)"} reads ${minimum.kind} data${minimum.kind === "candidate" ? " (HR records)" : " (other people's words)"}, not ${caseObject.data}: declare \`- Data: ${minimum.kind}\` (or higher)`)

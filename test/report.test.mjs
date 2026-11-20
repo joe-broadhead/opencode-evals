@@ -11,24 +11,40 @@ const historyCases = () => {
   return readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => JSON.parse(readFileSync(join(dir, f), "utf8")))
 }
 
+// The expected counts are worked out here, from each compiled case's own metadata, by the rules in src/case/sets.mjs's header: a test that pinned "83 cases" broke
+// for every pull request that added a History case. Nothing in it is a number of the corpus.
 test("the History sets are the phase B design's, from each case's own metadata; retired cases are in no set", () => {
   const cases = historyCases()
-  assert.equal(cases.length, 83)
-  assert.equal(cases.filter((c) => c.status === "retired").length, 20)
-  assert.deepEqual(setCounts(cases), { tune: 55, holdout: 0, tools: 8, core: 45, guard: 8, smoke: 8, f7: 5, safety: 17, new: 15, extra: 2, screen: 15 })
-  assert.equal(selectCases(cases).selected.length, 55, "the default set is tune, without the tools-* family")
-  assert.equal(selectCases(cases, { set: "all" }).selected.length, 63, "every active case, the retired ones aside")
-  assert.equal(selectCases(cases, { set: "core,guard,smoke" }).selected.length, 61)
-  assert.deepEqual(selectCases(cases, { set: "smoke" }).selected.map(familyOf), Array(8).fill("tools"))
+  const isActive = (c) => (c.status ?? "active") === "active"
+  const retired = cases.filter((c) => !isActive(c))
+  const active = cases.filter(isActive)
+  const holdout = (c) => c.holdout === true || /^hold-/.test(c.id)
+  const ROUND = ["wide", "route", "deep", "commit", "hooks", "local"]
+  const family = (c) => (holdout(c) ? "holdout" : /^tools-/.test(c.id) ? "tools" : (c.sets ?? []).some((n) => ROUND.includes(n)) ? "round" : "tune")
+  const inFamily = (name) => active.filter((c) => family(c) === name)
+  const named = (name) => active.filter((c) => !holdout(c) && (c.sets ?? []).includes(name))
+  const expected = { tune: inFamily("tune").length, holdout: inFamily("holdout").length, tools: inFamily("tools").length }
+  for (const name of new Set(active.filter((c) => !holdout(c)).flatMap((c) => c.sets ?? []))) expected[name] = named(name).length
+  assert.deepEqual(setCounts(cases), expected)
+  assert.ok(Object.values(setCounts(cases)).every(Number.isFinite), "every count is a number")
+  assert.ok(retired.length === 0 || retired.every((c) => !selectCases(active, { set: "all" }).selected.some((x) => x.id === c.id)))
+  const ids = (list) => list.map((c) => c.id).sort()
+  assert.deepEqual(ids(selectCases(cases).selected), ids(inFamily("tune")), "the default set is tune, without the tools-* family")
+  assert.deepEqual(ids(selectCases(cases, { set: "all" }).selected), ids([...inFamily("tune"), ...inFamily("tools")]), "all is tune and tools: no retired case, no holdout")
+  const union = active.filter((c) => !holdout(c) && (c.sets ?? []).some((n) => ["core", "guard", "smoke"].includes(n)))
+  assert.deepEqual(ids(selectCases(cases, { set: "core,guard,smoke" }).selected), ids(union))
+  if (expected.smoke) assert.deepEqual(selectCases(cases, { set: "smoke" }).selected.map(familyOf), Array(expected.smoke).fill("tools"))
   const core = new Set(selectCases(cases, { set: "core" }).selected.map((c) => c.id))
-  for (const name of ["safety", "screen"]) assert.ok(selectCases(cases, { set: name }).selected.every((c) => core.has(c.id)), `${name} is inside core`)
-  assert.throws(() => selectCases(cases, { patterns: "zsh-startup-fix", set: "all" }), /status retired/)
+  for (const name of ["safety", "screen"]) if (expected[name]) assert.ok(selectCases(cases, { set: name }).selected.every((c) => core.has(c.id)), `${name} is inside core`)
+  // a retired case named outright is an error that says so, whichever one it is
+  if (retired.length) assert.throws(() => selectCases(cases, { patterns: retired[0].id, set: "all" }), /status retired/)
 })
 
 test("a named case outside the set is an error that says which set it is in", () => {
   const cases = [{ id: "a" }, { id: "ho-b", holdout: true }, { id: "tools-c" }]
   assert.throws(() => selectCases(cases, { patterns: "ho-b" }), /in holdout, not in --set tune/)
-  assert.deepEqual(selectCases(cases, { patterns: "ho-b,a", set: "all" }).selected.map((c) => c.id), ["a", "ho-b"])
+  assert.deepEqual(selectCases(cases, { patterns: "ho-b,a", set: "all" }).selected.map((c) => c.id), ["a"], "all is tune and tools: a holdout is not in it")
+  assert.deepEqual(selectCases(cases, { patterns: "ho-b,a", set: "all,holdout" }).selected.map((c) => c.id), ["a", "ho-b"])
   assert.throws(() => parseSets("tunes"), /unknown case set/)
 })
 
@@ -86,12 +102,13 @@ test("a plugin's own sets come from Set: headers, and a retired or deferred case
     { id: "d" },
     { id: "ho-e", holdout: true, sets: ["core"] },
   ]
-  assert.deepEqual(selectCases(cases, { set: "core" }).selected.map((c) => c.id), ["a", "b", "ho-e"])
+  assert.deepEqual(selectCases(cases, { set: "core" }).selected.map((c) => c.id), ["a", "b"], "a holdout in a plugin's own set is not in it: only naming holdout selects one")
+  assert.deepEqual(selectCases(cases, { set: "core,holdout" }).selected.map((c) => c.id), ["a", "b", "ho-e"])
   assert.deepEqual(selectCases(cases, { set: "smoke" }).selected.map((c) => c.id), ["a"])
   assert.deepEqual(selectCases(cases, { set: "tune" }).selected.map((c) => c.id), ["a", "b", "d"])
   assert.throws(() => selectCases(cases, { set: "guard" }), /status deferred/)
   assert.throws(() => selectCases(cases, { set: "nightly" }), /unknown case set nightly/)
-  assert.deepEqual(setCounts(cases), { tune: 3, holdout: 1, tools: 0, core: 3, smoke: 1 })
+  assert.deepEqual(setCounts(cases), { tune: 3, holdout: 1, tools: 0, core: 2, smoke: 1 }, "a holdout is counted as a holdout and under no other set")
 })
 
 test("each comparison's seed is derived from its own arms and cases, and pinned", () => {
@@ -105,4 +122,39 @@ test("each comparison's seed is derived from its own arms and cases, and pinned"
   assert.equal(compare([base, other]).comparisons[0].seed, 3542987912, "another comparison, another stream")
   // And what the stream gives: a fixed seed shared by every comparison would not give this interval.
   assert.deepEqual([c.mean, c.lo, c.hi], [0.4166666666666667, 0.20833333333333334, 0.5833333333333334])
+})
+
+test("setCounts counts every set a case can declare, round sets included, as numbers, and counts a holdout as a holdout only", () => {
+  // the shape of the NaN: a round-set case's family is `round`, which was not a key, so `counts.round++` made NaN
+  const cases = [
+    { id: "tools-a", sets: ["wide"] },
+    { id: "tools-b", sets: ["wide"] },
+    { id: "route-no-1", sets: ["route"] },
+    { id: "deep-a", sets: ["deep"] },
+    { id: "deep-b", sets: ["deep", "local"] },
+    { id: "commit-a", sets: ["commit"] },
+    { id: "hook-a", sets: ["hooks"] },
+    { id: "anything", sets: ["local"] },
+    { id: "plain" },
+    { id: "own", sets: ["local", "core"] },
+    { id: "retired-wide", sets: ["wide"], status: "retired" },
+    { id: "deferred-deep", sets: ["deep"], status: "deferred" },
+    // holdouts, however they are marked or whatever Set they were given to get past the old id rule
+    { id: "hold-slack-1-a", holdout: true, sets: ["local"] },
+    { id: "hold-slack-2-b", holdout: true, sets: ["wide"] },
+    { id: "hold-slack-3-c", holdout: true },
+    { id: "hold-slack-4-d", sets: ["deep", "core"] },
+  ]
+  const counts = setCounts(cases)
+  assert.deepEqual(counts, { tune: 1, holdout: 4, tools: 2, wide: 2, route: 1, deep: 2, commit: 1, hooks: 1, local: 3, core: 1 })
+  assert.ok(Object.values(counts).every((n) => Number.isInteger(n)), "no NaN")
+  assert.equal("round" in counts, false, "`round` is not a selection")
+  for (const name of ["wide", "route", "deep", "commit", "hooks", "local"]) assert.equal(Number.isInteger(setCounts([{ id: name === "wide" ? "tools-x" : `${name}-x`, sets: [name] }])[name]), true, name)
+  // and the counts are what selectCases returns for each name (a holdout in none of them)
+  for (const [name, n] of Object.entries(counts)) {
+    if (["tune", "holdout", "tools"].includes(name)) continue
+    assert.equal(selectCases(cases, { set: name }).selected.length, n, `--set ${name}`)
+  }
+  assert.equal(selectCases(cases, { set: "holdout" }).selected.length, counts.holdout)
+  assert.equal(selectCases(cases, { set: "tools" }).selected.length, counts.tools)
 })

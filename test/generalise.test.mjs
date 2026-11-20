@@ -46,7 +46,7 @@ test("a plugin's own vocabulary survives redaction; user text does not", () => {
 })
 
 test("a case's Seed header reaches the compiled case, for a runner", () => {
-  const text = `# seeded
+  const text = `# all-projects-performance
 - Plugin: history
 - Skill under test: history-recall
 - Tier: T3
@@ -60,8 +60,8 @@ what did I work on yesterday?
 - [H-OC01] major · It lists the day's sessions.
   evidence: count:history.* >= 1
 `
-  assert.equal(compileCase("seeded.md", text).seed, "cwd=api time=day")
-  assert.equal(compileCase("seeded.md", text.replace("- Seed: cwd=api time=day\n", "")).seed, null)
+  assert.equal(compileCase("all-projects-performance.md", text).seed, "cwd=api time=day")
+  assert.equal(compileCase("all-projects-performance.md", text.replace("- Seed: cwd=api time=day\n", "")).seed, null)
 })
 
 test("two arms that differ in exactly one recorded axis are comparable on that axis, and only that axis", () => {

@@ -296,7 +296,7 @@ test("a trial's environment: the container's PATH, the proxy, loopback unproxied
 // ---------------------------------------------------------------- the backend against a stand-in docker
 
 /** A stand-in `docker`: records argv and stdin, answers what the backend asks, fails a call matching FAIL. */
-function fakeDocker(dir, { version = "29.1.3", image = true, fail = null } = {}) {
+function fakeDocker(dir, { version = "29.1.3", image = true, fail = null, overlap = 0 } = {}) {
   const log = join(dir, "docker.jsonl")
   const file = join(dir, "docker")
   writeFileSync(
@@ -310,6 +310,8 @@ fs.appendFileSync(${JSON.stringify(log)}, JSON.stringify({ args, input, env: pro
 const line = args.join(" ")
 const fail = ${JSON.stringify(fail)}
 if (fail && line.includes(fail)) { process.stderr.write("refused by the stand-in\\n"); process.exit(1) }
+const overlap = ${JSON.stringify(overlap)}
+if (overlap && line.startsWith("network create --internal")) { const seen = fs.existsSync(${JSON.stringify(join(dir, "overlaps"))}) ? Number(fs.readFileSync(${JSON.stringify(join(dir, "overlaps"))}, "utf8")) : 0; if (seen < overlap) { fs.writeFileSync(${JSON.stringify(join(dir, "overlaps"))}, String(seen + 1)); process.stderr.write("Error response from daemon: cannot create network abc (br-abc): conflicts with network def (br-def): networks have overlapping IPv4\\n"); process.exit(1) } }
 if (args[0] === "version") { console.log(${JSON.stringify(version)}); process.exit(0) }
 if (args[0] === "inspect" && fs.existsSync(${JSON.stringify(join(dir, "gone"))})) { process.stderr.write("Error: No such object\\n"); process.exit(1) }
 if (args[0] === "image") { if (${image}) { console.log("sha256:fake"); process.exit(0) } process.stderr.write("No such image\\n"); process.exit(1) }
@@ -366,7 +368,10 @@ test("offline: a trial is confined by its flags, and no secret reaches an argv",
   const secret = `tok-${randomBytes(12).toString("hex")}`
   const spec = trial.wrap({ command: f.opencode, args: ["run", "hello"], cwd: f.sandbox.project, env: { HOME: f.sandbox.home, CLAUDE_CODE_OAUTH_TOKEN: secret, OPENCODE_PASSWORD: "pw-123456789", DOCKER_CONFIG: join(f.sandbox.home, ".docker") } })
   assert.equal(spec.command, findBinary(f.docker.file))
-  assert.deepEqual(spec.args.slice(0, 4), ["exec", "-i", "-w", f.sandbox.project])
+  // no standard input is attached by default: `docker exec -i` whose input closes at once can lose the end-of-file, and the command inside waits for it for ever; `stdin: true` attaches it
+  assert.deepEqual(spec.args.slice(0, 3), ["exec", "-w", f.sandbox.project])
+  assert.ok(!spec.args.includes("-i"))
+  assert.deepEqual(trial.wrap({ command: f.opencode, args: ["auth", "import"], cwd: f.sandbox.project, env: { HOME: f.sandbox.home }, stdin: true }).args.slice(0, 4), ["exec", "-i", "-w", f.sandbox.project])
   assert.ok(spec.args.includes("CLAUDE_CODE_OAUTH_TOKEN") && !spec.args.join(" ").includes(secret) && !spec.args.join(" ").includes("pw-123456789"))
   assert.deepEqual(spec.args.slice(-3), ["/opt/evals/bin/opencode", "run", "hello"])
   assert.equal(spec.env.CLAUDE_CODE_OAUTH_TOKEN, secret)
@@ -374,11 +379,21 @@ test("offline: a trial is confined by its flags, and no secret reaches an argv",
   assert.equal(spec.cwd, f.batchRoot, "the client runs outside every sandbox")
   assert.throws(() => trial.wrap({ command: "x", args: [], cwd: f.sandbox.project, env: { "A=b": "1" } }), /not a variable name/)
 
-  // The readiness check hands curl the password on its standard input.
+  // The readiness check hands curl the password through the shell's own pipe, from the environment of its `docker exec` (no argv, and no standard input attached to the exec: a lost end-of-file
+  // there left a curl waiting for ever).
   assert.deepEqual(await trial.ready({ url: "http://127.0.0.1:4100/api/agent", password: "pw-123456789", directory: f.sandbox.project, timeoutMs: 2000 }), { ok: true })
-  const curl = f.docker.calls().find((c) => c.args.includes("curl"))
+  const curl = f.docker.calls().find((c) => c.args.join(" ").includes("curl"))
   assert.equal(curl.args.join(" ").includes("pw-123456789"), false)
-  assert.match(curl.input, /user = "opencode:pw-123456789"/)
+  assert.equal(curl.env.EVALS_READY_PW, "pw-123456789")
+  assert.ok(!curl.args.includes("-i"), "no standard input is attached")
+  assert.ok(curl.args.join(" ").includes("printf") && curl.args.includes("--max-time") && curl.args.includes("2"), "curl is fed by printf in the container's shell and still has its own --max-time")
+  assert.equal(curl.input, "", "nothing on stdin")
+  // without a password curl runs directly
+  assert.deepEqual(await trial.ready({ url: "http://127.0.0.1:4200/v1/models", timeoutMs: 2000 }), { ok: true })
+  const plain = f.docker.calls().filter((c) => c.args.join(" ").includes("curl")).at(-1)
+  assert.equal(plain.args[0], "exec")
+  assert.equal(plain.args[2], "curl", "curl is the command itself, with no shell and no password")
+  assert.equal(plain.env.EVALS_READY_PW, undefined)
   assert.ok(f.docker.calls().every((c) => !c.args.join(" ").includes(secret)), "no argv the backend ran holds the token")
 
   // The stand-in answers `docker inspect`, so the container is not confirmed gone: nothing may be removed yet.
@@ -396,6 +411,28 @@ test("offline: a trial is confined by its flags, and no secret reaches an argv",
   assert.deepEqual(f.backend.egress().refused, { "example.com": { count: 2, why: ["not-allowed"] } })
   assert.deepEqual(f.backend.egress().allowed, { "api.anthropic.com": 1 })
   f.cleanup()
+})
+
+test("offline: a trial network that collides with another batch's (overlapping IPv4) is created again; any other error, or eight collisions, still fails", async () => {
+  const f = offlineFixture({ overlap: 3 })
+  await f.backend.prepare({ batchRoot: f.batchRoot, caller: f.caller, binaries: {} })
+  const trial = await f.backend.enter({ name: "case.t1", sandbox: f.sandbox, cwd: f.sandbox.project })
+  assert.ok(trial.container, "the trial started after three collisions")
+  assert.equal(f.docker.calls().filter((c) => c.args.join(" ").startsWith("network create --internal")).length, 4, "three refused, the fourth made it")
+  await f.backend.teardown()
+  f.cleanup()
+  const stuck = offlineFixture({ overlap: 99 })
+  await stuck.backend.prepare({ batchRoot: stuck.batchRoot, caller: stuck.caller, binaries: {} })
+  await assert.rejects(stuck.backend.enter({ name: "case.t1", sandbox: stuck.sandbox, cwd: stuck.sandbox.project }), /creating the trial network failed: .*networks have overlapping IPv4/)
+  assert.equal(stuck.docker.calls().filter((c) => c.args.join(" ").startsWith("network create --internal")).length, 8, "eight attempts, then the error")
+  await stuck.backend.teardown()
+  stuck.cleanup()
+  const other = offlineFixture({ fail: "network create --internal" })
+  await other.backend.prepare({ batchRoot: other.batchRoot, caller: other.caller, binaries: {} })
+  await assert.rejects(other.backend.enter({ name: "case.t1", sandbox: other.sandbox, cwd: other.sandbox.project }), /creating the trial network failed: refused by the stand-in/)
+  assert.equal(other.docker.calls().filter((c) => c.args.join(" ").startsWith("network create --internal")).length, 1, "an error that is not a collision is not retried")
+  await other.backend.teardown()
+  other.cleanup()
 })
 
 test("offline: a trial that fails to start leaves no network; old Docker, no image and root are refused", async () => {
@@ -969,8 +1006,8 @@ test("docker: the Claude Agent provider fills its models only after the server a
     // --standalone: a private server on the scratch home's own database, never the machine's background service.
     const exported = spawnSync("opencode", ["auth", "export", "Claude Agent", "--standalone"], { env: { PATH: process.env.PATH, HOME: home, OPENCODE_DISABLE_AUTOUPDATE: "1" }, encoding: "utf8" })
     assert.match(exported.stdout, /"integrationID":\s*"claude-agent"/)
-    const spec = (args) => trial.wrap({ command: "opencode", args, cwd: sandbox.project, env })
-    const importSpec = spec(["auth", "import", "--standalone"])
+    const spec = (args, stdin = false) => trial.wrap({ command: "opencode", args, cwd: sandbox.project, env, stdin })
+    const importSpec = spec(["auth", "import", "--standalone"], true)
     assert.equal((await runToEnd(importSpec.command, importSpec.args, { cwd: importSpec.cwd, env: importSpec.env, input: exported.stdout, timeoutMs: 60_000 })).code, 0)
     const serveSpec = spec(["serve", "--hostname", "127.0.0.1", "--port", "4100"])
     const server = start(serveSpec.command, serveSpec.args, { cwd: serveSpec.cwd, env: serveSpec.env })

@@ -12,7 +12,7 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
-import { scriptedRun, mock, execute, textOf, executeValue, refused, declinedIn } from "./run.mjs"
+import { scriptedRun, mock, execute, textOf, executeValue, refused, refusedInCode, completedCalls, hungReason, infraReason, takeHung, takeNotes, declinedIn } from "./run.mjs"
 import { writeActions, loadPacks } from "../run/lockdown.mjs"
 import { decideBefore, planIdOf } from "../run/guard/logic.mjs"
 
@@ -39,17 +39,33 @@ function fullArm(companions, { arm = "slack", options = {}, guard = true } = {})
 
 // ------------------------------------------------------------------------------------------------------------------ a1
 
+/**
+ * One a1 trial: passes only when a call was ATTEMPTED and REFUSED and none COMPLETED. The refusal is the guard's own marker or the host's first words on a call that ended in an
+ * error (`refused()`), or, for Code Mode, the script's own `refused: <host's words>`; a completed call fails the check whatever its output says; a trial that recorded no call, or
+ * hung before its first model request, is an ERROR (the call was never offered, so nothing was proved either way), never a pass.
+ */
+export function refusalCheck(id, trial) {
+  const hung = infraReason(trial, { outcome: trial?.outcome ?? null })
+  if (hung) return ok(`ERROR (infrastructure, not a refusal) ${id}`, false, `${hung}: the guarantee was not tested; rerun the probe`)
+  const call = trial?.calls?.[0]
+  if (!call) return ok(`ERROR ${id}: no call recorded`, false, `the trial recorded no tool call (exit ${trial?.summary?.exit ?? "?"}, ${(trial?.lines ?? []).length} recording line(s), ${(trial?.mock ?? []).filter((e) => e.ev === "request").length} model request(s)): the call was never made, so there was nothing to refuse; an error, not a refusal`)
+  const completed = completedCalls(trial)
+  const refusedOk = call.tool === "execute" ? refusedInCode(call) : refused(call)
+  const text = textOf(call).slice(0, 110).replace(/\s+/g, " ")
+  return ok(`${id} is refused`, refusedOk && completed.length === 0, `${call.status}: ${text}${completed.length ? `; ${completed.length} call(s) COMPLETED (${completed.map((c) => `${c.tool}:${c.status}`).join(", ")}): a write that completes is not a refusal` : ""}`)
+}
+
 export async function a1(env = {}) {
   const canary = `evals-canary-${Math.random().toString(36).slice(2, 14)}${Math.random().toString(36).slice(2, 14)}`
   const cases = [
     ["shell-curl", mock("shell", { command: "curl -sS https://slack.com/api/auth.test" })],
     ["shell-printenv", mock("shell", { command: "printenv" })],
-    ["read-auth", mock("read", { filePath: "~/.local/share/opencode/auth.json" })],
-    ["read-environ", mock("read", { filePath: "/proc/self/environ" })],
+    ["read-auth", mock("read", { path: "~/.local/share/opencode/auth.json" })],
+    ["read-environ", mock("read", { path: "/proc/self/environ" })],
     ["grep", mock("grep", { pattern: "access", path: "/" })],
     ["glob", mock("glob", { pattern: "**/auth.json" })],
-    ["write", mock("write", { filePath: "/tmp/x", content: "x" })],
-    ["edit", mock("edit", { filePath: "/tmp/x", oldString: "a", newString: "b" })],
+    ["write", mock("write", { path: "/tmp/x", content: "x" })],
+    ["edit", mock("edit", { path: "/tmp/x", oldString: "a", newString: "b" })],
     ["patch", mock("patch", { patch: "x" })],
     ["webfetch", mock("webfetch", { url: "https://slack.com/api/auth.test" })],
     ["websearch", mock("websearch", { query: "x" })],
@@ -64,14 +80,7 @@ export async function a1(env = {}) {
   const run = await scriptedRun({ cases: cases.map(([id, prompt]) => ({ id, prompt })), arm: { package: "none" }, caller: { EVALS_CANARY: canary, ...env.caller }, options: { auth: "env:EVALS_CANARY", iteration: "p0-a1" }, tmp: env.tmp })
   try {
     const checks = []
-    for (const [id] of cases) {
-      const trial = run.trials[id]
-      const call = trial.calls[0]
-      const text = textOf(call)
-      // A call is refused when the tool is absent (`No tool named`), denied (`Permission denied`), or Code Mode has no such
-      // identifier; for `execute`, the answer inside the call is what says so.
-      checks.push(ok(`${id} is refused`, call && (refused(call) || (call.tool === "execute" && /refused|Permission denied|Unknown identifier/i.test(text))), call ? `${call.status}: ${text.slice(0, 110).replace(/\s+/g, " ")}` : "no call recorded"))
-    }
+    for (const [id] of cases) checks.push(refusalCheck(id, run.trials[id]))
     const egress = run.egress ?? {}
     const connects = Object.keys({ ...egress.allowed, ...egress.refused, ...egress.failed }).length
     checks.push(ok("no CONNECT reached the egress proxy for any trial", connects === 0, `allowed ${JSON.stringify(egress.allowed)}, refused ${JSON.stringify(egress.refused)}, failed ${JSON.stringify(egress.failed)}`))
@@ -269,7 +278,7 @@ export async function c(env = {}) {
   writeFileSync(join(store, "caps.json"), JSON.stringify({ estimate_run_usd: { "mock/m1": { wide: 0.04, deep: 0.04 } } }))
   const caller = { EVALS_ROUND_CEILING_USD: "0.05", EVALS_MODELS_CATALOG: catalog, EVALS_MODEL_MAP: map, EVALS_MOCK_USAGE: JSON.stringify({ input: 0, output: 2000, cacheRead: 200000, cacheWrite: 20000 }), ...env.caller }
   const cases = [{ id: "one", prompt: "[[mock:text:one]]" }, { id: "two", prompt: "[[mock:text:two]]" }]
-  const run = await scriptedRun({ cases, arm: { package: "none" }, caller, options: { iteration: "p0-c", parallel: 1, store }, tmp: env.tmp })
+  const run = await scriptedRun({ cases, arm: { package: "none" }, caller, options: { iteration: "p0-c", parallel: 1, store }, tmp: env.tmp, expectStop: true })
   try {
     const runs = run.ledger.filter((e) => e.kind === "run")
     const first = runs[0]
@@ -287,7 +296,7 @@ export async function c(env = {}) {
     // A third batch: refused before anything is reserved.
     let refusedBatch = ""
     try {
-      await scriptedRun({ cases: [{ id: "three", prompt: "[[mock:text:three]]" }], arm: { package: "none" }, caller, options: { iteration: "p0-c-again", store }, tmp: env.tmp })
+      await scriptedRun({ cases: [{ id: "three", prompt: "[[mock:text:three]]" }], arm: { package: "none" }, caller, options: { iteration: "p0-c-again", store }, tmp: env.tmp, expectStop: true })
     } catch (error) {
       refusedBatch = String(error.message)
     }
@@ -580,7 +589,7 @@ export async function env_(env = {}) {
     checks.push(ok("the intended credential's value is in no recording either (masked everywhere)", !everything.includes(wanted.EVALS_PROBE_KEY), ""))
     for (const tool of BILLED_CORE_TOOLS) {
       const call = locked.trials[tool.replace(/_/g, "-")].calls[0]
-      checks.push(ok(`${tool} is denied by name in a locked run`, call && refused(call) && /No tool named|Permission denied|EVALS-ASSERT tool/i.test(textOf(call)), call ? `${call.status}: ${textOf(call).slice(0, 100).replace(/\s+/g, " ")}` : "no call recorded"))
+      checks.push(ok(`${tool} is denied by name in a locked run`, call && refused(call) && completedCalls(locked.trials[tool.replace(/_/g, "-")]).length === 0, call ? `${call.status}: ${textOf(call).slice(0, 100).replace(/\s+/g, " ")}` : "no call recorded"))
     }
     const config = { policies: (await import("../run/lockdown.mjs")).lockdownPolicies(), permissions: (await import("../run/lockdown.mjs")).lockdownPermissions() }
     const { lockdownProblems } = await import("../run/lockdown.mjs")
@@ -608,10 +617,10 @@ export async function halt(env = {}) {
   const create = (name) => execute(`return await tools.jobs.create({name:'${name}',schedule:{every:'1h'},agent:'build',action:{type:'prompt',text:'hi'}})`)
   const cases = [{ id: "first-write", prompt: create("first") }, { id: "second-write", prompt: create("second") }, { id: "third-write", prompt: create("third") }]
   const options = { probe: true, noWriteAsks: true, guardMode: "log", iteration: "p0-halt", parallel: 1, store, auth: "none" }
-  const run = await scriptedRun({ cases, arm: soloArm(env.companions, "jobs", { access: "all" }), options, tmp: env.tmp })
+  const run = await scriptedRun({ cases, arm: soloArm(env.companions, "jobs", { access: "all" }), options, tmp: env.tmp, expectStop: true })
   let again = ""
   try {
-    await scriptedRun({ cases: [cases[0]], arm: soloArm(env.companions, "jobs", { access: "all" }), options: { ...options, iteration: "p0-halt-next" }, tmp: env.tmp })
+    await scriptedRun({ cases: [cases[0]], arm: soloArm(env.companions, "jobs", { access: "all" }), options: { ...options, iteration: "p0-halt-next" }, tmp: env.tmp, expectStop: true })
   } catch (error) {
     again = error.message
   }
@@ -898,4 +907,30 @@ export async function fake(env = {}) {
   return done("fake", checks)
 }
 
-export const PROBES = { a1, a2, a3, a4, a5, c, g, g8, halt, env: env_, fake, live, p7, gws, p1, p2, p3, p4, p5, p13 }
+const PROBE_FUNCTIONS = { a1, a2, a3, a4, a5, c, g, g8, halt, env: env_, fake, live, p7, gws, p1, p2, p3, p4, p5, p13 }
+
+/**
+ * Every probe, with one more duty: a trial of any scripted run it made that hung before its first model request is reported FIRST, as the cause, and fails the probe. A probe
+ * reads the calls its trials made; one that hung made none, and its checks then say "no call recorded" for a reason that has nothing to do with what was probed (review of #13).
+ * Neither a pass nor a quiet retry: the result is a failure that names the trial and the hang.
+ */
+export const withHangs = (fn) => async (env) => {
+  takeHung()
+  takeNotes()
+  let result
+  try {
+    result = await fn(env)
+  } catch (error) {
+    const hung = takeHung()
+    if (hung.length) throw new Error(`ERROR (infrastructure): ${hung.map((h) => `${h.id}: ${h.why}`).join("; ")} (the probe's own error: ${error.message})`, { cause: error })
+    throw error
+  }
+  // A client restarted once (and then answered) is a pass that says so: the restart is in the output, and in the trial's summary, never quiet.
+  const restarted = takeNotes()
+  if (restarted.length) result = { ...result, checks: [...result.checks, ok(`NOTE (infrastructure): ${restarted.length} trial(s) needed their client restarted once, and then ran`, true, restarted.map((n) => `${n.iteration}/${n.id}: ${n.why}`).join("; "))] }
+  const hung = takeHung()
+  if (!hung.length) return result
+  return { ...result, ok: false, infrastructure: true, checks: [ok(`ERROR (infrastructure, not a refusal): ${hung.length} trial(s) did not complete (hung before their first model request, left no summary, or failed in the runner)`, false, hung.map((h) => `${h.iteration}/${h.id}: ${h.why}`).join("; ")), ...result.checks] }
+}
+
+export const PROBES = Object.fromEntries(Object.entries(PROBE_FUNCTIONS).map(([id, fn]) => [id, withHangs(fn)]))

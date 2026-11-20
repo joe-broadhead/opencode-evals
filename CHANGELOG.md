@@ -8,6 +8,32 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
 
 ### Fixed
 
+- **A trial that ends with no summary always says why** (re-check of #13, R5: 1 of 50 `p0 a1` runs lost a trial and its cause). The runner writes a stub summary (`infra: trial_incomplete`) when it begins a trial and replaces it
+  with the trial's own; a trial whose job throws gets a failure summary (`infra: trial_error`) with the phase it reached, the error and its stack, what Docker said of the container (state, exit code, OOM kill, the last log lines, its
+  processes), the exit code and signal, and is reported by the batch (exit code 1) and by the probe first, as the cause; a run that ended with no exit code (a signal, an OOM kill) is `trial_error` too. The probe also reads a trial with
+  no summary file at all: the runner's error, its log lines for the trial, or that it was never launched. **What it found:** `docker exec -i` can lose its end-of-file under load, and the command inside waits for it for ever: `opencode run`
+  (idle at 0 % CPU, the mock never asked) and the readiness `curl --config -` (alive past its `--max-time`). `docker exec` now attaches no standard input unless there is input to send (`stdin: true`), and the readiness password rides the
+  container shell's own pipe from the exec's environment. An idle scripted client is also replaced once (`client_restarts` in the summary, with the container's processes; a NOTE in the probe output; a second hang is still
+  `no_model_request`; first-request deadline 90 s, `EVALS_CLIENT_RESTARTS=0` turns it off). Two batches creating Docker networks at the same moment got overlapping subnets (`networks have overlapping IPv4`): the create is tried again,
+  up to eight times. The guard marker counts only at the start of an errored result; `p0 a1`'s file tools use 2.3.2's argument names (`path`, `oldString`); a test pins that only a scripted trial has a stall watch.
+- **`refused()` could pass a call that completed** (review of #13). A refusal is now a call that ended in an error and carries the guard's own marker (`EVALS-ASSERT tool: … refused (`) or the host's first words; a completed call never is,
+  whatever its output says. `p0 a1` passes only when a write was attempted and refused with none completed; "no call recorded" is an ERROR that says the call was never made; a trial that hung before its first model request is
+  reported first, as the cause, by every probe. The runner kills a scripted trial that has made no model request within `EVALS_FIRST_REQUEST_S` (150 s) and records it as infrastructure (`no_model_request`: never graded, its run
+  released), instead of waiting out the 420 s timeout.
+- **The legacy exemption is a frozen list of case ids** (`src/case/legacy-cases.json`), not a rule about the plugin: a new History, X or Charts case, or a `Plugin: p0` case, meets every round rule. `Holdout:` is `true` or `false`.
+- **The fake Jira and GitHub servers read `OR`** (and a comma in `label:`), and refuse parentheses, `NOT` and a dangling `OR` with an error instead of returning nothing.
+- **`evals compile` refuses a literal `<placeholder>` in a prompt** (104 lane cases had them); `- Angle brackets: <h1>, </h1>` lists the tokens a prompt really quotes. The History, X and Charts corpora written before the round are exempt.
+- **The fake Jira reads `resolved`/`resolutiondate`, `resolution` (`Unresolved`), `statusCategory`, `is EMPTY|NULL`, and Jira's date functions** (`startOfDay/Week/Month/Year()` and `endOf…`, with increments; weeks start on
+  Monday; now is fixed), so a "done this week" case can be asked and graded; the fake GitHub reads `merged:` and gives a merged pull request its `closed_at`.
+- **`setCounts` returned NaN for the round sets** (`counts.round++` on a key that does not exist); it now counts every `Set:` name as a number and a holdout as a holdout only. The History and
+  Charts tests no longer pin their corpora's case counts (a pull request that adds a case broke the harness's own tests); they derive the expectations from the compiled cases.
+- **Holdouts are in no selection but their own.** A holdout (`Holdout: true` or a `hold-` id) needs no round set or id prefix (the holdout lane had to give 84 of them `Set: local`, which made them one
+  `--set local` away from a tuner), and `--set` of any value, `all` included (now `tune` and `tools`), a round set, a plugin's set or a `--cases` glob never returns one; only a selection naming `holdout` does.
+- **The fake Jira and GitHub servers read dates.** JQL `created`/`updated` with `>=`, `>`, `<=`, `<`, `=` (a bare date is that day's midnight, as Jira reads it; `-7d`, `now()`), and GitHub search
+  `created:`, `updated:`, `closed:` (`D`, `>D`, `<=D`, `a..b`, whole days), `assignee:` (`@me`), `author:`, `no:`, `is:open|closed|merged|draft|pr`, `label:` (quoted, `-label:`), `repo:`/`org:`; what they cannot
+  read is an error, never an empty answer.
+- **The seven stand-in GitHub tools** have the best text there is: one exact (a signed-in host's listing), four from the open-source README (title and parameters); two stay stand-ins (no public listing).
+- **The closed-pipe fix hid real write errors.** Only a closed reader (EPIPE, ECONNRESET) is tolerated now; a disk-full or other write error says so on stderr once and the command exits non-zero.
 - **Fake mode runs the plugins as released.** A loopback `mcp` override was a `conflict` to both plugins (no namespace description, no tool filter, status `conflict`). Each now registers its own
   server at its default URL; the trial maps that host to the fake (`--add-host`, `NO_PROXY`) and the fake answers TLS with a per-batch, name-constrained CA trusted only in the trial
   (`NODE_EXTRA_CA_CERTS`). `p0 fake` asserts the namespace text (from the plugin's source), the status (`connected`, own server) and the vendor host in every request.

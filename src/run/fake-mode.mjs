@@ -57,8 +57,9 @@ export function installFake(harnessDir, ids) {
     if (!readCatalog(id)) throw new Error(`fake mode for ${id}: packs/${id}/mcp.json does not exist (node scripts/mcp-catalog.mjs builds it)`)
     if (!FAKE_HOSTS[id]) throw new Error(`fake mode for ${id}: no vendor host is known for it (FAKE_HOSTS in src/run/fake-mode.mjs)`)
     cpSync(catalogFile(id), join(dir, `${id}.catalog.json`))
-    cpSync(join(FAKE_SOURCE, "fixtures", `${id}.mjs`), join(dir, "fixtures", `${id}.mjs`))
   }
+  // The whole fixtures directory: a fixture imports the shared date helper (fixtures/when.mjs).
+  cpSync(join(FAKE_SOURCE, "fixtures"), join(dir, "fixtures"), { recursive: true })
   const tls = makeFakeCa(join(dir, "tls"), Object.fromEntries(ids.map((id) => [id, FAKE_HOSTS[id].host])))
   return { dir, ...tls }
 }

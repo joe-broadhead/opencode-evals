@@ -188,21 +188,26 @@ export function start(command, args, { cwd, env, input = null } = {}) {
 }
 
 /** Runs to completion, or kills the group after `timeoutMs`. */
-export async function runToEnd(command, args, { cwd, env, input = null, timeoutMs = 0 } = {}) {
+export async function runToEnd(command, args, { cwd, env, input = null, timeoutMs = 0, stall = null } = {}) {
   const proc = start(command, args, { cwd, env, input })
   let timedOut = false
+  let stalled = false
   const timer = timeoutMs
     ? setTimeout(() => {
         timedOut = true
         proc.kill("SIGKILL")
       }, timeoutMs)
     : null
+  // `stall: { afterMs, alive }`: a command that has shown no sign of life by `afterMs` (`alive()` still false) is killed then, not at the timeout: a trial whose client never
+  // got as far as its model (found hanging 420 s, in 1 trial of 360 under load) says so in seconds, with that cause.
+  const watch = stall ? setTimeout(() => { if (!stall.alive()) { stalled = true; proc.kill("SIGKILL") } }, stall.afterMs) : null
   const exit = await proc.exited
   if (timer) clearTimeout(timer)
+  if (watch) clearTimeout(watch)
   // Nothing a finished command started is left running.
   proc.kill("SIGKILL")
   reap()
-  return { ...exit, ...proc.output(), timedOut }
+  return { ...exit, ...proc.output(), timedOut, ...(stalled ? { stalled: true } : {}) }
 }
 
 /** TERM, a grace period, then KILL: only the group this run started. */

@@ -143,7 +143,7 @@ test("placeholders are filled from the store at run time, and a prompt that cann
     rmSync(root, { recursive: true, force: true })
   }
   // A legacy corpus's case that omits Data: takes what the corpus always held: x reads other people's posts, so it is real.
-  const legacy = compileCase("cases/x/legacy.md", mkCaseText("legacy", "").replace(/- Plugin: linear/, "- Plugin: x").replace("- Set: local\n", "").replace("- Data: synthetic\n", ""))
+  const legacy = compileCase("cases/x/bookmark-asks-first.md", mkCaseText("bookmark-asks-first", "").replace(/- Plugin: linear/, "- Plugin: x").replace("- Set: local\n", "").replace("- Data: synthetic\n", ""))
   assert.equal(dataOf(legacy), "real")
   assert.deepEqual(gateCases([legacy], { model: "claude-agent/haiku" }).runnable, [])
 })

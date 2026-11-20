@@ -245,12 +245,12 @@ test("a holdout's id is hold-<plugin>-<n>-<slug>; history's ho- ids are the one 
 
 test("a compiled synthetic holdout set is selected by --set holdout and by no other set", () => {
   const mk = (id, header) => compileCase(`cases/linear/${id}.md`, caseText(id, header))
-  const cases = [mk("hold-linear-1-a", "- Holdout: true\n- Data: synthetic"), mk("tools-save-issue", "- Set: wide"), mk("deep-x", "- Set: deep"), compileCase("cases/history/tune-me.md", caseText("tune-me", "- Set: core").replace(/linear/g, "history"))]
+  const cases = [mk("hold-linear-1-a", "- Holdout: true\n- Data: synthetic"), mk("tools-save-issue", "- Set: wide"), mk("deep-x", "- Set: deep"), compileCase("cases/history/audit-tree-cost.md", caseText("audit-tree-cost", "- Set: core").replace(/linear/g, "history"))]
   assert.deepEqual(selectCases(cases, { set: "holdout" }).selected.map((c) => c.id), ["hold-linear-1-a"])
   assert.deepEqual(selectCases(cases, { set: "wide" }).selected.map((c) => c.id), ["tools-save-issue"])
   assert.deepEqual(selectCases(cases, { set: "deep" }).selected.map((c) => c.id), ["deep-x"])
-  assert.deepEqual(selectCases(cases, { set: "tune" }).selected.map((c) => c.id), ["tune-me"], "tune never picks up a round set's case: a commit case really writes")
-  assert.deepEqual(selectCases(cases, { set: "all" }).selected.map((c) => c.id), ["hold-linear-1-a", "tools-save-issue", "tune-me"], "nor does all")
+  assert.deepEqual(selectCases(cases, { set: "tune" }).selected.map((c) => c.id), ["audit-tree-cost"], "tune never picks up a round set's case: a commit case really writes")
+  assert.deepEqual(selectCases(cases, { set: "all" }).selected.map((c) => c.id), ["audit-tree-cost", "tools-save-issue"], "nor does all: it is tune and tools")
   const commit = [mk("commit-linear-issue", "- Set: commit")]
   assert.throws(() => selectCases(commit, { set: "tune" }), /no case matches/)
   assert.deepEqual(selectCases(commit, { set: "commit" }).selected.map((c) => c.id), ["commit-linear-issue"])

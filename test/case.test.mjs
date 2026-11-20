@@ -4,7 +4,7 @@ import { compileCase, casesDigest } from "../src/case/compile.mjs"
 import { CaseError } from "../src/case/schema.mjs"
 import { ParseError } from "../src/case/parse.mjs"
 
-const good = `# demo
+const good = `# small-bounded-search
 - Plugin: x
 - Skill under test: x
 - Tier: T3
@@ -13,7 +13,7 @@ const good = `# demo
 - Budget: outer_calls <= 4, billed_calls <= 2
 
 ## Prompt
-how many posts mention <topic> right now?
+how many posts mention the topic right now?
 
 ## Items
 - [X-OC01] blocker · Exactly one count read.
@@ -37,7 +37,7 @@ const compile = (text) => compileCase("demo.md", text)
 test("a good case compiles to the strict schema", () => {
   const c = compile(good)
   assert.equal(c.schema, "oc-case/1")
-  assert.equal(c.id, "demo")
+  assert.equal(c.id, "small-bounded-search")
   assert.equal(c.items.length, 3)
   assert.equal(c.items[2].forbidden, true)
   assert.deepEqual(c.items[0].maps_to, ["A1"])

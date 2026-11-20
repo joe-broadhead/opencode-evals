@@ -117,7 +117,10 @@ the trace's order); the trace still holds only the shape. Without the recording,
   credential-free arm: shell and file tools on) takes any id and is combined with another set (`Set: route, local`). Any
   other lower-case set name is the plugin's own. `tune`, `holdout`, `tools` and `all` are `--set` families and cannot be
   declared.
-- *Holdouts* are `Holdout: true` with the id `hold-<plugin>-<n>-<slug>`, written into `$EVALS_STORE/holdouts/<plugin>/` only.
+- *Holdouts* are `Holdout: true` with the id `hold-<plugin>-<n>-<slug>`, written into `$EVALS_STORE/holdouts/<plugin>/` only. A holdout needs **no** round set and none of their id prefixes (a `hold-` id
+  or `Holdout: true` is exempt from both rules), and it is in **no selection but its own**: `--set tune`, `tools`, `all`, a round set (`local`, `wide`, `deep`, ...) or a plugin's own set never returns one, whatever
+  `Set:` it lists, and a `--cases hold-*` glob cannot reach it. Only a selection that names `holdout` (`--set holdout`, the plan's flag for `h0` and `h1`; `--set tune,holdout` for both) returns holdouts.
+  So a holdout given `Set: local` is not one `--set local` away from a tuner. `all` is `tune` and `tools`.
 - A case in one of this round's sets is in no family: `--set tune` and `--set all` never select it, so a default run cannot
   start a `commit` case (which really writes) or a `local` one (which needs the credential-free arm). Name the set.
 - `Data:` says what the case reads. `synthetic`, `seeded` (made by the owner for the round) and `own` (the owner's own data,
@@ -203,8 +206,8 @@ a 95% percentile interval). Each comparison seeds its own generator from its two
 they share, so an arm's interval is the same whichever other arms are listed. The rows are compared on the cases
 every arm ran; `--all-cases` lifts that.
 
-`--set tune|holdout|tools|all` selects cases by their own metadata, the same sets the runner uses: `holdout` is a case
-with `Holdout: true`, `tools` an id starting `tools-`, `tune` the rest. A plugin defines its own sets with a
+`--set tune|holdout|tools|all` selects cases by their own metadata, the same sets the runner uses (`all` is `tune` and `tools`, never holdouts): `holdout` is a case
+with `Holdout: true` or a `hold-` id, selected only by naming it, `tools` an id starting `tools-`, `tune` the rest. A plugin defines its own sets with a
 `Set:` header (`--set core`, `--set smoke`); a case with `Status: retired` or `deferred` is in no set. A run of a `Seed: time=day` case recorded on
 another UTC day than its world's is dropped, and the report says how many.
 

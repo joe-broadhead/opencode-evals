@@ -287,13 +287,17 @@ test("an unknown or missing --auth is refused before anything runs", async () =>
   f.cleanup()
 })
 
-test("the CLI's dry run lists the plan and the caps, and launches nothing", () => {
+test("the CLI's dry run lists the plan and the caps, and launches nothing; --set all leaves the holdout out, naming holdout brings it in", () => {
   const f = fixture()
-  const out = spawnSync(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "dry", "--model", "mock/m1", "--auth", "none", "--scripted", "--isolation", "none", "--unsafe-no-isolation", "--arm", f.arm, "--cases-dir", f.casesDir, "--set", "all", "--trials", "2", "--dry-run"], { env: f.caller, encoding: "utf8" })
+  const dry = (set) => spawnSync(process.execPath, [BIN, "run", "--plugin", "demo", "--iteration", "dry", "--model", "mock/m1", "--auth", "none", "--scripted", "--isolation", "none", "--unsafe-no-isolation", "--arm", f.arm, "--cases-dir", f.casesDir, "--set", set, "--trials", "2", "--dry-run"], { env: f.caller, encoding: "utf8" })
+  const out = dry("all")
   assert.equal(out.status, 0, out.stderr)
-  assert.match(out.stdout, /3 case\(s\) x 2 trial\(s\) = 6 run\(s\)/)
-  assert.match(out.stdout, /hold-demo-3-c\.t2/)
+  assert.match(out.stdout, /2 case\(s\) x 2 trial\(s\) = 4 run\(s\)/)
+  assert.doesNotMatch(out.stdout, /hold-demo-3-c/, "a holdout is in no selection but its own")
   assert.match(out.stdout, /nothing launched, nothing reserved/)
+  const both = dry("all,holdout")
+  assert.match(both.stdout, /3 case\(s\) x 2 trial\(s\) = 6 run\(s\)/)
+  assert.match(both.stdout, /hold-demo-3-c\.t2/)
   assert.deepEqual(readLedger(f.store), [])
   f.cleanup()
 })

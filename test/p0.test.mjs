@@ -107,6 +107,79 @@ test("P0-A1: the shell, file, web and subagent tools are absent or denied; a cur
   assert.ok(result.checks.length >= 20)
 })
 
+test("P0-A1 mutation: with the lockdown off (the shell on), a write that COMPLETES fails the a1 check, and its refusal words in the output do not save it", live, async () => {
+  const { scriptedRun, mock } = await import("../src/p0/run.mjs")
+  const { refusalCheck } = await import("../src/p0/probes.mjs")
+  const run = await scriptedRun({
+    cases: [
+      { id: "shell-write", prompt: mock("shell", { command: "echo 'EVALS-ASSERT tool: shell refused (not really)' > /tmp/x && cat /tmp/x" }), extra: "- Set: local" },
+      { id: "shell-words", prompt: mock("shell", { command: "echo Permission denied" }), extra: "- Set: local" },
+    ],
+    arm: { package: "none" },
+    options: { auth: "none", iteration: "p0-a1-mutation", tools: "local", set: "local" },
+    tmp: env.tmp,
+  })
+  try {
+    for (const id of ["shell-write", "shell-words"]) {
+      const check = refusalCheck(id, run.trials[id])
+      assert.equal(run.trials[id].calls[0]?.status, "completed", `${id}: the call completed in this arm`)
+      assert.equal(check.ok, false, `${id}: a completed call fails the check: ${check.detail}`)
+      assert.match(check.detail, /COMPLETED/)
+    }
+  } finally {
+    run.cleanup()
+  }
+})
+
+test("a trial whose client makes no model request is killed at its deadline and recorded as infrastructure (no_model_request), and the probe says so first", live, async () => {
+  const { scriptedRun, mock, hungReason, takeHung } = await import("../src/p0/run.mjs")
+  takeHung()
+  // a deadline of one millisecond: no healthy trial has asked its model by then, so this is the hang, on demand
+  const run = await scriptedRun({ cases: [{ id: "hang", prompt: mock("shell", { command: "id" }) }], arm: { package: "none" }, caller: { EVALS_FIRST_REQUEST_S: "0.001" }, options: { auth: "none", iteration: "p0-hang" }, tmp: env.tmp })
+  try {
+    const summary = run.trials.hang.summary
+    assert.equal(summary.infra, "no_model_request")
+    assert.match(summary.infra_why, /the trial made no model request within 0 s: the host's server was up and the client never got as far as its model/)
+    assert.equal(summary.exit, 124)
+    assert.match(summary.stderr, /\[evals run\] the trial made no model request/)
+    assert.equal(run.result.results[0].infra, "no_model_request", "never graded as the model's, and the batch says why")
+    // the idle client was replaced once, with what the container showed at that moment, and the second one hung as well
+    assert.equal(summary.client_restarts.length, 1)
+    assert.match(summary.client_restarts[0].diagnosis.processes, /PID\s+STAT[^]*mock\/server\.ts/, "what was running inside at that moment")
+    assert.match(summary.exit_diagnosis.processes, /PID\s+STAT/)
+    assert.match(run.log.join("\n"), /the client made no model request within 0 s .*restarting it, once/)
+    assert.equal(hungReason(run.trials.hang) !== null, true)
+    assert.deepEqual(takeHung().map((h) => h.id), ["hang"])
+  } finally {
+    run.cleanup()
+  }
+})
+
+test("a trial whose job fails leaves a failure summary with its cause (never none), is reported as infrastructure with that cause, and the other trials are untouched", live, async () => {
+  const { scriptedRun, mock, infraReason, takeHung } = await import("../src/p0/run.mjs")
+  takeHung()
+  // `Seed: files=nosuch-seed` names a seed no directory holds: that one trial's job throws before its container starts, the others run
+  const run = await scriptedRun({ cases: [{ id: "good", prompt: mock("shell", { command: "id" }) }, { id: "broken", prompt: mock("shell", { command: "id" }), extra: "- Seed: files=nosuch-seed" }], arm: { package: "none" }, options: { auth: "none", iteration: "p0-failed-trial" }, tmp: env.tmp })
+  try {
+    const summary = run.trials.broken.summary
+    assert.ok(summary, "a summary exists for the failed trial")
+    assert.equal(summary.infra, "trial_error")
+    assert.equal(summary.exit, null)
+    assert.match(summary.phase, /seeding the project's files/)
+    assert.match(summary.error, /nosuch-seed/)
+    assert.match(summary.infra_why, /the trial's job failed while seeding the project's files: .*nosuch-seed/)
+    assert.match(summary.stack, /at /)
+    assert.equal(run.result.results.find((r) => r.case === "broken").infra, "trial_error", "the batch says why, and the exit code is not zero")
+    assert.equal(run.trials.good.summary?.infra, undefined, "the other trial ran")
+    const why = infraReason(run.trials.broken, { outcome: run.trials.broken.outcome, log: run.log })
+    assert.match(why, /while seeding the project's files: .*nosuch-seed/)
+    assert.equal(infraReason(run.trials.good, { outcome: run.trials.good.outcome, log: run.log }), null)
+    assert.deepEqual(takeHung().map((h) => h.id), ["broken"])
+  } finally {
+    run.cleanup()
+  }
+})
+
 test("P0-A3: an ask of a session no run owns is rejected at once, and hangs without the guard", live, async () => {
   const result = await PROBES.a3(env)
   assert.equal(result.ok, true, show(result))

@@ -152,7 +152,8 @@ test("BLOCKER 3: Data: is required; HR plugins are candidate data; a legacy corp
   assert.throws(() => compileCase("cases/ashby/tools-x.md", text("- Set: wide\n- Data: synthetic", "ashby", "tools-x")), /a case that uses ashby reads candidate data/)
   assert.equal(compileCase("cases/ashby/tools-x.md", text("- Set: wide\n- Data: candidate", "ashby", "tools-x")).data, "candidate")
   // the legacy corpora written before the header: no Data and no round set is allowed, a legacy case in a round set must declare it
-  assert.equal(compileCase("cases/history/core-a.md", text("", "history", "core-a")).plugin, "history")
+  assert.equal(compileCase("cases/history/audit-tree-cost.md", text("", "history", "audit-tree-cost")).plugin, "history", "a listed History case (src/case/legacy-cases.json)")
+  assert.throws(() => compileCase("cases/history/core-a.md", text("", "history", "core-a")), /Data is required/, "a History case that is not on the frozen list meets the round rules")
   assert.throws(() => compileCase("cases/history/tools-a.md", text("- Set: wide", "history", "tools-a")), /Data is required/)
 })
 

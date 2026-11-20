@@ -3,7 +3,7 @@
 
 import { parseCase, parseControls, parseBudget, ParseError } from "./parse.mjs"
 import { parseClause } from "../grade/evidence.mjs"
-import { validateCase, CaseError } from "./schema.mjs"
+import { validateCase, CaseError, isLegacyCase } from "./schema.mjs"
 import { sha256 } from "../util/canonical.mjs"
 import { parseTruth } from "./truth.mjs"
 import { toolNameProblems } from "./toolnames.mjs"
@@ -20,6 +20,17 @@ const truthOf = (file, text) => {
   }
 }
 
+/** `Holdout:` is `true` or `false`, and nothing else: `True`, `yes` or `1` used to compile to `false`, and the case was then an ordinary case a tuner could be given. */
+function holdoutFlag(file, value) {
+  if (value === undefined) return false
+  if (value === "true") return true
+  if (value === "false") return false
+  throw new CaseError(file, `Holdout: is \`true\` or \`false\`, not ${JSON.stringify(value)}: any other spelling used to compile to false, and a holdout was then one \`--set tune\` away from a tuner`)
+}
+
+/** The `<...>` tokens of a prompt: a `<` that does not open with a space or another `<`, up to the next `>` on the same line (so `a < b and c > d` is not one). */
+export const angleTokens = (prompt) => [...String(prompt).matchAll(/(?<!<)<(?![<\s=])[^<>\n]{1,79}>(?!>)/g)].map((m) => m[0])
+
 /**
  * Compiles one markdown case. Throws CaseError or ParseError with the file and line. With `packs` (parsed pack.json objects), a
  * case in one of this round's sets is also checked against its plugin's pack: a clause that names a tool the plugin does not have
@@ -30,6 +41,15 @@ export function compileCase(file, text, { packs = null } = {}) {
   if (!draft.id) throw new ParseError(file, "missing # case id")
   // A wide skeleton (scripts/wide-skeletons.mjs) carries `<<TODO ...>>` where the writer's words go: it cannot be compiled, run or committed.
   if (/<<TODO/.test(draft.prompt)) throw new CaseError(file, "the prompt is still a skeleton's <<TODO>>: write the task a user would have, without the tool's description")
+  // A literal `<placeholder>` in a prompt is a gap nobody filled (`<github sandbox repo>`, `<your channel>`): the model is asked about something that is not there, or
+  // answers with the placeholder echoed back. `{{target:...}}` and `{{canary:...}}` are the way to name a value the store fills. A prompt that really quotes angle
+  // brackets (HTML, a generic type, a shell redirect) lists each quoted token in `- Angle brackets: <div>, </div>`; anything else between < and > is refused.
+  const allowed = new Set(String(draft.fields.angleBrackets ?? "").split(",").map((t) => t.trim()).filter(Boolean))
+  // The History, X and Charts corpora written before this round fill their `<X test topic: ...>` gaps from their own worlds and are left as they are (isLegacyCase).
+  const legacy = isLegacyCase({ id: draft.id, plugin: draft.fields.plugin ?? "", sets: list(draft.fields.set ?? "") })
+  const placeholders = legacy ? [] : angleTokens(draft.prompt).filter((token) => !allowed.has(token))
+  if (placeholders.length) throw new CaseError(file, `the prompt has a literal placeholder: ${[...new Set(placeholders)].slice(0, 4).join(" ")}. Write the value, or use {{target:<plugin>.<name>}} / {{canary:<name>}} for one the store fills. A prompt that really quotes angle brackets lists them: \`- Angle brackets: ${placeholders[0]}\`. Only angle brackets are checked here: [channel], YOUR_REPO, \${TARGET}, TODO and XXX are not placeholders to this check, and they are still gaps a reviewer rejects`)
+  for (const token of legacy ? [] : allowed) if (!draft.prompt.includes(token)) throw new CaseError(file, `\`Angle brackets:\` lists ${token}, which the prompt does not contain`)
   const problems = []
   const items = draft.items.map((item) => {
     const isJudge = (item.grader ?? "code") === "judge"
@@ -87,7 +107,7 @@ export function compileCase(file, text, { packs = null } = {}) {
     budgets: parseBudget(draft.fields.budget),
     seed: draft.fields.seed ?? null,
     expect: draft.fields.expect ?? "pass",
-    holdout: draft.fields.holdout === "true",
+    holdout: holdoutFlag(file, draft.fields.holdout),
     // Present only when declared, so a case that declares none compiles to the JSON it always did.
     ...(draft.fields.checkable ? { checkable: list(draft.fields.checkable) } : {}),
     ...(draft.fields.set ? { sets: list(draft.fields.set) } : {}),

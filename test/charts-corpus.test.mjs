@@ -77,11 +77,12 @@ test("the adapter's facts: counts, distinct values, every known value listed, ag
   assert.equal(disagree.values.North, undefined)
 })
 
-test("the corpus: 13 tasks in corpus (7 create, 6 revise) and 2 scripted probes, every item decided by code", () => {
+test("the corpus: its tasks are the create tasks and the revise tasks, with 2 scripted probes, every item decided by code", () => {
   const ids = (set) => selectCases(CASES, { set }).selected.map((c) => c.id)
-  assert.equal(ids("corpus").length, 13)
-  assert.equal(ids("create").length, 7)
-  assert.equal(ids("revise").length, 6)
+  // no count is pinned: a pull request that adds a task must not break the harness's own tests
+  assert.ok(ids("create").length > 0 && ids("revise").length > 0)
+  assert.deepEqual([...ids("create"), ...ids("revise")].sort(), [...ids("corpus")].sort(), "corpus is create and revise, each task in one")
+  assert.equal(new Set(ids("corpus")).size, ids("corpus").length)
   assert.deepEqual(ids("scripted"), ["scripted-probe-document", "scripted-probe-refusal"])
   for (const c of CASES) for (const item of c.items) assert.equal(item.grader, "code", `${c.id} ${item.id}`)
   for (const id of ["long-labels-narrow", "explicit-aggregation", "ambiguous-aggregation", "count-vs-measure", "malformed-field-names", "brand-theme", "light-to-dark", "inline-presentation-inline", "add-zoom", "add-scatter-brush", "unsupported-pie-zoom", "changed-csv-cosmetic", "empty-data"]) assert.ok(byId(id), id)
