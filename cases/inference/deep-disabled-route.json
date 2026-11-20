@@ -1,0 +1,129 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-disabled-route",
+  "plugin": "inference",
+  "skill": "inference-extract",
+  "tier": "T3",
+  "source": "evals-232/deep/inference/disabled-route",
+  "decision": "a named model that is not enabled is refused from the capability table, with no extract attempt and no retry loop",
+  "data_check": "scaledown/extract is documented but not enabled in this version",
+  "prompt": "use scaledown/extract to pull the invoice number and total from this text: \"Invoice AB-72, total EUR 120.00.\"",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 5,
+    "tokens": 350000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "INF-OC01",
+      "severity": "blocker",
+      "ask": "The capability table or status was consulted first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "first",
+            "tool": "inference.capabilities"
+          },
+          {
+            "kind": "first",
+            "tool": "inference.status"
+          },
+          {
+            "kind": "first",
+            "tool": "inference.plan"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "INF-OC02",
+      "severity": "major",
+      "ask": "No extraction was sent on the disabled route.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "inference.extract",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "INF-OC03",
+      "severity": "major",
+      "ask": "The answer says that model is not enabled, and names the enabled route or the next step.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "not enabled|disabled|unavailable|canary",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "clairic|capabilit",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "INF-EF01",
+      "severity": "minor",
+      "ask": "It does not retry the same call or silently switch models without saying so.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "inference.*",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "262bf5474d948ffcfbc8818c6d2c73ddaddeccb99eeff6ce761129ae5afe36ed"
+  }
+}

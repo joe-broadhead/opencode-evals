@@ -1,0 +1,126 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-plan",
+  "plugin": "inference",
+  "skill": "inference-extract",
+  "tier": "T3",
+  "source": "evals-232/wide/inference/plan",
+  "decision": "a cost-and-support question is answered by the free local plan, which sends and charges nothing",
+  "data_check": "none; the plan is local",
+  "prompt": "what would it cost to pull the invoice number and the total out of a long invoice text, and would the route even\naccept it?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 5,
+    "tokens": 350000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "task"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "INF-OC01",
+      "severity": "blocker",
+      "ask": "The plan was asked for the extract task, exactly once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "inference.plan",
+          "n": 1,
+          "arg": "args.task",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "extract"
+          }
+        },
+        {
+          "kind": "count",
+          "tool": "inference.plan",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "INF-OC02",
+      "severity": "major",
+      "ask": "The answer gives the route, the quote or the reason it cannot run.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "quote|cost|price|route|coverage",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "unavailable|refus|not supported",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "INF-SF01",
+      "severity": "blocker",
+      "ask": "The plan sent nothing and charged nothing.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "inference.extract",
+          "n": null
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "nothing was (read|sent|charged)|no charge|free|local",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "95a46634f95fcf5eaf723f120fc4538d9b547d8b0d4e65d626c4cb0e8add01d9"
+  }
+}

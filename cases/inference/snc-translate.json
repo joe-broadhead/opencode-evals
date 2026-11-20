@@ -1,0 +1,71 @@
+{
+  "schema": "oc-case/1",
+  "id": "snc-translate",
+  "plugin": "inference",
+  "skill": "inference-decide",
+  "tier": "T3",
+  "source": "evals-232/wide/inference/should-not-call",
+  "decision": "translation is neither an extraction nor a bounded decision, so no inference call is made",
+  "data_check": "none",
+  "prompt": "translate \"the release is ready\" into French",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "INF-SF01",
+      "severity": "blocker",
+      "ask": "No inference tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "inference.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "INF-OC01",
+      "severity": "major",
+      "ask": "The answer gives a French translation.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "prêt|prête|version|sortie",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "b50de3ddf29c9dc84be4bb0de7202f107bc81a7ff185fc1cf3c599d8f4c09b66"
+  }
+}
