@@ -1,11 +1,12 @@
 // A case id, an iteration or a plugin id never escapes the store or the sandbox.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from "node:fs"
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync, symlinkSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { spawnSync } from "node:child_process"
 import { segment, inside, within, isSegment } from "../src/run/paths.mjs"
+import { stripForeignLinks } from "../src/run/sandbox.mjs"
 import { casesIn, pluginCases } from "../src/case/load.mjs"
 import { runBatch } from "../src/run/runner.mjs"
 
@@ -95,4 +96,26 @@ test("a dangling link counts as inside only when where it points is inside; a lo
   assert.equal(inside(box, join(box, "relative-loop-a")), false, "a link loop resolves nowhere")
   assert.equal(inside(box, join(box, "plain", "new.txt")), true)
   rmSync(root, { recursive: true, force: true })
+})
+
+test("stripForeignLinks removes a link chain that only looks inside the sandbox lexically", () => {
+  const base = temp()
+  const root = join(base, "runs", "case.t1")
+  const cache = join(root, "home", ".cache")
+  mkdirSync(cache, { recursive: true })
+  const outside = join(base, "outside")
+  mkdirSync(outside)
+  writeFileSync(join(outside, "marker"), "untouched")
+  // Lexically `../..` from .cache is the sandbox root. The kernel knows `hop` is the root, so `opencode-x` resolves
+  // three levels above it, outside; JS realpathSync collapsed the `..` and said inside.
+  symlinkSync("../..", join(cache, "hop"))
+  symlinkSync("hop/../../..", join(cache, "opencode-x"))
+  symlinkSync(join(cache, "hop"), join(root, "home", ".inside"))
+  const removed = stripForeignLinks({ root })
+  assert.deepEqual(removed, ["home/.cache/opencode-x"])
+  assert.equal(existsSync(join(cache, "opencode-x")), false, "the chain is removed")
+  assert.equal(existsSync(join(cache, "hop")), true, "a link to the root itself is inside")
+  assert.equal(existsSync(join(root, "home", ".inside")), true, "a link that resolves inside through another is kept")
+  assert.equal(readFileSync(join(outside, "marker"), "utf8"), "untouched")
+  rmSync(base, { recursive: true, force: true })
 })

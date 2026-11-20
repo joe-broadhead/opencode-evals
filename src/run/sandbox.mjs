@@ -3,8 +3,8 @@
 // servers, agents or provider keys reaches a run unless a credential profile passes it on purpose.
 
 import { spawn } from "node:child_process"
-import { mkdirSync, writeFileSync, existsSync, rmSync, readdirSync, lstatSync, readlinkSync, unlinkSync, chmodSync, openSync, closeSync, fstatSync, constants } from "node:fs"
-import { join, resolve, dirname, basename, sep } from "node:path"
+import { mkdirSync, writeFileSync, existsSync, rmSync, readdirSync, lstatSync, unlinkSync, chmodSync, openSync, closeSync, fstatSync, constants } from "node:fs"
+import { join, resolve, dirname, basename } from "node:path"
 import { randomBytes } from "node:crypto"
 import { inside, real } from "./paths.mjs"
 
@@ -223,7 +223,9 @@ export async function stop(proc, { graceMs = 2000 } = {}) {
 
 /**
  * Removes every symlink anywhere in the sandbox that points outside it: a world's home copied from a lab sandbox carries
- * links to the caller's ~/.claude or ~/.local/bin, and a run must not reach through them. Links are not followed.
+ * links to the caller's ~/.claude or ~/.local/bin, and a run must not reach through them. Links are not followed; where a
+ * link really goes is resolved by the OS (`inside`), so a chain that looks inside lexically (`hop -> ../..`, then
+ * `x -> hop/../../..`) is removed too.
  */
 export function stripForeignLinks(sandbox, { depth = Infinity } = {}) {
   const removed = []
@@ -238,8 +240,7 @@ export function stripForeignLinks(sandbox, { depth = Infinity } = {}) {
     for (const entry of entries) {
       const path = join(dir, entry.name)
       if (entry.isSymbolicLink()) {
-        const target = resolve(dirname(path), readlinkSync(path))
-        if (target !== root && !target.startsWith(`${root}${sep}`)) {
+        if (!inside(root, path)) {
           unlinkSync(path)
           removed.push(path.slice(root.length + 1))
         }

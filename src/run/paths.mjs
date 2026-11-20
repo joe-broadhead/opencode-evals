@@ -5,6 +5,10 @@
 import { lstatSync, readlinkSync, realpathSync } from "node:fs"
 import { dirname, basename, join, resolve, sep } from "node:path"
 
+/** The OS's own resolution. JS `realpathSync` collapses `..` after a link lexically, so a chain that looks inside a root
+ * (`hop -> ../..`, then `x -> hop/../../..`) can be mistaken for one; the kernel, and `realpathSync.native`, follow it. */
+const realpath = (path) => realpathSync.native(path)
+
 const SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 
 export function isSegment(value) {
@@ -47,7 +51,7 @@ export function real(path, depth = 0) {
   }
   let resolved
   try {
-    resolved = realpathSync(head)
+    resolved = realpath(head)
   } catch {
     // It exists but does not resolve: a dangling link (or a loop). Follow the link itself, from where it sits.
     let stat = null
@@ -65,7 +69,7 @@ export function real(path, depth = 0) {
       }
       const parent = (() => {
         try {
-          return realpathSync(dirname(head))
+          return realpath(dirname(head))
         } catch {
           return dirname(head)
         }
