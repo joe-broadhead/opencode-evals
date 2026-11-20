@@ -209,6 +209,7 @@
    "route": "linear.workspace.tools/probe",
    "action": "linear_probe",
    "inner": [
+    "linear_get_workspace",
     "linear_get_user"
    ]
   },
@@ -243,10 +244,7 @@
    ],
    "calls": "GitHub GET /user",
    "route": "github.platform.tools/probe",
-   "action": "github_probe",
-   "inner": [
-    "github_get_me"
-   ]
+   "action": "github_probe"
   }
  }
 }

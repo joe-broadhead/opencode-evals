@@ -20,7 +20,8 @@ signin.sh --yes            no Enter prompts
 
 `evals-profile.sh -- <command>` runs any command inside the profile (the sign-in is
 `evals-profile.sh -- opencode auth login <vendor>`); `check-real.mjs` is the check on its own; `keeper.mjs` refreshes the evals profile's
-tokens on a timer; `guard-real.mjs` refuses while the real background service is running; `copy-client.mjs` copies an app client;
+tokens on a timer, through the same `identityCheck` learning path (an inner read the table lacks is learned as a read of the same plugin, never a
+wildcard); `guard-real.mjs` refuses while the real background service is running; `copy-client.mjs` copies an app client;
 `log-signin.mjs` records (or, with `--forget`, clears) a sign-in's baseline, for the refresh-chain proof below.
 
 ## The refresh-chain proof
@@ -77,7 +78,9 @@ These are the rules the tests enforce; a change that drops one fails `npm run te
 2. **A read only.** The real profile gets `auth export` and one tools-RPC read. No write, no sign-in, no logout, no revoke.
 3. **Check sessions are least privilege and always deleted.** Every identity read runs in a session that starts `deny *` and allows only
    that read's action plus the inner reads the host lists (`identity-methods.json`) — nothing else, no wildcard. The session is deleted in
-   `finally` on every path; one that cannot be deleted is named on PASS as well as FAIL.
+   `finally` on every path; one that cannot be deleted is named on PASS as well as FAIL. The keeper uses the same path, so a new inner
+   read is learned exactly as `check-real` learns it, and a gws keeper failure says the binary is not installed in the evals profile
+   (run `/gws-install` there): the keeper never downloads it.
 4. **Only a real answer passes.** A non-zero exit, an RpcError, an error/isError/failed field, an error-word code, or an answer without the
    method's expected fields is a FAIL. A "probe" that only reads whether OpenCode holds a credential is not used for the four vendors whose
    probe calls nothing.

@@ -1292,17 +1292,20 @@ test("every vendor: the check session allows its own action plus its listed inne
       r.done()
     }
   }
+  // The table's own entries that matter: linear's probe reads TWO host tools (v0.0.6), and github's probe needs no inner read.
+  assert.deepEqual(IDENTITY_INNER.linear, ["linear_get_workspace", "linear_get_user"])
+  assert.deepEqual(IDENTITY_INNER.github, [])
 })
 
 test("a read the host says the call also needs is learned once, from a read of the same plugin, into a NEW session (and both are deleted)", () => {
   const r = rig()
   try {
-    const out = checkReal(r, "linear", { STUB_INNER: "linear_get_workspace" })
+    const out = checkReal(r, "linear", { STUB_INNER: "linear_list_teams" })
     assert.equal(out.status, 0, out.stdout + out.stderr)
     const sessions = permsLog(r).map(rulesOf)
     assert.equal(sessions.length, 2)
-    assert.deepEqual(sessions[0].allow, ["linear_probe", "linear_get_user"])
-    assert.deepEqual(sessions[1].allow, ["linear_probe", "linear_get_user", "linear_get_workspace"])
+    assert.deepEqual(sessions[0].allow, ["linear_probe", "linear_get_workspace", "linear_get_user"])
+    assert.deepEqual(sessions[1].allow, ["linear_probe", "linear_get_workspace", "linear_get_user", "linear_list_teams"])
     assert.equal(readFileSync(join(r.root, "deleted.log"), "utf8").trim().split("\n").length, 2, "every session deleted")
   } finally {
     r.done()
@@ -1334,6 +1337,53 @@ test("keeper: each vendor's session allows its identity action AND its inner rea
     assert.equal(sessions.length, 1, "one session for the one vendor")
     assert.deepEqual(rulesOf(sessions[0]), { deny: ["*"], allow: ["x_probe", "x_get_users_me"] })
     assert.equal(readFileSync(join(r.root, "deleted.log"), "utf8").trim().split("\n").length, 1, "its session was deleted")
+  } finally {
+    r.done()
+  }
+})
+
+test("keeper: a probe that needs an UNDECLARED inner read learns it, in a NEW session, exactly as check-real does", () => {
+  const r = rig()
+  try {
+    writeFileSync(join(r.root, "evals-linear.json"), JSON.stringify([{ id: "cred_x", integrationID: "linear", label: "linear", active: true, value: { type: "oauth", access: "A", refresh: "R", expires: Date.now() + 60 * 60_000 } }]))
+    const results = keepOnce({ opencode: r.env.OPENCODE_BIN, profile: r.env.EVALS_PROFILE, env: { ...r.env, STUB_INNER: "linear_list_teams" }, only: ["linear"] })
+    assert.deepEqual(results, [{ integration: "linear", ok: true }])
+    const sessions = permsLog(r).map(rulesOf)
+    assert.equal(sessions.length, 2, "the first is refused, the second allows the learned read")
+    assert.deepEqual(sessions[0].allow, ["linear_probe", "linear_get_workspace", "linear_get_user"])
+    assert.deepEqual(sessions[1].allow, ["linear_probe", "linear_get_workspace", "linear_get_user", "linear_list_teams"])
+    assert.equal(readFileSync(join(r.root, "deleted.log"), "utf8").trim().split("\n").length, 2, "both sessions deleted")
+  } finally {
+    r.done()
+  }
+})
+
+test("keeper: a write or an install action the probe wants is NEVER granted", () => {
+  for (const [vendor, wanted, integrationID] of [["linear", "linear_create_issue_label", "linear"], ["gws", "gws.native_install", "gws-default"]]) {
+    const r = rig()
+    try {
+      writeFileSync(join(r.root, `evals-${integrationID}.json`), JSON.stringify([{ id: "cred_x", integrationID, label: integrationID, active: true, value: { type: "oauth", access: "A", refresh: "R", expires: Date.now() + 60 * 60_000 } }]))
+      const results = keepOnce({ opencode: r.env.OPENCODE_BIN, profile: r.env.EVALS_PROFILE, env: { ...r.env, STUB_INNER: wanted }, only: [vendor] })
+      assert.equal(results.length, 1, vendor)
+      assert.equal(results[0].ok, false, vendor)
+      assert.match(results[0].why, /not a read of this plugin/, `${vendor}: ${results[0].why}`)
+      const sessions = permsLog(r).map(rulesOf)
+      assert.equal(sessions.length, 1, `${vendor}: one session, no widening`)
+      assert.ok(!JSON.stringify(sessions).includes(`"${wanted}"`), `${vendor}: never allowed`)
+    } finally {
+      r.done()
+    }
+  }
+})
+
+test("keeper: gws without its binary in the evals profile says to run /gws-install there, never token wording", () => {
+  const r = rig()
+  try {
+    writeFileSync(join(r.root, "evals-gws-default.json"), JSON.stringify([{ id: "cred_x", integrationID: "gws-default", label: "default", active: true, value: { type: "oauth", access: "A", refresh: "R", expires: Date.now() + 60 * 60_000 } }]))
+    const results = keepOnce({ opencode: r.env.OPENCODE_BIN, profile: r.env.EVALS_PROFILE, env: { ...r.env, STUB_GWS_MISSING: "1" }, only: ["gws"] })
+    assert.deepEqual(results.map((x) => x.ok), [false])
+    assert.equal(results[0].why, "the gws binary isn't installed in the evals profile; run /gws-install there")
+    assert.doesNotMatch(results[0].why, /token/i)
   } finally {
     r.done()
   }

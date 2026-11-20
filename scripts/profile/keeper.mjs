@@ -9,11 +9,14 @@
 //   keeper.mjs [--once] [--profile DIR] [--opencode BIN] [--store DIR] [--every MINUTES] [--only a,b]
 
 import { join } from "node:path"
-import { IDENTITY, IDENTITY_ACTION, IDENTITY_INNER, withCheckSession, identityRead, exportTarget, profileEnv, realEnv, run, activeCredential, logRound, defaultProfileDir, defaultStoreDir } from "./profile-lib.mjs"
+import { IDENTITY, identityCheck, exportTarget, profileEnv, realEnv, run, activeCredential, logRound, defaultProfileDir, defaultStoreDir } from "./profile-lib.mjs"
 import { assertDistinctPort } from "./service-port.mjs"
 
 /** A token this close to its expiry (or past it) is due: the identity read must make the service refresh it. */
 export const REFRESH_WINDOW_MS = 15 * 60_000
+
+/** What the keeper says when the evals profile has never downloaded gws: its session may not install, and the owner runs /gws-install there. */
+export const GWS_INSTALL_HINT = "the gws binary isn't installed in the evals profile; run /gws-install there"
 
 /** One pass: which integrations the profile is signed into, and whether each identity read worked. */
 export function keepOnce({ opencode = "opencode", profile, store, env = process.env, only = null, except = null, exec = run, now = Date.now() } = {}) {
@@ -26,8 +29,9 @@ export function keepOnce({ opencode = "opencode", profile, store, env = process.
     const credential = out.code === 0 ? activeCredential(out.stdout, exportTarget(integration)) : null
     return credential ? { present: true, expires: typeof credential.value?.expires === "number" ? credential.value.expires : null } : { present: false, expires: null }
   }
-  // One check session per vendor, in the profile's own service, deleted when that read ends, on every path: the session allows the vendor's identity
-  // action plus the reads its probe makes through the host (IDENTITY_INNER), as check-real does, so a probe's inner read is never denied.
+  // One check session per vendor, in the profile's own service, deleted when that read ends, on every path, through identityCheck exactly as
+  // check-real does: the session allows the vendor's identity action plus its listed inner reads and, should the host name one more read of the
+  // same plugin (PERMISSION_DENIED ... needs <action>), that read in a NEW session. Never a wildcard, never a write.
   const call = (args) => exec(opencode, args, { env: penv })
   for (const [integration] of Object.entries(IDENTITY)) {
     if (only && !only.includes(integration)) continue
@@ -35,13 +39,14 @@ export function keepOnce({ opencode = "opencode", profile, store, env = process.
     if (except?.has(integration)) continue
     const before = expiryOf(integration)
     if (!before.present) continue
-    const read = withCheckSession(call, profile, (sessionID) => identityRead(call, { vendor: integration, directory: profile, sessionID }), undefined, [IDENTITY_ACTION[integration], ...IDENTITY_INNER[integration]])
+    const read = identityCheck(call, { vendor: integration, directory: profile })
     const ok = read.ok
     const after = expiryOf(integration)
     const due = before.expires !== null && before.expires - now < REFRESH_WINDOW_MS
     const moved = before.expires !== null && after.expires !== null && after.expires > before.expires
     const stuck = ok && due && !moved
-    results.push({ integration, ok: ok && !stuck, ...(due ? { due: true, refreshed: moved } : {}), ...(ok ? {} : { why: read.why }), ...(stuck ? { why: "its token was due and its expiry did not move: the service did not refresh it" } : {}) })
+    const why = !ok ? (read.notInstalled ? GWS_INSTALL_HINT : read.why) : null
+    results.push({ integration, ok: ok && !stuck, ...(due ? { due: true, refreshed: moved } : {}), ...(why ? { why } : {}), ...(stuck ? { why: "its token was due and its expiry did not move: the service did not refresh it" } : {}) })
   }
   if (store) logRound(store, { event: "keeper", reads: results.length, failed: results.filter((r) => !r.ok).map((r) => r.integration), refreshed: results.filter((r) => r.refreshed).map((r) => r.integration) })
   return results

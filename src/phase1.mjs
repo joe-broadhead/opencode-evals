@@ -19,8 +19,8 @@
 // Nothing here runs a credential step by itself without being asked: `evals phase1` is the owner's or the lead's command, and
 // `--dry-run` prints this order and what each step needs.
 
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
-import { dirname, join } from "node:path"
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, readlinkSync, lstatSync, unlinkSync } from "node:fs"
+import { dirname, join, sep } from "node:path"
 import { readHalt, haltMessage } from "./run/halt.mjs"
 
 export const STATE_FILE = "phase1.json"
@@ -46,6 +46,36 @@ function writeState(store, state) {
 /** The plugin entries of a live-*.json file, in file order: ["slack", "linear", ...]. */
 export const entriesOf = (store, name) => Object.keys(readJson(join(store, name), {})).filter((key) => key !== "_note")
 
+/**
+ * The one symbolic link evals-profile.sh accepts, judged the same way: `.config/pulse/<name>-runtime` -> `/tmp/pulse-<letters or digits>`, a
+ * real directory (not a link) owned by this user. "stale" means exactly that shape with the target gone (safe to remove, as the walk does);
+ * anything else is "refuse". Byte-equivalent to pulse_link_parts/pulse_link_ok/pulse_link_stale in evals-profile.sh.
+ */
+export function pulseLinkVerdict(link, profile, { uid = typeof process.getuid === "function" ? process.getuid() : null } = {}) {
+  if (typeof link !== "string") return "refuse"
+  const prefix = join(profile, ".config", "pulse") + sep
+  if (!link.startsWith(prefix)) return "refuse"
+  const rel = link.slice(prefix.length)
+  if (!rel || rel.includes("/") || !rel.endsWith("-runtime") || rel === "-runtime") return "refuse"
+  let target
+  try {
+    target = readlinkSync(link)
+  } catch {
+    return "refuse"
+  }
+  if (!/^\/tmp\/pulse-[A-Za-z0-9]+$/.test(target)) return "refuse"
+  let st
+  try {
+    st = lstatSync(target)
+  } catch {
+    // A target that is a dangling link is still an entry (lstat succeeds); only a truly absent path is stale.
+    return "stale"
+  }
+  if (st.isSymbolicLink() || !st.isDirectory()) return "refuse"
+  if (uid !== null && st.uid !== uid) return "refuse"
+  return "ok"
+}
+
 const pass = (lines = []) => ({ ok: true, lines: [].concat(lines) })
 const fail = (message, lines = []) => ({ ok: false, message, lines: [].concat(lines) })
 const checksOf = (result) => result.checks.map((c) => `${c.ok ? "ok  " : "FAIL"} ${c.name}${c.ok ? "" : `: ${c.detail}`}`)
@@ -57,10 +87,24 @@ export const STEPS = [
     needs: "EVALS_PROFILE (the evals profile's directory), $EVALS_STORE/targets.json",
     async run(ctx) {
       const problems = []
+      const notes = []
       if (!ctx.profile || !existsSync(ctx.profile)) problems.push(`the evals profile ${ctx.profile ?? "(EVALS_PROFILE is not set)"} does not exist: run evals-profile.sh once`)
       else {
-        const links = ctx.deps.linksIn(ctx.profile)
-        if (links.length) problems.push(`a symbolic link under the profile: ${links[0]}`)
+        // The same rule evals-profile.sh applies: PulseAudio's own runtime link is legitimate; a stale one is removed; anything else refuses.
+        for (const link of ctx.deps.linksIn(ctx.profile)) {
+          const verdict = pulseLinkVerdict(link, ctx.profile)
+          if (verdict === "ok") continue
+          if (verdict === "stale") {
+            try {
+              unlinkSync(link)
+              notes.push(`removed the stale PulseAudio link ${link} (its target no longer exists)`)
+            } catch {
+              problems.push(`a symbolic link under the profile: ${link} (stale, and could not be removed)`)
+            }
+            continue
+          }
+          problems.push(`a symbolic link under the profile: ${link}`)
+        }
         try {
           ctx.deps.assertDistinctPort(ctx)
         } catch (error) {
@@ -68,7 +112,7 @@ export const STEPS = [
         }
       }
       if (!existsSync(join(ctx.store, "targets.json"))) problems.push(`${join(ctx.store, "targets.json")} does not exist: the sandbox aliases are the owner's`)
-      return problems.length ? fail(problems.join("; ")) : pass("the profile is ready")
+      return problems.length ? fail(problems.join("; ")) : pass(notes.length ? [...notes, "the profile is ready"] : "the profile is ready")
     },
   },
   {
@@ -211,16 +255,26 @@ export async function defaultDeps({ store, caller, companions }) {
     checkReal,
     keepOnce,
     assertDistinctPort: (ctx) => assertDistinctPort({ opencode: ctx.opencode, profileEnv: lib.profileEnv(ctx.profile, ctx.caller), realEnv: lib.realEnv(ctx.caller), env: ctx.caller }),
-    signedIn: (ctx) => lib.SIGNIN_ORDER.filter((id) => !ctx.noAccount?.has(id)).filter((id) => {
-      const out = lib.run(ctx.opencode, ["auth", "export", id], { env: lib.profileEnv(ctx.profile, ctx.caller) })
-      return out.code === 0 && lib.activeCredential(out.stdout, id)
-    }),
+    signedIn: (ctx) => {
+      const wanted = lib.SIGNIN_ORDER.filter((id) => !ctx.noAccount?.has(id))
+      // The name `auth export` knows the credential by: gws is gws-default, Wispr Flow is its label (exportTarget).
+      const held = wanted.filter((id) => {
+        const target = lib.exportTarget(id)
+        const out = lib.run(ctx.opencode, ["auth", "export", target], { env: lib.profileEnv(ctx.profile, ctx.caller) })
+        return out.code === 0 && lib.activeCredential(out.stdout, target)
+      })
+      // Auto-detection must not silently drop a vendor the walk was supposed to sign in: that is how gws and wisprflow were skipped.
+      const missing = wanted.filter((id) => !held.includes(id))
+      if (missing.length) throw new Error(`the evals profile holds no credential for ${missing.join(", ")}: sign ${missing.length === 1 ? "it" : "them"} in with signin.sh --from ${missing[0]} (or check only a subset with --vendors a,b), then rerun`)
+      return held
+    },
     credentialType: (ctx, id) => {
-      const out = lib.run(ctx.opencode, ["auth", "export", id], { env: lib.profileEnv(ctx.profile, ctx.caller) })
-      return out.code === 0 ? lib.activeCredential(out.stdout, id)?.value?.type ?? null : null
+      const target = lib.exportTarget(id)
+      const out = lib.run(ctx.opencode, ["auth", "export", target], { env: lib.profileEnv(ctx.profile, ctx.caller) })
+      return out.code === 0 ? lib.activeCredential(out.stdout, target)?.value?.type ?? null : null
     },
     logout: (ctx, id) => {
-      const out = lib.run(ctx.opencode, ["auth", "logout", id], { env: lib.profileEnv(ctx.profile, ctx.caller) })
+      const out = lib.run(ctx.opencode, ["auth", "logout", lib.exportTarget(id)], { env: lib.profileEnv(ctx.profile, ctx.caller) })
       return { ok: out.code === 0, code: out.code }
     },
     probe: async (id, extra) => {
