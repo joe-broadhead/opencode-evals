@@ -1,0 +1,96 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-time-zones",
+  "plugin": "utilities",
+  "skill": "utilities-time",
+  "tier": "T3",
+  "source": "wide sweep: time_zones (IANA names, optionally by region)",
+  "decision": "A list-zones question is one time_zones filtered to the region asked about",
+  "data_check": "none",
+  "prompt": "list the time zones in Europe for me — I need the exact names.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It used time_zones once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.time_zones",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It filtered to Europe.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.time_zones",
+          "n": 1,
+          "arg": "args.region",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "europe",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "major",
+      "ask": "The answer lists IANA names such as Europe/London.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Europe\\/",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "ee6ee1f3a1229737b79b694c6f1365ff6aa66126ad9d6897c53cde83234272c8"
+  }
+}

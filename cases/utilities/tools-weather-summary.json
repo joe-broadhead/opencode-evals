@@ -1,0 +1,95 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-weather-summary",
+  "plugin": "utilities",
+  "skill": "utilities-weather",
+  "tier": "T3",
+  "source": "wide sweep: weather_summary (a headline and counts of risky, wet or hot days)",
+  "decision": "A quick-outlook question is one weather_summary, not six daily calls",
+  "data_check": "api.open-meteo.com is reachable from the trial",
+  "prompt": "quick outlook for Lisbon over the next ten days — just the headline and how many bad days there are.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It used weather_summary once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.weather_summary",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It asked for ten days.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.weather_summary",
+          "n": 1,
+          "arg": "args.days",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 10
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "major",
+      "ask": "The answer gives a headline and counts, and credits Open-Meteo.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(day|wet|hot|windy).{0,300}open-meteo|open-meteo",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "f2edb17ca5acee6ef44a67a08307aecf6c634baa7525c0fbec320966f273f7b7"
+  }
+}

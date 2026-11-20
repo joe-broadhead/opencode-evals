@@ -1,0 +1,91 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-weather-demand-signal",
+  "plugin": "utilities",
+  "skill": "utilities-weather",
+  "tier": "T3",
+  "source": "wide sweep: weather_demand_signal (daily values with fixed flags for planning)",
+  "decision": "A planning question is one demand_signal over the days asked, with the flags read as thresholds",
+  "data_check": "api.open-meteo.com is reachable from the trial",
+  "prompt": "I'm staffing a market stall in Lisbon next week. which days look wet or hot enough to change the plan?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It used weather_demand_signal once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.weather_demand_signal",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It asked for about a week.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.weather_demand_signal",
+          "n": 1,
+          "arg": "args.days",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "major",
+      "ask": "The answer names the flagged days and says the flags are fixed thresholds.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(rain_likely|hot_day|windy_day|threshold|flag)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "f8a6046ed026c999b891274feb4812a0f2b008370618434aea20f6bfaf5344f1"
+  }
+}

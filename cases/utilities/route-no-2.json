@@ -1,0 +1,70 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "utilities",
+  "skill": "utilities",
+  "tier": "T3",
+  "source": "should-not-call: a meeting recap belongs to Granola, not to Utilities",
+  "decision": "A what-did-we-decide question reaches no utilities tool",
+  "data_check": "the user has a meeting note from yesterday",
+  "prompt": "what did we decide in yesterday's planning meeting?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "UTL-RL01",
+      "severity": "blocker",
+      "ask": "No utilities tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "utilities.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-OC01",
+      "severity": "major",
+      "ask": "The answer looks for the meeting notes, not a time or a date.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(meeting|notes|decided|granola)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "cfbc5e45090912df86d79b5c368f0e65f5d65b0cb2ae1bb42753e510a7880571"
+  }
+}

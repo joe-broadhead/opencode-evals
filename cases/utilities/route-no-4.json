@@ -1,0 +1,70 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-4",
+  "plugin": "utilities",
+  "skill": "utilities",
+  "tier": "T3",
+  "source": "should-not-call: an astronomical date is not in the offline calendar",
+  "decision": "A next-full-moon question reaches no utilities tool",
+  "data_check": "none",
+  "prompt": "when's the next full moon?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "UTL-RL01",
+      "severity": "blocker",
+      "ask": "No utilities tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "utilities.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-OC01",
+      "severity": "major",
+      "ask": "The answer says it has no moon data rather than inventing a date.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(no|not|can't|cannot|don't).{0,50}(moon|data|astronom)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "097df5745ef73f6dcb474313e6ee1113fbf0497fa0f9f4df4f64ef32e71468a3"
+  }
+}

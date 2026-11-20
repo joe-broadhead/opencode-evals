@@ -1,0 +1,91 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-time-now",
+  "plugin": "utilities",
+  "skill": "utilities-time",
+  "tier": "T3",
+  "source": "wide sweep: time_now (current time in IANA zones, plus the machine's zone)",
+  "decision": "A what-time-is-it question is one time_now with both zones named",
+  "data_check": "none",
+  "prompt": "what time is it in Tokyo right now, and what's the date here?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It used time_now once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.time_now",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It asked for Tokyo.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.time_now",
+          "n": 1,
+          "arg": "args.timezones",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "major",
+      "ask": "The answer gives Tokyo's time and this machine's date and zone.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(Tokyo|JST|Asia\\/Tokyo)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "d4542c7744037c6b7262854bc304f70c79e9b24fc7e42f06955f105ec94bd63a"
+  }
+}

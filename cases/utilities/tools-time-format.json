@@ -1,0 +1,96 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-time-format",
+  "plugin": "utilities",
+  "skill": "utilities-time",
+  "tier": "T3",
+  "source": "wide sweep: time_format (ISO 8601, RFC 3339, RFC 2822 or a Unix timestamp)",
+  "decision": "A reformat question is one time_format to the format asked for",
+  "data_check": "none",
+  "prompt": "turn 2026-11-18T09:00:00Z into a Unix timestamp.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It used time_format once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.time_format",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It asked for the epoch form.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.time_format",
+          "n": 1,
+          "arg": "args.output_format",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "epoch|unix",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "major",
+      "ask": "The answer gives one number, as seconds.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b1[0-9]{9}\\b",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "efeac48ab6c6beae1fa4f42f79f3f44eb40c58dffdf4eb2b59cda73b6e71f6f3"
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-weather-daily",
+  "plugin": "utilities",
+  "skill": "utilities-weather",
+  "tier": "T3",
+  "source": "wide sweep: weather_daily (a daily forecast up to 16 days)",
+  "decision": "A weekend question is one weather_daily with enough days to reach the last day asked",
+  "data_check": "api.open-meteo.com is reachable from the trial",
+  "prompt": "will it rain in Lisbon this weekend? give me the daily numbers, not a summary.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It used weather_daily once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.weather_daily",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It asked for enough days to reach the weekend.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.weather_daily",
+          "n": 1,
+          "arg": "args.days",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "major",
+      "ask": "The answer gives a precipitation chance or amount per day, and credits Open-Meteo.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(mm|%|rain).{0,300}open-meteo|open-meteo",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a129bb9ef679c06c0f59f01a2c8f5c7ffd3ecd2351a2934f7d3205f4acac3634"
+  }
+}

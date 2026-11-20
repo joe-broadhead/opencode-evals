@@ -1,0 +1,117 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-dst-nonexistent",
+  "plugin": "utilities",
+  "skill": "utilities-time",
+  "tier": "T3",
+  "source": "deep, error: a local time the clocks skip",
+  "decision": "The skipped local time is reported as nonexistent, with a suggested time outside the change, and no guessed conversion",
+  "data_check": "Europe/London skips 01:00 to 02:00 on 29 March 2026",
+  "prompt": "convert 1:30am on 29 March 2026 in London to Tokyo time.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It attempted the conversion with time_convert.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.time_convert",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-OC02",
+      "severity": "major",
+      "ask": "The answer says that local time does not exist, because the clocks go forward.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(doesn't exist|does not exist|nonexistent|not exist|skipped|clocks (go|went) forward)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "major",
+      "ask": "It offers a time outside the change instead of inventing one.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(before 1|after 2|outside|another time|3am|03:00|00:30|midnight)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "UTL-SF01",
+      "severity": "blocker",
+      "ask": "It did not answer with a converted time as if the time existed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "1:30am.{0,30}(is|was|=).{0,20}(Tokyo|JST)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "cb36c08fb4a88a1f9f92e60dffca04ae34d431dfeb0c8d807f65406d6acdd203"
+  }
+}

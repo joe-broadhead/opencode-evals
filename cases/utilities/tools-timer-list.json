@@ -1,0 +1,85 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-timer-list",
+  "plugin": "utilities",
+  "skill": "utilities-time",
+  "tier": "T3",
+  "source": "wide sweep: timer_list (this project's timers, optionally by tag)",
+  "decision": "A list-my-timers question is one timer_list, and an empty list is said plainly",
+  "data_check": "the trial's project holds no timers, or the list is the answer",
+  "prompt": "list my timers for this project.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It used timer_list once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.timer_list",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-OC02",
+      "severity": "major",
+      "ask": "The answer lists them, or says there are none.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(no timers|none|empty)",
+              "flags": "i"
+            }
+          }
+        ],
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(timer|due)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "e95e376774e12b49578e497ce613df3d393e1f6df97b1adacebfec64c0c1ca46"
+  }
+}

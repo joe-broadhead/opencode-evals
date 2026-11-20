@@ -1,0 +1,96 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-weather-current",
+  "plugin": "utilities",
+  "skill": "utilities-weather",
+  "tier": "T3",
+  "source": "wide sweep: weather_current (current conditions for a place)",
+  "decision": "A current-weather question is one weather_current for the place named, with Open-Meteo credited",
+  "data_check": "api.open-meteo.com is reachable from the trial",
+  "prompt": "what's the weather in Lisbon right now?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It used weather_current once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.weather_current",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It asked for the place the user named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.weather_current",
+          "n": 1,
+          "arg": "args.location",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "lisbon",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "major",
+      "ask": "The answer gives the temperature and credits Open-Meteo.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(°|celsius|temperature).{0,200}open-meteo|open-meteo",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "2af7db6eb900c79fab0c88df141ed570ea67ee9302c62ed7068a1c4681ce8067"
+  }
+}

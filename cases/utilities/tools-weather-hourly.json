@@ -1,0 +1,95 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-weather-hourly",
+  "plugin": "utilities",
+  "skill": "utilities-weather",
+  "tier": "T3",
+  "source": "wide sweep: weather_hourly (the next hours, up to 384)",
+  "decision": "A next-hours question is one weather_hourly with an hour count, not a daily forecast",
+  "data_check": "api.open-meteo.com is reachable from the trial",
+  "prompt": "what are the next 12 hours in Lisbon like? I'm deciding whether to cycle in.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It used weather_hourly once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.weather_hourly",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It asked for about twelve hours.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.weather_hourly",
+          "n": 1,
+          "arg": "args.hours",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 12
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "major",
+      "ask": "The answer is hourly, with rain chance and wind, and credits Open-Meteo.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(hour|wind|rain|precipitation).{0,300}open-meteo|open-meteo",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "e6225d19242927763df4f1add592da3764dcd9e41929630f8a8116f4445f7119"
+  }
+}

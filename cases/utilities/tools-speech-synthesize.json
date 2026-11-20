@@ -1,0 +1,134 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-speech-synthesize",
+  "plugin": "utilities",
+  "skill": "utilities-speech",
+  "tier": "T3",
+  "source": "wide sweep: speech_synthesize (text to a WAV on this machine; a write, asked at ask-changes)",
+  "decision": "A read-this-aloud request is one speech_synthesize, graded at the declined call",
+  "data_check": "none: the line is the user's own",
+  "prompt": "read this out loud and save it as standup.wav: \"standup in five minutes, bring the deploy notes.\"",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one speech_synthesize call, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.speech_synthesize",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "utilities_speech_synthesize"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It carried the line the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.speech_synthesize",
+          "n": 1,
+          "arg": "args.text",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "UTL-PR02",
+      "severity": "major",
+      "ask": "It wrote to the file name the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.speech_synthesize",
+          "n": 1,
+          "arg": "args.path",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "standup\\.wav",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "UTL-OC04",
+      "severity": "major",
+      "ask": "The answer says no audio file was made.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(written|saved|spoken|created|made)\\b",
+              "flags": "i"
+            }
+          }
+        ],
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a57ca35c9ce72a72de6ed9107a7d079b8c8f34892b9c1f55eb627cc6ad3c9f37"
+  }
+}

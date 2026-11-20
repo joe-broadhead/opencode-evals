@@ -1,0 +1,94 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-status",
+  "plugin": "utilities",
+  "skill": "utilities",
+  "tier": "T3",
+  "source": "wide sweep: utilities_status (what works here, the weather tier, speech files, due timers)",
+  "decision": "A setup question is answered from status once, without a trial transcription or a weather call",
+  "data_check": "none",
+  "prompt": "is speech set up on this machine, and does the weather key work? don't run a test transcription to find out.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It used status once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.status",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-OC02",
+      "severity": "major",
+      "ask": "The answer reports the speech files and the weather tier from status.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(speech|whisper|voice|weather|tier|key)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-SF01",
+      "severity": "blocker",
+      "ask": "It ran no trial transcription and fetched no weather.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "utilities.speech_transcribe",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "utilities.weather_current",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a2935eff73cc701552300adc0c190158861b5d2a0e82654ef15c0f13a57bbb1b"
+  }
+}

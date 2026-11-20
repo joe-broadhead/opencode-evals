@@ -1,0 +1,96 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-time-calendar",
+  "plugin": "utilities",
+  "skill": "utilities-time",
+  "tier": "T3",
+  "source": "wide sweep: time_calendar (weekday, ISO week, quarter for a date)",
+  "decision": "A what-weekday question is one time_calendar for the date",
+  "data_check": "none",
+  "prompt": "what weekday is 14 March 2027, and which ISO week is that?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "It used time_calendar once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.time_calendar",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It passed the date the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.time_calendar",
+          "n": 1,
+          "arg": "args.date",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "2027-03-14",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "major",
+      "ask": "The answer gives the weekday and the ISO week.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday).{0,40}(week|11)",
+            "flags": "is"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "49b93f13b423ce173f56ced0ffd90885682ae792d156cd593752c20798b71966"
+  }
+}

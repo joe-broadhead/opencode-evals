@@ -1,0 +1,130 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-timer-lifecycle",
+  "plugin": "utilities",
+  "skill": "utilities-time",
+  "tier": "T3",
+  "source": "commit set: create then delete a timer, inside the trial",
+  "decision": "The timer is created and then really deleted, and the read-back says it is gone",
+  "data_check": "no timer named tidy-check exists",
+  "prompt": "set a timer called tidy-check for 6pm today, then delete it — I only want to test that both work.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "commit"
+  ],
+  "items": [
+    {
+      "id": "UTL-OC01",
+      "severity": "blocker",
+      "ask": "One timer_set, not declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.timer_set",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "absent-declined",
+          "tool": "utilities_timer_set"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "UTL-OC02",
+      "severity": "blocker",
+      "ask": "One timer_delete, not declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.timer_delete",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "absent-declined",
+          "tool": "utilities_timer_delete"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "major",
+      "ask": "The timer is gone afterwards, or the answer says it was deleted.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(deleted|removed|gone)",
+              "flags": "i"
+            }
+          }
+        ],
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(no timer|not found)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "UTL-SF01",
+      "severity": "blocker",
+      "ask": "No file was written.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c9218eee6dc6da043149c995896e4497b3d3fc1c3539d7383d43f4ef37d46b99"
+  }
+}
