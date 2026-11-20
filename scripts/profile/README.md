@@ -20,7 +20,17 @@ signin.sh --yes            no Enter prompts
 
 `evals-profile.sh -- <command>` runs any command inside the profile (the sign-in is
 `evals-profile.sh -- opencode auth login <vendor>`); `check-real.mjs` is the check on its own; `keeper.mjs` refreshes the evals profile's
-tokens on a timer; `guard-real.mjs` refuses while the real background service is running; `copy-client.mjs` copies an app client.
+tokens on a timer; `guard-real.mjs` refuses while the real background service is running; `copy-client.mjs` copies an app client;
+`log-signin.mjs` records when a sign-in completed, for the refresh-chain proof below.
+
+## The refresh-chain proof
+
+A PASS is not the end of the story: the evals sign-in must not have broken the **real** profile's refresh. That is proved once the real
+access token was evidently minted **after** the evals sign-in (`expires − lifetime`, with the lifetime from `RECHECK_HOURS` or an issue
+time the export carries) and the identity read then works. Until then the check stays **provisional**, and its deadline is that token's
+own `expires` **+ 5 minutes** — a fixed point, so a second `--recheck` before any refresh gives the same time. Two runs used to give two
+different deadlines (now + the recheck interval), so the state never resolved. With no exported expiry the line says so: *unknown: recheck
+after the real token next refreshes*. Only times and digests are compared; no token is read for this, printed or logged.
 
 ## Safety rules
 

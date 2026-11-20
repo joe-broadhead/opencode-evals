@@ -186,6 +186,8 @@ for v in $ORDER; do
     echo "Fix: run $0 --from $v to try $v again; sign no other vendor first."
     exit 1
   fi
+  # The sign-in's time, for check-real: the real token must be minted after it for the refresh chain to count as verified. Not fatal if it fails.
+  node "$B/log-signin.mjs" "$STORE" "$v" || echo "signin: could not record the sign-in time for $v (its check stays provisional)" >&2
   run_check "$v" || exit 1
   echo "$v" >> "$PASSED"
   echo "[$n/$total] $v: PASS"

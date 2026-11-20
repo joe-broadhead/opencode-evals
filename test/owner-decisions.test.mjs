@@ -268,9 +268,11 @@ function walk({ failAt = null, loginFailAt = null, tokenLine = false } = {}) {
   writeFileSync(join(bin, "evals-profile.sh"), `#!/usr/bin/env bash\necho "login $*" >> "${log}"\n[ "$5" = "${loginFailAt ?? "__none__"}" ] && exit 3\nexit 0\n`)
   writeFileSync(join(bin, "check-real.sh"), `#!/usr/bin/env bash\necho "check $1" >> "${log}"\n${tokenLine ? 'echo "debug sk-ant-oat01-AbCdEfGhIjKlMnOpQrStUvWxYz0123456789zzzzzz"' : ""}\nif [ "$1" = "${failAt ?? "__none__"}" ]; then echo "FAIL $1: the real profile's identity read failed"; exit 1; fi\necho "PASS $1: ok"\n`)
   // No real background service: the walk refuses before any call otherwise. The app-client steps copy from the real profile; here they pass.
+  // The sign-in time is recorded by the walk itself (log-signin.mjs), so its stub is a no-op.
   writeFileSync(join(bin, "guard-real.mjs"), `console.log("guard: no real background service, nothing on its port")\n`)
+  writeFileSync(join(bin, "log-signin.mjs"), `process.exit(0)\n`)
   writeFileSync(join(bin, "copy-client.mjs"), `console.log("PASS " + process.argv[2] + ": a stand-in")\n`)
-  for (const f of ["evals-profile.sh", "check-real.sh", "guard-real.mjs", "copy-client.mjs"]) chmodSync(join(bin, f), 0o755)
+  for (const f of ["evals-profile.sh", "check-real.sh", "guard-real.mjs", "log-signin.mjs", "copy-client.mjs"]) chmodSync(join(bin, f), 0o755)
   const run = (...args) => spawnSync("bash", [join(ROOT, "scripts", "profile", "signin.sh"), ...args], { encoding: "utf8", input: "\n".repeat(30), env: { PATH: process.env.PATH, HOME: root, EVALS_BIN: bin, EVALS_STORE: store, OPENCODE_BIN: "opencode" } })
   const calls = () => (existsSync(log) ? readFileSync(log, "utf8").split("\n").filter(Boolean) : [])
   return { root, store, run, calls, cleanup: () => rmSync(root, { recursive: true, force: true }) }

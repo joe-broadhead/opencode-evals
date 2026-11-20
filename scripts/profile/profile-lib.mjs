@@ -419,6 +419,97 @@ export function gwsClient(exported, integration = "gws-default") {
 /** The secrets of a credential as digests: { access, refresh } (null when absent). The tokens themselves go no further than this call. */
 export const digestsOf = (credential) => ({ access: credential?.value?.access ? sha256(credential.value.access) : null, refresh: credential?.value?.refresh ? sha256(credential.value.refresh) : null })
 
+// ---- The refresh chain (EVALS-232 §1.2.3 rule 3): times and digests only ----------------------------------------------------------------
+// The evals sign-in must not have broken the real profile's refresh. That is proved once the REAL access token was minted AFTER the evals sign-in
+// AND the identity read still works. Nothing here reads, prints or logs a token: only its `expires`, an issue/update time the export carries, and
+// a digest. Every function tolerates an export without the field (null: the check then says the time is unknown, and stays provisional).
+
+/** Epoch ms from an exported time: a number in ms (in seconds when below 1e12), a numeric string, or an ISO date. Null when it is not a time. */
+export function timeValue(v) {
+  if (typeof v === "number") {
+    if (!Number.isFinite(v) || v <= 0) return null
+    return Math.round(v < 1e12 ? v * 1000 : v)
+  }
+  if (typeof v === "string" && v.trim()) {
+    const n = Number(v)
+    if (Number.isFinite(n) && n > 0) return Math.round(n < 1e12 ? n * 1000 : n)
+    const at = Date.parse(v)
+    return Number.isNaN(at) ? null : at
+  }
+  return null
+}
+
+/** The keys an export may carry the access token's ISSUE time under, at the entry or in its value. */
+const ISSUE_KEYS = ["issuedAt", "issued_at", "obtainedAt", "obtained_at", "createdAt", "created_at", "created", "mintedAt", "minted_at"]
+/** The keys an export may carry its last UPDATE under (a refresh moves it). Used only when no issue time is exported. */
+const TOUCH_KEYS = ["updatedAt", "updated_at", "updated"]
+
+/** The first time under `keys` that the credential or its value carries, or null. */
+function timeUnder(credential, keys) {
+  for (const holder of [credential, credential?.value]) {
+    if (!holder || typeof holder !== "object" || Array.isArray(holder)) continue
+    for (const key of keys) {
+      const at = timeValue(holder[key])
+      if (at) return at
+    }
+  }
+  return null
+}
+
+/** The credential's access-token expiry (epoch ms), or null. Only the time is read, never the token. */
+export const credentialExpires = (credential) => timeValue(credential?.value?.expires ?? credential?.expires)
+/** When the credential (its access token) was issued, when the export says; else null. */
+export const credentialIssuedAt = (credential) => timeUnder(credential, ISSUE_KEYS)
+/** When the credential was last updated (a refresh moves it), when the export says; else null. */
+export const credentialUpdatedAt = (credential) => timeUnder(credential, TOUCH_KEYS)
+
+/**
+ * When the evals sign-in completed for an integration (epoch ms), or null: the evals credential's own issue time when the export carries one,
+ * else the last `sign-in` line the walk logged (logRound). Never the token.
+ */
+export function signinTime(store, integration, credential = null) {
+  const issued = credentialIssuedAt(credential)
+  if (issued) return issued
+  if (!store) return null
+  let text
+  try {
+    text = readFileSync(join(store, "round-232.log"), "utf8")
+  } catch {
+    return null
+  }
+  let last = null
+  for (const line of text.split("\n")) {
+    if (!line.trim()) continue
+    let entry
+    try {
+      entry = JSON.parse(line)
+    } catch {
+      continue
+    }
+    if (entry?.event === "sign-in" && entry.integration === integration) {
+      const at = timeValue(entry.at)
+      if (at) last = at
+    }
+  }
+  return last
+}
+
+/**
+ * The refresh-chain verdict of one PASS: `verified` once the real token was evidently minted after the evals sign-in; `provisional` with a
+ * fixed `recheckAt` (this token's expiry + 5 min), or `provisional` with `known: false` when the export carries no expiry; `null` when the
+ * integration has no refresh chain (an API key). Times and digests only.
+ */
+export function refreshChain({ real, evals, integration, store, lifetimeHours = RECHECK_HOURS[integration] }) {
+  const expires = credentialExpires(real)
+  const signin = signinTime(store, integration, evals)
+  // The token's own expiry and its lifetime first (the formula the round states), then an issue time the export carries, then a row update time.
+  const minted = (expires && lifetimeHours ? expires - lifetimeHours * 3_600_000 : null) ?? credentialIssuedAt(real) ?? credentialUpdatedAt(real)
+  const chain = Boolean(lifetimeHours || expires || real?.value?.refresh || evals?.value?.refresh)
+  if (!chain) return null
+  if (minted !== null && signin !== null && minted > signin) return { verified: true, provisional: false, recheckAt: null }
+  return { verified: false, provisional: true, recheckAt: expires ? new Date(expires + 5 * 60_000).toISOString() : null, known: Boolean(expires) }
+}
+
 /** Appends one JSON line to the round log (a file in the private store). */
 export function logRound(store, entry) {
   mkdirSync(store, { recursive: true, mode: 0o700 })

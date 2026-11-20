@@ -71,7 +71,7 @@ test("linksIn finds every symbolic link under a directory, and none when there i
 })
 
 test("check-real.sh, keeper.mjs and evals-profile.sh are installed where the round expects them, from this repository's copies", () => {
-  for (const file of ["check-real.sh", "check-real.mjs", "keeper.mjs", "evals-profile.sh", "profile-lib.mjs", "signin.sh", "guard-real.mjs", "copy-client.mjs", "service-port.mjs", "write-config.mjs", "ensure-port.mjs", "identity-methods.json", "rpc-methods.fixture.json", "walk.test.mjs", "install.sh"]) assert.ok(existsSync(join(SCRIPT, file)), file)
+  for (const file of ["check-real.sh", "check-real.mjs", "keeper.mjs", "evals-profile.sh", "profile-lib.mjs", "signin.sh", "guard-real.mjs", "log-signin.mjs", "copy-client.mjs", "service-port.mjs", "write-config.mjs", "ensure-port.mjs", "identity-methods.json", "rpc-methods.fixture.json", "walk.test.mjs", "install.sh"]) assert.ok(existsSync(join(SCRIPT, file)), file)
   for (const file of ["check-real.sh", "evals-profile.sh", "install.sh"]) assert.match(readFileSync(join(SCRIPT, file), "utf8"), /EVALS_STORE=/, file)
   assert.match(readFileSync(join(SCRIPT, "signin.sh"), "utf8"), /EVALS_STORE/, "the walk takes its store from EVALS_STORE")
   const usage = spawnSync("node", [join(SCRIPT, "check-real.mjs")], { encoding: "utf8" })

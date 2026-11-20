@@ -398,7 +398,7 @@ test("check-real affinity: a successful real export with no credential takes the
 function failingWalk(r, vendor, extraEnv = {}) {
   const bin = join(r.root, "bin")
   mkdirSync(bin, { recursive: true })
-  for (const f of ["signin.sh", "guard-real.mjs", "profile-lib.mjs", "copy-client.mjs", "identity-methods.json"]) writeFileSync(join(bin, f), readFileSync(join(HERE, f)), { mode: 0o700 })
+  for (const f of ["signin.sh", "guard-real.mjs", "log-signin.mjs", "profile-lib.mjs", "copy-client.mjs", "identity-methods.json"]) writeFileSync(join(bin, f), readFileSync(join(HERE, f)), { mode: 0o700 })
   writeFileSync(join(bin, "evals-profile.sh"), "#!/bin/sh\ntouch " + join(r.root, "login-ran") + "\nexit 0\n", { mode: 0o700 })
   writeFileSync(join(bin, "check-real.sh"), "#!/bin/sh\necho \"FAIL $1: the check failed\"\nexit ${CHECK_EXIT:-1}\n", { mode: 0o700 })
   return spawnSync(join(bin, "signin.sh"), ["--only", vendor, "--yes"], { env: { ...r.env, EVALS_BIN: bin, ...extraEnv }, encoding: "utf8" })
@@ -767,6 +767,97 @@ test("check-real: a left-over check session is named on a PASS too", () => {
     const out = checkReal(r, "linear", { STUB_FAIL_DELETE: "1" })
     assert.equal(out.status, 0, out.stdout)
     assert.match(out.stdout, /WARNING: \(the check session ses_\w+ could not be deleted: delete the session titled "evals walk check"/)
+  } finally {
+    r.done()
+  }
+})
+
+// ---- the refresh chain (round 7): verified once the REAL token was minted after the evals sign-in; a fixed deadline until then --------------
+// The bug: recheck_at was now + RECHECK_HOURS on every run, so every recheck was provisional again and the state never resolved.
+const SIGNIN_AT = Date.parse("2026-11-20T17:08:00.000Z")
+const refreshCred = (integrationID, access, refresh, extra = {}) => JSON.stringify([{ id: "cred_x", integrationID, label: "Linear", active: true, value: { type: "oauth", access, refresh, ...extra } }])
+const signinLine = (r, at = SIGNIN_AT) => writeFileSync(join(r.env.EVALS_STORE, "round-232.log"), `${JSON.stringify({ at: new Date(at).toISOString(), event: "sign-in", integration: "linear" })}\n`)
+const roundLogOf = (r) => readFileSync(join(r.env.EVALS_STORE, "round-232.log"), "utf8").trim().split("\n").map((l) => JSON.parse(l))
+const lastCheck = (r) => roundLogOf(r).filter((e) => e.event === "check-real").at(-1)
+
+test("check-real: the refresh chain is VERIFIED once the real token was minted after the evals sign-in", () => {
+  const r = rig()
+  try {
+    // The walk logged the sign-in; Linear's token lives 24h, so this one was minted six hours after it.
+    signinLine(r)
+    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R"))
+    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R", { expires: SIGNIN_AT + 30 * 3_600_000 }))
+    const out = checkReal(r, "linear")
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stdout, /refresh chain verified: the real token was refreshed after the evals sign-in/)
+    assert.doesNotMatch(out.stdout, /provisional/)
+    assert.deepEqual({ provisional: lastCheck(r).provisional, recheck_at: lastCheck(r).recheck_at, chain: lastCheck(r).refresh_chain }, { provisional: false, recheck_at: null, chain: "verified" })
+    assert.ok(!(out.stdout + JSON.stringify(lastCheck(r))).includes("REAL-A"), "no token is printed or logged")
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: the evals credential's own creation time counts as the sign-in time when there is no log", () => {
+  const r = rig()
+  try {
+    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R", { createdAt: new Date(SIGNIN_AT).toISOString() }))
+    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R", { expires: SIGNIN_AT + 30 * 3_600_000 }))
+    const out = checkReal(r, "linear")
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stdout, /refresh chain verified: the real token was refreshed after the evals sign-in/)
+    assert.equal(lastCheck(r).provisional, false)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a real token minted before the evals sign-in stays provisional, and the deadline is its expiry + 5 min on every run", () => {
+  const r = rig()
+  const expires = SIGNIN_AT + 2 * 3_600_000 // minted = expires - 24h: before the sign-in
+  const at = new Date(expires + 5 * 60_000).toISOString()
+  try {
+    signinLine(r)
+    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R"))
+    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R", { expires }))
+    const first = checkReal(r, "linear")
+    const second = checkReal(r, "linear")
+    for (const out of [first, second]) {
+      assert.equal(out.status, 0, out.stdout + out.stderr)
+      assert.ok(out.stdout.includes(`provisional: the real refresh chain is checked again by ${at}`), out.stdout)
+      assert.doesNotMatch(out.stdout, /refresh chain verified/)
+    }
+    const [a, b] = roundLogOf(r).filter((e) => e.event === "check-real")
+    assert.deepEqual({ provisional: a.provisional, recheck_at: a.recheck_at }, { provisional: true, recheck_at: at })
+    assert.equal(b.recheck_at, a.recheck_at, "a second run before any refresh does not move the deadline")
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: an export with no expiry says the recheck time is unknown, and logs no deadline", () => {
+  const r = rig()
+  try {
+    signinLine(r)
+    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R"))
+    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R")) // no expires
+    const out = checkReal(r, "linear")
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stdout, /provisional: unknown: recheck after the real token next refreshes/)
+    assert.deepEqual({ provisional: lastCheck(r).provisional, recheck_at: lastCheck(r).recheck_at, recheck: lastCheck(r).recheck }, { provisional: true, recheck_at: null, recheck: "unknown" })
+  } finally {
+    r.done()
+  }
+})
+
+test("signin.sh: a completed sign-in logs its time, so check-real can prove the real token was refreshed after it", () => {
+  const r = rig()
+  try {
+    const out = failingWalk(r, "linear", { CHECK_EXIT: "0" })
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    const entry = readFileSync(join(r.env.EVALS_STORE, "round-232.log"), "utf8").trim().split("\n").map((l) => JSON.parse(l)).find((e) => e.event === "sign-in" && e.integration === "linear")
+    assert.ok(entry, "a sign-in line was recorded")
+    assert.ok(!Number.isNaN(Date.parse(entry.at)), "with the time it completed")
   } finally {
     r.done()
   }

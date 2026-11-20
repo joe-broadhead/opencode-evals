@@ -13,10 +13,10 @@
 // On FAIL: stop signing in further vendors; the owner signs the real profile back in for that vendor.
 
 import { join } from "node:path"
-import { IDENTITY, RECHECK_HOURS, NOT_IN_REAL, exportTarget, identityCheck, IDENTITY_CALLS, realEnv, profileEnv, run, runReal, realServiceProblem, activeCredential, digestsOf, logRound, defaultProfileDir, defaultStoreDir } from "./profile-lib.mjs"
+import { IDENTITY, NOT_IN_REAL, exportTarget, identityCheck, IDENTITY_CALLS, realEnv, profileEnv, run, runReal, realServiceProblem, activeCredential, digestsOf, logRound, refreshChain, defaultProfileDir, defaultStoreDir } from "./profile-lib.mjs"
 import { assertDistinctPort } from "./service-port.mjs"
 
-export function checkReal({ integration, opencode = "opencode", profile, store, env = process.env, exec = run, now = new Date(), guard = {} }) {
+export function checkReal({ integration, opencode = "opencode", profile, store, env = process.env, exec = run, guard = {} }) {
   const real = realEnv(env)
   const evals = profileEnv(profile, env)
   // Which side failed decides what the owner is told (exit code, see signin.sh): 1 the real profile, 4 the evals profile (nothing wrong with the real one),
@@ -93,13 +93,21 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
   const same = ["access", "refresh"].filter((k) => !a[k] || !b[k])
   const compared = same.length === 2 ? "no token in either to compare (an API key or an external credential)" : "access and refresh tokens differ"
 
-  // 3. The real refresh chain: provisional until its next refresh.
-  const hours = RECHECK_HOURS[integration]
-  const recheck = hours ? new Date(now.getTime() + hours * 3_600_000).toISOString() : null
-  if (store) logRound(store, { event: "check-real", integration, result: "PASS", provisional: Boolean(hours), recheck_at: recheck })
+  // 3. The real refresh chain: proved once the REAL access token was minted AFTER the evals sign-in and the identity read still works. The
+  //    deadline is this token's own expiry plus five minutes — a fixed point, so a second run before any refresh gives the same time, not now + hours.
+  //    Times and digests only: no token is read for this, printed or logged.
+  const chain = refreshChain({ real: mine, evals: theirs, integration, store })
+  const proof = chain?.verified
+    ? "refresh chain verified: the real token was refreshed after the evals sign-in"
+    : !chain
+      ? null
+      : chain.recheckAt
+        ? `provisional: the real refresh chain is checked again by ${chain.recheckAt} (repeat on days 1 and 2)`
+        : "provisional: unknown: recheck after the real token next refreshes"
+  if (store) logRound(store, { event: "check-real", integration, result: "PASS", provisional: Boolean(chain?.provisional), recheck_at: chain?.recheckAt ?? null, ...(chain?.verified ? { refresh_chain: "verified" } : {}), ...(chain?.provisional && !chain.recheckAt ? { recheck: "unknown" } : {}) })
   // A different token string is not a different grant: a GitHub OAuth app, for one, hands every sign-in the same grant under a new string,
   // so revoking the evals profile's grant would sign the owner out. The end of the round is `auth logout` in the evals profile, never a revoke.
-  return { ok: true, line: `PASS ${integration}: ${identity}; ${compared}${hours ? `; provisional: the real refresh chain is checked again by ${recheck} (repeat on days 1 and 2)` : ""}. A distinct token does not prove a distinct grant: end the round with \`auth logout\` in the evals profile only, never by revoking a grant` }
+  return { ok: true, line: `PASS ${integration}: ${identity}; ${compared}${proof ? `; ${proof}` : ""}. A distinct token does not prove a distinct grant: end the round with \`auth logout\` in the evals profile only, never by revoking a grant` }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
