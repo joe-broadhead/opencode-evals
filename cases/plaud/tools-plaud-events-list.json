@@ -1,0 +1,172 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-plaud-events-list",
+  "plugin": "plaud",
+  "skill": "opencode-plaud",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "A cursor feed of what changed is one events_list call, oldest first, for the consumer that asked.",
+  "data_check": "the account has recordings after the cursor",
+  "prompt": "pull everything that changed in my Plaud account since 1 January 2026, oldest first, for the Memory feed.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=plaud",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "PLD-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one events_list call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "events_list",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "PLD-PR01",
+      "severity": "major",
+      "ask": "The read starts at 1 January 2026.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "events_list",
+          "n": 1,
+          "arg": "args.since",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^2026-01-01",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "PLD-OC02",
+      "severity": "major",
+      "ask": "The answer lists the events, or says there are none.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(no (new )?events|nothing new|none)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(^|\\n)\\s*[-*]\\s+\\S",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "PLD-TR01",
+      "severity": "minor",
+      "ask": "The opencode-plaud skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "opencode-plaud"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "PLD-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written outside the trial: no file, no edit.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c0c9fa0004007ce81c3587a371eb4821df7c5a5a6c3aeeaa41ee63aa94a2f2de"
+  }
+}

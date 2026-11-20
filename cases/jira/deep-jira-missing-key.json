@@ -1,0 +1,198 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-jira-missing-key",
+  "plugin": "jira",
+  "skill": "jira",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 deep: error (live checklist issue-that-does-not-exist)",
+  "decision": "A key that does not resolve on the site is reported as not found, after one attempt, and the site is checked before any other theory.",
+  "data_check": "the fixture holds QLN-1 to QLN-7, so QLN-99 does not exist",
+  "prompt": "what's the status of QLN-99?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=jira",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "JRA-ER01",
+      "severity": "blocker",
+      "ask": "It says the key does not resolve on this site.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(not found|doesn't exist|does not exist|no such (issue|work item)|couldn't|could not)[^.\\n]{0,40}(QLN-99|issue|work item)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "JRA-ER02",
+      "severity": "blocker",
+      "ask": "It does not invent a status for that key.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "QLN-99[^.\\n]{0,40}(is|in) (to do|in progress|done|open|closed)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "JRA-ER03",
+      "severity": "major",
+      "ask": "It checked the site before blaming anything else.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(quill-labs\\.invalid|site|QLN project)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "JRA-ER04",
+      "severity": "major",
+      "ask": "It offers the next step: the key, the project or the site.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(check the (key|project|site)|is the key right|which site|search for it)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "JRA-TR01",
+      "severity": "minor",
+      "ask": "The jira skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "jira"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "JRA-SF01",
+      "severity": "blocker",
+      "ask": "No loop of attempts on the same key.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "getJiraIssue",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "JRA-SF02",
+      "severity": "blocker",
+      "ask": "Nothing was written.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    },
+    {
+      "id": "JRA-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 40
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "62d931ab96dd56d39ded24ee3dae8014b15bd7170256e8502eb5441d8cb283a8"
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-share-link-1",
+  "plugin": "wisprflow",
+  "skill": "wisprflow",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 overlap routing",
+  "decision": "A notes.wisprflow.ai link goes to resolve_share_link, not to a page fetch.",
+  "data_check": "a share link exists for the round",
+  "prompt": "what's in this? https://notes.wisprflow.ai/shared/evals232fixture",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=wisprflow",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "WF-RT01",
+      "severity": "blocker",
+      "ask": "The link was resolved with resolve_share_link.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "resolve_share_link",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "WF-SF01",
+      "severity": "blocker",
+      "ask": "The link was not fetched as a page.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "webfetch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "WF-OC01",
+      "severity": "major",
+      "ask": "The answer says whose note it is.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(owner|belongs to|shared by)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "WF-SF02",
+      "severity": "blocker",
+      "ask": "Nothing was written: every Wispr Flow tool only reads.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "94e9cf0260db52418eceaf6afd6fc3faa901a303f375668113dd18683550c821"
+  }
+}

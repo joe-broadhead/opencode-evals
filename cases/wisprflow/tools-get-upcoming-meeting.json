@@ -1,0 +1,181 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-upcoming-meeting",
+  "plugin": "wisprflow",
+  "skill": "wisprflow",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "\"My next meeting\" is one get_upcoming_meeting call with its pre-read, not a list paged by hand.",
+  "data_check": "an upcoming calendar event exists within 168 hours",
+  "prompt": "what's my next meeting? include anything I should read before it.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=wisprflow",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "WF-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one get_upcoming_meeting call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_upcoming_meeting",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "WF-OC02",
+      "severity": "major",
+      "ask": "The answer names the meeting and its local time.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "WF-OC03",
+      "severity": "major",
+      "ask": "It mentions the pre-read when one is attached.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(pre-?read|reading|agenda|document)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "WF-TR01",
+      "severity": "minor",
+      "ask": "The wisprflow skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "wisprflow"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "WF-EF01",
+      "severity": "blocker",
+      "ask": "It did not list the whole calendar for one meeting.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "list_upcoming_meetings",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "search_calendar_events",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "WF-SF02",
+      "severity": "blocker",
+      "ask": "Nothing was written: every Wispr Flow tool only reads.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "ac9ab798b843e9bdb0d58fd1f9c48c24b6c3af252dd487091ae4b04531873550"
+  }
+}

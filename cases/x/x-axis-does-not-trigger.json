@@ -87,11 +87,6 @@
           "kind": "absent",
           "tool": "create_posts",
           "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_publish",
-          "n": null
         }
       ],
       "evidence_any": [],
@@ -113,12 +108,12 @@
       "maps_to": [
         "A2"
       ],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "57ee1d170b80391c3994703937ab9161f96e4a00fa7d0c4c2ee1a14327a534ef"
+    "source_sha256": "656324960b1dc1325b841fa2fe3017947378e80eeb5c6776be7fc14ab4ec71b5"
   }
 }

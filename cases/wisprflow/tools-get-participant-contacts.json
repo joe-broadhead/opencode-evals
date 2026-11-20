@@ -1,0 +1,170 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-participant-contacts",
+  "plugin": "wisprflow",
+  "skill": "wisprflow",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "A person's job title and company come from get_participant_contacts, only because the user asked about those details.",
+  "data_check": "the participant has a contact record",
+  "prompt": "what does the person in my last Wispr Flow meeting do, and which company are they at?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=wisprflow",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "status": "deferred",
+  "data": "real",
+  "items": [
+    {
+      "id": "WF-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one get_participant_contacts call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_participant_contacts",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "WF-PR01",
+      "severity": "major",
+      "ask": "It found the participant first, or passed their contact id.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "get_meeting_participants_enriched",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "call",
+            "tool": "get_participant_contacts",
+            "n": 1,
+            "arg": "args.contact_ids",
+            "op": "present"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "WF-OC02",
+      "severity": "major",
+      "ask": "The answer gives a role and a company, and says it looked the profile up.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(looked up|Wispr Contacts|profile)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "WF-TR01",
+      "severity": "minor",
+      "ask": "The wisprflow skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "wisprflow"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "WF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written: every Wispr Flow tool only reads.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: reads a participant of a recorded meeting (owner decision 20 Nov).",
+      "line": 40
+    }
+  ],
+  "hashes": {
+    "source_sha256": "4d5cf9c9301e7f6eeed4e0e6b758693077bbeb5ce67892f2ea8d474fcc37693d"
+  }
+}

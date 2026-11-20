@@ -1,0 +1,139 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-list-dashboards",
+  "plugin": "jira",
+  "skill": "jira",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool (fake mode)",
+  "decision": "The dashboard list comes from listJiraDashboards, and the fixture holds none.",
+  "data_check": "the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7",
+  "prompt": "what dashboards do I have in Jira?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=jira",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "JRA-OC01",
+      "severity": "blocker",
+      "ask": "The read ran once, with listJiraDashboards.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "listJiraDashboards",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "JRA-OC02",
+      "severity": "blocker",
+      "ask": "The answer states what the fixture holds.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(no dashboards|none|nothing)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "JRA-TR01",
+      "severity": "minor",
+      "ask": "The jira skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "jira"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "JRA-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written: this is a read.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "JRA-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "ee8c10c8fd841dd5c8b3fd185f0ec38fee25740aa652e7df57e935f4a6ad760c"
+  }
+}

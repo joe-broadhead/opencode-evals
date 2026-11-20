@@ -1,0 +1,175 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 should-not-call",
+  "decision": "A calendar question is the calendar's: no history lookup, and no invented meeting.",
+  "data_check": "none",
+  "prompt": "what's on my calendar tomorrow?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "seed": "plugins=history",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "own",
+  "items": [
+    {
+      "id": "H-RT01",
+      "severity": "blocker",
+      "ask": "No history skill loaded for a calendar question.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "H-RT02",
+      "severity": "blocker",
+      "ask": "No history tool call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It does not invent meetings.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(^|\\n)\\s*[-*]?\\s*[0-9]{1,2}:[0-9]{2}\\s*(am|pm)?\\s*[-–]\\s*\\w",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "H-RT03",
+      "severity": "major",
+      "ask": "It read a calendar, or says it cannot reach one.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "gws.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "count",
+            "tool": "wisprflow.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(can't|cannot|couldn't|could not|don't have|do not have)[^.\\n]{0,30}(access|reach|see)[^.\\n]{0,20}calendar",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written: no file, no edit, and no pin.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "history"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "H-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "09f7a8c830852efe0db3d6085033cb43b909417f182ade22fcd81caa2a7d60ea"
+  }
+}

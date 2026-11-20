@@ -1,0 +1,142 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-4",
+  "plugin": "jira",
+  "skill": "jira",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 should-not-call",
+  "decision": "A vendor's public status page is a web read: no Jira tool call for it.",
+  "data_check": "none",
+  "prompt": "is the Atlassian status page showing any incidents right now?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "seed": "plugins=jira",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "JRA-RT01",
+      "severity": "blocker",
+      "ask": "No Jira tool call for a public status page.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "jira.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "JRA-RT03",
+      "severity": "major",
+      "ask": "It read the web page, or says it cannot reach it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "tavily.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "count",
+            "tool": "webfetch",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(can't|cannot|couldn't|could not)[^.\\n]{0,30}(reach|read|fetch)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "JRA-TR01",
+      "severity": "minor",
+      "ask": "No jira skill loaded for a status page.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "jira"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "JRA-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "JRA-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "eac079e712c89c815ce4d33ae2cef8e83ea7001e3e1cbf4ffd217582944a68ce"
+  }
+}

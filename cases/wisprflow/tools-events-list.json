@@ -1,0 +1,177 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-events-list",
+  "plugin": "wisprflow",
+  "skill": "wisprflow",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "A cursor feed of meeting events is one events_list call, oldest first.",
+  "data_check": "meetings exist after the cursor",
+  "prompt": "pull the meeting events since the start of this year, oldest first, for Memory.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=wisprflow",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "WF-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one events_list call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "events_list",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "WF-PR01",
+      "severity": "major",
+      "ask": "The read starts at the start of this year.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "events_list",
+          "n": 1,
+          "arg": "args.since",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "WF-OC02",
+      "severity": "major",
+      "ask": "The answer lists the events, says there are none, or reports the feed's gap.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(no (new )?events|nothing new|none)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(^|\\n)\\s*[-*]\\s+\\S",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(gap|29 days|30 days|starts (at|from))",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "WF-TR01",
+      "severity": "minor",
+      "ask": "The wisprflow skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "wisprflow"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "WF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written: every Wispr Flow tool only reads.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "557d107ee195ddf60653b9b6ebf4ccca6d10cd9ca9be61bb4368b6d6c401c4d6"
+  }
+}

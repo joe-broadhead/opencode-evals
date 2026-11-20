@@ -1,0 +1,195 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-audio-export-1",
+  "plugin": "plaud",
+  "skill": "opencode-plaud-export",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 overlap routing",
+  "decision": "A request for the audio is an export, not a get_file: the link is withheld and the export path is offered.",
+  "data_check": "the test recording exists",
+  "prompt": "send me the audio from {{target:plaud.recording}}",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=plaud",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "kind"
+  ],
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "PLD-RT01",
+      "severity": "blocker",
+      "ask": "The full-file read was not used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "get_file",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "PLD-WR01",
+      "severity": "blocker",
+      "ask": "Exactly one export, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "export",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "export"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "PLD-PR01",
+      "severity": "major",
+      "ask": "The export is of the audio.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "export",
+          "n": 1,
+          "arg": "args.kind",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "audio"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "PLD-OC01",
+      "severity": "major",
+      "ask": "The answer says the file was not written.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not|nothing|no longer)\\b[^.\\n]{0,60}\\b(sent|send|posted|post|created|create|added|add|removed|remove|changed|change|updated|update|archived|archive|started|start|scheduled|schedule|deleted|delete|muted|mute|pinned|pin|followed|follow|blocked|block|unblocked|unblock|read|shown|fetched|downloaded|uploaded|accepted|accept|cancelled|canceled|renamed|rename|drafted|draft|published|publish|live|moved|move|closed|close|written|write|saved|save|exported|export)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "PLD-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written outside the trial: no file, no edit.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "PLD-SF02",
+      "severity": "blocker",
+      "ask": "Nothing was committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 40
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "fca1e7ee1877fe7c3de3903a7c65d2c88110abfa2e6086bf1fe566d9756fbe6f"
+  }
+}

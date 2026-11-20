@@ -1,0 +1,161 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-1",
+  "plugin": "plaud",
+  "skill": "opencode-plaud",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 should-not-call",
+  "decision": "A meeting question is the notes plugins': no Plaud call, and no invented agreement.",
+  "data_check": "none",
+  "prompt": "what did we decide about the launch date in Tuesday's meeting?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 4,
+    "inner_calls": 3,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "seed": "plugins=plaud",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "PLD-RT01",
+      "severity": "blocker",
+      "ask": "No Plaud skill loaded for a meeting question.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "opencode-plaud"
+        },
+        {
+          "kind": "absent-skill",
+          "skill": "opencode-plaud-digest"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "PLD-RT02",
+      "severity": "blocker",
+      "ask": "No Plaud tool call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "plaud.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "PLD-OC01",
+      "severity": "blocker",
+      "ask": "It does not state a launch date as agreed.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(^|[.!?]\\s+|\\n\\s*[-*]?\\s*)(we|you|the team) (agreed|decided|settled on)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "PLD-OC02",
+      "severity": "major",
+      "ask": "It points at the meeting notes, or asks which notes app holds them.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(granola|wispr ?flow|meeting notes|notes app)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "PLD-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written outside the trial: no file, no edit.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c73a72b340b456ebe39d7666d3b27cf0bee2f16ac7952ae3c7a3e9072231020f"
+  }
+}

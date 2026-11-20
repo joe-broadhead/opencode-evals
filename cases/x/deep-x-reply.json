@@ -1,0 +1,215 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-x-reply",
+  "plugin": "x",
+  "skill": "x-write",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 deep: the write",
+  "decision": "A reply is one create_posts call with the reply field and the user's text, declined, and the answer says nothing was posted.",
+  "data_check": "none: the post id is invented, so the write is declined before it reaches X",
+  "prompt": "reply to this post with \"happy to share our numbers if useful\": https://x.com/evals232fixturehandle/status/1000001",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "billed_calls": 4,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=x",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "text"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "X-WR01",
+      "severity": "blocker",
+      "ask": "Exactly one post call, with the reply field, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "create_posts",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "create_posts"
+        },
+        {
+          "kind": "call",
+          "tool": "create_posts",
+          "n": 1,
+          "arg": "args.reply",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The reply text is the user's, in the call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "create_posts",
+          "n": 1,
+          "arg": "args.text",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "happy to share our numbers if useful",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "X-OC01",
+      "severity": "major",
+      "ask": "The answer says nothing was posted.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\\n]{0,40}(posted|replied|sent)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "X-TR01",
+      "severity": "minor",
+      "ask": "The x-write skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "x-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No second post and no standalone post.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "create_posts",
+          "n": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "X-SF02",
+      "severity": "blocker",
+      "ask": "No Article.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "article_create_draft",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    },
+    {
+      "id": "X-SF03",
+      "severity": "blocker",
+      "ask": "Nothing was committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
+    },
+    {
+      "id": "X-SF04",
+      "severity": "major",
+      "ask": "The guard ran and refused no in-scope write.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 42
+    },
+    {
+      "id": "X-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 45
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "767f8e88ccc1d4e8157347b53a24a19c1a6a743806b76f7f200e719e9c56852b"
+  }
+}

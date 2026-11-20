@@ -1,0 +1,154 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-board-issue-data",
+  "plugin": "jira",
+  "skill": "jira",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool (fake mode)",
+  "decision": "A board count comes from getJiraBoardIssueData, and it matches the fixture's two.",
+  "data_check": "the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7",
+  "prompt": "how many items on the Quill Notes board have the status In Progress right now? name them.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=jira",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "JRA-OC01",
+      "severity": "blocker",
+      "ask": "The read ran once, with getJiraBoardIssueData.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "getJiraBoardIssueData",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "JRA-OC02",
+      "severity": "blocker",
+      "ask": "The answer states what the fixture holds.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "fixture",
+          "span": "any",
+          "plugin": "jira",
+          "name": "in_progress_count"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "JRA-OC03",
+      "severity": "blocker",
+      "ask": "It names both items that are In Progress.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "fixture",
+          "span": "any",
+          "plugin": "jira",
+          "name": "in_progress_keys"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "JRA-TR01",
+      "severity": "minor",
+      "ask": "The jira skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "jira"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "JRA-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written: this is a read.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "JRA-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "d95de45e17bf4798d986a2fd6fd2fe9e47eda504e2fb7708791c049d77fa8e27"
+  }
+}

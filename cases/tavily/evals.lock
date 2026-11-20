@@ -1,0 +1,9 @@
+{
+  "plugin": "tavily",
+  "epoch": 1,
+  "cases": 16,
+  "items": 106,
+  "cases_sha256": "5fe42e2f45d4cac7d87048b60e2d46fb5a53216424833351026b723b05fda516",
+  "grader_sha256": "7e6efd86ec6ce41f6608b698d853d0452f4eb2c183af2576e09ce52962ba1ad3",
+  "frozen_at": "2026-11-20T15:41:04.302Z"
+}

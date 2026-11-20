@@ -1,0 +1,165 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-tavily-vague-company",
+  "plugin": "tavily",
+  "skill": "tavily",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 deep: ambiguous",
+  "decision": "An unscoped \"look into this company\" is either one narrow search with its scope stated, or a question; it is never a Research task or a crawl.",
+  "data_check": "the company has public pages",
+  "prompt": "look into Acme Robotics for me",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=tavily",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "data": "own",
+  "items": [
+    {
+      "id": "TAV-OC01",
+      "severity": "blocker",
+      "ask": "It asks what to find out, or states the one thing it looked for.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\?",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(I (looked|searched|checked) for|assuming you want|I focused on)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "TAV-OC02",
+      "severity": "blocker",
+      "ask": "No Research and no crawl on an unscoped request.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "tavily_research",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "tavily_crawl",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "TAV-EF01",
+      "severity": "major",
+      "ask": "At most two searches.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "tavily_search",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "TAV-PR01",
+      "severity": "minor",
+      "ask": "The answer stays within what the search returned, with sources.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "TAV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written or edited: every Tavily tool only reads the web.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "TAV-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "b546723a7bb40218bddf748c074baa95a5ba1a127252ccc25cdff43611ee45e8"
+  }
+}

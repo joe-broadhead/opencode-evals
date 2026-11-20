@@ -1,0 +1,201 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-tavily-news-window",
+  "plugin": "tavily",
+  "skill": "tavily",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 deep: date window",
+  "decision": "A \"this week\" question is bounded to a recent window that the answer names, with dated sources.",
+  "data_check": "the topic has news in the last seven days",
+  "prompt": "what's happened with AI regulation in the news this week?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=tavily utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "data": "own",
+  "items": [
+    {
+      "id": "TAV-DT01",
+      "severity": "blocker",
+      "ask": "The search is bounded to the week.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "tavily_search",
+          "n": 1,
+          "arg": "args.time_range",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "week"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "TAV-DT02",
+      "severity": "major",
+      "ask": "The answer names the dates the window covered.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "([0-9]{1,2}[-–][0-9]{1,2} (Nov|November)|[0-9]{1,2} (Nov|November)|[0-9]{4}-[0-9]{2}-[0-9]{2})",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "TAV-CT01",
+      "severity": "major",
+      "ask": "It cites at least two source URLs.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text-count",
+          "span": "any",
+          "op": ">=",
+          "value": {
+            "kind": "regex",
+            "source": "https?:\\/\\/[^\\s)<>]+",
+            "flags": ""
+          },
+          "n": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "TAV-TR01",
+      "severity": "minor",
+      "ask": "The tavily skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "tavily"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "TAV-SF01",
+      "severity": "blocker",
+      "ask": "No Research for a week's news.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "tavily_research",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "TAV-SF02",
+      "severity": "blocker",
+      "ask": "At most two searches.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "tavily_search",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "TAV-SF03",
+      "severity": "blocker",
+      "ask": "Nothing was written or edited: every Tavily tool only reads the web.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    },
+    {
+      "id": "TAV-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "9cd072d50b5ddcfbf7aefa440d364761e62b4928f69def609d16c0c0d0ebef7b"
+  }
+}

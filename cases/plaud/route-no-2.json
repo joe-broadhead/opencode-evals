@@ -1,0 +1,169 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "plaud",
+  "skill": "opencode-plaud",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 should-not-call",
+  "decision": "Dictation history is not something this connection can read: no Plaud call, and the nearest real thing is offered.",
+  "data_check": "none",
+  "prompt": "what did I dictate this morning?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 4,
+    "inner_calls": 3,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "seed": "plugins=plaud",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "PLD-RT01",
+      "severity": "blocker",
+      "ask": "No Plaud call for dictation history.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "plaud.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "PLD-OC01",
+      "severity": "major",
+      "ask": "It says dictation history is not readable here.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(dictation|dictated)[^.\\n]{0,60}(can't|cannot|not available|don't have|do not have|no access|isn't)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "PLD-OC02",
+      "severity": "major",
+      "ask": "It offers the nearest real thing, or asks whether Plaud was meant.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(scratchpad|note|recording)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(do you mean|are you asking about) (plaud|a recording)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "PLD-RT02",
+      "severity": "minor",
+      "ask": "No Plaud skill loaded for dictation.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "opencode-plaud"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "PLD-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written outside the trial: no file, no edit.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "1361e3f640d42871a0e4c85f8ed881d4f94fc2447704894f056cea4e611baf06"
+  }
+}

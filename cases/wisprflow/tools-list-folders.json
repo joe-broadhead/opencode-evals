@@ -1,0 +1,158 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-list-folders",
+  "plugin": "wisprflow",
+  "skill": "wisprflow",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "The folder list is one list_folders call, answered with names and ids.",
+  "data_check": "the round's folder exists",
+  "prompt": "what folders do I have in Wispr Flow?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=wisprflow",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "WF-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one list_folders call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "list_folders",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "WF-OC02",
+      "severity": "major",
+      "ask": "The answer lists folder names.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(^|\\n)\\s*[-*]\\s+\\S",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "WF-TR01",
+      "severity": "minor",
+      "ask": "The wisprflow skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "wisprflow"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "WF-EF01",
+      "severity": "blocker",
+      "ask": "No meetings were listed for a folder question.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "list_folder_meetings",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "search_meetings",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "WF-SF02",
+      "severity": "blocker",
+      "ask": "Nothing was written: every Wispr Flow tool only reads.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "dd78d78bb47f2db5c1a5ebd217e549da4fbef1b65c5dfb682d305e96e9d4f210"
+  }
+}

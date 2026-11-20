@@ -1,0 +1,136 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-3",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 should-not-call",
+  "decision": "Mail is Google Workspace's: no X lookup for an email question.",
+  "data_check": "none",
+  "prompt": "find the invoice email from Acme and tell me the amount",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "seed": "plugins=x,gws",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "X-RT01",
+      "severity": "blocker",
+      "ask": "No x skill loaded for a mail question.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "x"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "X-RT02",
+      "severity": "blocker",
+      "ask": "No X tool call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "x.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "X-RT03",
+      "severity": "major",
+      "ask": "It read Gmail, or says it cannot reach the mailbox.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "gws.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(can't|cannot|couldn't|could not)[^.\\n]{0,30}(reach|read|access)[^.\\n]{0,20}(mail|inbox)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No write of any kind: every X write is covered.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "x"
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "X-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "27598d3e769ff1c938c881674d784f0b0d425421ed252f6d131b71492d304122"
+  }
+}

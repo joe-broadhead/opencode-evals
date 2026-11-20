@@ -1,0 +1,207 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-history-bad-session",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 deep: error",
+  "decision": "A session id that does not exist is reported as not found, after at most one retry, with a search offered.",
+  "data_check": "no session with the id the prompt names exists in the world",
+  "prompt": "read session ses_000000000000000000000000 and tell me what we decided in it.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 12,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api plugins=history",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "sessionID"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "data": "own",
+  "items": [
+    {
+      "id": "H-ER01",
+      "severity": "blocker",
+      "ask": "It read that id and reports it as not found.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "history.read",
+          "n": 1,
+          "arg": "args.sessionID",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "ses_000000000000000000000000"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(not found|doesn't exist|does not exist|no such session|SESSION_NOT_FOUND)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "H-ER02",
+      "severity": "blocker",
+      "ask": "It does not invent a decision from that session.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(in that session|that session)[^.\\n]{0,40}(we|you) (decided|agreed|chose)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "H-ER03",
+      "severity": "major",
+      "ask": "It tried at most twice, and offered a search instead.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.read",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "H-ER04",
+      "severity": "major",
+      "ask": "It offers to search by topic instead.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(search|look) (for|up)[^.\\n]{0,30}(topic|title|what)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.search",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "H-TR01",
+      "severity": "minor",
+      "ask": "The history-recall skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written: no file, no edit, and no pin.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "history"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    },
+    {
+      "id": "H-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a64584febe657b4e9ab14fc1452ebeb0453f9868e6999925186ff1bf58586893"
+  }
+}

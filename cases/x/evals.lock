@@ -1,9 +1,9 @@
 {
   "plugin": "x",
-  "epoch": 3,
-  "cases": 14,
-  "items": 95,
-  "cases_sha256": "9bbfaaa86ead67204e00733fe2ead27a6b4459c6b6e04fe3da8dfedaf1eedb9e",
-  "grader_sha256": "fd59173d40a03bae99de6aa13ed2b9731c8d37b170e1740c83f1fa0667da5d75",
-  "frozen_at": "2026-11-12T02:30:58.079Z"
+  "epoch": 1,
+  "cases": 124,
+  "items": 919,
+  "cases_sha256": "653b114ba74ad0571694de39d2e32dc4da547cd98ccce7b0cd3fe956086c873f",
+  "grader_sha256": "7e6efd86ec6ce41f6608b698d853d0452f4eb2c183af2576e09ce52962ba1ad3",
+  "frozen_at": "2026-11-20T15:41:04.733Z"
 }

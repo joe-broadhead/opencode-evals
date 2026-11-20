@@ -1,0 +1,154 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-meeting-by-calendar-id",
+  "plugin": "wisprflow",
+  "skill": "wisprflow",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "A calendar event's recording is found by its calendar id, and \"not recorded\" is reported as such.",
+  "data_check": "the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary",
+  "prompt": "we had a call booked as the calendar event for {{target:wisprflow.meeting}} — was it recorded, and what came out of it?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=wisprflow",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "status": "deferred",
+  "data": "real",
+  "items": [
+    {
+      "id": "WF-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one get_meeting_by_calendar_id call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_meeting_by_calendar_id",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "WF-OC02",
+      "severity": "major",
+      "ask": "The answer says whether it was recorded, citing the notes when it was.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "notes\\.wisprflow\\.ai",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(was not|wasn't|not) recorded",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "WF-TR01",
+      "severity": "minor",
+      "ask": "The wisprflow skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "wisprflow"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "WF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written: every Wispr Flow tool only reads.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: needs a recorded meeting behind the calendar event (owner decision 20 Nov).",
+      "line": 37
+    }
+  ],
+  "hashes": {
+    "source_sha256": "6893766494f8830a424c0a410dd9899546ad76d7a10a5b490282ce4c5a5c8354"
+  }
+}

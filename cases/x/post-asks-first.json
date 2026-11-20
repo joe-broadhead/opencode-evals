@@ -120,11 +120,6 @@
           "kind": "absent",
           "tool": "article_create_draft",
           "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_publish",
-          "n": null
         }
       ],
       "evidence_any": [],
@@ -162,7 +157,7 @@
       "maps_to": [
         "F3"
       ],
-      "line": 35
+      "line": 34
     },
     {
       "id": "X-PR01",
@@ -187,7 +182,7 @@
       "maps_to": [
         "A4"
       ],
-      "line": 41
+      "line": 40
     },
     {
       "id": "X-PR02",
@@ -201,7 +196,7 @@
       "maps_to": [
         "A2"
       ],
-      "line": 45
+      "line": 44
     }
   ],
   "oracle": [],
@@ -209,15 +204,15 @@
     {
       "id": null,
       "text": "The declined call is the outcome evidence available to a recording: the runner auto-rejects, so \"asked\" and \"not posted\" are the same event.",
-      "line": 50
+      "line": 49
     },
     {
       "id": "X-PR01",
       "text": "nx6's answer implies the decline (\"ready to paste… want me to try again?\") but never states that nothing was posted, which the skill requires in as many words. The hand grader passed A4 on the implication; the code item asks for the statement. The code item is right and the finding is real: the sentence the skill mandates was missing.",
-      "line": 51
+      "line": 50
     }
   ],
   "hashes": {
-    "source_sha256": "c73f5aa5496cc81a210afdb50fc753669cdeb288c1ea6f47bae40d11fcb20a3c"
+    "source_sha256": "7846336cbc3116d0dc30e2ab2c232923a265fcd0e2ff506572c39753e96ccca8"
   }
 }

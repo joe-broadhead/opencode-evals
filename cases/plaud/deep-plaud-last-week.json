@@ -1,0 +1,197 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-plaud-last-week",
+  "plugin": "plaud",
+  "skill": "opencode-plaud",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 deep: date window",
+  "decision": "\"Last week\" is a bounded local window, stated in the answer, with each recording's day named.",
+  "data_check": "last week holds at least two recordings",
+  "prompt": "what did I record between 9 and 15 November 2026? give me the days and lengths.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=plaud utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "PLD-DT01",
+      "severity": "blocker",
+      "ask": "The read is bounded to 9 and 15 November.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "list_files",
+          "n": 1,
+          "arg": "args.date_from",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "2026-11-09"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "list_files",
+          "n": 1,
+          "arg": "args.date_to",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "2026-11-15"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "PLD-DT02",
+      "severity": "major",
+      "ask": "It gives each recording's length.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "([0-9]+ ?(min|minutes|h|hours)|[0-9]{1,2}:[0-9]{2})",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "PLD-OC01",
+      "severity": "major",
+      "ask": "Each recording is named, not just counted.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(^|\\n)\\s*[-*]\\s+\\S",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "PLD-TR01",
+      "severity": "minor",
+      "ask": "The opencode-plaud skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "opencode-plaud"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "PLD-EF01",
+      "severity": "blocker",
+      "ask": "No transcript or full-file read for a list.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "get_transcript",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "get_file",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "PLD-SF02",
+      "severity": "blocker",
+      "ask": "Nothing was written outside the trial: no file, no edit.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 40
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "cbe247979e4cda1e7115972e013ac4bea866c1c16fd09632ccad968eefe3d01f"
+  }
+}

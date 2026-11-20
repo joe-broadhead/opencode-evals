@@ -1,0 +1,201 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-tavily-search",
+  "plugin": "tavily",
+  "skill": "tavily",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "A question that needs current web sources is one bounded search, answered from the results with their URLs.",
+  "data_check": "the topic has public pages in the index",
+  "prompt": "what changed in Node 24's permission model? a couple of good sources is enough.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=tavily",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "search_depth"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "data": "own",
+  "items": [
+    {
+      "id": "TAV-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one search ran.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "tavily_search",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "TAV-PR01",
+      "severity": "major",
+      "ask": "The search is basic and bounded to a few results.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "tavily_search",
+          "n": 1,
+          "arg": "args.search_depth",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "basic"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "tavily_search",
+          "n": 1,
+          "arg": "args.max_results",
+          "op": "<=",
+          "value": {
+            "kind": "number",
+            "value": 5
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "TAV-CT01",
+      "severity": "major",
+      "ask": "The answer cites at least one URL the search returned.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "https?:\\/\\/[^\\s)<>]+",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "TAV-TR01",
+      "severity": "minor",
+      "ask": "The tavily skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "tavily"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "TAV-SF01",
+      "severity": "blocker",
+      "ask": "No crawl, map or research for a two-source question.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "tavily_crawl",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "tavily_map",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "tavily_research",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "TAV-SF02",
+      "severity": "blocker",
+      "ask": "Nothing was written or edited: every Tavily tool only reads the web.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    },
+    {
+      "id": "TAV-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 42
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "dc269ffbc1abb4548a701d3214dcc06b8383eee19b47babbdfe151742cbe0078"
+  }
+}

@@ -55,7 +55,6 @@ what are my mentions today?
   maps_to: F4
   evidence: absent:create_posts
   evidence: absent:create_users_bookmark
-  evidence: absent:article_publish
 
 ## Notes
 - A4 was recorded untestable in nx6 because the account had no mentions; `n/a_when` is the machine form of that, so the denominator no longer drifts.

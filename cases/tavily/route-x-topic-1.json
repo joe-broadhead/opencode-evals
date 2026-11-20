@@ -1,0 +1,146 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-x-topic-1",
+  "plugin": "tavily",
+  "skill": "tavily",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 overlap routing",
+  "decision": "A question about what people post on X is X's, not a web search: no Tavily call.",
+  "data_check": "none",
+  "prompt": "what are people posting about sourdough baking on X this week?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "seed": "plugins=tavily,x",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "TAV-RT01",
+      "severity": "blocker",
+      "ask": "No Tavily skill loaded when X is named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "tavily"
+        },
+        {
+          "kind": "absent-skill",
+          "skill": "tavily-research"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "TAV-RT02",
+      "severity": "blocker",
+      "ask": "No Tavily tool call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "tavily.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "TAV-RT03",
+      "severity": "major",
+      "ask": "It read X, or asks whether X is meant.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "x.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(do you mean X|X or the web|which (one|platform))",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "TAV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written or edited: every Tavily tool only reads the web.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "TAV-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a12f06cc8792e45fe24fa9ea6f3235d84e216b094583b3ce6ad0f54ec50552d6"
+  }
+}

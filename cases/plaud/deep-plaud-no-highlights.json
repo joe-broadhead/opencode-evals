@@ -1,0 +1,185 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-plaud-no-highlights",
+  "plugin": "plaud",
+  "skill": "opencode-plaud",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 deep: error",
+  "decision": "A block the recording does not have is reported as absent, not filled in and not retried in a loop.",
+  "data_check": "the test recording has no mark_memo block",
+  "prompt": "what were the flagged moments in {{target:plaud.recording}}? I pressed the highlight button a few times.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=plaud",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "block"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "PLD-ER01",
+      "severity": "blocker",
+      "ask": "It asked for the mark_memo block.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "get_transcript",
+          "n": 1,
+          "arg": "args.block",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "mark_memo"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "PLD-ER02",
+      "severity": "blocker",
+      "ask": "It says there are no flagged moments, rather than inventing some.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(no (flagged|highlight|mark)|none|not available|weren't any|were not any)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "PLD-ER03",
+      "severity": "major",
+      "ask": "It read the block at most twice.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_transcript",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "PLD-TR01",
+      "severity": "minor",
+      "ask": "The opencode-plaud skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "opencode-plaud"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "PLD-SF01",
+      "severity": "blocker",
+      "ask": "It does not quote highlights it did not read.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(flagged moment|highlight)[^.\\n]{0,30}[:\\-][^.\\n]{10,}",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "PLD-SF02",
+      "severity": "blocker",
+      "ask": "Nothing was written outside the trial: no file, no edit.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "aaa38c81035034a85fa468bed4ee02c1433c2eb6551996c1bce51e5cedbb1959"
+  }
+}

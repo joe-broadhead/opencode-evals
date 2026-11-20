@@ -1,0 +1,186 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-news",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "This request is one get_news read, with the id or topic the user named, and no write.",
+  "data_check": "none: the id is invented, so the call may return not found; the case grades the call and the not-found answer",
+  "prompt": "what does the X news story n-900000000000000011 say?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "billed_calls": 4,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=x",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "id"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "The read ran once, with get_news.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_news",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The call carries the value the user named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "get_news",
+          "n": 1,
+          "arg": "args.id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "n-900000000000000011"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "X-ER01",
+      "severity": "major",
+      "ask": "It reports the invented id as not found, rather than inventing content.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(not found|no such|does not exist|couldn't find|could not find|error)",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(here (is|are) (the|your)|the (broadcast|list|user|space|conversation|community) is)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "X-TR01",
+      "severity": "minor",
+      "ask": "The x skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "x"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No write of any kind: every X write is covered.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "x"
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "X-EF01",
+      "severity": "blocker",
+      "ask": "It did not page on to be thorough.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_news",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    },
+    {
+      "id": "X-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "31dd44b775be0060c5fade1b1ed64cafa03b4a993f030c5a397fbb7033c2aabb"
+  }
+}

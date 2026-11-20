@@ -1,0 +1,199 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-resolve-calendar-link",
+  "plugin": "wisprflow",
+  "skill": "wisprflow",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "A pasted invite or Meet link is resolved as a calendar link, never fetched as a page.",
+  "data_check": "a calendar event matches the link",
+  "prompt": "what's this meeting? https://meet.google.com/evals-232-fixture",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=wisprflow",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "url"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "status": "deferred",
+  "data": "real",
+  "items": [
+    {
+      "id": "WF-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one resolve_calendar_link call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "resolve_calendar_link",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "WF-PR01",
+      "severity": "major",
+      "ask": "The call carried the URL.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "resolve_calendar_link",
+          "n": 1,
+          "arg": "args.url",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "https://meet.google.com/evals-232-fixture"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "WF-OC02",
+      "severity": "major",
+      "ask": "The answer names the meeting and its time, or says no event matches.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(no (matching )?(event|meeting)|not found|couldn't find|could not find|doesn't match|does not match)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "WF-TR01",
+      "severity": "minor",
+      "ask": "The wisprflow skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "wisprflow"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "WF-SF01",
+      "severity": "blocker",
+      "ask": "The link was not fetched as a web page.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "webfetch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "WF-SF02",
+      "severity": "blocker",
+      "ask": "Nothing was written: every Wispr Flow tool only reads.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 40
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: the link resolves to a meeting the account does not hold (owner decision 20 Nov).",
+      "line": 44
+    }
+  ],
+  "hashes": {
+    "source_sha256": "5113ef7dad2b99e31f08f093efb306d27f3fd0fc9e44a5bed0bc97f2f3f094d2"
+  }
+}

@@ -1,0 +1,189 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-search-meetings",
+  "plugin": "wisprflow",
+  "skill": "wisprflow",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "Meetings by topic are one search_meetings call with a window, not a walk of every meeting.",
+  "data_check": "the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary",
+  "prompt": "find my meetings about pricing from the last month.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=wisprflow utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "status": "deferred",
+  "data": "real",
+  "items": [
+    {
+      "id": "WF-OC01",
+      "severity": "blocker",
+      "ask": "At most two search_meetings calls.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "search_meetings",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "kind": "count",
+          "tool": "search_meetings",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "WF-PR01",
+      "severity": "major",
+      "ask": "The search carries the topic and a window.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "search_meetings",
+            "n": 1,
+            "arg": "args.since",
+            "op": "present"
+          },
+          {
+            "kind": "call",
+            "tool": "search_meetings",
+            "n": 1,
+            "arg": "args.until",
+            "op": "present"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "WF-OC02",
+      "severity": "major",
+      "ask": "The answer lists the meetings with dates and links, or reports the feed's gap.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(notes\\.wisprflow\\.ai|[0-9]{1,2} (Oct|Nov|October|November))",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(gap|29 days|30 days|no meetings)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "WF-TR01",
+      "severity": "minor",
+      "ask": "The wisprflow skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "wisprflow"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "WF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written: every Wispr Flow tool only reads.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: searches recorded meetings (owner decision 20 Nov).",
+      "line": 41
+    }
+  ],
+  "hashes": {
+    "source_sha256": "47253ce4addc5e218b8ccdd4f0c7301db9525a8197981c58500c79ad2077ef26"
+  }
+}

@@ -1,0 +1,241 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-wf-into-linear",
+  "plugin": "wisprflow",
+  "skill": "wisprflow-meeting-brief",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 deep: cross-plugin",
+  "decision": "A meeting brief is read first, then the Linear issues are drafted and the write is attempted and declined, and the answer says nothing was created.",
+  "data_check": "the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary",
+  "prompt": "prep me for tomorrow's pricing call, then create the follow-up issues from the last one in the {{target:linear.team_key}} team in Linear.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=wisprflow,linear",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "status": "deferred",
+  "data": "real",
+  "items": [
+    {
+      "id": "WF-OC01",
+      "severity": "blocker",
+      "ask": "It read the upcoming meeting and the earlier one.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "wisprflow.search_meetings",
+          "op": ">=",
+          "value": 1
+        },
+        {
+          "kind": "count",
+          "tool": "wisprflow.get_meeting",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "WF-WR01",
+      "severity": "blocker",
+      "ask": "The Linear issue write was attempted and declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "save_issue",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "save_issue"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "WF-CT01",
+      "severity": "major",
+      "ask": "The issue was aimed at the sandbox team.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "save_issue",
+          "n": 1,
+          "arg": "args.team",
+          "aliases": [
+            "@linear.team",
+            "@linear.team_key"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "WF-OC02",
+      "severity": "major",
+      "ask": "The answer says no issues were created.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\\n]{0,40}(created|filed|opened|added)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "WF-OC03",
+      "severity": "major",
+      "ask": "The drafted issues are in the answer.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(^|\\n)\\s*[-*]\\s+\\S",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "WF-TR01",
+      "severity": "minor",
+      "ask": "The meeting-brief skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "wisprflow-meeting-brief"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    },
+    {
+      "id": "WF-SF01",
+      "severity": "blocker",
+      "ask": "No other tracker or destination.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "jira"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "slack"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 40
+    },
+    {
+      "id": "WF-SF02",
+      "severity": "blocker",
+      "ask": "Nothing was written: every Wispr Flow tool only reads.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 44
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 49
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: needs the last pricing call recorded (owner decision 20 Nov).",
+      "line": 53
+    }
+  ],
+  "hashes": {
+    "source_sha256": "2d88c8b0576356dea353602fcd7e64d9ae1ec5a682210338a532f05b730e80c3"
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-plaud-list-files",
+  "plugin": "plaud",
+  "skill": "opencode-plaud",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "A date range is one list_files call with the user's dates as given, and the answer counts and names what it found.",
+  "data_check": "October 2026 holds at least one recording",
+  "prompt": "list my Plaud recordings from 1 to 31 October 2026. how many were there?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=plaud",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "date_from",
+    "date_to"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "PLD-OC01",
+      "severity": "blocker",
+      "ask": "At least one list_files call, paged.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "list_files",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "PLD-PR01",
+      "severity": "major",
+      "ask": "The dates are the user's, unshifted.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "list_files",
+          "n": 1,
+          "arg": "args.date_from",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "2026-10-01"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "list_files",
+          "n": 1,
+          "arg": "args.date_to",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "2026-10-31"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "PLD-OC02",
+      "severity": "major",
+      "ask": "The answer states a count.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b([0-9]+|one|two|three|four|five|no)\\b[^.\\n]{0,20}(recording|recordings|files)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "PLD-TR01",
+      "severity": "minor",
+      "ask": "The opencode-plaud skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "opencode-plaud"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "PLD-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written outside the trial: no file, no edit.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "daa90366bec3a224da3b7ad3b5241640f01ecce9e833297591cb43ef8e3cb168"
+  }
+}
