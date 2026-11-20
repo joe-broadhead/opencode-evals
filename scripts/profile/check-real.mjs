@@ -13,7 +13,7 @@
 // On FAIL: stop signing in further vendors; the owner signs the real profile back in for that vendor.
 
 import { join } from "node:path"
-import { IDENTITY, NOT_IN_REAL, exportTarget, identityCheck, IDENTITY_CALLS, realEnv, profileEnv, run, runReal, realServiceProblem, activeCredential, digestsOf, logRound, refreshChain, defaultProfileDir, defaultStoreDir } from "./profile-lib.mjs"
+import { IDENTITY, NOT_IN_REAL, exportTarget, identityCheck, IDENTITY_CALLS, realEnv, profileEnv, run, runReal, realServerUrl, realServiceProblem, activeCredential, digestsOf, logRound, credentialExpires, readBaseline, recordBaseline, refreshChain, defaultProfileDir, defaultStoreDir } from "./profile-lib.mjs"
 import { assertDistinctPort } from "./service-port.mjs"
 
 export function checkReal({ integration, opencode = "opencode", profile, store, env = process.env, exec = run, guard = {} }) {
@@ -30,6 +30,13 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
   // Real-profile calls go to the owner's web server only (`--server`), and never while a real background service exists or runs.
   const target = exportTarget(integration)
   const callReal = (args) => runReal(exec, opencode, args, { base: env })
+
+  // -2. The web server is a loopback URL: runReal sends its password there, so anything else is refused before a single call is made.
+  try {
+    realServerUrl(env)
+  } catch (error) {
+    return { ok: false, side: "read", line: `FAIL ${integration}: ${error.message}` }
+  }
 
   // -1. No real background service, and nothing on its port: checked from /proc, with no opencode command (one could start it).
   const problem = realServiceProblem(env, guard)
@@ -68,12 +75,16 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
 
   // 1. The real profile still reads.
   const route = IDENTITY[integration]
+  // The refresh-chain proof needs the identity read to have passed; an integration with no identity tool has no read to fail.
+  let identityOk = true
   let identity = "no identity tool for this integration (an API key): its presence is checked, not a call"
   if (route) {
+    identityOk = false
     const read = identityCheck(callReal, { vendor: integration, directory: realDirectory })
     // The plugin's binary is downloaded on first use, which is a change the check session may not make (it allows one read and nothing else): not a failure of the real profile.
     if (!read.ok && read.notInstalled) return { ok: false, side: "install", line: `FAIL ${integration}: the ${integration} plugin's program is not installed in your normal profile yet (the first use downloads it, and the check never downloads anything). Run /gws-install in your normal OpenCode (the web app at http://127.0.0.1:4096), or make one gws call there, then run signin.sh --recheck ${integration}${leftoverNote(read)}` }
     if (!read.ok) return fail(`the real profile's identity read (${route.split("/")[1]}) failed: ${read.why}${leftoverNote(read)}`)
+    identityOk = true
     identity = `identity read ${route.split("/")[1]} (${IDENTITY_CALLS[integration]}) succeeded with the expected answer${read.leftover ? ` WARNING:${leftoverNote(read)}` : ""}`
   }
 
@@ -93,18 +104,21 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
   const same = ["access", "refresh"].filter((k) => !a[k] || !b[k])
   const compared = same.length === 2 ? "no token in either to compare (an API key or an external credential)" : "access and refresh tokens differ"
 
-  // 3. The real refresh chain: proved once the REAL access token was minted AFTER the evals sign-in and the identity read still works. The
-  //    deadline is this token's own expiry plus five minutes — a fixed point, so a second run before any refresh gives the same time, not now + hours.
-  //    Times and digests only: no token is read for this, printed or logged.
-  const chain = refreshChain({ real: mine, evals: theirs, integration, store })
+  // 3. The real refresh chain: a baseline, then a later refresh. On the first check for a vendor the real `expires` is recorded as the baseline
+  //    (a time only), and the check stays provisional; a later `expires` than that baseline proves a refresh happened after it, which is the proof
+  //    (with the identity read) that the evals sign-in did not break the real profile's refresh. No lifetime is inferred, and no token is stored or
+  //    logged: only times.
+  const expires = credentialExpires(mine)
+  const baseline = readBaseline(store, integration) ?? recordBaseline(store, integration, expires, { source: "check-real" })
+  const chain = mine?.value?.refresh || mine?.value?.expires || baseline ? refreshChain({ expires, baseline, identityOk }) : null
   const proof = chain?.verified
-    ? "refresh chain verified: the real token was refreshed after the evals sign-in"
+    ? `refresh chain verified: the real token was refreshed after ${baseline.at}`
     : !chain
       ? null
-      : chain.recheckAt
+      : chain.known
         ? `provisional: the real refresh chain is checked again by ${chain.recheckAt} (repeat on days 1 and 2)`
-        : "provisional: unknown: recheck after the real token next refreshes"
-  if (store) logRound(store, { event: "check-real", integration, result: "PASS", provisional: Boolean(chain?.provisional), recheck_at: chain?.recheckAt ?? null, ...(chain?.verified ? { refresh_chain: "verified" } : {}), ...(chain?.provisional && !chain.recheckAt ? { recheck: "unknown: recheck after the real token next refreshes" } : {}) })
+        : "provisional: unknown: no expiry on the real credential"
+  if (store) logRound(store, { event: "check-real", integration, result: "PASS", provisional: Boolean(chain?.provisional), recheck_at: chain?.recheckAt ?? null, ...(baseline ? { baseline_expires: baseline.expires, baseline_at: baseline.at } : {}), ...(chain?.verified ? { refresh_chain: "verified" } : {}) })
   // A different token string is not a different grant: a GitHub OAuth app, for one, hands every sign-in the same grant under a new string,
   // so revoking the evals profile's grant would sign the owner out. The end of the round is `auth logout` in the evals profile, never a revoke.
   return { ok: true, line: `PASS ${integration}: ${identity}; ${compared}${proof ? `; ${proof}` : ""}. A distinct token does not prove a distinct grant: end the round with \`auth logout\` in the evals profile only, never by revoking a grant` }

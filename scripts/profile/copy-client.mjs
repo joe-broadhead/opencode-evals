@@ -10,10 +10,16 @@
 import { join } from "node:path"
 import { randomBytes } from "node:crypto"
 import { chmodSync, existsSync, readFileSync, renameSync, writeFileSync } from "node:fs"
-import { CLIENT_STEPS, realServicePortOf, profileEnv, run, runReal, realServiceProblem, activeCredential, appClientEntry, gwsClient, sha256, logRound, defaultProfileDir, defaultStoreDir } from "./profile-lib.mjs"
+import { CLIENT_STEPS, realServicePortOf, profileEnv, run, runReal, realServerUrl, realServiceProblem, activeCredential, appClientEntry, gwsClient, sha256, logRound, defaultProfileDir, defaultStoreDir } from "./profile-lib.mjs"
 
 export function copyClient({ step, opencode = "opencode", profile, store, env = process.env, exec = run, guard = {} }) {
   const fail = (reason) => ({ ok: false, line: `FAIL ${step}: ${reason}` })
+  // The web server is a loopback URL, checked before any call: its password travels with the real-profile export.
+  try {
+    realServerUrl(env)
+  } catch (error) {
+    return fail(error.message)
+  }
   if (!(step in CLIENT_STEPS)) return fail(`not an app-client step (${Object.keys(CLIENT_STEPS).join(", ")})`)
   const problem = realServiceProblem(env, guard)
   if (problem) return fail(problem)

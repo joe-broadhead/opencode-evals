@@ -3,7 +3,7 @@
 // `npm run test:profile`: every vendor, every refusal, with a stand-in `opencode` and no real profile, vendor or credential.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync, existsSync } from "node:fs"
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, symlinkSync, existsSync, statSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { spawnSync } from "node:child_process"
@@ -77,4 +77,38 @@ test("check-real.sh, keeper.mjs and evals-profile.sh are installed where the rou
   const usage = spawnSync("node", [join(SCRIPT, "check-real.mjs")], { encoding: "utf8" })
   assert.equal(usage.status, 2)
   assert.match(usage.stderr, /usage: check-real\.mjs <integration>/)
+})
+
+test("install.sh refuses to overwrite a different copy, backs up first with --force, and installs JSON at 600", () => {
+  const root = mkdtempSync(join(tmpdir(), "evals-profile-install-"))
+  try {
+    const dest = join(root, "bin")
+    const env = { ...process.env, EVALS_BIN: dest, EVALS_STORE: join(root, "store") }
+    const run = (...args) => spawnSync("bash", [join(SCRIPT, "install.sh"), ...args], { env, encoding: "utf8" })
+    const first = run()
+    assert.equal(first.status, 0, first.stdout + first.stderr)
+    assert.equal(statSync(join(dest, "signin.sh")).mode & 0o777, 0o700)
+    assert.equal(statSync(join(dest, "identity-methods.json")).mode & 0o777, 0o600)
+    // a hand edit: refuse, and change nothing
+    const edited = "#!/bin/sh\n# hand edited\n"
+    writeFileSync(join(dest, "signin.sh"), edited)
+    const refused = run()
+    assert.equal(refused.status, 1, refused.stdout)
+    assert.match(refused.stderr, /already holds a different copy: signin\.sh/)
+    assert.equal(readFileSync(join(dest, "signin.sh"), "utf8"), edited, "nothing was overwritten")
+    // --force: the old tree is backed up first, then installed
+    const forced = run("--force")
+    assert.equal(forced.status, 0, forced.stdout + forced.stderr)
+    assert.match(forced.stdout, /backed up .* to .*\.bak-/)
+    const backups = readdirSync(root).filter((n) => n.startsWith("bin.bak-"))
+    assert.equal(backups.length, 1)
+    assert.equal(readFileSync(join(root, backups[0], "signin.sh"), "utf8"), edited, "the hand-edited file is in the backup")
+    assert.equal(readFileSync(join(dest, "signin.sh"), "utf8"), readFileSync(join(SCRIPT, "signin.sh"), "utf8"))
+    // an identical tree needs no backup
+    const again = run("--force")
+    assert.equal(again.status, 0, again.stdout + again.stderr)
+    assert.equal(readdirSync(root).filter((n) => n.startsWith("bin.bak-")).length, 1, "identical files are not backed up")
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
 })

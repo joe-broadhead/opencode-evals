@@ -2,7 +2,7 @@
 
 import { createHash } from "node:crypto"
 import { spawnSync } from "node:child_process"
-import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, lstatSync } from "node:fs"
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, lstatSync, chmodSync, renameSync, writeFileSync } from "node:fs"
 import { join, dirname } from "node:path"
 import { homedir, userInfo } from "node:os"
 import { fileURLToPath } from "node:url"
@@ -261,8 +261,26 @@ export function loadPins(env = process.env) {
 // refreshed vendor tokens next to the web server). So every opencode call made with realEnv() goes through `--server <the web server>`, with its
 // password in that call's environment only.
 
-/** The web server's URL (EVALS_REAL_SERVER overrides). */
-export const realServerUrl = (env = process.env) => env.EVALS_REAL_SERVER ?? DEFAULT_REAL_SERVER
+/** The hosts the real web server may have. runReal sends the server's password there, so nothing else is allowed. */
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]", "::1"])
+
+/** Is this URL a loopback HTTP(S) URL (the only host the real web server's password may go to)? */
+export function loopbackUrl(url) {
+  let parsed
+  try {
+    parsed = new URL(String(url))
+  } catch {
+    return false
+  }
+  return (parsed.protocol === "http:" || parsed.protocol === "https:") && LOOPBACK_HOSTS.has(parsed.hostname)
+}
+
+/** The web server's URL (EVALS_REAL_SERVER overrides). A non-loopback host is refused: the password would go with it. */
+export function realServerUrl(env = process.env) {
+  const url = env.EVALS_REAL_SERVER ?? DEFAULT_REAL_SERVER
+  if (!loopbackUrl(url)) throw new Error(`EVALS_REAL_SERVER (or --real-server) must be a loopback URL (127.0.0.1, localhost or [::1]), not ${url}: the real web server's password would be sent there`)
+  return url
+}
 
 /** The web server's password from its env file (EVALS_REAL_SERVER_ENV overrides the file), read per call: never kept, printed or put in argv. Null when there is none. */
 export function realServerPassword(env = process.env) {
@@ -419,10 +437,18 @@ export function gwsClient(exported, integration = "gws-default") {
 /** The secrets of a credential as digests: { access, refresh } (null when absent). The tokens themselves go no further than this call. */
 export const digestsOf = (credential) => ({ access: credential?.value?.access ? sha256(credential.value.access) : null, refresh: credential?.value?.refresh ? sha256(credential.value.refresh) : null })
 
-// ---- The refresh chain (EVALS-232 §1.2.3 rule 3): times and digests only ----------------------------------------------------------------
-// The evals sign-in must not have broken the real profile's refresh. That is proved once the REAL access token was minted AFTER the evals sign-in
-// AND the identity read still works. Nothing here reads, prints or logs a token: only its `expires`, an issue/update time the export carries, and
-// a digest. Every function tolerates an export without the field (null: the check then says the time is unknown, and stays provisional).
+// ---- The refresh chain (EVALS-232 §1.2.3 rule 3): a baseline, then a later refresh. Times only ----------------------------------------------
+// The evals sign-in must not have broken the real profile's refresh. A token's lifetime is NOT knowable from here (RECHECK_HOURS is a recheck
+// interval, and Notion and Jira tokens really last 8 h), so nothing infers a mint time. Instead the real credential's `expires` is recorded as a
+// baseline — a time, never a token or a digest of one — when the vendor is signed in, or at the first check-real after the baseline existed.
+// The chain is verified only when a later check reads a LATER `expires` (a refresh happened after the baseline) and the identity read passes.
+
+/** Where the baselines live in the private store: one time per vendor. */
+export const BASELINE_FILE = "refresh-baseline.json"
+/** A value more than this far from now is not trusted as an expiry (seconds/ms mistakes, a broken export). */
+export const EXPIRY_TRUST_MS = 30 * 24 * 3_600_000
+/** Is `expires` a time that can be trusted as an access token's expiry now? */
+export const trustedExpiry = (expires, now = Date.now()) => Number.isFinite(expires) && Math.abs(expires - now) <= EXPIRY_TRUST_MS
 
 /** Epoch ms from an exported time: a number in ms (in seconds when below 1e12), a numeric string, or an ISO date. Null when it is not a time. */
 export function timeValue(v) {
@@ -439,75 +465,59 @@ export function timeValue(v) {
   return null
 }
 
-/** The keys an export may carry the access token's ISSUE time under, at the entry or in its value. */
-const ISSUE_KEYS = ["issuedAt", "issued_at", "obtainedAt", "obtained_at", "createdAt", "created_at", "created", "mintedAt", "minted_at"]
-/** The keys an export may carry its last UPDATE under (a refresh moves it). Used only when no issue time is exported. */
-const TOUCH_KEYS = ["updatedAt", "updated_at", "updated"]
-
-/** The first time under `keys` that the credential or its value carries, or null. */
-function timeUnder(credential, keys) {
-  for (const holder of [credential, credential?.value]) {
-    if (!holder || typeof holder !== "object" || Array.isArray(holder)) continue
-    for (const key of keys) {
-      const at = timeValue(holder[key])
-      if (at) return at
-    }
-  }
-  return null
-}
-
 /** The credential's access-token expiry (epoch ms), or null. Only the time is read, never the token. */
 export const credentialExpires = (credential) => timeValue(credential?.value?.expires ?? credential?.expires)
-/** When the credential (its access token) was issued, when the export says; else null. */
-export const credentialIssuedAt = (credential) => timeUnder(credential, ISSUE_KEYS)
-/** When the credential was last updated (a refresh moves it), when the export says; else null. */
-export const credentialUpdatedAt = (credential) => timeUnder(credential, TOUCH_KEYS)
 
-/**
- * When the evals sign-in completed for an integration (epoch ms), or null: the evals credential's own issue time when the export carries one,
- * else the last `sign-in` line the walk logged (logRound). Never the token.
- */
-export function signinTime(store, integration, credential = null) {
-  const issued = credentialIssuedAt(credential)
-  if (issued) return issued
+/** The vendor's baseline from the store: { expires, at, source }, or null. A time only: no token, no digest. */
+export function readBaseline(store, integration) {
   if (!store) return null
-  let text
+  let all
   try {
-    text = readFileSync(join(store, "round-232.log"), "utf8")
+    all = JSON.parse(readFileSync(join(store, BASELINE_FILE), "utf8"))
   } catch {
     return null
   }
-  let last = null
-  for (const line of text.split("\n")) {
-    if (!line.trim()) continue
-    let entry
-    try {
-      entry = JSON.parse(line)
-    } catch {
-      continue
-    }
-    if (entry?.event === "sign-in" && entry.integration === integration) {
-      const at = timeValue(entry.at)
-      if (at) last = at
-    }
-  }
-  return last
+  const entry = all?.[integration]
+  const expires = timeValue(entry?.expires)
+  if (!expires || typeof entry?.at !== "string" || Number.isNaN(Date.parse(entry.at))) return null
+  return { expires, at: entry.at, source: typeof entry.source === "string" ? entry.source : "check-real" }
 }
 
 /**
- * The refresh-chain verdict of one PASS: `verified` once the real token was evidently minted after the evals sign-in; `provisional` with a
- * fixed `recheckAt` (this token's expiry + 5 min), or `provisional` with `known: false` when the export carries no expiry; `null` when the
- * integration has no refresh chain (an API key). Times and digests only.
+ * Records the FIRST baseline for a vendor, and returns it. An existing baseline is never moved: it is the fixed point. A baseline is only
+ * written when its expiry is trusted now. Times only.
  */
-export function refreshChain({ real, evals, integration, store, lifetimeHours = RECHECK_HOURS[integration] }) {
-  const expires = credentialExpires(real)
-  const signin = signinTime(store, integration, evals)
-  // The token's own expiry and its lifetime first (the formula the round states), then an issue time the export carries, then a row update time.
-  const minted = (expires && lifetimeHours ? expires - lifetimeHours * 3_600_000 : null) ?? credentialIssuedAt(real) ?? credentialUpdatedAt(real)
-  const chain = Boolean(lifetimeHours || expires || real?.value?.refresh || evals?.value?.refresh)
-  if (!chain) return null
-  if (minted !== null && signin !== null && minted > signin) return { verified: true, provisional: false, recheckAt: null }
-  return { verified: false, provisional: true, recheckAt: expires ? new Date(expires + 5 * 60_000).toISOString() : null, known: Boolean(expires) }
+export function recordBaseline(store, integration, expires, { at = new Date().toISOString(), source = "check-real", now = Date.now() } = {}) {
+  if (!store) return null
+  const existing = readBaseline(store, integration)
+  if (existing) return existing
+  if (!trustedExpiry(expires, now)) return null
+  let all = {}
+  try {
+    all = JSON.parse(readFileSync(join(store, BASELINE_FILE), "utf8"))
+  } catch {}
+  if (!all || typeof all !== "object" || Array.isArray(all)) all = {}
+  all[integration] = { expires: Math.round(expires), at, source }
+  const file = join(store, BASELINE_FILE)
+  mkdirSync(store, { recursive: true, mode: 0o700 })
+  writeFileSync(`${file}.tmp`, `${JSON.stringify(all, null, 2)}\n`, { mode: 0o600 })
+  chmodSync(`${file}.tmp`, 0o600)
+  renameSync(`${file}.tmp`, file)
+  return all[integration]
+}
+
+/**
+ * The refresh-chain verdict of one PASS. `verified` only when the current real expiry is LATER than the baseline (a refresh after it) and
+ * `identityOk` (the identity read passed); `provisional` with a fixed `recheckAt` = the baseline's expiry + 5 min otherwise, or with
+ * `known: false` when the current expiry is missing, unparsable or not trusted. No lifetime is inferred, and no time is taken from a token.
+ */
+export function refreshChain({ expires, baseline, identityOk = true, now = Date.now() }) {
+  const known = trustedExpiry(expires, now)
+  const fixed = baseline ? new Date(baseline.expires + 5 * 60_000).toISOString() : null
+  if (!known) return { verified: false, provisional: true, known: false, recheckAt: fixed }
+  if (!baseline) return { verified: false, provisional: true, known: true, recheckAt: new Date(expires + 5 * 60_000).toISOString() }
+  if (identityOk && expires > baseline.expires) return { verified: true, provisional: false, known: true, recheckAt: null }
+  return { verified: false, provisional: true, known: true, recheckAt: fixed }
 }
 
 /** Appends one JSON line to the round log (a file in the private store). */

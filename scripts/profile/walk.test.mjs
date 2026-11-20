@@ -8,7 +8,7 @@ import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync
 import { join, dirname } from "node:path"
 import { tmpdir } from "node:os"
 import { fileURLToPath } from "node:url"
-import { IDENTITY, IDENTITY_INPUT, IDENTITY_ACTION, IDENTITY_INNER, IDENTITY_EXPECT, judgeAnswer, errorSignal, shapeProblem, identityCheck, rpcFailure, realServiceProblem, realServerPassword, profileConfig, loadPins, WALK_ORDER, appClientEntry, activeCredential as activeCredentialOf } from "./profile-lib.mjs"
+import { IDENTITY, IDENTITY_INPUT, IDENTITY_ACTION, IDENTITY_INNER, IDENTITY_EXPECT, judgeAnswer, errorSignal, shapeProblem, identityCheck, rpcFailure, realServiceProblem, realServerPassword, realServerUrl, refreshChain, profileConfig, loadPins, WALK_ORDER, appClientEntry, activeCredential as activeCredentialOf } from "./profile-lib.mjs"
 import { keepOnce } from "./keeper.mjs"
 import { createHash, randomBytes } from "node:crypto"
 import { statSync } from "node:fs"
@@ -772,24 +772,80 @@ test("check-real: a left-over check session is named on a PASS too", () => {
   }
 })
 
-// ---- the refresh chain (round 7): verified once the REAL token was minted after the evals sign-in; a fixed deadline until then --------------
-// The bug: recheck_at was now + RECHECK_HOURS on every run, so every recheck was provisional again and the state never resolved.
-const SIGNIN_AT = Date.parse("2026-11-20T17:08:00.000Z")
+// ---- the refresh chain (round 8): a baseline, then a later refresh. No lifetime is inferred ------------------------------------------------------
+// Two bugs: `expires − RECHECK_HOURS` treated a recheck interval as a token lifetime (Notion's token lives 8 h, not 1 h), and "verified" needed
+// no baseline, so a vendor signed in before the baseline could never resolve. And recheck_at was now + hours, so every run moved the deadline.
+const HOUR = 3_600_000
+const NOW = Date.now()
 const refreshCred = (integrationID, access, refresh, extra = {}) => JSON.stringify([{ id: "cred_x", integrationID, label: "Linear", active: true, value: { type: "oauth", access, refresh, ...extra } }])
-const signinLine = (r, at = SIGNIN_AT) => writeFileSync(join(r.env.EVALS_STORE, "round-232.log"), `${JSON.stringify({ at: new Date(at).toISOString(), event: "sign-in", integration: "linear" })}\n`)
 const roundLogOf = (r) => readFileSync(join(r.env.EVALS_STORE, "round-232.log"), "utf8").trim().split("\n").map((l) => JSON.parse(l))
 const lastCheck = (r) => roundLogOf(r).filter((e) => e.event === "check-real").at(-1)
+const baselineOf = (r, integration = "linear") => JSON.parse(readFileSync(join(r.env.EVALS_STORE, "refresh-baseline.json"), "utf8"))[integration]
+const writeBaseline = (r, expires, { integration = "linear", at = new Date(NOW - 2 * HOUR).toISOString(), source = "sign-in" } = {}) => {
+  const file = join(r.env.EVALS_STORE, "refresh-baseline.json")
+  const all = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {}
+  all[integration] = { expires, at, source }
+  writeFileSync(file, JSON.stringify(all))
+}
+const realLinear = (r, expires) => writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R", expires === undefined ? {} : { expires }))
+const evalsLinear = (r) => writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R"))
 
-test("check-real: the refresh chain is VERIFIED once the real token was minted after the evals sign-in", () => {
+test("check-real: an 8 h token minted two hours before the sign-in is NOT verified (RECHECK_HOURS is not a lifetime)", () => {
   const r = rig()
+  // Notion's real lifetime is 8 h; RECHECK_HOURS says 1 h. This token was minted 2 h before the sign-in and expires 6 h after it, and the
+  // sign-in's baseline is exactly this expiry: no refresh since. The old inference (expires - 1 h) called this "verified".
+  const expires = NOW + 6 * HOUR
   try {
-    // The walk logged the sign-in; Linear's token lives 24h, so this one was minted six hours after it.
-    signinLine(r)
-    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R"))
-    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R", { expires: SIGNIN_AT + 30 * 3_600_000 }))
+    writeBaseline(r, expires, { integration: "notion", at: new Date(NOW).toISOString() })
+    writeFileSync(join(r.root, "evals-notion.json"), refreshCred("notion", "EVALS-A", "EVALS-R"))
+    writeFileSync(join(r.root, "real-notion.json"), refreshCred("notion", "REAL-A", "REAL-R", { expires }))
+    const out = checkReal(r, "notion")
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.doesNotMatch(out.stdout, /refresh chain verified/)
+    assert.match(out.stdout, /provisional: the real refresh chain is checked again by/)
+    assert.equal(lastCheck(r).provisional, true)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: no baseline is never verified; the first run records it, stays provisional, and the deadline does not move on a second run", () => {
+  const r = rig()
+  const expires = NOW + 6 * HOUR
+  const at = new Date(expires + 5 * 60_000).toISOString()
+  try {
+    evalsLinear(r)
+    realLinear(r, expires)
+    const first = checkReal(r, "linear")
+    assert.equal(first.status, 0, first.stdout + first.stderr)
+    assert.doesNotMatch(first.stdout, /refresh chain verified/)
+    assert.ok(first.stdout.includes(`provisional: the real refresh chain is checked again by ${at}`), first.stdout)
+    const recorded = baselineOf(r)
+    assert.deepEqual({ expires: recorded.expires, source: recorded.source }, { expires, source: "check-real" })
+    assert.ok(!Number.isNaN(Date.parse(recorded.at)), "the baseline carries when it was taken")
+    assert.equal(statSync(join(r.env.EVALS_STORE, "refresh-baseline.json")).mode & 0o777, 0o600, "times only, in a 600 file")
+    const second = checkReal(r, "linear")
+    assert.equal(second.status, 0, second.stdout + second.stderr)
+    assert.doesNotMatch(second.stdout, /refresh chain verified/)
+    const [a, b] = roundLogOf(r).filter((e) => e.event === "check-real")
+    assert.deepEqual({ provisional: a.provisional, recheck_at: a.recheck_at }, { provisional: true, recheck_at: at })
+    assert.equal(b.recheck_at, a.recheck_at, "the deadline is the baseline's, so it does not move")
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a later expiry than the baseline verifies the refresh chain, naming the baseline's time", () => {
+  const r = rig()
+  const baseline = NOW + 6 * HOUR
+  const at = new Date(NOW - 3 * HOUR).toISOString()
+  try {
+    writeBaseline(r, baseline, { at })
+    evalsLinear(r)
+    realLinear(r, baseline + 8 * HOUR)
     const out = checkReal(r, "linear")
     assert.equal(out.status, 0, out.stdout + out.stderr)
-    assert.match(out.stdout, /refresh chain verified: the real token was refreshed after the evals sign-in/)
+    assert.ok(out.stdout.includes(`refresh chain verified: the real token was refreshed after ${at}`), out.stdout)
     assert.doesNotMatch(out.stdout, /provisional/)
     assert.deepEqual({ provisional: lastCheck(r).provisional, recheck_at: lastCheck(r).recheck_at, chain: lastCheck(r).refresh_chain }, { provisional: false, recheck_at: null, chain: "verified" })
     assert.ok(!(out.stdout + JSON.stringify(lastCheck(r))).includes("REAL-A"), "no token is printed or logged")
@@ -798,66 +854,97 @@ test("check-real: the refresh chain is VERIFIED once the real token was minted a
   }
 })
 
-test("check-real: the evals credential's own creation time counts as the sign-in time when there is no log", () => {
-  const r = rig()
-  try {
-    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R", { createdAt: new Date(SIGNIN_AT).toISOString() }))
-    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R", { expires: SIGNIN_AT + 30 * 3_600_000 }))
-    const out = checkReal(r, "linear")
-    assert.equal(out.status, 0, out.stdout + out.stderr)
-    assert.match(out.stdout, /refresh chain verified: the real token was refreshed after the evals sign-in/)
-    assert.equal(lastCheck(r).provisional, false)
-  } finally {
-    r.done()
-  }
-})
-
-test("check-real: a real token minted before the evals sign-in stays provisional, and the deadline is its expiry + 5 min on every run", () => {
-  const r = rig()
-  const expires = SIGNIN_AT + 2 * 3_600_000 // minted = expires - 24h: before the sign-in
-  const at = new Date(expires + 5 * 60_000).toISOString()
-  try {
-    signinLine(r)
-    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R"))
-    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R", { expires }))
-    const first = checkReal(r, "linear")
-    const second = checkReal(r, "linear")
-    for (const out of [first, second]) {
-      assert.equal(out.status, 0, out.stdout + out.stderr)
-      assert.ok(out.stdout.includes(`provisional: the real refresh chain is checked again by ${at}`), out.stdout)
-      assert.doesNotMatch(out.stdout, /refresh chain verified/)
+test("check-real: expires in seconds and in milliseconds are both read and normalised", () => {
+  const baseline = NOW + 6 * HOUR
+  const later = NOW + 14 * HOUR
+  const cases = [
+    ["a baseline in seconds, the export in ms", Math.round(baseline / 1000), later],
+    ["the baseline in ms, the export in seconds", baseline, Math.round(later / 1000)],
+  ]
+  for (const [name, stored, exported] of cases) {
+    const r = rig()
+    try {
+      writeBaseline(r, stored)
+      evalsLinear(r)
+      realLinear(r, exported)
+      const out = checkReal(r, "linear")
+      assert.equal(out.status, 0, `${name}: ${out.stdout}${out.stderr}`)
+      assert.match(out.stdout, /refresh chain verified/, name)
+    } finally {
+      r.done()
     }
-    const [a, b] = roundLogOf(r).filter((e) => e.event === "check-real")
-    assert.deepEqual({ provisional: a.provisional, recheck_at: a.recheck_at }, { provisional: true, recheck_at: at })
-    assert.equal(b.recheck_at, a.recheck_at, "a second run before any refresh does not move the deadline")
-  } finally {
-    r.done()
   }
 })
 
-test("check-real: an export with no expiry says the recheck time is unknown, and logs no deadline", () => {
+test("check-real: a missing or untrusted expiry says so, never claims verified, and keeps the baseline's fixed deadline", () => {
+  const baseline = NOW + 6 * HOUR
+  const fixed = new Date(baseline + 5 * 60_000).toISOString()
+  const cases = [
+    ["missing", undefined],
+    ["far in the future", NOW + 60 * 24 * HOUR],
+    ["far in the past", NOW - 60 * 24 * HOUR],
+  ]
+  for (const [name, expires] of cases) {
+    const r = rig()
+    try {
+      writeBaseline(r, baseline)
+      evalsLinear(r)
+      realLinear(r, expires)
+      const out = checkReal(r, "linear")
+      assert.equal(out.status, 0, `${name}: ${out.stdout}${out.stderr}`)
+      assert.match(out.stdout, /provisional: unknown: no expiry on the real credential/, name)
+      assert.doesNotMatch(out.stdout, /refresh chain verified/, name)
+      assert.deepEqual({ provisional: lastCheck(r).provisional, recheck_at: lastCheck(r).recheck_at }, { provisional: true, recheck_at: fixed }, name)
+    } finally {
+      r.done()
+    }
+  }
+  // and with no baseline at all, unknown carries no deadline
   const r = rig()
   try {
-    signinLine(r)
-    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R"))
-    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R")) // no expires
+    evalsLinear(r)
+    realLinear(r) // no expires
     const out = checkReal(r, "linear")
     assert.equal(out.status, 0, out.stdout + out.stderr)
-    assert.match(out.stdout, /provisional: unknown: recheck after the real token next refreshes/)
-    assert.deepEqual({ provisional: lastCheck(r).provisional, recheck_at: lastCheck(r).recheck_at, recheck: lastCheck(r).recheck }, { provisional: true, recheck_at: null, recheck: "unknown: recheck after the real token next refreshes" })
+    assert.match(out.stdout, /provisional: unknown: no expiry on the real credential/)
+    assert.deepEqual({ provisional: lastCheck(r).provisional, recheck_at: lastCheck(r).recheck_at }, { provisional: true, recheck_at: null })
   } finally {
     r.done()
   }
 })
 
-test("signin.sh: a completed sign-in logs its time, so check-real can prove the real token was refreshed after it", () => {
+test("refreshChain: a later expiry is not verified unless the identity read passed, and never without a baseline", () => {
+  const baseline = { expires: NOW + 6 * HOUR, at: new Date(NOW).toISOString() }
+  assert.equal(refreshChain({ expires: NOW + 14 * HOUR, baseline, identityOk: false, now: NOW }).verified, false)
+  assert.equal(refreshChain({ expires: NOW + 14 * HOUR, baseline, identityOk: true, now: NOW }).verified, true)
+  assert.equal(refreshChain({ expires: NOW + 14 * HOUR, baseline: null, identityOk: true, now: NOW }).verified, false, "no baseline: never verified")
+})
+
+test("the real web server is loopback only: a non-loopback URL is refused before any call", () => {
+  for (const url of ["http://127.0.0.1:4096", "http://localhost:4096", "http://[::1]:4096"]) assert.equal(realServerUrl({ EVALS_REAL_SERVER: url }), url)
+  for (const url of ["http://example.com:4096", "https://10.0.0.1:4096", "ftp://127.0.0.1:4096", "http://127.0.0.1.evil.com:4096", "not a url"]) assert.throws(() => realServerUrl({ EVALS_REAL_SERVER: url }), /loopback/, url)
   const r = rig()
   try {
+    const out = checkReal(r, "linear", { EVALS_REAL_SERVER: "http://example.com:4096" })
+    assert.equal(out.status, 5, out.stdout)
+    assert.match(out.stdout, /^FAIL linear: EVALS_REAL_SERVER \(or --real-server\) must be a loopback URL/)
+    assert.equal(existsSync(join(r.root, "calls.jsonl")), false, "no call was made")
+  } finally {
+    r.done()
+  }
+})
+
+test("signin.sh: a completed sign-in logs its time and records the real expiry as the baseline", () => {
+  const r = rig()
+  const expires = NOW + 6 * HOUR
+  try {
+    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R", { expires }))
     const out = failingWalk(r, "linear", { CHECK_EXIT: "0" })
     assert.equal(out.status, 0, out.stdout + out.stderr)
     const entry = readFileSync(join(r.env.EVALS_STORE, "round-232.log"), "utf8").trim().split("\n").map((l) => JSON.parse(l)).find((e) => e.event === "sign-in" && e.integration === "linear")
     assert.ok(entry, "a sign-in line was recorded")
     assert.ok(!Number.isNaN(Date.parse(entry.at)), "with the time it completed")
+    assert.deepEqual({ expires: baselineOf(r).expires, source: baselineOf(r).source }, { expires, source: "sign-in" })
   } finally {
     r.done()
   }
@@ -1233,6 +1320,24 @@ test("evals-profile.sh: a directory find cannot read refuses the run, so a link 
     assert.equal(existsSync(r.ran), false, "nothing ran")
   } finally {
     try { chmodSync(locked, 0o700) } catch {}
+    r.done()
+  }
+})
+
+// ---- review 7, finding 7: a file vanishing mid-scan is not a refusal; permission errors still are --------------------------------
+test("evals-profile.sh: find runs with -ignore_readdir_race, so a file vanishing mid-scan is not a refusal", () => {
+  const r = linkRig()
+  const record = join(r.root, "find-args")
+  const realFind = (process.env.PATH ?? "").split(":").map((d) => join(d, "find")).find((p) => existsSync(p))
+  try {
+    assert.ok(realFind, "find is on PATH")
+    // A stand-in find: without the flag it refuses, so dropping it fails this test; with it, the real find does the work.
+    writeFileSync(join(r.root, "find"), `#!/bin/sh\nprintf '%s\\n' "$*" >> ${JSON.stringify(record)}\ncase " $* " in *" -ignore_readdir_race "*) ;; *) echo "STUB find: called without -ignore_readdir_race" >&2; exit 9 ;; esac\nexec ${JSON.stringify(realFind)} "$@"\n`, { mode: 0o700 })
+    const out = r.run()
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(readFileSync(record, "utf8"), /-ignore_readdir_race/)
+    assert.equal(readFileSync(r.ran, "utf8"), "ran")
+  } finally {
     r.done()
   }
 })

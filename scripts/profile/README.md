@@ -25,12 +25,16 @@ tokens on a timer; `guard-real.mjs` refuses while the real background service is
 
 ## The refresh-chain proof
 
-A PASS is not the end of the story: the evals sign-in must not have broken the **real** profile's refresh. That is proved once the real
-access token was evidently minted **after** the evals sign-in (`expires − lifetime`, with the lifetime from `RECHECK_HOURS` or an issue
-time the export carries) and the identity read then works. Until then the check stays **provisional**, and its deadline is that token's
-own `expires` **+ 5 minutes** — a fixed point, so a second `--recheck` before any refresh gives the same time. Two runs used to give two
-different deadlines (now + the recheck interval), so the state never resolved. With no exported expiry the line says so: *unknown: recheck
-after the real token next refreshes*. Only times and digests are compared; no token is read for this, printed or logged.
+A PASS is not the end of the story: the evals sign-in must not have broken the **real** profile's refresh, and a token's lifetime cannot be
+known from here (`RECHECK_HOURS` is a recheck interval, not a lifetime; Notion and Jira tokens really last 8 h). So nothing infers a mint
+time. Instead the real credential's `expires` is recorded as a **baseline** — a time only, never a token or a digest of one — when the vendor
+is signed in (`log-signin.mjs`, through `--server`), or at the first `check-real` for a vendor signed in before that (later than its sign-in,
+so conservative). The chain is **verified** only when a later check reads a **later** `expires` than the baseline (a refresh happened after
+it) and the identity read passes: `refresh chain verified: the real token was refreshed after <baseline time>`. Until then the check stays
+**provisional**, with a deadline of the baseline's `expires` **+ 5 minutes** — fixed, because the baseline does not move, so a second
+`--recheck` gives the same time. An expiry more than 30 days from now (a seconds/ms mistake, a broken export) is not trusted; with no usable
+expiry the line says *unknown: no expiry on the real credential* and never claims verified. Seconds and milliseconds are both accepted and
+normalised.
 
 ## Safety rules
 
@@ -50,7 +54,8 @@ These are the rules the tests enforce; a change that drops one fails `npm run te
    probe calls nothing.
 5. **The profile links nothing out.** Before it runs anything, `evals-profile.sh` refuses if there is **any** symbolic link under the
    profile, because a link could reach the real profile. `find`'s own errors fail the run too: a link under a directory `find` cannot read
-   must not pass unseen.
+   must not pass unseen. A file that vanishes mid-scan (the profile's own service writes under it) is not an error: GNU
+   `find -ignore_readdir_race` suppresses only that, and permission errors stay fatal.
    One link is expected — PulseAudio's own `.config/pulse/<name>-runtime -> /tmp/pulse-<id>` — and it is accepted only when the path is
    exactly that (one name, no `/`), the target is exactly `/tmp/pulse-<letters or digits>`, and the target is a real directory owned by
    this user. A link of that exact shape whose target is **gone** (a reboot, PulseAudio exited) is stale: that one link is removed, with one
@@ -69,15 +74,17 @@ Every path is an environment variable with today's value as the default; the scr
 | --- | --- | --- |
 | `EVALS_PROFILE` | the evals profile's HOME | `$EVALS_REAL_HOME/evals-232/profile` |
 | `EVALS_STORE` | the private store: plugin pins, copied app client, round log, progress | `$EVALS_REAL_HOME/evals-232/store` |
-| `EVALS_REAL_SERVER` | the owner's web server; every real-profile call goes to it with `--server` | `http://127.0.0.1:4096` |
+| `EVALS_REAL_SERVER` | the owner's web server; every real-profile call goes to it with `--server`. Loopback only (`127.0.0.1`, `localhost`, `[::1]`): nothing else is accepted | `http://127.0.0.1:4096` |
 | `EVALS_REAL_SERVER_ENV` | the env file holding that server's password | `$EVALS_REAL_HOME/.config/opencode-web/server.env` |
 | `EVALS_REAL_HOME` | the owner's home | the running user's home |
-| `EVALS_BIN` | the walk's own scripts | this directory |
+| `EVALS_BIN` | where `install.sh` installs these scripts, and what `signin.sh` uses to find its siblings (its own directory when unset) | `$(dirname $EVALS_STORE)/bin`, today `~/evals-232/bin` |
 | `EVALS_REAL_SERVICE_PORT` | the real background service's port (read, never called) | its `service.json`, else 49374 |
 
-The store is private (700, its files 600) and holds no credential: `evals-plugins.json` maps each vendor to its pinned plugin source;
-`evals-gws-client.json` holds the copied Google OAuth client. `install.sh` copies these scripts to `EVALS_BIN` for a round that expects them
-at `~/evals-232/bin`; the scripts are self-contained, so nothing is rewritten on the way.
+The store is private (700, its files 600). It holds no **user** credential, but it does hold one client secret: `evals-gws-client.json`
+carries the Google Desktop OAuth client's id and **secret** (a client secret, not a user token; kept 600). `evals-plugins.json` maps each
+vendor to its pinned plugin source; `refresh-baseline.json` holds one expiry time per vendor. `install.sh` copies these scripts to
+`EVALS_BIN`; it refuses to overwrite a different copy unless `--force`, which first backs the old tree up to `<dest>.bak-<UTC date-time>`.
+The scripts are self-contained, so nothing is rewritten on the way.
 
 ## Tests
 

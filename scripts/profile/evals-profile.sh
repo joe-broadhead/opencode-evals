@@ -64,10 +64,12 @@ pulse_link_stale() {
   [ ! -e "$PULSE_TARGET" ] && [ ! -L "$PULSE_TARGET" ] || return 1
   return 0
 }
-# find's own failure must fail the run: a link under a directory find cannot read would otherwise never be seen (fail open; review 6, note 1).
+# find's own failure must fail the run: a link under a directory find cannot read would otherwise never be seen (fail open; review 6, note 1). A file
+# that vanishes mid-scan is not a failure: the profile's own service writes and deletes under it, and -ignore_readdir_race (GNU) suppresses only that
+# ENOENT, while permission errors still fail (review 7, finding 7).
 LINKS="$(mktemp "${TMPDIR:-/tmp}/evals-profile-links.XXXXXX")"
 trap 'rm -f -- "$LINKS"' EXIT
-if ! find "$P" -type l -print0 >"$LINKS"; then
+if ! find "$P" -ignore_readdir_race -type l -print0 >"$LINKS"; then
   echo "evals-profile: find could not read every directory under $P: refusing to run (it cannot see every link, so it cannot judge them)" >&2
   exit 1
 fi
