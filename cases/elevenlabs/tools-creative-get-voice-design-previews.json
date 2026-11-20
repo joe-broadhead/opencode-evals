@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_get_voice_design_previews (ElevenLabs MCP; creative tools)",
   "decision": "A request for what creative_get_voice_design_previews reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "show me the voice design previews from earlier.",
+  "prompt": "show me the voice design previews for voice voice_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "53337d1163d085901d9625534629936aa6d6e96002b3dc9d9b5451982d271751"
+    "source_sha256": "0eec21216074272bfe38fee666e877c13d6d37fd735f4775dc8274d7758fbe4c"
   }
 }

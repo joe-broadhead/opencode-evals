@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_procedure (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_procedure reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "show me the refunds procedure the agent follows.",
+  "prompt": "show me the refunds procedure the agent follows for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -43,16 +43,18 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the agent id the question needs.",
+      "ask": "Aimed at the sandbox agent the user named, and nothing else.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "elevenlabs.agents_get_procedure",
           "n": 1,
           "arg": "args.agent_id",
-          "op": "present"
+          "aliases": [
+            "@elevenlabs.agent"
+          ]
         }
       ],
       "evidence_any": [],
@@ -88,11 +90,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "245f8ea5f5644c54f5d3ea3d31bbbc2a1835db7f9a05d2c5b6ad8741e8ade44c"
+    "source_sha256": "e4a4f2f58f6fabeaf48c35942620356be5ee740214ab0792efbe7f52187cec54"
   }
 }

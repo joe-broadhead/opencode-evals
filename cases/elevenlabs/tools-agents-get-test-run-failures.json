@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_test_run_failures (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_test_run_failures reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "which tests failed in the last run?",
+  "prompt": "which tests failed in test run run_000000000000000000000000?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fee3ebce553c0e5a617b6b3c1c66018b41f93af8eb136171d0b22293e1784bc2"
+    "source_sha256": "e60d9fd5c851905b7db85a794e9579f55fc8db9970cd3e9870123522fcded611"
   }
 }

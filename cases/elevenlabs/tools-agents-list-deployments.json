@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_list_deployments (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_list_deployments reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "list the deployments of the agent.",
+  "prompt": "list the deployments of the agent for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -43,16 +43,18 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the agent id the question needs.",
+      "ask": "Aimed at the sandbox agent the user named, and nothing else.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "elevenlabs.agents_list_deployments",
           "n": 1,
           "arg": "args.agent_id",
-          "op": "present"
+          "aliases": [
+            "@elevenlabs.agent"
+          ]
         }
       ],
       "evidence_any": [],
@@ -88,11 +90,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f21db8b2586a16f55b71886b227af37badce3d653e2a0a3aea6b703a2737e971"
+    "source_sha256": "b2939fd1e6cf7e82cd86a8b8ec76d7a72d95ca8c96dd14518934a38a3266cdf2"
   }
 }

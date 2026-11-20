@@ -5,7 +5,7 @@
 - Source: wide sweep: get_reminders (reminders on records, filtered)
 - Decision tested: A what-reminders-are-due question is one get_reminders for the window
 - Data check: at least one reminder due this week
-- Seed: plugins=affinity
+- Seed: plugins=affinity utc-hours=9-17
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide

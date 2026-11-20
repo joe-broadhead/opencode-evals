@@ -16,10 +16,10 @@ what notes did we add last week? group them by company.
 ## Items
 - [AFF-DT01] blocker · It queried the notes with a window.
   evidence: count:affinity.query_notes == 1
-- [AFF-PR01] major · The filter is a UTC instant range.
-  evidence: call:affinity.query_notes#1 args.filter_expr matches /Z/
-- [AFF-OC01] minor · It names the zone the local days were taken in.
-  grader: judge
+- [AFF-PR01] major · The filter is a UTC instant range with both ends.
+  evidence: call:affinity.query_notes#1 args.filter_expr matches /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z.*[0-9]{4}-[0-9]{2}-[0-9]{2}T/
+- [AFF-OC01] major · It names the zone the local days were taken in.
+  evidence: text:any matches /(UTC|GMT|Europe\/[A-Za-z]+|[+-][0-9]{2}:[0-9]{2})/
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

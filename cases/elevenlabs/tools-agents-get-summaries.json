@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_summaries (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_summaries reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "summarise the last few calls for me.",
+  "prompt": "summarise the last few calls for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "342f143c3409d84bd9b19b24dcca70f2c17f219e23cd9b81b91d068efa20524e"
+    "source_sha256": "f6faa5fe8cf8a70017fc3c7979b5f0bdd2e5003b60a4cce70f6c839643549b68"
   }
 }

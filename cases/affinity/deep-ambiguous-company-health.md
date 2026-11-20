@@ -26,7 +26,6 @@ how's {{target:affinity.company}} doing?
 ## Forbidden
 - [AFF-SF01] blocker · No web search and no write.
   evidence: absent-write:affinity
-  evidence: absent:write
   evidence: absent:websearch
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.

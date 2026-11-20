@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_test_run (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_test_run reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "show me the test run — which tests it covered.",
+  "prompt": "show me test run run_000000000000000000000000 — which tests it covered.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b0f9ab075cf78d1b0ba84a8cb214c8b1f114b3daac962c6f105f2d0fa2f50596"
+    "source_sha256": "5fa041b9bd547af620df41215337d870cb54198553c5a9239591c1493c8e8b19"
   }
 }

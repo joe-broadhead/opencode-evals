@@ -26,7 +26,6 @@ who at the firm knows the founder of {{target:affinity.company}} best?
 ## Forbidden
 - [AFF-SF01] blocker · Nothing was written.
   evidence: absent-write:affinity
-  evidence: absent:write
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

@@ -13,7 +13,7 @@
     "outer_calls": 8,
     "inner_calls": 6
   },
-  "seed": "plugins=utilities",
+  "seed": "plugins=utilities utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -130,11 +130,6 @@
         {
           "kind": "absent-write",
           "ns": "utilities"
-        },
-        {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
         }
       ],
       "evidence_any": [],
@@ -156,7 +151,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 32
     }
   ],
   "oracle": [],
@@ -164,10 +159,10 @@
     {
       "id": null,
       "text": "Commit plan: `utilities.timer_set and utilities.timer_delete` is `local: true`: the write touches only the trial's own sandbox.",
-      "line": 37
+      "line": 36
     }
   ],
   "hashes": {
-    "source_sha256": "6b2f5bf28bf70455f8395d65b341d4a3b48af4144b058162cc13246f1003587f"
+    "source_sha256": "ed5ccc74f0e008141c2bf52b56e7a30c49cbb603248d0f9be64dd64c63126636"
   }
 }

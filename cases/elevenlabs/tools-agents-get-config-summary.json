@@ -43,16 +43,18 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the agent id the question needs.",
+      "ask": "Aimed at the sandbox agent the user named, and nothing else.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "elevenlabs.agents_get_config_summary",
           "n": 1,
           "arg": "args.agent_id",
-          "op": "present"
+          "aliases": [
+            "@elevenlabs.agent"
+          ]
         }
       ],
       "evidence_any": [],
@@ -88,11 +90,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a8e413a9d182db5b2fdfffb1f54d43b9836b868b25efb9755e7a9f39903e6958"
+    "source_sha256": "f6035a47a19f09b4aeedd765e37a115af4ef1fafa04085f56435d087d8aa43ac"
   }
 }

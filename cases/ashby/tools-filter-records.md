@@ -5,7 +5,7 @@
 - Source: wide sweep: filter_records (Ashby MCP; counts and filters records by field)
 - Decision tested: A how-many question takes the count form of the filter, once, and answers with a number rather than rows
 - Data check: the Ashby organisation holds at least one application in the current local week
-- Seed: plugins=ashby
+- Seed: plugins=ashby utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 6, inner_calls <= 4
 - Set: wide

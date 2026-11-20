@@ -5,7 +5,7 @@
 - Source: wide sweep: affinity_event_setup (Affinity's event playbook text)
 - Decision tested: A set-up-our-LP-event request calls the event playbook once
 - Data check: the CRM's lists
-- Seed: plugins=affinity
+- Seed: plugins=affinity utc-hours=9-17
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide

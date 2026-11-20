@@ -5,7 +5,7 @@
 - Source: should-not-call: a meeting recap belongs to Granola, not to Utilities
 - Decision tested: A what-did-we-decide question reaches no utilities tool
 - Data check: the user has a meeting note from yesterday
-- Seed: plugins=utilities
+- Seed: plugins=utilities utc-hours=9-17
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: route

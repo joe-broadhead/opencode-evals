@@ -7,13 +7,13 @@
   "source": "wide sweep: agents_query_analytics (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_query_analytics reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "how many calls converted to a booking last month?",
+  "prompt": "how many calls converted to a booking last month? for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": "plugins=elevenlabs",
+  "seed": "plugins=elevenlabs utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -43,16 +43,18 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the agent id the question needs.",
+      "ask": "Aimed at the sandbox agent the user named, and nothing else.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "elevenlabs.agents_query_analytics",
           "n": 1,
           "arg": "args.agent_id",
-          "op": "present"
+          "aliases": [
+            "@elevenlabs.agent"
+          ]
         }
       ],
       "evidence_any": [],
@@ -88,11 +90,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a7732c1eb0fc28a52aabd87c074efb6b5207e1273737832ae10874fb3f488b9c"
+    "source_sha256": "dadb381c63eaebf1f99a0b48219dc691b7ca5e2c853591d578fc2fc9464f19d0"
   }
 }

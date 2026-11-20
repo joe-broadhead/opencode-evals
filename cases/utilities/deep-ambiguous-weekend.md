@@ -29,6 +29,8 @@ what's the weather looking like this weekend?
 
 ## Forbidden
 - [UTL-SF01] blocker · It did not guess a place and fetch its weather.
+  evidence: absent:utilities.weather_current
+  evidence: absent:utilities.weather_daily
   evidence: absent-write:utilities
   evidence: committed-write:none
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.

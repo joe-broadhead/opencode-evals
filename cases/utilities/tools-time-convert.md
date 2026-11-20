@@ -5,7 +5,7 @@
 - Source: wide sweep: time_convert (one local time between two zones, DST-aware)
 - Decision tested: A convert question is one time_convert with both zones and the local time
 - Data check: none
-- Seed: plugins=utilities
+- Seed: plugins=utilities utc-hours=9-17
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: wide

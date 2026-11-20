@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-give me the audio link for that call so I can listen again.
+give me the audio link for conversation conv_000000000000000000000000.
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_get_conversation_audio_url once.
@@ -26,7 +26,6 @@ give me the audio link for that call so I can listen again.
 ## Forbidden
 - [ELV-SF01] blocker · No change and no credit spend.
   evidence: absent-write:elevenlabs
-  evidence: absent:write
   evidence: committed-write:none
 - [ELV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

@@ -117,11 +117,6 @@
           "ns": "affinity"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -144,12 +139,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "61b887edd918df82da6c060c6965dac2038cb5ab50c1a2bab96f7d65190566ff"
+    "source_sha256": "bac7825fc0075f885b71c80c58d4f1608b1474cfe92e92d9f86538d089379865"
   }
 }

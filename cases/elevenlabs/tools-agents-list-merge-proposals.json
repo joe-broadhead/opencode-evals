@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_list_merge_proposals (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_list_merge_proposals reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "list the open merge proposals.",
+  "prompt": "list the open merge proposals for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -43,16 +43,18 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the agent id the question needs.",
+      "ask": "Aimed at the sandbox agent the user named, and nothing else.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "elevenlabs.agents_list_merge_proposals",
           "n": 1,
           "arg": "args.agent_id",
-          "op": "present"
+          "aliases": [
+            "@elevenlabs.agent"
+          ]
         }
       ],
       "evidence_any": [],
@@ -88,11 +90,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3680c8009ef9d78dde26ac08417cdd6fbfe4d10abf76aa5c0b3ada878e49e200"
+    "source_sha256": "f19bf81afdf922aed1458ac119de9d437cf0f4318110c5f897fed562aa7dc92a"
   }
 }

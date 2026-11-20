@@ -104,12 +104,10 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(changed|updated|saved)\\b",
+              "source": "\\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(changed|updated|saved)\\b",
               "flags": "i"
             }
-          }
-        ],
-        [
+          },
           {
             "kind": "text",
             "span": "any",
@@ -117,6 +115,26 @@
             "value": {
               "kind": "regex",
               "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(couldn't|could not|can't|cannot|unable to|not able to)\\b.{0,40}\\b(move|change|save|create|update|delete|send|post|add|archive|submit|reject|edit|record|run|query|answer|generate|write|set|rename)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\bnothing (happened|changed|was (sent|added|moved|created|saved|updated|deleted|posted|rejected))\\b",
               "flags": "i"
             }
           }
@@ -136,7 +154,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     },
     {
       "id": "MV-OC03",
@@ -152,7 +170,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     },
     {
       "id": "MV-SF01",
@@ -162,18 +180,13 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 32
     },
     {
       "id": "MV-SF02",
@@ -189,12 +202,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fe9684f301a2300306d7106f13be56b34f6d55272b60a67e0914827ce04780fa"
+    "source_sha256": "0ef19703acc5a8b5d1ac293c99eafeed3ac2e29f059d09aee6ff9ea527a5ea23"
   }
 }

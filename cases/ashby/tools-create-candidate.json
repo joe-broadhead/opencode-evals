@@ -107,12 +107,10 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(saved|added|moved|sent|created|changed|archived|deleted|submitted)\\b",
+              "source": "\\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(saved|added|moved|sent|created|changed|archived|deleted|submitted)\\b",
               "flags": "i"
             }
-          }
-        ],
-        [
+          },
           {
             "kind": "text",
             "span": "any",
@@ -120,6 +118,26 @@
             "value": {
               "kind": "regex",
               "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(couldn't|could not|can't|cannot|unable to|not able to)\\b.{0,40}\\b(move|change|save|create|update|delete|send|post|add|archive|submit|reject|edit|record|run|query|answer|generate|write|set|rename)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\bnothing (happened|changed|was (sent|added|moved|created|saved|updated|deleted|posted|rejected))\\b",
               "flags": "i"
             }
           }
@@ -143,7 +161,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     },
     {
       "id": "ASH-SF01",
@@ -153,18 +171,13 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     },
     {
       "id": "ASH-SF02",
@@ -180,12 +193,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6c9a773efd2404bd25929d8f6847b16fe07ffda24d8c1dd062117a8b2bccc93e"
+    "source_sha256": "1619b9ef6a3aea91cf40f44c8de4574b7430c2e854b818086c539a1d786a6fd0"
   }
 }

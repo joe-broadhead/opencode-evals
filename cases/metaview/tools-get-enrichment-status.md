@@ -5,7 +5,7 @@
 - Source: wide sweep: get_enrichment_status (contact enrichment usage and attempts)
 - Decision tested: A how-much-enrichment question is one status read for the month, not an enrichment call
 - Data check: the workspace's enrichment usage this month
-- Seed: plugins=metaview
+- Seed: plugins=metaview utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 10, inner_calls <= 6
 - Set: wide

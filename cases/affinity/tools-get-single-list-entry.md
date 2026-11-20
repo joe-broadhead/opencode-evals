@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-show me {{target:affinity.company}}'s entry on the the pipeline list — stage, owner, the lot.
+show me {{target:affinity.company}}'s entry on our pipeline — stage, owner, the lot.
 
 ## Items
 - [AFF-TR01] blocker · It used get_single_list_entry once.

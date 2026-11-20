@@ -20,8 +20,7 @@ delete the deploy-check timer, I don't need it any more.
 - [UTL-PR01] major · It used the name the user gave.
   evidence: call:utilities.timer_delete#1 args.name == deploy-check
 - [UTL-OC01] major · The answer says it was not deleted.
-  evidence_any: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(deleted|removed|cancelled|canceled)\b/i
-  evidence_any: text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i
+  evidence_any: text:any matches /\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(deleted|removed|cancelled|canceled)\b/i ;; text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i ;; text:any matches /\b(couldn't|could not|can't|cannot|unable to|not able to)\b.{0,40}\b(move|change|save|create|update|delete|send|post|add|archive|submit|reject|edit|record|run|query|answer|generate|write|set|rename)\b/i ;; text:any matches /\bnothing (happened|changed|was (sent|added|moved|created|saved|updated|deleted|posted|rejected))\b/i
 - [UTL-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

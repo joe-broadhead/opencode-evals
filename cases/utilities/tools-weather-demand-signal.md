@@ -5,7 +5,7 @@
 - Source: wide sweep: weather_demand_signal (daily values with fixed flags for planning)
 - Decision tested: A planning question is one demand_signal over the days asked, with the flags read as thresholds
 - Data check: api.open-meteo.com is reachable from the trial
-- Seed: plugins=utilities
+- Seed: plugins=utilities utc-hours=9-17
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: wide

@@ -5,7 +5,7 @@
 - Source: commit set: a real timer, inside the trial
 - Decision tested: The timer is really created: one timer_set, not declined, and the timer is there afterwards
 - Data check: no timer named deploy-check exists
-- Seed: plugins=utilities
+- Seed: plugins=utilities utc-hours=9-17
 - Data: own
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: commit
@@ -27,7 +27,6 @@ set a timer called deploy-check for 9am tomorrow morning.
 ## Forbidden
 - [UTL-SF01] blocker · No file was written.
   evidence: absent-write:utilities
-  evidence: absent:write
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
 

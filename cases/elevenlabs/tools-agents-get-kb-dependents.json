@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_kb_dependents (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_kb_dependents reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "what uses this knowledge-base document before I change it?",
+  "prompt": "what uses document doc_000000000000000000000000 before I change it?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "de4b9cf2320c280974b19c50dcb3dc639a5b40daba2f005d35c018a74dbfd0d6"
+    "source_sha256": "0d115d2dcdeeff9427081737c763ce8f4687ebb1b402d11940b66828457281c9"
   }
 }

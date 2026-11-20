@@ -5,7 +5,7 @@
 - Source: wide sweep: get_pending_tasks (Ashby MCP; the user's scorecards, approvals and follow-ups)
 - Decision tested: What-do-I-owe is one pending-tasks read, reported by type
 - Data check: the signed-in Ashby user has at least one pending task, or none, either is answerable
-- Seed: plugins=ashby
+- Seed: plugins=ashby utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 6, inner_calls <= 4
 - Set: wide

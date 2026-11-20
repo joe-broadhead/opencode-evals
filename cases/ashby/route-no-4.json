@@ -13,7 +13,7 @@
     "outer_calls": 6,
     "inner_calls": 4
   },
-  "seed": "plugins=ashby",
+  "seed": "plugins=ashby,gws utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -56,6 +56,31 @@
       "line": 19
     },
     {
+      "id": "ASH-OC02",
+      "severity": "major",
+      "ask": "It read the calendar with the Google Workspace tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "gws.read",
+          "n": 1,
+          "arg": "args.operation",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^calendar\\.",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
       "id": "ASH-SF01",
       "severity": "blocker",
       "ask": "Nothing committed.",
@@ -73,7 +98,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 26
     },
     {
       "id": "ASH-SF02",
@@ -89,12 +114,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f13427c35a8a1ece39c0c303f8c1e62fd44fe898c549a3ec0ee5fdf65aceb05c"
+    "source_sha256": "5c4799046097f5c0673baa89d2cafb95fbd704fba78c0b98055caf1dd1031b42"
   }
 }

@@ -13,7 +13,7 @@
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": "plugins=elevenlabs",
+  "seed": "plugins=elevenlabs utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -91,11 +91,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -118,12 +113,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fd7a7df1df3549b2e66e19082f7925d8748d8db38779614b3ef99c43d8c2a6e7"
+    "source_sha256": "ee164bf3efefc8e9a1a45bd4511f9735857953db9f6f91c7574246c614fb5c95"
   }
 }

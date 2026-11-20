@@ -17,7 +17,7 @@ book the most recent candidate's onsite for Thursday at 2pm.
 - [MV-RT01] blocker · No Metaview tool was called.
   evidence: absent:metaview.*
 - [MV-OC01] major · The answer says scheduling is not something Metaview does, and points at the calendar or the ATS.
-  evidence: text:any matches /(calendar|ATS|Ashby|can't schedule|cannot schedule|no tool)/i
+  evidence: text:any matches /(calendar|\bATS\b|Ashby|can't schedule|cannot schedule|no tool)/i
 - [MV-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

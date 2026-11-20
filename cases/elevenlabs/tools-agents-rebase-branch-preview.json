@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_rebase_branch_preview (what a rebase would change)",
   "decision": "A preview-the-rebase request is one read, and nothing is rebased",
   "data_check": "{{target:elevenlabs.agent}} has a branch that is behind main",
-  "prompt": "preview rebasing the tone-tweak branch onto main — what would change?",
+  "prompt": "preview rebasing branch branch_000000000000000000000000 onto main — what would change?",
   "controls": [],
   "budgets": {
     "outer_calls": 14,
@@ -68,11 +68,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -95,12 +90,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1dd20beed4b81e0359db7a0ab1b29d02742763cfbae4c8d40fd81bddaf0ce1fd"
+    "source_sha256": "8d26ca090fa96e8a6ef20832605f8e281328d8359b00db7583acfe7af5531e32"
   }
 }

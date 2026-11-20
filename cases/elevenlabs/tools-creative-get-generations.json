@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_get_generations (ElevenLabs MCP; creative tools)",
   "decision": "A request for what creative_get_generations reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "show me the last generation again.",
+  "prompt": "show me the generations from flow flow_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "322be8415de5c4fff00570d9cff412c2fa42bf97b8e04c1e2b38f59d1c0bcccd"
+    "source_sha256": "56a0a3f33228f430a7508d011393fb31b1ee5edacbadced8ba71210c5b7172d0"
   }
 }

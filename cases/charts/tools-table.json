@@ -56,7 +56,24 @@
           "tool": "charts.table",
           "n": 1,
           "arg": "args.columns",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "revenue",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "charts.table",
+          "n": 1,
+          "arg": "args.columns",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "bar",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -79,12 +96,10 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(written|made|created|saved|rendered)\\b",
+              "source": "\\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(written|made|created|saved|rendered)\\b",
               "flags": "i"
             }
-          }
-        ],
-        [
+          },
           {
             "kind": "text",
             "span": "any",
@@ -94,12 +109,32 @@
               "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
               "flags": "i"
             }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(couldn't|could not|can't|cannot|unable to|not able to)\\b.{0,40}\\b(move|change|save|create|update|delete|send|post|add|archive|submit|reject|edit|record|run|query|answer|generate|write|set|rename)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\bnothing (happened|changed|was (sent|added|moved|created|saved|updated|deleted|posted|rejected))\\b",
+              "flags": "i"
+            }
           }
         ]
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "CHT-OC02",
@@ -153,6 +188,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cd420eef74b5f04aa1cb152b6010c311c2fc841a0b0fd0e2d9f8e53a992f6e6a"
+    "source_sha256": "7d7dbd1e4ecfb76a43ae0b71a3bbc927243c0a7695a24523b77029352e8eba31"
   }
 }

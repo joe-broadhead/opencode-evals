@@ -5,7 +5,7 @@
 - Source: wide sweep: time_now (current time in IANA zones, plus the machine's zone)
 - Decision tested: A what-time-is-it question is one time_now with both zones named
 - Data check: none
-- Seed: plugins=utilities
+- Seed: plugins=utilities utc-hours=9-17
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: wide

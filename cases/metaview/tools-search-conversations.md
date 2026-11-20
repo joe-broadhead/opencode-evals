@@ -5,7 +5,7 @@
 - Source: wide sweep: search_conversations (conversations by filters, with id, url and has_transcript)
 - Decision tested: A what-did-we-record question is one filtered search with local-day bounds, and the answer names the window
 - Data check: at least two recorded conversations in the last week
-- Seed: plugins=metaview
+- Seed: plugins=metaview utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 10, inner_calls <= 6
 - Set: wide

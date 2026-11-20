@@ -13,7 +13,7 @@
     "outer_calls": 14,
     "inner_calls": 10
   },
-  "seed": "plugins=elevenlabs",
+  "seed": "plugins=elevenlabs utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -95,6 +95,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0e9bd658462d43ec765e6ac35c5b02954d30980756cb9fbb0df0eae67f1eeb15"
+    "source_sha256": "de2d2caae47db53b5609a8e516be9dc4f19bac1d75c0a8b8fea869c4d5e76f6f"
   }
 }

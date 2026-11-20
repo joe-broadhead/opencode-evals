@@ -7,13 +7,13 @@
   "source": "wide sweep: agents_get_topics_summary (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_topics_summary reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "summarise the topics from this week's calls.",
+  "prompt": "summarise the topics from this week's calls for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": "plugins=elevenlabs",
+  "seed": "plugins=elevenlabs utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -43,16 +43,18 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the agent id the question needs.",
+      "ask": "Aimed at the sandbox agent the user named, and nothing else.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "elevenlabs.agents_get_topics_summary",
           "n": 1,
           "arg": "args.agent_id",
-          "op": "present"
+          "aliases": [
+            "@elevenlabs.agent"
+          ]
         }
       ],
       "evidence_any": [],
@@ -88,11 +90,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f5ab65f4e5e856ea4cb69d911f8bbcb0e55bfbf0584732773a01a0ed0c8f40d2"
+    "source_sha256": "f8b7126926121adcc0d58e9e6db1c7eada308697abd264279ebf3db8917e8484"
   }
 }

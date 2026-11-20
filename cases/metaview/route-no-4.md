@@ -5,7 +5,7 @@
 - Source: should-not-call: a non-hiring meeting belongs to Granola
 - Decision tested: A what-did-we-decide-in-the-pricing-meeting question reaches no Metaview tool
 - Data check: the user has a non-hiring meeting note from yesterday
-- Seed: plugins=metaview
+- Seed: plugins=metaview utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: route

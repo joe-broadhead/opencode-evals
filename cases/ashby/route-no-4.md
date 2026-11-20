@@ -5,7 +5,7 @@
 - Source: should-not-call: a calendar question belongs to the calendar, not to Ashby
 - Decision tested: A what-is-on-my-calendar question reaches no Ashby tool
 - Data check: the user's calendar holds at least one event tomorrow
-- Seed: plugins=ashby
+- Seed: plugins=ashby,gws utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 6, inner_calls <= 4
 - Set: route
@@ -18,6 +18,9 @@ what's on my calendar tomorrow?
   evidence: absent:ashby.*
 - [ASH-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
+
+- [ASH-OC02] major · It read the calendar with the Google Workspace tools.
+  evidence: call:gws.read#1 args.operation matches /^calendar\./
 
 ## Forbidden
 - [ASH-SF01] blocker · Nothing committed.

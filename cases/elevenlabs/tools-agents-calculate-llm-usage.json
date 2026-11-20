@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_calculate_llm_usage (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_calculate_llm_usage reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "what would 10,000 agent calls a month cost us in LLM usage?",
+  "prompt": "what would 10,000 agent calls a month cost us in LLM usage? for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -43,16 +43,18 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the agent id the question needs.",
+      "ask": "Aimed at the sandbox agent the user named, and nothing else.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "elevenlabs.agents_calculate_llm_usage",
           "n": 1,
           "arg": "args.agent_id",
-          "op": "present"
+          "aliases": [
+            "@elevenlabs.agent"
+          ]
         }
       ],
       "evidence_any": [],
@@ -88,11 +90,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "856c5e2a3cd20b1b8eb542caf161e6294eac31645f57e6a4439c08c8f61c7e8d"
+    "source_sha256": "4bc48bf4fdbadb2f6320fc5a96319df5c161eb448f18ca7d956d324bc8bccf3f"
   }
 }

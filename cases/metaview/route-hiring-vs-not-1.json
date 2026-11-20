@@ -13,7 +13,7 @@
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": "plugins=metaview,granola",
+  "seed": "plugins=metaview,granola utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -120,11 +120,6 @@
           "ns": "metaview"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -147,12 +142,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c98ff36be304f5426ead5e2508c814dda37f34eabafb544f57e3dd40c3ddb94c"
+    "source_sha256": "2a57a4a56e09c11141af1e1988cce58c942fa2df7d7a80913e2d09eac2f6fd71"
   }
 }

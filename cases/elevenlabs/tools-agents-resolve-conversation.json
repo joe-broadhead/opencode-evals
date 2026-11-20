@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_resolve_conversation (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_resolve_conversation reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "here's the dashboard link for that call — which conversation is it?",
+  "prompt": "resolve this dashboard link for {{target:elevenlabs.agent}}: https://elevenlabs.io/app/conversations/conv_000000000000000000000000 — which conversation is it?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -43,16 +43,18 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the agent id the question needs.",
+      "ask": "Aimed at the sandbox agent the user named, and nothing else.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "elevenlabs.agents_resolve_conversation",
           "n": 1,
           "arg": "args.agent_id",
-          "op": "present"
+          "aliases": [
+            "@elevenlabs.agent"
+          ]
         }
       ],
       "evidence_any": [],
@@ -88,11 +90,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b0a46c5020bf72fe248cfa616a44fec63bee00cc603b381d4acf483fe3662de3"
+    "source_sha256": "509c823704dbca9c4da68ad4b8e1e5802dde468039b63be20f8b719b52507965"
   }
 }

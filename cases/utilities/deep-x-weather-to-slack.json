@@ -13,7 +13,7 @@
     "outer_calls": 8,
     "inner_calls": 6
   },
-  "seed": "plugins=utilities,slack",
+  "seed": "plugins=utilities,slack utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -55,12 +55,10 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(posted|sent)\\b",
+              "source": "\\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(posted|sent)\\b",
               "flags": "i"
             }
-          }
-        ],
-        [
+          },
           {
             "kind": "text",
             "span": "any",
@@ -68,6 +66,26 @@
             "value": {
               "kind": "regex",
               "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(couldn't|could not|can't|cannot|unable to|not able to)\\b.{0,40}\\b(move|change|save|create|update|delete|send|post|add|archive|submit|reject|edit|record|run|query|answer|generate|write|set|rename)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\bnothing (happened|changed|was (sent|added|moved|created|saved|updated|deleted|posted|rejected))\\b",
               "flags": "i"
             }
           }
@@ -98,7 +116,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 21
     },
     {
       "id": "UTL-OC03",
@@ -114,7 +132,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "UTL-SF01",
@@ -124,13 +142,13 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent-write",
-          "ns": "utilities"
+          "kind": "absent",
+          "tool": "utilities.weather_current",
+          "n": null
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
+          "kind": "absent-write",
+          "ns": "utilities"
         },
         {
           "kind": "committed-write"
@@ -139,7 +157,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "UTL-SF02",
@@ -155,7 +173,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     }
   ],
   "oracle": [],
@@ -163,10 +181,10 @@
     {
       "id": null,
       "text": "The sibling's Slack send cannot be named in a deep case: the answer item carries \"not sent\", and Slack's own write case grades the declined send.",
-      "line": 36
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "4800f2540bb5b4f23edf0a8eb767eb7705fff16bee839e2598a7bda80c54d473"
+    "source_sha256": "0f7400b2ebabc80f0b1b3fa4c6d7b95caba50aa79c63318c13c5e1d6a6c0a7f3"
   }
 }

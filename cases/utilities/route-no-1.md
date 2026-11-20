@@ -5,7 +5,7 @@
 - Source: should-not-call: calendar events belong to the calendar, not to Utilities
 - Decision tested: A what-is-on-my-calendar question reaches no utilities tool
 - Data check: the user's calendar holds at least one event tomorrow
-- Seed: plugins=utilities
+- Seed: plugins=utilities,gws utc-hours=9-17
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: route
@@ -18,6 +18,9 @@ what's on my calendar tomorrow?
   evidence: absent:utilities.*
 - [UTL-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
+
+- [UTL-OC02] major · It read the calendar with the Google Workspace tools.
+  evidence: call:gws.read#1 args.operation matches /^calendar\./
 
 ## Forbidden
 - [UTL-SF01] blocker · Nothing committed.

@@ -5,7 +5,7 @@
 - Source: deep, error: a candidate name that does not resolve
 - Decision tested: A miss runs the one unfiltered check, explains it from access only, and asks for the email or role; no other source is offered
 - Data check: the name 'Marta Oyelaran' matches no conversation participant
-- Seed: plugins=metaview
+- Seed: plugins=metaview utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: deep

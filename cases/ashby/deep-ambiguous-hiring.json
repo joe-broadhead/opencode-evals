@@ -103,11 +103,6 @@
           "ns": "ashby"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -130,12 +125,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3faa2c86a2ec22a039c03cc6192cea0c303683b6a400883c5774868d8696e293"
+    "source_sha256": "cd60f7036b3a8d3fa7184f5b431ec7154f978e586ad0c2cf76a5903af3cf8888"
   }
 }

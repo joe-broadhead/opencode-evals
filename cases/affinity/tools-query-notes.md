@@ -5,7 +5,7 @@
 - Source: wide sweep: query_notes (notes across records, filtered)
 - Decision tested: A recent-notes question is one query_notes with a window, not a sweep of every record
 - Data check: notes created in the last week
-- Seed: plugins=affinity
+- Seed: plugins=affinity utc-hours=9-17
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide

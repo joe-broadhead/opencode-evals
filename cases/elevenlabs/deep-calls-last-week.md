@@ -5,7 +5,7 @@
 - Source: deep, date window: last week's call count, in the user's local days
 - Decision tested: The count is one call with a local-week window converted to instants, and the answer names the window
 - Data check: at least a few conversations in the last week
-- Seed: plugins=elevenlabs
+- Seed: plugins=elevenlabs utc-hours=9-17
 - Data: real
 - Budget: outer_calls <= 14, inner_calls <= 10
 - Set: deep
@@ -17,10 +17,10 @@ how many calls did the agent take last week, and how many were successful?
 - [ELV-TR01] blocker · It counted with one call.
   evidence: count:elevenlabs.agents_count_conversations == 1
 - [ELV-PR01] major · The count carries a start and end for the window.
-  evidence: call:elevenlabs.agents_count_conversations#1 args.call_start_after_unix present
-  evidence: call:elevenlabs.agents_count_conversations#1 args.call_start_before_unix present
-- [ELV-OC01] major · The answer gives the count and the successful count.
-  evidence: text:any matches /\b[0-9]+\b/
+  evidence: call:elevenlabs.agents_count_conversations#1 args.call_start_after_unix matches /^1[0-9]{9}$/
+  evidence: call:elevenlabs.agents_count_conversations#1 args.call_start_before_unix matches /^1[0-9]{9}$/
+- [ELV-OC01] minor · The answer gives the count and the successful count the tool returned.
+  grader: judge
 - [ELV-OC02] minor · It names the window it used.
   grader: judge
 - [ELV-OC03] minor · No tool was invented.

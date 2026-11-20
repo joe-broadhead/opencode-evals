@@ -112,11 +112,6 @@
         },
         {
           "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
-          "kind": "absent",
           "tool": "websearch",
           "n": null
         },
@@ -143,12 +138,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "945be51723a18aca8ac04773992fea8dfdb7283904cf9bb6acf60ba8e1fff396"
+    "source_sha256": "263b76880579e61f1857ff4edd99d135909d7ebe19d401cabd1bf909adb4df01"
   }
 }

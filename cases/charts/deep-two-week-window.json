@@ -87,11 +87,6 @@
       "evidence": [
         {
           "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
-          "kind": "absent",
           "tool": "edit",
           "n": null
         },
@@ -118,12 +113,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2c20ce91a78804cff2d679580f260110e0504faf08326654bf562cfd25694e63"
+    "source_sha256": "56a1245c9a857839142c7b9941980bd91f034e2237c440608697829f0ad674ec"
   }
 }

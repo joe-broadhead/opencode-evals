@@ -13,7 +13,7 @@
     "outer_calls": 14,
     "inner_calls": 10
   },
-  "seed": "plugins=affinity,slack",
+  "seed": "plugins=affinity,slack utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -61,12 +61,10 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(posted|sent)\\b",
+              "source": "\\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(posted|sent)\\b",
               "flags": "i"
             }
-          }
-        ],
-        [
+          },
           {
             "kind": "text",
             "span": "any",
@@ -74,6 +72,26 @@
             "value": {
               "kind": "regex",
               "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(couldn't|could not|can't|cannot|unable to|not able to)\\b.{0,40}\\b(move|change|save|create|update|delete|send|post|add|archive|submit|reject|edit|record|run|query|answer|generate|write|set|rename)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\bnothing (happened|changed|was (sent|added|moved|created|saved|updated|deleted|posted|rejected))\\b",
               "flags": "i"
             }
           }
@@ -93,7 +111,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 22
     },
     {
       "id": "AFF-OC03",
@@ -109,7 +127,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 24
     },
     {
       "id": "AFF-SF01",
@@ -123,18 +141,13 @@
           "ns": "affinity"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     },
     {
       "id": "AFF-SF02",
@@ -150,7 +163,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 31
     }
   ],
   "oracle": [],
@@ -158,10 +171,10 @@
     {
       "id": null,
       "text": "The sibling's Slack send cannot be named in a deep case: the answer item carries \"not posted\", and Slack's own write case grades the declined send.",
-      "line": 37
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "41f0342ab0e23690bbbe1f5b4579d3595cb366da2e70e5a0cbc93500e84436f9"
+    "source_sha256": "d66aa52cd40d082cb49bf138cf49937ed536f599bd9a2a39895c79f6c9e0774a"
   }
 }

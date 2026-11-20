@@ -5,7 +5,7 @@
 - Source: wide sweep: group_conversations (counts by group, never fetched rows)
 - Decision tested: A how-many-by question is one grouped count, not a fetch of every row
 - Data check: at least ten conversations in the last month
-- Seed: plugins=metaview
+- Seed: plugins=metaview utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 10, inner_calls <= 6
 - Set: wide

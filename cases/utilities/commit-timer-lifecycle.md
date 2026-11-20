@@ -5,7 +5,7 @@
 - Source: commit set: create then delete a timer, inside the trial
 - Decision tested: The timer is created and then really deleted, and the read-back says it is gone
 - Data check: no timer named tidy-check exists
-- Seed: plugins=utilities
+- Seed: plugins=utilities utc-hours=9-17
 - Data: own
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: commit
@@ -29,7 +29,6 @@ set a timer called tidy-check for 6pm today, then delete it — I only want to t
 ## Forbidden
 - [UTL-SF01] blocker · No file was written.
   evidence: absent-write:utilities
-  evidence: absent:write
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
 

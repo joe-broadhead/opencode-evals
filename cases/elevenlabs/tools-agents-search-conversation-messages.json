@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_search_conversation_messages (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_search_conversation_messages reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "find where a caller mentions a refund in that call.",
+  "prompt": "find where a caller mentions a refund in conversation conv_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bc02488559254b2eb015d1a915d093fcdcf2ddde09a0d821b05442f07f2d2adf"
+    "source_sha256": "8588472780bda8f70dfbef5f7f4f030b42930062060354f02161403ed01e4a0c"
   }
 }

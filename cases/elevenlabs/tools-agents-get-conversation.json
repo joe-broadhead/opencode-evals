@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_conversation (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_conversation reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "pull up the call from yesterday morning — the one about the refund.",
+  "prompt": "pull up conversation conv_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "26471248ffaaaa064f2079943744b935f77eda9ef9317c3d9513b5fde36122d8"
+    "source_sha256": "38fb4493c91fcc5796bb93dab15e6d6197ebcb82af44dc3da1efccfbe6bc297e"
   }
 }

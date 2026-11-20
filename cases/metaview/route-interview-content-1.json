@@ -121,11 +121,6 @@
           "ns": "metaview"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -148,12 +143,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "efe05ecbb0100cb0cf7dad77a4fa26e4e603ff5c12313f8de78037758c16a8e6"
+    "source_sha256": "155bd94a43d669619e4731c9fd94cf223ec7fc174f0ced91a200bc691f5ab3ed"
   }
 }

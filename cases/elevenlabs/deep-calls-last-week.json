@@ -13,7 +13,7 @@
     "outer_calls": 14,
     "inner_calls": 10
   },
-  "seed": "plugins=elevenlabs",
+  "seed": "plugins=elevenlabs utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -52,14 +52,24 @@
           "tool": "elevenlabs.agents_count_conversations",
           "n": 1,
           "arg": "args.call_start_after_unix",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^1[0-9]{9}$",
+            "flags": ""
+          }
         },
         {
           "kind": "call",
           "tool": "elevenlabs.agents_count_conversations",
           "n": 1,
           "arg": "args.call_start_before_unix",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^1[0-9]{9}$",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -69,22 +79,11 @@
     },
     {
       "id": "ELV-OC01",
-      "severity": "major",
-      "ask": "The answer gives the count and the successful count.",
+      "severity": "minor",
+      "ask": "The answer gives the count and the successful count the tool returned.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "\\b[0-9]+\\b",
-            "flags": ""
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -164,6 +163,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3266011f7def5a43468845d664d496ee9170abd9266161100d296796f264a4a6"
+    "source_sha256": "19fd411d698ec49b8fcc6087ae7009164645b436b29a6612d3be732eb9c3a318"
   }
 }

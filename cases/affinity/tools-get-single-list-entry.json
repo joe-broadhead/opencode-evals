@@ -7,7 +7,7 @@
   "source": "wide sweep: get_single_list_entry (one company's entry on one list)",
   "decision": "A show-me-the-entry question is one get_single_list_entry",
   "data_check": "{{target:affinity.company}} is on the pipeline",
-  "prompt": "show me {{target:affinity.company}}'s entry on the the pipeline list — stage, owner, the lot.",
+  "prompt": "show me {{target:affinity.company}}'s entry on our pipeline — stage, owner, the lot.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -116,6 +116,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "007d03d202aa4e01acc87d092b35ad9576c6b7c4d52dfd15f3ec29822315c38f"
+    "source_sha256": "afe5ab27db7d8ddd32c55ebbdd24243c655468ab926d0a0d1560e22584c4dfc8"
   }
 }

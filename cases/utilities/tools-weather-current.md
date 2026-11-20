@@ -5,7 +5,7 @@
 - Source: wide sweep: weather_current (current conditions for a place)
 - Decision tested: A current-weather question is one weather_current for the place named, with Open-Meteo credited
 - Data check: api.open-meteo.com is reachable from the trial
-- Seed: plugins=utilities
+- Seed: plugins=utilities utc-hours=9-17
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: wide

@@ -118,6 +118,16 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent",
+          "tool": "utilities.weather_current",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "utilities.weather_daily",
+          "n": null
+        },
+        {
           "kind": "absent-write",
           "ns": "utilities"
         },
@@ -144,12 +154,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1e9deaa4ad24b0e970d0bb17131e01e5c5cd58fabfe66d4269b2df50e4a6abe0"
+    "source_sha256": "ad0b345a5ed3a642c4b6b3773d1e0c247846f5a9ba0b624961d22da6a87b8e69"
   }
 }

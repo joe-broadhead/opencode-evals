@@ -5,7 +5,7 @@
 - Source: should-not-call: issue tracking is Linear's, not the CRM's
 - Decision tested: A how-many-open-issues question reaches no Affinity tool
 - Data check: the user's Linear workspace has open issues
-- Seed: plugins=affinity
+- Seed: plugins=affinity utc-hours=9-17
 - Data: real
 - Budget: outer_calls <= 14, inner_calls <= 10
 - Set: route

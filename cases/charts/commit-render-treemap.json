@@ -114,11 +114,6 @@
         },
         {
           "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
-          "kind": "absent",
           "tool": "edit",
           "n": null
         }
@@ -142,7 +137,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     }
   ],
   "oracle": [],
@@ -150,10 +145,10 @@
     {
       "id": null,
       "text": "Commit plan: `charts.render` is `local: true`: the write touches only the trial's own sandbox.",
-      "line": 36
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "536fdb1376199b39f7f496700f5411dfdacb7529054e2e8a5f1c39fd92de1f8f"
+    "source_sha256": "7b18dd6389aba956690415ae93b02149533aa6737c2a5cfe74eb6188ae512a3f"
   }
 }

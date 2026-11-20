@@ -5,7 +5,7 @@
 - Source: deep, error: a candidate name that does not resolve
 - Decision tested: A miss is reported as a miss, with what was searched and a request for the email or job; no fragment of the name is invented into a record
 - Data check: the name 'Jonas Van Der Berg' matches no record in Ashby
-- Seed: plugins=ashby
+- Seed: plugins=ashby utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 6, inner_calls <= 4
 - Set: deep

@@ -52,7 +52,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(calendar|ATS|Ashby|can't schedule|cannot schedule|no tool)",
+            "source": "(calendar|\\bATS\\b|Ashby|can't schedule|cannot schedule|no tool)",
             "flags": "i"
           }
         }
@@ -118,6 +118,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c0c7647a3f2d8801ac1a3afe2faf323d24ce1764b894bafe261b5e5529f05cf1"
+    "source_sha256": "c64b7e9398a84a52a14e9cda8c2afd782270a2ac58cb8bc88568ec229315b209"
   }
 }

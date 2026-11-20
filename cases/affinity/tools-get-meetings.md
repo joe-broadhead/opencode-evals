@@ -5,7 +5,7 @@
 - Source: wide sweep: get_meetings (the CRM's copy of meetings)
 - Decision tested: A what-meetings question is one get_meetings for the window, and it says this is the CRM's copy
 - Data check: meetings logged in the last week
-- Seed: plugins=affinity
+- Seed: plugins=affinity utc-hours=9-17
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide

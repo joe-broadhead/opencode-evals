@@ -13,7 +13,7 @@
     "outer_calls": 14,
     "inner_calls": 10
   },
-  "seed": "plugins=affinity",
+  "seed": "plugins=affinity utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -95,6 +95,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9e63b509e736f5f943cd9f612de156f4c44eacca7a158b19d6c6bb5bd0dd8366"
+    "source_sha256": "a26428014b189b0c47213545bb5ae9b7eb2f21b27e56f36e3bfdf46720ed48ee"
   }
 }

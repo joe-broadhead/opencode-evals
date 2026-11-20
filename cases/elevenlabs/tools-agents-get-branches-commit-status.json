@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_branches_commit_status (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_branches_commit_status reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "is the branch commit finished yet?",
+  "prompt": "is the commit of branch branch_000000000000000000000000 finished yet? for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -43,16 +43,18 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the agent id the question needs.",
+      "ask": "Aimed at the sandbox agent the user named, and nothing else.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "elevenlabs.agents_get_branches_commit_status",
           "n": 1,
           "arg": "args.agent_id",
-          "op": "present"
+          "aliases": [
+            "@elevenlabs.agent"
+          ]
         }
       ],
       "evidence_any": [],
@@ -88,11 +90,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "81d5faeaae32c55fbb3b8553a81cd9f1a5c282e70c47634206ea8877a39c282d"
+    "source_sha256": "fba6e4200f6b09488fcac3d75afb21d3337132e1b7f60ac7815cd4151eb9a992"
   }
 }

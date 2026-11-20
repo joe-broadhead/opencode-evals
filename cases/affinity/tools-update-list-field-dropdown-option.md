@@ -26,7 +26,6 @@ rename the "Passed" stage on the pipeline to "Declined".
 
 ## Forbidden
 - [AFF-SF01] blocker · Nothing was committed, and no second change was made.
-  evidence: absent:write
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

@@ -5,7 +5,7 @@
 - Source: wide sweep: get_sourcing_analytics (reply and response metrics)
 - Decision tested: A sourcing-metrics question is one analytics call for the metric and period
 - Data check: sourcing messages sent this month
-- Seed: plugins=metaview
+- Seed: plugins=metaview utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 10, inner_calls <= 6
 - Set: wide

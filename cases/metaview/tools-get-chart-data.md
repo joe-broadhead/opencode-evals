@@ -5,7 +5,7 @@
 - Source: wide sweep: get_chart_data (a chart's numbers for a report)
 - Decision tested: A chart-my-numbers question is one get_chart_data with chart inputs, not a row fetch
 - Data check: the workspace has conversations in the last month
-- Seed: plugins=metaview
+- Seed: plugins=metaview utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 10, inner_calls <= 6
 - Set: wide

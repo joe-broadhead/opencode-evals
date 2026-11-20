@@ -5,7 +5,7 @@
 - Source: wide sweep: list_interviews (Ashby MCP; the past seven days through the next seven)
 - Decision tested: A what-interviews question is one list over the tool's own window, and the answer states the dates
 - Data check: the user has at least one interview in the tool's window, or none
-- Seed: plugins=ashby
+- Seed: plugins=ashby utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 6, inner_calls <= 4
 - Set: wide

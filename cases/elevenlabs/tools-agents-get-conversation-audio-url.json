@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_conversation_audio_url (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_conversation_audio_url reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "give me the audio link for that call so I can listen again.",
+  "prompt": "give me the audio link for conversation conv_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -111,11 +111,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -138,12 +133,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "22c19a694e4c6045be7bb8f4110e11434a1bf5ea5ea090e1d00d1a557162076c"
+    "source_sha256": "b5851d98edfda7fca4f935c26b4f37c36a784a3e9c5e7c4fea6f3bbf19af91f5"
   }
 }

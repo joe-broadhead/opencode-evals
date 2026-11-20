@@ -5,7 +5,7 @@
 - Source: wide sweep: affinity_meeting_prep (Affinity's meeting prep text)
 - Decision tested: A prep-me-for-the-meeting request calls the meeting prep playbook once, then reads the record
 - Data check: {{target:affinity.company}} exists with notes and people
-- Seed: plugins=affinity
+- Seed: plugins=affinity utc-hours=9-17
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide

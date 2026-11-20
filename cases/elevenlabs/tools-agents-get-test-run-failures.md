@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-which tests failed in the last run?
+which tests failed in test run run_000000000000000000000000?
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_get_test_run_failures once.
@@ -24,7 +24,6 @@ which tests failed in the last run?
 ## Forbidden
 - [ELV-SF01] blocker · No change and no credit spend.
   evidence: absent-write:elevenlabs
-  evidence: absent:write
   evidence: committed-write:none
 - [ELV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

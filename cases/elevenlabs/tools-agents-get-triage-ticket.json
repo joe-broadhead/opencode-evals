@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_triage_ticket (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_triage_ticket reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "show me the triage ticket about the failed call.",
+  "prompt": "show me triage ticket ticket_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e3288c868eda91085282309773288f37e11627216afb2973c5f1df21abe522ea"
+    "source_sha256": "4cb1c400acaaa8683d1e0912696c4f658a22ac80e17268d210d3afa029c255bc"
   }
 }

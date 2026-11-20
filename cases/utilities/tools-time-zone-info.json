@@ -13,7 +13,7 @@
     "outer_calls": 8,
     "inner_calls": 6
   },
-  "seed": "plugins=utilities",
+  "seed": "plugins=utilities utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -78,7 +78,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(WET|WEST|UTC\\+0|GMT\\+0|UTC\\+1|GMT\\+1)",
+            "source": "(WET|UTC\\+0|GMT\\+0)",
             "flags": "i"
           }
         }
@@ -144,6 +144,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9c151312aba3d176d3351c5a31d3f53133007b4855f5d9cc6b0a128a203a10d1"
+    "source_sha256": "4b315c1c21d417e2a7af9cd2385b473853d889d5368c0b050beb2f95a9758669"
   }
 }

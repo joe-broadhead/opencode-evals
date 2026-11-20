@@ -5,7 +5,7 @@
 - Source: wide sweep: portfolio_attention_score (Affinity's attention routine)
 - Decision tested: A which-portfolio-companies-need-attention request calls the routine once
 - Data check: portfolio companies with recent activity
-- Seed: plugins=affinity
+- Seed: plugins=affinity utc-hours=9-17
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide

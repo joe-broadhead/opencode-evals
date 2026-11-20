@@ -13,7 +13,7 @@
     "outer_calls": 10,
     "inner_calls": 6
   },
-  "seed": "plugins=metaview",
+  "seed": "plugins=metaview utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -179,6 +179,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "84c2c04be15a503e9e101d1579a1b1dcf0b4a3d332fc48e9185fc94cb9f7fa9e"
+    "source_sha256": "8e7b212c2e80b065f6109892a8dfda3ad72de42ea1f71e05226835a0e1eb34ac"
   }
 }

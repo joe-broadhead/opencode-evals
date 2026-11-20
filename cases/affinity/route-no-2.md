@@ -5,7 +5,7 @@
 - Source: should-not-call: a non-hiring meeting recap belongs to Granola, not the CRM
 - Decision tested: A what-did-we-decide-in-the-planning-meeting question reaches no Affinity tool
 - Data check: the user has a planning meeting note from yesterday
-- Seed: plugins=affinity
+- Seed: plugins=affinity utc-hours=9-17
 - Data: real
 - Budget: outer_calls <= 14, inner_calls <= 10
 - Set: route

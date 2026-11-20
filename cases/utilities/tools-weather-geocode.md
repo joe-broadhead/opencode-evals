@@ -5,7 +5,7 @@
 - Source: wide sweep: weather_geocode (places by name, with region and country)
 - Decision tested: A shared place name is geocoded once and the matches are shown for the user to choose
 - Data check: 'Springfield' is shared by several places
-- Seed: plugins=utilities
+- Seed: plugins=utilities utc-hours=9-17
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: wide

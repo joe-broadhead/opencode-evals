@@ -5,7 +5,7 @@
 - Source: wide sweep: time_add (adds or subtracts a calendar amount, clamping month ends)
 - Decision tested: A 90-days-from-today question is one time_add from today's date, not mental arithmetic
 - Data check: none
-- Seed: plugins=utilities
+- Seed: plugins=utilities utc-hours=9-17
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: wide

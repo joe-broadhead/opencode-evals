@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_list_conversations (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_list_conversations reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "list the last ten calls.",
+  "prompt": "list the last ten calls for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -68,11 +68,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -95,12 +90,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "19698d702e7afa7b6579cf7f80d59f6cc934ca753d51030d6cdb9e73a4cb12e8"
+    "source_sha256": "06ea64289d972080505c07d46b7003fccbb5504d13c074f5750ae9d31afdde9c"
   }
 }

@@ -5,7 +5,7 @@
 - Source: wide sweep: company_signals (Affinity's signals routine)
 - Decision tested: A what-signals-are-on-this-company request calls company_signals once
 - Data check: {{target:affinity.company}} exists
-- Seed: plugins=affinity
+- Seed: plugins=affinity utc-hours=9-17
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide

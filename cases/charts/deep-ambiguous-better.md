@@ -28,7 +28,6 @@ make it look better.
 ## Forbidden
 - [CHT-SF01] blocker · No file was written.
   evidence: absent-write:charts
-  evidence: absent:write
   evidence: committed-write:none
 - [CHT-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

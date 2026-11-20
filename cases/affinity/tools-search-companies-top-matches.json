@@ -48,40 +48,19 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "affinity.search_companies_top_matches",
           "n": 1,
-          "arg": "args.search_criteria",
-          "op": "present"
+          "arg": "args.search_criteria.search.term",
+          "aliases": [
+            "@affinity.company"
+          ]
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 19
-    },
-    {
-      "id": "AFF-OC01",
-      "severity": "major",
-      "ask": "The answer names the company, with its domain, and asks if several match.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(found|match|domain|which)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 21
     },
     {
       "id": "AFF-OC02",
@@ -97,7 +76,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "AFF-SF01",
@@ -117,7 +96,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 25
     },
     {
       "id": "AFF-SF02",
@@ -133,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1824c3c27fcfa0c756add1e86357782251002d66ee1e1d886c35d633b6d532d9"
+    "source_sha256": "1979342fb010dc1a07d30ca10fb4c68c9bb397ceaff25ac0e9eee8a98a358f3e"
   }
 }

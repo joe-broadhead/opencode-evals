@@ -5,7 +5,7 @@
 - Source: wide sweep: get_field_value_changes (a log of field changes)
 - Decision tested: A what-changed question is one change log for the window, and the window is named
 - Data check: at least one field change in the last week
-- Seed: plugins=affinity
+- Seed: plugins=affinity utc-hours=9-17
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide

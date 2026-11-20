@@ -111,11 +111,6 @@
           "ns": "charts"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -138,12 +133,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "72af79a08f9d0f2ead43d63d29a126ec0349a9152b7aa83ec42ecd350aa8fc0b"
+    "source_sha256": "c1b84dfe1b519a3196215d9122addf0c715324ce7359994cd843c0691d035ee4"
   }
 }

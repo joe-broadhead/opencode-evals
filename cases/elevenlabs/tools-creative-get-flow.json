@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_get_flow (ElevenLabs MCP; creative tools)",
   "decision": "A request for what creative_get_flow reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "show me the flow I made yesterday.",
+  "prompt": "show me flow flow_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "25b1e73b7f31724e755ef0326d7c916d34eb4df0116ae3e4f9c7f645d72276da"
+    "source_sha256": "94527325404061897c97dbed48f7caddcd6d7729aadb4be70027f1d58ce0d518"
   }
 }

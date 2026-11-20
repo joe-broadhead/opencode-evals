@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "64fbadb9e0e0bd241043c3ad8b8f002cafb8fbbd0eeab26ff9cfb15bc1559362"
+    "source_sha256": "3db08b4786e0fd1998152a59a35eb9b137f49b07cd3098c19baa37b93aceeece"
   }
 }

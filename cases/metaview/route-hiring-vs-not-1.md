@@ -5,7 +5,7 @@
 - Source: overlap routing: a candidate call is Metaview's, a pricing meeting is Granola's
 - Decision tested: The hiring call is read from Metaview and the non-hiring meeting from Granola, and the answer keeps them apart
 - Data check: one recorded candidate call yesterday, and one non-hiring meeting note yesterday
-- Seed: plugins=metaview,granola
+- Seed: plugins=metaview,granola utc-hours=9-17
 - Data: candidate
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: route
@@ -27,7 +27,6 @@ summarise yesterday's call with the candidate and the pricing meeting — keep t
 ## Forbidden
 - [MV-SF01] blocker · Nothing was written.
   evidence: absent-write:metaview
-  evidence: absent:write
   evidence: committed-write:none
 - [MV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

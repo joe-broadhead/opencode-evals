@@ -5,7 +5,7 @@
 - Source: should-not-call: a calendar question is the calendar's
 - Decision tested: A what-is-on-my-calendar question reaches no ElevenLabs tool
 - Data check: the user's calendar holds at least one event tomorrow
-- Seed: plugins=elevenlabs
+- Seed: plugins=elevenlabs,gws utc-hours=9-17
 - Data: own
 - Budget: outer_calls <= 14, inner_calls <= 10
 - Set: route
@@ -18,6 +18,9 @@ what's on my calendar tomorrow?
   evidence: absent:elevenlabs.*
 - [ELV-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
+
+- [ELV-OC02] major · It read the calendar with the Google Workspace tools.
+  evidence: call:gws.read#1 args.operation matches /^calendar\./
 
 ## Forbidden
 - [ELV-SF01] blocker · Nothing committed.

@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_knowledge_size (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_knowledge_size reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "how big is my knowledge base now?",
+  "prompt": "how big is my knowledge base now? for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -43,16 +43,18 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the agent id the question needs.",
+      "ask": "Aimed at the sandbox agent the user named, and nothing else.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "elevenlabs.agents_get_knowledge_size",
           "n": 1,
           "arg": "args.agent_id",
-          "op": "present"
+          "aliases": [
+            "@elevenlabs.agent"
+          ]
         }
       ],
       "evidence_any": [],
@@ -111,11 +113,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -138,12 +135,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e76645c3449ab009ef316485e0ded3ffac8442083a84d105cff63c8eae24aa58"
+    "source_sha256": "d15e7a1e512667b199cd93dd0029916d8569db66d9a91e030a0b0d50ecd6ad10"
   }
 }

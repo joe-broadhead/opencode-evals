@@ -17,9 +17,7 @@ find {{target:affinity.company}} in the CRM for me.
 - [AFF-TR01] blocker · It used search_companies_top_matches once.
   evidence: call:affinity.search_companies_top_matches#1
 - [AFF-PR01] major · It searched on the name or domain.
-  evidence: call:affinity.search_companies_top_matches#1 args.search_criteria present
-- [AFF-OC01] major · The answer names the company, with its domain, and asks if several match.
-  evidence: text:any matches /(found|match|domain|which)/i
+  evidence: target:affinity.search_companies_top_matches#1 args.search_criteria.search.term in @affinity.company
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

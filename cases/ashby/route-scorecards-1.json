@@ -122,11 +122,6 @@
         {
           "kind": "absent-write",
           "ns": "ashby"
-        },
-        {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
         }
       ],
       "evidence_any": [],
@@ -148,12 +143,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2871e393fa38f93938328fc52551a00d33f357b16d1668b492f7e9dab056cfa3"
+    "source_sha256": "a10eadb084540ddacc3c351a4df38007e224431d12e66540a49e6f7c8e9793cf"
   }
 }

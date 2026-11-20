@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_test_result (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_test_result reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "how did the last test run do?",
+  "prompt": "how did test run run_000000000000000000000000 do?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -88,11 +88,6 @@
           "ns": "elevenlabs"
         },
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -115,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ac4256891f313f528f89db6b18d36a1fa05ad12f1672b6298baccb943c7988f8"
+    "source_sha256": "009ad0bd6fcf7d1925931be67ead2b31d3194603aceb7f767a58a72788e4ca88"
   }
 }

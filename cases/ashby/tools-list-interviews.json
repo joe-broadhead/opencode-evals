@@ -13,7 +13,7 @@
     "outer_calls": 6,
     "inner_calls": 4
   },
-  "seed": "plugins=ashby",
+  "seed": "plugins=ashby utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -96,6 +96,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7c272304e5079836241875ebbdca75e5c2b4003ebf8a78292a0a719f79d14fb7"
+    "source_sha256": "21a4b04e82fa32591eff89b399e066ddec08ee7d399f7d3d29fbfb095af8d92c"
   }
 }
