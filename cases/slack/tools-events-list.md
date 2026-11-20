@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The collector's read is events_list, not a search turned into events by hand.
 - Data check: the sandbox channel has messages since the seeded cursor; content unchecked
-- Data: seeded
+- Data: real
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 

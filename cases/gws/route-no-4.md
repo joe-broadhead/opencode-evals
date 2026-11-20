@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (should-not-call)
 - Decision tested: A look-only request reads and stops; no plan and no commit.
 - Data check: tomorrow's calendar is readable; content unchecked
-- Data: seeded
+- Data: own
 - Set: route
 - Budget: outer_calls <= 3, inner_calls <= 2, tokens <= 300000
 

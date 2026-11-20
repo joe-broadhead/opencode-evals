@@ -18,7 +18,7 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "pull_number",
+    "pullNumber",
     "title"
   ],
   "sets": [
@@ -56,7 +56,7 @@
           "kind": "call",
           "tool": "update_pull_request",
           "n": 1,
-          "arg": "args.pull_number",
+          "arg": "args.pullNumber",
           "op": "==",
           "value": {
             "kind": "number",
@@ -222,6 +222,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "edb6fffaed194998d530b3482d27575518e2cf3c901c52ee6a77bd1cadf1c8f2"
+    "source_sha256": "40b205bf9eae27d7e4f96ffd254409b5f8aca95f05d74f91f55047bfa2c80707"
   }
 }

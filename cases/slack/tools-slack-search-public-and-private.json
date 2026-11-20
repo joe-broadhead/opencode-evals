@@ -23,7 +23,7 @@
   "sets": [
     "wide"
   ],
-  "data": "seeded",
+  "data": "real",
   "items": [
     {
       "id": "SLK-WR01",
@@ -154,6 +154,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "8d286250d8cb5a93f121ff799b9c4c315d8176d856c7b64d9b9782601ebbd732"
+    "source_sha256": "edd2e76c853e2f69cd32dc0e8c109e494855c60df46feccc87f59dccf4e042cd"
   }
 }

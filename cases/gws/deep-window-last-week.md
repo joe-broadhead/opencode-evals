@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: A relative past week is one events list bounded by the week's own instants, and the answer reports each day in the user's zone.
 - Data check: the primary calendar holds last week's events, or none; both are a report
-- Data: seeded
+- Data: own
 - Checkable: operation
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

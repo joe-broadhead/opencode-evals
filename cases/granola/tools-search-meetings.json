@@ -14,7 +14,7 @@
     "inner_calls": 5,
     "tokens": 400000
   },
-  "seed": null,
+  "seed": "utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "checkable": [
@@ -43,7 +43,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "GRA-PR01",
@@ -68,7 +68,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "GRA-PR02",
@@ -93,7 +93,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "GRA-RB01",
@@ -109,7 +109,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "GRA-RB02",
@@ -125,7 +125,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "GRA-SF01",
@@ -145,12 +145,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "698dd38d24845e7cc213a28fb1554949b68890797f85f815b6b75b6e77e1cdc4"
+    "source_sha256": "265022c8fee97d75b23649172e0c41e4654778350aa62f484358b7310f19c75e"
   }
 }

@@ -18,7 +18,7 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "pull_number"
+    "pullNumber"
   ],
   "sets": [
     "wide"
@@ -55,7 +55,7 @@
           "kind": "call",
           "tool": "request_copilot_review",
           "n": 1,
-          "arg": "args.pull_number",
+          "arg": "args.pullNumber",
           "op": "==",
           "value": {
             "kind": "number",
@@ -197,6 +197,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c5888b0eaee17921a02a9dc9d465f64e35aad580ad10a367f8917e09cccdb57d"
+    "source_sha256": "2451d7486d0cefde63c499b6b8e0dceb3425f73220700dabb52b3d62590e56a8"
   }
 }

@@ -21,7 +21,7 @@ find commits in the quill-notes repo that mention timeout
   evidence: call:search_commits#1 args.query contains timeout
 
 - [GH-OC02] major · The answer reports what the read returned.
-  evidence_any: text:any matches /(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)/i
+  evidence_any: text:any matches /\b(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)\b/i
 
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

@@ -89,8 +89,8 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\?",
-              "flags": ""
+              "source": "(which doc|did you mean|closest|what is it called)",
+              "flags": "i"
             }
           }
         ]
@@ -166,6 +166,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "ef6769ade6f5796c81fe982733b44d914f45dd8b17471dde67653a7dd7d4dd2d"
+    "source_sha256": "d3cf3f2fbe68a0faaf498198ca1f70e0fa880ba30a3bcceff65a51537fd2e5dc"
   }
 }

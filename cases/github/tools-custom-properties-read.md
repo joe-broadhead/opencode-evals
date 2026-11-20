@@ -17,7 +17,7 @@ what custom properties are set on the quill-notes repo?
   evidence: call:custom_properties_read#1
 
 - [GH-OC02] major · The answer reports what the read returned.
-  evidence_any: text:any matches /(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)/i
+  evidence_any: text:any matches /\b(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)\b/i
 
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

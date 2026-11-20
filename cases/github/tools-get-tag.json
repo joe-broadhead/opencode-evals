@@ -56,7 +56,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)",
+              "source": "\\b(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)\\b",
               "flags": "i"
             }
           }
@@ -147,6 +147,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ed71740279f02ae4c3594f0b7dd447f6e2008db27c63b03d4cff57860d604d3b"
+    "source_sha256": "a6006ba2bbcd22426c70fb8a0193e5ee6f4f770594b12885dcfab921f5f709d0"
   }
 }

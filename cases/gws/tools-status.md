@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: An account question is answered by status, without reading any mail, file or calendar.
 - Data check: the evals account is signed in to the plugin; content unchecked
-- Data: seeded
+- Data: own
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 

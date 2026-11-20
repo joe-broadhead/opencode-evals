@@ -21,7 +21,7 @@ open the doc called zzz evals 232 missing and tell me what it says
   evidence_any: text:any matches /(not found|no (such|matching) (doc|file)|couldn't find|could not find|didn't find)/i
 
 - [GWS-ER02] major · It asks which doc the user means, rather than creating one.
-  evidence_any: text:any matches /\?/
+  evidence_any: text:any matches /(which doc|did you mean|closest|what is it called)/i
 
 - [GWS-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

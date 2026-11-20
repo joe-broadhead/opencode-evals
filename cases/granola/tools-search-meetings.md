@@ -9,6 +9,7 @@
 - Checkable: from_date, to_date
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
+- Seed: utc-hours=9-17
 
 ## Prompt
 what meetings did I have last week?

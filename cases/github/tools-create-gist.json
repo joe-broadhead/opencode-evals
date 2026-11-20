@@ -17,6 +17,9 @@
   "seed": null,
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "content"
+  ],
   "sets": [
     "wide"
   ],
@@ -39,7 +42,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "GH-WR02",
@@ -56,7 +59,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "GH-WR03",
@@ -91,7 +94,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "GH-RB01",
@@ -107,7 +110,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "GH-RB02",
@@ -123,7 +126,32 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
+    },
+    {
+      "id": "GH-PR01",
+      "severity": "major",
+      "ask": "The gist carries the notes the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "create_gist",
+          "n": 1,
+          "arg": "args.content",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "one[\\s\\S]*three",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     },
     {
       "id": "GH-SF01",
@@ -164,12 +192,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3870e4092d1fe1c38e6e3559f2c8742d12059a260197b27f57f81aa1b10e38c0"
+    "source_sha256": "f62083c79ed9d958ca89f4a3294048be1c0d4888660c670fad754bf824771e28"
   }
 }

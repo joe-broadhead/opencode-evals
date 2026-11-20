@@ -6,7 +6,7 @@
 - Decision tested: A PR that does not exist is reported as not found, with the number tried; no logs are invented and no other PR is blamed.
 - Data check: the harness's fake GitHub holds the quill-notes fixture
 - Data: synthetic
-- Checkable: pull_number
+- Checkable: pullNumber
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
@@ -15,7 +15,7 @@ why did CI fail on pull request 42 in the quill-notes repo?
 
 ## Items
 - [GH-OC01] blocker · It asks GitHub for PR 42 rather than guessing from another PR.
-  evidence: call:github.pull_request_read#1 args.pull_number == 42
+  evidence: call:github.pull_request_read#1 args.pullNumber == 42
 
 - [GH-ER01] major · It reports that the PR was not found.
   evidence_any: text:any matches /(not found|no (such )?pull|404|couldn't find|could not find|doesn't exist)/i

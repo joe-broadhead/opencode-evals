@@ -20,7 +20,7 @@
   "sets": [
     "wide"
   ],
-  "data": "seeded",
+  "data": "own",
   "items": [
     {
       "id": "GWS-OC01",
@@ -108,6 +108,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "d86db05245624eaaf54449626d59718b21210be1e2380f381b594d79524c06dd"
+    "source_sha256": "c142aae23c1e480cf0390802f2e88d9c48a7d2d1e953664f707ec940f00aabca"
   }
 }

@@ -20,7 +20,7 @@
   "sets": [
     "route"
   ],
-  "data": "seeded",
+  "data": "own",
   "items": [
     {
       "id": "GWS-RT01",
@@ -121,6 +121,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "cdf40f89c2d825a56f4e0ca91f2821d35c8ff1c4a70418fc58d83de1c382ddf6"
+    "source_sha256": "0f78202b10e89231ef1de09554e3e82dc4cf272247c9d547ccbe641b4e74e33e"
   }
 }

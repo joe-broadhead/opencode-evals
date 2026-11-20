@@ -6,7 +6,7 @@
 - Decision tested: The pull_request_read read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.
 - Data check: the harness's fake GitHub holds the quill-notes fixture
 - Data: synthetic
-- Checkable: pull_number
+- Checkable: pullNumber
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
@@ -18,7 +18,7 @@ read pull request 7 in the quill-notes repo
   evidence: call:pull_request_read#1
 
 - [GH-PR01] major · The call carries pull_number as the user gave it.
-  evidence: call:pull_request_read#1 args.pull_number == 7
+  evidence: call:pull_request_read#1 args.pullNumber == 7
 
 - [GH-OC02] major · The answer reports what the read returned.
   evidence_any: text:any contains @fixture.github.offline_pr_title

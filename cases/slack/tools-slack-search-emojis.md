@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: An emoji lookup is one emoji search, and the answer reports the match or says there is none.
 - Data check: the workspace's emoji set either has parrot or does not; both are a report
-- Data: seeded
+- Data: own
 - Checkable: query
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000

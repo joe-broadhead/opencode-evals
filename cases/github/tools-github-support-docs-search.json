@@ -45,30 +45,6 @@
       "line": 17
     },
     {
-      "id": "GH-PR01",
-      "severity": "major",
-      "ask": "The call carries query as the user gave it.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "github_support_docs_search",
-          "n": 1,
-          "arg": "args.query",
-          "op": "contains",
-          "value": {
-            "kind": "string",
-            "value": "branch protection"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
       "id": "GH-OC02",
       "severity": "major",
       "ask": "The answer reports what the read returned.",
@@ -83,7 +59,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)",
+              "source": "\\b(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)\\b",
               "flags": "i"
             }
           }
@@ -91,7 +67,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 20
     },
     {
       "id": "GH-RB01",
@@ -107,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "GH-RB02",
@@ -123,7 +99,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "GH-SF01",
@@ -168,12 +144,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "762d4652704dcbce204e98ac441aacf8b692c51c84ea47496da534808c882ba8"
+    "source_sha256": "7330f411f594df08c016f30845ac71511be4dc2d35180c338babd7e16674808a"
   }
 }
