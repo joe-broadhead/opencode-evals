@@ -38,10 +38,11 @@
           "tool": "list_issues",
           "n": 1,
           "arg": "args.state",
-          "op": "==",
+          "op": "matches",
           "value": {
-            "kind": "string",
-            "value": "started"
+            "kind": "regex",
+            "source": "^(started|in progress)$",
+            "flags": "i"
           }
         }
       ],
@@ -200,6 +201,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f6c7ddfa6984b9f5fefbbea670c1e51c5cc575e5e5dcbf0e0401ecf6850b0058"
+    "source_sha256": "1e37eaa466433a2ba02498320c4573580569ce2d196893b23c71b1cf2ad5931a"
   }
 }

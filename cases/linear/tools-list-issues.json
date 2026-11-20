@@ -48,7 +48,7 @@
     {
       "id": "LIN-PR01",
       "severity": "major",
-      "ask": "The call carries state as the user gave it.",
+      "ask": "The state filter is the in-progress type or its name, not a completed or backlog one.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -57,10 +57,11 @@
           "tool": "list_issues",
           "n": 1,
           "arg": "args.state",
-          "op": "==",
+          "op": "matches",
           "value": {
-            "kind": "string",
-            "value": "started"
+            "kind": "regex",
+            "source": "^(started|in progress)$",
+            "flags": "i"
           }
         }
       ],
@@ -167,6 +168,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d890ae60e3ce0b74cf14a302383e364f37409e0557fe5e732774edd20ed2a73c"
+    "source_sha256": "cdc1288e15b7906302642dd4c2161adfe849e24b55be9369e09f7c6aff4f5435"
   }
 }

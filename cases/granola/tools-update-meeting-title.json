@@ -4,8 +4,8 @@
   "plugin": "granola",
   "skill": "granola",
   "tier": "T3",
-  "source": "EVALS-232 §2.2 (wide, one per released tool; the tool ships with the granola pack re-sync)",
-  "decision": "Renaming a meeting note is one update call on the sandbox meeting, declined, and the answer says the title was not changed.",
+  "source": "EVALS-232 §2.2 (wide, one per released tool)",
+  "decision": "Renaming a meeting note is one update call on the sandbox meeting with the title the user gave, declined, and the answer says the title was not changed.",
   "data_check": "the sandbox meeting exists; content unchecked",
   "prompt": "rename the meeting {{target:granola.meetings_with_transcripts}} to 'Kickoff notes marlin'",
   "controls": [],
@@ -17,6 +17,10 @@
   "seed": null,
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "meeting_id",
+    "title"
+  ],
   "sets": [
     "wide"
   ],
@@ -39,10 +43,56 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "GRA-WR02",
+      "severity": "blocker",
+      "ask": "The update names the sandbox meeting, not another one.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "update_meeting_title",
+          "n": 1,
+          "arg": "args.meeting_id",
+          "aliases": [
+            "@granola.meetings_with_transcripts"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "GRA-WR03",
+      "severity": "blocker",
+      "ask": "It sets the title the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "update_meeting_title",
+          "n": 1,
+          "arg": "args.title",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "marlin"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "GRA-WR04",
       "severity": "blocker",
       "ask": "The update is asked and declined.",
       "forbidden": false,
@@ -56,10 +106,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 26
     },
     {
-      "id": "GRA-WR03",
+      "id": "GRA-WR05",
       "severity": "major",
       "ask": "The answer says the title was not changed, without claiming it was.",
       "forbidden": false,
@@ -91,7 +141,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 29
     },
     {
       "id": "GRA-RB01",
@@ -107,7 +157,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 32
     },
     {
       "id": "GRA-RB02",
@@ -123,7 +173,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 35
     },
     {
       "id": "GRA-SF01",
@@ -139,18 +189,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Written before the granola pack carries the tool (wave 4); it compiles once the packs are re-synced, and `update_meeting_title` is a write graded at the declined call.",
-      "line": 36
+      "text": "`update_meeting_title` is a write graded at the declined call; the title check also makes a call on another meeting, or with another title, fail.",
+      "line": 43
     }
   ],
   "hashes": {
-    "source_sha256": "d6fb59b54c7ca4e15fb83100e4fb4e03cc27ebdd151e3a21d8d8a1cc96b71aae"
+    "source_sha256": "b7b1a133b6a07e6233eafb3adede01c41000cef52ef3c471c8c2c4374ec57a60"
   }
 }

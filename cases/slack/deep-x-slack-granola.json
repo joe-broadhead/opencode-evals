@@ -146,6 +146,31 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent",
+          "tool": "slack.slack_send_message_draft",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "slack.slack_schedule_message",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "slack.slack_create_canvas",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "slack.slack_add_reaction",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "slack.mark_read",
+          "n": null
+        },
+        {
           "kind": "absent-write",
           "ns": "granola"
         },
@@ -162,6 +187,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3773589b33d68ef78bc7b80d443a13d9d6f74f8e3e85757216073689e0839f6a"
+    "source_sha256": "b115cbb185ccabc3e0c473bba6f3ce6b11bee85c524561aacdaa95af06a03939"
   }
 }

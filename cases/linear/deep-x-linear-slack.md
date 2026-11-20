@@ -16,7 +16,7 @@ post my in-progress Linear issues to {{target:slack.sandbox_channel}}
 
 ## Items
 - [LIN-OC01] blocker · The issues are read with the in-progress filter.
-  evidence: call:list_issues#1 args.state == started
+  evidence: call:list_issues#1 args.state matches /^(started|in progress)$/i
 
 - [LIN-WR01] blocker · One Slack post is attempted at most.
   evidence: count:slack.slack_send_message <= 1

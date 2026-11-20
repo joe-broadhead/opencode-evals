@@ -17,8 +17,8 @@ list the in-progress issues in the {{target:linear.team_key}} team
 - [LIN-OC01] blocker · list_issues answers the request: the plugin's own tool for this task is called, not a substitute.
   evidence: call:list_issues#1
 
-- [LIN-PR01] major · The call carries state as the user gave it.
-  evidence: call:list_issues#1 args.state == started
+- [LIN-PR01] major · The state filter is the in-progress type or its name, not a completed or backlog one.
+  evidence: call:list_issues#1 args.state matches /^(started|in progress)$/i
 
 - [LIN-CT01] blocker · The read is scoped to the sandbox: team is the alias, not anything else.
   evidence: target:list_issues#1 args.team in @linear.team,@linear.team_key

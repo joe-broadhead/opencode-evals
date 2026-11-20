@@ -4,8 +4,8 @@
   "plugin": "granola",
   "skill": "granola",
   "tier": "T3",
-  "source": "EVALS-232 §2.2 (wide, one per released tool; the tool ships with the granola pack re-sync)",
-  "decision": "Rewriting a meeting's summary is one update call on the sandbox meeting, declined, and the answer says the summary was not changed.",
+  "source": "EVALS-232 §2.2 (wide, one per released tool)",
+  "decision": "Rewriting a meeting's summary is one update call on the sandbox meeting carrying the operations the user asked for, declined, and the answer says the summary was not changed.",
   "data_check": "the sandbox meeting has a summary; content unchecked",
   "prompt": "rewrite the summary of the meeting {{target:granola.meetings_with_transcripts}} to say the budget was approved",
   "controls": [],
@@ -17,6 +17,10 @@
   "seed": null,
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "meeting_id",
+    "operations"
+  ],
   "sets": [
     "wide"
   ],
@@ -39,10 +43,52 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "GRA-WR02",
+      "severity": "blocker",
+      "ask": "The update names the sandbox meeting, not another one.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "update_summary",
+          "n": 1,
+          "arg": "args.meeting_id",
+          "aliases": [
+            "@granola.meetings_with_transcripts"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "GRA-WR03",
+      "severity": "blocker",
+      "ask": "The call carries the summary operations it would apply.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "update_summary",
+          "n": 1,
+          "arg": "args.operations",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "GRA-WR04",
       "severity": "blocker",
       "ask": "The update is asked and declined.",
       "forbidden": false,
@@ -56,10 +102,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 26
     },
     {
-      "id": "GRA-WR03",
+      "id": "GRA-WR05",
       "severity": "major",
       "ask": "The answer says the summary was not changed, without claiming it was.",
       "forbidden": false,
@@ -91,7 +137,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 29
     },
     {
       "id": "GRA-RB01",
@@ -107,7 +153,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 32
     },
     {
       "id": "GRA-RB02",
@@ -123,7 +169,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 35
     },
     {
       "id": "GRA-SF01",
@@ -139,18 +185,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Written before the granola pack carries the tool (wave 4); it compiles once the packs are re-synced, and `update_summary` is a write graded at the declined call.",
-      "line": 36
+      "text": "`update_summary` takes `operations`, the required list of ops; the item checks it is there, and the target keeps the call on the sandbox meeting.",
+      "line": 43
     }
   ],
   "hashes": {
-    "source_sha256": "5683e2d42b48c731158326d573a1021154e4486fd6671c9e78c5e49bc9516cf3"
+    "source_sha256": "b356ba95336fde5132691c2da14e7e3822cc0f79541693619bf135b029287d38"
   }
 }
