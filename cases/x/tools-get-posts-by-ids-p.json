@@ -1,0 +1,179 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-posts-by-ids-p",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 paraphrase twin of tools-get-posts-by-ids (lane L6b)",
+  "decision": "This request is one get_posts_by_ids read, with the id or topic the user named, and no write.",
+  "data_check": "none",
+  "prompt": "look at these three posts and say what ties them together: https://x.com/evals232fixturehandle/status/1000001, https://x.com/evals232fixturehandle/status/1000002, https://x.com/evals232fixturehandle/status/1000003",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "billed_calls": 4,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=x",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "ids"
+  ],
+  "sets": [
+    "wide",
+    "twin"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "The read ran once, with get_posts_by_ids.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_posts_by_ids",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The call carries the value the user named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "get_posts_by_ids",
+          "n": 1,
+          "arg": "args.ids",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "1000001",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "get_posts_by_ids",
+          "n": 1,
+          "arg": "args.ids",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "1000002",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "get_posts_by_ids",
+          "n": 1,
+          "arg": "args.ids",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "1000003",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "X-TR01",
+      "severity": "minor",
+      "ask": "The x skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "x"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No write of any kind: every X write is covered.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "x"
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "X-EF01",
+      "severity": "blocker",
+      "ask": "It did not page on to be thorough.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_posts_by_ids",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    },
+    {
+      "id": "X-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "e6f4a80339f885211d2b4bcbbb44de3db76ffef0da832a94cede7ae282836b37"
+  }
+}

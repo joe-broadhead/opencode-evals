@@ -1,0 +1,155 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-spaces-by-ids-p",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 paraphrase twin of tools-get-spaces-by-ids (lane L6b)",
+  "decision": "This request is one get_spaces_by_ids read, with the id or topic the user named, and no write.",
+  "data_check": "none",
+  "prompt": "tell me about these two Spaces: s-900000000000000008, s-900000000000000018",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "billed_calls": 4,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=x",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "ids"
+  ],
+  "sets": [
+    "wide",
+    "twin"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "The read ran once, with get_spaces_by_ids.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_spaces_by_ids",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The call carries the value the user named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "get_spaces_by_ids",
+          "n": 1,
+          "arg": "args.ids",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "s-900000000000000008",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "X-TR01",
+      "severity": "minor",
+      "ask": "The x skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "x"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No write of any kind: every X write is covered.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "x"
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "X-EF01",
+      "severity": "blocker",
+      "ask": "It did not page on to be thorough.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_spaces_by_ids",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "X-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "916b1b06e7ca0077df1cb1efca8ff3e643afb865844048fe7d7f8b39e89fb445"
+  }
+}
