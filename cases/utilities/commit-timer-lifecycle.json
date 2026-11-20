@@ -156,8 +156,14 @@
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Commit plan: `utilities.timer_set and utilities.timer_delete` is `local: true`: the write touches only the trial's own sandbox.",
+      "line": 36
+    }
+  ],
   "hashes": {
-    "source_sha256": "f1f6c6d360e3c2e3b6b96347b09842a11f95c52aca8a67c314aea46f155887bf"
+    "source_sha256": "2205eb74fbec7b142fa5ccd916679f01537302393dd28b3c3a911e887e7e03e5"
   }
 }

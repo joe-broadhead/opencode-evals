@@ -31,3 +31,6 @@ set a timer called tidy-check for 6pm today, then delete it — I only want to t
   evidence: absent:write
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
+
+## Notes
+- Commit plan: `utilities.timer_set and utilities.timer_delete` is `local: true`: the write touches only the trial's own sandbox.

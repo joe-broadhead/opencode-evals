@@ -29,3 +29,6 @@ quick bar chart of revenue by region from data/sales.csv, summed, saved with its
   evidence: absent:charts.render
 - [CHT-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
+
+## Notes
+- Commit plan: `charts.quick` is `local: true`: the write touches only the trial's own sandbox.

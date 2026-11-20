@@ -132,8 +132,14 @@
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Commit plan: `charts.quick` is `local: true`: the write touches only the trial's own sandbox.",
+      "line": 34
+    }
+  ],
   "hashes": {
-    "source_sha256": "937269a333ddea4e2c934b0d14e30a58f633ee85540d8d81100857d96671cb48"
+    "source_sha256": "f2ccaa16dc7d27f955b269dafd4261534a34f70744d02502321961531c84b50a"
   }
 }

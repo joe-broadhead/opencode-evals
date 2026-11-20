@@ -30,3 +30,6 @@ draw a treemap of revenue by region from data/sales.csv and save the SVG.
   evidence: absent:edit
 - [CHT-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
+
+## Notes
+- Commit plan: `charts.render` is `local: true`: the write touches only the trial's own sandbox.

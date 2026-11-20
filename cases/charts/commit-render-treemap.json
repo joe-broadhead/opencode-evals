@@ -142,8 +142,14 @@
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Commit plan: `charts.render` is `local: true`: the write touches only the trial's own sandbox.",
+      "line": 35
+    }
+  ],
   "hashes": {
-    "source_sha256": "ee439489895d34af1d913334ecd6db5d4fc33938d8e09b8c7aa668d7c67df72d"
+    "source_sha256": "2cb384c7d51d64bbe28497bcce1cfca65296db48c4fc9b571667ae6f40977eff"
   }
 }

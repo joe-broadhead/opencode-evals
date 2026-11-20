@@ -29,3 +29,6 @@ set a timer called deploy-check for 9am tomorrow morning.
   evidence: absent:write
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
+
+## Notes
+- Commit plan: `utilities.timer_set` is `local: true`: the write touches only the trial's own sandbox.
