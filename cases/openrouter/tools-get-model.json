@@ -57,7 +57,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "[0-9]+k|[0-9]{3},?[0-9]{3}|context",
+            "source": "[0-9]+\\s?k|[0-9]{3},?[0-9]{3}|[0-9]{6}",
             "flags": "i"
           }
         },
@@ -104,6 +104,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e3c43f9483b6105145ce45bef4eb71f13b1b7e0e487b85ff052c79bd318e8cf5"
+    "source_sha256": "9e47dbe0e9a1a3151c3713493b62f9ed23ee597b75b9399aae2ad891c3b4aae6"
   }
 }

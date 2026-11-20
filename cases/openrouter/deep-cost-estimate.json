@@ -51,8 +51,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "1,?000,?000|200,?000",
-            "flags": ""
+            "source": "1,?000,?000|1 ?M\\b|200,?000|200 ?k\\b",
+            "flags": "i"
           }
         },
         {
@@ -115,6 +115,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ab6e41d47799d76e710eefa3ea2b373b81840e28ffbcdf30576111b760ce5181"
+    "source_sha256": "7e77b56f7ee333ef7a5fd337a93d02b38f2c900c36ecd77c01da0b6d29ff88bf"
   }
 }

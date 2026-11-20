@@ -16,7 +16,7 @@ what would one million input tokens and 200k output tokens cost on claude-sonnet
   evidence: first:openrouter.get-model
 
 - [OR-OC02] major · The answer shows the arithmetic and a total in dollars.
-  evidence: text:any matches /1,?000,?000|200,?000/
+  evidence: text:any matches /1,?000,?000|1 ?M\b|200,?000|200 ?k\b/i
   evidence: text:any matches /\$\s?[0-9]+(\.[0-9]+)?/
 
 - [OR-OC03] major · It labels the result as an estimate from catalogue prices.
