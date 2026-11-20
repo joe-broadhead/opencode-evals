@@ -1,0 +1,106 @@
+{
+  "schema": "oc-case/1",
+  "id": "snc-local-file",
+  "plugin": "boxd",
+  "skill": "boxd",
+  "tier": "T3",
+  "source": "evals-232/wide/boxd/should-not-call",
+  "decision": "a file on this laptop is not a work's file, and no machine is started to delete it",
+  "data_check": "none",
+  "prompt": "delete ~/tmp/old.log on my laptop, it's taking space",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "BOX-SF01",
+      "severity": "blocker",
+      "ask": "No boxd tool was used, and nothing was started.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "boxd.*",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "boxd.ensure",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "BOX-OC01",
+      "severity": "major",
+      "ask": "The answer says it cannot delete a local file from here, or that the shell is unavailable.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(cannot|can't|unable)\\b.{0,40}\\b(delete|remove|file)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(permission|denied|not allowed|no shell)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "BOX-SF02",
+      "severity": "blocker",
+      "ask": "No shell command was run.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "shell",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a2ae288408c4e3caec51686f97c98f4058d1811093b590f8fef2d0e2217b645f"
+  }
+}
