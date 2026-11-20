@@ -6,6 +6,7 @@
 - Decision tested: The notes of named meetings are read in one call, and the answer reports them in its own words.
 - Data check: the seeded kickoff meeting exists in the evals-232 folder; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
+- Seed: utc-hours=9-17
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 

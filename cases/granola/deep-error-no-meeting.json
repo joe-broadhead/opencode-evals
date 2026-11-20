@@ -14,7 +14,7 @@
     "inner_calls": 8,
     "tokens": 500000
   },
-  "seed": null,
+  "seed": "utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -39,7 +39,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "GRA-ER01",
@@ -64,7 +64,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "GRA-ER02",
@@ -99,7 +99,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "GRA-RB01",
@@ -115,7 +115,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "GRA-RB02",
@@ -131,7 +131,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "GRA-SF01",
@@ -161,7 +161,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     }
   ],
   "oracle": [],
@@ -169,10 +169,10 @@
     {
       "id": null,
       "text": "An empty search does not prove the topic never came up; the answer must say what it searched.",
-      "line": 39
+      "line": 40
     }
   ],
   "hashes": {
-    "source_sha256": "be9544b64df1f1b88fc6e25ab869779806fcce7b863316c7365c958e05c72047"
+    "source_sha256": "4edcb9bb82504baca7d5fb8fdc871d66ec8601298423c2e92e27945e3353acdf"
   }
 }

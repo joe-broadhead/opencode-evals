@@ -6,6 +6,7 @@
 - Decision tested: A meeting that does not exist is reported as not found, with the window shown; no query across every meeting is used to invent one.
 - Data check: no meeting in the sandbox folder matches that name or day; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
+- Seed: utc-hours=9-17
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 

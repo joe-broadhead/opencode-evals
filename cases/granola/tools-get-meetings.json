@@ -14,7 +14,7 @@
     "inner_calls": 5,
     "tokens": 400000
   },
-  "seed": null,
+  "seed": "utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -39,7 +39,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "GRA-RB01",
@@ -55,7 +55,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "GRA-RB02",
@@ -71,7 +71,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "GRA-SF01",
@@ -91,7 +91,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     }
   ],
   "oracle": [],
@@ -99,10 +99,10 @@
     {
       "id": null,
       "text": "The canary is the seeded meeting title; the alternative keeps the case gradeable before the canary is seeded.",
-      "line": 31
+      "line": 32
     }
   ],
   "hashes": {
-    "source_sha256": "e854a5fd263cc590e1f95d91f3e541b39fe6bb237bfc82733df30e2da74e3ed7"
+    "source_sha256": "b0cc3e6086a054b44c402412c4c1d561858987b9b56b28fe86f237edc66d7890"
   }
 }

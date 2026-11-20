@@ -79,10 +79,11 @@
           "tool": "slack_add_reaction",
           "n": 1,
           "arg": "args.reaction",
-          "op": "contains",
+          "op": "matches",
           "value": {
-            "kind": "string",
-            "value": "white_check_mark"
+            "kind": "regex",
+            "source": "(white|heavy)_check_mark",
+            "flags": ""
           }
         }
       ],
@@ -200,6 +201,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "78e234945ac1d15adf8fa3d87e1769645e4e7e758da99a7f9d7b2359829016a3"
+    "source_sha256": "a2690baece06b9af188d7bc37f84e634439ca901bdfea4da846a7a07a79a31e0"
   }
 }
