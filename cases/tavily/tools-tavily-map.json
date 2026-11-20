@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "Which pages a site has is a map, answered as URLs without reading the pages.",
   "data_check": "the site publishes an index of its pages",
-  "prompt": "list the pages on https://docs.example.org that cover webhooks. I only want the URLs.",
+  "prompt": "list the pages in the Node.js API docs at https://nodejs.org/docs/latest/api/ that cover the file system. I only want the URLs.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -65,7 +65,7 @@
     {
       "id": "TAV-OC02",
       "severity": "major",
-      "ask": "The answer lists several page URLs.",
+      "ask": "The answer lists several Node.js API page URLs.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -75,7 +75,7 @@
           "op": ">=",
           "value": {
             "kind": "regex",
-            "source": "https?:\\/\\/[^\\s)<>]+",
+            "source": "https?:\\/\\/nodejs\\.org\\/docs\\/latest\\/api\\/[^\\s)<>]+",
             "flags": ""
           },
           "n": 2
@@ -192,6 +192,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a2087e6ff5e8f4ca13e46fdd1fc53b3cfe75ba34b1c7eaf2c1e38468cd135ad4"
+    "source_sha256": "bf345fa4f08470d88d2b245045b40f3b217030d09d9ee89715d3d75d183ec092"
   }
 }

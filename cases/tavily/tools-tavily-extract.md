@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-read https://example.org/pricing and tell me what a seat costs.
+read https://nodejs.org/en/about and tell me what Node.js is built on.
 
 ## Items
 - [TAV-OC01] blocker · The page was read once with extract.
@@ -20,8 +20,8 @@ read https://example.org/pricing and tell me what a seat costs.
 - [TAV-PR01] major · The call passed the URL the user gave.
   evidence: call:tavily_extract#1 args.urls present
 
-- [TAV-OC02] major · The answer states the price it read.
-  evidence: text:any matches /(per seat|\/seat|seat\/mo|a month|per month|\$|€|£)/i
+- [TAV-OC02] major · The answer states what the page says it is built on.
+  evidence: text:any matches /(V8|JavaScript engine|Chrome)/i
 
 - [TAV-TR01] minor · The tavily skill was loaded.
   evidence: skill:tavily

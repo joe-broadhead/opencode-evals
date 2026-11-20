@@ -14,8 +14,8 @@
 pull up the recording of yesterday's standup and give me the action items
 
 ## Items
-- [PLD-RT01] blocker · It asks which service holds the recording, or says which one it read.
-  evidence: text:any matches /(plaud|granola|wispr ?flow)/i
+- [PLD-RT01] blocker · It asks which service holds the recording, or reads one.
+  evidence_any: text:any matches /(which (app|service|one)|do you mean|want me to check)/i ;; count:plaud.* >= 1 ;; count:granola.* >= 1 ;; count:wisprflow.* >= 1
 
 - [PLD-RT02] major · It reads at most one service's recordings before settling the source.
   evidence: count:recent <= 2

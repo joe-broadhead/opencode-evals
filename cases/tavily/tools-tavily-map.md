@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-list the pages on https://docs.example.org that cover webhooks. I only want the URLs.
+list the pages in the Node.js API docs at https://nodejs.org/docs/latest/api/ that cover the file system. I only want the URLs.
 
 ## Items
 - [TAV-OC01] blocker · Exactly one map ran.
@@ -20,8 +20,8 @@ list the pages on https://docs.example.org that cover webhooks. I only want the 
 - [TAV-PR01] major · The call named the site the user gave.
   evidence: call:tavily_map#1 args.url present
 
-- [TAV-OC02] major · The answer lists several page URLs.
-  evidence: text:any count /https?:\/\/[^\s)<>]+/ >= 2
+- [TAV-OC02] major · The answer lists several Node.js API page URLs.
+  evidence: text:any count /https?:\/\/nodejs\.org\/docs\/latest\/api\/[^\s)<>]+/ >= 2
 
 - [TAV-TR01] minor · The tavily skill was loaded.
   evidence: skill:tavily

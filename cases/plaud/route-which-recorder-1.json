@@ -26,22 +26,42 @@
     {
       "id": "PLD-RT01",
       "severity": "blocker",
-      "ask": "It asks which service holds the recording, or says which one it read.",
+      "ask": "It asks which service holds the recording, or reads one.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(plaud|granola|wispr ?flow)",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(which (app|service|one)|do you mean|want me to check)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "count",
+            "tool": "plaud.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "count",
+            "tool": "granola.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "count",
+            "tool": "wisprflow.*",
+            "op": ">=",
+            "value": 1
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
@@ -131,6 +151,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a71e67c4472d4eadb8981aca12c796f9d4b20b25635740c2d7020d32ddde7884"
+    "source_sha256": "e48efc27dd1abc87337192242441c05b6e06da395acb090fd0446b7327fa5c62"
   }
 }

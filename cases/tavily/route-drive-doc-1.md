@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 overlap routing
 - Decision tested: A file in the user's Drive is Google Workspace's, not a web search: no Tavily call.
 - Data check: none
-- Data: own
+- Data: real
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=tavily,gws
 - Set: route

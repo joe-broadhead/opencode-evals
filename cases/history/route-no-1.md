@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 should-not-call
 - Decision tested: Mail is Google Workspace's: no history lookup for a Gmail question.
 - Data check: none
-- Data: own
+- Data: real
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=history,gws
 - Set: route

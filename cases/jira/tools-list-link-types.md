@@ -18,7 +18,7 @@ what issue link types does Jira have here?
   evidence: count:listJiraIssueLinkTypes == 1
 
 - [JRA-OC02] blocker · The answer states what the fixture holds.
-  evidence: text:any matches /Blocks/i
+  evidence: text:any matches /is blocked by/i
 
 - [JRA-TR01] minor · The jira skill was loaded.
   evidence: skill:jira

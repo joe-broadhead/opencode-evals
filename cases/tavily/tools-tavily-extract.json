@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A URL the user already has is read with extract, not searched for.",
   "data_check": "the page is public and states its price",
-  "prompt": "read https://example.org/pricing and tell me what a seat costs.",
+  "prompt": "read https://nodejs.org/en/about and tell me what Node.js is built on.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -65,7 +65,7 @@
     {
       "id": "TAV-OC02",
       "severity": "major",
-      "ask": "The answer states the price it read.",
+      "ask": "The answer states what the page says it is built on.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -75,7 +75,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(per seat|\\/seat|seat\\/mo|a month|per month|\\$|€|£)",
+            "source": "(V8|JavaScript engine|Chrome)",
             "flags": "i"
           }
         }
@@ -196,6 +196,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ef4270aba6976354178db6c765d86c71550a31c143fb8a4f9308743f51feecb4"
+    "source_sha256": "26901f02facde6b0bf612999277d230bd9d47f5dd9af0997dc842fe899d7257a"
   }
 }
