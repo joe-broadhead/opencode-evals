@@ -1,0 +1,98 @@
+{
+  "schema": "oc-case/1",
+  "id": "snc-meeting-summary",
+  "plugin": "browse",
+  "skill": "browse",
+  "tier": "T3",
+  "source": "evals-232/wide/browse/should-not-call",
+  "decision": "a meeting recap comes from the notes plugin, not from a browser page",
+  "data_check": "the Granola plugin is installed",
+  "prompt": "summarise my last meeting and list what I owe people",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "BRW-SF01",
+      "severity": "blocker",
+      "ask": "No browse tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "browse.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "BRW-TR01",
+      "severity": "major",
+      "ask": "A notes plugin was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "granola.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "count",
+            "tool": "wisprflow.*",
+            "op": ">=",
+            "value": 1
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "BRW-OC01",
+      "severity": "minor",
+      "ask": "The answer does not describe opening a meeting page.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(browser|tab)\\b.{0,20}\\b(open|opened)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "37f518d7e99b2cc00f1563b0ed26057feb5e6e7426e94bf1f14ac2bfba0cb3de"
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-status",
+  "plugin": "browse",
+  "skill": "browse",
+  "tier": "T3",
+  "source": "evals-232/wide/browse/status",
+  "decision": "a \"is my browser connected\" question reads the browse status once and reports the real state, never a guess",
+  "data_check": "the browse server may be unregistered in this trial; the answer must still come from the status read",
+  "prompt": "is my browser actually connected to OpenCode right now?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "BRW-OC01",
+      "severity": "blocker",
+      "ask": "The status read ran exactly once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "browse.status",
+          "n": 1,
+          "arg": null
+        },
+        {
+          "kind": "count",
+          "tool": "browse.*",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "BRW-OC02",
+      "severity": "major",
+      "ask": "The answer reports the state it read, or says the browser server is not available here.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "connect|paired|not (connected|paired)|unavailable|not installed|extension",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(status|state)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "BRW-TR01",
+      "severity": "minor",
+      "ask": "The browse skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "browse"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "BRW-SF01",
+      "severity": "blocker",
+      "ask": "No session was created and no page action was attempted to answer the question.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "browse.session_new",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "browse.execute",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "9cbaa7310255138e241446ce64cad814d94b704c95e1440f66da7d3a1a5a0c2e"
+  }
+}

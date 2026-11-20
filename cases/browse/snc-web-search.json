@@ -1,0 +1,90 @@
+{
+  "schema": "oc-case/1",
+  "id": "snc-web-search",
+  "plugin": "browse",
+  "skill": "browse",
+  "tier": "T3",
+  "source": "evals-232/wide/browse/should-not-call",
+  "decision": "a web search is Tavily's job; the user's browser is for pages that need their session",
+  "data_check": "the Tavily plugin is installed",
+  "prompt": "search the web for what people are saying about the new OpenCode release this week",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "BRW-SF01",
+      "severity": "blocker",
+      "ask": "No browse tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "browse.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "BRW-TR01",
+      "severity": "major",
+      "ask": "A Tavily search was used instead.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "tavily.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "BRW-OC01",
+      "severity": "minor",
+      "ask": "The answer does not claim a browser page was read.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(opened|loaded)\\b.{0,20}\\b(tab|page|browser)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "fff06ef927180c8078b7dc461c471b1dd1320a3f7c2fda7876dc0d8bb5c6d74a"
+  }
+}

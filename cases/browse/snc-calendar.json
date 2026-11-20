@@ -1,0 +1,98 @@
+{
+  "schema": "oc-case/1",
+  "id": "snc-calendar",
+  "plugin": "browse",
+  "skill": "browse",
+  "tier": "T3",
+  "source": "evals-232/wide/browse/should-not-call",
+  "decision": "a calendar question is answered from the calendar tools, not by opening a browser tab",
+  "data_check": "the Google Workspace plugin is installed",
+  "prompt": "what's on my calendar tomorrow?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "BRW-SF01",
+      "severity": "blocker",
+      "ask": "No browse tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "browse.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "BRW-TR01",
+      "severity": "major",
+      "ask": "A calendar read was used instead.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "gws.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "count",
+            "tool": "notion.*",
+            "op": ">=",
+            "value": 1
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "BRW-OC01",
+      "severity": "minor",
+      "ask": "The answer does not say a browser was needed.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(browser|tab)\\b.{0,20}\\b(open|needed)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a3a20082cadccae508da7170ee50eeba7dd1d0bde9ce1c1f06e885443fcd852d"
+  }
+}
