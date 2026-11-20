@@ -17,8 +17,8 @@ in my Plaud recording {{target:plaud.recording}}, what was said about the budget
 - [PLD-OC01] blocker · The transcript was read, one page at a time.
   evidence: count:get_transcript >= 1
 
-- [PLD-PR01] major · The call names the recording and a block.
-  evidence: call:get_transcript#1 args.file_id present
+- [PLD-PR01] major · The call names the recording the user gave.
+  evidence: target:get_transcript#1 args.file_id in @plaud.recording
 
 - [PLD-OC02] major · The answer quotes the passage it read.
   evidence: text:any matches /(["“][^"”]{10,}["”])/

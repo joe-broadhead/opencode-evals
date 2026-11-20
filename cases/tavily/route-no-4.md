@@ -20,8 +20,9 @@ what's the latest Node LTS version?
   evidence: absent:tavily_crawl
   evidence: absent:tavily_map
 
-- [TAV-OC02] major · The answer gives a version number.
+- [TAV-OC02] major · The answer gives a version number, from a search.
   evidence: text:any matches /\bv?[0-9]{1,2}(\.[0-9]{1,2})+\b/i
+  evidence: count:tavily_search >= 1
 
 - [TAV-RT01] minor · The research skill was not loaded for one fact.
   evidence: absent-skill:tavily-research

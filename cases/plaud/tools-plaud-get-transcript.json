@@ -45,16 +45,18 @@
     {
       "id": "PLD-PR01",
       "severity": "major",
-      "ask": "The call names the recording and a block.",
+      "ask": "The call names the recording the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "get_transcript",
           "n": 1,
           "arg": "args.file_id",
-          "op": "present"
+          "aliases": [
+            "@plaud.recording"
+          ]
         }
       ],
       "evidence_any": [],
@@ -191,6 +193,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1785dfe09324e2bd9a7cb0826bbfd34fb5525938d06c40c8fbf8f0c32cdba5c2"
+    "source_sha256": "5674f50bbeefa00358560b0bb4a3a2f8c240ef93c0c11803fcdd8d2a240f8e71"
   }
 }

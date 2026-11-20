@@ -50,10 +50,14 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "fixture",
+          "kind": "text",
           "span": "any",
-          "plugin": "jira",
-          "name": "me"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "acct-ada-0001",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -130,6 +134,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0349212345127eba4ac6be442ba1219a55d9a6b2b3355bfa36a0ab9f161cdd0a"
+    "source_sha256": "33fc5a60e0ae785607c7d9a678be8df81b51951f774f4225c8b442bafb1b2298"
   }
 }

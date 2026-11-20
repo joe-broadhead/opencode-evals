@@ -24,9 +24,9 @@
   "data": "own",
   "items": [
     {
-      "id": "TAV-OC01",
+      "id": "TAV-WR01",
       "severity": "blocker",
-      "ask": "Exactly one crawl ran.",
+      "ask": "Exactly one crawl was proposed, and it was declined.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -35,6 +35,10 @@
           "tool": "tavily_crawl",
           "op": "==",
           "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "tavily_crawl"
         }
       ],
       "evidence_any": [],
@@ -60,30 +64,42 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "TAV-OC02",
+      "id": "TAV-OC01",
       "severity": "major",
-      "ask": "The answer gives the findings as a list.",
+      "ask": "The answer says the crawl did not run, and offers the cheaper route.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(^|\\n)\\s*[-*]\\s+\\S",
-            "flags": ""
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(not run|wasn't run|was not run|not started|declined)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(search|tavily_search|instead|fewer credits)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "TAV-TR01",
@@ -100,7 +116,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "TAV-SF01",
@@ -123,7 +139,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "TAV-SF02",
@@ -151,7 +167,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     },
     {
       "id": "TAV-RB01",
@@ -167,12 +183,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "11add91e1c64a20c9b20aad11b65335e02a0f6fc393f1a0c79cae8fa50be6ac5"
+    "source_sha256": "31bbcf2ec0b601c170c82cf9bd0c48a2e9c4a600f25a6d35468a930b29a41aaa"
   }
 }

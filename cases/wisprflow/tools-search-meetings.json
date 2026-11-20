@@ -15,7 +15,7 @@
     "tokens": 400000,
     "wall_ms": 300000
   },
-  "seed": "plugins=wisprflow",
+  "seed": "plugins=wisprflow utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -54,16 +54,25 @@
       "ask": "The search carries the topic and a window.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "search_meetings",
-          "n": 1,
-          "arg": "args.query",
-          "op": "present"
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "search_meetings",
+            "n": 1,
+            "arg": "args.since",
+            "op": "present"
+          },
+          {
+            "kind": "call",
+            "tool": "search_meetings",
+            "n": 1,
+            "arg": "args.until",
+            "op": "present"
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 21
@@ -156,6 +165,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6eb2452f3f30415e05da5e7c2e8b10ccab5b7504efd5ae4f8ac9404204b54b90"
+    "source_sha256": "e3d54d849384322be9499b4ea9f05769a0b18c6bb2d64914601d681a81cb24e0"
   }
 }

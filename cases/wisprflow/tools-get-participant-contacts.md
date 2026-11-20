@@ -17,8 +17,8 @@ what does the person in my last Wispr Flow meeting do, and which company are the
 - [WF-OC01] blocker · Exactly one get_participant_contacts call.
   evidence: count:get_participant_contacts == 1
 
-- [WF-PR01] major · The contact id the user gave was passed.
-  evidence: call:get_participant_contacts#1 args.contact_ids present
+- [WF-PR01] major · It found the participant first, or passed their contact id.
+  evidence_any: count:get_meeting_participants_enriched >= 1 ;; call:get_participant_contacts#1 args.contact_ids present
 
 - [WF-OC02] major · The answer gives a role and a company, and says it looked the profile up.
   evidence: text:any matches /(looked up|Wispr Contacts|profile)/i

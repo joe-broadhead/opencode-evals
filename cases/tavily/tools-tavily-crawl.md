@@ -14,14 +14,15 @@
 read through the guides under https://docs.example.org/guides and pull out what they say about retries. a handful of pages is plenty.
 
 ## Items
-- [TAV-OC01] blocker · Exactly one crawl ran.
+- [TAV-WR01] blocker · Exactly one crawl was proposed, and it was declined.
   evidence: count:tavily_crawl == 1
+  evidence: declined:tavily_crawl
 
 - [TAV-PR01] major · The crawl was bounded by a page limit.
   evidence: call:tavily_crawl#1 args.limit present
 
-- [TAV-OC02] major · The answer gives the findings as a list.
-  evidence: text:any matches /(^|\n)\s*[-*]\s+\S/
+- [TAV-OC01] major · The answer says the crawl did not run, and offers the cheaper route.
+  evidence_any: text:any matches /(not run|wasn't run|was not run|not started|declined)/i ;; text:any matches /(search|tavily_search|instead|fewer credits)/i
 
 - [TAV-TR01] minor · The tavily skill was loaded.
   evidence: skill:tavily

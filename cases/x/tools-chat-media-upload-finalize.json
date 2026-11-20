@@ -152,8 +152,8 @@
           "arg": "args.num_parts",
           "op": "==",
           "value": {
-            "kind": "number",
-            "value": 1
+            "kind": "string",
+            "value": "1"
           }
         }
       ],
@@ -305,6 +305,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4d3c91a9cedaf75002edad055d00b6c807a07954a9f6b64bd14970ab4c2318c5"
+    "source_sha256": "e52857789e3c4741085a338b2718f24b016fe108d0454ed61f8a7d386b710ef1"
   }
 }

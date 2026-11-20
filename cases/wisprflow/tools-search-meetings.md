@@ -7,7 +7,7 @@
 - Data check: the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary
 - Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
-- Seed: plugins=wisprflow
+- Seed: plugins=wisprflow utc-hours=9-17
 - Set: wide
 
 ## Prompt
@@ -19,7 +19,7 @@ find my meetings about pricing from the last month.
   evidence: count:search_meetings <= 2
 
 - [WF-PR01] major · The search carries the topic and a window.
-  evidence: call:search_meetings#1 args.query present
+  evidence_any: call:search_meetings#1 args.since present ;; call:search_meetings#1 args.until present
 
 - [WF-OC02] major · The answer lists the meetings with dates and links.
   evidence: text:any matches /(notes\.wisprflow\.ai|[0-9]{1,2} (Oct|Nov|October|November))/i

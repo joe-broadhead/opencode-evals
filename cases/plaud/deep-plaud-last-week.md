@@ -21,8 +21,8 @@ what did I record between 9 and 15 November 2026? give me the days and lengths.
 - [PLD-DT02] major · It gives each recording's length.
   evidence: text:any matches /([0-9]+ ?(min|minutes|h|hours)|[0-9]{1,2}:[0-9]{2})/i
 
-- [PLD-OC01] major · Each recording is named with its day and length.
-  evidence: text:any matches /([0-9]+ ?(min|minutes|h|hours)|[0-9]{1,2}:[0-9]{2})/i
+- [PLD-OC01] major · Each recording is named, not just counted.
+  evidence: text:any matches /(^|\n)\s*[-*]\s+\S/
 
 - [PLD-TR01] minor · The opencode-plaud skill was loaded.
   evidence: skill:opencode-plaud

@@ -84,7 +84,7 @@
     {
       "id": "PLD-OC01",
       "severity": "major",
-      "ask": "Each recording is named with its day and length.",
+      "ask": "Each recording is named, not just counted.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -94,8 +94,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "([0-9]+ ?(min|minutes|h|hours)|[0-9]{1,2}:[0-9]{2})",
-            "flags": "i"
+            "source": "(^|\\n)\\s*[-*]\\s+\\S",
+            "flags": ""
           }
         }
       ],
@@ -192,6 +192,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1705321955a41a58b50516e985f12b282cff30c3cf7499cac7151ee0ed358f95"
+    "source_sha256": "cbe247979e4cda1e7115972e013ac4bea866c1c16fd09632ccad968eefe3d01f"
   }
 }

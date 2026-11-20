@@ -25,7 +25,7 @@ finish media upload 900000000000000021 for chat 900000000000000002: 1 part, hash
   evidence: call:chat_media_upload_finalize#1 args.conversation_id == "900000000000000002"
   evidence: call:chat_media_upload_finalize#1 args.id == "900000000000000021"
   evidence: call:chat_media_upload_finalize#1 args.media_hash_key == "mhk-evals232-1"
-  evidence: call:chat_media_upload_finalize#1 args.num_parts == 1
+  evidence: call:chat_media_upload_finalize#1 args.num_parts == "1"
   n/a_when: declined:chat_media_upload_initialize
 
 - [X-OC01] major · The answer says the call was declined, and nothing changed.

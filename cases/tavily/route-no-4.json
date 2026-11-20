@@ -60,7 +60,7 @@
     {
       "id": "TAV-OC02",
       "severity": "major",
-      "ask": "The answer gives a version number.",
+      "ask": "The answer gives a version number, from a search.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -73,6 +73,12 @@
             "source": "\\bv?[0-9]{1,2}(\\.[0-9]{1,2})+\\b",
             "flags": "i"
           }
+        },
+        {
+          "kind": "count",
+          "tool": "tavily_search",
+          "op": ">=",
+          "value": 1
         }
       ],
       "evidence_any": [],
@@ -95,7 +101,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "TAV-SF01",
@@ -123,7 +129,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "TAV-RB01",
@@ -139,12 +145,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "79a86aafa2751b5d6cb4f4de9479156c7379436219986066d89548893bf83f29"
+    "source_sha256": "f72beb8ed858c40ea3ea04fcc1b4b3a706731bffc604d40d54717d4d0c96534b"
   }
 }
