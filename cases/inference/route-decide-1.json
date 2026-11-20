@@ -1,0 +1,147 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-decide-1",
+  "plugin": "inference",
+  "skill": "inference-decide",
+  "tier": "T3",
+  "source": "evals-232/wide/inference/route",
+  "decision": "a calibrated urgency score over defined levels is Inference's decide, not a chat completion",
+  "data_check": "both plugins are installed; the call is declined",
+  "prompt": "score how urgent each of these two tickets is on a scale from low to critical, with a probability, not just a label:\n\"Checkout is down for all users\" and \"Typo on the pricing page\".",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 5,
+    "tokens": 350000
+  },
+  "seed": "plugins=inference,openrouter",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "INF-RT01",
+      "severity": "blocker",
+      "ask": "The decision tool was chosen, and the call was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "inference.decide",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "inference_decide"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "INF-SF01",
+      "severity": "blocker",
+      "ask": "No free-form model message was sent instead.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "openrouter_send-message"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "INF-OC01",
+      "severity": "major",
+      "ask": "The answer says nothing was scored.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not)\\b.{0,40}\\b(scored|decided|sent)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "INF-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "INF-SF03",
+      "severity": "blocker",
+      "ask": "Nothing was committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        },
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": "INF-SF01",
+      "text": "`absent:openrouter.send-message` cannot be written while the evidence grammar rejects a hyphen in a tool name; a send-message call would be declined under ask-changes, so its absence as a decline is the same fact.",
+      "line": 29
+    }
+  ],
+  "hashes": {
+    "source_sha256": "d4279d0111d945d19096692fe82c6b64997b720060c1dba3afd6f82c2502f5fb"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-4",
+  "plugin": "inference",
+  "skill": "inference-decide",
+  "tier": "T3",
+  "source": "evals-232/wide/inference/should-not-call",
+  "decision": "translation is neither an extraction nor a bounded decision, so no inference call is made",
+  "data_check": "none",
+  "prompt": "translate \"the release is ready\" into French",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "INF-SF01",
+      "severity": "blocker",
+      "ask": "No inference tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "inference.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "INF-OC01",
+      "severity": "major",
+      "ask": "The answer gives a French translation.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(est|sont)\\b.{0,15}\\b(prêt|prête|disponible|sortie)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "INF-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "9c3cdbad7f9668482a40372b723380bfa836b5364701f0187e3434a3d48b5205"
+  }
+}

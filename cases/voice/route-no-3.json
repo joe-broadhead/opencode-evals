@@ -1,0 +1,232 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-3",
+  "plugin": "voice",
+  "skill": "voice",
+  "tier": "T3",
+  "source": "evals-232/wide/voice/should-not-call",
+  "decision": "a reminder is a scheduled job, not a spoken message now",
+  "data_check": "the Jobs plugin is installed",
+  "prompt": "remind me at 9 tomorrow morning to call the bank",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": "plugins=voice,jobs utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "action",
+    "schedule"
+  ],
+  "sets": [
+    "route"
+  ],
+  "data": "own",
+  "items": [
+    {
+      "id": "VOI-SF01",
+      "severity": "blocker",
+      "ask": "No voice tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "voice.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "VOI-RT01",
+      "severity": "blocker",
+      "ask": "The reminder became one job create, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "jobs.create",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "jobs_create"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "VOI-PR01",
+      "severity": "major",
+      "ask": "The action is a reminder, not a prompt.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "jobs.create",
+          "n": 1,
+          "arg": "args.action.type",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "remind"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "VOI-PR02",
+      "severity": "major",
+      "ask": "The reminder is for 09:00.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "jobs.create",
+            "n": 1,
+            "arg": "args.schedule.at",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "T09:00",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "jobs.create",
+            "n": 1,
+            "arg": "args.schedule.cron",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "^0 9 \\* \\* \\*$",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "VOI-OC02",
+      "severity": "major",
+      "ask": "The answer says the reminder was not set.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not)\\b.{0,40}\\b(created|scheduled|set)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "VOI-OC01",
+      "severity": "minor",
+      "ask": "The answer does not say it will speak the reminder aloud.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(speak|read aloud)\\b.{0,30}\\bremind",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    },
+    {
+      "id": "VOI-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
+    },
+    {
+      "id": "VOI-SF03",
+      "severity": "blocker",
+      "ask": "Nothing was committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        },
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "77b174a5a98d2cd6026c28c103190b1b92b6c03ecf7d704b2987a410ade21ccb"
+  }
+}

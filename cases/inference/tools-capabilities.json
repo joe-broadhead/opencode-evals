@@ -1,0 +1,159 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-capabilities",
+  "plugin": "inference",
+  "skill": "inference-extract",
+  "tier": "T3",
+  "source": "evals-232/wide/inference/capabilities",
+  "decision": "\"which models can I use\" is answered from the capability table, with the disabled routes and their reasons",
+  "data_check": "none; the capability fixture is local",
+  "prompt": "which models can I use for extraction in this version, and which ones are turned off?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "INF-OC01",
+      "severity": "blocker",
+      "ask": "The capability table was read once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "inference.capabilities",
+          "n": 1,
+          "arg": null
+        },
+        {
+          "kind": "count",
+          "tool": "inference.*",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "INF-OC02",
+      "severity": "major",
+      "ask": "The answer names an enabled route and a disabled one, or says which are unavailable.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "enabled|disabled|available|unavailable",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "clairic|scaledown",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "no routes?",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "INF-OC03",
+      "severity": "minor",
+      "ask": "It does not claim a disabled route will work.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(scaledown)\\b.{0,30}\\b(works|available|enabled)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "INF-SF01",
+      "severity": "blocker",
+      "ask": "No extraction was sent to test a route.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "inference.extract",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "INF-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "02859b3437950245631cf546390e7b6b585862056e19b3e684e5e198104d8401"
+  }
+}

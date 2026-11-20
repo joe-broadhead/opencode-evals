@@ -1,0 +1,141 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-status",
+  "plugin": "jobs",
+  "skill": "jobs",
+  "tier": "T3",
+  "source": "evals-232/wide/jobs/status",
+  "decision": "a general \"how are my jobs\" question reads the compact status once, and the answer comes from it rather than from memory",
+  "data_check": "the job store is empty and no job file is committed",
+  "prompt": "how are my scheduled jobs doing? anything broken or waiting on me?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "JOB-OC01",
+      "severity": "blocker",
+      "ask": "The status read ran exactly once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "jobs.status",
+          "n": 1,
+          "arg": null
+        },
+        {
+          "kind": "count",
+          "tool": "jobs.*",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "JOB-OC02",
+      "severity": "major",
+      "ask": "The answer says there are no jobs, or names the state it read, without inventing a job.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "no jobs?|\\bnone\\b|nothing (is )?scheduled|no scheduled jobs|empty",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "paused|active|runner",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "JOB-TR01",
+      "severity": "minor",
+      "ask": "The jobs skill was loaded before the read.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "jobs"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "JOB-SF01",
+      "severity": "blocker",
+      "ask": "No job was created, paused, resumed or deleted to answer a question.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "jobs"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "JOB-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "ec7037fd276ccbcab48fd464a5fe9f6462349ac1c5b8eeb46f04a57212947c6f"
+  }
+}

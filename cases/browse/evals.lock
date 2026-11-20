@@ -1,0 +1,9 @@
+{
+  "plugin": "browse",
+  "epoch": 1,
+  "cases": 30,
+  "items": 164,
+  "cases_sha256": "65e11e5710af690f529eac5e43af70b079ab11e01a07b627e574d00ed0092812",
+  "grader_sha256": "7e6efd86ec6ce41f6608b698d853d0452f4eb2c183af2576e09ce52962ba1ad3",
+  "frozen_at": "2026-11-20T15:35:54.332Z"
+}

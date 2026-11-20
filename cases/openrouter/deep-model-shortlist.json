@@ -1,0 +1,213 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-model-shortlist",
+  "plugin": "openrouter",
+  "skill": "openrouter",
+  "tier": "T3",
+  "source": "evals-232/deep/openrouter/model-shortlist",
+  "decision": "a shortlist is built from the live catalogue in a few reads, with ids and prices from the results and the tradeoff stated",
+  "data_check": "the catalogue is reachable",
+  "prompt": "I need a coding model with at least 200k context and tool calling, ideally under $3 per million input tokens.\nShortlist two and tell me the tradeoff.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6,
+    "tokens": 400000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "data": "own",
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "The catalogue was the first read, and it was read once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "openrouter.list-models"
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.list-models",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "OR-OC05",
+      "severity": "major",
+      "ask": "No more than one detail read per shortlisted model.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "openrouter.get-model",
+          "op": "<=",
+          "value": 2
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.list-benchmarks",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer names two models by catalogue id.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "[a-z0-9][a-z0-9-]*\\/[a-z0-9][a-z0-9.:-]*",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "text-count",
+          "span": "any",
+          "op": ">=",
+          "value": {
+            "kind": "regex",
+            "source": "[a-z0-9][a-z0-9-]*\\/[a-z0-9][a-z0-9.:-]*",
+            "flags": ""
+          },
+          "n": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "OR-OC03",
+      "severity": "major",
+      "ask": "It states a price with its unit, from the catalogue.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "[$€£]\\s?[0-9]",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "token|million|1M",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "OR-OC04",
+      "severity": "major",
+      "ask": "It states the tradeoff, and labels the numbers as catalogue prices.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "catalogue|catalog|list price",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "but\\b|however|whereas|cheaper|faster|slower|more expensive|trade-?off",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "OR-SF01",
+      "severity": "blocker",
+      "ask": "No paid test call was made to compare them.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "openrouter.send-message",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    },
+    {
+      "id": "OR-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "7074d49cabc91f44409f88645683afdeaa96176908b469f23dc193f946d7ee2c"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "plugin": "boxd",
+  "epoch": 1,
+  "cases": 23,
+  "items": 132,
+  "cases_sha256": "9a9876cfa02da9fa368a5fab5ab327769c9b062abbd613fed92d42eb4139d6c9",
+  "grader_sha256": "7e6efd86ec6ce41f6608b698d853d0452f4eb2c183af2576e09ce52962ba1ad3",
+  "frozen_at": "2026-11-20T15:35:54.208Z"
+}

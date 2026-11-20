@@ -1,0 +1,201 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-run-script",
+  "plugin": "jobs",
+  "skill": "jobs",
+  "tier": "T3",
+  "source": "evals-232/wide/jobs/run_script",
+  "decision": "a one-off no-model script runs once through run-script with its tool manifest, not as a created job",
+  "data_check": "the script is declined before any tool runs, so nothing is read",
+  "prompt": "run this once, no job: list my saved X bookmarks and tell me how many there are",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 5,
+    "tokens": 350000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "uses"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "JOB-WR01",
+      "severity": "blocker",
+      "ask": "Exactly one one-off script run, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "jobs.run_script",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "jobs_run_script"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "JOB-PR01",
+      "severity": "major",
+      "ask": "The script declares the bookmark read in its manifest.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "jobs.run_script",
+          "n": 1,
+          "arg": "args.uses",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "jobs.run_script",
+            "n": 1,
+            "arg": "args.uses",
+            "op": "contains",
+            "value": {
+              "kind": "string",
+              "value": "x.posts.get_users_bookmarks"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "jobs.run_script",
+            "n": 1,
+            "arg": "args.uses",
+            "op": "contains",
+            "value": {
+              "kind": "string",
+              "value": "get_users_bookmarks"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "jobs.run_script",
+            "n": 1,
+            "arg": "args.uses",
+            "op": "contains",
+            "value": {
+              "kind": "string",
+              "value": "host:x_get_users_bookmarks"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "JOB-OC01",
+      "severity": "major",
+      "ask": "The answer says the script did not run.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not|didn't|did not)\\b.{0,30}\\b(run|executed)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|needs? (your )?approval|approve)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "JOB-SF01",
+      "severity": "blocker",
+      "ask": "No job was created to run it once.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "jobs.create",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "JOB-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "JOB-SF03",
+      "severity": "blocker",
+      "ask": "Nothing was committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        },
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "3067b36facffcbadd360a5c33b5b1434a902b4b8ba558a6af31e22e1b2569879"
+  }
+}

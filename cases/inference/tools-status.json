@@ -1,0 +1,153 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-status",
+  "plugin": "inference",
+  "skill": "inference-extract",
+  "tier": "T3",
+  "source": "evals-232/wide/inference/status",
+  "decision": "readiness is read once from status, and the answer reports connection, modules and caps rather than assuming them",
+  "data_check": "the OpenRouter key may or may not be imported in this trial",
+  "prompt": "is inference set up here, and what would a call cost me?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "INF-OC01",
+      "severity": "blocker",
+      "ask": "The status read ran exactly once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "inference.status",
+          "n": 1,
+          "arg": null
+        },
+        {
+          "kind": "count",
+          "tool": "inference.*",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "INF-OC02",
+      "severity": "major",
+      "ask": "The answer reports the key or module state and the cost caps it read.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(not )?(connected|configured)|key (is )?(set|missing)|modules? (on|off)|caps? (set|none)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "not (connected|configured)|no key",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "INF-TR01",
+      "severity": "minor",
+      "ask": "A skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "skill",
+            "skill": "inference-extract"
+          },
+          {
+            "kind": "skill",
+            "skill": "inference-decide"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "INF-SF01",
+      "severity": "blocker",
+      "ask": "No extraction or decision was sent to answer a readiness question.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "inference.extract",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "inference.decide",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "INF-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "e0c77244dea3adac080480cfee8189432e197738b1e8af0172c54d03cb19a974"
+  }
+}

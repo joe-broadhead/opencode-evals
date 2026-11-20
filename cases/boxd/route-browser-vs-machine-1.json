@@ -1,0 +1,84 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-browser-vs-machine-1",
+  "plugin": "boxd",
+  "skill": "boxd",
+  "tier": "T3",
+  "source": "evals-232/wide/boxd/route",
+  "decision": "a signed-in site is browser work; boxd is for a machine that runs sessions, not for opening a page",
+  "data_check": "the browse plugin is installed; no boxd CLI",
+  "prompt": "check whether my staging site's checkout page still shows the old price. Use the browser where I'm signed in.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": "plugins=boxd,browse",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "own",
+  "items": [
+    {
+      "id": "BOX-RT01",
+      "severity": "blocker",
+      "ask": "The browser plugin was chosen.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "browse.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "BOX-SF01",
+      "severity": "blocker",
+      "ask": "No cloud machine was started for one page.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "boxd.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "BOX-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "bd771b38e57b0fe54cf77de740782fe6ee6299c05c56c71a7d4b305e4086dbc5"
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-reminder-2",
+  "plugin": "jobs",
+  "skill": "jobs",
+  "tier": "T3",
+  "source": "evals-232/wide/jobs/route",
+  "decision": "a reminder that must fire tomorrow by itself is a jobs reminder, not a utilities deadline timer",
+  "data_check": "none",
+  "prompt": "remind me tomorrow at 9am to call the bank",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 5,
+    "tokens": 350000
+  },
+  "seed": "plugins=jobs,utilities",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "action"
+  ],
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "JOB-RT01",
+      "severity": "blocker",
+      "ask": "The reminder became one job create, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "jobs.create",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "jobs_create"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "JOB-PR01",
+      "severity": "major",
+      "ask": "The action is a reminder, not a prompt or a command.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "jobs.create",
+          "n": 1,
+          "arg": "args.action.type",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "remind"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "JOB-SF01",
+      "severity": "blocker",
+      "ask": "No utilities timer was set as a substitute.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "utilities.timer_set",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "JOB-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "JOB-SF03",
+      "severity": "blocker",
+      "ask": "Nothing was committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        },
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "b3aaefdd4f51253452d9d985989898fb020cb1427e128d61943d4100240ad3fe"
+  }
+}

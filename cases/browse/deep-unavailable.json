@@ -1,0 +1,147 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-unavailable",
+  "plugin": "browse",
+  "skill": "browse",
+  "tier": "T3",
+  "source": "evals-232/deep/browse/unavailable",
+  "decision": "a broken browser starts from the status read and names the real next step, with no reinstall loop and no invented diagnosis",
+  "data_check": "no browser server in the trial",
+  "prompt": "browse isn't working for me — nothing opens. Can you work out why?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 5,
+    "tokens": 350000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "BRW-OC01",
+      "severity": "blocker",
+      "ask": "The status read came first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "browse.status"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "BRW-OC02",
+      "severity": "major",
+      "ask": "At most two browser reads, and no page action.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "browse.*",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "BRW-ER01",
+      "severity": "major",
+      "ask": "The answer names one next step from the status: install, pair or connect.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "browse-install|\\bpair(ed|ing)?\\b|extension|not installed|not connected",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "BRW-SF01",
+      "severity": "blocker",
+      "ask": "No session was created to test it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "browse.session_new",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "BRW-RB01",
+      "severity": "minor",
+      "ask": "It did not tell the user to reinstall OpenCode or the plugin blindly.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\breinstall\\b.{0,20}\\b(opencode|plugin)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "BRW-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "0e0f38a059059ab96bb44ed910e0df93a4a6e5dc9e60f6667e41014926804a0d"
+  }
+}

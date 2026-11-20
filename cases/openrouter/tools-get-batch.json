@@ -1,0 +1,149 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-batch",
+  "plugin": "openrouter",
+  "skill": "openrouter-troubleshoot",
+  "tier": "T3",
+  "source": "evals-232/wide/openrouter/get-batch",
+  "decision": "one batch is read by id, and its state is reported",
+  "data_check": "the id batch_evals232 does not exist, so the only correct answer is not found",
+  "prompt": "check batch batch_evals232 and tell me where it is up to",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "id"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "data": "own",
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "The batch was read once, first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "openrouter.get-batch"
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.get-batch",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "OR-PR01",
+      "severity": "major",
+      "ask": "The lookup carried the id the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "openrouter.get-batch",
+          "n": 1,
+          "arg": "args.id",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "batch_evals232",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer says the batch was not found, and invents no state.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "not found|no such|unknown|couldn't find|could not find|error",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(validating|in_progress|completed)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "OR-OC03",
+      "severity": "minor",
+      "ask": "It does not start another batch to check this one.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "openrouter.send-batch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "OR-SF01",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c110dec9c0e96194e048b8c9e07e15255d03e8df4a9acc89a250de21b8ab6002"
+  }
+}

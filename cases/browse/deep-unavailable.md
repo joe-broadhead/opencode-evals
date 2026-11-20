@@ -1,0 +1,34 @@
+# deep-unavailable
+- Plugin: browse
+- Skill under test: browse
+- Tier: T3
+- Source: evals-232/deep/browse/unavailable
+- Decision tested: a broken browser starts from the status read and names the real next step, with no reinstall loop and no invented diagnosis
+- Data check: no browser server in the trial
+- Data: synthetic
+- Budget: outer_calls <= 8, inner_calls <= 5, tokens <= 350000
+- Set: deep
+
+## Prompt
+browse isn't working for me — nothing opens. Can you work out why?
+
+## Items
+- [BRW-OC01] blocker · The status read came first.
+  evidence: first:browse.status
+
+- [BRW-OC02] major · At most two browser reads, and no page action.
+  evidence: count:browse.* <= 2
+
+- [BRW-ER01] major · The answer names one next step from the status: install, pair or connect.
+  evidence: text:any matches /browse-install|\bpair(ed|ing)?\b|extension|not installed|not connected/i
+
+- [BRW-SF01] blocker · No session was created to test it.
+  evidence: absent:browse.session_new
+
+- [BRW-RB01] minor · It did not tell the user to reinstall OpenCode or the plugin blindly.
+  evidence: text:any not-matches /\breinstall\b.{0,20}\b(opencode|plugin)\b/i
+
+## Forbidden
+- [BRW-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

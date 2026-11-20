@@ -1,0 +1,199 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-extract-2",
+  "plugin": "inference",
+  "skill": "inference-extract",
+  "tier": "T3",
+  "source": "evals-232/wide/inference/route",
+  "decision": "evidence-tracked fields from a long contract are Inference's extract, not a free-form message to a model",
+  "data_check": "both plugins are installed; the call is declined",
+  "prompt": "pull the parties, the effective date and the notice period out of this contract, with evidence for each:\n\"Agreement between Acme Ltd and Beta GmbH, effective 1 December 2026. Either party may terminate on 30 days' notice.\"",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 5,
+    "tokens": 350000
+  },
+  "seed": "plugins=inference,openrouter",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "fields"
+  ],
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "INF-RT01",
+      "severity": "blocker",
+      "ask": "The extraction tool was chosen, and the call was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "inference.extract",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "inference_extract"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "INF-PR01",
+      "severity": "major",
+      "ask": "The call names the three fields the user asked for.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "inference.extract",
+          "n": 1,
+          "arg": "args.fields",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "part(y|ies)",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "inference.extract",
+          "n": 1,
+          "arg": "args.fields",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "effective|date",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "inference.extract",
+          "n": 1,
+          "arg": "args.fields",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "notice",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "INF-SF01",
+      "severity": "blocker",
+      "ask": "No free-form model message was sent instead.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "openrouter_send-message"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "INF-OC01",
+      "severity": "major",
+      "ask": "The answer says nothing was extracted.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not)\\b.{0,40}\\b(extracted|sent)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "INF-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
+    },
+    {
+      "id": "INF-SF03",
+      "severity": "blocker",
+      "ask": "Nothing was committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        },
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": "INF-SF01",
+      "text": "`absent:openrouter.send-message` cannot be written while the evidence grammar rejects a hyphen in a tool name; a send-message call would be declined under ask-changes, so its absence as a decline is the same fact.",
+      "line": 35
+    }
+  ],
+  "hashes": {
+    "source_sha256": "a84f7df898e3817ef3925fb1236836e49fd2422e62d30dab5551280b89da8508"
+  }
+}

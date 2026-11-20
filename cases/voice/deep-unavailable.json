@@ -1,0 +1,132 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-unavailable",
+  "plugin": "voice",
+  "skill": "voice",
+  "tier": "T3",
+  "source": "evals-232/deep/voice/unavailable",
+  "decision": "a broken voice setup is diagnosed from status, with the one next step named and no invented cause",
+  "data_check": "the container has no audio device",
+  "prompt": "voice isn't working — nothing happens when I press the key. What's wrong?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "VOI-OC01",
+      "severity": "blocker",
+      "ask": "The status read came first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "voice.status"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "VOI-ER01",
+      "severity": "major",
+      "ask": "The answer names the status's next step: /voice-install, the microphone setting, or the doctor.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "voice-install|System Settings|doctor|allow microphone|microphone permission",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "VOI-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was spoken or downloaded to test it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "voice"
+        },
+        {
+          "kind": "absent",
+          "tool": "shell",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "VOI-RB01",
+      "severity": "minor",
+      "ask": "It does not blame the user's keyboard without evidence.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(keyboard|hardware)\\b.{0,20}\\b(broken|faulty)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "VOI-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "aa0927c5644109c9edabdeb8aae5a8d939cca9366732112eb4cb579b6966e846"
+  }
+}
