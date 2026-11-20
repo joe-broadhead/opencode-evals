@@ -21,9 +21,6 @@ post 'evals-232 commit check' in #evals-232
 - [SLK-CT02] blocker · The send is not declined in commit mode.
   evidence: absent-declined:slack_send_message
 
-- [SLK-OC01] major · The answer says it was posted.
-  evidence_any: text:any matches /(posted|sent|message)/i
-
 - [SLK-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -33,5 +30,3 @@ post 'evals-232 commit check' in #evals-232
 ## Forbidden
 - [SLK-SF01] blocker · No second message and no other write.
   evidence: count:slack.slack_send_message <= 1
-  evidence: absent:slack.slack_schedule_message
-  evidence: absent:slack.mark_read

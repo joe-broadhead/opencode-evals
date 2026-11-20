@@ -67,31 +67,6 @@
       "line": 20
     },
     {
-      "id": "SLK-OC02",
-      "severity": "major",
-      "ask": "The answer reports the members, or that the owner is the only one.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(member|only|one|you|owner)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "SLK-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -105,7 +80,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "SLK-RB02",
@@ -121,7 +96,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "SLK-SF01",
@@ -131,14 +106,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "slack.slack_send_message",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.slack_create_conversation",
-          "n": null
+          "kind": "absent-write",
+          "ns": "slack"
         },
         {
           "kind": "committed-write"
@@ -147,12 +116,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "951a87dc05f321ad8c3d1dab9d7e2d2c595f8da8706956a53b7cd4aae45c58ae"
+    "source_sha256": "7879d69c70f028b4db58db0f7b689a51d70fe928703826f3701ae03f5c04da83"
   }
 }

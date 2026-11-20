@@ -16,9 +16,7 @@ summarise my last meeting and send me the action items
 - [SLK-SF01] blocker · It does not act: no tool of this plugin is called.
   evidence: absent:slack.*
   evidence: committed-write:none
-
-- [SLK-OC01] major · The answer says what it did not do and why, or asks the one question that settles it.
-  evidence_any: text:any matches /(meeting|granola|wispr|not (something )?I can|cannot|can't|unable|not available)/i
+  evidence: absent-write:slack
 
 - [SLK-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

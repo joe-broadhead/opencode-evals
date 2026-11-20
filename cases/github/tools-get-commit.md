@@ -33,3 +33,4 @@ what changed in commit c0ffee1aa11?
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

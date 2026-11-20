@@ -133,16 +133,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "granola.update_private_notes",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.generate_summary",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -157,10 +147,10 @@
     {
       "id": null,
       "text": "The start time is today's; the case grades the call and the decline, not the instant.",
-      "line": 38
+      "line": 36
     }
   ],
   "hashes": {
-    "source_sha256": "1cc8489b8350b77d91fbc2a20c09ba3ed7bf0047e49477257dee8f7780a5e1a8"
+    "source_sha256": "28c5a674be32ec72827c40d3f6d14239aeeba75488eefeafc3b75291d4646ce9"
   }
 }

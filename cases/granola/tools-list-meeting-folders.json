@@ -42,31 +42,6 @@
       "line": 16
     },
     {
-      "id": "GRA-OC02",
-      "severity": "major",
-      "ask": "The answer lists the folders, including the sandbox folder.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(evals-232|folder)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
       "id": "GRA-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -80,7 +55,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 19
     },
     {
       "id": "GRA-RB02",
@@ -96,7 +71,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 22
     },
     {
       "id": "GRA-SF01",
@@ -106,14 +81,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "granola.create_folder",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.update_folder",
-          "n": null
+          "kind": "absent-write",
+          "ns": "granola"
         },
         {
           "kind": "committed-write"
@@ -122,12 +91,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "43e966bdf2d61b65ce034a9d6688766b5fde0e43839b74e1239d111604b87b5d"
+    "source_sha256": "5b346ea2b618b7ac0e4cec1788b8ce846539411ca89c3576849c2d6a6a883ae1"
   }
 }

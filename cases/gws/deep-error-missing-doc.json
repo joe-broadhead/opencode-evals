@@ -139,23 +139,12 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "gws"
+        },
+        {
           "kind": "absent",
           "tool": "gws.plan",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.write",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.delete",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.send",
           "n": null
         },
         {
@@ -173,10 +162,10 @@
     {
       "id": null,
       "text": "A missing name is the deterministic error path: it does not depend on the account's scopes or the day.",
-      "line": 41
+      "line": 39
     }
   ],
   "hashes": {
-    "source_sha256": "919328630082198e166891dc9effef48530c453905d7e1e40e466ff55d9363f2"
+    "source_sha256": "1de3a1d789ad8afcdf958a79b800880660303a2dad0ddf833092b284c83ef117"
   }
 }

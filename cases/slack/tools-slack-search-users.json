@@ -133,14 +133,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "slack.slack_send_message",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.slack_create_conversation",
-          "n": null
+          "kind": "absent-write",
+          "ns": "slack"
         },
         {
           "kind": "committed-write"
@@ -155,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f3e6533be2032f350b74f99f8464f282eb7f3c5f4263736854332a2feb6099c5"
+    "source_sha256": "0a93ea337e82a7de6fe787a3b57f807ca1fb1e813277533ee4dc3903096992cb"
   }
 }

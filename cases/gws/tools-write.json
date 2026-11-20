@@ -163,31 +163,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "gws.export",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.send",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.share",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.delete",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.admin",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -202,10 +177,10 @@
     {
       "id": null,
       "text": "The spreadsheet id is a sandbox target; the plan's params are read from the private recording.",
-      "line": 45
+      "line": 40
     }
   ],
   "hashes": {
-    "source_sha256": "b79fd4a36106d590e3afa4f8b48962b28e9159b83ac454a993302a75df6f0878"
+    "source_sha256": "b0d14d78c011753d44825fc2619fd922a45d29ad2fc7500fcfa29d6df3a5b4b3"
   }
 }

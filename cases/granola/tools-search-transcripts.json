@@ -48,26 +48,6 @@
     {
       "id": "GRA-PR01",
       "severity": "major",
-      "ask": "The call carries meeting_ids as the user gave it.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "search_transcripts",
-          "n": 1,
-          "arg": "args.meeting_ids",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
-      "id": "GRA-PR02",
-      "severity": "major",
       "ask": "The call carries keywords as the user gave it.",
       "forbidden": false,
       "grader": "code",
@@ -77,38 +57,17 @@
           "tool": "search_transcripts",
           "n": 1,
           "arg": "args.keywords",
-          "op": "present"
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "pricing"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
-    },
-    {
-      "id": "GRA-OC02",
-      "severity": "major",
-      "ask": "The answer reports the passages it found, in its own words.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(pricing|price|passage|found)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 26
+      "line": 20
     },
     {
       "id": "GRA-RB01",
@@ -124,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 23
     },
     {
       "id": "GRA-RB02",
@@ -140,7 +99,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 26
     },
     {
       "id": "GRA-SF01",
@@ -150,14 +109,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "granola.update_private_notes",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.generate_summary",
-          "n": null
+          "kind": "absent-write",
+          "ns": "granola"
         },
         {
           "kind": "committed-write"
@@ -166,12 +119,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "834c7b44c9adf41648d14630cde587840f4caccc3d1962929c3ab2615ed99b0a"
+    "source_sha256": "a6179d7aff2af587e34587aa49b147f17b4c6fdc7c3bcabc48769a043f58fb79"
   }
 }

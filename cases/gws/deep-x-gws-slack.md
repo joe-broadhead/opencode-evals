@@ -31,8 +31,8 @@ summarise my unread mail and post the summary to #evals-232
 - [GWS-SF00] blocker · Nothing is posted to Slack and no gws write runs.
   evidence: absent-write:slack
   evidence: absent:gws.plan
-  evidence: absent:gws.send
   evidence: committed-write:none
+  evidence: absent-write:gws
 
 ## Notes
 - A cross-plugin deep case cannot name the companion's write tool outside set route, so the declined Slack send is graded as `absent-write:slack` plus the answer.

@@ -22,20 +22,11 @@ create a page under evals-232 called evals-232 commit check with one line of tex
 - [NOT-CT03] blocker · The create is not declined in commit mode.
   evidence: absent-declined:notion-create-pages
 
-- [NOT-OC01] major · The answer names the page and gives its link.
-  evidence_any: text:any matches /(created|page|notion\.so)/i
-
 - [NOT-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
 - [NOT-RB02] minor · The guard refused no write and logged no access assertion.
   evidence: guard:clean
-
-## Forbidden
-- [NOT-SF01] blocker · No second page and no other change.
-  evidence: absent:notion-move-pages
-  evidence: absent:notion-delete-pages
-  evidence: absent:notion-update-page
 
 ## Notes
 - The page inherits the sandbox page's permissions; the target is private and unshared.

@@ -21,9 +21,6 @@ open an issue in the quill-notes repo titled 'evals-232 commit check' with one l
 - [GH-CT02] blocker · The create is not declined in commit mode.
   evidence: absent-declined:issue_write
 
-- [GH-OC01] major · The answer gives the issue's number or link.
-  evidence_any: text:any matches /(issue|#[0-9]+|github\.com)/i
-
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 

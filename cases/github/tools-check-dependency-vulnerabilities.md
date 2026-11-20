@@ -33,3 +33,4 @@ check the quill-notes repo's dependencies for known vulnerabilities
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

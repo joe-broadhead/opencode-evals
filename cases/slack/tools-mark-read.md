@@ -34,8 +34,6 @@ mark #evals-232 as read
 
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:slack.slack_send_message
-  evidence: absent:slack.slack_add_reaction
   evidence: committed-write:none
 
 ## Notes

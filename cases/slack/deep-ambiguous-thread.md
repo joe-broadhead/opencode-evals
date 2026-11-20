@@ -28,6 +28,5 @@ reply to that message in #evals-232 and say we agree
 
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is written.
-  evidence: absent:slack.slack_add_reaction
-  evidence: absent:slack.mark_read
+  evidence: absent-write:slack
   evidence: committed-write:none

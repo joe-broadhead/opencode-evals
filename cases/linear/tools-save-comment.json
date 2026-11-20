@@ -48,26 +48,6 @@
     {
       "id": "LIN-PR01",
       "severity": "major",
-      "ask": "The call carries issueId as the user gave it.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "save_comment",
-          "n": 1,
-          "arg": "args.issueId",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
-      "id": "LIN-PR02",
-      "severity": "major",
       "ask": "The call carries body as the user gave it.",
       "forbidden": false,
       "grader": "code",
@@ -87,7 +67,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 20
     },
     {
       "id": "LIN-WR02",
@@ -104,7 +84,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "LIN-WR03",
@@ -139,7 +119,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "LIN-RB01",
@@ -155,7 +135,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 29
     },
     {
       "id": "LIN-RB02",
@@ -171,7 +151,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 32
     },
     {
       "id": "LIN-SF01",
@@ -181,43 +161,18 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "delete_comment",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "merge_diff",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "share_issue",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "save_issue",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "save_project",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d2bb0968d545e6e254af839b268d0b0d56d7fd793d6c88fde1000913740834c3"
+    "source_sha256": "4546f6667c94a203ac7462fd7c844f8e531ae0a5e543dee99c0dc6c5f52cb3f4"
   }
 }

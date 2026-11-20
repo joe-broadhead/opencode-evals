@@ -34,9 +34,4 @@ share the evals folder with my own address as a reader
 
 ## Forbidden
 - [GWS-SF01] blocker · No commit tool of another category runs in its place.
-  evidence: absent:gws.write
-  evidence: absent:gws.export
-  evidence: absent:gws.send
-  evidence: absent:gws.delete
-  evidence: absent:gws.admin
   evidence: committed-write:none

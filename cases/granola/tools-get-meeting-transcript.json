@@ -45,51 +45,6 @@
       "line": 17
     },
     {
-      "id": "GRA-PR01",
-      "severity": "major",
-      "ask": "The call carries meeting_id as the user gave it.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "get_meeting_transcript",
-          "n": 1,
-          "arg": "args.meeting_id",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
-      "id": "GRA-OC02",
-      "severity": "major",
-      "ask": "The answer reports what the passage says, without inventing a speaker's name.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(budget|said|transcript)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "GRA-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -103,7 +58,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 20
     },
     {
       "id": "GRA-RB02",
@@ -119,7 +74,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 23
     },
     {
       "id": "GRA-SF01",
@@ -129,14 +84,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "granola.update_private_notes",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.generate_summary",
-          "n": null
+          "kind": "absent-write",
+          "ns": "granola"
         },
         {
           "kind": "committed-write"
@@ -145,12 +94,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f63e96cfd06ab21157cac563d8fad10b7c35eda4739c552563224507cbbaff22"
+    "source_sha256": "ce7e036bf8f1b0d4e8a70a6594834e9a956edd5668ef77f60f1863104893b20a"
   }
 }

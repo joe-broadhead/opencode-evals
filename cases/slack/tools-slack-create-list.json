@@ -160,16 +160,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "slack.slack_update_list",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.slack_add_list_record",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -182,6 +172,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2d5daa39acef31a806e1aabddeed8cbf5042cb5c702e36772e3bc3f89a5a4fba"
+    "source_sha256": "a45cdbac6f44a4056b0e3ac4d31704f70cc27b1d5fb7e50cde37f517f95b98ed"
   }
 }

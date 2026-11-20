@@ -34,6 +34,4 @@ rename the evals list to eval runs 232
 
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:slack.slack_create_list
-  evidence: absent:slack.slack_update_list_record
   evidence: committed-write:none

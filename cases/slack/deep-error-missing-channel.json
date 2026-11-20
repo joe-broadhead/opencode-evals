@@ -144,13 +144,12 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "slack.slack_read_channel",
-          "n": null
+          "kind": "absent-write",
+          "ns": "slack"
         },
         {
           "kind": "absent",
-          "tool": "slack.slack_send_message",
+          "tool": "slack.slack_read_channel",
           "n": null
         },
         {
@@ -166,6 +165,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d6d8b09562935cc1619fa5aa2b0c278111afc5d2c77ba7765903e18b8095937a"
+    "source_sha256": "df18a3ef859729180133955d54f464c2beb1636e2f047906f9deff89f0546aac"
   }
 }

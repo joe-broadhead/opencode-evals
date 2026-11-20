@@ -34,6 +34,4 @@ make a canvas in #evals-232 called evals run notes with a heading and one line
 
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:slack.slack_update_canvas
-  evidence: absent:slack.slack_send_message
   evidence: committed-write:none

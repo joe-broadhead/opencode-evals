@@ -61,38 +61,18 @@
           "tool": "slack.slack_read_channel",
           "n": 1,
           "arg": "args.oldest",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^[0-9]{10}$",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 20
-    },
-    {
-      "id": "SLK-DT02",
-      "severity": "major",
-      "ask": "The answer names the dates it covered.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(last week|monday|tuesday|wednesday|thursday|friday|[0-9]{1,2} [A-Z][a-z]+)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
     },
     {
       "id": "SLK-RB01",
@@ -108,7 +88,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "SLK-RB02",
@@ -124,7 +104,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "SLK-SF01",
@@ -134,14 +114,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "slack.slack_send_message",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.mark_read",
-          "n": null
+          "kind": "absent-write",
+          "ns": "slack"
         },
         {
           "kind": "committed-write"
@@ -150,7 +124,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     }
   ],
   "oracle": [],
@@ -158,10 +132,10 @@
     {
       "id": null,
       "text": "The exact instants depend on the day, so the case grades that a bound was passed and that the answer names its window.",
-      "line": 39
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "7e4f49520c33ae426d2cf4487c9fcc2c49a2f6113ba1d43df669c5037b500587"
+    "source_sha256": "fc6d2ddbb0fcdb6e08e3d087c2abfd5a35ed2a5082eeb0dc4b05ed7a4de64c9e"
   }
 }

@@ -144,13 +144,12 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "get_issue",
-          "n": null
+          "kind": "absent-write",
+          "ns": "linear"
         },
         {
           "kind": "absent",
-          "tool": "save_issue",
+          "tool": "get_issue",
           "n": null
         },
         {
@@ -172,6 +171,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "8c650d4564ca990c7431838b8ad6366d8d72a46ac699b6785e39040fe7890de0"
+    "source_sha256": "f823a71443c32bd56dbfb883ca3c8c82e52134f7e5f03d9b4a58ca53d21b4424"
   }
 }

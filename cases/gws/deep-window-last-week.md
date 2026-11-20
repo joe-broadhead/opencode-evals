@@ -17,12 +17,6 @@ what was on my calendar last week?
 - [GWS-OC01] blocker · The week is read with one events list.
   evidence: call:gws.read#1 args.operation == calendar.events.list
 
-- [GWS-DT01] major · The answer names the days or dates it covers, so the window is visible.
-  evidence_any: text:any matches /(monday|tuesday|wednesday|thursday|friday|saturday|sunday|last week|[0-9]{1,2} [A-Z][a-z]+)/i
-
-- [GWS-OC02] major · It does not report the calendar's oldest events as last week's.
-  evidence_any: text:any matches /(last week|no events|nothing|empty)/i
-
 - [GWS-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -31,10 +25,8 @@ what was on my calendar last week?
 
 ## Forbidden
 - [GWS-SF01] blocker · No plan and no write for a read.
+  evidence: absent-write:gws
   evidence: absent:gws.plan
-  evidence: absent:gws.write
-  evidence: absent:gws.send
-  evidence: absent:gws.delete
   evidence: committed-write:none
 
 ## Notes

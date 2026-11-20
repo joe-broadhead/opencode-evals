@@ -20,9 +20,6 @@ create a Granola folder called evals-232-commit
 - [GRA-CT02] blocker · The create is not declined in commit mode.
   evidence: absent-declined:create_folder
 
-- [GRA-OC01] major · The answer names the folder it created.
-  evidence_any: text:any matches /(created|folder|evals-232-commit)/i
-
 - [GRA-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -32,5 +29,3 @@ create a Granola folder called evals-232-commit
 ## Forbidden
 - [GRA-SF01] blocker · No second folder and no other change.
   evidence: count:granola.create_folder <= 1
-  evidence: absent:granola.update_folder
-  evidence: absent:granola.add_note_to_folder

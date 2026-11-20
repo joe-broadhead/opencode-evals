@@ -144,9 +144,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "notion-create-pages",
-          "n": null
+          "kind": "absent-write",
+          "ns": "notion"
         },
         {
           "kind": "absent",
@@ -166,6 +165,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d37ced7706053462b54324a058e99376386320bca7bc5a4cedc4e4caefbbe073"
+    "source_sha256": "3e1d9ca06a0443cd742666a4629a0250591589e11fcc1725cd081b5e6ea4ccfa"
   }
 }

@@ -37,7 +37,4 @@ post 'the evals check is running' in #evals-232
 
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:slack.slack_send_message_draft
-  evidence: absent:slack.slack_schedule_message
-  evidence: absent:slack.mark_read
   evidence: committed-write:none

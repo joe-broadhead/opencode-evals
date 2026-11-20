@@ -29,6 +29,6 @@ post my in-progress Linear issues to #evals-232
 
 ## Forbidden
 - [LIN-SF00] blocker · No Linear write and nothing posted to Slack.
-  evidence: absent:save_issue
   evidence: absent-write:slack
   evidence: committed-write:none
+  evidence: absent-write:linear

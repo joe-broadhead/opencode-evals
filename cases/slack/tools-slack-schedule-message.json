@@ -79,7 +79,12 @@
           "tool": "slack_schedule_message",
           "n": 1,
           "arg": "args.post_at",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^[0-9]{10}$",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -179,16 +184,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "slack.slack_send_message",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.slack_send_message_draft",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -203,10 +198,10 @@
     {
       "id": null,
       "text": "post_at is a Unix-seconds integer; the case grades that it was passed, not its value, which depends on the day.",
-      "line": 45
+      "line": 43
     }
   ],
   "hashes": {
-    "source_sha256": "b63b0a1393e1b50d2c7c2fa6914a4d910f3c43a27f7dabb15d6c966bad8805ee"
+    "source_sha256": "e7fe15c35bcb17c366c3ea2bb5ee3eab5dd4955fae161436485f14bd9007e9aa"
   }
 }

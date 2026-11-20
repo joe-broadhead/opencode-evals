@@ -152,6 +152,10 @@
         },
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "granola"
         }
       ],
       "evidence_any": [],
@@ -165,10 +169,10 @@
     {
       "id": null,
       "text": "An empty search does not prove the topic never came up; the answer must say what it searched.",
-      "line": 38
+      "line": 39
     }
   ],
   "hashes": {
-    "source_sha256": "362186732c344b88a72490307150abf348f7bc25eaedc7abfeafbace57de515e"
+    "source_sha256": "b37709cf762cb190ed8108ab953b8f45d6fe6547fe239a08d9e644c97e17550c"
   }
 }

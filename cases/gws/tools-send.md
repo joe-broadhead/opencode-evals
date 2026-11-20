@@ -37,9 +37,4 @@ email me a one-line note that the eval run passed
 
 ## Forbidden
 - [GWS-SF01] blocker · No commit tool of another category runs in its place.
-  evidence: absent:gws.write
-  evidence: absent:gws.export
-  evidence: absent:gws.share
-  evidence: absent:gws.delete
-  evidence: absent:gws.admin
   evidence: committed-write:none

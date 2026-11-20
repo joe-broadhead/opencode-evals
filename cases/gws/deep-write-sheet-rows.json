@@ -184,31 +184,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "gws.send",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.delete",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.share",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.admin",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.export",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -221,6 +196,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "df43c9a823d4e1e16b463a1932a527fc30dce015c42bc6d5d3f65fe163aae1a7"
+    "source_sha256": "b31213741af925ae1c501a4ae7b83ec39521d9ea256611012b84a9a26fb88a6d"
   }
 }

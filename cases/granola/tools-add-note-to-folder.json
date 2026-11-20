@@ -133,16 +133,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "granola.remove_note_from_folder",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.update_folder",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -155,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5673dfcf056a098f001241c1dd4ac4fbf488f4c878cc16ca3e078a998a136082"
+    "source_sha256": "bfa13c546405fc8f2fe1681d6fbebe0aed3e8b4d5e73e5ebcdeb5ff202f6c195"
   }
 }

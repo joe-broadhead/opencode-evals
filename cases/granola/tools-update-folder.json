@@ -133,16 +133,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "granola.create_folder",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.add_note_to_folder",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -155,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3b3f601e816c413bb7bc4b924d4e88f97141070de49b0cc4579ac54382282b71"
+    "source_sha256": "d9bb772e914e1242c2273e38338574cec04ea980e0ba5bb666d747123e678e80"
   }
 }

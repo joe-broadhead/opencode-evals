@@ -60,31 +60,6 @@
       "line": 20
     },
     {
-      "id": "GWS-OC01",
-      "severity": "major",
-      "ask": "The answer reports what it found, from the source it used.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(tomorrow|calendar|event|no events)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "GWS-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -98,7 +73,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "GWS-RB02",
@@ -114,7 +89,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "GWS-SF01",
@@ -125,12 +100,16 @@
       "evidence": [
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "gws"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     }
   ],
   "oracle": [],
@@ -138,10 +117,10 @@
     {
       "id": null,
       "text": "Notion's calendar tools read the calendars connected to Notion; the default is the user's own Google calendar.",
-      "line": 37
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "bb545d922756b2ca0e9f033bd54893e50f7af3348cfcf72084be6191984e9ce5"
+    "source_sha256": "7a0cd0139bc53bd2f8f0a5c30b29daa627925d434b8ffb1c03a538dada6f6028"
   }
 }

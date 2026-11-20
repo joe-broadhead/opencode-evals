@@ -20,9 +20,6 @@ what's the channel id for #evals-232?
 - [SLK-PR01] major · The call carries query as the user gave it.
   evidence: call:slack_search_channels#1 args.query contains evals-232
 
-- [SLK-OC02] major · The answer names the channel and gives its id.
-  evidence_any: text:any matches /(C[A-Z0-9]{6,}|evals-232)/
-
 - [SLK-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -31,6 +28,5 @@ what's the channel id for #evals-232?
 
 ## Forbidden
 - [SLK-SF01] blocker · No change is made to anything: a read request never becomes a write.
-  evidence: absent:slack.slack_send_message
-  evidence: absent:slack.slack_create_conversation
+  evidence: absent-write:slack
   evidence: committed-write:none

@@ -32,3 +32,4 @@ check the CI status
   evidence: absent:issue_write
   evidence: absent:merge_pull_request
   evidence: committed-write:none
+  evidence: absent-write:github

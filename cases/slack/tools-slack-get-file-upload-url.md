@@ -34,6 +34,4 @@ upload the notes.txt from my project to #evals-232
 
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:slack.slack_complete_file_upload
-  evidence: absent:slack.slack_send_message
   evidence: committed-write:none

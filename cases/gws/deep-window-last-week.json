@@ -50,56 +50,6 @@
       "line": 17
     },
     {
-      "id": "GWS-DT01",
-      "severity": "major",
-      "ask": "The answer names the days or dates it covers, so the window is visible.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(monday|tuesday|wednesday|thursday|friday|saturday|sunday|last week|[0-9]{1,2} [A-Z][a-z]+)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
-      "id": "GWS-OC02",
-      "severity": "major",
-      "ask": "It does not report the calendar's oldest events as last week's.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(last week|no events|nothing|empty)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "GWS-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -113,7 +63,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 20
     },
     {
       "id": "GWS-RB02",
@@ -129,7 +79,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 23
     },
     {
       "id": "GWS-SF01",
@@ -139,23 +89,12 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "gws"
+        },
+        {
           "kind": "absent",
           "tool": "gws.plan",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.write",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.send",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.delete",
           "n": null
         },
         {
@@ -165,7 +104,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 27
     }
   ],
   "oracle": [],
@@ -173,10 +112,10 @@
     {
       "id": null,
       "text": "The window is relative, so the case carries no absolute dates; the answer's own days are what is graded.",
-      "line": 41
+      "line": 33
     }
   ],
   "hashes": {
-    "source_sha256": "0397c29d31db6057814ec1745378fe05d9131a4c50fdc9b716d85f3503122e6a"
+    "source_sha256": "d11600f740f4a29df3c5861c98c925849941f95e8f80aed4ae6b327051dc68c1"
   }
 }

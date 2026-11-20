@@ -17,11 +17,8 @@ what do you know about my role and the team I work with?
 - [GRA-OC01] blocker · get_agent_brief answers the request: the plugin's own tool for this task is called, not a substitute.
   evidence: call:get_agent_brief#1
 
-- [GRA-PR01] major · The call carries fields as the user gave it.
-  evidence: call:get_agent_brief#1 args.fields present
-
-- [GRA-OC02] major · The answer reports the brief's fields and does not present them as current work.
-  evidence_any: text:any matches /(role|team|work|brief)/i
+- [GRA-PR01] major · The brief is asked for the fields the user named.
+  evidence: call:get_agent_brief#1 args.fields contains role
 
 - [GRA-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
@@ -31,6 +28,5 @@ what do you know about my role and the team I work with?
 
 ## Forbidden
 - [GRA-SF01] blocker · No change is made to anything: a read request never becomes a write.
-  evidence: absent:granola.update_private_notes
-  evidence: absent:granola.create_folder
+  evidence: absent-write:granola
   evidence: committed-write:none

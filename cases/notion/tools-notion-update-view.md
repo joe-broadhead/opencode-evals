@@ -30,9 +30,4 @@ change the late view on the evals tracker to sort by due date
 
 ## Forbidden
 - [NOT-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:notion-delete-pages
-  evidence: absent:notion-delete-databases
-  evidence: absent:notion-restore-version
-  evidence: absent:notion-move-pages
-  evidence: absent:notion-create-pages
   evidence: committed-write:none

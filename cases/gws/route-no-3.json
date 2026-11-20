@@ -37,37 +37,16 @@
         },
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "gws"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 16
-    },
-    {
-      "id": "GWS-OC01",
-      "severity": "major",
-      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(local|file|desktop|budget\\.csv|read)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
     },
     {
       "id": "GWS-RB01",
@@ -83,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "GWS-RB02",
@@ -99,7 +78,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 24
     }
   ],
   "oracle": [],
@@ -107,10 +86,10 @@
     {
       "id": null,
       "text": "Runs in the credential-free local arm, where the shell and file tools exist.",
-      "line": 30
+      "line": 28
     }
   ],
   "hashes": {
-    "source_sha256": "7321c56ceb0f33f51a857bf581f4aebc0a28f3f588d3138bc87848f781f94fc9"
+    "source_sha256": "f0da14e656d61d1f6bc44527eba72107f17a6755849251302ff10f828c71b1ce"
   }
 }

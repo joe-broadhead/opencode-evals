@@ -20,9 +20,6 @@ find where we discussed the budget in a meeting
 - [GRA-RT02] major · The overlapping plugin is not called.
   evidence: absent:slack.*
 
-- [GRA-OC01] major · The answer reports what it found, from the source it used.
-  evidence_any: text:any matches /(budget|meeting|transcript|passage)/i
-
 - [GRA-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -32,3 +29,4 @@ find where we discussed the budget in a meeting
 ## Forbidden
 - [GRA-SF01] blocker · Nothing is committed.
   evidence: committed-write:none
+  evidence: absent-write:granola

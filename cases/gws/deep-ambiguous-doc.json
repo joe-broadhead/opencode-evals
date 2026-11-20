@@ -105,29 +105,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "gws.write",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.send",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.delete",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.share",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.admin",
-          "n": null
+          "kind": "absent-write",
+          "ns": "gws"
         },
         {
           "kind": "committed-write"
@@ -144,10 +123,10 @@
     {
       "id": null,
       "text": "'Update the doc' names neither the text nor the change; a plan would have to invent both.",
-      "line": 38
+      "line": 34
     }
   ],
   "hashes": {
-    "source_sha256": "302a84a066339345c0e0966ccd4fb3418d09a88327f948dc935cc0d0eefc5fc3"
+    "source_sha256": "40f33fff17f10c5bcfbf9d837c12bffb6c7d231c09c110b1b995a7df179d7d46"
   }
 }

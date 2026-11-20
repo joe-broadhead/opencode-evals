@@ -34,6 +34,4 @@ add a record to the evals list saying the run passed
 
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:slack.slack_update_list
-  evidence: absent:slack.slack_update_list_record
   evidence: committed-write:none

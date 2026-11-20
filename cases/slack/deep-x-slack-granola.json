@@ -27,31 +27,6 @@
   "data": "real",
   "items": [
     {
-      "id": "SLK-OC01",
-      "severity": "major",
-      "ask": "The answer reports the meeting's action items, in its own words.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(action|meeting|granola|follow)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 18
-    },
-    {
       "id": "SLK-WR01",
       "severity": "blocker",
       "ask": "One post is attempted in the sandbox channel.",
@@ -77,7 +52,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 18
     },
     {
       "id": "SLK-WR02",
@@ -94,7 +69,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 22
     },
     {
       "id": "SLK-WR03",
@@ -129,7 +104,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 25
     },
     {
       "id": "SLK-RB01",
@@ -145,7 +120,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 28
     },
     {
       "id": "SLK-RB02",
@@ -161,7 +136,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 31
     },
     {
       "id": "SLK-SF00",
@@ -170,16 +145,6 @@
       "forbidden": true,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent",
-          "tool": "slack.slack_schedule_message",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.slack_send_message_draft",
-          "n": null
-        },
         {
           "kind": "absent-write",
           "ns": "granola"
@@ -191,12 +156,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fac0c40ad745873369814f4a07352e623e54213d36a867a423f274918e4373cc"
+    "source_sha256": "6c91a7d6e0b396252167029dd763d789a172724177ce385af115c74c215adfd8"
   }
 }

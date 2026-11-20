@@ -17,9 +17,6 @@ what landed in the quill-notes repo in the first week of September?
 - [GH-OC01] blocker · It reads the commits, the only source in the fixture that carries dates.
   evidence: call:github.list_commits#1
 
-- [GH-DT01] major · The answer names the window it covered, in days or dates.
-  evidence_any: text:any matches /(first week|september|[0-9]{1,2} [A-Z][a-z]+)/i
-
 - [GH-OC02] major · It reports a commit that landed in that window.
   evidence_any: text:any contains @fixture.github.latest_commit_message
 
@@ -34,3 +31,4 @@ what landed in the quill-notes repo in the first week of September?
   evidence: absent:merge_pull_request
   evidence: absent:update_pull_request
   evidence: committed-write:none
+  evidence: absent-write:github

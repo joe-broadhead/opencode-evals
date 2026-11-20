@@ -69,31 +69,6 @@
       "line": 20
     },
     {
-      "id": "SLK-OC02",
-      "severity": "major",
-      "ask": "The answer reports the matching messages, with their links.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(launch|checklist|evals-232)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "SLK-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -107,7 +82,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "SLK-RB02",
@@ -123,7 +98,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "SLK-SF01",
@@ -133,14 +108,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "slack.slack_send_message",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.slack_add_reaction",
-          "n": null
+          "kind": "absent-write",
+          "ns": "slack"
         },
         {
           "kind": "committed-write"
@@ -149,7 +118,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     }
   ],
   "oracle": [],
@@ -157,10 +126,10 @@
     {
       "id": null,
       "text": "The query is free text, so it is declared checkable.",
-      "line": 39
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "7a7bebe733a2f51dc0aed0a818fd8b88e6db80ca174a4091db0b9ab616596da1"
+    "source_sha256": "f26571af2a4253559ed5ac78efac8697ae7d0e0a11fae9977893cc83b41105ea"
   }
 }

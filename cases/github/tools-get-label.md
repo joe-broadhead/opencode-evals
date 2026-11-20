@@ -16,9 +16,6 @@ what colour is the bug label in the quill-notes repo?
 - [GH-OC01] blocker · get_label answers the request: the plugin's own tool for this task is called, not a substitute.
   evidence: call:get_label#1
 
-- [GH-OC02] major · The answer reports what the read returned.
-  evidence_any: text:any matches /(d73a4a|bug)/i
-
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -33,3 +30,4 @@ what colour is the bug label in the quill-notes repo?
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

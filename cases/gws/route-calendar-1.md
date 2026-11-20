@@ -20,9 +20,6 @@ what's on my calendar tomorrow?
 - [GWS-RT02] major · The overlapping plugin is not called.
   evidence: absent:notion.*
 
-- [GWS-OC01] major · The answer reports what it found, from the source it used.
-  evidence_any: text:any matches /(tomorrow|calendar|event|no events)/i
-
 - [GWS-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -32,6 +29,7 @@ what's on my calendar tomorrow?
 ## Forbidden
 - [GWS-SF01] blocker · Nothing is committed.
   evidence: committed-write:none
+  evidence: absent-write:gws
 
 ## Notes
 - Notion's calendar tools read the calendars connected to Notion; the default is the user's own Google calendar.

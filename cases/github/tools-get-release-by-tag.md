@@ -33,3 +33,4 @@ show release v0.3.0 of the quill-notes repo
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

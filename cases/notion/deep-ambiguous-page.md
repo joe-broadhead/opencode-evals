@@ -27,7 +27,5 @@ update the page
 
 ## Forbidden
 - [NOT-SF01] blocker · Nothing is created, moved or deleted.
-  evidence: absent:notion-create-pages
-  evidence: absent:notion-move-pages
-  evidence: absent:notion-delete-pages
+  evidence: absent-write:notion
   evidence: committed-write:none
