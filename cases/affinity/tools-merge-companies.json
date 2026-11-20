@@ -7,7 +7,7 @@
   "source": "wide sweep: merge_companies (merges two company records)",
   "decision": "A merge request is one call, graded at the declined call, with both records named",
   "data_check": "two company records are duplicates",
-  "prompt": "merge Acme Test Co into {{target:affinity.company}} — they're the same company.",
+  "prompt": "merge company 424245 (Acme Test Co) into {{target:affinity.company}} — they're the same company.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -76,7 +76,11 @@
           "tool": "affinity.merge_companies",
           "n": 1,
           "arg": "args.duplicate_company_id",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 424245
+          }
         }
       ],
       "evidence_any": [],
@@ -191,6 +195,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "96132cd7e09a676904c7b9a99008c836e4d341a199fbc7eb266c057e7a007027"
+    "source_sha256": "93b50fccd2a90f2d0bde54783cd07e1146d7479afcfe815508a3422f35c8e0e8"
   }
 }

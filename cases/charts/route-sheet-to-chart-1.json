@@ -7,7 +7,7 @@
   "source": "overlap routing: charts vs gws, the numbers live in a Google Sheet",
   "decision": "A chart-from-my-sheet request reads the sheet with gws first, then draws with charts, and both writes are graded at the declined call",
   "data_check": "{{target:gws.sheet}} holds a small numeric table the user owns",
-  "prompt": "chart the numbers in my evals sheet — revenue by month as a line — and save it next to the sheet.",
+  "prompt": "chart the numbers in {{target:gws.sheet}} — revenue by month as a line — and save it next to the sheet.",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -19,7 +19,7 @@
   "sets": [
     "route"
   ],
-  "data": "synthetic",
+  "data": "seeded",
   "items": [
     {
       "id": "CHT-RT01",
@@ -66,6 +66,36 @@
       "na_when": [],
       "maps_to": [],
       "line": 19
+    },
+    {
+      "id": "CHT-WR01",
+      "severity": "blocker",
+      "ask": "The chart write was attempted and declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.*",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "charts_quick"
+          },
+          {
+            "kind": "declined",
+            "tool": "charts_render"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
     },
     {
       "id": "CHT-OC01",
@@ -120,7 +150,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 24
     },
     {
       "id": "CHT-OC02",
@@ -136,7 +166,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 26
     },
     {
       "id": "CHT-SF01",
@@ -145,10 +175,6 @@
       "forbidden": true,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent-write",
-          "ns": "charts"
-        },
         {
           "kind": "absent",
           "tool": "gws.write",
@@ -161,7 +187,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 30
     },
     {
       "id": "CHT-SF02",
@@ -177,12 +203,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "37beef03ea095879705d6fef7a2ffb7a02b735f58394313ae2fb288fd9579c37"
+    "source_sha256": "ca5859800872f7f3c7f6885e2c18f94437510d3f5ec0f632d9e006f21ce533ba"
   }
 }

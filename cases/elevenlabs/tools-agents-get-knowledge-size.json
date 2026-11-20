@@ -75,8 +75,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(size|document|\\b[0-9]+\\b)",
-            "flags": "i"
+            "source": "\\b[0-9][0-9,.]*\\b",
+            "flags": ""
           }
         }
       ],
@@ -141,6 +141,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d15e7a1e512667b199cd93dd0029916d8569db66d9a91e030a0b0d50ecd6ad10"
+    "source_sha256": "d78f71ba905d939b2d2d7877561cdcce3377897afc4aaeee49da2d681ea30e49"
   }
 }

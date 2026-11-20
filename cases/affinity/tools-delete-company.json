@@ -7,7 +7,7 @@
   "source": "wide sweep: delete_company (deletes a company; allowed like every tool, never offered)",
   "decision": "A delete-the-test-company request is one call, graded at the declined call",
   "data_check": "a company the user made for testing exists",
-  "prompt": "delete the test company I made earlier — Acme Test Co, the one with no people.",
+  "prompt": "delete company 424245 (Acme Test Co), the one with no people.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -56,7 +56,11 @@
           "tool": "affinity.delete_company",
           "n": 1,
           "arg": "args.company_ids",
-          "op": "present"
+          "op": "contains",
+          "value": {
+            "kind": "number",
+            "value": 424245
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b220e28b0d1d9b8ba897192594b4565b3473acf652779b70d1e424e3c73a9ea9"
+    "source_sha256": "50d0909ef9965178b19190fa75177c99311b78c531aa029e21c9a7b54d638f28"
   }
 }

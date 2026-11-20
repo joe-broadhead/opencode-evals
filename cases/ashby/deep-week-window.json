@@ -52,7 +52,12 @@
           "tool": "ashby.filter_records",
           "n": 1,
           "arg": "args.filter",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(2026-[0-9]{2}-[0-9]{2}|after|before)",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -157,6 +162,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4b743a3c4228dbdd1d43f5a529d439c7072bb0f6a070cf53a94ec142964f5e42"
+    "source_sha256": "c06f7504927c1e3c41ca7690f9c5bc1b88efa736d861933ae35af9b96309dec8"
   }
 }

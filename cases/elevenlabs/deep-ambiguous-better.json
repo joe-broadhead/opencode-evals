@@ -53,7 +53,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(what would|which|improve|change|goal)",
+            "source": "(what would you like|which (part|change|aspect)|what should I (change|improve)|do you want me to)",
             "flags": "i"
           }
         }
@@ -147,6 +147,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b607c784cd498501bd887a50e070e4f7f305f5bcf1d53a1cb32a51508f7f58fa"
+    "source_sha256": "996db16dd6d5a05f268856171ecfb4c07320acd3175391978b9a1afbb1ffc7ce"
   }
 }

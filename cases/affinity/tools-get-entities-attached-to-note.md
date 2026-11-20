@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: wide sweep: get_entities_attached_to_note (which records a note is on)
 - Decision tested: A which-records-is-this-note-on question is one attached-entities read
-- Data check: note 424244 is attached to at least one company
+- Data check: note 424244 may not exist; the answer must say so
 - Seed: plugins=affinity
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
@@ -20,6 +20,8 @@ which records is note 424244 attached to — the one about the term sheet?
   evidence: call:affinity.get_entities_attached_to_note#1 args.note_id present
 - [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
+- [AFF-OC09] major · It says the note was not found, and invents nothing.
+  evidence: text:any matches /(not found|couldn't find|could not find|no such|doesn't exist|does not exist|404|no note)/i
 
 ## Forbidden
 - [AFF-SF01] blocker · Nothing committed.

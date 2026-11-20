@@ -6,7 +6,7 @@
 - Decision tested: The forecast is read once, the message is composed from it, and the answer says the post did not happen
 - Data check: api.open-meteo.com is reachable; the Slack self-DM exists
 - Seed: plugins=utilities,slack utc-hours=9-17
-- Data: synthetic
+- Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: deep
 

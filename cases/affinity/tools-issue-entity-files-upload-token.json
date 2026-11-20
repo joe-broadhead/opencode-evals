@@ -7,7 +7,7 @@
   "source": "wide sweep: issue_entity_files_upload_token (a token to upload a file)",
   "decision": "An upload request is one token issue, graded at the declined call",
   "data_check": "{{target:affinity.company}} exists",
-  "prompt": "upload the deck at ./acme-deck.pdf to {{target:affinity.company}}'s record.",
+  "prompt": "upload the deck at ./acme-deck.pdf (204800 bytes, application/pdf) to {{target:affinity.company}}'s record.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -82,6 +82,28 @@
             "source": "acme-deck\\.pdf",
             "flags": ""
           }
+        },
+        {
+          "kind": "call",
+          "tool": "affinity.issue_entity_files_upload_token",
+          "n": 1,
+          "arg": "args.filesize",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 204800
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "affinity.issue_entity_files_upload_token",
+          "n": 1,
+          "arg": "args.content_type",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "application/pdf"
+          }
         }
       ],
       "evidence_any": [],
@@ -142,7 +164,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 26
     },
     {
       "id": "AFF-OC02",
@@ -158,7 +180,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 28
     },
     {
       "id": "AFF-SF01",
@@ -174,7 +196,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 32
     },
     {
       "id": "AFF-SF02",
@@ -190,12 +212,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "644246c7a89cdcd338fa3e5c36a31f868199a7ff56f903725529d3a195f05c91"
+    "source_sha256": "5b474431b89f925ec4ee1fda6bbf83dfd04fb44ba3299f609db65acc457d39ac"
   }
 }

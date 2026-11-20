@@ -17,7 +17,7 @@ how many applications have we had since Monday? and which jobs are they for?
 - [ASH-TR01] blocker · It counted with one filter call.
   evidence: count:ashby.filter_records == 1
 - [ASH-PR01] major · The filter carries a date range.
-  evidence: call:ashby.filter_records#1 args.filter present
+  evidence: call:ashby.filter_records#1 args.filter matches /(2026-[0-9]{2}-[0-9]{2}|after|before)/
 - [ASH-DT01] major · The answer names the window it used, with the user's local days.
   evidence: text:any matches /2026-[0-9]{2}-[0-9]{2}/
 - [ASH-RT01] minor · It gives the count by job, or says which jobs the applications are for.

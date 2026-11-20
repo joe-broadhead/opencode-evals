@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_attach_reference_file (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "attach the reference image at ./reference.png to flow flow_000000000000000000000000.",
+  "prompt": "attach the reference image at https://files.example.com/reference.png to flow flow_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -132,6 +132,17 @@
             "kind": "string",
             "value": "flow_000000000000000000000000"
           }
+        },
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_attach_reference_file",
+          "n": 1,
+          "arg": "args.url",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "https://files.example.com/reference.png"
+          }
         }
       ],
       "evidence_any": [],
@@ -153,7 +164,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "ELV-SF02",
@@ -169,12 +180,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ee8fcb189441c66ae86d4304d2cc2c145cec32ed278e1465065aeb0718d22516"
+    "source_sha256": "fd54a99173124e5416084a617c4c02253b52346306fc54b4497aea502769f6a5"
   }
 }

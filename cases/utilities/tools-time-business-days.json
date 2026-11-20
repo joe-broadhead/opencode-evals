@@ -66,6 +66,31 @@
       "line": 19
     },
     {
+      "id": "UTL-PR02",
+      "severity": "major",
+      "ask": "It passed the country too.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.time_business_days",
+          "n": 1,
+          "arg": "args.country",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "gb|uk",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
       "id": "UTL-OC01",
       "severity": "major",
       "ask": "The answer gives one count and names the holidays it skipped.",
@@ -78,15 +103,35 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "\\b22\\b",
+            "source": "\\b21\\b",
             "flags": ""
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Good Friday",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Easter Monday",
+            "flags": "i"
           }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 23
     },
     {
       "id": "UTL-OC02",
@@ -102,7 +147,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 27
     },
     {
       "id": "UTL-SF01",
@@ -122,7 +167,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 31
     },
     {
       "id": "UTL-SF02",
@@ -138,12 +183,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "64813208203c2522a1c741febc4fa7143e165d6a80b1fe3524da4291dfa56423"
+    "source_sha256": "0d79c791e9c3204550416e07f336c043b98b996bd6e1a0523acbefad290c8886"
   }
 }

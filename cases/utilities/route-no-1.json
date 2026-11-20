@@ -19,7 +19,7 @@
   "sets": [
     "route"
   ],
-  "data": "synthetic",
+  "data": "own",
   "items": [
     {
       "id": "UTL-RT01",
@@ -120,6 +120,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "45e121a061299da57b6ab5a76de7fddc5a400585c12a7f4018998725ef2ab811"
+    "source_sha256": "6edbfd50a41469fc884ca05a697c681dbc55ac1f8a91603936a29b4483e4254a"
   }
 }

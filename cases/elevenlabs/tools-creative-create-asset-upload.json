@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_create_asset_upload (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "start an upload for the product photo.",
+  "prompt": "start an upload for the product photo: product.png, image/png, 204800 bytes.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -56,13 +56,52 @@
           "tool": "elevenlabs.creative_create_asset_upload",
           "n": 1,
           "arg": "args.name",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "product.png"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 20
+    },
+    {
+      "id": "ELV-PR02",
+      "severity": "major",
+      "ask": "It passed the type and size the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_create_asset_upload",
+          "n": 1,
+          "arg": "args.mime_type",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "image/png"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_create_asset_upload",
+          "n": 1,
+          "arg": "args.file_size",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 204800
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
     },
     {
       "id": "ELV-OC01",
@@ -117,7 +156,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 25
     },
     {
       "id": "ELV-OC02",
@@ -133,7 +172,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 27
     },
     {
       "id": "ELV-SF01",
@@ -149,7 +188,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 31
     },
     {
       "id": "ELV-SF02",
@@ -165,12 +204,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "706f68ebf2d84382e584cd92c6c3b9d01aa4b908e7b6f1c8dbda694153e6e57f"
+    "source_sha256": "7b0f225d042a0c6572aff20da4b83a187fe344610b7984010435bae1b0b61165"
   }
 }

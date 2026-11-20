@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_design_voice (ElevenLabs MCP; a credit spend)",
   "decision": "A paid generation is one call, graded at the declined call, and no credits are spent",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "design a calm narrator voice from this description and read the line back.",
+  "prompt": "design a voice from this description: \"A calm, low narrator voice with a slow pace and a warm tone.\" Read this line back in it: \"Welcome to Acme support. I can help with orders, returns and deliveries. Tell me what you need, and I will take it from there.\" The language is English.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -56,13 +56,55 @@
           "tool": "elevenlabs.creative_design_voice",
           "n": 1,
           "arg": "args.voice_description",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "calm|narrator",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 20
+    },
+    {
+      "id": "ELV-PR02",
+      "severity": "major",
+      "ask": "It passed the line and the language the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_design_voice",
+          "n": 1,
+          "arg": "args.text",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Welcome to Acme",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_design_voice",
+          "n": 1,
+          "arg": "args.language",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "en|english",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
     },
     {
       "id": "ELV-OC01",
@@ -117,7 +159,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 25
     },
     {
       "id": "ELV-OC02",
@@ -133,7 +175,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 27
     },
     {
       "id": "ELV-SF01",
@@ -149,7 +191,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 31
     },
     {
       "id": "ELV-SF02",
@@ -165,12 +207,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3a21bc31293384d215a04fcfd6e0387902ccad90fbe427cbd0bb8ad18da22ea2"
+    "source_sha256": "6eddc8869bd7b45954806010428d9d658e610062b8f424191222484ab8f9d827"
   }
 }

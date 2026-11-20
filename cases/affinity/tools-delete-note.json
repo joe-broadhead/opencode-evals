@@ -7,7 +7,7 @@
   "source": "wide sweep: delete_note (deletes a note)",
   "decision": "A delete-that-note request is one call, graded at the declined call",
   "data_check": "a note the user wrote by mistake exists",
-  "prompt": "delete the note I left on Acme Test Co — the one that just says \"test\".",
+  "prompt": "delete note 424246 — the one I left on Acme Test Co that just says \"test\".",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -56,7 +56,11 @@
           "tool": "affinity.delete_note",
           "n": 1,
           "arg": "args.note_ids",
-          "op": "present"
+          "op": "contains",
+          "value": {
+            "kind": "number",
+            "value": 424246
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8ebd562547772481dbf62ddfbdf06740408d2066255a392818d7e0545b4c31bb"
+    "source_sha256": "300d38398d0132aabedfd1e4f0f1fe40d00945002a1e660933d3c1203cc025e9"
   }
 }

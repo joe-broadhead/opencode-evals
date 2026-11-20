@@ -18,8 +18,12 @@ how many working days are there in March 2027 for our London team?
   evidence: call:utilities.time_business_days#1
 - [UTL-PR01] major · It passed the nation, as the UK needs.
   evidence: call:utilities.time_business_days#1 args.region matches /england/i
+- [UTL-PR02] major · It passed the country too.
+  evidence: call:utilities.time_business_days#1 args.country matches /gb|uk/i
 - [UTL-OC01] major · The answer gives one count and names the holidays it skipped.
-  evidence: text:any matches /\b22\b/
+  evidence: text:any matches /\b21\b/
+  evidence: text:any matches /Good Friday/i
+  evidence: text:any matches /Easter Monday/i
 - [UTL-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

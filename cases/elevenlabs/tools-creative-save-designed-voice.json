@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_save_designed_voice (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "save the voice I designed as \"Narrator calm\".",
+  "prompt": "save generated voice voice_000000000000000000000000 as \"Narrator calm\", described as \"A calm, low narrator voice.\"",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -56,7 +56,34 @@
           "tool": "elevenlabs.creative_save_designed_voice",
           "n": 1,
           "arg": "args.generated_voice_id",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "voice_000000000000000000000000"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_save_designed_voice",
+          "n": 1,
+          "arg": "args.name",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "Narrator calm"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_save_designed_voice",
+          "n": 1,
+          "arg": "args.description",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "calm|narrator",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -117,7 +144,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 24
     },
     {
       "id": "ELV-OC02",
@@ -133,7 +160,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 26
     },
     {
       "id": "ELV-SF01",
@@ -149,7 +176,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 30
     },
     {
       "id": "ELV-SF02",
@@ -165,12 +192,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "156bee8ec0dc104781526ac7c686e3c1d750e462a27a8f0f4d012da95d2bf301"
+    "source_sha256": "255b6135d42d12860980a6bfcc1345fe8d9794adb8b52419f4897960e78e6421"
   }
 }

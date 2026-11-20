@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "wide sweep: get_entities_attached_to_note (which records a note is on)",
   "decision": "A which-records-is-this-note-on question is one attached-entities read",
-  "data_check": "note 424244 is attached to at least one company",
+  "data_check": "note 424244 may not exist; the answer must say so",
   "prompt": "which records is note 424244 attached to — the one about the term sheet?",
   "controls": [],
   "budgets": {
@@ -77,6 +77,29 @@
       "line": 21
     },
     {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "It says the note was not found, and invents nothing.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(not found|couldn't find|could not find|no such|doesn't exist|does not exist|404|no note)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
       "id": "AFF-SF01",
       "severity": "blocker",
       "ask": "Nothing committed.",
@@ -94,7 +117,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 27
     },
     {
       "id": "AFF-SF02",
@@ -110,12 +133,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3aabcb23fb9e0fe27acda9e36773a6b26ae6bd7f61dd45d1013155d24f42c7f1"
+    "source_sha256": "af33b47d0100b41b53ff9b48b840744b13c05eb899b0d48a850a4902051ea481"
   }
 }

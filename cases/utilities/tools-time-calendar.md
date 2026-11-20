@@ -19,7 +19,8 @@ what weekday is 14 March 2027, and which ISO week is that?
 - [UTL-PR01] major · It passed the date the user gave.
   evidence: call:utilities.time_calendar#1 args.date matches /2027-03-14/
 - [UTL-OC01] major · The answer gives the weekday and the ISO week.
-  evidence: text:any matches /(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday).{0,40}(week|11)/is
+  evidence: text:any matches /\bSunday\b/i
+  evidence: text:any matches /\b10\b/
 - [UTL-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

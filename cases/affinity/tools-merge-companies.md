@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-merge Acme Test Co into {{target:affinity.company}} — they're the same company.
+merge company 424245 (Acme Test Co) into {{target:affinity.company}} — they're the same company.
 
 ## Items
 - [AFF-WR01] blocker · Exactly one merge companies call, and it was declined.
@@ -20,7 +20,7 @@ merge Acme Test Co into {{target:affinity.company}} — they're the same company
 - [AFF-PR01] major · It named the record to keep.
   evidence: call:affinity.merge_companies#1 args.primary_company_id present
 - [AFF-PR02] major · It named the record to merge in.
-  evidence: call:affinity.merge_companies#1 args.duplicate_company_id present
+  evidence: call:affinity.merge_companies#1 args.duplicate_company_id == 424245
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.
   evidence_any: text:any matches /\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(merged|combined)\b/i ;; text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i ;; text:any matches /\b(couldn't|could not|can't|cannot|unable to|not able to)\b.{0,40}\b(move|change|save|create|update|delete|send|post|add|archive|submit|reject|edit|record|run|query|answer|generate|write|set|rename)\b/i ;; text:any matches /\bnothing (happened|changed|was (sent|added|moved|created|saved|updated|deleted|posted|rejected))\b/i
 - [AFF-OC02] minor · No tool was invented.

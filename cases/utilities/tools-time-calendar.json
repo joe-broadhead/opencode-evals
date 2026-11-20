@@ -78,8 +78,18 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday).{0,40}(week|11)",
-            "flags": "is"
+            "source": "\\bSunday\\b",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b10\\b",
+            "flags": ""
           }
         }
       ],
@@ -102,7 +112,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "UTL-SF01",
@@ -122,7 +132,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "UTL-SF02",
@@ -138,12 +148,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "306e5d4238444429117a11f858ca9c4e5d3bf6ed70138c674dff87bee75475a7"
+    "source_sha256": "fc1617263a50fa2bec7ecd855e6ce54744eb81e26a038b75268292a2481a125e"
   }
 }

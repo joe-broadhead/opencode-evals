@@ -57,6 +57,18 @@
           "n": 1,
           "arg": "args.target",
           "op": "present"
+        },
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_edit_string_field",
+          "n": 1,
+          "arg": "args.new_string",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "calm support agent",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -117,7 +129,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "ELV-OC02",
@@ -133,7 +145,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "ELV-SF01",
@@ -149,7 +161,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "ELV-SF02",
@@ -165,12 +177,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "695d33a91ad9ae5e5fa421e467a38419c292e5c2532d6339fa73dd391b103933"
+    "source_sha256": "68675f74be990b1d9d3a32eba3d0aab777e0c54a53acf1470cd63ae1a89fd796"
   }
 }

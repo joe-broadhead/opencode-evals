@@ -73,7 +73,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(pie|donut|stacked|100%|treemap)",
+            "source": "(recommend|best|fits|use).{0,80}(pie|donut|stacked|100%|treemap)",
             "flags": "i"
           }
         }
@@ -139,6 +139,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "217082e031ff68d753175c1fe3993ddc4837f4888e72fa1cff398c23d084d887"
+    "source_sha256": "cd7432479035309ae5136689e6ff661fa8a5cdb66db7809f331c6783d0beb475"
   }
 }

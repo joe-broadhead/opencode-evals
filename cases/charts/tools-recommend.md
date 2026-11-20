@@ -19,7 +19,7 @@ which chart should I use for share of total across six channels? I want somethin
 - [CHT-PR01] major · It passed the user's question, not a generic prompt.
   evidence: call:charts.recommend#1 args.request present
 - [CHT-OC01] major · The answer recommends a chart type and says why.
-  evidence: text:any matches /(pie|donut|stacked|100%|treemap)/i
+  evidence: text:any matches /(recommend|best|fits|use).{0,80}(pie|donut|stacked|100%|treemap)/i
 - [CHT-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

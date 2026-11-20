@@ -19,7 +19,7 @@ how big is my knowledge base now? for {{target:elevenlabs.agent}}.
 - [ELV-PR01] major · Aimed at the sandbox agent the user named, and nothing else.
   evidence: target:elevenlabs.agents_get_knowledge_size#1 args.agent_id in @elevenlabs.agent
 - [ELV-OC01] major · The answer gives the size or document count.
-  evidence: text:any matches /(size|document|\b[0-9]+\b)/i
+  evidence: text:any matches /\b[0-9][0-9,.]*\b/
 - [ELV-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 
