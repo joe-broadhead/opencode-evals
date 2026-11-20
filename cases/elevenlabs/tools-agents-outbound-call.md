@@ -17,7 +17,7 @@ call +15550000001 with {{target:elevenlabs.agent}} from our number phone_0000000
   evidence: count:elevenlabs.agents_outbound_call == 1
   evidence: declined:elevenlabs_agents_outbound_call
 - [ELV-PR01] major · It used the sandbox agent.
-  evidence: call:elevenlabs.agents_outbound_call#1 args.agent_id == "agent_2001m7r851mhfv58zjw4w66tgff1"
+  evidence: target:elevenlabs.agents_outbound_call#1 args.agent_id in @elevenlabs.agent
 - [ELV-PR02] major · It used the number the user named.
   evidence: call:elevenlabs.agents_outbound_call#1 args.to_number == " +15550000001"
 - [ELV-PR03] major · It used the number the user named to call from.

@@ -17,7 +17,7 @@ in the draft of {{target:elevenlabs.agent}}, set the first message to "Hi, how c
   evidence: count:elevenlabs.agents_update_draft == 1
   evidence: declined:elevenlabs_agents_update_draft
 - [ELV-PR01] major · It used the sandbox agent.
-  evidence: call:elevenlabs.agents_update_draft#1 args.agent_id == "agent_2001m7r851mhfv58zjw4w66tgff1"
+  evidence: target:elevenlabs.agents_update_draft#1 args.agent_id in @elevenlabs.agent
 - [ELV-PR02] major · It carried the new first message.
   evidence: call:elevenlabs.agents_update_draft#1 args.conversation_config present
 - [ELV-OC04] major · The answer says the draft was not changed.

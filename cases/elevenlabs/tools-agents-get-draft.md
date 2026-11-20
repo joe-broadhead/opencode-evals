@@ -16,7 +16,7 @@ show me the unpublished draft of {{target:elevenlabs.agent}} — what would publ
 - [ELV-TR01] blocker · It used agents_get_draft once.
   evidence: call:elevenlabs.agents_get_draft#1
 - [ELV-PR01] major · It read the draft of the sandbox agent.
-  evidence: call:elevenlabs.agents_get_draft#1 args.agent_id == "agent_2001m7r851mhfv58zjw4w66tgff1"
+  evidence: target:elevenlabs.agents_get_draft#1 args.agent_id in @elevenlabs.agent
 - [ELV-OC01] major · The answer reports what the draft would change, or that nothing is staged.
   evidence: text:any matches /(draft|change|nothing|no draft|staged)/i
 - [ELV-OC02] minor · No tool was invented.
