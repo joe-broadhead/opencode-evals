@@ -427,7 +427,7 @@
       "body_lines": 95
     }
   },
-  "digest": "8c7b2f986466a2c18a5fb184e6f6ae7db025051906dce4088acb3d78e82bc782",
+  "digest": "06b525f58a7dfec20c5e5024776752eef361a13d283fe5870a3f2331fa1808bc",
   "access": {
     "key": "access",
     "default": "all"
@@ -438,5 +438,10 @@
     "api.atlassian.com",
     "{target:jira.site}.atlassian.net"
   ],
-  "accounts": "fake"
+  "accounts": "fake",
+  "release": {
+    "version": "0.0.5",
+    "tag": "v0.0.5",
+    "commit": "0dbfe632cb4374e7e2d20362722493178ad73bb3"
+  }
 }

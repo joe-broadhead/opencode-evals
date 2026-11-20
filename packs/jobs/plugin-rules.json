@@ -1,0 +1,31 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "jobs",
+ "release": {
+  "version": "0.0.3",
+  "tag": "v0.0.3",
+  "commit": "bbc52c66fd15eaacf5b8a4596ca89effe6912a4f"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "jobs_get",
+  "jobs_history",
+  "jobs_list",
+  "jobs_status"
+ ],
+ "asked": [
+  "jobs_approve",
+  "jobs_create",
+  "jobs_delete",
+  "jobs_extend",
+  "jobs_pause",
+  "jobs_pause_all",
+  "jobs_resume",
+  "jobs_run_now",
+  "jobs_run_script",
+  "jobs_update"
+ ],
+ "denied": []
+}

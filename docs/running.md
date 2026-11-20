@@ -85,11 +85,11 @@ plugin's `ask-changes`. So the sealed config (`src/run/lockdown.mjs`):
   would never be asked. In the commit set it does refuse, for a write with no declared target extractor or a target outside the
   allowed aliases, and for a plan commit (gws: only the `planId`) of a plan it did not see made for an in-sandbox target.
 
-`evals p0 [a1|a2|a3|a4|a5|c|g|g8|halt|live|p7|gws|env|p1|p2|p3|p4|p5|p13|all] [--companions FILE]` runs the probes the gate rests on, with the scripted model, no credential
+`evals p0 [a1|a2|a3|a4|a5|c|g|g8|halt|unknown|consent|tavily|live|p7|gws|env|p1|p2|p3|p4|p5|p13|all] [--companions FILE]` runs the probes the gate rests on, with the scripted model, no credential
 and every trial in a container: **a1** shell/file/web/subagent tools refused, no egress, a canary credential in no output;
 **a2** all 24 plugins at ask-changes, every write action asks (at access `all` too), the local writes decline end to end;
 **a3** a foreign-session ask is rejected within 5 s (and hangs without the guard); **a4** Tavily research and crawl are
-confirm-only; **a5** gws commits ask, and the guard's plan registry; **c** the token-priced round ceiling refuses the second
+confirm-only; **unknown** a tool no pack lists is asked and declined at every access, refused in commit mode, and one that completes halts the wave; **consent** no tool a plugin's own rules ask for is an allow in the sealed config (Slack's private search and file read, X's DM reads asked), the Tavily metered reads the one exception; **tavily** when all five Tavily tools are spend-class, search, extract and map still run and research and crawl are asked; **a5** gws commits ask, and the guard's plan registry; **c** the token-priced round ceiling refuses the second
 launch; **g** the guard is deny-by-default at access `all`, and the suite fails without it.
 
 The other probes: **env** a trial's environment is built from an allow-list, never inherited: the launcher's shell holds `OPENCODE_API_KEY`, `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `GH_TOKEN` and 16 more canaries, and the trial sees none of them by name or value (a positive control shows the one `--auth` credential, masked), and the image, video, search, fetch and subagent tools are refused by name with no connection reaching the proxy; **p1** what reaches the model (the request body dumped in the locked and the open arm, saved under `$EVALS_STORE/p0/`);
@@ -165,11 +165,42 @@ says what to do, and a HALT in the store stops it whichever step is next. `evals
 | 1 | `preflight` | no HALT; the profile exists on its own service port with no link; `targets.json` is in the store | fix the profile or the store |
 | 2 | `check-real` | after each vendor's sign-in (`--vendors a,b`, else the sign-in walk's vendors; never GitHub or Jira): the real profile still works and the tokens differ | sign the real profile back in for that vendor and sign in no more |
 | 3 | `keeper` | P0-6: one identity read per signed-in vendor; a due token's expiry must move | the token did not read or refresh |
-| 4 | `p6c` | P0-6c: `auth logout` of one vendor, only with `--logout <vendor>`; watch the egress log | (skipped unless asked) |
-| 5 | `p7` | P0-7: one scripted read per plugin (`live-reads.json`), the real egress hosts written to `egress-hosts.json`, none refused | a host is missing from the plugin's pack `egress`, or the read failed |
-| 6 | `live` | `p0 live`: one real write per plugin (`live-writes.json`), guard on, one plugin at a time; declined is the pass | a completed write is a HALT: `evals halt` |
-| 7 | `gws` | one real gws plan-and-commit in commit mode (`live-gws.json`) | the plan registry did not behave |
-| 8 | `pilot` | P0-8, paid, last: only with `--pilot --confirm-labels` (the lead has read the cases' `Data:` labels and `Seed: plugins=`), a ceiling set, `pilot.json` | stops at a person's step until confirmed |
+| 4 | `canaries` | `scripts/seed-canaries.mjs`: plants the round's canaries in the sandbox containers through the evals profile, idempotently, and records them in `canaries.json` (no `canaries/manifest.json`: a visible skip, and `--preflight data` defers the cases that name a canary) | a container that is not a sandbox alias, a plugin the profile is not signed in to, or a call the service refused |
+| 5 | `p6c` | P0-6c: `auth logout` of one vendor, only with `--logout <vendor>`; watch the egress log | (skipped unless asked) |
+| 6 | `p7` | P0-7: one scripted read per plugin (`live-reads.json`), the real egress hosts written to `egress-hosts.json`, none refused | a host is missing from the plugin's pack `egress`, or the read failed |
+| 7 | `live` | `p0 live`: one real write per plugin (`live-writes.json`), guard on, one plugin at a time; declined is the pass | a completed write is a HALT: `evals halt` |
+| 8 | `gws` | one real gws plan-and-commit in commit mode (`live-gws.json`) | the plan registry did not behave |
+| 9 | `pilot` | P0-8, paid, last: only with `--pilot --confirm-labels` (the lead has read the cases' `Data:` labels and `Seed: plugins=`), a ceiling set, `pilot.json` | stops at a person's step until confirmed |
+
+### Canaries
+
+A canary is an invented fact in a sandbox: a prompt names it with `{{canary:<name>}}`, an item grades `text:any contains @canary.<name>`, and `$EVALS_STORE/canaries.json` holds its
+value (a random token of at least 8 characters, so an answer cannot hit it by luck). `node scripts/seed-canaries.mjs [--manifest FILE] [--only a,b] [--dry-run]` plants them;
+`evals phase1` runs it after the sign-ins and before any probe or case. `EVALS_PROFILE` names the evals profile; `--dry-run` prints the plan and calls nothing.
+
+The manifest is `canaries/manifest.json` (or `EVALS_CANARIES_MANIFEST`): invented content only, so it may be committed.
+
+```json
+{ "schema": "oc-canaries/1", "canaries": [ {
+    "name": "linear_issue",
+    "plugin": "linear",
+    "container": "linear.team",
+    "content": "Quillfeather sync stalls {{token}}",
+    "value": "content",
+    "find":   { "method": "list_issues", "input": { "team": "{{container}}", "query": "{{content}}" }, "items": "issues", "where": "title", "id": "id" },
+    "create": { "method": "save_issue",  "input": { "team": "{{container}}", "title": "{{content}}" }, "id": "id" }
+} ] }
+```
+
+- `container` is a `targets.json` alias (one value). Anything else (an id, a name, an alias the store lacks) is refused before anything is created, and `find.input` and `create.input` must both
+  name `{{container}}`: a canary that does not say where it goes is refused.
+- `method` is the plugin's tools-RPC method and `input` that tool's input, with `{{container}}`, `{{content}}` and `{{token}}` (six random characters, made once and kept in `canaries.json`).
+  `items` is the dotted path of the result's list, `where` the item field that holds the content (`match`: `equals` or `includes`), `id` the dotted path of the id.
+- `value` is `content` (the default) or `id`, for a fact the vendor assigns (a Slack `ts`, a file id): the id the service returns is the value, and the content is the fixed text it is found by.
+- Idempotent: each canary is **found** first and created only when it is not there; a rerun reuses and never duplicates, and keeps the content and the token. The ids go under `_ids` in
+  `canaries.json` (a key that starts `_` is not a canary to the grader).
+- Safety: it runs only through the evals profile (`EVALS_PROFILE` is required, is not the real home, and its service port is not the real service's), only for plugins the profile is signed in
+  to, and as one session whose rules deny every tool of those plugins except the `find` and `create` methods named. Fake-mode plugins have nothing to seed.
 
 `live-reads.json`, `live-writes.json` and `live-gws.json` live in the private store and hold `@alias` placeholders (resolved from `targets.json` at
 run time), never an id: `{ "slack": { "code": "return await tools.slack.slack_send_message({ channel_id: '@slack.sandbox_channel', text: 'x' })" } }`.
@@ -215,7 +246,7 @@ An independent review of the harness found six things that block the first run t
   is obviously made up (`0123456789`, `abcdefghij`, `dummy`, `canary`, `example`) is not flagged, and a hex digest never is.
 - **A plugin that failed to load** (the host's own log) is `infra: plugin`: never graded, and the batch stops.
 - **Seeds** may not carry `opencode.json*`, `AGENTS.md`, `CLAUDE.md`, or anything under `.claude/`, `.agents/` or `.opencode/` (but `.opencode/jobs/` data
-  files). **`Home files:`** names may not start with a dot, and a link is never followed or recorded. **A prompt may not hold a literal `<placeholder>`** (`<github sandbox repo>`, `<your channel>`): `evals compile` refuses it and names it; write the value, or use `{{target:<plugin>.<name>}}` / `{{canary:<name>}}` for one the store fills. A prompt that really quotes angle brackets (HTML, a shell redirect) lists each quoted token in `- Angle brackets: <h1>, </h1>`; a listed token the prompt does not contain is an error too. Only angle brackets (up to 79 characters, on one line) are checked: `[channel]`, `YOUR_REPO`, `${TARGET}`, `TODO` and `...` pass and are still gaps. The History, X and Charts cases written before this round are exempt **by a frozen list of ids** (`src/case/legacy-cases.json`: 83 + 14 + 15 cases and History's private `ho-` holdouts): a new case of those plugins, and any `Plugin: p0` case, meets every round rule, `Data:` and a round set included. A change to the list is a reviewed change.
+  files). **`Home files:`** names may not start with a dot, and a link is never followed or recorded. **A prompt may not hold a literal `<placeholder>`** (`<github sandbox repo>`, `<your channel>`): `evals compile` refuses it and names it; write the value, or use `{{target:<plugin>.<name>}}` / `{{canary:<name>}}` for one the store fills. A prompt that really quotes angle brackets (HTML, a shell redirect) lists each quoted token in `- Angle brackets: <h1>, </h1>`; a listed token the prompt does not contain is an error too. Only angle brackets (up to 79 characters, on one line) are checked: `[channel]`, `YOUR_REPO`, `${TARGET}`, `TODO` and `...` pass and are still gaps. The History, X and Charts cases written before this round are exempt **by a frozen list of ids** (`src/case/legacy-cases.json`: 83 + 14 + 15 cases and History's private `ho-` holdouts): a new case of those plugins, and any `Plugin: p0` case, meets every round rule, `Data:` and a round set included. A change to the list is a reviewed change. **A `Seed:` key written twice (`plugins=a plugins=b`) is refused too: the compiler read the first and the runner the last.** **A header is one line:** a header written twice is a compile error that names both lines (the last used to win, and a second `- Seed:` dropped the first's `plugins=` or `egress=`).
 - **The commit plan names `@alias`es of `targets.json` only**; a literal, an unknown alias, or `actions` that differ from `writes` fails the run.
   `local: true` is the one write with no target (it touches only the trial's own sandbox).
 - **The guard has an allow-list tripwire**: in a locked trial a tool other than `execute`, `skill`, `question`, `todowrite` and the plugins' own is

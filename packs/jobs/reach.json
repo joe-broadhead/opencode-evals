@@ -1,0 +1,21 @@
+{
+ "schema": "oc-reach/1",
+ "plugin": "jobs",
+ "note": "Tools that can return content that is not in a sandbox, and the least `Data:` a case that can call one may declare. Built by scripts/reach-marks.mjs; see src/case/reach.mjs for how a case's floor is worked out.",
+ "tools": {
+  "get": {
+   "floor": "own",
+   "why": "the owner's own scheduled jobs and their runs",
+   "scope": "id"
+  },
+  "history": {
+   "floor": "own",
+   "why": "the owner's own scheduled jobs and their runs",
+   "scope": "id"
+  },
+  "list": {
+   "floor": "own",
+   "why": "the owner's own scheduled jobs and their runs"
+  }
+ }
+}

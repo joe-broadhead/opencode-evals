@@ -1,0 +1,25 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "plaud",
+ "release": {
+  "version": "0.0.7",
+  "tag": "v0.0.7",
+  "commit": "f89f95a94bde45cba6a62a70f8dcc262d8cbb15c"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "plaud_events_list",
+  "plaud_get_current_user",
+  "plaud_get_file",
+  "plaud_get_note",
+  "plaud_get_transcript",
+  "plaud_list_files",
+  "plaud_recent"
+ ],
+ "asked": [
+  "plaud_export"
+ ],
+ "denied": []
+}

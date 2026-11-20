@@ -787,12 +787,17 @@
       "body_lines": 81
     }
   },
-  "digest": "8c980ffed0d6e6a6c8b6dfc650c1b05b098a094a170b6bf4e96a7825ba31610b",
+  "digest": "6c7b93eef0782f7a448c85b9b0cbf6a02f9e81aa94f81d67368f64b953f718b5",
   "access": {
     "key": "access",
     "default": "all"
   },
   "egress": [
     "api.x.com"
-  ]
+  ],
+  "release": {
+    "version": "0.0.7",
+    "tag": "v0.0.7",
+    "commit": "c9ffb80bb57cada5f34047f03475f28d7bd298f7"
+  }
 }

@@ -5,6 +5,7 @@ import { pluginOfTool } from "../run/accounts.mjs"
 
 import { evaluateClause } from "./evidence.mjs"
 import { selectCalls } from "./select.mjs"
+import { writeIndex, writeOf } from "./writes.mjs"
 import { redactEvidence } from "../trace/redact.mjs"
 import { sha256 } from "../util/canonical.mjs"
 
@@ -14,7 +15,7 @@ const BILLED_EXCEPTIONS = new Set(["get_usage_credits"])
 export const isInner = (call) => call.via === "execute" && call.tool !== "execute"
 
 /** A run view: the one shape every grader reads. Built from a trace file's lines. */
-export function runView(traceLines, { text = null, state = null, scope = null, rawArgs = null, checkable = [], files = null, targets = null, canaries = null, guard = null, noAccount = null } = {}) {
+export function runView(traceLines, { text = null, state = null, scope = null, rawArgs = null, guardLog = null, checkable = [], files = null, targets = null, canaries = null, guard = null, noAccount = null } = {}) {
   const parsed = traceLines.map((line) => (typeof line === "string" ? JSON.parse(line) : line))
   const head = parsed.find((event) => event.schema === "oc-trace/1") ?? parsed[0]
   const events = parsed.filter((event) => event.kind)
@@ -58,6 +59,8 @@ export function runView(traceLines, { text = null, state = null, scope = null, r
     targets,
     canaries,
     guard,
+    // The guard's own records of the trial (`.guard.jsonl`), in order: what `target: ... in created` reads (the value a write really got, the ids earlier writes returned).
+    guardLog,
     // { plugins: Set, all: boolean }: the plugins that ran with no account, and whether every plugin the case uses did.
     noAccount,
     calls,

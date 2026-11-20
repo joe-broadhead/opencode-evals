@@ -1,0 +1,16 @@
+{
+ "schema": "oc-live/1",
+ "plugin": "plaud",
+ "listedAt": "2026-11-20",
+ "via": "a signed-in OpenCode host's Code Mode listing (read-only: search({ namespace }), no tool call)",
+ "names": [
+  "events_list",
+  "export",
+  "get_current_user",
+  "get_file",
+  "get_note",
+  "get_transcript",
+  "list_files",
+  "recent"
+ ]
+}

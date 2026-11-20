@@ -1,0 +1,32 @@
+{
+ "schema": "oc-live/1",
+ "plugin": "utilities",
+ "listedAt": "2026-11-20",
+ "via": "a signed-in OpenCode host's Code Mode listing (read-only: search({ namespace }), no tool call)",
+ "names": [
+  "speech_synthesize",
+  "speech_transcribe",
+  "status",
+  "time_add",
+  "time_between",
+  "time_business_days",
+  "time_calendar",
+  "time_convert",
+  "time_format",
+  "time_holidays",
+  "time_now",
+  "time_zone_info",
+  "time_zones",
+  "timer_check",
+  "timer_delete",
+  "timer_get",
+  "timer_list",
+  "timer_set",
+  "weather_current",
+  "weather_daily",
+  "weather_demand_signal",
+  "weather_geocode",
+  "weather_hourly",
+  "weather_summary"
+ ]
+}

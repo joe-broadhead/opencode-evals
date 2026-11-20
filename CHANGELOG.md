@@ -8,6 +8,28 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
 
 ### Fixed
 
+- **The harness is never more permissive than the plugin** (review of #14, round 4: the allow written for the pack's reads overrode eight asks the plugins make on purpose for private content, Slack's private search and file read
+  and X's six direct-message reads). The sealed config now allows only the reads the plugin's OWN rules allow at the trial's access, taken from the host, not from the pack's read list: `packs/<id>/plugin-rules.json`
+  (`scripts/plugin-rules.mjs`: all 24 builds loaded with none of the harness's rules, the probe plugin asking the host about every action of every pack; `evals pack` fails a pack with none, of another release, or that does not decide
+  every action). Any read the plugin asks for stays an ask and is declined in a trial; a pack with no recording gets no read allowed. The one exception is Tavily's three metered spending reads (search, extract, map: they run inside the
+  round's credit cap, and a case about them stays measurable once Tavily marks all five spend-class), listed with its reason in `PERMISSIVE_EXCEPTIONS`; research and crawl stay confirm-only. `P0-consent` measures every plugin twice
+  (its own rules alone, then under the sealed config) and fails any allow the plugin does not make bar that exception, checks the eight reads by name, the confirm-only reads, an unlisted tool in four plugins and that the recording is
+  what the host resolves; it fails when the allow is derived from the pack's reads again. `lockdownProblems` names an allow the plugin does not make.
+- **The harness is fail-closed for a tool no pack lists** (review of #14, round 3: ElevenLabs' live server lists eight tools v0.0.9's pack lacks, one of which places phone calls, and nothing classified them as writes).
+  In every locked trial: (1) the sealed config asks for each plugin's whole namespace (`<id>_*`, `gws.*`), then allows the pack's reads, then asks every write, so a tool the pack does not list is an ask, declined, at any `access` of the
+  plugin; (2) the guard records every tool of every pack (`known`) and treats a plugin's tool outside it as a write: left to the ask in `refuse` and `log` mode (execute.before fires before the ask), refused in commit mode with
+  `EVALS-ASSERT tool: <name> refused (a tool no pack lists, and the commit set does not name it)`, turned from an allow into a deny at the permission hook, and recorded as `committed` when it completes, which halts the wave like
+  any committed write; (3) a commit set may name such an action, and it is then the plan's declared write (extractor, aliases). `P0-unknown` runs it end to end with the fake pack list (`lockPacks`, a probe-only switch no flag
+  reaches): asked and declined at `all` and at `ask-changes`, refused in commit mode, completing one halts the wave, control with the tool in the pack; both layers fail it when removed. `lockdownProblems` now evaluates the rules as the
+  host does (last match wins, wildcards) and checks the namespace asks come first.
+- **A pack is checked against what its release registers and what a host lists** (`src/pack/listing.mjs`): `packs/<id>/registered.json` (the built release loaded in the host with no sign-in, listed by Code Mode's `search`:
+  `scripts/registered-tools.mjs`) and `packs/<id>/live.json` (a signed-in host's listing, read-only: `scripts/capture-live.mjs`); `evals pack` prints `release`, `registered` and `listed` per plugin and FAILS a pack that lacks a tool
+  either holds, one with no recorded release, or a reason (`scripts/live-extra.json`) that has gone stale. 37 tools the host lists and the pinned packs do not (affinity 21, ashby 6, elevenlabs 8, granola 2: newer builds and the
+  vendor's own additions) each carry a reason. Every pack records `release: { version, tag, commit }` (`scripts/record-releases.mjs`; `evals pack --sync --release` records it); a sync adds a tool the release registers and the
+  declaration omits as an unclassified write. Every release's registered tools were already in its pack (including `events_list` for metaview, jira and elevenlabs).
+- **Tavily stays measurable when all five tools become spend-class.** The plugin's rule block asks for each at `ask-changes`; the harness's rules come after it and the last match wins, so search, extract and map are `allow`
+  (`CAPPED_SPEND_READS`, metered by the round's Tavily credit cap) and research and crawl stay confirm-only, whatever class the pack gives them; the guard does not count the three as writes. `P0-tavily` checks it against a build whose
+  block is the spend-class one (`EVALS_TAVILY_SPEND_BUILD`, else a stand-in made from the installed build) at both accesses, with a control showing the plugin itself asks for search when the harness's rules are removed.
 - **A trial that ends with no summary always says why** (re-check of #13, R5: 1 of 50 `p0 a1` runs lost a trial and its cause). The runner writes a stub summary (`infra: trial_incomplete`) when it begins a trial and replaces it
   with the trial's own; a trial whose job throws gets a failure summary (`infra: trial_error`) with the phase it reached, the error and its stack, what Docker said of the container (state, exit code, OOM kill, the last log lines, its
   processes), the exit code and signal, and is reported by the batch (exit code 1) and by the probe first, as the cause; a run that ended with no exit code (a signal, an OOM kill) is `trial_error` too. The probe also reads a trial with
@@ -34,6 +56,33 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
   read is an error, never an empty answer.
 - **The seven stand-in GitHub tools** have the best text there is: one exact (a signed-in host's listing), four from the open-source README (title and parameters); two stay stand-ins (no public listing).
 - **The closed-pipe fix hid real write errors.** Only a closed reader (EPIPE, ECONNRESET) is tolerated now; a disk-full or other write error says so on stderr once and the command exits non-zero.
+- **`target: ... in created` is rebuilt on the guard's log** (review of #14): the guard records a write's input leaves and the new ids its completed result returned that its input did not; a pre-existing id, an update, a
+  failed write and a script's invented id no longer count, a create-then-use in one script does, an id is at least 8 characters with a digit, and a blocker may not rest on it. `@alias*` needs a prefix the targets file
+  declares, at least 8 characters, ended by a separator, and never matches a path with `..`. A positive glob on an unseeded plugin and a repeated `plugins=` key are compile errors.
+- **Three more compile checks** (`src/case/consistency.mjs`, tests in `test/consistency.test.mjs`): (1) every `args.<name>` path in `call:`, `target:` and `absent-arg:` must exist in the tool's input in the pack's recorded parameters
+  (`packs/<id>/inputs.json`, built by `scripts/capture-inputs.mjs`; nested through object properties and array items, `length` and a number allowed, a free-form object takes any key); an unknown name is a compile error naming the
+  tool and its real parameters. A tool with no recorded parameters is not checked. (2) A case that requires a call (`call:`, `declined:`, `first:`, `before:`, a blocker's `count >= 1`, `call:` with `== value`) and forbids the same call
+  (`absent:`, `absent-write:` covering it, `count == 0`, `absent-declined:`, the same `absent-arg:` value) is a compile error naming both items. (3) A warning, never an error, when a value a `call:`/`absent-arg:` `==` checks is in neither the prompt,
+  the seeds nor the fake's fixture. A skeleton for a tool that takes no parameters has no `target:` item.
+- **Review of #14, round 2**: (1) the data floor lifts only when **every call** is constrained on the argument that selects what the tool returns (`scope` in `reach.json`) to an exact sandbox alias of the tool's own plugin, in
+  blocker items outside `evidence_any` and `n/a_when`, with a `count <= N` and a `target:` for calls 1..N; a tool with no scope argument never lifts, `created` and `@alias*` never lift, and mutation tests cover each weak form
+  (`test/reach.test.mjs`). (2) `created` accepts only the id a completed write's result gives to the thing it made (`id`, `uuid`, `<noun>_id`, `ts`, reached through envelope keys or the written thing's own key): not a
+  parent, an owner, a workspace, a list of ids or a timestamp; numeric ids (GitHub and Linear issue numbers) are too short to count, so `created` cannot be used for them; the safety records of a write are written before
+  its `write_result` and a result the guard cannot read cannot stop them. (3) False refusals fixed: an untyped or object parameter is open (`gws.plan` `body`, affinity `search_criteria`), `n/a_when` is a condition and not a
+  demand, a bare `write`/`edit`/`read` is OpenCode's own tool in every case and a prototype name (`constructor`) is not a parameter. (4) `reach.json` marks `agents_get_signed_url`, `creative_transcribe_audio`, six more
+  ElevenLabs conversation and analytics reads, and `gws events_list` (own).
+- **Argument-name coverage is complete** (`packs/<id>/inputs.json`, `scripts/capture-inputs.mjs`, `scripts/own-inputs.json`): every tool of all 24 packs has its recorded parameters, from its plugin's source at the pack's release tag
+  (the recorded tool snapshot in its tests, or the tool table in source), the vendor's `mcp.json` (GitHub, Jira), or a signed-in host's Code Mode listing. Eleven tools their vendors do not list to the pinned sign-in (nine of Jira's
+  `delete_jira`/`manage_jira` groups, Notion's two plan-gated searches) have no schema and say why. `evals compile` now **refuses** an `args.` clause (`call:`, `target:`, `absent-arg:`) on a tool with no recorded schema, so
+  coverage cannot lapse unseen; `evals pack` prints `schemas have/total` per plugin and fails a pack with a tool that has neither a schema nor a reason. A bare `write`/`edit`/`read` is OpenCode's own tool, not gws's. X's dotted
+  parameter names (`tweet.fields`) are one argument, to the check and to the grader. The signature parser reads numeric literal types.
+- **The data floor is per tool** (packs' `reach.json`, `src/case/reach.mjs`): a case that can call a tool that returns non-sandbox content, in its own plugin (the tools it names) or in any companion it seeds (all marked tools), may
+  not be labelled below the tool's floor, unless it scopes the call to a sandbox alias. 
+- **`scripts/seed-canaries.mjs`** plants the round's canaries (docs/running.md#canaries) in the sandbox containers through the evals profile only, idempotently (find, then create), records them in `canaries.json`
+  (ids under `_ids`), refuses any container that is not a `targets.json` alias, and has `--dry-run`; `evals phase1` runs it as the `canaries` step after the sign-ins.
+- **A header written twice is a compile error** (the last used to win: a second `- Seed:` silently dropped the first's `plugins=` and `egress=`).
+- **A case can grade its companion plugin's tools.** A deep cross-plugin case may name the tools of a plugin its `Seed: plugins=` lists (`call:`, `declined:`, `target:`, `first:`, `before:`, `absent:`, `count:`), checked against the
+  companion's own pack; a plugin that is not seeded is still refused. `target:` takes a prefix alias (`@boxd.prefix*`) and `created` (an id an earlier write of the same trial returned), for writes whose argument has no alias.
 - **Fake mode runs the plugins as released.** A loopback `mcp` override was a `conflict` to both plugins (no namespace description, no tool filter, status `conflict`). Each now registers its own
   server at its default URL; the trial maps that host to the fake (`--add-host`, `NO_PROXY`) and the fake answers TLS with a per-batch, name-constrained CA trusted only in the trial
   (`NODE_EXTRA_CA_CERTS`). `p0 fake` asserts the namespace text (from the plugin's source), the status (`connected`, own server) and the vendor host in every request.

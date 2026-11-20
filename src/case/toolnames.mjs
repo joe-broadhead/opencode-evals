@@ -6,13 +6,16 @@
 //   - OpenCode's own tools (`shell`, `read`, `write`, `skill`, `execute`, ...): `BUILTIN_TOOLS` in select.mjs;
 //   - a namespace or a glob (`slack.*`, `x_*`): its prefix must be a plugin or the start of a tool name;
 //   - in a case of set `route` (should-not-call and overlap routing), a tool of a SIBLING plugin: that is what the case is about;
+//   - in any case, a tool of a COMPANION: a plugin its `Seed: plugins=` lists (a deep case that summarises an interview and posts the action items to Slack
+//     names Slack's send, to grade it). It is checked against the companion's own pack like the case's plugin's tools; a plugin the case does not seed stays refused;
 //   - a plugin's hidden tool is not reachable and is refused like an unknown one.
 //
 // Only a case in one of this round's sets is checked: the earlier corpora (history, x, charts) were written against their own
 // declarations and stay as they are.
 
 import { BUILTIN_TOOLS } from "../grade/select.mjs"
-import { ROUND_SETS } from "./schema.mjs"
+import { ROUND_SETS, seedPlugins } from "./schema.mjs"
+import { loadInputs, missingStep, resolveTool } from "./consistency.mjs"
 
 const clausesOf = (item) => [...(item.evidence ?? []), ...(item.evidence_any ?? []).flat(), ...(item.na_when ?? [])]
 const norm = (name) => String(name ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_")
@@ -53,12 +56,17 @@ export function toolsNamedBy(clause) {
  * The problems of one compiled case against the packs (an array of strings, empty when it is sound). `packs` are parsed pack.json
  * objects. A case that declares none of this round's sets is not checked.
  */
-export function toolNameProblems(caseObject, packs) {
+export function toolNameProblems(caseObject, packs, { inputs = null } = {}) {
+  // The pack's recorded parameters (packs/<id>/inputs.json, src/case/consistency.mjs): where a tool has them, an argument path is declared or it is not, and `argumentProblems` says which.
+  const recorded = inputs ?? loadInputs()
   const sets = caseObject.sets ?? []
   if (!sets.some((name) => name in ROUND_SETS)) return []
   const own = packs.find((p) => p.id === caseObject.plugin)
   if (!own) return [`no pack for plugin ${caseObject.plugin}: its tools cannot be checked`]
   const route = sets.includes("route")
+  // The plugins the case seeds as companions: their tools may be named, and are checked against their own packs.
+  const companions = new Set(seedPlugins(caseObject.seed).filter((id) => id !== own.id))
+  const mayName = (pack) => pack.id === own.id || route || companions.has(pack.id)
   const builtin = new Set(BUILTIN_TOOLS)
   // A tool name in a clause must be spelled as the plugin spells it: `matchesTool` is case-sensitive, so `getjiraissue` for
   // `getJiraIssue` never matches. Only `declined:` (permission actions) reads names loosely.
@@ -83,11 +91,23 @@ export function toolNameProblems(caseObject, packs) {
       if (wide && item.severity === "blocker" && (clause.kind === "target" || (clause.kind === "call" && clause.arg))) {
         const arg = clause.kind === "target" ? clause.arg : typeof clause.arg === "string" ? clause.arg : clause.arg?.path ?? ""
         const first = String(arg).replace(/^args\./, "").split(/[.\s=<>!]/)[0]
-        const pack = packs.find((p) => p.id === caseObject.plugin)
-        const tool = (pack?.tools ?? []).find((t) => namesOfTool(pack, t).some((n) => norm(n) === norm(clause.tool)))
-        if (!(tool?.args ?? []).includes(first)) problems.push(`${item.id}: a blocker in a wide case rests on the argument \`${first}\` of ${clause.tool}, which no signature in the pack declares: a misspelt path would never match. Make it a major item, or declare the tool's \`args\` in its pack`)
+        // The tool, in the case's own plugin or (a deep case's companion) in a plugin it seeds, by the same resolution the argument check uses.
+        const ownPack = packs.find((p) => p.id === caseObject.plugin)
+        const ownTool = (ownPack?.tools ?? []).find((t) => namesOfTool(ownPack, t).some((n) => norm(n) === norm(clause.tool)))
+        const hit = ownTool ? { pack: ownPack, tool: ownTool } : resolveTool(clause.tool, packs, caseObject)
+        const pack = hit?.pack
+        const tool = hit?.tool
+        const tree = tool ? recorded.get(pack.id)?.tools?.[tool.name] : null
+        if (tree ? missingStep(tree, `args.${String(arg).replace(/^args\./, "")}`) === null : (tool?.args ?? []).includes(first)) continue
+        problems.push(`${item.id}: a blocker in a wide case rests on the argument \`${first}\` of ${clause.tool}, which no signature in the pack declares: a misspelt path would never match. Make it a major item, or declare the tool's \`args\` in its pack`)
       }
       // Nothing checks an argument path against the tool's input (the packs carry no schema), so a misspelt `absent-arg:` path passes for ever.
+      if (clause.kind === "absent-arg") {
+        const pack = packs.find((p) => p.id === caseObject.plugin)
+        const tool = (pack?.tools ?? []).find((t) => namesOfTool(pack, t).some((n) => norm(n) === norm(clause.tool)))
+        // Where the pack records the tool's parameters the path is checked at compile (argumentProblems); only a tool with none recorded is still unverifiable.
+        if (tool && recorded.get(pack.id)?.tools?.[tool.name]) continue
+      }
       if (clause.kind === "absent-arg") problems.push(`${item.id}: absent-arg:${clause.tool} cannot be checked against the tool's signature, so a misspelt path would pass for ever. Use absent:, count: or target:, which fail when the path is wrong`)
     }
   }
@@ -107,6 +127,9 @@ export function toolNameProblems(caseObject, packs) {
           const known = packs.some((p) => p.id === prefix || String(p.pluginId ?? "").split(".")[0] === prefix || (p.tools ?? []).some((t) => norm(t.name).startsWith(norm(prefix)) || norm(`${p.id}_${t.name}`).startsWith(norm(prefix))))
           if (!known && !prefix) continue
           if (!known && !builtin.has(prefix)) problems.push(`${item.id}: ${tool} matches no plugin or tool`)
+          // A positive glob on a namespace the case neither owns nor seeds can never be satisfied (no credential, no tools): `call:linear.*#1` with only slack seeded is a vacuous blocker.
+          const owner = packs.find((p) => p.id === prefix || String(p.pluginId ?? "").split(".")[0] === prefix)
+          if (owner && !mayName(owner) && ["call", "first", "before", "counts"].includes(clause.kind)) problems.push(`${item.id}: ${tool} names ${owner.id}, which this case does not seed (Seed: plugins=${owner.id}) and which is not its own: a positive match on it can never be satisfied`)
           continue
         }
         if (dot > 0) {
@@ -120,7 +143,7 @@ export function toolNameProblems(caseObject, packs) {
           }
           const hit = find(pack, name, loose) ?? find(pack, `${pack.id}_${name}`, loose)
           if (!hit || hit.hidden) problems.push(`${item.id}: ${tool} is not a ${hit?.hidden ? "reachable " : ""}tool of ${pack.id} v${pack.version}`)
-          else if (pack.id !== own.id && !route) problems.push(`${item.id}: ${tool} is a tool of ${pack.id}, not of ${own.id} (only a case in set route may name a sibling's tool)`)
+          else if (!mayName(pack)) problems.push(`${item.id}: ${tool} is a tool of ${pack.id}, not of ${own.id} (only a case in set route, or one whose Seed: plugins= lists ${pack.id}, may name a sibling's tool)`)
           continue
         }
         if (builtin.has(tool)) continue
@@ -129,9 +152,13 @@ export function toolNameProblems(caseObject, packs) {
           if (mine.hidden) problems.push(`${item.id}: ${tool} is hidden by ${own.id} at runtime: no model can call it`)
           continue
         }
-        const sibling = siblings.find((p) => find(p, tool, loose))
-        if (sibling && route) continue
-        problems.push(`${item.id}: ${tool} is not a tool of ${own.id} v${own.version}${sibling ? ` (it is ${sibling.id}'s: only a case in set route may name it)` : ""}`)
+        // A companion's tool first (a bare name two plugins share is the seeded one's), then any sibling's, to say whose it is.
+        const sibling = siblings.find((p) => mayName(p) && find(p, tool, loose)) ?? siblings.find((p) => find(p, tool, loose))
+        if (sibling && mayName(sibling)) {
+          if (find(sibling, tool, loose).hidden && !route) problems.push(`${item.id}: ${tool} is hidden by ${sibling.id} at runtime: no model can call it`)
+          continue
+        }
+        problems.push(`${item.id}: ${tool} is not a tool of ${own.id} v${own.version}${sibling ? ` (it is ${sibling.id}'s: only a case in set route, or one whose Seed: plugins= lists ${sibling.id}, may name it)` : ""}`)
       }
     }
   }

@@ -13,7 +13,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
 import { scriptedRun, mock, execute, textOf, executeValue, refused, refusedInCode, completedCalls, hungReason, infraReason, takeHung, takeNotes, declinedIn } from "./run.mjs"
-import { writeActions, loadPacks } from "../run/lockdown.mjs"
+import { writeActions, loadPacks, namespacePatterns } from "../run/lockdown.mjs"
 import { decideBefore, planIdOf } from "../run/guard/logic.mjs"
 
 /** A case id: lower-case words joined by dashes. */
@@ -22,13 +22,13 @@ const ok = (name, pass, detail = "") => ({ name, ok: Boolean(pass), detail: Stri
 const done = (id, checks, extra = {}) => ({ id, ok: checks.every((c) => c.ok), checks, ...extra })
 
 /** Code Mode source asking the probe about every action (a list literal would carry a `]`, which a scripted call cannot). */
-const askAll = (actions) => `return await tools.evalsprobe.assert_all({actions: '${actions.join(",")}'.split(',')})`
+export const askAll = (actions) => `return await tools.evalsprobe.assert_all({actions: '${actions.join(",")}'.split(',')})`
 
 /** The 24 plugin ids, from the packs. */
 export const pluginIds = () => loadPacks().map((p) => p.id)
 
 /** An arm for the 24-plugin install: the `arm` plugin under test and the other 23 as companions, from a companions file. */
-function fullArm(companions, { arm = "slack", options = {}, guard = true } = {}) {
+export function fullArm(companions, { arm = "slack", options = {}, guard = true } = {}) {
   if (!companions || !existsSync(companions)) throw new Error("this probe needs the 24 plugin builds: pass --companions <file> (a map from plugin id to a built directory), or set EVALS_COMPANIONS")
   const map = JSON.parse(readFileSync(companions, "utf8"))
   const entry = map[arm]
@@ -156,9 +156,14 @@ export async function a2(env = {}) {
     }
     const wild = rules(r1)
     const expected = plugins.filter((id) => !NEEDS_ENGINE.includes(id))
-    const notAsking = expected.filter((id) => !(wild[wildcardOf(id)] ?? []).includes("*:ask"))
+    // The harness's own namespace rule (`<id>_*` as an ask: src/run/lockdown.mjs) is in the list too: a plugin's own rule is what is left of it.
+    const harness = new Set(namespacePatterns())
+    // It appears once per ruleset it is in (the agent's and the session's): voice registers no rule of its own, so its list is the harness's copies alone.
+    const copies = (wild[wildcardOf("voice")] ?? []).length
+    const own = (id) => (harness.has(wildcardOf(id)) ? (wild[wildcardOf(id)] ?? []).slice(copies) : (wild[wildcardOf(id)] ?? []))
+    const notAsking = expected.filter((id) => !own(id).includes("*:ask"))
     checks.push(ok(`${expected.length} of 24 plugins loaded and applied ask-changes (each holds its \`${"<id>"}_*\` rule as \`ask\`)`, notAsking.length === 0, notAsking.length ? `no ask rule: ${notAsking.join(", ")}` : `${expected.length} wildcard ask rules`))
-    checks.push(ok("voice loaded without error but registers no tools or rules without its engine (the trial image has none)", !(wildcardOf("voice") in wild), "voice_* absent, as its plugin.ts only registers them when the engine and models exist"))
+    checks.push(ok("voice loaded without error but registers no tools or rules without its engine (the trial image has none)", own("voice").length === 0, "voice adds no rule of its own (the harness's namespace ask aside), as its plugin.ts only registers them when the engine and models exist"))
     const failures = Object.values(r1.trials).flatMap((t) => t.summary?.host_log?.plugin_load_failures ?? [])
     const logged = Object.values(r1.trials).every((t) => t.summary?.host_log?.log === true)
     checks.push(ok("the host's own log shows no plugin that failed to load", logged && failures.length === 0, logged ? failures.map((f) => `${f.plugin}: ${f.why.slice(0, 80)}`).join("; ") : "the host's log was not found"))
@@ -640,6 +645,194 @@ export async function halt(env = {}) {
   }
 }
 
+// ------------------------------------------------------------------------------------------------------------------ consent
+
+/**
+ * The harness is never more permissive than the plugin (review of #14, round 4: its allow for the pack's reads overrode eight asks the plugins make on purpose, for private content). Per plugin, at
+ * the trial's access (ask-changes), measured on the host:
+ *   - A: the plugin's OWN rules, none of the harness's: what the host resolves for every action of its pack;
+ *   - B: the sealed config the harness writes, the plugin's rules under it: the same question;
+ * and no action may be an allow in B that the plugin's own rules do not allow in A, bar the one listed exception (Tavily's metered spending reads, `PERMISSIVE_EXCEPTIONS`). Named: Slack's private
+ * search and file read and X's six direct-message reads are asks in B. A tool no pack lists is an ask. The recorded `plugin-rules.json` (what the harness derives its allows from) must be what A resolves.
+ */
+export async function consent(env = {}) {
+  const { readFileSync: rf } = await import("node:fs")
+  const { resolveOwnRules } = await import("../../scripts/plugin-rules.mjs")
+  const { loadPluginRules, PERMISSIVE_EXCEPTIONS, CONFIRM_ONLY_READS, keptAsks } = await import("../run/lockdown.mjs")
+  const packs = loadPacks()
+  const own = (await resolveOwnRules({ companions: env.companions, tmp: env.tmp })).out
+  const cases = []
+  for (const pack of packs) {
+    const actions = [...new Set(pack.tools.map((t) => t.permission).filter(Boolean))]
+    for (let i = 0; i < actions.length; i += 80) cases.push({ id: `tools-consent-${pack.id}-${i / 80}`, pack: pack.id, actions: actions.slice(i, i + 80) })
+  }
+  cases.push({ id: "tools-consent-unlisted", pack: "(unlisted)", actions: ["elevenlabs_agents_outbound_call", "slack_slack_brand_new", "gws.brand_new", "tavily_tavily_added_later"] })
+  const run = await scriptedRun({ plugin: "slack", cases: cases.map((c) => ({ id: c.id, prompt: execute(askAll(c.actions)) })), arm: fullArm(env.companions, { arm: "slack", options: {} }), options: { probe: true, guardMode: "log", iteration: "p0-consent", auth: "none" }, caller: env.caller, tmp: env.tmp })
+  try {
+    const sealed = {}
+    for (const c of cases) {
+      const value = executeValue(run.trials[c.id].calls[0])
+      Object.assign(sealed, (value?.output ?? value)?.outcomes ?? {})
+    }
+    const exceptions = new Set(PERMISSIVE_EXCEPTIONS.map((e) => e.action))
+    const confirm = new Set(CONFIRM_ONLY_READS)
+    const checks = []
+    const answered = packs.every((pack) => pack.tools.every((t) => !t.permission || sealed[t.permission] !== undefined))
+    checks.push(ok(`the host answered for every action of the ${packs.length} packs (${Object.keys(sealed).length} actions)`, answered, `${Object.keys(sealed).length} answers`))
+    const more = []
+    for (const pack of packs) for (const tool of pack.tools) {
+      const action = tool.permission
+      if (!action || sealed[action] !== "allowed" || exceptions.has(action)) continue
+      if (!own[pack.id].allowed.includes(action)) more.push(action)
+    }
+    checks.push(ok("no tool the plugin's own rules ask for or deny is an allow in the sealed config (the harness is never more permissive than the plugin)", more.length === 0, more.slice(0, 8).join(", ")))
+    const exceptional = Object.entries(sealed).filter(([action, outcome]) => outcome === "allowed" && !packs.some((p) => (own[p.id].allowed.includes(action)))).map(([action]) => action)
+    checks.push(ok(`the only allow the plugin does not make is the listed exception (${[...exceptions].join(", ")})`, exceptional.every((action) => exceptions.has(action)), exceptional.filter((a) => !exceptions.has(a)).slice(0, 6).join(", ")))
+    for (const action of ["slack_slack_search_public_and_private", "slack_slack_read_file", "x_get_chat_conversation", "x_get_chat_conversation_events", "x_get_chat_conversations", "x_get_chat_message_requests", "x_get_users_public_key", "x_get_users_public_keys"]) checks.push(ok(`${action} (private content, the plugin asks consent) stays asked`, sealed[action] === "asked", `${sealed[action]}; the plugin's own rules: ${own[action.startsWith("x_") ? "x" : "slack"].asked.includes(action) ? "ask" : "NOT recorded as an ask"}`))
+    for (const action of confirm) checks.push(ok(`${action} stays confirm-only (asked)`, sealed[action] === "asked", sealed[action]))
+    for (const action of exceptions) checks.push(ok(`the listed exception ${action} is allowed`, sealed[action] === "allowed", sealed[action]))
+    checks.push(ok("a tool no pack lists is asked, in four plugins (the fail-closed default holds)", ["elevenlabs_agents_outbound_call", "slack_slack_brand_new", "gws.brand_new", "tavily_tavily_added_later"].every((a) => sealed[a] === "asked"), JSON.stringify(["elevenlabs_agents_outbound_call", "slack_slack_brand_new", "gws.brand_new", "tavily_tavily_added_later"].map((a) => sealed[a]))))
+    // the harness's derived allows come from the recorded rules, and the recording is what the host resolves
+    const recorded = loadPluginRules()
+    const stale = packs.filter((pack) => JSON.stringify([...recorded.get(pack.id)?.allowed ?? []].sort()) !== JSON.stringify(own[pack.id].allowed)).map((p) => p.id)
+    checks.push(ok("packs/<id>/plugin-rules.json is what each plugin's own rules resolve to now", stale.length === 0, stale.join(", ") || "24 of 24"))
+    const kept = keptAsks(packs)
+    checks.push(ok(`${Object.values(kept).flat().length} reads are kept as asks because their plugin asks for them`, Object.values(kept).flat().every((a) => sealed[a] === "asked"), Object.entries(kept).map(([id, v]) => `${id} ${v.length}`).join(", ")))
+    return done("consent", checks)
+  } finally {
+    run.cleanup()
+  }
+}
+
+// ------------------------------------------------------------------------------------------------------------------ tavily
+
+/**
+ * Tavily stays measurable when its next release marks all five tools spend-class (they cost credits): the plugin then asks for each of them at `ask-changes` (its rule block puts
+ * `ask` on `tavily_*` and on each known action), and denies them at `read-only`. The plugin inserts that block right after the agent's base allow, and the host lets the LAST matching rule
+ * win, so the harness's own rules (written after it) decide: search, extract and map are `allow` (metered by the round's Tavily credit cap), research and crawl are `ask` (confirm-only,
+ * declined in a trial), a tool Tavily adds later is an `ask`. No plugin option is needed, and none is relaxed. Checked against a build of the plugin whose rule block is the spend-class one:
+ * `EVALS_TAVILY_SPEND_BUILD` (a built directory of the release that has it), else a stand-in made here: the installed v0.0.5 with its default-rules block replaced by #26's, and the pack
+ * reclassified to match.
+ *   - at `ask-changes` and at `all`: search, extract, map allowed; research, crawl and an unlisted tool asked;
+ *   - control: with the harness's rules taken away, the plugin itself asks for search at `ask-changes` (so the spend-class block is in force, and it is the harness that lets search through).
+ */
+export async function tavily(env = {}) {
+  const { cpSync, mkdtempSync, rmSync, readFileSync: rf, writeFileSync: wf } = await import("node:fs")
+  const { loadPacks } = await import("../run/lockdown.mjs")
+  const map = JSON.parse(rf(env.companions, "utf8"))
+  const installed = typeof map.tavily === "string" ? map.tavily : map.tavily?.package
+  const dir = mkdtempSync(join(env.tmp ?? "/tmp", "evals-p0-tavily-"))
+  try {
+    let build = process.env.EVALS_TAVILY_SPEND_BUILD
+    let kind = `the build at EVALS_TAVILY_SPEND_BUILD`
+    if (!build) {
+      build = join(dir, "tavily-spend")
+      cpSync(installed, build, { recursive: true, filter: (src) => !/(^|\/)(\.git|node_modules)(\/|$)/.test(src) })
+      const file = join(build, "dist", "index.js")
+      const source = rf(file, "utf8")
+      const old = 'return [rule("tavily_*", other), ...KNOWN_ACTIONS.map((action) => rule(action, "allow"))];'
+      if (!source.includes(old)) throw new Error("the installed Tavily build has a default-rules block this probe cannot restate as the spend-class one: set EVALS_TAVILY_SPEND_BUILD to a build that has it")
+      wf(file, source.replace(old, 'return [rule("tavily_*", other), ...KNOWN_ACTIONS.map((action) => rule(action, other))];'))
+      kind = "a stand-in: the installed build with the spend-class default rules (#26)"
+    }
+    const spend = loadPacks().map((pack) => (pack.id === "tavily" ? { ...pack, tools: pack.tools.map((tool) => ({ ...tool, class: "write", readOnly: false })) } : pack))
+    const actions = { search: "tavily_tavily_search", extract: "tavily_tavily_extract", map: "tavily_tavily_map", crawl: "tavily_tavily_crawl", research: "tavily_tavily_research", added: "tavily_tavily_added_later" }
+    const cases = (access) => Object.entries(actions).map(([name, action]) => ({ id: `${name}-${access}`, prompt: execute(`return await tools.evalsprobe.assert_action({action:'${action}'})`) }))
+    const outcome = (run, id) => {
+      const v = executeValue(run.trials[id].calls[0])
+      return (v?.output ?? v)?.outcome
+    }
+    const arm = (access) => ({ package: build, options: { access }, companions: env.companions, guard: true })
+    const checks = []
+    for (const access of ["ask-changes", "all"]) {
+      const run = await scriptedRun({ cases: cases(access), arm: arm(access), options: { probe: true, iteration: `p0-tavily-${access}`, auth: "none", lockPacks: spend }, caller: env.caller, tmp: env.tmp })
+      try {
+        const got = Object.fromEntries(Object.keys(actions).map((name) => [name, outcome(run, `${name}-${access}`)]))
+        for (const name of ["search", "extract", "map"]) checks.push(ok(`${access}: tavily_${name} runs (allowed by the harness, metered by the credit cap) although the plugin's block asks for it`, got[name] === "allowed", got[name]))
+        for (const name of ["research", "crawl"]) checks.push(ok(`${access}: tavily_${name} is confirm-only (asked)`, got[name] === "asked", got[name]))
+        checks.push(ok(`${access}: a tool Tavily adds later is asked`, got.added === "asked", got.added))
+      } finally {
+        run.cleanup()
+      }
+    }
+    // control: no harness rules (noWriteAsks): the plugin's own spend-class block asks for search at ask-changes
+    const control = await scriptedRun({ cases: [cases("ask-changes")[0]], arm: arm("ask-changes"), options: { probe: true, noWriteAsks: true, iteration: "p0-tavily-control", auth: "none", lockPacks: spend }, caller: env.caller, tmp: env.tmp })
+    try {
+      const got = outcome(control, "search-ask-changes")
+      checks.push(ok(`control: with no harness rules the plugin itself asks for search at ask-changes (${kind})`, got === "asked", got))
+    } finally {
+      control.cleanup()
+    }
+    return done("tavily", checks, { build: kind })
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+}
+
+// ------------------------------------------------------------------------------------------------------------------ unknown
+
+/**
+ * The harness is fail-closed for a tool no pack lists (review of #14, round 3): a plugin can register a tool its pack does not know (ElevenLabs' live server lists eight v0.0.9's pack lacks, one
+ * of which places phone calls), and nothing then classified it as a write. The pack here is jobs', with `create` taken out of the list the harness locks by (`options.lockPacks`: a probe's
+ * own switch, no flag reaches it); the plugin still has the tool, so `jobs.create` is exactly "a tool no pack lists".
+ *   - at the plugin's `access: "all"` (a plugin that does not ask) and at `ask-changes`, the call is ASKED and declined, and never completes;
+ *   - in commit mode, with a commit set that does not name it, the guard refuses it before it runs;
+ *   - with the harness's asks taken away and the guard only logging (the halt probe's setting), it COMPLETES, the guard records it as a write, and the wave is halted;
+ *   - control: with `create` in the pack, it is the pack's write and is declined the ordinary way.
+ */
+export async function unknown(env = {}) {
+  const { mkdirSync: mk, writeFileSync: wf, mkdtempSync, rmSync } = await import("node:fs")
+  const { readHalt } = await import("../run/halt.mjs")
+  const { loadPacks } = await import("../run/lockdown.mjs")
+  const trimmed = loadPacks().map((pack) => (pack.id === "jobs" ? { ...pack, tools: pack.tools.filter((tool) => tool.name !== "create") } : pack))
+  const create = (name) => execute(`return await tools.jobs.create({name:'${name}',schedule:{every:'1h'},agent:'build',action:{type:'prompt',text:'hi'}})`)
+  const declined = (call) => declinedIn(call) || /cannot ask the user|declined|rejected/i.test(textOf(call))
+  const checks = []
+  const runs = []
+  const keep = (run) => (runs.push(run), run)
+  try {
+    for (const access of ["all", "ask-changes"]) {
+      const run = keep(await scriptedRun({ cases: [{ id: `unknown-${access}`, prompt: create(`unlisted-${access}`) }], arm: soloArm(env.companions, "jobs", { access }), options: { iteration: `p0-unknown-${access}`, auth: "none", lockPacks: trimmed }, tmp: env.tmp }))
+      const trial = run.trials[`unknown-${access}`]
+      const call = trial.calls[0]
+      const guard = trial.summary?.guard ?? {}
+      checks.push(ok(`a tool no pack lists, plugin at access ${access}: asked and declined, never completed`, Boolean(call) && declined(call) && (guard.committed ?? 0) === 0, `${textOf(call).slice(0, 110).replace(/\s+/g, " ")}; guard ${JSON.stringify(guard)}`))
+      const asked = (trial.guard ?? []).some((r) => r.kind === "permission" && r.action === "jobs_create" && r.unknown === true)
+      checks.push(ok(`  the guard saw the permission for it as a tool no pack lists`, asked, JSON.stringify((trial.guard ?? []).filter((r) => r.kind === "permission").map((r) => [r.action, r.effect, r.unknown]))))
+      checks.push(ok(`  the call is not a refusal of the guard's own: the ask is what stopped it`, !/EVALS-ASSERT/.test(textOf(call)), textOf(call).slice(0, 80)))
+    }
+    // commit mode: the plan names another action; the unlisted tool is refused at execute.before
+    const dir = mkdtempSync(join(env.tmp ?? "/tmp", "evals-p0-unknown-"))
+    runs.push({ cleanup: () => rmSync(dir, { recursive: true, force: true }) })
+    const store = join(dir, "store")
+    mk(store, { recursive: true })
+    wf(join(store, "targets.json"), JSON.stringify({ jobs: { sandbox_name: "in-scope" } }))
+    const plan = join(dir, "commit-plan.json")
+    wf(plan, JSON.stringify({ actions: ["jobs_delete"], writes: { jobs_delete: { extract: "args.id", allow: ["@jobs.sandbox_name"] } } }))
+    const commit = keep(await scriptedRun({ cases: [{ id: "commit-unknown", prompt: create("unlisted-commit"), extra: "- Set: commit" }], arm: soloArm(env.companions, "jobs", { access: "all" }), options: { iteration: "p0-commit-unknown", commitPlan: plan, set: "commit", auth: "none", store, lockPacks: trimmed }, tmp: env.tmp }))
+    const ct = commit.trials["commit-unknown"]
+    checks.push(ok("a tool no pack lists, commit mode, not named by the commit set: refused before it runs, with the guard's marker", /EVALS-ASSERT tool: jobs_create refused \(a tool no pack lists, and the commit set does not name it/.test(textOf(ct.calls[0])) && (ct.summary?.guard?.committed ?? 0) === 0, textOf(ct.calls[0]).slice(0, 160)))
+    // a plan that names it lets it through to the usual in-scope checks (and here, with no extractor, refuses it for that)
+    // completing one halts the wave: the asks are taken away and the guard only logs
+    const haltStore = join(dir, "halt-store")
+    mk(haltStore, { recursive: true })
+    const cases = [{ id: "first", prompt: create("first") }, { id: "second", prompt: create("second") }]
+    const options = { probe: true, noWriteAsks: true, guardMode: "log", iteration: "p0-unknown-halt", parallel: 1, store: haltStore, auth: "none", lockPacks: trimmed }
+    const wave = keep(await scriptedRun({ cases, arm: soloArm(env.companions, "jobs", { access: "all" }), options, tmp: env.tmp, expectStop: true }))
+    const first = wave.trials.first
+    const marked = readHalt(wave.store)
+    checks.push(ok("a tool no pack lists that COMPLETES is recorded by the guard as a write", (first.summary?.guard?.committed ?? 0) === 1 && (first.guard ?? []).some((r) => r.kind === "committed" && r.unknown === true), JSON.stringify(first.summary?.guard)))
+    checks.push(ok("  and halts the wave: nothing more launches", wave.result.launched === 1 && /HALT/.test(String(wave.result.stopped)) && /jobs_create completed outside commit mode/.test(String(wave.result.stopped) + String(marked?.reason)), `launched ${wave.result.launched} of ${wave.result.planned}; ${String(wave.result.stopped).slice(0, 140)}`))
+    // control: with the pack intact it is the pack's own write, declined the ordinary way
+    const control = keep(await scriptedRun({ cases: [{ id: "known", prompt: create("listed") }], arm: soloArm(env.companions, "jobs", { access: "all" }), options: { iteration: "p0-unknown-control", auth: "none" }, tmp: env.tmp }))
+    const kt = control.trials.known
+    checks.push(ok("control: with the tool in the pack it is its write, asked and declined", declined(kt.calls[0]) && (kt.summary?.guard?.committed ?? 0) === 0 && !(kt.guard ?? []).some((r) => r.unknown), textOf(kt.calls[0]).slice(0, 100).replace(/\s+/g, " ")))
+    return done("unknown", checks)
+  } finally {
+    for (const run of runs) run.cleanup?.()
+  }
+}
+
 // ------------------------------------------------------------------------------------------------------------------ live
 
 /**
@@ -907,7 +1100,7 @@ export async function fake(env = {}) {
   return done("fake", checks)
 }
 
-const PROBE_FUNCTIONS = { a1, a2, a3, a4, a5, c, g, g8, halt, env: env_, fake, live, p7, gws, p1, p2, p3, p4, p5, p13 }
+const PROBE_FUNCTIONS = { a1, a2, a3, a4, a5, c, g, g8, halt, unknown, consent, tavily, env: env_, fake, live, p7, gws, p1, p2, p3, p4, p5, p13 }
 
 /**
  * Every probe, with one more duty: a trial of any scripted run it made that hung before its first model request is reported FIRST, as the cause, and fails the probe. A probe

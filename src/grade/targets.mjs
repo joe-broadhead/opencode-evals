@@ -44,13 +44,16 @@ export function loadTargets(env = process.env) {
   return data ? flatten(data) : null
 }
 
+/** A canary a short or repetitive value cannot be: it is found in ordinary text, and a case that grades it proves nothing. */
+export const isWeakCanary = (value) => String(value).length < 8 || new Set(String(value)).size < 5
+
 /** The canaries as a Map name -> [values], or null when the file is absent. */
 export function loadCanaries(env = process.env) {
   const data = readJson(join(storeDir(env), "canaries.json"))
   const canaries = data ? flatten(data) : null
   if (canaries) {
     // A canary is a random token: a short or repetitive one is found in ordinary text, and then a case that grades it proves nothing.
-    const weak = [...canaries].filter(([, values]) => values.some((v) => String(v).length < 8 || new Set(String(v)).size < 5)).map(([name]) => name)
+    const weak = [...canaries].filter(([, values]) => values.some(isWeakCanary)).map(([name]) => name)
     if (weak.length) throw new Error(`canaries.json: ${weak.sort().join(", ")} must be random tokens of at least 8 characters (with at least 5 different ones): a short canary is found in ordinary text`)
   }
   return canaries
@@ -72,4 +75,30 @@ export function aliasValues(targets, aliases) {
 export const norm = (value) => {
   const text = String(value ?? "").trim()
   return text.includes("@") && !/\s/.test(text) ? text.toLowerCase() : text
+}
+
+/**
+ * A prefix alias (`@boxd.prefix*`) is a grading check that a value starts with a name the owner chose to be theirs alone. So the targets file must DECLARE it a prefix (a name that ends
+ * `.prefix` or `_prefix`, or one listed in its `prefixes`), it must be at least 8 characters, and it must end in a separator (`-`, `_`, `.`, `/` or `:`), so `evals-232-` cannot
+ * match `evals-2321` and `e` cannot match `engine-prod`. It cannot know whether the owner's real, non-sandbox resources share the prefix: that is the owner's to keep unique, and the
+ * guard does not read a prefix (the commit plan takes exact aliases only), so it is not a confinement.
+ */
+export const MIN_PREFIX = 8
+export function prefixAliasProblem(alias, targets) {
+  const name = String(alias).replace(/^@/, "")
+  const declared = /(?:^|[._])prefix$/.test(name) || (targets?.get("prefixes") ?? []).includes(name)
+  if (!declared) return `@${name}* is used as a prefix, but ${name} is not declared one in targets.json (a name ending .prefix or _prefix, or listed in "prefixes")`
+  for (const value of targets?.get(name) ?? []) {
+    const text = String(value).trim()
+    if (text.length < MIN_PREFIX) return `the prefix @${name} is ${text.length} character(s): at least ${MIN_PREFIX}, so it cannot be an ordinary start of a real name`
+    if (!/[-_./:]$/.test(text)) return `the prefix @${name} does not end in a separator (- _ . / :): it would match a longer name that merely begins the same`
+  }
+  return null
+}
+
+/** Does `value` start with `prefix` as a name, and stay inside it? A path with a `..` segment or a backslash is not within a prefix, whatever it starts with. */
+export function withinPrefix(value, prefix) {
+  const text = String(value)
+  if (/(^|\/)\.\.(\/|$)/.test(text) || text.includes("\\") || text.includes("\0")) return false
+  return text.startsWith(prefix) && text.length > prefix.length
 }

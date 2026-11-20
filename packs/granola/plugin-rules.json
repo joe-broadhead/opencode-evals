@@ -1,0 +1,38 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "granola",
+ "release": {
+  "version": "0.0.6",
+  "tag": "v0.0.6",
+  "commit": "1bce3289fba00fbbd40b44ff20ea79d264c48c00"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "granola_events_list",
+  "granola_get_account_info",
+  "granola_get_agent_brief",
+  "granola_get_meeting_attachment",
+  "granola_get_meeting_transcript",
+  "granola_get_meetings",
+  "granola_list_meeting_folders",
+  "granola_list_templates",
+  "granola_query_granola_meetings",
+  "granola_search_meetings",
+  "granola_search_transcripts"
+ ],
+ "asked": [
+  "granola_add_note_to_folder",
+  "granola_create_folder",
+  "granola_create_meeting_note_from_transcript",
+  "granola_export_markdown",
+  "granola_generate_summary",
+  "granola_give_feedback",
+  "granola_remove_note_from_folder",
+  "granola_sign_out",
+  "granola_update_folder",
+  "granola_update_private_notes"
+ ],
+ "denied": []
+}

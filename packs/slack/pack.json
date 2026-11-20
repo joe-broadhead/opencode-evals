@@ -234,10 +234,15 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "e13f08658eae43299f8365aa5525733c2181d7a115c3e220354f28da808b744f",
+  "digest": "c9609731f49d5b4020404f1c56ddb98875e13ffe56ac917929d816e7eb4b2302",
   "t1": [],
   "egress": [
     "mcp.slack.com",
     "slack.com"
-  ]
+  ],
+  "release": {
+    "version": "0.0.6",
+    "tag": "v0.0.6",
+    "commit": "c37d3712c1536c36f51ad9dafd7c8e663ed2b35d"
+  }
 }

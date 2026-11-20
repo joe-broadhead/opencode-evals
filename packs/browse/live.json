@@ -1,0 +1,26 @@
+{
+ "schema": "oc-live/1",
+ "plugin": "browse",
+ "listedAt": "2026-11-20",
+ "via": "a signed-in OpenCode host's Code Mode listing (read-only: search({ namespace }), no tool call)",
+ "names": [
+  "execute",
+  "flight_recorder",
+  "network",
+  "recording",
+  "secrets_list",
+  "secrets_refresh",
+  "secrets_run",
+  "secrets_status",
+  "session_adopt",
+  "session_allowlist",
+  "session_delete",
+  "session_list",
+  "session_new",
+  "session_reset",
+  "session_use",
+  "settings",
+  "status",
+  "tabs_cleanup"
+ ]
+}

@@ -1,0 +1,223 @@
+{
+ "gws": {
+  "gws v0.0.10 src/domain/contract.ts (RequestInput, CommitInput) via src/host/tools.ts": {
+   "read": {
+    "type": "object",
+    "properties": {
+     "account": {
+      "type": "string"
+     },
+     "operation": {
+      "type": "string"
+     },
+     "input": {
+      "type": "object"
+     },
+     "params": {
+      "type": "object"
+     },
+     "body": {
+      "type": "object"
+     },
+     "fields": {
+      "type": "string"
+     },
+     "pagination": {
+      "type": "object",
+      "properties": {
+       "all": {
+        "type": "boolean"
+       },
+       "maxPages": {
+        "type": "integer"
+       },
+       "maxItems": {
+        "type": "integer"
+       },
+       "delayMs": {
+        "type": "integer"
+       }
+      }
+     },
+     "upload": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string"
+       },
+       "mime": {
+        "type": "string"
+       }
+      }
+     },
+     "download": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string"
+       },
+       "overwrite": {
+        "type": "boolean"
+       }
+      }
+     },
+     "reason": {
+      "type": "string"
+     },
+     "response": {
+      "type": "object",
+      "properties": {
+       "mode": {
+        "type": "string"
+       },
+       "maxInlineBytes": {
+        "type": "integer"
+       }
+      }
+     }
+    },
+    "required": [
+     "operation"
+    ]
+   },
+   "write": {
+    "type": "object",
+    "properties": {
+     "planId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "planId"
+    ]
+   },
+   "export": {
+    "type": "object",
+    "properties": {
+     "planId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "planId"
+    ]
+   },
+   "send": {
+    "type": "object",
+    "properties": {
+     "planId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "planId"
+    ]
+   },
+   "share": {
+    "type": "object",
+    "properties": {
+     "planId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "planId"
+    ]
+   },
+   "delete": {
+    "type": "object",
+    "properties": {
+     "planId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "planId"
+    ]
+   },
+   "admin": {
+    "type": "object",
+    "properties": {
+     "planId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "planId"
+    ]
+   }
+  }
+ },
+ "history": {
+  "history v0.0.7 src/host/actions.ts (PinInputSchema)": {
+   "pin": {
+    "type": "object",
+    "properties": {
+     "action": {
+      "type": "string"
+     },
+     "sessionID": {
+      "type": "string"
+     },
+     "from": {
+      "type": "integer"
+     },
+     "to": {
+      "type": "integer"
+     },
+     "maxChars": {
+      "type": "integer"
+     }
+    }
+   }
+  }
+ },
+ "linear": {
+  "linear v0.0.6 src/ (the `issues` tool's own JSON Schema: `limit`)": {
+   "issues": {
+    "type": "object",
+    "properties": {
+     "limit": {
+      "type": "integer"
+     }
+    }
+   }
+  }
+ },
+ "voice": {
+  "voice v0.0.4 src/host/tools.ts (EMPTY, SPEAK)": {
+   "status": {
+    "type": "object",
+    "properties": {}
+   },
+   "speak": {
+    "type": "object",
+    "properties": {
+     "text": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "text"
+    ]
+   }
+  }
+ },
+ "_unlisted": {
+  "jira": {
+   "deleteJiraIssue": "the sign-in's pinned scope does not grant it: the vendor server lists it only to the delete_jira / manage_jira permission groups, which are off by default (Atlassian's supported-tools page; jira v0.0.5 src/jira-tools.ts)",
+   "deleteJiraComment": "the sign-in's pinned scope does not grant it: the vendor server lists it only to the delete_jira / manage_jira permission groups, which are off by default (Atlassian's supported-tools page; jira v0.0.5 src/jira-tools.ts)",
+   "deleteJiraIssueAttachment": "the sign-in's pinned scope does not grant it: the vendor server lists it only to the delete_jira / manage_jira permission groups, which are off by default (Atlassian's supported-tools page; jira v0.0.5 src/jira-tools.ts)",
+   "createJiraProject": "the sign-in's pinned scope does not grant it: the vendor server lists it only to the delete_jira / manage_jira permission groups, which are off by default (Atlassian's supported-tools page; jira v0.0.5 src/jira-tools.ts)",
+   "updateJiraProject": "the sign-in's pinned scope does not grant it: the vendor server lists it only to the delete_jira / manage_jira permission groups, which are off by default (Atlassian's supported-tools page; jira v0.0.5 src/jira-tools.ts)",
+   "updateJiraScreen": "the sign-in's pinned scope does not grant it: the vendor server lists it only to the delete_jira / manage_jira permission groups, which are off by default (Atlassian's supported-tools page; jira v0.0.5 src/jira-tools.ts)",
+   "getJiraScreen": "the sign-in's pinned scope does not grant it: the vendor server lists it only to the manage_jira permission group, which is off by default (jira v0.0.5 src/jira-tools.ts NOT_GRANTED_TOOLS)",
+   "getJiraWorkflowEditorLink": "the sign-in's pinned scope does not grant it: the vendor server lists it only to the manage_jira permission group, which is off by default (jira v0.0.5 src/jira-tools.ts NOT_GRANTED_TOOLS)",
+   "getJiraWorkflows": "the sign-in's pinned scope does not grant it: the vendor server lists it only to the manage_jira permission group, which is off by default (jira v0.0.5 src/jira-tools.ts NOT_GRANTED_TOOLS)"
+  },
+  "notion": {
+   "notion-ai-search": "Notion lists it only on workspace-owned connections an admin selects (notion v0.0.5 src/notion-tools.ts)",
+   "notion-connector-search": "Notion lists it only on plans with Notion AI and a connected source (notion v0.0.5 src/notion-tools.ts)"
+  }
+ }
+}

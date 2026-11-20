@@ -1,0 +1,1 @@
+{"schema":"oc-inputs/2","plugin":"voice","sources":{"voice v0.0.4 src/host/tools.ts (EMPTY, SPEAK)":["speak","status"],"widened with names a signed-in host's later listing has":["status"]},"tools":{"speak":{"p":{"text":{}},"req":["text"]},"status":{}}}

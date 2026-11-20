@@ -1,0 +1,22 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "inference",
+ "release": {
+  "version": "0.0.7",
+  "tag": "v0.0.7",
+  "commit": "6b61922f3bec849e11e16918d0ac9795811a5bff"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "inference_capabilities",
+  "inference_plan",
+  "inference_status"
+ ],
+ "asked": [
+  "inference_decide",
+  "inference_extract"
+ ],
+ "denied": []
+}

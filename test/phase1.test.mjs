@@ -28,6 +28,11 @@ function stand({ fail = {}, signedIn = ["linear", "slack"], github = "oauth" } =
       calls.push("keeper")
       return signedIn.map((integration) => ({ integration, ok: fail.keeper !== integration, ...(fail.keeper === integration ? { why: "its token was due and its expiry did not move" } : {}) }))
     },
+    seedCanaries: async () => {
+      calls.push("canaries")
+      if (fail.canaries) throw new Error("the canaries manifest is refused, nothing was created: container linear.production is not an alias in targets.json")
+      return { created: ["linear_issue"], reused: ["slack_pinned_ts"] }
+    },
     credentialType: () => github,
     logout: (ctx, vendor) => {
       calls.push(`logout ${vendor}`)
@@ -66,8 +71,8 @@ const run = async (w, s, extra = {}, options = {}) => {
   return { ...result, lines }
 }
 
-test("the order is section D's: sign-in checks, keeper, GitHub, logout, egress, live writes, gws, the paid pilot last", () => {
-  assert.deepEqual(ids, ["preflight", "check-real", "keeper", "p6c", "p7", "live", "gws", "pilot"])
+test("the order is section D's: sign-in checks, keeper, the canaries, logout, egress, live writes, gws, the paid pilot last", () => {
+  assert.deepEqual(ids, ["preflight", "check-real", "keeper", "canaries", "p6c", "p7", "live", "gws", "pilot"])
   for (const step of STEPS) assert.ok(step.title && step.needs, step.id)
 })
 
@@ -80,11 +85,11 @@ test("every step runs, in order, when each passes; a step needing a person stops
     assert.equal(r.stopped.id, "pilot")
     assert.equal(r.stopped.manual, true)
     assert.match(r.stopped.message, /THE LEAD'S STEP: the pilot spends money/)
-    assert.deepEqual(s.calls, ["check-real linear", "check-real slack", "keeper", "p7 slack", "p7 linear", "live slack", "live linear", "gws"], "p6c skips (no --logout); the one-plugin-at-a-time probes run in the file's order")
+    assert.deepEqual(s.calls, ["check-real linear", "check-real slack", "keeper", "canaries", "p7 slack", "p7 linear", "live slack", "live linear", "gws"], "the canaries are planted after the sign-ins and before any probe or case; p6c skips (no --logout); the one-plugin-at-a-time probes run in the file's order")
     assert.deepEqual(r.ran.map((x) => x.id), ids)
     assert.ok(r.lines.some((l) => /nothing after pilot ran/.test(l)))
     const state = readState(w.store)
-    assert.deepEqual(Object.keys(state.steps).filter((k) => state.steps[k].ok), ids.slice(0, 7))
+    assert.deepEqual(Object.keys(state.steps).filter((k) => state.steps[k].ok), ids.slice(0, -1))
     // with the lead's confirmation, a ceiling and a plan, the pilot runs
     const done = await run(w, s, { pilot: true, confirmLabels: true }, { from: "pilot" })
     assert.equal(done.ok, true, JSON.stringify(done.stopped))
@@ -100,6 +105,7 @@ test("the first failure stops everything after it, with the sentence that says w
     [{ port: true }, "preflight", /service port \(49374\) is the real service's/],
     [{ "check-real": "slack" }, "check-real", /check-real failed for slack: sign the real profile back in for slack and sign in NO further vendor/],
     [{ keeper: "linear" }, "keeper", /the keeper failed for linear/],
+    [{ canaries: true }, "canaries", /the canaries manifest is refused, nothing was created: container linear\.production is not an alias/],
     [{ p7: "linear" }, "p7", /P0-7 failed for linear/],
     [{ live: "slack" }, "live", /the live write probe failed for slack: .*A completed write is a HALT/],
     [{ gws: true }, "gws", /the gws plan-and-commit failed/],
@@ -243,5 +249,42 @@ test("entriesOf reads a live-*.json file's plugins in order, and `evals phase1 -
     assert.equal(existsSync(join(w.store, STATE_FILE)), false, "a dry run leaves no mark")
   } finally {
     w.cleanup()
+  }
+})
+
+test("the canaries step: lines say what was created and reused; no seeding configured, or no manifest, is a visible skip, never a failure", async () => {
+  const w = world()
+  const s = stand()
+  try {
+    const early = await run(w, s, {}, { only: "canaries" })
+    assert.equal(early.ok, false)
+    assert.match(early.stopped.message, /step canaries needs preflight to have passed first/, "it needs the sign-ins before it")
+    assert.deepEqual(s.calls, [], "and plants nothing")
+  } finally {
+    w.cleanup()
+  }
+  const all = world()
+  const t = stand()
+  try {
+    const r = await run(all, t, {}, {})
+    assert.deepEqual(r.ran.find((x) => x.id === "canaries").lines, ["created linear_issue", "reused  slack_pinned_ts"])
+    // no dependency at all: skipped, and the sequence goes on
+    const bare = stand()
+    delete bare.deps.seedCanaries
+    const again = await run(world({}), bare, {}, { reset: true })
+    assert.match(again.ran.find((x) => x.id === "canaries").lines.join(" "), /skipped: no canary seeding in this run/)
+    assert.equal(again.ran.find((x) => x.id === "canaries").ok, true)
+  } finally {
+    all.cleanup()
+  }
+  // the real dependency, with no manifest: skipped with the path it looked at
+  const { defaultDeps } = await import("../src/phase1.mjs")
+  const w2 = world()
+  try {
+    const deps = await defaultDeps({ store: w2.store, caller: {}, companions: null })
+    const out = await deps.seedCanaries({ store: w2.store, profile: w2.profile, opencode: "oc", caller: { EVALS_CANARIES_MANIFEST: join(w2.root, "none.json") } })
+    assert.match(out.skipped, /no canaries manifest at .*none\.json: every case that names a canary is deferred/)
+  } finally {
+    w2.cleanup()
   }
 })

@@ -182,7 +182,11 @@ export function validateCase(caseObject, file = "<case>") {
   }
   if (caseObject.data === undefined && !isLegacyCase(caseObject)) bad(`Data is required (one of ${DATA_KINDS.join(", ")}): it says whose words the case reads, and a case that omits it would be taken for synthetic. Add \`- Data: ...\` to the header`)
   if (!holdsOut(caseObject) && !isLegacyCase(caseObject) && packPlugins().has(caseObject.plugin) && !(caseObject.sets ?? []).some((name) => name in ROUND_SETS)) bad(`a case declares one of this round's sets (${Object.keys(ROUND_SETS).join(", ")}): \`- Set: ...\`; only the history, x and charts corpora written before it are exempt`)
-  if (caseObject.data !== undefined && caseObject.data !== "synthetic" && fakeModePlugins().has(caseObject.plugin)) bad(`a ${caseObject.plugin} case runs against the harness's synthetic fixture (fake mode): declare \`- Data: synthetic\`, not ${caseObject.data}`)
+  // A fake-mode plugin's cases read the harness's fixture: `synthetic`, and nothing else... unless the case also seeds a plugin that holds the owner's sign-in (github/deep-x-github-linear):
+  // then it reads that plugin's real data too, and its label is the floor of that plugin's tools (src/case/reach.mjs), which `evals compile` enforces.
+  const fakes = fakeModePlugins()
+  const seedsReal = seedPlugins(caseObject.seed).some((id) => id !== caseObject.plugin && packPlugins().has(id) && !fakes.has(id))
+  if (caseObject.data !== undefined && caseObject.data !== "synthetic" && fakes.has(caseObject.plugin) && !seedsReal) bad(`a ${caseObject.plugin} case runs against the harness's synthetic fixture (fake mode): declare \`- Data: synthetic\`, not ${caseObject.data}`)
   const minimum = caseObject.data !== undefined ? dataMinimum(caseObject) : null
   if (minimum && DATA_KINDS.indexOf(caseObject.data) < DATA_KINDS.indexOf(minimum.kind)) bad(`a case that uses ${minimum.plugin}${minimum.plugin === caseObject.plugin ? "" : " (Seed: plugins=)"} reads ${minimum.kind} data${minimum.kind === "candidate" ? " (HR records)" : " (other people's words)"}, not ${caseObject.data}: declare \`- Data: ${minimum.kind}\` (or higher)`)
   if (caseObject.data !== undefined && !DATA_KINDS.includes(caseObject.data)) bad(`Data must be one of ${DATA_KINDS.join(", ")}, not ${JSON.stringify(caseObject.data)}`)

@@ -101,7 +101,7 @@
     "denied": 0,
     "skills": 3
   },
-  "digest": "c02fffaa812c0e809708591dcb2f16f63d64430f6747f4787d0e07a129eea0fa",
+  "digest": "fe8afcc74849b4ecfb3a5c532ca923cb984a55a848afb266943e88777c6473a1",
   "t1": [],
   "account_templates": [
     "plaud-*.list_files",
@@ -112,5 +112,10 @@
   ],
   "egress": [
     "mcp.plaud.ai"
-  ]
+  ],
+  "release": {
+    "version": "0.0.7",
+    "tag": "v0.0.7",
+    "commit": "f89f95a94bde45cba6a62a70f8dcc262d8cbb15c"
+  }
 }

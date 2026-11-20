@@ -1,0 +1,15 @@
+{
+ "schema": "oc-reach/1",
+ "plugin": "browse",
+ "note": "Tools that can return content that is not in a sandbox, and the least `Data:` a case that can call one may declare. Built by scripts/reach-marks.mjs; see src/case/reach.mjs for how a case's floor is worked out.",
+ "tools": {
+  "secrets_list": {
+   "floor": "own",
+   "why": "the names of the owner's stored secrets and the pages their browser has open"
+  },
+  "session_list": {
+   "floor": "own",
+   "why": "the names of the owner's stored secrets and the pages their browser has open"
+  }
+ }
+}

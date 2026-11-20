@@ -1,0 +1,27 @@
+{
+ "schema": "oc-registered/1",
+ "plugin": "jobs",
+ "release": {
+  "version": "0.0.3",
+  "tag": "v0.0.3",
+  "commit": "bbc52c66fd15eaacf5b8a4596ca89effe6912a4f"
+ },
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",
+ "names": [
+  "approve",
+  "create",
+  "delete",
+  "extend",
+  "get",
+  "history",
+  "list",
+  "pause",
+  "pause_all",
+  "resume",
+  "run_now",
+  "run_script",
+  "status",
+  "update"
+ ]
+}

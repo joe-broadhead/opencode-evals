@@ -271,7 +271,8 @@ test("in a locked trial a tool outside execute, skill, question and the plugins'
 test("a positive glob in a wide case, absent-arg, and a canary the prompt fills and an item grades are compile errors; canaries are random tokens", () => {
   const packs = [{ id: "slack", version: "0.0.6", pluginId: "slack.workspace", tools: [{ name: "slack_send_message", permission: "slack_slack_send_message", class: "write" }] }]
   const text = (evidence, { prompt = "p", set = "wide", id = "tools-send" } = {}) => `# ${id}\n- Plugin: slack\n- Skill under test: slack\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: seeded\n- Set: ${set}\n\n## Prompt\n${prompt}\n\n## Items\n- [SLK-OC01] major · It answers the question.\n  evidence: ${evidence}\n`
-  const problems = (evidence, options) => toolNameProblems(compileCase("cases/slack/x.md", text(evidence, options)), packs)
+  // a synthetic pack with no recorded parameters: the older, stricter rule for a tool whose parameters are not known
+  const problems = (evidence, options) => toolNameProblems(compileCase("cases/slack/x.md", text(evidence, options)), packs, { inputs: new Map() })
   assert.match(problems("call:*#1")[0], /positive glob in a wide case/)
   assert.match(problems("call:slack.*#1")[0], /positive glob/)
   assert.match(problems("first:slack.*")[0] ?? "", /positive glob/)

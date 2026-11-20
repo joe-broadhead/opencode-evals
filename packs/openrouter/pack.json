@@ -269,7 +269,7 @@
     "denied": 0,
     "skills": 4
   },
-  "digest": "382bc602ebcefee0710408900b0af2f3c468374b36f812185ef2fb6b9693e108",
+  "digest": "d3a3e1cde26155c0ab7e83ee153bcbd2b6c69c14eeb4e9e928b024cb42bf0a0a",
   "t1": [],
   "egress": [
     "openrouter.ai",
@@ -278,5 +278,10 @@
   "integration": [
     "openrouter",
     "inference-openrouter"
-  ]
+  ],
+  "release": {
+    "version": "0.0.6",
+    "tag": "v0.0.6",
+    "commit": "a9e85429481d579cf1180a20fa9270120cb5e95a"
+  }
 }

@@ -1,0 +1,35 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "browse",
+ "release": {
+  "version": "0.0.4",
+  "tag": "v0.0.4",
+  "commit": "83d00abbe7f72e0cf48e68d0040d89cc43ce1973"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "browse_secrets_list",
+  "browse_secrets_status",
+  "browse_session_list",
+  "browse_status"
+ ],
+ "asked": [
+  "browse_execute",
+  "browse_flight_recorder",
+  "browse_network",
+  "browse_recording",
+  "browse_secrets_refresh",
+  "browse_secrets_run",
+  "browse_session_adopt",
+  "browse_session_allowlist",
+  "browse_session_delete",
+  "browse_session_new",
+  "browse_session_reset",
+  "browse_session_use",
+  "browse_settings",
+  "browse_tabs_cleanup"
+ ],
+ "denied": []
+}

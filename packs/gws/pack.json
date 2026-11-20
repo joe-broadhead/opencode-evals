@@ -122,7 +122,7 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "6ecac7d04596fee185b574da6f4a69fc5ff482bff881e5f857b5cd6a4b4250d7",
+  "digest": "8808f9b503fb28ace351c51bbf215dba1e1c79f0eb13a3e1ca8d4bc1656da929",
   "t1": [],
   "egress": [
     "www.googleapis.com",
@@ -136,5 +136,10 @@
     "people.googleapis.com",
     "slides.googleapis.com",
     "chat.googleapis.com"
-  ]
+  ],
+  "release": {
+    "version": "0.0.10",
+    "tag": "v0.0.10",
+    "commit": "2a20560fe3f0fccdc1d8776da6ba0287e9b47bfe"
+  }
 }

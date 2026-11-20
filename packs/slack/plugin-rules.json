@@ -1,0 +1,46 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "slack",
+ "release": {
+  "version": "0.0.6",
+  "tag": "v0.0.6",
+  "commit": "c37d3712c1536c36f51ad9dafd7c8e663ed2b35d"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "slack_events_list",
+  "slack_slack_get_reactions",
+  "slack_slack_list_channel_members",
+  "slack_slack_list_user_channels",
+  "slack_slack_read_canvas",
+  "slack_slack_read_channel",
+  "slack_slack_read_list",
+  "slack_slack_read_thread",
+  "slack_slack_read_user_profile",
+  "slack_slack_search_channels",
+  "slack_slack_search_emojis",
+  "slack_slack_search_public",
+  "slack_slack_search_users"
+ ],
+ "asked": [
+  "slack_mark_read",
+  "slack_slack_add_list_record",
+  "slack_slack_add_reaction",
+  "slack_slack_complete_file_upload",
+  "slack_slack_create_canvas",
+  "slack_slack_create_conversation",
+  "slack_slack_create_list",
+  "slack_slack_get_file_upload_url",
+  "slack_slack_read_file",
+  "slack_slack_schedule_message",
+  "slack_slack_search_public_and_private",
+  "slack_slack_send_message",
+  "slack_slack_send_message_draft",
+  "slack_slack_update_canvas",
+  "slack_slack_update_list",
+  "slack_slack_update_list_record"
+ ],
+ "denied": []
+}

@@ -109,6 +109,19 @@ export function derivePack(id, directory = pluginRepo(id)) {
   return { ...pack, digest: packDigest(pack) }
 }
 
+/**
+ * The tools a release registers (packs/<id>/registered.json) that its `jelly` declaration does not name, as pack tools: classed `write` (an unclassified tool is a write), `undeclared: true`.
+ * Returns `{ tools }` to replace the derived list, or nothing when there is none.
+ */
+export function undeclaredTools(id, root, derived) {
+  const file = join(root, "packs", id, "registered.json")
+  if (!existsSync(file)) return {}
+  const have = new Set(derived.flatMap((tool) => [tool.name, tool.permission]))
+  const prefix = (derived.find((tool) => tool.permission?.endsWith(tool.name)) ?? { permission: `${id}_`, name: "" }).permission.slice(0, -((derived.find((tool) => tool.permission?.endsWith(tool.name)) ?? { name: "" }).name.length))
+  const extra = (JSON.parse(readFileSync(file, "utf8")).names ?? []).filter((name) => !have.has(name) && !have.has(`${id}_${name}`)).map((name) => ({ name, permission: `${prefix}${name}`, effect: "allow", readOnly: false, class: "write", undeclared: true }))
+  return extra.length ? { tools: [...derived, ...extra] } : {}
+}
+
 /** The committed snapshot, or null when the repository does not carry one. */
 export function readSnapshot(id, root) {
   const file = join(root, "packs", id, "pack.json")
@@ -134,7 +147,7 @@ export function readPack(id, root = join(import.meta.dirname, "..", ".."), env =
  * options a test host needs, the scripted cases) is carried over from the snapshot it replaces. Nothing is
  * dropped silently: `derivePack` says what it knows, and the file keeps the rest.
  */
-export function writePack(id, root = join(import.meta.dirname, "..", ".."), env = process.env, directory = pluginRepo(id, env)) {
+export function writePack(id, root = join(import.meta.dirname, "..", ".."), env = process.env, directory = pluginRepo(id, env), release = null) {
   const declared = readSnapshot(id, root) ?? {}
   const live = derivePack(id, directory)
   const merged = {
@@ -156,8 +169,13 @@ export function writePack(id, root = join(import.meta.dirname, "..", ".."), env 
     ...(declared.vocab ? { vocab: declared.vocab } : {}),
     // The round's per-plugin facts the checkout cannot answer (R8): where it reaches, its sandbox targets, how a neutral call and a
     // prefix read, what a "read" spends. Carried over like the options above.
-    ...Object.fromEntries(["egress", "targets", "neutral", "prefix", "spend", "release", "integration", "accounts"].filter((key) => declared[key] !== undefined).map((key) => [key, declared[key]])),
+    ...(release ? { release } : {}),
+    // A tool the release registers that its declaration does not name (packs/<id>/registered.json) is a tool the pack must list, and unclassified: a write, so nothing treats it as a read.
+    ...undeclaredTools(id, root, live.tools),
+    ...Object.fromEntries(["egress", "targets", "neutral", "prefix", "spend", "release", "integration", "accounts"].filter((key) => declared[key] !== undefined && !(key === "release" && release)).map((key) => [key, declared[key]])),
   }
+  // counts and digest follow the tools the pack finally lists
+  merged.counts = recomputeCounts(merged)
   return writeSnapshot(root, merged)
 }
 

@@ -121,6 +121,12 @@ function parseAtom(r) {
     r.i += m[0].length
     return { type: "string", enum: [JSON.parse(m[0])] }
   }
+  // a numeric literal type (`schemaVersion: 1`, `0 | 1`)
+  const number = /^-?\d+(?:\.\d+)?/.exec(r.s.slice(r.i))
+  if (number) {
+    r.i += number[0].length
+    return { type: "number", enum: [Number(number[0])] }
+  }
   const word = /^[A-Za-z_$][A-Za-z0-9_$.]*/.exec(r.s.slice(r.i))
   if (!word) throw new Error(`no type at ${r.i}: ${JSON.stringify(r.s.slice(r.i, r.i + 40))}`)
   r.i += word[0].length
@@ -174,9 +180,11 @@ function parseType(r) {
 
 /** `{ name, input }` of a Code Mode signature: the tool's own name and the JSON Schema of its one argument. */
 export function parseSignature(signature) {
-  const head = /^tools\.(?:[A-Za-z0-9_$]+)(?:\.([A-Za-z0-9_$]+)|\["([^"]+)"\]\["([^"]+)"\])\(/.exec(signature) ?? /^tools(?:\.[A-Za-z0-9_$]+|\["[^"]+"\])*\.([A-Za-z0-9_$-]+)\(/.exec(signature)
+  // `tools.jira.getJiraIssue(`, `tools["notion"]["notion-search"](` and `tools.notion["notion-search"](`: the last name before the parenthesis is the tool's.
+  const head = /^tools((?:\.[A-Za-z0-9_$-]+|\["[^"]+"\])+)\(/.exec(signature)
   if (!head) throw new Error(`not a tool signature: ${JSON.stringify(signature.slice(0, 60))}`)
-  const name = head[1] ?? head[3] ?? head[2]
+  const parts = [...head[1].matchAll(/\.([A-Za-z0-9_$-]+)|\["([^"]+)"\]/g)].map((m) => m[1] ?? m[2])
+  const name = parts.at(-1)
   const r = new Reader(signature)
   r.i = head[0].length
   r.ws()

@@ -588,12 +588,17 @@
       "body_lines": 94
     }
   },
-  "digest": "9db9f17f6cb581273331381e62782789160fdcde0498c5833a7b88235e9540c3",
+  "digest": "5e41db7831cb9633c34c599a3f5fa34e67092f492d800fdc2c3c6e15f52ffa7d",
   "access": {
     "key": "access",
     "default": "all"
   },
   "egress": [
     "mcp.notion.com"
-  ]
+  ],
+  "release": {
+    "version": "0.0.5",
+    "tag": "v0.0.5",
+    "commit": "597babd5b23f9ca5d850fbc85b79f78695e28409"
+  }
 }

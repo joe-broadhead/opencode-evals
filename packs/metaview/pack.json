@@ -525,7 +525,7 @@
       "body_lines": 95
     }
   },
-  "digest": "3e772868542941c5d4a646b0834690d5934fa8d3b10c1745d0b7b7f536bfff2d",
+  "digest": "d1f3b51a96576aa9473d98d4061a25dee5cf291be868a9e6f0cc58454beea43c",
   "access": {
     "key": "access",
     "default": "all"
@@ -533,5 +533,10 @@
   "egress": [
     "mcp.metaview.ai",
     "auth.metaview.ai"
-  ]
+  ],
+  "release": {
+    "version": "0.0.6",
+    "tag": "v0.0.6",
+    "commit": "53a180b48e1cd360e9336804604cb93dcd673f9a"
+  }
 }
