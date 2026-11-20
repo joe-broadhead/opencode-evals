@@ -43,7 +43,7 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer gives the review's findings — the passed deals and what they went on to raise — not a restatement of the question.",
+      "ask": "The answer gives the review's findings — the passed deals and what they went on to raise, or says there are none — not a restatement of the question.",
       "forbidden": false,
       "grader": "judge",
       "evidence": [],
@@ -108,6 +108,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9a2e3138b6cf98b8deb665fac032bd4670840409b1249721d1cd05dcba8e26d8"
+    "source_sha256": "bb7cec3fdcb1e6f468816b46829f3118558eaafc9309bd2dc122123820296316"
   }
 }

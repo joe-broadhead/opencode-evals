@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "wide sweep: affinity_missed_deal_review (Affinity's missed-deal review text)",
   "decision": "A review-the-deals-we-missed request calls the missed-deal playbook once",
-  "data_check": "at least one lost deal",
+  "data_check": "the playbook text is returned",
   "prompt": "review the deals we missed this year — what went wrong and what to change.",
   "controls": [],
   "budgets": {
@@ -102,6 +102,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "5b7c637268b54c66ece204f2ff2470ef39ec687cdcfebc71d7d74ded2fbe52a5"
+    "source_sha256": "ae16991aba8d3be568caefc8676e20403bd45d4ce8aba4e2d75017c29e792d4e"
   }
 }

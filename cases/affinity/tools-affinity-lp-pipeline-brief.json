@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "wide sweep: affinity_lp_pipeline_brief (Affinity's LP brief text)",
   "decision": "A brief-me-on-the-LP-pipeline request calls the LP brief playbook once",
-  "data_check": "an LP pipeline list exists",
+  "data_check": "the playbook text is returned",
   "prompt": "brief me on our LP pipeline — where each conversation stands.",
   "controls": [],
   "budgets": {
@@ -102,6 +102,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "6ca28a08032111885a0764a6c24f28faa02fa0dc03de87f54a18c1e5dd9d7e4e"
+    "source_sha256": "2cf2243e151a7169d30f4e17ab28f427d0de54625cda330af7b13ddf2a842ed0"
   }
 }

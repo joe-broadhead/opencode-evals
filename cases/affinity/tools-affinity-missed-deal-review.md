@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: wide sweep: affinity_missed_deal_review (Affinity's missed-deal review text)
 - Decision tested: A review-the-deals-we-missed request calls the missed-deal playbook once
-- Data check: at least one lost deal
+- Data check: the playbook text is returned
 - Seed: plugins=affinity
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8

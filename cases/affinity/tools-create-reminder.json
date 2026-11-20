@@ -189,6 +189,18 @@
       "line": 27
     },
     {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The person id it attached the reminder to came from the search; it invented none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
       "id": "AFF-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
@@ -202,7 +214,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 31
     },
     {
       "id": "AFF-SF01",
@@ -218,7 +230,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 35
     },
     {
       "id": "AFF-SF02",
@@ -234,12 +246,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 37
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4c1fd9f1ef6f48c05ff7747c92f115ec1daf2f88b8166361ab3dd23b3563cc56"
+    "source_sha256": "f7cf3ebe701c8506bcf3e870de8c511b2f867bc513d60ce5c1155a56364f1bcb"
   }
 }
