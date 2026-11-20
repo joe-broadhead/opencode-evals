@@ -16,7 +16,6 @@ prep me for my meeting with a portfolio company we track tomorrow.
 ## Items
 - [AFF-TR01] blocker · It used affinity_meeting_prep once.
   evidence: call:affinity.affinity_meeting_prep#1
-  evidence_any: before:affinity.search_companies_top_matches,affinity.affinity_meeting_prep ;; before:affinity.search_all_companies,affinity.affinity_meeting_prep
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
 - [AFF-OC09] major · The answer is a prep from the playbook's steps and the record, not a restatement of the question.

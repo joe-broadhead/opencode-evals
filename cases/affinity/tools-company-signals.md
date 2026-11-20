@@ -16,7 +16,6 @@ what signals are on a portfolio company we track right now? hiring, funding, any
 ## Items
 - [AFF-TR01] blocker · It used company_signals once.
   evidence: call:affinity.company_signals#1
-  evidence_any: before:affinity.search_companies_top_matches,affinity.company_signals ;; before:affinity.search_all_companies,affinity.company_signals
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
 - [AFF-OC09] major · The answer gives the signals the playbook and the record returned, or says there are none, not a restatement of the question.

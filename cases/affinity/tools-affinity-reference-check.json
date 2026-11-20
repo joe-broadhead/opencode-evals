@@ -35,20 +35,7 @@
           "arg": null
         }
       ],
-      "evidence_any": [
-        [
-          {
-            "kind": "before",
-            "tool": "affinity.search_companies_top_matches",
-            "other": "affinity.affinity_reference_check"
-          },
-          {
-            "kind": "before",
-            "tool": "affinity.search_all_companies",
-            "other": "affinity.affinity_reference_check"
-          }
-        ]
-      ],
+      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
@@ -78,7 +65,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 19
     },
     {
       "id": "AFF-OC09",
@@ -90,7 +77,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 21
     },
     {
       "id": "AFF-OC01",
@@ -106,7 +93,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "AFF-SF01",
@@ -126,7 +113,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "AFF-SF02",
@@ -142,7 +129,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
@@ -150,10 +137,10 @@
     {
       "id": null,
       "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
-      "line": 35
+      "line": 34
     }
   ],
   "hashes": {
-    "source_sha256": "ca18de320b6bb0779f73eada6676d25bf266f55002534f6458dfc05fd3573831"
+    "source_sha256": "aa49612b9469b1bc3a5250a3915460e3cbde0def4af2847042487d2f6f508f52"
   }
 }

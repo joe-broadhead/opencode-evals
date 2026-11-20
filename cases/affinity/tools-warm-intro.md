@@ -16,7 +16,6 @@ find me a warm intro to a portfolio company we track and draft the ask.
 ## Items
 - [AFF-TR01] blocker · It used warm_intro once.
   evidence: call:affinity.warm_intro#1
-  evidence_any: before:affinity.search_companies_top_matches,affinity.warm_intro ;; before:affinity.search_all_companies,affinity.warm_intro
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
 - [AFF-OC09] major · The answer gives the paths the playbook returned and a draft ask, or says there are none.

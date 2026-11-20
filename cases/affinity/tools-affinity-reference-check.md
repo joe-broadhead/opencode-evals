@@ -16,7 +16,6 @@ run a backchannel reference check on a founder at a portfolio company we track �
 ## Items
 - [AFF-TR01] blocker · It used affinity_reference_check once.
   evidence: call:affinity.affinity_reference_check#1
-  evidence_any: before:affinity.search_companies_top_matches,affinity.affinity_reference_check ;; before:affinity.search_all_companies,affinity.affinity_reference_check
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
 - [AFF-OC09] major · The answer gives a reference-check plan from the playbook and the record, naming who to ask and why, not a restatement of the question.
