@@ -313,9 +313,11 @@ none` is refused for every run, before anything is created, reserved or imported
   (4 GB, no swap) and CPU (2) limits;
 - **only its own files**: the trial's sandbox bind-mounted read-write at the same absolute path it has on the host (so
   HOME, the XDG tree, the working directory, the world's rewritten session paths and the sealed config stay valid);
-  the build under test and the harness's scripted-model files read-only at theirs; and the host's `opencode`,
-  `claude` (for the Claude Agent provider) and `bun` (for the scripted model) read-only under `/opt/evals/bin`, their
-  sha256 recorded. Nothing else of the host: no home directory, no other trial, no Docker socket;
+  the build under test and the harness's scripted-model files read-only at theirs; the host's `opencode`, `claude`
+  (for the Claude Agent provider), `bun` (for the scripted model) and, for a browse trial, `node` (browse's MCP server
+  is a Node script) read-only under `/opt/evals/bin`, their sha256 recorded; and the owner's `container.assets`
+  read-only at `/opt/evals/assets/<name>`, or with `copyTo` copied into the sandbox home before it starts. Nothing else
+  of the host: no home directory, no other trial, no Docker socket;
 - **its own network**, `--internal` with the bridge gateway in Docker's `isolated` mode (Docker 28 or later): the bridge
   has no host address and the container has no route anywhere, so neither the host's services (an OpenCode server on
   loopback, a metadata service, anything on the host's addresses) nor the internet can be reached, and names do not

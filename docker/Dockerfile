@@ -9,9 +9,10 @@
 # (noble and noble-updates as of 2026-11-11). Ubuntu removes a superseded version from its archive, so when a build
 # fails with "Version ... was not found", move that pin to the version `apt-cache policy <package>` offers.
 #
-# There is no Node in the image: Ubuntu's nodejs is 18.x, past its end of life, and nothing in a trial needs it (OpenCode
-# and claude are standalone binaries). The egress proxy runs on the harness's own Node (>= 22), mounted read-only into
-# the proxy's container only, with its sha256 recorded; libstdc++6 and libgcc-s1 are what that binary links against.
+# There is no Node in the image: Ubuntu's nodejs is 18.x, past its end of life. A browse trial gets the harness's own
+# Node (>= 22) mounted read-only at /opt/evals/bin/node, like opencode and claude; the egress proxy runs on that same
+# binary, mounted read-only into the proxy's container only, with its sha256 recorded. libstdc++6 and libgcc-s1 are
+# what the binary links against.
 FROM ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852
 
 RUN apt-get update \
