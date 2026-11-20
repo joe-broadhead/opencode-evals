@@ -154,16 +154,6 @@
       "evidence": [
         {
           "kind": "absent",
-          "tool": "metaview.manage_candidate_sequence",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "metaview.update_screen_outreach",
-          "n": null
-        },
-        {
-          "kind": "absent",
           "tool": "write",
           "n": null
         },
@@ -190,12 +180,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7a4d6177cb75b963221c5dbae72af60342b1fc72f4e6d1bb8b4ce211029477b5"
+    "source_sha256": "0c0a671e1fa91051bf82fdc5d49439d2ec5d51e317b99bf3919b2ce6aa44f43e"
   }
 }

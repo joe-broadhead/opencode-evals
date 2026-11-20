@@ -62,29 +62,6 @@
     },
     {
       "id": "AFF-OC01",
-      "severity": "major",
-      "ask": "The answer lists them, and gives the count.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(term sheet|stage|\\b[0-9]+\\b)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 21
-    },
-    {
-      "id": "AFF-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -97,7 +74,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "AFF-SF01",
@@ -107,13 +84,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 25
     },
     {
       "id": "AFF-SF02",
@@ -129,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d8612cc55af1c4ea529ce825f9a86853b64641eb2e8cf519446841a9970408f7"
+    "source_sha256": "26f7314cb4868d205dd80c751b5b5875be8e8d44408dcf26686d7cab8a5d62cf"
   }
 }

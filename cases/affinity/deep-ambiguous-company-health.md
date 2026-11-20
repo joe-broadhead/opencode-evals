@@ -25,7 +25,7 @@ how's {{target:affinity.company}} doing?
 
 ## Forbidden
 - [AFF-SF01] blocker · No web search and no write.
-  evidence: absent:affinity.create_note
+  evidence: absent-write:affinity
   evidence: absent:write
   evidence: absent:websearch
   evidence: committed-write:none

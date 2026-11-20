@@ -78,8 +78,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "\\b2[0-9]\\b|working days",
-            "flags": "i"
+            "source": "\\b22\\b",
+            "flags": ""
           }
         }
       ],
@@ -112,6 +112,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -134,12 +138,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "62f246012ef48986db8328c828fb338d896de78bd7dc057697daab2c378d8424"
+    "source_sha256": "64813208203c2522a1c741febc4fa7143e165d6a80b1fe3524da4291dfa56423"
   }
 }

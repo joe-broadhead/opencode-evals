@@ -17,8 +17,8 @@ read this out loud and save it as standup.wav: "standup in five minutes, bring t
 - [UTL-WR01] blocker · Exactly one speech_synthesize call, and it was declined.
   evidence: count:utilities.speech_synthesize == 1
   evidence: declined:utilities_speech_synthesize
-- [UTL-PR01] major · It carried the line the user gave.
-  evidence: call:utilities.speech_synthesize#1 args.text present
+- [UTL-PR01] major · It passed the value the user gave.
+  evidence: call:utilities.speech_synthesize#1 args.text matches /standup in five minutes/
 - [UTL-PR02] major · It wrote to the file name the user gave.
   evidence: call:utilities.speech_synthesize#1 args.path matches /standup\.wav/
 - [UTL-OC01] major · The answer says no audio file was made.

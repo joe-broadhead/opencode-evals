@@ -19,8 +19,8 @@ set a timer called deploy-check for 9am tomorrow, so I remember to look at the r
   evidence: declined:utilities_timer_set
 - [UTL-PR01] major · It used the name the user gave.
   evidence: call:utilities.timer_set#1 args.name == deploy-check
-- [UTL-PR02] major · The deadline carries a date, a time and an offset.
-  evidence: call:utilities.timer_set#1 args.deadline present
+- [UTL-PR02] major · It passed the value the user gave.
+  evidence: call:utilities.timer_set#1 args.deadline matches /T09:00:00/
 - [UTL-OC01] major · The answer says the timer was not set.
   evidence_any: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(set|created|saved|added)\b/i
   evidence_any: text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i

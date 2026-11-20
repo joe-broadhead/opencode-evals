@@ -47,7 +47,7 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the prompt the request needs.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -56,7 +56,12 @@
           "tool": "elevenlabs.creative_generate_speech",
           "n": 1,
           "arg": "args.prompt",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Every great product",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -150,21 +155,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_video",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_image",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_run_flow_nodes",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -187,12 +177,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "54cdf8cab7412f924671785d3597929c72ba8756aa4d1e3efe76252ec36d6164"
+    "source_sha256": "ca215109bd6226c852fb44c43e7c3a9ee6628cbfc09a49b7bc59360c2817c325"
   }
 }

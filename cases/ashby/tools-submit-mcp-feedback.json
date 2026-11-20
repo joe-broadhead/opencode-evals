@@ -130,11 +130,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "ashby.change_application_stage",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -157,12 +152,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c62c81cc8b4f505f468e95088d343ff67c4345a4c61e8cf819c2d50c8bec0659"
+    "source_sha256": "f1d8e2392554c3b89d5b0d649d7ad695622c5c835e72f44b60939918e6ac57c9"
   }
 }

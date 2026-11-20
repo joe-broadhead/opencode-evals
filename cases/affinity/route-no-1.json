@@ -41,29 +41,6 @@
     },
     {
       "id": "AFF-OC01",
-      "severity": "major",
-      "ask": "The answer answers the calendar question.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(calendar|tomorrow|event|meeting)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
-      "id": "AFF-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -76,7 +53,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 19
     },
     {
       "id": "AFF-SF01",
@@ -86,13 +63,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "AFF-SF02",
@@ -108,12 +89,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2a97eec42077893b546abbb72c5ff2b6217e7355297725747dac64aa0b6b1c2b"
+    "source_sha256": "7bb6bb064ea7d589573789e98843bbdac687ec16583446740152c7eff63cca50"
   }
 }

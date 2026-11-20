@@ -42,29 +42,6 @@
     },
     {
       "id": "AFF-OC01",
-      "severity": "major",
-      "ask": "The answer gives the map as a table of categories and companies.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(category|company|infrastructure|table|\\|)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
-      "id": "AFF-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -77,7 +54,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 19
     },
     {
       "id": "AFF-SF01",
@@ -87,13 +64,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "AFF-SF02",
@@ -109,7 +90,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     }
   ],
   "oracle": [],
@@ -117,10 +98,10 @@
     {
       "id": null,
       "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
-      "line": 31
+      "line": 30
     }
   ],
   "hashes": {
-    "source_sha256": "4c79845df8e05b367b378e8a52b4be529b215c9df2c2b10460d258f3df5efbe2"
+    "source_sha256": "fae6cc5255febb22b58f65f72d5109e665313fd7dc76106017b9b599a123ea51"
   }
 }

@@ -124,9 +124,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "utilities.weather_current",
-          "n": null
+          "kind": "absent-write",
+          "ns": "utilities"
         },
         {
           "kind": "absent",
@@ -168,6 +167,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "84c609fe481490164a49d6fd376700a93fe4720d5b853f052dcdbcfa6a88da81"
+    "source_sha256": "4800f2540bb5b4f23edf0a8eb767eb7705fff16bee839e2598a7bda80c54d473"
   }
 }

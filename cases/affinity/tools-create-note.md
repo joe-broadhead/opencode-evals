@@ -17,8 +17,8 @@ add a note to {{target:affinity.company}}: "Wants a warm intro to the platform t
 - [AFF-WR01] blocker · Exactly one create note call, and it was declined.
   evidence: count:affinity.create_note == 1
   evidence: declined:affinity_create_note
-- [AFF-PR01] major · It carried the note text the user gave.
-  evidence: call:affinity.create_note#1 args.content present
+- [AFF-PR01] major · It passed the value the user gave.
+  evidence: call:affinity.create_note#1 args.content matches /warm intro/
 - [AFF-PR02] major · It attached the note to the company.
   evidence: call:affinity.create_note#1 args.company_ids present
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.

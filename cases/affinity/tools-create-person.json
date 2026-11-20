@@ -47,7 +47,7 @@
     {
       "id": "AFF-PR01",
       "severity": "major",
-      "ask": "It used the first name.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -71,7 +71,7 @@
     {
       "id": "AFF-PR02",
       "severity": "major",
-      "ask": "It passed the email.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -80,7 +80,11 @@
           "tool": "affinity.create_person",
           "n": 1,
           "arg": "args.emails",
-          "op": "present"
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "jordan.lee@example.com"
+          }
         }
       ],
       "evidence_any": [],
@@ -182,6 +186,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "18dc17728f202c39eb710f7a936361df37930ea6951bd49c0ca0f87a7311b823"
+    "source_sha256": "08fd11ec86ddbbceba7f5be3723fe0f76d253d056ed16a7486381553853187cb"
   }
 }

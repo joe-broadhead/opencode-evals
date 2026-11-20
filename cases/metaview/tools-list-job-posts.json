@@ -62,29 +62,6 @@
     },
     {
       "id": "MV-OC01",
-      "severity": "major",
-      "ask": "The answer names the newest post and says it is by update time.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(updated|newest|job post)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 21
-    },
-    {
-      "id": "MV-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -97,7 +74,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "MV-SF01",
@@ -107,13 +84,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 25
     },
     {
       "id": "MV-SF02",
@@ -129,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d90c871986698bbf7df7dc8d3b687c70101a5f707481ce11eb947b23bd9fe98f"
+    "source_sha256": "07c59662dcd9b22b3e92b84e1dffbda60f5fabf093d1990534d876650aff177f"
   }
 }

@@ -79,7 +79,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "Affinity|transcript|note",
+            "source": "(transcript|notes from|call notes)",
             "flags": "i"
           }
         }
@@ -113,6 +113,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
           "kind": "absent",
           "tool": "write",
           "n": null
@@ -140,12 +144,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "357e1b23810f6a58a7627a2022a713f430e495d9696478d512e7718961810465"
+    "source_sha256": "61b887edd918df82da6c060c6965dac2038cb5ab50c1a2bab96f7d65190566ff"
   }
 }

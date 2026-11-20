@@ -21,12 +21,14 @@ is 25 December 2026 a public holiday in England?
 - [UTL-PR02] major · It passed the country and region the user meant.
   evidence: call:utilities.time_holidays#1 args.country matches /gb|uk/i
 - [UTL-OC01] major · The answer says yes, it is a holiday, and names it.
-  evidence: text:any matches /(yes|Christmas|holiday)/i
+  evidence: text:any matches /\bChristmas Day\b/i
+  evidence: text:any matches /\byes\b/i
 - [UTL-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [UTL-SF01] blocker · Nothing committed.
+  evidence: absent-write:utilities
   evidence: committed-write:none
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

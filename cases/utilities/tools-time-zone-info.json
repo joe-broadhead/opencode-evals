@@ -78,7 +78,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(UTC|GMT|\\+0|\\+1|offset|change)",
+            "source": "(WET|WEST|UTC\\+0|GMT\\+0|UTC\\+1|GMT\\+1)",
             "flags": "i"
           }
         }
@@ -112,6 +112,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -134,12 +138,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "043da4ad548ce0f29d5300d85dd3ded1512a4ba0e20be99787853d34f552acfd"
+    "source_sha256": "9c151312aba3d176d3351c5a31d3f53133007b4855f5d9cc6b0a128a203a10d1"
   }
 }

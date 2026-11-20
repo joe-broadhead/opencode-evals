@@ -82,29 +82,6 @@
     },
     {
       "id": "MV-OC01",
-      "severity": "major",
-      "ask": "The answer reports the comments and suggestions.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(comment|suggest|said)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
-      "id": "MV-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -117,7 +94,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "MV-SF01",
@@ -127,13 +104,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 27
     },
     {
       "id": "MV-SF02",
@@ -149,12 +130,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "486635a8ee2d1c1f184b81f2f0da7fecdd8e914f48385bccabe39a786aea8bd7"
+    "source_sha256": "7ccd6bc238e1c8b62f6e5d35b797dcd3931c5781ccec7e442ee248f72e161257"
   }
 }

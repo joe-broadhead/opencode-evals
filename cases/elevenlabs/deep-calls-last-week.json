@@ -126,6 +126,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "elevenlabs"
+        },
+        {
           "kind": "count",
           "tool": "elevenlabs.agents_list_conversations",
           "op": "<=",
@@ -154,12 +158,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "90fe85ead4e72ae835ec097c7da79c34c948d9d44a0c2216bd92fa21d3a74403"
+    "source_sha256": "3266011f7def5a43468845d664d496ee9170abd9266161100d296796f264a4a6"
   }
 }

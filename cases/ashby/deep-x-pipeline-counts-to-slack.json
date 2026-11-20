@@ -124,14 +124,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "ashby.create_candidate",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "ashby.change_application_stage",
-          "n": null
+          "kind": "absent-write",
+          "ns": "ashby"
         },
         {
           "kind": "absent",
@@ -161,7 +155,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 32
     }
   ],
   "oracle": [],
@@ -169,10 +163,10 @@
     {
       "id": null,
       "text": "The sibling's Slack send cannot be named in a deep case (compile allows a sibling's tool only in set route): the answer item carries \"not posted\", and Slack's own write case grades the declined send.",
-      "line": 37
+      "line": 36
     }
   ],
   "hashes": {
-    "source_sha256": "8e7408b75a67fce6a7f35cbfde2f1293c79771ddf914dfe6c37dc7a1018e26b1"
+    "source_sha256": "8700feec84aec9e96a222431a28219e5c876df780bf6b1de47591542b1b17b99"
   }
 }

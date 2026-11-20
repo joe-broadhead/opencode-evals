@@ -24,22 +24,22 @@
     {
       "id": "ELV-WR01",
       "severity": "blocker",
-      "ask": "Exactly one agents query knowledge base rag call, and it was declined.",
+      "ask": "The first write in the skill's order was attempted and declined.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "elevenlabs.agents_query_knowledge_base_rag",
-          "op": "==",
-          "value": 1
-        },
-        {
-          "kind": "declined",
-          "tool": "elevenlabs_agents_query_knowledge_base_rag"
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "elevenlabs_agents_compute_kb_rag_index"
+          },
+          {
+            "kind": "declined",
+            "tool": "elevenlabs_agents_query_knowledge_base_rag"
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
@@ -60,9 +60,14 @@
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "declined",
+          "tool": "elevenlabs_agents_compute_kb_rag_index"
+        }
+      ],
       "maps_to": [],
-      "line": 20
+      "line": 19
     },
     {
       "id": "ELV-OC01",
@@ -130,26 +135,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_video",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_speech",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_image",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_run_flow_nodes",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -172,12 +157,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8e881c26c9670645a0098098895a76dc5ec44b46da6a1849227323cef8ecc925"
+    "source_sha256": "f6822158683eb5f8570ba827a8613cbde389656a42a2618b95a20d55dae9ffab"
   }
 }

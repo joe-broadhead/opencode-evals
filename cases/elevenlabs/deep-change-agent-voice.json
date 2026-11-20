@@ -140,16 +140,6 @@
       "evidence": [
         {
           "kind": "absent",
-          "tool": "elevenlabs.agents_publish_draft",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.agents_update",
-          "n": null
-        },
-        {
-          "kind": "absent",
           "tool": "write",
           "n": null
         },
@@ -176,12 +166,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "855aea8ccf781715264bcd455cc15ed43eacb0f48695b35dbf0d7026fe8f27f8"
+    "source_sha256": "952f4da7f1a52b61de0842b4c7cef3b3efcfae5d37cd37a61cca019bf641a76b"
   }
 }

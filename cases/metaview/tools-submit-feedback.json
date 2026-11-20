@@ -67,7 +67,7 @@
     {
       "id": "MV-PR02",
       "severity": "major",
-      "ask": "It chose a category.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -75,8 +75,13 @@
           "kind": "call",
           "tool": "metaview.submit_feedback",
           "n": 1,
-          "arg": "args.category",
-          "op": "present"
+          "arg": "args.feedback",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "timed out",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -182,16 +187,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "metaview.create_report",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "metaview.give_sourcing_feedback",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -214,12 +209,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6884f2cc1400e99906eec2e06fe6daef0da3da1b6643120189b0fad08a28b555"
+    "source_sha256": "160f6f48551b191582f686e8c12fabfa729d9d85516a3098aac9e192bfe2562c"
   }
 }

@@ -126,6 +126,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -148,12 +152,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "188eb2e3f16c541da8fcd4460cbd494ef1c7691240c236896619db635bf4aca4"
+    "source_sha256": "8fe80201c7af3da5177ab2d34a4cbd4ca53e604d08c640fedde90636b181090d"
   }
 }

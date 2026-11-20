@@ -73,14 +73,15 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "text",
+          "kind": "text-count",
           "span": "any",
-          "op": "matches",
+          "op": ">=",
           "value": {
             "kind": "regex",
-            "source": "(which|more than one|several|\\b[A-Z]{2}\\b)",
-            "flags": ""
-          }
+            "source": "Springfield",
+            "flags": "i"
+          },
+          "n": 2
         }
       ],
       "evidence_any": [],
@@ -112,6 +113,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -134,12 +139,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2c8359a905031fea7b39efdf2c6a781b3e5af3ce8e5894c00e93dc66e013b7e8"
+    "source_sha256": "36baf181b3c7e812dfe018b4c571a0c73364a2c0933540c553dddfd42498d3e3"
   }
 }

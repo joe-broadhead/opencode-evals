@@ -52,7 +52,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(Zoom|not an ElevenLabs|cannot|can't|no access)",
+            "source": "(not an ElevenLabs|isn't an ElevenLabs|cannot access|can't access|no access)",
             "flags": "i"
           }
         }
@@ -86,6 +86,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "elevenlabs"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -108,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3d29afff7da91a08014d57f19ae4230c6a2bf1becb8206f52fe205c0ccf5db88"
+    "source_sha256": "7992fb2bdbcffbb771c157412cf0ccc0710bebc6a1c944094866dabf706e8edf"
   }
 }

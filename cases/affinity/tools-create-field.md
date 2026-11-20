@@ -17,8 +17,8 @@ add a company field called "Thesis fit" as a single-select, with options strong,
 - [AFF-WR01] blocker · Exactly one create field call, and it was declined.
   evidence: count:affinity.create_field == 1
   evidence: declined:affinity_create_field
-- [AFF-PR01] major · It used the name the user gave.
-  evidence: call:affinity.create_field#1 args.name == Thesis fit
+- [AFF-PR01] major · It passed the value the user gave.
+  evidence: call:affinity.create_field#1 args.name == "Thesis fit"
 - [AFF-PR02] major · It created it for companies.
   evidence: call:affinity.create_field#1 args.entity_type present
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.

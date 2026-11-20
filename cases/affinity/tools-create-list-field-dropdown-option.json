@@ -67,7 +67,7 @@
     {
       "id": "AFF-PR02",
       "severity": "major",
-      "ask": "It used the option text the user gave.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -182,6 +182,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "81531f00d27cf4b327099ac7f5fea3a91e54984a3dc931df42a6a142f7fb465d"
+    "source_sha256": "30637159fb1e8415836a722ae29d6d38ab09e0935fe8c4908e8dbc28b2d7ecea"
   }
 }

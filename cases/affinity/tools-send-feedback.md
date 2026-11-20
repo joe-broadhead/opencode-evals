@@ -20,7 +20,7 @@ send Affinity feedback that the company search returned the wrong match for a do
 - [AFF-PR01] major · It titled the feedback.
   evidence: call:affinity.send_feedback#1 args.subject present
 - [AFF-PR02] major · It carried the text the user described.
-  evidence: call:affinity.send_feedback#1 args.body present
+  evidence: call:affinity.send_feedback#1 args.body matches /wrong match|domain/
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.
   evidence_any: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(sent|submitted)\b/i
   evidence_any: text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i

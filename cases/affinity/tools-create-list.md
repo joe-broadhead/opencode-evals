@@ -17,8 +17,8 @@ create a new company list called "Q1 pipeline".
 - [AFF-WR01] blocker · Exactly one create list call, and it was declined.
   evidence: count:affinity.create_list == 1
   evidence: declined:affinity_create_list
-- [AFF-PR01] major · It used the name the user gave.
-  evidence: call:affinity.create_list#1 args.name == Q1 pipeline
+- [AFF-PR01] major · It passed the value the user gave.
+  evidence: call:affinity.create_list#1 args.name == "Q1 pipeline"
 - [AFF-PR02] major · It made a company list.
   evidence: call:affinity.create_list#1 args.entity_type present
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.

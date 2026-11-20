@@ -73,7 +73,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(pie|donut|bar|treemap|share)",
+            "source": "(pie|donut|stacked|100%|treemap)",
             "flags": "i"
           }
         }
@@ -107,6 +107,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "charts"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -129,12 +133,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "857d4ade00c6b2bf4f4c82a70eef95ae020e90329c93c335afc8a93a3eee8168"
+    "source_sha256": "217082e031ff68d753175c1fe3993ddc4837f4888e72fa1cff398c23d084d887"
   }
 }

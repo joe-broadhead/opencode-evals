@@ -25,6 +25,7 @@ find {{target:affinity.company}} in the CRM for me.
 
 ## Forbidden
 - [AFF-SF01] blocker · Nothing committed.
+  evidence: absent-write:affinity
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

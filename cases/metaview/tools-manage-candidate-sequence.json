@@ -67,7 +67,7 @@
     {
       "id": "MV-PR02",
       "severity": "major",
-      "ask": "It asked to add the candidate.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -76,7 +76,12 @@
           "tool": "metaview.manage_candidate_sequence",
           "n": 1,
           "arg": "args.action",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "add",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -182,16 +187,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "metaview.give_application_review_candidate_feedback",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "metaview.send_sourcing_message",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -214,12 +209,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e1a6459ece8f5b2208827d373072a58f4da826777399aa5c496e723d14799a47"
+    "source_sha256": "b53b815fdf2b759ee5d5ec95de8ef5947554b2648b0eb704cd092ea6d74c4839"
   }
 }

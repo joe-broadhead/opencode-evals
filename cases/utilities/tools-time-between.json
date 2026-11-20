@@ -43,7 +43,7 @@
     {
       "id": "UTL-PR01",
       "severity": "major",
-      "ask": "It passed the first date.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -52,7 +52,12 @@
           "tool": "utilities.time_between",
           "n": 1,
           "arg": "args.from",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "2027-01-03",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -73,8 +78,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "\\b10[0-9]\\b|\\bdays\\b",
-            "flags": "i"
+            "source": "\\b101\\b",
+            "flags": ""
           }
         }
       ],
@@ -107,6 +112,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -129,12 +138,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e5a775c4baf01e44c28d6792be3de580c946e2c18e086b3cacaee812308b18b0"
+    "source_sha256": "a60f8c01dedcc0bec61ce26689388431f6eb61573f94f6777dfc381ef52980c7"
   }
 }

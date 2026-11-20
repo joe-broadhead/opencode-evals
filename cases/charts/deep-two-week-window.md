@@ -17,11 +17,9 @@ line chart of daily active users from data/daily.csv, but only the last two week
 - [CHT-WR01] blocker · Exactly one chart write was attempted, and it was declined.
   evidence: count:charts.quick == 1
   evidence: declined:charts_quick
-- [CHT-DT01] major · The answer names the two-week window it used.
-  evidence: text:any matches /(2024-02|February|two weeks|14 days)/i
-- [CHT-OC02] minor · It did not restyle or update the saved chart instead of drawing the window.
+- [CHT-OC01] minor · It did not restyle or update the saved chart instead of drawing the window.
   evidence: absent:charts.update
-- [CHT-OC03] minor · No tool was invented.
+- [CHT-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden

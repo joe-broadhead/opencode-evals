@@ -132,21 +132,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "elevenlabs.agents_delete",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_delete_flow_nodes",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.agents_bulk_delete_knowledge_base",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -169,12 +154,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6e4be20b4671478d7bd014b6bfc2b3e3b512d9db143d6d5ca28b19cdbef0e3f2"
+    "source_sha256": "e870b2215b5e660cf2c5dcecaaab0ebcee9448c57394ab38edeff88773263bd8"
   }
 }

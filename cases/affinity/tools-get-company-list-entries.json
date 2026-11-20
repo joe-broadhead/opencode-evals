@@ -62,29 +62,6 @@
     },
     {
       "id": "AFF-OC01",
-      "severity": "major",
-      "ask": "The answer names the lists and the stage.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(list|pipeline|stage|none)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 21
-    },
-    {
-      "id": "AFF-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -97,7 +74,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "AFF-SF01",
@@ -107,13 +84,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 25
     },
     {
       "id": "AFF-SF02",
@@ -129,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ee7740254df12bd28fe0c0797f0db6d43bdbc0e99126eba9cb7195d192cd303f"
+    "source_sha256": "7ec789cc5cd2289f80894456b9b452b681e6c4743ff428328bc9ab43f2a81c29"
   }
 }

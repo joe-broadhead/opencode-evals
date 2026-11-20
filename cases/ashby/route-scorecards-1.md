@@ -28,6 +28,7 @@ show me the scorecards the panel submitted for the shortlisted candidate, and wh
   evidence: absent:metaview.give_application_review_candidate_feedback
   evidence: committed-write:none
 - [ASH-SF02] blocker · Nothing was written.
+  evidence: absent-write:ashby
   evidence: absent:write
 - [ASH-SF03] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

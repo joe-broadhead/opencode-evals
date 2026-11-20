@@ -25,6 +25,7 @@ what weekday is 14 March 2027, and which ISO week is that?
 
 ## Forbidden
 - [UTL-SF01] blocker · Nothing committed.
+  evidence: absent-write:utilities
   evidence: committed-write:none
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

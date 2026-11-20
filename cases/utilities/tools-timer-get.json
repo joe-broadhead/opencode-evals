@@ -70,33 +70,19 @@
       "ask": "The answer says whether it exists, without inventing a deadline.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(not found|no timer|doesn't exist|does not exist|no such)",
-              "flags": "i"
-            }
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(not found|no timer|doesn't exist|does not exist|no such)",
+            "flags": "i"
           }
-        ],
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(due|remaining|status)",
-              "flags": "i"
-            }
-          }
-        ]
+        }
       ],
+      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 21
@@ -115,7 +101,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "UTL-SF01",
@@ -125,13 +111,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "UTL-SF02",
@@ -153,6 +143,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4b69f11c43ad1ee342c8a70895c1a73a7b6bcb349e643a93ac27ce2f3b3934d8"
+    "source_sha256": "d38743b08d8f7d9d57cb59fc8dd48dc449021de2c586125d5c137cfc26a2735f"
   }
 }

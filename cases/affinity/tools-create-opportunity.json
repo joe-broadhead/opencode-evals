@@ -47,7 +47,7 @@
     {
       "id": "AFF-PR01",
       "severity": "major",
-      "ask": "It used the deal name the user gave.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -56,7 +56,12 @@
           "tool": "affinity.create_opportunity",
           "n": 1,
           "arg": "args.name",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Acme Robotics seed",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -178,6 +183,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "08d57df35be8551be7f373a675c05a4f6a9938ffba95f9e25e210d3bb1e2e3cc"
+    "source_sha256": "f574377ad93cb1414d11a7bd504bcb4e042a0d0bc8d3385e81bd3a429947e3b1"
   }
 }

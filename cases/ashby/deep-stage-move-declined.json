@@ -156,11 +156,6 @@
       "evidence": [
         {
           "kind": "absent",
-          "tool": "ashby.consider_candidate_for_job",
-          "n": null
-        },
-        {
-          "kind": "absent",
           "tool": "write",
           "n": null
         },
@@ -187,12 +182,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "29832daff31cf4e3ff8b58962a59a581323d2f598451ae775ac7ac87ceac5bf0"
+    "source_sha256": "aa062bc40c584b9db172f1858af16a1acb3a0e26733f222036194d630d733452"
   }
 }

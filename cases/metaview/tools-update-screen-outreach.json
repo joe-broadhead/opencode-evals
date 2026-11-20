@@ -87,7 +87,7 @@
     {
       "id": "MV-PR03",
       "severity": "major",
-      "ask": "It carried the new invitation text.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -96,7 +96,12 @@
           "tool": "metaview.update_screen_outreach",
           "n": 1,
           "arg": "args.body_html",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "70|85|salary",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -182,16 +187,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "metaview.update_screen_plan",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "metaview.give_application_review_candidate_feedback",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -214,12 +209,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d1a521090dbd4f485428b09e90ec24202c29b8be252fd8fc146b1bd0193ba6f9"
+    "source_sha256": "d71c262d311daf0e3ae95efdf9b6ae87c9ef66633b33e79b6e97aa343dff5bc2"
   }
 }

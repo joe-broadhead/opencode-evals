@@ -76,7 +76,12 @@
           "tool": "affinity.create_interaction",
           "n": 1,
           "arg": "args.content",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "next quarter|numbers",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -178,6 +183,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9f44910652138db1d3ecdb047d001aa049252f1eb8726e5a69f9dc5b0c054fe9"
+    "source_sha256": "9a5ce01d7c0ccce6f3b807520a125d07147fce0ba3320a1f027505ade5887766"
   }
 }

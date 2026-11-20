@@ -62,29 +62,6 @@
     },
     {
       "id": "ASH-OC01",
-      "severity": "major",
-      "ask": "The answer says these are the user's own scorecards.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "your|own|you submitted",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 21
-    },
-    {
-      "id": "ASH-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -97,7 +74,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "ASH-SF01",
@@ -107,13 +84,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "ashby"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 25
     },
     {
       "id": "ASH-SF02",
@@ -129,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4d6491bd9c85573f9e17c835990fd812bd39837dbcb5498416fe185f4f719274"
+    "source_sha256": "d770a794694ffe3c0584590c8c4decd8e8b91631ea672f5d5a429ecf7227bd6b"
   }
 }

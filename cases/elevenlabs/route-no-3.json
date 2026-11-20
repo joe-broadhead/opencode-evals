@@ -41,29 +41,6 @@
     },
     {
       "id": "ELV-OC01",
-      "severity": "major",
-      "ask": "The answer looks for the meeting notes.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(meeting|notes|Granola|decided)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
-      "id": "ELV-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -76,7 +53,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 19
     },
     {
       "id": "ELV-SF01",
@@ -86,13 +63,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "elevenlabs"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "ELV-SF02",
@@ -108,12 +89,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f352d72a9cd899794008fcad29568262427aa8fcd6e0fd34893a3cbf7f1aa224"
+    "source_sha256": "0e9bd658462d43ec765e6ac35c5b02954d30980756cb9fbb0df0eae67f1eeb15"
   }
 }

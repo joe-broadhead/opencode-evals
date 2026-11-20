@@ -64,24 +64,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "elevenlabs.agents_update",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.agents_delete",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_speech",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_video",
-          "n": null
+          "kind": "absent-write",
+          "ns": "elevenlabs"
         },
         {
           "kind": "absent",
@@ -111,12 +95,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4608a74573278a29dc848eec8a48797fe8db46c5f0b2700d4f5f573bebc14415"
+    "source_sha256": "b96894054226b6f46eae91493897cd312e5a9a53757d73229e41af6ebacef4e8"
   }
 }

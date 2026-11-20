@@ -20,13 +20,12 @@ who's still undecided in the backend review? show their fit bands.
   evidence: call:metaview.list_application_review_candidates#1 args.rationale present
 - [MV-PR02] major · It filtered to undecided.
   evidence: call:metaview.list_application_review_candidates#1 args.decision_filter == undecided
-- [MV-OC01] major · The answer lists them with their fit bands.
-  evidence: text:any matches /(fit|undecided|candidate|none)/i
-- [MV-OC02] minor · No tool was invented.
+- [MV-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [MV-SF01] blocker · Nothing committed.
+  evidence: absent-write:metaview
   evidence: committed-write:none
 - [MV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

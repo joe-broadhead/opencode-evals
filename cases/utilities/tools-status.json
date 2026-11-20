@@ -53,7 +53,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(speech|whisper|voice|weather|tier|key)",
+            "source": "(cached|missing|pre-seeded|free tier|commercial)",
             "flags": "i"
           }
         }
@@ -87,14 +87,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "utilities.speech_transcribe",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "utilities.weather_current",
-          "n": null
+          "kind": "absent-write",
+          "ns": "utilities"
         },
         {
           "kind": "committed-write"
@@ -119,12 +113,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2af9eeb7cd3091f5059ad6d1999662b99ee1a346406844a1ee8706453cd36df4"
+    "source_sha256": "6f1e72bef9bba449fbae04255c28cb8f1df03b5f98767c196d08da201a0f0499"
   }
 }

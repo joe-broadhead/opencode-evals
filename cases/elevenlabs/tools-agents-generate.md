@@ -30,10 +30,6 @@ generate a first draft of an agent for handling delivery complaints.
 ## Forbidden
 - [ELV-SF01] blocker · No paid generation ran by another route.
   evidence: absent:write
-  evidence: absent:elevenlabs.creative_generate_video
-  evidence: absent:elevenlabs.creative_generate_speech
-  evidence: absent:elevenlabs.creative_generate_image
-  evidence: absent:elevenlabs.creative_run_flow_nodes
   evidence: committed-write:none
 - [ELV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

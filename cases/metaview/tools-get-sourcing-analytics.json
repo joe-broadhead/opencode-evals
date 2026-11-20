@@ -82,29 +82,6 @@
     },
     {
       "id": "MV-OC01",
-      "severity": "major",
-      "ask": "The answer gives the count and the period.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(repl|response|month|[0-9]+)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
-      "id": "MV-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -117,7 +94,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "MV-SF01",
@@ -127,13 +104,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 27
     },
     {
       "id": "MV-SF02",
@@ -149,12 +130,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "283e9cd5c52c5d3ea2333158083910d7414fe6098f4dd55dacc80e59d4df29ae"
+    "source_sha256": "6e9d5b21f49ca5c00f9ebe9ef443ff215cec89031635809f6a38ebcc72c86e0f"
   }
 }

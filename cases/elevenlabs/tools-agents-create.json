@@ -47,7 +47,7 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the prompt the request needs.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -56,7 +56,12 @@
           "tool": "elevenlabs.agents_create",
           "n": 1,
           "arg": "args.prompt",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "order number",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -67,7 +72,7 @@
     {
       "id": "ELV-PR02",
       "severity": "major",
-      "ask": "It passed the name the request needs.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -76,7 +81,11 @@
           "tool": "elevenlabs.agents_create",
           "n": 1,
           "arg": "args.name",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "Support triage"
+          }
         }
       ],
       "evidence_any": [],
@@ -190,6 +199,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9a869261154f33bd2b83f7007198395817374fa74793842d3e1f6de42ca212d4"
+    "source_sha256": "7dfabbaf4f2ad27be7cc5f66a8376c229e41cc2458d03b85e6e94e0bc27de74b"
   }
 }

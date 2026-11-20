@@ -130,21 +130,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_video",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_speech",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_image",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -167,12 +152,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "67bc41d386dc4ea24e30ddad5f9de8ce27702594eb9df5a60e45f7dbf10a2509"
+    "source_sha256": "caa8efc9f632b885e2def07d6632e807e9a3d74874d30eb361a8ff92d42bde5c"
   }
 }

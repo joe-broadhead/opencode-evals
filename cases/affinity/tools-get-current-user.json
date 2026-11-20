@@ -53,7 +53,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(organisation|organization|scope|read-only|change)",
+            "source": "(scope|read-only|admin|member)",
             "flags": "i"
           }
         }
@@ -87,6 +87,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -109,12 +113,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6bc1f5f1e4cdb45da5751cffd56fbb210f4a82a53f2e790983e53b8a9930d0b2"
+    "source_sha256": "d5b722c83ea371a3796d4d9bf3235f2f37eace0eb6e87627af982ce6b7ff55b9"
   }
 }

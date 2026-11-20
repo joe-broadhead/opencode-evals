@@ -47,7 +47,7 @@
     {
       "id": "UTL-PR01",
       "severity": "major",
-      "ask": "It carried the line the user gave.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -56,7 +56,12 @@
           "tool": "utilities.speech_synthesize",
           "n": 1,
           "arg": "args.text",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "standup in five minutes",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -178,6 +183,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5b47966d9685fc707ef6bad7f935f97258635fdd5fae781c08ee09aef710f00f"
+    "source_sha256": "fcd8f022378288c72d45e871ca11b63648e88c8ea5d6e9b3efcac60e9d5d3331"
   }
 }

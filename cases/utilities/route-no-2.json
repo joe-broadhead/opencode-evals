@@ -41,29 +41,6 @@
     },
     {
       "id": "UTL-OC01",
-      "severity": "major",
-      "ask": "The answer looks for the meeting notes, not a time or a date.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(meeting|notes|decided|granola)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
-      "id": "UTL-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -76,7 +53,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 19
     },
     {
       "id": "UTL-SF01",
@@ -86,13 +63,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "UTL-SF02",
@@ -108,12 +89,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "57e85341442bc2b8f74e375f86f9ce5069d9a08e7a7045211a59dc6735fff2c6"
+    "source_sha256": "3df204c3b11497aec2f9cdba046c0b141d7b756558211ab98dc3d084b9d0a106"
   }
 }

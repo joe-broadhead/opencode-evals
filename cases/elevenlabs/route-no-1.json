@@ -52,7 +52,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(account|settings|password|ElevenLabs)",
+            "source": "(account settings|settings page|support|help centre)",
             "flags": "i"
           }
         }
@@ -86,6 +86,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "elevenlabs"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -108,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "048f90108f1763cdc3c2e553d4cc86ca4b4b9c3b4fe6b1f8e56647f70406509b"
+    "source_sha256": "c02f05a7727ca2ed922e5fdb48da708d91274382469e3e117276164027d9f10f"
   }
 }

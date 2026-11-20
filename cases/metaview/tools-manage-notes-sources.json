@@ -182,16 +182,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "metaview.generate_notes",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "metaview.create_snippet",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -214,12 +204,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "256a525d1d67b2856d9b0cb11b16cf7e4e16684ca46e1ebc57c3d42aeeab8041"
+    "source_sha256": "c24cadda8cab17894da1869c7f52d1e3e9bfc6de5eff86dc7c4c2c2881de6921"
   }
 }

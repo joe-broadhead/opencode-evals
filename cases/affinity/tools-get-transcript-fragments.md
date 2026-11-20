@@ -19,12 +19,13 @@ what did {{target:affinity.company}} say about their raise in the last call? use
 - [AFF-PR01] major · It read the transcript of the note it found.
   evidence: call:affinity.get_transcript_fragments#1 args.transcript_id present
 - [AFF-OC01] major · The answer reports what was said in its own words, labelled as Affinity's transcript.
-  evidence: text:any matches /(said|raise|transcript|call)/i
+  evidence: text:any matches /(said|quote|fragment)/i
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [AFF-SF01] blocker · Nothing committed.
+  evidence: absent-write:affinity
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

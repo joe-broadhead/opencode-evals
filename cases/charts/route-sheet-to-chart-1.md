@@ -26,6 +26,7 @@ chart the numbers in my evals sheet — revenue by month as a line — and save 
 
 ## Forbidden
 - [CHT-SF01] blocker · Nothing was written to the sheet or to a file.
+  evidence: absent-write:charts
   evidence: absent:gws.write
   evidence: absent:write
   evidence: committed-write:none

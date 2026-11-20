@@ -42,29 +42,6 @@
     },
     {
       "id": "AFF-OC01",
-      "severity": "major",
-      "ask": "The answer gives the event plan as steps.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(event|guest|invite|list|step)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
-      "id": "AFF-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -77,7 +54,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 19
     },
     {
       "id": "AFF-SF01",
@@ -87,13 +64,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "AFF-SF02",
@@ -109,7 +90,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     }
   ],
   "oracle": [],
@@ -117,10 +98,10 @@
     {
       "id": null,
       "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
-      "line": 31
+      "line": 30
     }
   ],
   "hashes": {
-    "source_sha256": "0e5254281b254c258e20cd8517853834b170cc20a24cad4b39cd79b67e434dcb"
+    "source_sha256": "3581cfd83751a8c4674e92baaa05e52afce6e4ac10552f241f182836a6f16dd4"
   }
 }

@@ -67,7 +67,7 @@
     {
       "id": "AFF-PR02",
       "severity": "major",
-      "ask": "It carried the new text.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -76,7 +76,12 @@
           "tool": "affinity.update_note",
           "n": 1,
           "arg": "args.content",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "intro to the CTO",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -178,6 +183,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2885994a9521a8abbaef4969e1818bbab8ecfde56560c485afbc453f785e8a9f"
+    "source_sha256": "9bb031e16ce41e636ecfbc7a5345cb3591ca55e5f5bb0ef31cbeeaccdba4cc5d"
   }
 }

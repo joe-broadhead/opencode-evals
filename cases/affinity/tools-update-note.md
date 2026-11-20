@@ -19,8 +19,8 @@ add a line to the note on {{target:affinity.company}}: "also wants an intro to t
   evidence: declined:affinity_update_note
 - [AFF-PR01] major · It used the note it resolved.
   evidence: call:affinity.update_note#1 args.note_id present
-- [AFF-PR02] major · It carried the new text.
-  evidence: call:affinity.update_note#1 args.content present
+- [AFF-PR02] major · It passed the value the user gave.
+  evidence: call:affinity.update_note#1 args.content matches /intro to the CTO/
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.
   evidence_any: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(updated|changed|saved|added)\b/i
   evidence_any: text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i

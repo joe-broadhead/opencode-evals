@@ -110,15 +110,14 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "ashby"
+        },
+        {
           "kind": "count",
           "tool": "ashby.search_records_by_name",
           "op": "<=",
           "value": 2
-        },
-        {
-          "kind": "absent",
-          "tool": "ashby.create_candidate",
-          "n": null
         },
         {
           "kind": "committed-write"
@@ -155,6 +154,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "ab81842b0c1cefb72c6127ae236eb152a249b76f1bcbf9e8230a3dab20094891"
+    "source_sha256": "418c161efa866db92d3341ccd6c3220b243e82ba988dba2cb4c5e1ce43c92ff8"
   }
 }

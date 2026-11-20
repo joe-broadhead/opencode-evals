@@ -25,8 +25,8 @@ find Northwind Dynamics in Affinity — I'm sure we track them.
 
 ## Forbidden
 - [AFF-SF01] blocker · It did not retry with a shortened or variant name, and did not offer another source.
+  evidence: absent-write:affinity
   evidence: count:affinity.search_companies_top_matches <= 2
-  evidence: absent:affinity.create_company
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

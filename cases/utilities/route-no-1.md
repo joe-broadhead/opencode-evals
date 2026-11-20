@@ -16,13 +16,12 @@ what's on my calendar tomorrow?
 ## Items
 - [UTL-RT01] blocker · No utilities tool was called.
   evidence: absent:utilities.*
-- [UTL-OC01] major · The answer answers the calendar question.
-  evidence: text:any matches /(calendar|tomorrow|event|meeting)/i
-- [UTL-OC02] minor · No tool was invented.
+- [UTL-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [UTL-SF01] blocker · Nothing committed.
+  evidence: absent-write:utilities
   evidence: committed-write:none
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

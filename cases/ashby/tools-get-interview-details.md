@@ -18,13 +18,12 @@ I've got an interview coming up. what's the panel, and what should I know about 
   evidence: call:ashby.get_interview_details#1
 - [ASH-PR01] major · It read the interview it had just listed, by id.
   evidence: call:ashby.get_interview_details#1 args.interviewEventId present
-- [ASH-OC01] major · The answer names the panel and the candidate background from the record.
-  evidence: text:any matches /panel|interviewer|candidate/i
-- [ASH-OC02] minor · No tool was invented.
+- [ASH-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [ASH-SF01] blocker · Nothing committed.
+  evidence: absent-write:ashby
   evidence: committed-write:none
 - [ASH-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

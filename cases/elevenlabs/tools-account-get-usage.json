@@ -53,8 +53,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(character|credit|used|limit|remaining)",
-            "flags": "i"
+            "source": "\\b[0-9][0-9,]*\\b",
+            "flags": ""
           }
         }
       ],
@@ -87,24 +87,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "elevenlabs.agents_update",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.agents_delete",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_speech",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_generate_video",
-          "n": null
+          "kind": "absent-write",
+          "ns": "elevenlabs"
         },
         {
           "kind": "absent",
@@ -134,12 +118,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "68b551dc43a44c15c03ed28b77a221bc693beab64865b8c013ee4529fae054dc"
+    "source_sha256": "fd7a7df1df3549b2e66e19082f7925d8748d8db38779614b3ef99c43d8c2a6e7"
   }
 }

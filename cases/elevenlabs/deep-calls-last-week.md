@@ -28,6 +28,7 @@ how many calls did the agent take last week, and how many were successful?
 
 ## Forbidden
 - [ELV-SF01] blocker · It did not list every call to count them itself.
+  evidence: absent-write:elevenlabs
   evidence: count:elevenlabs.agents_list_conversations <= 2
   evidence: committed-write:none
 - [ELV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.

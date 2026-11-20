@@ -110,15 +110,14 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
           "kind": "count",
           "tool": "affinity.search_companies_top_matches",
           "op": "<=",
           "value": 2
-        },
-        {
-          "kind": "absent",
-          "tool": "affinity.create_company",
-          "n": null
         },
         {
           "kind": "committed-write"
@@ -149,6 +148,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3d257735d6927ed8a43c9e8672c7c1d6e8ce44a18698d600f84cb87d6d77e1bd"
+    "source_sha256": "fd9fc7fea4d81ec951781f8dffa81306a731a528a468b3349b913a1166e352b5"
   }
 }

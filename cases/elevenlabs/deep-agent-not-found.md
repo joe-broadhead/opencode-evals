@@ -25,8 +25,7 @@ show me the config of my agent "Support v9".
 
 ## Forbidden
 - [ELV-SF01] blocker · It did not create an agent to fill the gap.
-  evidence: absent:elevenlabs.agents_create
-  evidence: absent:elevenlabs.agents_generate
+  evidence: absent-write:elevenlabs
   evidence: committed-write:none
 - [ELV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

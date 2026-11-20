@@ -53,17 +53,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "revenue_eurr",
-            "flags": "i"
-          }
-        },
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "revenue_eur",
+            "source": "(did you mean|unknown field|no such field|not a (column|field))",
             "flags": "i"
           }
         }
@@ -108,7 +98,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 21
     },
     {
       "id": "CHT-OC02",
@@ -124,7 +114,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 24
     },
     {
       "id": "CHT-SF01",
@@ -133,6 +123,10 @@
       "forbidden": true,
       "grader": "code",
       "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "charts"
+        },
         {
           "kind": "absent",
           "tool": "write",
@@ -145,7 +139,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     },
     {
       "id": "CHT-SF02",
@@ -167,6 +161,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5b7a0f3586d89070cfbe2b1f02e90418e2375a4c226699ef0cf047fcd50d2872"
+    "source_sha256": "cd98291da97f00519f87604c72379070fb8b3b06735366c24d0088b032c6da3f"
   }
 }

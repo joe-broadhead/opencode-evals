@@ -67,7 +67,7 @@
     {
       "id": "MV-PR02",
       "severity": "major",
-      "ask": "It carried the brief the user gave.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -76,7 +76,12 @@
           "tool": "metaview.send_sourcing_message",
           "n": 1,
           "arg": "args.message",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Lisbon|backend",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -162,16 +167,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "metaview.give_sourcing_feedback",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "metaview.manage_sourcing_knowledge",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -194,12 +189,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b23246bc8ced6f316a02555b20f976e1c5265c27f4d305c788e6822c99d54dc2"
+    "source_sha256": "9cd22536da57c9f057e6a98dbd303090542ac9af386a8592eb085c4fe98c7c40"
   }
 }

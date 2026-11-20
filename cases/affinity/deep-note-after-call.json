@@ -138,11 +138,6 @@
       "evidence": [
         {
           "kind": "absent",
-          "tool": "affinity.update_note",
-          "n": null
-        },
-        {
-          "kind": "absent",
           "tool": "write",
           "n": null
         },
@@ -169,12 +164,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cddfa486b9452c619cca95f21427bd87b79e93b3c446ce8b4f8b11817aa0fc8c"
+    "source_sha256": "7b11afb204d77f22d0967f41e3263be88d0d65cd80036ba94d3a895e1f796722"
   }
 }

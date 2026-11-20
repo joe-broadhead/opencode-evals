@@ -42,29 +42,6 @@
     },
     {
       "id": "ASH-OC01",
-      "severity": "major",
-      "ask": "The answer names each interview with its job and a date or time.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "interview|no interviews|nothing",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
-      "id": "ASH-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -77,7 +54,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 19
     },
     {
       "id": "ASH-SF01",
@@ -87,13 +64,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "ashby"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "ASH-SF02",
@@ -109,12 +90,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0ad3fa8f2181fe99434908b14d6a36c974aed9baf2374d13080db0159ed3f393"
+    "source_sha256": "7c272304e5079836241875ebbdca75e5c2b4003ebf8a78292a0a719f79d14fb7"
   }
 }

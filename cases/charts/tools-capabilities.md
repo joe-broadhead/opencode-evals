@@ -23,6 +23,7 @@ what can you draw here, and which output formats actually work on this machine?
 
 ## Forbidden
 - [CHT-SF01] blocker · Nothing committed.
+  evidence: absent-write:charts
   evidence: committed-write:none
 - [CHT-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

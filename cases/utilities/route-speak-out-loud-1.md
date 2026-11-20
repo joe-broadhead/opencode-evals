@@ -23,6 +23,7 @@ say "standup in five minutes" out loud for me.
 
 ## Forbidden
 - [UTL-SF01] blocker · Nothing committed.
+  evidence: absent-write:utilities
   evidence: committed-write:none
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

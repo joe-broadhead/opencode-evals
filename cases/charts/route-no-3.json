@@ -52,7 +52,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(python|matplotlib|code|3-d|three-dimensional)",
+            "source": "(python|matplotlib|plotly|code)",
             "flags": "i"
           }
         }
@@ -86,6 +86,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "charts"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -108,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "592ec5e83eebdddffe7eaa0c768fb44b3117d8031808fe7482a7a6197b35e6c8"
+    "source_sha256": "339179e41a180b09745b88816443dd283f14074f34fa25e2584f5c036d9c7a96"
   }
 }

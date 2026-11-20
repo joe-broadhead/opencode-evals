@@ -47,7 +47,7 @@
     {
       "id": "ASH-PR01",
       "severity": "major",
-      "ask": "It passed the name the user gave.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -56,7 +56,11 @@
           "tool": "ashby.create_candidate",
           "n": 1,
           "arg": "args.name",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "Jordan Lee"
+          }
         }
       ],
       "evidence_any": [],
@@ -67,7 +71,7 @@
     {
       "id": "ASH-PR02",
       "severity": "major",
-      "ask": "It passed the email the user gave.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -76,7 +80,11 @@
           "tool": "ashby.create_candidate",
           "n": 1,
           "arg": "args.email",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "jordan.lee@example.com"
+          }
         }
       ],
       "evidence_any": [],
@@ -150,11 +158,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "ashby.consider_candidate_for_job",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -177,12 +180,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "778874cf30dba64e5bc00f6fc5af9bd76df6f2bddc4ee16fc273f13b0546be00"
+    "source_sha256": "6c9a773efd2404bd25929d8f6847b16fe07ffda24d8c1dd062117a8b2bccc93e"
   }
 }

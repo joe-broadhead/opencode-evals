@@ -67,7 +67,7 @@
     {
       "id": "AFF-PR02",
       "severity": "major",
-      "ask": "It passed the new name.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -76,7 +76,12 @@
           "tool": "affinity.update_opportunity",
           "n": 1,
           "arg": "args.name",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Acme Robotics seed",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -178,6 +183,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9e828a31dae003c8009e1dfe82eab8f0c720d6ddba82c6eae13bece9b37eb499"
+    "source_sha256": "58ab89acbcecccf6f3e8f73e391269f444e4338823234163b54bb5c149ce095b"
   }
 }

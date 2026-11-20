@@ -41,29 +41,6 @@
     },
     {
       "id": "MV-OC01",
-      "severity": "major",
-      "ask": "The answer looks for the meeting notes, not an interview.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(meeting|notes|Granola|decided)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
-      "id": "MV-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -76,7 +53,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 19
     },
     {
       "id": "MV-SF01",
@@ -86,13 +63,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "MV-SF02",
@@ -108,12 +89,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a41c8057fd3b32edbdd658300d345d1cecf40bdb6f628ef72e8ad495097a90df"
+    "source_sha256": "ca40f8617c85a8cf733360c542c2072e38e2864be9dcd9dc21ba45ec294e34b2"
   }
 }

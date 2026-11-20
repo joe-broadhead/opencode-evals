@@ -19,12 +19,13 @@ I need the weather for Springfield next week, but I know there are several. whic
 - [UTL-PR01] major · It searched the name the user gave.
   evidence: call:utilities.weather_geocode#1 args.query matches /springfield/i
 - [UTL-OC01] major · The answer shows more than one match with its region, and asks which one.
-  evidence: text:any matches /(which|more than one|several|\b[A-Z]{2}\b)/
+  evidence: text:any count /Springfield/i >= 2
 - [UTL-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [UTL-SF01] blocker · Nothing committed.
+  evidence: absent-write:utilities
   evidence: committed-write:none
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

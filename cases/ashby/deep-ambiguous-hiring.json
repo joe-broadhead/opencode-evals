@@ -53,7 +53,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(which job|two jobs|both|backend)",
+            "source": "(which job|two jobs|both jobs)",
             "flags": "i"
           }
         }
@@ -99,14 +99,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "ashby.change_application_stage",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "ashby.add_note_to_candidate",
-          "n": null
+          "kind": "absent-write",
+          "ns": "ashby"
         },
         {
           "kind": "absent",
@@ -136,12 +130,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "dbb8e229681e222369678405d8934ab20144f445188fac7322171456077a9ed2"
+    "source_sha256": "3faa2c86a2ec22a039c03cc6192cea0c303683b6a400883c5774868d8696e293"
   }
 }

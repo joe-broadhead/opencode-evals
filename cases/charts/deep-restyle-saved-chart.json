@@ -125,16 +125,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "charts.render",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "charts.quick",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -159,7 +149,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 31
     },
     {
       "id": "CHT-SF03",
@@ -175,12 +165,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d1d8417db9fad7ae391b32e50cf09d3cc742e3abe49d044fdd4d1ea5ffd79299"
+    "source_sha256": "15af85b991ae7b6ce1313683e8174538bbb2697757ad351da6445f98db83ea01"
   }
 }

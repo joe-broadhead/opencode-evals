@@ -19,14 +19,15 @@ how many interviews did each interviewer run last week? and which days does that
 - [MV-PR01] major · The filters bound the start time absolutely, with an offset.
   evidence: call:metaview.group_conversations#1 args.filters present
 - [MV-DT01] major · The answer names the window and the zone.
-  evidence: text:any matches /(last week|2026-|[+-][0-9]{2}:[0-9]{2})/i
-- [MV-OC02] major · It gives a count per interviewer.
+  evidence: text:any matches /2026-[0-9]{2}-[0-9]{2}/
+- [MV-OC01] major · It gives a count per interviewer.
   evidence: text:any matches /\b[0-9]+\b/
-- [MV-OC03] minor · No tool was invented.
+- [MV-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [MV-SF01] blocker · It did not fetch conversations to count them itself.
+  evidence: absent-write:metaview
   evidence: count:metaview.search_conversations <= 2
   evidence: committed-write:none
 - [MV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.

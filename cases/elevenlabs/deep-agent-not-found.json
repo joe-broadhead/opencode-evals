@@ -118,14 +118,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "elevenlabs.agents_create",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.agents_generate",
-          "n": null
+          "kind": "absent-write",
+          "ns": "elevenlabs"
         },
         {
           "kind": "committed-write"
@@ -150,12 +144,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ac01f419fd8c29b1e2d361da0b79aae62f7f51ae9418c6c0c5ee57383fdace73"
+    "source_sha256": "dd9ebd0dd44d9bf1cbb17fa90a77c6fc37feae88708a2f3178cd638d79644faa"
   }
 }

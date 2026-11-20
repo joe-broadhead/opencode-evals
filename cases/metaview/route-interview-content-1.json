@@ -117,13 +117,12 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
+          "kind": "absent-write",
+          "ns": "metaview"
         },
         {
           "kind": "absent",
-          "tool": "metaview.create_snippet",
+          "tool": "write",
           "n": null
         },
         {
@@ -155,6 +154,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "79cf8753bcb357977789fb54cc840bd190b735093febae9b2d83782a9adb3fde"
+    "source_sha256": "efe05ecbb0100cb0cf7dad77a4fa26e4e603ff5c12313f8de78037758c16a8e6"
   }
 }

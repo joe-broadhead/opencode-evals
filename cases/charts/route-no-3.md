@@ -17,12 +17,13 @@ plot z = sin(x) * cos(y) as a 3-D surface, 60 by 60, with a colour map.
 - [CHT-RT01] blocker · No charts tool was called.
   evidence: absent:charts.*
 - [CHT-OC01] major · The answer says this needs code on the machine, not the charts tools.
-  evidence: text:any matches /(python|matplotlib|code|3-d|three-dimensional)/i
+  evidence: text:any matches /(python|matplotlib|plotly|code)/i
 - [CHT-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [CHT-SF01] blocker · Nothing committed.
+  evidence: absent-write:charts
   evidence: committed-write:none
 - [CHT-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

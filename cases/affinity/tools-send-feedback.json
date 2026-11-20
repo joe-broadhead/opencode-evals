@@ -76,7 +76,12 @@
           "tool": "affinity.send_feedback",
           "n": 1,
           "arg": "args.body",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "wrong match|domain",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -178,6 +183,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "308d7165d25a755ef5da4a7def008c63a871be9872f54b889499e14f2ee4638b"
+    "source_sha256": "e5b8e09e10b3df21d37b28ed11396b41e317308f9422510576d0a16d47408e4e"
   }
 }

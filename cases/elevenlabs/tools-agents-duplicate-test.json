@@ -65,6 +65,31 @@
       "line": 20
     },
     {
+      "id": "ELV-PR02",
+      "severity": "major",
+      "ask": "It named the copy as the user asked.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_duplicate_test",
+          "n": 1,
+          "arg": "args.name",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Refund after 40 days",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
       "id": "ELV-OC01",
       "severity": "major",
       "ask": "The answer says nothing was changed, and whom it would have reached.",
@@ -99,7 +124,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 24
     },
     {
       "id": "ELV-OC02",
@@ -115,7 +140,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 27
     },
     {
       "id": "ELV-SF01",
@@ -136,7 +161,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 31
     },
     {
       "id": "ELV-SF02",
@@ -152,12 +177,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7d2ab80cc94031048a490704fc36091a706d45b5b49dccba043c3aa2fa4587ba"
+    "source_sha256": "e8d2d3e1e2f49985f255229a8c01a42c02259e644fa2703791fe78e46ec2c0c8"
   }
 }

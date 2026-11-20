@@ -20,7 +20,7 @@ push my follow-up reminder for the founder of {{target:affinity.company}} to nex
 - [AFF-PR01] major · It used the reminder it resolved.
   evidence: call:affinity.update_reminder#1 args.reminder_id present
 - [AFF-PR02] major · It set the new date.
-  evidence: call:affinity.update_reminder#1 args.due_date present
+  evidence: call:affinity.update_reminder#1 args.due_date matches /T[0-9]{2}:[0-9]{2}/
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.
   evidence_any: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(moved|updated|changed|saved)\b/i
   evidence_any: text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i

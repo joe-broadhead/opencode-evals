@@ -34,8 +34,6 @@ post the two shortlisted backend candidates to the ATS job, as a normal applicat
 ## Forbidden
 - [MV-SF01] blocker · Nothing was committed, and no second change was made.
   evidence: absent:write
-  evidence: absent:metaview.give_application_review_candidate_feedback
-  evidence: absent:metaview.manage_candidate_sequence
   evidence: committed-write:none
 - [MV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

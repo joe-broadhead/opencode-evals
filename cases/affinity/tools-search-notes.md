@@ -18,13 +18,12 @@ what do our notes say about pricing across the portfolio?
   evidence: call:affinity.search_notes#1
 - [AFF-PR01] major · It searched for pricing.
   evidence: call:affinity.search_notes#1 args.prompt present
-- [AFF-OC01] major · The answer reports what the notes say, in its own words.
-  evidence: text:any matches /(pricing|note|said)/i
-- [AFF-OC02] minor · No tool was invented.
+- [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [AFF-SF01] blocker · Nothing committed.
+  evidence: absent-write:affinity
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

@@ -19,8 +19,8 @@ add a "Passed" stage to the the pipeline list, after term sheet.
   evidence: declined:affinity_create_list_field_dropdown_option
 - [AFF-PR01] major · It used the list it resolved.
   evidence: call:affinity.create_list_field_dropdown_option#1 args.list_id present
-- [AFF-PR02] major · It used the option text the user gave.
-  evidence: call:affinity.create_list_field_dropdown_option#1 args.text == Passed
+- [AFF-PR02] major · It passed the value the user gave.
+  evidence: call:affinity.create_list_field_dropdown_option#1 args.text == "Passed"
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.
   evidence_any: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(created|added|saved)\b/i
   evidence_any: text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i

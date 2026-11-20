@@ -34,8 +34,6 @@ add a section called "Scale" to the onsite note template, after "System design".
 ## Forbidden
 - [MV-SF01] blocker · Nothing was committed, and no second change was made.
   evidence: absent:write
-  evidence: absent:metaview.create_ai_field
-  evidence: absent:metaview.create_report
   evidence: committed-write:none
 - [MV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

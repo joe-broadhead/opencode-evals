@@ -17,8 +17,8 @@ create a deal for {{target:affinity.company}} on the the pipeline list, called "
 - [AFF-WR01] blocker · Exactly one create opportunity call, and it was declined.
   evidence: count:affinity.create_opportunity == 1
   evidence: declined:affinity_create_opportunity
-- [AFF-PR01] major · It used the deal name the user gave.
-  evidence: call:affinity.create_opportunity#1 args.name present
+- [AFF-PR01] major · It passed the value the user gave.
+  evidence: call:affinity.create_opportunity#1 args.name matches /Acme Robotics seed/
 - [AFF-PR02] major · It used the list it resolved.
   evidence: call:affinity.create_opportunity#1 args.list_id present
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.

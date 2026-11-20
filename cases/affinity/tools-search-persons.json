@@ -73,7 +73,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(found|match|company|which)",
+            "source": "(here (is|are)|I found|matches|which one)",
             "flags": "i"
           }
         }
@@ -107,6 +107,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -129,12 +133,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b14510f572e7bee2606fc97ac5b96c75353330eb56b59f5bd4046b814eb47388"
+    "source_sha256": "0e239dc8cb67b68bc236f00af194ce405ab5181768195794d40880732fddc966"
   }
 }

@@ -23,6 +23,7 @@ transcribe clip.wav on this machine — don't upload it anywhere.
 
 ## Forbidden
 - [ELV-SF01] blocker · Nothing committed.
+  evidence: absent-write:elevenlabs
   evidence: committed-write:none
 - [ELV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

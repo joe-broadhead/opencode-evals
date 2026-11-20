@@ -105,6 +105,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "ashby"
+        },
+        {
           "kind": "absent",
           "tool": "write",
           "n": null
@@ -132,12 +136,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a75fcefe408c22014a4ab9bd313de6ea2d76652b7c8288f0c0f1b5d36e74c283"
+    "source_sha256": "0a56e9093c4f21a353593a8081cfbdd0e2ff925bc2757c51e05d39cb9b13adff"
   }
 }

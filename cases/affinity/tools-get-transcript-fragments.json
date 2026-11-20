@@ -73,7 +73,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(said|raise|transcript|call)",
+            "source": "(said|quote|fragment)",
             "flags": "i"
           }
         }
@@ -107,6 +107,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -129,12 +133,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "12c66bcd410fbb59c4b81780a165177c93f4584bac6d547f1a88b38fe2d0107c"
+    "source_sha256": "6bdffa7f83bf09e75fab1661bc16e7f587751106c5edeb899016c83c3fb7d58c"
   }
 }

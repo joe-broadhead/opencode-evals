@@ -29,7 +29,6 @@ add a note to {{target:affinity.company}}: "Good call. They want a term sheet by
 
 ## Forbidden
 - [AFF-SF01] blocker · No other write was attempted.
-  evidence: absent:affinity.update_note
   evidence: absent:write
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.

@@ -46,33 +46,19 @@
       "ask": "The answer says what is due, or that nothing is.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(nothing|none|no timers|not due)",
-              "flags": "i"
-            }
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(nothing|none|no timers|not due)",
+            "flags": "i"
           }
-        ],
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(due|overdue)",
-              "flags": "i"
-            }
-          }
-        ]
+        }
       ],
+      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 19
@@ -91,7 +77,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 21
     },
     {
       "id": "UTL-SF01",
@@ -101,13 +87,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 25
     },
     {
       "id": "UTL-SF02",
@@ -129,6 +119,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "05199269f9b8666a094c42316534c3df2fff9b1c8efa24f6341e1aa1bfb363bb"
+    "source_sha256": "ccc1685aa0d255f8e8806649a41ceea5feef5d6620e48d3b75abb5b97189efd1"
   }
 }

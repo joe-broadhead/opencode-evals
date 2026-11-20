@@ -104,6 +104,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "charts"
+        },
+        {
           "kind": "absent",
           "tool": "charts.render",
           "n": null
@@ -128,7 +132,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
@@ -136,10 +140,10 @@
     {
       "id": null,
       "text": "Commit plan: `charts.quick` is `local: true`: the write touches only the trial's own sandbox.",
-      "line": 34
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "f2ccaa16dc7d27f955b269dafd4261534a34f70744d02502321961531c84b50a"
+    "source_sha256": "34da9e057002b83fc6cecd5f202ec7509b442b68ca92686b1885a5fac55cb7b6"
   }
 }

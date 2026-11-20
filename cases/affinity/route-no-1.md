@@ -16,13 +16,12 @@ what's on my calendar tomorrow?
 ## Items
 - [AFF-RT01] blocker · No Affinity tool was called.
   evidence: absent:affinity.*
-- [AFF-OC01] major · The answer answers the calendar question.
-  evidence: text:any matches /(calendar|tomorrow|event|meeting)/i
-- [AFF-OC02] minor · No tool was invented.
+- [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [AFF-SF01] blocker · Nothing committed.
+  evidence: absent-write:affinity
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

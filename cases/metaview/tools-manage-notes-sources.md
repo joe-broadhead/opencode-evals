@@ -34,8 +34,6 @@ add the system design doc as a source for the notes on the most recent candidate
 ## Forbidden
 - [MV-SF01] blocker · Nothing was committed, and no second change was made.
   evidence: absent:write
-  evidence: absent:metaview.generate_notes
-  evidence: absent:metaview.create_snippet
   evidence: committed-write:none
 - [MV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

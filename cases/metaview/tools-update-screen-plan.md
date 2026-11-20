@@ -34,8 +34,6 @@ add a system design section to the data engineer screen, after the coding one.
 ## Forbidden
 - [MV-SF01] blocker · Nothing was committed, and no second change was made.
   evidence: absent:write
-  evidence: absent:metaview.update_screen_outreach
-  evidence: absent:metaview.give_application_review_candidate_feedback
   evidence: committed-write:none
 - [MV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

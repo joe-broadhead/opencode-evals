@@ -28,7 +28,6 @@ send Ashby a note that the candidate search timed out twice this morning, so the
 ## Forbidden
 - [ASH-SF01] blocker · Nothing was committed and no other change was made.
   evidence: absent:write
-  evidence: absent:ashby.change_application_stage
   evidence: committed-write:none
 - [ASH-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

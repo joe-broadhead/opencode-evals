@@ -47,7 +47,7 @@
     {
       "id": "ELV-PR01",
       "severity": "major",
-      "ask": "It passed the name the request needs.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -56,7 +56,11 @@
           "tool": "elevenlabs.creative_create_brand_kit",
           "n": 1,
           "arg": "args.name",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "Acme"
+          }
         }
       ],
       "evidence_any": [],
@@ -158,6 +162,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7d296fe1daf3df72cf1a3b152b60bb65965ac846ae643bf527cafb9a2db81dcc"
+    "source_sha256": "7fd2db163cb6c3c878403abe189620a50477995292861c6acc84b39b4f77dc1b"
   }
 }

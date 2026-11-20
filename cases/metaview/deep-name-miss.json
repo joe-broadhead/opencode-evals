@@ -95,7 +95,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(email|which role|role)",
+            "source": "email",
             "flags": "i"
           }
         }
@@ -129,15 +129,14 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
           "kind": "count",
           "tool": "metaview.list_field_values",
           "op": "<=",
           "value": 1
-        },
-        {
-          "kind": "absent",
-          "tool": "metaview.fetch_candidates",
-          "n": null
         },
         {
           "kind": "committed-write"
@@ -174,6 +173,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "8c1beee77bd8e10bba5bf94adaac38eddc31d75e9cd2056c323056eb1af9b8dc"
+    "source_sha256": "b8e9e8cf62bdd4eb79dd8a14090cd4f6cc1b491b4a9de003749bf49b17e5a332"
   }
 }

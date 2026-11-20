@@ -27,8 +27,8 @@ what did the most recent candidate say about distributed systems in their onsite
 
 ## Forbidden
 - [MV-SF01] blocker · Nothing was written in either tool.
+  evidence: absent-write:metaview
   evidence: absent:write
-  evidence: absent:metaview.create_snippet
   evidence: committed-write:none
 - [MV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

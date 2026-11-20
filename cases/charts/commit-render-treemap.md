@@ -26,6 +26,7 @@ draw a treemap of revenue by region from data/sales.csv and save the SVG.
 
 ## Forbidden
 - [CHT-SF01] blocker · No source file was edited.
+  evidence: absent-write:charts
   evidence: absent:write
   evidence: absent:edit
 - [CHT-SF02] blocker · The guard refused nothing in scope and saw no access assertion.

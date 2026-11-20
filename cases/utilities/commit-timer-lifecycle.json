@@ -128,6 +128,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
           "kind": "absent",
           "tool": "write",
           "n": null
@@ -152,7 +156,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     }
   ],
   "oracle": [],
@@ -160,10 +164,10 @@
     {
       "id": null,
       "text": "Commit plan: `utilities.timer_set and utilities.timer_delete` is `local: true`: the write touches only the trial's own sandbox.",
-      "line": 36
+      "line": 37
     }
   ],
   "hashes": {
-    "source_sha256": "2205eb74fbec7b142fa5ccd916679f01537302393dd28b3c3a911e887e7e03e5"
+    "source_sha256": "6b2f5bf28bf70455f8395d65b341d4a3b48af4144b058162cc13246f1003587f"
   }
 }

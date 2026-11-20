@@ -67,7 +67,7 @@
     {
       "id": "MV-PR02",
       "severity": "major",
-      "ask": "It used the name the user gave.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -186,16 +186,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "metaview.create_report",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "metaview.manage_note_template",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -218,12 +208,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d505ff3b03a1c449c94e21a2d864e126c365581ad7ff07b911a9b84c8423f28f"
+    "source_sha256": "5fb185839c5ed87a4ed86fbdcb4dc8712dbf596210cb172024c521c0cc5f34bc"
   }
 }

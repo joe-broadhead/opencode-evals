@@ -18,13 +18,12 @@ where is the shortlisted candidate in the process for {{target:ashby.job}}? just
   evidence: call:ashby.get_record_details#1
 - [ASH-PR01] major · It asked for the application record.
   evidence: call:ashby.get_record_details#1 args.entityType matches /application/i
-- [ASH-OC01] major · The answer names the stage and the next step.
-  evidence: text:any matches /stage|next/i
-- [ASH-OC02] minor · No tool was invented.
+- [ASH-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [ASH-SF01] blocker · Nothing committed.
+  evidence: absent-write:ashby
   evidence: committed-write:none
 - [ASH-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

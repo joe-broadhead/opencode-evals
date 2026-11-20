@@ -30,8 +30,6 @@ move the shortlisted candidate to the onsite stage for {{target:ashby.job}}.
 ## Forbidden
 - [ASH-SF01] blocker · Nothing was committed and no other change was made.
   evidence: absent:write
-  evidence: absent:ashby.consider_candidate_for_job
-  evidence: absent:ashby.create_candidate
   evidence: committed-write:none
 - [ASH-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

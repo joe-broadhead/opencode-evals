@@ -19,6 +19,8 @@ rename {{target:elevenlabs.agent}} to "Support triage v2".
   evidence: declined:elevenlabs_agents_update
 - [ELV-PR01] major · Aimed at the sandbox target the user named, and nothing else.
   evidence: target:elevenlabs.agents_update#1 args.agent_id in @elevenlabs.agent
+- [ELV-PR02] major · It passed the new name the user gave.
+  evidence: call:elevenlabs.agents_update#1 args.name == "Support triage v2"
 - [ELV-OC01] major · The answer says nothing was changed, and whom it would have reached.
   evidence_any: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(renamed|updated|changed|saved)\b/i
   evidence_any: text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i

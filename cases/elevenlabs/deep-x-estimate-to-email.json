@@ -130,16 +130,6 @@
       "evidence": [
         {
           "kind": "absent",
-          "tool": "elevenlabs.creative_generate_speech",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "elevenlabs.creative_run_flow_nodes",
-          "n": null
-        },
-        {
-          "kind": "absent",
           "tool": "write",
           "n": null
         },
@@ -166,7 +156,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 32
     }
   ],
   "oracle": [],
@@ -174,15 +164,15 @@
     {
       "id": null,
       "text": "§2.3 task 24: the estimate tool is a write, so it is graded at the declined call.",
-      "line": 38
+      "line": 36
     },
     {
       "id": null,
       "text": "The sibling's email send cannot be named in a deep case: the answer item carries \"no email\", and gws's own send case grades the plan and the decline.",
-      "line": 39
+      "line": 37
     }
   ],
   "hashes": {
-    "source_sha256": "03c44c692bbac32025a244eaf0b60057949c5dc7d60c9426b0acce74a9d350d5"
+    "source_sha256": "cea6ac59b27ee8ba1fae1545a9083325f2eced40ecda580c23264f4039a8e9d5"
   }
 }

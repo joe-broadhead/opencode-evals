@@ -73,7 +73,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "valid|problem|warning|issue|ok",
+            "source": "(no (problems|issues|warnings)|valid:\\s*(true|false))",
             "flags": "i"
           }
         }
@@ -107,14 +107,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "charts.render",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "charts.update",
-          "n": null
+          "kind": "absent-write",
+          "ns": "charts"
         },
         {
           "kind": "absent",
@@ -144,12 +138,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a42007d62dde69c9fc21ff0dfc39bbc97204917fc3d74fd36579544d98f16732"
+    "source_sha256": "72af79a08f9d0f2ead43d63d29a126ec0349a9152b7aa83ec42ecd350aa8fc0b"
   }
 }

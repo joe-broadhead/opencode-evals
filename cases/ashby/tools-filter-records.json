@@ -132,6 +132,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "ashby"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -154,7 +158,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     }
   ],
   "oracle": [],
@@ -162,10 +166,10 @@
     {
       "id": null,
       "text": "A count is read from the tool's count form; the item does not require a particular number, which moves with the world.",
-      "line": 35
+      "line": 36
     }
   ],
   "hashes": {
-    "source_sha256": "840816791cda60f166280863c3d74e197410a96a66c640c87207b67b17121857"
+    "source_sha256": "01686719f14e4947cb986ddf05c5b1dca36437dfac265cba3c3f85cb35839a55"
   }
 }

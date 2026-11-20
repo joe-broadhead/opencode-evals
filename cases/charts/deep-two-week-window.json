@@ -45,30 +45,7 @@
       "line": 17
     },
     {
-      "id": "CHT-DT01",
-      "severity": "major",
-      "ask": "The answer names the two-week window it used.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(2024-02|February|two weeks|14 days)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
-      "id": "CHT-OC02",
+      "id": "CHT-OC01",
       "severity": "minor",
       "ask": "It did not restyle or update the saved chart instead of drawing the window.",
       "forbidden": false,
@@ -83,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 20
     },
     {
-      "id": "CHT-OC03",
+      "id": "CHT-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -99,7 +76,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 22
     },
     {
       "id": "CHT-SF01",
@@ -125,7 +102,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 26
     },
     {
       "id": "CHT-SF02",
@@ -141,12 +118,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4696b9234998aaa7173b52ee2167ebf9512777c8dd8007515662182db85cad39"
+    "source_sha256": "2c20ce91a78804cff2d679580f260110e0504faf08326654bf562cfd25694e63"
   }
 }

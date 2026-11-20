@@ -96,7 +96,12 @@
           "tool": "metaview.create_job_post_check",
           "n": 1,
           "arg": "args.prompt",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "world-class",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -182,16 +187,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "metaview.run_job_post_checks",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "metaview.upsert_job_post_template",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -214,12 +209,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "824b03b6e5413cb7a470a6418a06350ab4eee872e93fe24644868e27ee3fc27a"
+    "source_sha256": "0c11cf9f9ea6d04ce5b385a72dd1b645494e68e82d8e3572e92fcc426abd93a6"
   }
 }

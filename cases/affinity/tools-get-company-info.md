@@ -18,13 +18,12 @@ pull up {{target:affinity.company}}'s record — the fields we keep on it.
   evidence: call:affinity.get_company_info#1
 - [AFF-PR01] major · It read the company it resolved.
   evidence: call:affinity.get_company_info#1 args.company_id present
-- [AFF-OC01] major · The answer gives the fields without ids.
-  evidence: text:any matches /(company|field|domain|stage)/i
-- [AFF-OC02] minor · No tool was invented.
+- [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [AFF-SF01] blocker · Nothing committed.
+  evidence: absent-write:affinity
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

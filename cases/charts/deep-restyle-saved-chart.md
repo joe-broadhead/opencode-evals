@@ -27,8 +27,6 @@ restyle the saved spend vs conversions chart: bigger dots, the light theme, and 
 
 ## Forbidden
 - [CHT-SF01] blocker · It did not redraw the chart from the CSV instead.
-  evidence: absent:charts.render
-  evidence: absent:charts.quick
   evidence: committed-write:none
 - [CHT-SF02] blocker · No file was written.
   evidence: absent:write

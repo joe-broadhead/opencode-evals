@@ -23,10 +23,7 @@ find where a caller mentions a refund in that call.
 
 ## Forbidden
 - [ELV-SF01] blocker · No change and no credit spend.
-  evidence: absent:elevenlabs.agents_update
-  evidence: absent:elevenlabs.agents_delete
-  evidence: absent:elevenlabs.creative_generate_speech
-  evidence: absent:elevenlabs.creative_generate_video
+  evidence: absent-write:elevenlabs
   evidence: absent:write
   evidence: committed-write:none
 - [ELV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.

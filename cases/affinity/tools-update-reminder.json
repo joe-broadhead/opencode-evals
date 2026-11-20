@@ -76,7 +76,12 @@
           "tool": "affinity.update_reminder",
           "n": 1,
           "arg": "args.due_date",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "T[0-9]{2}:[0-9]{2}",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -178,6 +183,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d31510818772b3bcc01e57c82127fd3fd6cbe3cb4d944c9d4ef3a88bef05bb18"
+    "source_sha256": "d10904e560c7acc192aa6e58c44ad340a3a849434f3a1c75cc070169a50066b8"
   }
 }

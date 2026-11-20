@@ -52,7 +52,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(photo|image|editing|can't|cannot)",
+            "source": "(can't|cannot|not able|outside|no tool)",
             "flags": "i"
           }
         }
@@ -86,6 +86,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "charts"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -108,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d300b895e543c616c725d9a94d3f2570463b56e9359a589cd53d3e4c1dacc8ad"
+    "source_sha256": "397ccfb7d5c7f5b59641a31f4a88243b793dc5ac1bb839d6cec4648b0eada2e3"
   }
 }

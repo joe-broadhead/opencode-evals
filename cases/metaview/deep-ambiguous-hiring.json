@@ -61,7 +61,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(which|review|screen|backend)",
+            "source": "(which (review|role|screen)|two|both)",
             "flags": "i"
           }
         }
@@ -107,9 +107,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "metaview.give_application_review_candidate_feedback",
-          "n": null
+          "kind": "absent-write",
+          "ns": "metaview"
         },
         {
           "kind": "absent",
@@ -145,6 +144,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a85810e13588c664cab4579290d49e82116ed488964ef86ea14fbf55dfe1b472"
+    "source_sha256": "0eed295f8fcaa7671673949f56fb4cf42fa429737aa84a80b94027383308b09c"
   }
 }

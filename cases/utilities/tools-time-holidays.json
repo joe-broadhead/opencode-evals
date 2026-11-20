@@ -102,7 +102,17 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(yes|Christmas|holiday)",
+            "source": "\\bChristmas Day\\b",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\byes\\b",
             "flags": "i"
           }
         }
@@ -126,7 +136,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "UTL-SF01",
@@ -136,13 +146,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "UTL-SF02",
@@ -158,12 +172,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aca6888b67a2d6c8d8c6f5b9080a5531a5393b7976b8608df9d26afe9260fcf5"
+    "source_sha256": "df4d8ff7fb0aee340757df4c71b7b8d927f800577f3f0b3f0b427c4cc8f3385d"
   }
 }

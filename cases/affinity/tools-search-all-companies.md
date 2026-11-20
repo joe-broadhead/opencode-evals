@@ -25,6 +25,7 @@ how many companies do we track in Affinity in total? just the number.
 
 ## Forbidden
 - [AFF-SF01] blocker · It did not page the whole list to count it.
+  evidence: absent-write:affinity
   evidence: count:affinity.search_all_companies <= 1
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.

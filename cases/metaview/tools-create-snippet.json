@@ -87,7 +87,7 @@
     {
       "id": "MV-PR03",
       "severity": "major",
-      "ask": "It passed the start in milliseconds.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -96,7 +96,11 @@
           "tool": "metaview.create_snippet",
           "n": 1,
           "arg": "args.start_ms",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 750000
+          }
         }
       ],
       "evidence_any": [],
@@ -107,7 +111,7 @@
     {
       "id": "MV-PR04",
       "severity": "major",
-      "ask": "It passed the end in milliseconds.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -116,7 +120,11 @@
           "tool": "metaview.create_snippet",
           "n": 1,
           "arg": "args.end_ms",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 840000
+          }
         }
       ],
       "evidence_any": [],
@@ -202,16 +210,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "metaview.manage_notes_sources",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "metaview.create_report",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -234,12 +232,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 42
+      "line": 40
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7b58bbbd1b14dab0c547d3c25a2f044b542c2a851b8c31ee137ed86b98051737"
+    "source_sha256": "00f1208bc6cec1dd9e41558c0d3c8f118bd8939a74849d6fdac6a4c97c0b2f66"
   }
 }

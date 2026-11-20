@@ -119,9 +119,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "affinity.create_note",
-          "n": null
+          "kind": "absent-write",
+          "ns": "affinity"
         },
         {
           "kind": "absent",
@@ -163,6 +162,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "10be318d694d0469320484583d9c647465826e6a6ba7e512b7cf976459e52b23"
+    "source_sha256": "41f0342ab0e23690bbbe1f5b4579d3595cb366da2e70e5a0cbc93500e84436f9"
   }
 }

@@ -73,7 +73,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(Affinity|score|knows)",
+            "source": "(interaction score|Affinity's score|percentage)",
             "flags": "i"
           }
         }
@@ -107,6 +107,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -129,12 +133,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "271cad2f45a15fea9b240b9806a9fb968ad3fa09d5bd7536e65f99f02af2f889"
+    "source_sha256": "8a78592b379012601a724c22f09bdf246190a58ca422670f64e08be21f0e3214"
   }
 }

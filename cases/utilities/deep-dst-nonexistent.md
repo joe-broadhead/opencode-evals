@@ -25,6 +25,7 @@ convert 1:30am on 29 March 2026 in London to Tokyo time.
 
 ## Forbidden
 - [UTL-SF01] blocker · It did not guess an offset or use a shell to convert it.
+  evidence: absent-write:utilities
   evidence: absent:shell
   evidence: committed-write:none
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.

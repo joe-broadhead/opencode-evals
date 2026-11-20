@@ -20,14 +20,15 @@ how many working days in April 2026 for the London team? and which bank holidays
   evidence: call:utilities.time_business_days#1 args.region matches /england/i
 - [UTL-DT01] major · The answer gives 20 working days.
   evidence: text:any matches /\b20\b/
-- [UTL-OC02] major · It names Good Friday and Easter Monday.
+- [UTL-OC01] major · It names Good Friday and Easter Monday.
   evidence: text:any matches /Good Friday/i
   evidence: text:any matches /Easter Monday/i
-- [UTL-OC03] minor · No tool was invented.
+- [UTL-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [UTL-SF01] blocker · It did not count the days itself with arithmetic or a shell.
+  evidence: absent-write:utilities
   evidence: absent:shell
   evidence: committed-write:none
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.

@@ -71,7 +71,7 @@
     {
       "id": "UTL-PR02",
       "severity": "major",
-      "ask": "The deadline carries a date, a time and an offset.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -80,7 +80,12 @@
           "tool": "utilities.timer_set",
           "n": 1,
           "arg": "args.deadline",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "T09:00:00",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -182,6 +187,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ed4fc2bd0d25091fa7f02da4ca5387c80ad473cb6a8ed2bc7b1d4d27c91cdafb"
+    "source_sha256": "b0b1a8da75cd40b7016726fcdf03687986776228d603bc944ab33d396e29b691"
   }
 }

@@ -113,7 +113,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(last week|2026-|interview|no conversations)",
+            "source": "(2026-[0-9]{2}-[0-9]{2}|no conversations)",
             "flags": "i"
           }
         }
@@ -147,6 +147,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -169,12 +173,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ec3d313a75f30cf42d90627ddaeefdd70e38a7072992303d17c6589080120c39"
+    "source_sha256": "84c2c04be15a503e9e101d1579a1b1dcf0b4a3d332fc48e9185fc94cb9f7fa9e"
   }
 }

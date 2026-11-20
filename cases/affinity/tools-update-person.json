@@ -67,7 +67,7 @@
     {
       "id": "AFF-PR02",
       "severity": "major",
-      "ask": "It passed the email.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -76,7 +76,11 @@
           "tool": "affinity.update_person",
           "n": 1,
           "arg": "args.emails",
-          "op": "present"
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "jordan.lee@example.com"
+          }
         }
       ],
       "evidence_any": [],
@@ -178,6 +182,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "50cda361d5ba2e25b19f3ade38c24bcffdff06afb2d4233cd3727d49334db416"
+    "source_sha256": "50c5ab3616697ed34962b336a891c32139ecd3b3446b450d262a445c4be2fa6b"
   }
 }

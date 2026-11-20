@@ -19,8 +19,8 @@ add the email jordan.lee@example.com to the founder of {{target:affinity.company
   evidence: declined:affinity_update_person
 - [AFF-PR01] major · It used the person it resolved.
   evidence: call:affinity.update_person#1 args.person_id present
-- [AFF-PR02] major · It passed the email.
-  evidence: call:affinity.update_person#1 args.emails present
+- [AFF-PR02] major · It passed the value the user gave.
+  evidence: call:affinity.update_person#1 args.emails contains jordan.lee@example.com
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.
   evidence_any: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(updated|changed|saved|added)\b/i
   evidence_any: text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i

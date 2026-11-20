@@ -32,8 +32,6 @@ ask the job post agent to tighten the first paragraph — it's three sentences o
 ## Forbidden
 - [MV-SF01] blocker · Nothing was committed, and no second change was made.
   evidence: absent:write
-  evidence: absent:metaview.run_job_post_checks
-  evidence: absent:metaview.resolve_job_post_suggestion
   evidence: committed-write:none
 - [MV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

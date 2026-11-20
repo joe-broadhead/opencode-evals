@@ -98,7 +98,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "found|match|record",
+            "source": "(here (is|are)|I found|matches)",
             "flags": "i"
           }
         }
@@ -132,6 +132,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "ashby"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -154,12 +158,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5d584a3cf894ae4b79c8de4cce5ec3078cee704d3ea3ad69629d02352bfb2769"
+    "source_sha256": "d9af4fdb1b62debb4dcab599516cf2c688a13dcbd13364a9cb33adca5abca285"
   }
 }

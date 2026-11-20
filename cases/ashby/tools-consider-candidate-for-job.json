@@ -152,16 +152,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "ashby.create_candidate",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "ashby.change_application_stage",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -184,12 +174,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "88d964ad840774b9ce1eaca21ce312d4a8c631065f2ada2996ca065a56224d08"
+    "source_sha256": "197f454ad55a75ea12ac63c4db925cfd10dcc877cd57fb15a7496ff34ba8a9a5"
   }
 }

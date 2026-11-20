@@ -182,16 +182,6 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "metaview.send_job_post_message",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "metaview.run_job_post_checks",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -214,12 +204,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a5df0079fd2604b5aba3851c37efedef30fa72dba1515121463d764601739b52"
+    "source_sha256": "a7c82b8bb0c45d0ff7bd47a577995ac56afe7844f033e1291e07fb4e3af83f2a"
   }
 }

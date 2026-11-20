@@ -78,7 +78,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(spec|data|nodes|links)",
+            "source": "(nodes|links)",
             "flags": "i"
           }
         }
@@ -112,6 +112,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "charts"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -134,12 +138,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aa7981e368dd3c6da0094d5d6e7b76a1d318a9e8303fa02e37cdb2cffd7d7ae6"
+    "source_sha256": "86c8122941161b8d6a89dfe61c1ac69b78412164ea1d8b8e728e57dddc868c48"
   }
 }

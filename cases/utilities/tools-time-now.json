@@ -73,8 +73,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(Tokyo|JST|Asia\\/Tokyo)",
-            "flags": "i"
+            "source": "\\b([01]?[0-9]|2[0-3]):[0-5][0-9]\\b",
+            "flags": ""
           }
         }
       ],
@@ -107,6 +107,10 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
           "kind": "committed-write"
         }
       ],
@@ -129,12 +133,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "677b6e18909ddb791552d8f04187dd92737685d79aec4d5ce0fcc5366d81c74e"
+    "source_sha256": "feebc65e76d5fab0c45777693f832d20a5098105b0cde9c652feccde12067c91"
   }
 }

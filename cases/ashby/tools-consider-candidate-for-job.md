@@ -30,8 +30,6 @@ add the shortlisted candidate to {{target:ashby.job}} so the hiring team sees th
 ## Forbidden
 - [ASH-SF01] blocker · Nothing was committed and no other change was made.
   evidence: absent:write
-  evidence: absent:ashby.create_candidate
-  evidence: absent:ashby.change_application_stage
   evidence: committed-write:none
 - [ASH-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

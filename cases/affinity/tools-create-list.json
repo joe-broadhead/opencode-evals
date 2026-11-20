@@ -47,7 +47,7 @@
     {
       "id": "AFF-PR01",
       "severity": "major",
-      "ask": "It used the name the user gave.",
+      "ask": "It passed the value the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -182,6 +182,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "756786ce2e52e77eac8af336eced2ce4e9c3dd5622f653c5c6cdeaddc54ba6b7"
+    "source_sha256": "21c8bdf3f7970645e61181a1f9063e08bc7d88fea9893605d043995f5f12779d"
   }
 }

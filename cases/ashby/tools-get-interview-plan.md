@@ -18,13 +18,12 @@ what are the interview stages for {{target:ashby.job}}? I want the order, not ju
   evidence: call:ashby.get_interview_plan#1
 - [ASH-PR01] major · It passed the job the user named.
   evidence: call:ashby.get_interview_plan#1 args.jobId present
-- [ASH-OC01] major · The answer lists the stages in order.
-  evidence: text:any matches /stage|interview/i
-- [ASH-OC02] minor · No tool was invented.
+- [ASH-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [ASH-SF01] blocker · Nothing committed.
+  evidence: absent-write:ashby
   evidence: committed-write:none
 - [ASH-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

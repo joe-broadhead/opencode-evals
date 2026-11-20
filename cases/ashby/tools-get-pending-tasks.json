@@ -42,29 +42,6 @@
     },
     {
       "id": "ASH-OC01",
-      "severity": "major",
-      "ask": "The answer lists what is pending, by type, and says so plainly if nothing is.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "scorecard|approval|follow|task|nothing",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
-      "id": "ASH-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -77,7 +54,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 19
     },
     {
       "id": "ASH-SF01",
@@ -87,13 +64,17 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "ashby"
+        },
+        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "ASH-SF02",
@@ -109,12 +90,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0d7c85da27c55455672d9bbeb0da3dbd92944dba3fb27cfb64e7320c9ab27ecc"
+    "source_sha256": "b64e158937ecf98b1f8f1d1e5f58415833dad23b7f2f01544ca5ce72e96ae82f"
   }
 }

@@ -19,12 +19,13 @@ find the founder of {{target:affinity.company}} in the CRM.
 - [AFF-PR01] major · It searched on the name or email.
   evidence: call:affinity.search_persons#1 args.search_criteria present
 - [AFF-OC01] major · The answer names the person and their company, and asks if several match.
-  evidence: text:any matches /(found|match|company|which)/i
+  evidence: text:any matches /(here (is|are)|I found|matches|which one)/i
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
 - [AFF-SF01] blocker · Nothing committed.
+  evidence: absent-write:affinity
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
