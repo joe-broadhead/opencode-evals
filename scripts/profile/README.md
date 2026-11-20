@@ -29,12 +29,23 @@ A PASS is not the end of the story: the evals sign-in must not have broken the *
 known from here (`RECHECK_HOURS` is a recheck interval, not a lifetime; Notion and Jira tokens really last 8 h). So nothing infers a mint
 time. Instead the real credential's `expires` is recorded as a **baseline** — a time only, never a token or a digest of one — when the vendor
 is signed in (`log-signin.mjs`, through `--server`), or at the first `check-real` for a vendor signed in before that (later than its sign-in,
-so conservative). The chain is **verified** only when a later check reads a **later** `expires` than the baseline (a refresh happened after
-it) and the identity read passes: `refresh chain verified: the real token was refreshed after <baseline time>`. Until then the check stays
-**provisional**, with a deadline of the baseline's `expires` **+ 5 minutes** — fixed, because the baseline does not move, so a second
-`--recheck` gives the same time. An expiry more than 30 days from now (a seconds/ms mistake, a broken export) is not trusted; with no usable
-expiry the line says *unknown: no expiry on the real credential* and never claims verified. Seconds and milliseconds are both accepted and
-normalised.
+so conservative). A **re-sign-in replaces the vendor's baseline**: it is the new fixed point, so a real refresh between two sign-ins cannot
+count as one after the second. `check-real` only ever records a baseline when none exists. The chain is **verified** only when a later check
+reads a **later** `expires` than the baseline (a refresh happened after it) and the identity read passes: `refresh chain verified: the real
+token was refreshed after <baseline time>`. Until then the check stays **provisional**, with a deadline of the baseline's `expires` **+ 5
+minutes** — fixed, because the baseline does not move, so a second `--recheck` gives the same time. An expiry more than 30 days from now (a
+seconds/ms mistake, a broken export) is not trusted; with no usable expiry the line says *unknown: no expiry on the real credential* and never
+claims verified. Seconds and milliseconds are both accepted and normalised.
+
+A stored baseline must be coherent: `|expires − at| ≤ 30 days`, `at` not in the future, and `expires` within 30 days of now. Otherwise it is
+ignored with one line naming the vendor, and a new one is taken. A baseline file that is not readable JSON is moved aside as
+`refresh-baseline.json.corrupt-<UTC date-time>` and a fresh one started; valid entries for other vendors are kept. Writers take a short lock
+and write through a unique temp file, so two concurrent rechecks cannot lose each other's vendor. `log-signin.mjs` runs the real-service
+guard again before it reads the real profile (the sign-in can take minutes); when the guard reports a problem it takes no baseline and the
+next `check-real` does.
+
+`--redo` is a **full redo**: it forgets what passed and clears `refresh-baseline.json`, so every vendor's baseline is taken again at its next
+sign-in or check-real.
 
 ## Safety rules
 

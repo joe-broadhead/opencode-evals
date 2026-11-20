@@ -4,11 +4,11 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { spawnSync, spawn } from "node:child_process"
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync, chownSync, chmodSync, lstatSync } from "node:fs"
+import { existsSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, symlinkSync, chownSync, chmodSync, lstatSync, openSync, closeSync, unlinkSync } from "node:fs"
 import { join, dirname } from "node:path"
 import { tmpdir } from "node:os"
 import { fileURLToPath } from "node:url"
-import { IDENTITY, IDENTITY_INPUT, IDENTITY_ACTION, IDENTITY_INNER, IDENTITY_EXPECT, judgeAnswer, errorSignal, shapeProblem, identityCheck, rpcFailure, realServiceProblem, realServerPassword, realServerUrl, refreshChain, profileConfig, loadPins, WALK_ORDER, appClientEntry, activeCredential as activeCredentialOf } from "./profile-lib.mjs"
+import { IDENTITY, IDENTITY_INPUT, IDENTITY_ACTION, IDENTITY_INNER, IDENTITY_EXPECT, judgeAnswer, errorSignal, shapeProblem, identityCheck, rpcFailure, realServiceProblem, realServerPassword, realServerUrl, refreshChain, recordBaseline, profileConfig, loadPins, WALK_ORDER, appClientEntry, activeCredential as activeCredentialOf } from "./profile-lib.mjs"
 import { keepOnce } from "./keeper.mjs"
 import { createHash, randomBytes } from "node:crypto"
 import { statSync } from "node:fs"
@@ -923,6 +923,21 @@ test("refreshChain: a later expiry is not verified unless the identity read pass
 test("the real web server is loopback only: a non-loopback URL is refused before any call", () => {
   for (const url of ["http://127.0.0.1:4096", "http://localhost:4096", "http://[::1]:4096"]) assert.equal(realServerUrl({ EVALS_REAL_SERVER: url }), url)
   for (const url of ["http://example.com:4096", "https://10.0.0.1:4096", "ftp://127.0.0.1:4096", "http://127.0.0.1.evil.com:4096", "not a url"]) assert.throws(() => realServerUrl({ EVALS_REAL_SERVER: url }), /loopback/, url)
+  // The reviewer's parser cases: refused, or normalised to a loopback origin with no userinfo, path, query or fragment.
+  const normalised = new Map([
+    ["http://127.0.0.1:4096\\@evil.com", "http://127.0.0.1:4096"],
+    ["HTTP://LOCALHOST", "http://localhost"],
+    ["http://127.0.0.1:4096/anything?x=1#f", "http://127.0.0.1:4096"],
+    ["http://[::1]:4096/path", "http://[::1]:4096"],
+  ])
+  for (const [input, expected] of normalised) {
+    const out = realServerUrl({ EVALS_REAL_SERVER: input })
+    assert.equal(out, expected, input)
+    assert.ok(!out.includes("@") && !out.includes("?") && !out.includes("#"), `${input}: no userinfo, query or fragment`)
+  }
+  // (built from parts: the privacy gate reads a userinfo URL as an email address)
+  const userinfoUrl = ["http://127.0.0.1", "evil.com"].join("@")
+  for (const input of ["0x7f000001", "2130706433", "127.1", "user:pw@127.0.0.1", userinfoUrl, "http://[::ffff:127.0.0.1]"]) assert.throws(() => realServerUrl({ EVALS_REAL_SERVER: input }), /loopback/, input)
   const r = rig()
   try {
     const out = checkReal(r, "linear", { EVALS_REAL_SERVER: "http://example.com:4096" })
@@ -946,6 +961,182 @@ test("signin.sh: a completed sign-in logs its time and records the real expiry a
     assert.ok(!Number.isNaN(Date.parse(entry.at)), "with the time it completed")
     assert.deepEqual({ expires: baselineOf(r).expires, source: baselineOf(r).source }, { expires, source: "sign-in" })
   } finally {
+    r.done()
+  }
+})
+
+// ---- round 8: a re-sign-in is the new fixed point; a corrupt baseline is ignored; writers share the file --------------------------------
+const logSignin = (r, integration = "linear", extra = {}) => spawnSync(process.execPath, [join(HERE, "log-signin.mjs"), r.env.EVALS_STORE, integration], { env: { ...r.env, ...extra }, encoding: "utf8" })
+const baselineFile = (r) => join(r.env.EVALS_STORE, "refresh-baseline.json")
+
+test("check-real: a re-sign-in replaces the baseline, so a refresh between two sign-ins does not count as one after the second", () => {
+  const r = rig()
+  const first = NOW + 4 * HOUR
+  try {
+    realLinear(r, first)
+    assert.equal(logSignin(r).status, 0)
+    assert.equal(baselineOf(r).expires, first)
+    // A real refresh between the two sign-ins: this proves the chain against the FIRST sign-in...
+    realLinear(r, NOW + 12 * HOUR)
+    assert.match(checkReal(r, "linear").stdout, /refresh chain verified/)
+    // ...but the second sign-in is the fixed point now, so that refresh no longer counts.
+    assert.equal(logSignin(r).status, 0)
+    assert.equal(baselineOf(r).expires, NOW + 12 * HOUR, "the sign-in replaced the baseline")
+    const afterSecond = checkReal(r, "linear")
+    assert.match(afterSecond.stdout, /provisional: the real refresh chain is checked again by/)
+    assert.doesNotMatch(afterSecond.stdout, /refresh chain verified/)
+    // Only a refresh after the second sign-in verifies.
+    realLinear(r, NOW + 20 * HOUR)
+    assert.match(checkReal(r, "linear").stdout, /refresh chain verified: the real token was refreshed after/)
+  } finally {
+    r.done()
+  }
+})
+
+test("baselines: a sign-in replaces, check-real keeps (pinned)", () => {
+  const r = rig()
+  const first = NOW + 4 * HOUR
+  try {
+    const kept = recordBaseline(r.env.EVALS_STORE, "linear", first, { now: NOW, at: new Date(NOW - 2 * HOUR).toISOString() })
+    assert.equal(kept.expires, first)
+    // check-real's record (replace false) never moves an existing baseline...
+    const same = recordBaseline(r.env.EVALS_STORE, "linear", NOW + 12 * HOUR, { now: NOW })
+    assert.equal(same.expires, first)
+    assert.equal(baselineOf(r).expires, first)
+    // ...and always keeps it when the check itself runs beside a later real expiry.
+    realLinear(r, NOW + 12 * HOUR)
+    evalsLinear(r)
+    assert.match(checkReal(r, "linear").stdout, /refresh chain verified/)
+    assert.equal(baselineOf(r).expires, first, "check-real did not move the baseline")
+    // a sign-in (replace true) does move it
+    assert.equal(logSignin(r).status, 0)
+    assert.equal(baselineOf(r).expires, NOW + 12 * HOUR)
+    // and a sign-in whose real expiry cannot be trusted clears the old fixed point rather than keeping it
+    writeFileSync(baselineFile(r), JSON.stringify({ linear: { expires: NOW + 12 * HOUR, at: new Date(NOW).toISOString(), source: "sign-in" } }))
+    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R")) // no expires
+    assert.equal(logSignin(r).status, 0)
+    assert.equal(JSON.parse(readFileSync(baselineFile(r), "utf8")).linear, undefined, "no stale baseline survives an untrusted re-sign-in")
+  } finally {
+    r.done()
+  }
+})
+
+test("signin.sh --redo clears the baseline file (a full redo)", () => {
+  const r = rig()
+  try {
+    writeBaseline(r, NOW + 6 * HOUR)
+    writeBaseline(r, NOW + 7 * HOUR, { integration: "notion" })
+    const out = spawnSync(join(HERE, "signin.sh"), ["--redo", "--list"], { env: { ...r.env, EVALS_BIN: HERE }, encoding: "utf8" })
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.equal(existsSync(baselineFile(r)), false, "every vendor's baseline is gone")
+    assert.match(out.stdout, /openrouter\s+not yet/)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a corrupt or hand-edited baseline is ignored with one line, and re-recorded", () => {
+  const cases = [
+    ["expires 1", { expires: 1, at: new Date(NOW - 2 * HOUR).toISOString() }],
+    ["at in the future", { expires: NOW + 6 * HOUR, at: new Date(NOW + 2 * HOUR).toISOString() }],
+    ["expires far from when it was taken", { expires: NOW + 6 * HOUR, at: new Date(NOW - 35 * 24 * HOUR).toISOString() }],
+  ]
+  for (const [name, entry] of cases) {
+    const r = rig()
+    try {
+      writeFileSync(baselineFile(r), JSON.stringify({ linear: entry }))
+      evalsLinear(r)
+      realLinear(r, NOW + 6 * HOUR)
+      const out = checkReal(r, "linear")
+      assert.equal(out.status, 0, `${name}: ${out.stdout}${out.stderr}`)
+      assert.match(out.stderr, /refresh baseline for linear: .*; ignoring it and taking a new one/, name)
+      assert.doesNotMatch(out.stdout, /refresh chain verified/, name)
+      assert.equal(baselineOf(r).expires, NOW + 6 * HOUR, `${name}: re-recorded from the current real expiry`)
+    } finally {
+      r.done()
+    }
+  }
+})
+
+test("baselines: unreadable JSON is moved aside, and a corrupt entry does not drop another vendor's", () => {
+  const r = rig()
+  const broken = '{"linear":{"expires":1,"at":"2026-01-01T00:00:00Z"},"notion":{"expires":'
+  try {
+    writeFileSync(baselineFile(r), broken)
+    evalsLinear(r)
+    realLinear(r, NOW + 6 * HOUR)
+    const out = checkReal(r, "linear")
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stderr, /was not readable JSON; moved it aside and started a new file/)
+    const aside = readdirSync(r.env.EVALS_STORE).find((n) => n.startsWith("refresh-baseline.json.corrupt-"))
+    assert.ok(aside, "the unreadable file is kept")
+    assert.equal(readFileSync(join(r.env.EVALS_STORE, aside), "utf8"), broken)
+    assert.deepEqual(Object.keys(JSON.parse(readFileSync(baselineFile(r), "utf8"))), ["linear"])
+    // a readable file with one bad entry: the other vendor's baseline survives the rewrite
+    const valid = { linear: { expires: 1, at: new Date(NOW - 2 * HOUR).toISOString() }, notion: { expires: NOW + 7 * HOUR, at: new Date(NOW - 2 * HOUR).toISOString(), source: "sign-in" } }
+    writeFileSync(baselineFile(r), JSON.stringify(valid))
+    const again = checkReal(r, "linear")
+    assert.equal(again.status, 0, again.stdout + again.stderr)
+    const all = JSON.parse(readFileSync(baselineFile(r), "utf8"))
+    assert.equal(all.linear.expires, NOW + 6 * HOUR)
+    assert.deepEqual(all.notion, valid.notion, "the other vendor's baseline is kept")
+  } finally {
+    r.done()
+  }
+})
+
+test("baselines: eight concurrent writers keep every vendor's entry and none throws", async () => {
+  const r = rig()
+  const vendors = ["affinity", "ashby", "plaud", "gws", "slack", "x", "linear", "notion"]
+  try {
+    const lib = new URL(`file://${join(HERE, "profile-lib.mjs")}`).href
+    const code = `import(${JSON.stringify(lib)}).then((m) => { m.recordBaseline(process.argv[1], process.argv[2], Number(process.argv[3])) })`
+    const children = vendors.map((v, i) => spawn(process.execPath, ["-e", code, r.env.EVALS_STORE, v, String(NOW + (i + 1) * HOUR)], { env: r.env, stdio: "ignore" }))
+    const codes = await Promise.all(children.map((c) => new Promise((resolve) => c.on("close", resolve))))
+    assert.deepEqual(codes, vendors.map(() => 0), "no writer threw")
+    const all = JSON.parse(readFileSync(baselineFile(r), "utf8"))
+    for (const [i, v] of vendors.entries()) assert.equal(all[v]?.expires, NOW + (i + 1) * HOUR, v)
+  } finally {
+    r.done()
+  }
+})
+
+test("baselines: a writer waits for another holder's lock instead of writing through it", async () => {
+  const r = rig()
+  const lock = join(r.env.EVALS_STORE, "refresh-baseline.json.lock")
+  try {
+    closeSync(openSync(lock, "wx", 0o600))
+    const lib = new URL(`file://${join(HERE, "profile-lib.mjs")}`).href
+    const code = `import(${JSON.stringify(lib)}).then((m) => { m.recordBaseline(process.argv[1], process.argv[2], Number(process.argv[3])) })`
+    const child = spawn(process.execPath, ["-e", code, r.env.EVALS_STORE, "linear", String(NOW + 6 * HOUR)], { env: r.env, stdio: "ignore" })
+    let exited = false
+    const done = new Promise((resolve) => child.on("close", (status) => { exited = true; resolve(status) }))
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    assert.equal(exited, false, "the writer waits while the lock is held")
+    assert.equal(existsSync(baselineFile(r)), false, "nothing was written while the lock was held")
+    unlinkSync(lock)
+    assert.equal(await done, 0)
+    assert.equal(baselineOf(r).expires, NOW + 6 * HOUR)
+  } finally {
+    try {
+      unlinkSync(lock)
+    } catch {}
+    r.done()
+  }
+})
+
+test("log-signin: the real-service guard runs again, and with a problem no baseline is taken", async () => {
+  const r = rig()
+  const server = spawn(process.execPath, ["-e", "require('node:net').createServer().listen(0,'127.0.0.1',function(){console.log(this.address().port)})"], { stdio: ["ignore", "pipe", "inherit"] })
+  try {
+    const port = await new Promise((res) => server.stdout.once("data", (d) => res(Number(String(d).trim()))))
+    const out = spawnSync(process.execPath, [join(HERE, "log-signin.mjs"), r.env.EVALS_STORE, "linear"], { env: { ...r.env, EVALS_REAL_SERVICE_PORT: String(port) }, encoding: "utf8" })
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stderr, /log-signin: a listener on the real service's port \d+: .*; no baseline was taken/)
+    assert.equal(existsSync(baselineFile(r)), false, "no baseline while a real service problem exists")
+    assert.match(readFileSync(join(r.env.EVALS_STORE, "round-232.log"), "utf8"), /"event":"sign-in"/, "the sign-in time is still logged")
+  } finally {
+    server.kill()
     r.done()
   }
 })

@@ -1,8 +1,8 @@
 // The evals profile (EVALS-232 §1.2): the helpers `check-real`, `keeper` and the tests share. Nothing here prints a credential.
 
-import { createHash } from "node:crypto"
+import { createHash, randomBytes } from "node:crypto"
 import { spawnSync } from "node:child_process"
-import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, lstatSync, chmodSync, renameSync, writeFileSync } from "node:fs"
+import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, lstatSync, chmodSync, renameSync, writeFileSync, openSync, closeSync, unlinkSync, statSync } from "node:fs"
 import { join, dirname } from "node:path"
 import { homedir, userInfo } from "node:os"
 import { fileURLToPath } from "node:url"
@@ -275,11 +275,18 @@ export function loopbackUrl(url) {
   return (parsed.protocol === "http:" || parsed.protocol === "https:") && LOOPBACK_HOSTS.has(parsed.hostname)
 }
 
-/** The web server's URL (EVALS_REAL_SERVER overrides). A non-loopback host is refused: the password would go with it. */
+/** The web server's URL (EVALS_REAL_SERVER overrides). A non-loopback host is refused: the password would go with it. The origin is
+ *  returned, so no userinfo, path, query or fragment from the raw string reaches the CLI (parser differentials stay out of argv). */
 export function realServerUrl(env = process.env) {
   const url = env.EVALS_REAL_SERVER ?? DEFAULT_REAL_SERVER
-  if (!loopbackUrl(url)) throw new Error(`EVALS_REAL_SERVER (or --real-server) must be a loopback URL (127.0.0.1, localhost or [::1]), not ${url}: the real web server's password would be sent there`)
-  return url
+  let parsed
+  try {
+    parsed = new URL(String(url))
+  } catch {
+    parsed = null
+  }
+  if (!parsed || !loopbackUrl(parsed)) throw new Error(`EVALS_REAL_SERVER (or --real-server) must be a loopback URL (127.0.0.1, localhost or [::1]), not ${url}: the real web server's password would be sent there`)
+  return parsed.origin
 }
 
 /** The web server's password from its env file (EVALS_REAL_SERVER_ENV overrides the file), read per call: never kept, printed or put in argv. Null when there is none. */
@@ -469,41 +476,138 @@ export function timeValue(v) {
 export const credentialExpires = (credential) => timeValue(credential?.value?.expires ?? credential?.expires)
 
 /** The vendor's baseline from the store: { expires, at, source }, or null. A time only: no token, no digest. */
-export function readBaseline(store, integration) {
+export function readBaseline(store, integration, { now = Date.now(), warn = (message) => console.error(message) } = {}) {
   if (!store) return null
-  let all
-  try {
-    all = JSON.parse(readFileSync(join(store, BASELINE_FILE), "utf8"))
-  } catch {
+  const { all, file } = readBaselineFile(store)
+  if (!all || all[integration] === undefined) return null
+  const why = baselineProblem(all[integration], now)
+  if (why) {
+    warn(`refresh baseline for ${integration}: ${why}; ignoring it and taking a new one (${file})`)
     return null
   }
-  const entry = all?.[integration]
+  return normaliseBaseline(all[integration])
+}
+
+/** Is a stored baseline entry trustworthy? Null when it is, else why not. */
+function baselineProblem(entry, now) {
   const expires = timeValue(entry?.expires)
-  if (!expires || typeof entry?.at !== "string" || Number.isNaN(Date.parse(entry.at))) return null
-  return { expires, at: entry.at, source: typeof entry.source === "string" ? entry.source : "check-real" }
+  if (!expires) return "its expiry is not a time"
+  const at = typeof entry?.at === "string" ? Date.parse(entry.at) : NaN
+  if (Number.isNaN(at)) return "its time is not a date"
+  if (at > now) return "it was taken in the future"
+  if (Math.abs(expires - at) > EXPIRY_TRUST_MS) return "its expiry is more than 30 days from when it was taken"
+  if (Math.abs(expires - now) > EXPIRY_TRUST_MS) return "its expiry is more than 30 days from now"
+  return null
+}
+
+const normaliseBaseline = (entry) => ({ expires: timeValue(entry.expires), at: entry.at, source: typeof entry.source === "string" ? entry.source : "check-real" })
+
+/** The baseline file's JSON object, or null; `corrupt` when the file exists but is not one. */
+function readBaselineFile(store) {
+  const file = join(store, BASELINE_FILE)
+  let text
+  try {
+    text = readFileSync(file, "utf8")
+  } catch {
+    return { file, all: null, corrupt: false }
+  }
+  try {
+    const all = JSON.parse(text)
+    if (all && typeof all === "object" && !Array.isArray(all)) return { file, all, corrupt: false }
+  } catch {}
+  return { file, all: null, corrupt: true }
+}
+
+const utcStamp = () => new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z")
+
+/** Writes the file under a unique temp name and renames it: a reader sees the old file or the new one, never half of either. */
+function writeBaselineFile(file, all) {
+  const tmp = `${file}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`
+  try {
+    writeFileSync(tmp, `${JSON.stringify(all, null, 2)}\n`, { mode: 0o600 })
+    chmodSync(tmp, 0o600)
+    renameSync(tmp, file)
+  } finally {
+    try {
+      unlinkSync(tmp)
+    } catch {}
+  }
+}
+
+const sleepBriefly = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+
+/**
+ * Runs `fn` while holding the baseline lock, so two rechecks cannot lose each other's vendor (a unique temp name alone does not stop a
+ * lost update). A lock older than 30 s is stale and is removed; if the lock still cannot be taken after two seconds the work runs anyway —
+ * a recheck must never throw for it, and the entry it writes is still a time it read itself.
+ */
+function withBaselineLock(store, fn) {
+  const lock = join(store, `${BASELINE_FILE}.lock`)
+  const deadline = Date.now() + 2_000
+  let held = false
+  while (!held) {
+    try {
+      closeSync(openSync(lock, "wx", 0o600))
+      held = true
+    } catch (error) {
+      if (error.code !== "EEXIST") break
+      try {
+        if (Date.now() - statSync(lock).mtimeMs > 30_000) {
+          unlinkSync(lock)
+          continue
+        }
+      } catch {}
+      if (Date.now() > deadline) break
+      sleepBriefly(10)
+    }
+  }
+  try {
+    return fn()
+  } finally {
+    if (held) {
+      try {
+        unlinkSync(lock)
+      } catch {}
+    }
+  }
 }
 
 /**
- * Records the FIRST baseline for a vendor, and returns it. An existing baseline is never moved: it is the fixed point. A baseline is only
- * written when its expiry is trusted now. Times only.
+ * Records a vendor's baseline and returns it. `replace: true` is a sign-in: the vendor's baseline becomes the new fixed point (an untrusted
+ * or missing expiry clears it rather than keeping an older one). `replace: false` is check-real: it keeps the first baseline. A corrupt
+ * file is moved aside as `<file>.corrupt-<UTC date-time>` and a new one started; other vendors' valid entries are kept. Times only.
  */
-export function recordBaseline(store, integration, expires, { at = new Date().toISOString(), source = "check-real", now = Date.now() } = {}) {
+export function recordBaseline(store, integration, expires, { at = new Date().toISOString(), source = "check-real", now = Date.now(), replace = false, warn = (message) => console.error(message) } = {}) {
   if (!store) return null
-  const existing = readBaseline(store, integration)
-  if (existing) return existing
-  if (!trustedExpiry(expires, now)) return null
-  let all = {}
-  try {
-    all = JSON.parse(readFileSync(join(store, BASELINE_FILE), "utf8"))
-  } catch {}
-  if (!all || typeof all !== "object" || Array.isArray(all)) all = {}
-  all[integration] = { expires: Math.round(expires), at, source }
-  const file = join(store, BASELINE_FILE)
   mkdirSync(store, { recursive: true, mode: 0o700 })
-  writeFileSync(`${file}.tmp`, `${JSON.stringify(all, null, 2)}\n`, { mode: 0o600 })
-  chmodSync(`${file}.tmp`, 0o600)
-  renameSync(`${file}.tmp`, file)
-  return all[integration]
+  const existing = readBaseline(store, integration, { now, warn: () => {} })
+  if (existing && !replace) return existing
+  return withBaselineLock(store, () => {
+    const { file, all, corrupt } = readBaselineFile(store)
+    let base = all ?? {}
+    if (corrupt) {
+      // Unreadable JSON cannot contribute other vendors' entries: keep it as evidence and start a fresh file.
+      try {
+        renameSync(file, `${file}.corrupt-${utcStamp()}`)
+        warn(`refresh baselines: ${file} was not readable JSON; moved it aside and started a new file`)
+      } catch {}
+      base = {}
+    }
+    const current = base[integration]
+    if (!replace && current && !baselineProblem(current, now)) return normaliseBaseline(current)
+    if (!trustedExpiry(expires, now)) {
+      // A sign-in whose real expiry cannot be trusted must not leave an older fixed point behind.
+      if (replace && current !== undefined) {
+        delete base[integration]
+        writeBaselineFile(file, base)
+      }
+      return null
+    }
+    base[integration] = { expires: Math.round(expires), at, source }
+    mkdirSync(store, { recursive: true, mode: 0o700 })
+    writeBaselineFile(file, base)
+    return base[integration]
+  })
 }
 
 /**

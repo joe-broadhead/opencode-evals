@@ -58,7 +58,7 @@ for v in $from $only $rv; do
   case " $EXCLUDED " in *" $v "*) echo "signin.sh: $v is not signed in: they run in fake mode (accounts: fake): no account, no real endpoint" >&2; exit 2 ;; esac
   known "$v" || { echo "signin.sh: no vendor $v: $ORDER" >&2; exit 2; }
 done
-[ "$redo" = 1 ] && : > "$PASSED"
+[ "$redo" = 1 ] && { : > "$PASSED"; rm -f -- "$STORE/refresh-baseline.json"; }
 
 if [ "$list" = 1 ]; then
   n=0
