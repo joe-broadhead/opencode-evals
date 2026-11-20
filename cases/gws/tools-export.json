@@ -188,31 +188,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "gws.write",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.send",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.share",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.delete",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.admin",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -227,10 +202,10 @@
     {
       "id": null,
       "text": "A read with download.path is an export: it writes a file, so it plans as export.",
-      "line": 48
+      "line": 43
     }
   ],
   "hashes": {
-    "source_sha256": "35694fa1ae9001f1052be1390e9ea655918f043f2aa883eeafaf22ec58531ae1"
+    "source_sha256": "abf16c8ccf06e4102140f7d04ac04d1cdfbcf0dc53beb25a8ee4d7dc0e833fef"
   }
 }

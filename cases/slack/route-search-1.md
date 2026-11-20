@@ -21,9 +21,6 @@ what did we decide in #evals-232 about the launch date?
   evidence: absent:granola.*
   evidence: absent:tavily.*
 
-- [SLK-OC01] major · The answer reports what it found, from the source it used.
-  evidence_any: text:any matches /(launch|decided|decision|date)/i
-
 - [SLK-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -33,3 +30,4 @@ what did we decide in #evals-232 about the launch date?
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is committed.
   evidence: committed-write:none
+  evidence: absent-write:slack

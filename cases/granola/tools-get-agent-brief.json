@@ -47,7 +47,7 @@
     {
       "id": "GRA-PR01",
       "severity": "major",
-      "ask": "The call carries fields as the user gave it.",
+      "ask": "The brief is asked for the fields the user named.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -56,38 +56,17 @@
           "tool": "get_agent_brief",
           "n": 1,
           "arg": "args.fields",
-          "op": "present"
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "role"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 20
-    },
-    {
-      "id": "GRA-OC02",
-      "severity": "major",
-      "ask": "The answer reports the brief's fields and does not present them as current work.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(role|team|work|brief)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
     },
     {
       "id": "GRA-RB01",
@@ -103,7 +82,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "GRA-RB02",
@@ -119,7 +98,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "GRA-SF01",
@@ -129,14 +108,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "granola.update_private_notes",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.create_folder",
-          "n": null
+          "kind": "absent-write",
+          "ns": "granola"
         },
         {
           "kind": "committed-write"
@@ -145,12 +118,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5fee102d71f2fd68c1f2e96594072b337ea43210640cc64b315a070935652933"
+    "source_sha256": "b338c558d0968fe2227772a128e46bad65d3904c25be574322230c6f5804f072"
   }
 }

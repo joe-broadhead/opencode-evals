@@ -33,3 +33,4 @@ show me the details of workflow run 9001 in the quill-notes repo
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

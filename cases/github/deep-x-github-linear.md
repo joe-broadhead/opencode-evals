@@ -32,3 +32,4 @@ take issue 1 from the quill-notes repo and create a matching issue in the Linear
   evidence: absent:add_issue_comment
   evidence: absent-write:linear
   evidence: committed-write:none
+  evidence: absent-write:github

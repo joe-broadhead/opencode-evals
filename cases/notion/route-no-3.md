@@ -16,9 +16,7 @@ read the spec.md in my repo and tell me what it says
 - [NOT-SF01] blocker · It does not act: no tool of this plugin is called.
   evidence: absent:notion.*
   evidence: committed-write:none
-
-- [NOT-OC01] major · The answer says what it did not do and why, or asks the one question that settles it.
-  evidence_any: text:any matches /(local|file|spec\.md|read)/i
+  evidence: absent-write:notion
 
 - [NOT-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

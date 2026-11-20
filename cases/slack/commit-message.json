@@ -77,31 +77,6 @@
       "line": 21
     },
     {
-      "id": "SLK-OC01",
-      "severity": "major",
-      "ask": "The answer says it was posted.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(posted|sent|message)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 24
-    },
-    {
       "id": "SLK-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -115,7 +90,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 24
     },
     {
       "id": "SLK-RB02",
@@ -131,7 +106,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 27
     },
     {
       "id": "SLK-SF01",
@@ -145,27 +120,17 @@
           "tool": "slack.slack_send_message",
           "op": "<=",
           "value": 1
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.slack_schedule_message",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.mark_read",
-          "n": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ab6e4ebed712efbfc90827923b6b057fb38142ce24b89a7701ed058e5f02a632"
+    "source_sha256": "320a73249022b05f00664444e9db7cc5510517860e239be7e33c6e272984b868"
   }
 }

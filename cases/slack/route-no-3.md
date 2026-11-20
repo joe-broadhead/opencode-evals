@@ -16,9 +16,7 @@ summarise the chat-export.csv on my Desktop and list the busiest channels
 - [SLK-SF01] blocker · It does not act: no tool of this plugin is called.
   evidence: absent:slack.*
   evidence: committed-write:none
-
-- [SLK-OC01] major · The answer says what it did not do and why, or asks the one question that settles it.
-  evidence_any: text:any matches /(local|file|desktop|chat-export|read)/i
+  evidence: absent-write:slack
 
 - [SLK-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

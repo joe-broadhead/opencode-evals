@@ -184,11 +184,6 @@
       "evidence": [
         {
           "kind": "absent",
-          "tool": "slack.slack_send_message",
-          "n": null
-        },
-        {
-          "kind": "absent",
           "tool": "slack.slack_get_reactions",
           "n": null
         },
@@ -205,6 +200,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c97d0da2ed30eca1f51d8c1719a9fa23297701f9f531c70231ef32184646422c"
+    "source_sha256": "96bf2819504e14bd455abc84b444c95eaf6a47804e161c8256665c603e6370f8"
   }
 }

@@ -26,31 +26,6 @@
   "data": "seeded",
   "items": [
     {
-      "id": "NOT-OC01",
-      "severity": "major",
-      "ask": "The answer reports the Doc's content it would copy.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(launch|plan|doc|copy)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 18
-    },
-    {
       "id": "NOT-WR01",
       "severity": "blocker",
       "ask": "One Notion page create is attempted.",
@@ -67,7 +42,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 18
     },
     {
       "id": "NOT-WR02",
@@ -84,7 +59,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 21
     },
     {
       "id": "NOT-WR03",
@@ -119,7 +94,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 24
     },
     {
       "id": "NOT-RB01",
@@ -135,7 +110,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 27
     },
     {
       "id": "NOT-RB02",
@@ -151,7 +126,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     },
     {
       "id": "NOT-SF00",
@@ -165,28 +140,18 @@
           "ns": "gws"
         },
         {
-          "kind": "absent",
-          "tool": "notion-move-pages",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "notion-delete-pages",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ba08237d230501f5ba34ee3f10f9d2724ab37fe59b89e9dc2a56393f2249cc8c"
+    "source_sha256": "38b474b52941e6f0100ff1550b8065b8f60de88d124fbd710c44b7b3d960d052"
   }
 }

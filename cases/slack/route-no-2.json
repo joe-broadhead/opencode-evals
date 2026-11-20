@@ -36,37 +36,16 @@
         },
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "slack"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 16
-    },
-    {
-      "id": "SLK-OC01",
-      "severity": "major",
-      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(meeting|granola|wispr|not (something )?I can|cannot|can't|unable|not available)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
     },
     {
       "id": "SLK-RB01",
@@ -82,7 +61,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "SLK-RB02",
@@ -98,12 +77,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 24
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "efb520b1a8ba144b0bd21cb2a09f6b80f0ef144cde4818793e2fb2f4555e4ac1"
+    "source_sha256": "c8ab61ccc2f7f5b6fc9e6a678a7b2283b9e24dca4cc0b7034a4b81954689cd3d"
   }
 }

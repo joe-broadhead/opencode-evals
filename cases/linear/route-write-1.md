@@ -33,6 +33,7 @@ create a Linear issue in the evals team for the flaky test
 ## Forbidden
 - [LIN-SF01] blocker · Nothing is committed.
   evidence: committed-write:none
+  evidence: absent-write:linear
 
 ## Notes
 - The write is declined at ask-changes; the route is what the case grades.

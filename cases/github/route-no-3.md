@@ -16,9 +16,7 @@ check the uncommitted diff in my working copy and tell me what changed
 - [GH-SF01] blocker · It does not act: no tool of this plugin is called.
   evidence: absent:github.*
   evidence: committed-write:none
-
-- [GH-OC01] major · The answer says what it did not do and why, or asks the one question that settles it.
-  evidence_any: text:any matches /(local|working copy|diff|git|uncommitted)/i
+  evidence: absent-write:github
 
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

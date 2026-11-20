@@ -33,8 +33,4 @@ create a page under evals-232 called week one notes
 
 ## Forbidden
 - [NOT-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:notion-delete-pages
-  evidence: absent:notion-delete-databases
-  evidence: absent:notion-restore-version
-  evidence: absent:notion-move-pages
   evidence: committed-write:none

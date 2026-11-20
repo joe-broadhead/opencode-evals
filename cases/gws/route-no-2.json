@@ -36,37 +36,16 @@
         },
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "gws"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 16
-    },
-    {
-      "id": "GWS-OC01",
-      "severity": "major",
-      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(weather|forecast|not (something )?I can|cannot|can't|unable|not available)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
     },
     {
       "id": "GWS-RB01",
@@ -82,7 +61,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "GWS-RB02",
@@ -98,7 +77,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 24
     }
   ],
   "oracle": [],
@@ -106,10 +85,10 @@
     {
       "id": null,
       "text": "No gws tool is called at all: the request names no mail, file, calendar or task.",
-      "line": 30
+      "line": 28
     }
   ],
   "hashes": {
-    "source_sha256": "0379ff7e0a25c11d2a3ef1fa30c91faa969ea1f8e538d58e337352308c667e71"
+    "source_sha256": "fa30f2452e29f34cb21bd4c3bd9510a1c178940d48bb07e50dc966fb50d1c013"
   }
 }

@@ -45,31 +45,6 @@
       "line": 17
     },
     {
-      "id": "GH-DT01",
-      "severity": "major",
-      "ask": "The answer names the window it covered, in days or dates.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(first week|september|[0-9]{1,2} [A-Z][a-z]+)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
       "id": "GH-OC02",
       "severity": "major",
       "ask": "It reports a commit that landed in that window.",
@@ -88,7 +63,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 20
     },
     {
       "id": "GH-RB01",
@@ -104,7 +79,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "GH-RB02",
@@ -120,7 +95,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "GH-SF00",
@@ -141,17 +116,21 @@
         },
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "github"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7a2ba9ea2702eb4d084de5f1403f033ef102aa2dd20091e73286f0418b8fd49f"
+    "source_sha256": "a23d228620670f2ada919e84e2e423cfacfa081ffc46cc9b2c72ea8a01bf9272"
   }
 }

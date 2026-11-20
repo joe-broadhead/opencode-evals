@@ -133,31 +133,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "notion-delete-pages",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "notion-delete-databases",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "notion-restore-version",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "notion-move-pages",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "notion-create-pages",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -170,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e37c3ab010731f254632ce5991049f12e1b0b54237f349c342227aea335f4689"
+    "source_sha256": "4af32c818e943089a2c2e9ab3936ce40b24d838cf1497d45fa2ab7529d18e256"
   }
 }

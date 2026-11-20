@@ -28,7 +28,5 @@ summarise the meeting
 
 ## Forbidden
 - [GRA-SF01] blocker · Nothing is changed.
-  evidence: absent:granola.create_folder
-  evidence: absent:granola.update_private_notes
-  evidence: absent:granola.export_markdown
+  evidence: absent-write:granola
   evidence: committed-write:none

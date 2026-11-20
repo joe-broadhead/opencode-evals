@@ -125,16 +125,15 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "save_issue",
-          "n": null
-        },
-        {
           "kind": "absent-write",
           "ns": "slack"
         },
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "linear"
         }
       ],
       "evidence_any": [],
@@ -146,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bfa0e87c7a90aa157f5bd7fb7dcff05c9372e4002d7ab8915df4cd5b4e2db2ad"
+    "source_sha256": "f850f9c4b4954c3851bcc6dc348f59deae5ecb74a7075240eeda7b1a7b554fc7"
   }
 }

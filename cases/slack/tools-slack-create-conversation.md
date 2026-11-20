@@ -34,6 +34,4 @@ create a private channel called evals-232-scratch
 
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:slack.slack_send_message
-  evidence: absent:slack.slack_create_list
   evidence: committed-write:none

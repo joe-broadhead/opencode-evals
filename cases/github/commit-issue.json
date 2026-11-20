@@ -74,31 +74,6 @@
       "line": 21
     },
     {
-      "id": "GH-OC01",
-      "severity": "major",
-      "ask": "The answer gives the issue's number or link.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(issue|#[0-9]+|github\\.com)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 24
-    },
-    {
       "id": "GH-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -112,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 24
     },
     {
       "id": "GH-RB02",
@@ -128,7 +103,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 27
     },
     {
       "id": "GH-SF01",
@@ -161,7 +136,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 31
     }
   ],
   "oracle": [],
@@ -169,10 +144,10 @@
     {
       "id": null,
       "text": "Runs only with the repo-scoped fine-grained token (P0-6b); `github_api` writes stay confirm-only.",
-      "line": 41
+      "line": 38
     }
   ],
   "hashes": {
-    "source_sha256": "3c58ac4dd9caaf5bc393b260a221f8cc28f26884e935078149e1cd7209064547"
+    "source_sha256": "aa70be5c9c9148a14aeca09b0997a25489e5f9c9fbd5f25e452fcc47b5703639"
   }
 }

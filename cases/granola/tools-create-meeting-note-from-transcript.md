@@ -30,8 +30,6 @@ make a Granola note from this transcript, starting at 9am today: a short synthet
 
 ## Forbidden
 - [GRA-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:granola.update_private_notes
-  evidence: absent:granola.generate_summary
   evidence: committed-write:none
 
 ## Notes

@@ -33,3 +33,4 @@ which teams am I in?
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

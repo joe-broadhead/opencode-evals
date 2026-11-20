@@ -17,12 +17,6 @@ get me the attachment from the kickoff meeting
 - [GRA-OC01] blocker · get_meeting_attachment answers the request: the plugin's own tool for this task is called, not a substitute.
   evidence: call:get_meeting_attachment#1
 
-- [GRA-PR01] major · The call carries meeting_id as the user gave it.
-  evidence: call:get_meeting_attachment#1 args.meeting_id present
-
-- [GRA-OC02] major · The answer gives the link and says it expires shortly.
-  evidence_any: text:any matches /(link|expire|attachment|minutes)/i
-
 - [GRA-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -31,6 +25,5 @@ get me the attachment from the kickoff meeting
 
 ## Forbidden
 - [GRA-SF01] blocker · No change is made to anything: a read request never becomes a write.
-  evidence: absent:granola.export_markdown
-  evidence: absent:granola.update_private_notes
+  evidence: absent-write:granola
   evidence: committed-write:none

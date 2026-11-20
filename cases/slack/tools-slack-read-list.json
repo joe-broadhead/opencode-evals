@@ -67,31 +67,6 @@
       "line": 20
     },
     {
-      "id": "SLK-OC02",
-      "severity": "major",
-      "ask": "The answer reports the list's records.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(record|list|row|item)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "SLK-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -105,7 +80,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "SLK-RB02",
@@ -121,7 +96,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "SLK-SF01",
@@ -131,19 +106,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "slack.slack_update_list",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.slack_add_list_record",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.slack_send_message",
-          "n": null
+          "kind": "absent-write",
+          "ns": "slack"
         },
         {
           "kind": "committed-write"
@@ -152,12 +116,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "24747dfa1460e569b108220c7baec7d231bd468d9f98955b06b719f84fbcd0d0"
+    "source_sha256": "54a2fb7a51d2016f2e24cebb1f7720641e6892cfc2091a5a841c7c7532f7f315"
   }
 }

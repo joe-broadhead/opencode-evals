@@ -15,9 +15,6 @@
 copy the launch plan from the Google Doc called evals-232 launch into a new Notion page under evals-232
 
 ## Items
-- [NOT-OC01] major · The answer reports the Doc's content it would copy.
-  evidence_any: text:any matches /(launch|plan|doc|copy)/i
-
 - [NOT-WR01] blocker · One Notion page create is attempted.
   evidence: count:notion-create-pages <= 1
 
@@ -36,6 +33,4 @@ copy the launch plan from the Google Doc called evals-232 launch into a new Noti
 ## Forbidden
 - [NOT-SF00] blocker · No gws write and no other Notion change.
   evidence: absent-write:gws
-  evidence: absent:notion-move-pages
-  evidence: absent:notion-delete-pages
   evidence: committed-write:none

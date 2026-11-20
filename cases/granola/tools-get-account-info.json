@@ -42,31 +42,6 @@
       "line": 16
     },
     {
-      "id": "GRA-OC02",
-      "severity": "major",
-      "ask": "The answer names the workspace it is signed in to.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(workspace|signed in|account|evals)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
       "id": "GRA-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -80,7 +55,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 19
     },
     {
       "id": "GRA-RB02",
@@ -96,7 +71,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 22
     },
     {
       "id": "GRA-SF01",
@@ -106,9 +81,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "granola.create_folder",
-          "n": null
+          "kind": "absent-write",
+          "ns": "granola"
         },
         {
           "kind": "committed-write"
@@ -117,12 +91,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1f69c3836cb0ff42a9d0e667c78f12e9137588582e66cfb274805b29c3cd8e9d"
+    "source_sha256": "f59bf93275fd1eb18cbd30c9d7c65793ad7dbd57e78682147c8633b262bec6a4"
   }
 }

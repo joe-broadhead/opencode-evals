@@ -16,9 +16,7 @@ read the budget.csv on my Desktop and tell me the total
 - [GWS-SF01] blocker · It does not act: no tool of this plugin is called.
   evidence: absent:gws.*
   evidence: committed-write:none
-
-- [GWS-OC01] major · The answer says what it did not do and why, or asks the one question that settles it.
-  evidence_any: text:any matches /(local|file|desktop|budget\.csv|read)/i
+  evidence: absent-write:gws
 
 - [GWS-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

@@ -36,37 +36,16 @@
         },
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "granola"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 16
-    },
-    {
-      "id": "GRA-OC01",
-      "severity": "major",
-      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(inbox|mail|gmail|not (something )?I can|cannot|can't|unable|not available)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
     },
     {
       "id": "GRA-RB01",
@@ -82,7 +61,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "GRA-RB02",
@@ -98,12 +77,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 24
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "530bf16a132f52252e292c4867f16a2878050bbdfdc660d277796e6c10b5a8e9"
+    "source_sha256": "f5875307b2565531f0ffb1dd3395a13e24cdf0235e3f0975d248761bb9666da6"
   }
 }

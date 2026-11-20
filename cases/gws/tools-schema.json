@@ -69,41 +69,6 @@
       "line": 20
     },
     {
-      "id": "GWS-OC02",
-      "severity": "major",
-      "ask": "The answer shows the operation's parameters, including the time window one.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "timeMin",
-              "flags": ""
-            }
-          },
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(calendarId|singleEvents)",
-              "flags": ""
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "GWS-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -117,7 +82,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "GWS-RB02",
@@ -133,7 +98,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "GWS-SF01",
@@ -143,17 +108,12 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "gws"
+        },
+        {
           "kind": "absent",
           "tool": "gws.read",
-          "n": null
-        },
-        {
-          "kind": "absent-write",
-          "ns": "inference"
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.write",
           "n": null
         },
         {
@@ -163,12 +123,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4d13f166980340364b81290ee1608a5336c354b3abf259f2a63a578ea4b66dbf"
+    "source_sha256": "c291e52e7cc5c1115aa9ffbc49105035210f6cd861439cf1e5c6601579a9d2d1"
   }
 }

@@ -70,37 +70,16 @@
         },
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "linear"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 19
-    },
-    {
-      "id": "LIN-OC02",
-      "severity": "major",
-      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(flaky|issue|comment)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 26
     },
     {
       "id": "LIN-RB01",
@@ -116,7 +95,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 27
     },
     {
       "id": "LIN-RB02",
@@ -132,12 +111,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0ed74d9dd7d82c05586da6f8bf42f2818953de2887a19b6d0f3f68150d42dc6d"
+    "source_sha256": "728644a20910a13f5f7d9bb7acd471f4615b85f00183234312e697765e82221b"
   }
 }

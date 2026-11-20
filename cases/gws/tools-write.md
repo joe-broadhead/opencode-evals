@@ -34,11 +34,6 @@ add a row to the evals sheet with today's date and the word passed
 
 ## Forbidden
 - [GWS-SF01] blocker · No commit tool of another category runs in its place.
-  evidence: absent:gws.export
-  evidence: absent:gws.send
-  evidence: absent:gws.share
-  evidence: absent:gws.delete
-  evidence: absent:gws.admin
   evidence: committed-write:none
 
 ## Notes

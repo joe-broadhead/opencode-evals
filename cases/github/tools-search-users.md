@@ -37,3 +37,4 @@ find a GitHub user called evals-bot-232
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

@@ -42,31 +42,6 @@
       "line": 16
     },
     {
-      "id": "NOT-DT01",
-      "severity": "major",
-      "ask": "The answer names the window and the pages.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(last week|monday|tuesday|wednesday|thursday|friday|[0-9]{1,2} [A-Z][a-z]+)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
       "id": "NOT-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -80,7 +55,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 19
     },
     {
       "id": "NOT-RB02",
@@ -96,7 +71,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 22
     },
     {
       "id": "NOT-SF01",
@@ -106,14 +81,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "notion-update-page",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "notion-create-pages",
-          "n": null
+          "kind": "absent-write",
+          "ns": "notion"
         },
         {
           "kind": "committed-write"
@@ -122,12 +91,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "dc405217c4c988aab8acde164a952b09d467f0935ab43ced273689911954c814"
+    "source_sha256": "bfb791686d26ea0627176a8febc681448c5c782d9650c981b247e1210494a20b"
   }
 }

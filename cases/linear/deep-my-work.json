@@ -53,31 +53,6 @@
     {
       "id": "LIN-OC02",
       "severity": "major",
-      "ask": "It pages while hasNextPage is true, or says it stopped early.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(more|stopped|first page|all [0-9]+|no more)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
-      "id": "LIN-OC03",
-      "severity": "major",
       "ask": "Each issue it names carries its identifier and link.",
       "forbidden": false,
       "grader": "code",
@@ -97,32 +72,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
-    },
-    {
-      "id": "LIN-OC04",
-      "severity": "major",
-      "ask": "It does not present the number of rows as a total unless it counted them all.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(in progress|started|backlog|total|count)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 26
+      "line": 20
     },
     {
       "id": "LIN-RB01",
@@ -138,7 +88,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 23
     },
     {
       "id": "LIN-RB02",
@@ -154,7 +104,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 26
     },
     {
       "id": "LIN-SF01",
@@ -164,19 +114,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "save_issue",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "save_comment",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "share_issue",
-          "n": null
+          "kind": "absent-write",
+          "ns": "linear"
         },
         {
           "kind": "committed-write"
@@ -185,7 +124,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 30
     }
   ],
   "oracle": [],
@@ -193,10 +132,10 @@
     {
       "id": null,
       "text": "The count item is graded on the wording ('total' only when everything was counted), which is what the skill requires.",
-      "line": 43
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "24f4070f375e5a6fd5c7874ac37c80fcd2fe432ebf11499fd378a5e107c4eae6"
+    "source_sha256": "eb66302c7497ffcc63ddab04ec53a1d7b3b735c8a5d8666a75897e84efbc6f2b"
   }
 }

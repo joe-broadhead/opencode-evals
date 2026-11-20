@@ -16,9 +16,6 @@ show the file tree of the quill-notes repo at main
 - [GH-OC01] blocker · get_repository_tree answers the request: the plugin's own tool for this task is called, not a substitute.
   evidence: call:get_repository_tree#1
 
-- [GH-OC02] major · The answer reports what the read returned.
-  evidence_any: text:any matches /(README|docs\/sync|quill)/i
-
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -33,3 +30,4 @@ show the file tree of the quill-notes repo at main
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

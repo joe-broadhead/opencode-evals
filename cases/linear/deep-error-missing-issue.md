@@ -31,8 +31,8 @@ open the issue called zzz evals 232 missing and show me its comments
 
 ## Forbidden
 - [LIN-SF01] blocker · No invented identifier and no create.
+  evidence: absent-write:linear
   evidence: absent:get_issue
-  evidence: absent:save_issue
   evidence: committed-write:none
 
 ## Notes

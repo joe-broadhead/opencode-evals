@@ -33,6 +33,7 @@ summarise the board meeting from last Tuesday
   evidence: absent:query_granola_meetings
   evidence: absent:get_meeting_transcript
   evidence: committed-write:none
+  evidence: absent-write:granola
 
 ## Notes
 - An empty search does not prove the topic never came up; the answer must say what it searched.

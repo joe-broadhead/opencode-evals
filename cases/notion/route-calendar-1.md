@@ -20,9 +20,6 @@ what's on my Notion calendar this week?
 - [NOT-RT02] major · The overlapping plugin is not called.
   evidence: absent:gws.*
 
-- [NOT-OC01] major · The answer reports what it found, from the source it used.
-  evidence_any: text:any matches /(event|week|calendar)/i
-
 - [NOT-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -31,3 +28,8 @@ what's on my Notion calendar this week?
 
 ## Notes
 - Naming Notion Calendar is what makes this Notion's; the unnamed 'my calendar' case is gws's.
+
+## Forbidden
+- [NOT-SF01] blocker · Nothing is written and nothing is committed.
+  evidence: absent-write:notion
+  evidence: committed-write:none

@@ -130,6 +130,10 @@
       "evidence": [
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "linear"
         }
       ],
       "evidence_any": [],
@@ -143,10 +147,10 @@
     {
       "id": null,
       "text": "The write is declined at ask-changes; the route is what the case grades.",
-      "line": 38
+      "line": 39
     }
   ],
   "hashes": {
-    "source_sha256": "c6bca71c29e333bed656ea20683de78ab609aa2272ded3d9240a5b58c25cd633"
+    "source_sha256": "bceaa69b0998645e8f2af8419fc5177bd80708f0399a3d504dbddc4d37668235"
   }
 }

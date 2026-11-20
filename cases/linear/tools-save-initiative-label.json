@@ -133,31 +133,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "delete_comment",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "merge_diff",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "share_issue",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "save_issue",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "save_project",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -170,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7c0eee9c3a22bf62f1159445ef35a45358b19bd7185494cf4dfc847123403f97"
+    "source_sha256": "c3a934cb4f6afb5a874b40fe19c82bc384e994b693905db1d19e231126c29261"
   }
 }

@@ -30,9 +30,6 @@ which Linear user am I signed in as?
 
 ## Forbidden
 - [LIN-SF01] blocker · No change of any kind.
-  evidence: absent:save_issue
-  evidence: absent:save_comment
-  evidence: absent:share_issue
   evidence: committed-write:none
 
 ## Notes

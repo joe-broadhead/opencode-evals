@@ -120,19 +120,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "granola.create_folder",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.update_private_notes",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.export_markdown",
-          "n": null
+          "kind": "absent-write",
+          "ns": "granola"
         },
         {
           "kind": "committed-write"
@@ -147,6 +136,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f1d16a6b9cc62943fe3f29ce0cbda69e7b22a3fe6d5bb95ba3c4edd9c8649b4f"
+    "source_sha256": "7746b67f9da2297d0220e7ada887d691746e4e2a97c3d263dc2f2615ef397d7c"
   }
 }

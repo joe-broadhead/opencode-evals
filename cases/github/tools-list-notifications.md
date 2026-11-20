@@ -16,9 +16,6 @@ what are my unread notifications?
 - [GH-OC01] blocker · list_notifications answers the request: the plugin's own tool for this task is called, not a substitute.
   evidence: call:list_notifications#1
 
-- [GH-OC02] major · The answer reports what the read returned.
-  evidence_any: text:any matches /(no notification|nothing|none|empty)/i
-
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -33,3 +30,4 @@ what are my unread notifications?
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

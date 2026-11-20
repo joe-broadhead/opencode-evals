@@ -30,8 +30,6 @@ report a Granola problem for me: the markdown export drops the headings
 
 ## Forbidden
 - [GRA-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:granola.create_folder
-  evidence: absent:granola.export_markdown
   evidence: committed-write:none
 
 ## Notes

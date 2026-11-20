@@ -65,31 +65,6 @@
       "line": 20
     },
     {
-      "id": "GRA-OC01",
-      "severity": "major",
-      "ask": "The answer reports what it found, from the source it used.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(design review|meeting|summary|no meeting)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 24
-    },
-    {
       "id": "GRA-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -103,7 +78,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 24
     },
     {
       "id": "GRA-RB02",
@@ -119,7 +94,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 27
     },
     {
       "id": "GRA-SF01",
@@ -130,17 +105,21 @@
       "evidence": [
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "granola"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "098f1c6e11d8ab98572b29e738edb8b7a7045db01fccb6e84aab2a0c1d788a18"
+    "source_sha256": "4086b8e6c8dd09fda73d79bc3d57ddf607ca65c89fdfa4e6f98d24360c56c080"
   }
 }

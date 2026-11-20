@@ -60,31 +60,6 @@
       "line": 20
     },
     {
-      "id": "GH-OC01",
-      "severity": "major",
-      "ask": "The answer reports what it found, from the source it used.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(pull|PR|change|file|review)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "GH-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -98,7 +73,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "GH-RB02",
@@ -114,7 +89,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "GH-SF01",
@@ -125,17 +100,21 @@
       "evidence": [
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "github"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "dddc03278955a1c88670e118a499dc193326a59f2803bf0ed20c38d0ad16660d"
+    "source_sha256": "da1e6381e77dd1c4e0e35508aa785cdb18d737dd3b069c2996f92cd21412fff9"
   }
 }

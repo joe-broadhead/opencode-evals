@@ -130,6 +130,10 @@
       "evidence": [
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "slack"
         }
       ],
       "evidence_any": [],
@@ -143,10 +147,10 @@
     {
       "id": null,
       "text": "The send is declined at ask-changes; the route is what the case grades.",
-      "line": 38
+      "line": 39
     }
   ],
   "hashes": {
-    "source_sha256": "37f552b7e56f13f662dda152b897aa92e5b276c37930528167a6d4d9a75e4dac"
+    "source_sha256": "6ed46ca28cf3b8523683098e6209da67939b833065f9bd60bbcd54991d1e09ba"
   }
 }

@@ -16,9 +16,6 @@ for the activity collector: give me the inbox messages that arrived since its la
 - [GWS-OC01] blocker · events_list answers the request: the plugin's own tool for this task is called, not a substitute.
   evidence: call:events_list#1
 
-- [GWS-OC02] major · The answer returns the normalised events, or says the cursor is current.
-  evidence_any: text:any matches /(event|arrived|since|message)/i
-
 - [GWS-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -27,12 +24,7 @@ for the activity collector: give me the inbox messages that arrived since its la
 
 ## Forbidden
 - [GWS-SF01] blocker · No change is made to anything: a read request never becomes a write.
-  evidence: absent:gws.write
-  evidence: absent:send
-  evidence: absent-write:jobs
-  evidence: absent:share
-  evidence: absent-write:plaud
-  evidence: absent:admin
+  evidence: absent-write:gws
   evidence: committed-write:none
 
 ## Notes

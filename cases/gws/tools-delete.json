@@ -187,31 +187,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "gws.write",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.export",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.send",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.share",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.admin",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -226,10 +201,10 @@
     {
       "id": null,
       "text": "Trashing is delete, not write: the plan's category decides the commit tool.",
-      "line": 48
+      "line": 43
     }
   ],
   "hashes": {
-    "source_sha256": "55126f60e831110d0b861fa2f8d65e2f4bb0a3a10b5f7f0cddf1207cdcae1a83"
+    "source_sha256": "44dca986f86f0568f78491aeffb86512e80ffd2c503ba72369b45514d54945e5"
   }
 }

@@ -161,21 +161,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "notion-create-pages",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "notion-move-pages",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "notion-delete-pages",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -190,10 +175,10 @@
     {
       "id": null,
       "text": "'Add a line' is an edit, not a replacement; a replace_content call would fail the forbidden item if the trace could see the command, and the skill forbids it.",
-      "line": 43
+      "line": 40
     }
   ],
   "hashes": {
-    "source_sha256": "a69770a8b05ababb40d704ee44806d0d168da1223186b2d729b1f7c7b16ec0c5"
+    "source_sha256": "937997c6569c2735d0ba5b4d365407f4429cbb840fece1eb6c8635bbdb12ac43"
   }
 }

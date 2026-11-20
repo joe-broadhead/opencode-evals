@@ -134,12 +134,11 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "gws.send",
-          "n": null
+          "kind": "committed-write"
         },
         {
-          "kind": "committed-write"
+          "kind": "absent-write",
+          "ns": "gws"
         }
       ],
       "evidence_any": [],
@@ -157,6 +156,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "87941d33f4783bf4a56f8d152663b5550165cde1d8e7cbc7f5d7c913ba409ee7"
+    "source_sha256": "f7a7b48e747645faa64f712ae0d5eae8cb7dff6e040c6349637326cf20eac9b1"
   }
 }

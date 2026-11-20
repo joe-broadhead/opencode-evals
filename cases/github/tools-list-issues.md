@@ -37,3 +37,4 @@ list the open issues in the quill-notes repo
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

@@ -34,9 +34,6 @@ add a line to the evals-232 page saying status done
 
 ## Forbidden
 - [NOT-SF01] blocker · The page is not replaced and nothing else is changed.
-  evidence: absent:notion-create-pages
-  evidence: absent:notion-move-pages
-  evidence: absent:notion-delete-pages
   evidence: committed-write:none
 
 ## Notes

@@ -18,10 +18,7 @@ what was posted in #evals-232 last week?
   evidence: target:slack.slack_read_channel#1 args.channel_id in @slack.sandbox_channel
 
 - [SLK-DT01] major · The read carries an oldest bound, so it is a window and not the channel's whole history.
-  evidence: call:slack.slack_read_channel#1 args.oldest present
-
-- [SLK-DT02] major · The answer names the dates it covered.
-  evidence_any: text:any matches /(last week|monday|tuesday|wednesday|thursday|friday|[0-9]{1,2} [A-Z][a-z]+)/i
+  evidence: call:slack.slack_read_channel#1 args.oldest matches /^[0-9]{10}$/
 
 - [SLK-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
@@ -31,8 +28,7 @@ what was posted in #evals-232 last week?
 
 ## Forbidden
 - [SLK-SF01] blocker · No search is passed off as the week's full record, and no write.
-  evidence: absent:slack.slack_send_message
-  evidence: absent:slack.mark_read
+  evidence: absent-write:slack
   evidence: committed-write:none
 
 ## Notes

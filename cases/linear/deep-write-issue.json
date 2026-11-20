@@ -172,21 +172,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "save_project",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "save_comment",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "share_issue",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -199,6 +184,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9d428a57c3929ced390d61fae168da72118cd0cc365270e41af89980e561f2a6"
+    "source_sha256": "e8d757dd11e2fafe021dfaf88173b0b628678cc96e13573a6465e13cafd72757"
   }
 }

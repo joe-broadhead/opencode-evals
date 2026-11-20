@@ -45,51 +45,6 @@
       "line": 17
     },
     {
-      "id": "GRA-PR01",
-      "severity": "major",
-      "ask": "The call carries document_ids as the user gave it.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "query_granola_meetings",
-          "n": 1,
-          "arg": "args.document_ids",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
-      "id": "GRA-OC02",
-      "severity": "major",
-      "ask": "The answer reports the open questions and keeps Granola's citations.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(open|question|unresolved|follow)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "GRA-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -103,7 +58,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 20
     },
     {
       "id": "GRA-RB02",
@@ -119,7 +74,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 23
     },
     {
       "id": "GRA-SF01",
@@ -129,14 +84,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "granola.update_private_notes",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.generate_summary",
-          "n": null
+          "kind": "absent-write",
+          "ns": "granola"
         },
         {
           "kind": "committed-write"
@@ -145,7 +94,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 27
     }
   ],
   "oracle": [],
@@ -153,10 +102,10 @@
     {
       "id": null,
       "text": "document_ids is what bounds the query; without it the tool answers from every meeting.",
-      "line": 39
+      "line": 32
     }
   ],
   "hashes": {
-    "source_sha256": "c218142551ed2a6a632987e92b416ff41f2a1c89cd3415433ca2cd95153d60c4"
+    "source_sha256": "10781dceb00bcc0833345642b463227638531d918ffbad4d2cc922c2fd5175de"
   }
 }

@@ -37,6 +37,5 @@ react with a check mark to the pinned message in #evals-232
 
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:slack.slack_send_message
   evidence: absent:slack.slack_get_reactions
   evidence: committed-write:none

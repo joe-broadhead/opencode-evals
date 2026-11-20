@@ -158,16 +158,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "slack.slack_send_message",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "slack.slack_add_reaction",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -182,10 +172,10 @@
     {
       "id": null,
       "text": "mark_read is new in v0.0.6; it is a write even though it changes only the user's own read state.",
-      "line": 42
+      "line": 40
     }
   ],
   "hashes": {
-    "source_sha256": "dd9142b222f4609155b04d52ebb368238c506cce605a9307cdaeb1349abdfcce"
+    "source_sha256": "98e9f481d6a2ee776a6b781ddcdc7161c3fb78f32b9c14e0d1fd6c39ac713ea1"
   }
 }

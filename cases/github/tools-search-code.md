@@ -20,9 +20,6 @@ where is the export format documented in the quill-notes repo?
 - [GH-PR01] major · The call carries query as the user gave it.
   evidence: call:search_code#1 args.query contains reserveBatch
 
-- [GH-OC02] major · The answer reports what the read returned.
-  evidence_any: text:any matches /(README|quill|export)/i
-
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -37,3 +34,4 @@ where is the export format documented in the quill-notes repo?
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

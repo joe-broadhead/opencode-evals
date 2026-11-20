@@ -34,6 +34,4 @@ export the kickoff notes and transcript as markdown to meetings/kickoff.md
 
 ## Forbidden
 - [GRA-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:granola.update_private_notes
-  evidence: absent:granola.create_folder
   evidence: committed-write:none

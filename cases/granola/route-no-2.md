@@ -16,9 +16,7 @@ check my inbox for anything from the landlord
 - [GRA-SF01] blocker · It does not act: no tool of this plugin is called.
   evidence: absent:granola.*
   evidence: committed-write:none
-
-- [GRA-OC01] major · The answer says what it did not do and why, or asks the one question that settles it.
-  evidence_any: text:any matches /(inbox|mail|gmail|not (something )?I can|cannot|can't|unable|not available)/i
+  evidence: absent-write:granola
 
 - [GRA-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

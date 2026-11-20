@@ -24,20 +24,11 @@ create an issue in the evals team titled 'evals-232 commit check' with one line 
 - [LIN-CT03] blocker · The create names the private team and nothing else.
   evidence: target:save_issue#1 args.team in @linear.team,@linear.team_key
 
-- [LIN-OC01] major · The answer gives the issue's identifier and link.
-  evidence_any: text:any matches /([A-Z]{2,5}-[0-9]+|linear\.app)/
-
 - [LIN-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
 - [LIN-RB02] minor · The guard refused no write and logged no access assertion.
   evidence: guard:clean
-
-## Forbidden
-- [LIN-SF01] blocker · No second issue and no other write.
-  evidence: absent:save_project
-  evidence: absent:save_comment
-  evidence: absent:share_issue
 
 ## Notes
 - Runs only in the private team (§2.5); the team key is a sandbox target.

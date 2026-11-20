@@ -27,6 +27,5 @@ create an issue for the bug
 
 ## Forbidden
 - [LIN-SF01] blocker · No issue, project or comment is created.
-  evidence: absent:save_project
-  evidence: absent:save_comment
+  evidence: absent-write:linear
   evidence: committed-write:none

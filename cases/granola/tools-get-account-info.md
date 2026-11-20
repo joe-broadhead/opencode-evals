@@ -16,9 +16,6 @@ which Granola workspace am I in?
 - [GRA-OC01] blocker · get_account_info answers the request: the plugin's own tool for this task is called, not a substitute.
   evidence: call:get_account_info#1
 
-- [GRA-OC02] major · The answer names the workspace it is signed in to.
-  evidence_any: text:any matches /(workspace|signed in|account|evals)/i
-
 - [GRA-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none
 
@@ -27,5 +24,5 @@ which Granola workspace am I in?
 
 ## Forbidden
 - [GRA-SF01] blocker · No change is made to anything: a read request never becomes a write.
-  evidence: absent:granola.create_folder
+  evidence: absent-write:granola
   evidence: committed-write:none

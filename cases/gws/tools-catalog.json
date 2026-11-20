@@ -70,31 +70,6 @@
       "line": 20
     },
     {
-      "id": "GWS-OC02",
-      "severity": "major",
-      "ask": "The answer names the operation that lists messages, with its id.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "gmail\\.(users\\.)?messages\\.list",
-              "flags": ""
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "GWS-RB01",
       "severity": "minor",
       "ask": "No call names a tool that does not exist.",
@@ -108,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "GWS-RB02",
@@ -124,7 +99,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 26
     },
     {
       "id": "GWS-SF01",
@@ -134,27 +109,13 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "gws"
+        },
+        {
           "kind": "absent",
           "tool": "gws.read",
           "n": null
-        },
-        {
-          "kind": "absent-write",
-          "ns": "inference"
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.write",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "send",
-          "n": null
-        },
-        {
-          "kind": "absent-write",
-          "ns": "jobs"
         },
         {
           "kind": "committed-write"
@@ -163,7 +124,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     }
   ],
   "oracle": [],
@@ -171,10 +132,10 @@
     {
       "id": null,
       "text": "The query is free text, so the case declares it checkable.",
-      "line": 42
+      "line": 36
     }
   ],
   "hashes": {
-    "source_sha256": "3975a0bf25a5c965a4a8cac0980f506cd5632996c29f25f52048d7079a4fa971"
+    "source_sha256": "f46079354ce7e33b596481d92b746fbeb027a3c5ab1f063fa4f86150b6133c10"
   }
 }

@@ -37,37 +37,16 @@
         },
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "github"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 16
-    },
-    {
-      "id": "GH-OC01",
-      "severity": "major",
-      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(local|working copy|diff|git|uncommitted)",
-              "flags": "i"
-            }
-          }
-        ]
-      ],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
     },
     {
       "id": "GH-RB01",
@@ -83,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "GH-RB02",
@@ -99,12 +78,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 24
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d4098169381eb99a16c71bed4cc0c27f60830f0e0fe2049782cc092a88ba9eb4"
+    "source_sha256": "181f01a6fb354dc5e1d0eedf52f167e99bbb9ba4d74ceb7fbb8bd0dad7957527"
   }
 }

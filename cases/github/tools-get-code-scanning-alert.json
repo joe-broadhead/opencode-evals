@@ -132,6 +132,10 @@
         },
         {
           "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "github"
         }
       ],
       "evidence_any": [],
@@ -143,6 +147,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f46985ed6cd910d781b2bc74fe5ecae8370151db7f71ae2b1ee1bfbcbf06bedb"
+    "source_sha256": "5d5d555af711c532580cb60d5b02c2e1a5bf7bc0ea35f5570ab70243bf3e189e"
   }
 }

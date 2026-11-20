@@ -33,3 +33,4 @@ open my gist 1a2b3c4d5e
   evidence: absent:create_pull_request
   evidence: absent:issue_write
   evidence: committed-write:none
+  evidence: absent-write:github

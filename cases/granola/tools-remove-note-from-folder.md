@@ -30,6 +30,4 @@ take the kickoff note out of the evals-232 folder
 
 ## Forbidden
 - [GRA-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:granola.add_note_to_folder
-  evidence: absent:granola.update_folder
   evidence: committed-write:none

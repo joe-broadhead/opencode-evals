@@ -35,7 +35,4 @@ create an issue in the evals team: the ingest job is flaky again, please fix it 
 
 ## Forbidden
 - [LIN-SF01] blocker · No second issue and no other change.
-  evidence: absent:save_project
-  evidence: absent:save_comment
-  evidence: absent:share_issue
   evidence: committed-write:none

@@ -34,6 +34,4 @@ mark the first record in the evals list as done
 
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is committed, and no other write is tried in its place.
-  evidence: absent:slack.slack_add_list_record
-  evidence: absent:slack.slack_update_list
   evidence: committed-write:none

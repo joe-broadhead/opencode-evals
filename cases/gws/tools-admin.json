@@ -167,31 +167,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "gws.write",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.export",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.send",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.share",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "gws.delete",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -206,10 +181,10 @@
     {
       "id": null,
       "text": "An admin plan needs a reason; the case checks it is present, not its wording.",
-      "line": 45
+      "line": 40
     }
   ],
   "hashes": {
-    "source_sha256": "507189a217796702d48e5cfa646790354d83df38e817cf7cdac2d64a2238d335"
+    "source_sha256": "6183c89f210f88b917bb52643a0568aac4a1a84db5bc662ab543132812928154"
   }
 }
