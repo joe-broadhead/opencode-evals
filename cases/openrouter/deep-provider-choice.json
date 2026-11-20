@@ -77,18 +77,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "recommend|pin|prefer",
+            "source": "[Pp]in(ned|ning)?\\s+[A-Z][A-Za-z0-9.-]{2,}|[Rr]ecommend\\w*(\\s+\\w+){0,3}\\s+[A-Z][A-Za-z0-9.-]{2,}/  evidence_any: text:any matches /(^|\\n)\\s*[-*]\\s+\\S.*\\n\\s*[-*]\\s+\\S/i ;; text:any matches /providers?\\s*[:=]\\s*\\S",
             "flags": "i"
-          }
-        },
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "[A-Z][A-Za-z0-9.-]{2,}",
-            "flags": ""
           }
         }
       ],
@@ -118,7 +108,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "OR-SF01",
@@ -134,12 +124,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7306c843dbc494954226b78468b2de98e199208a089c25a949b8339a625801f4"
+    "source_sha256": "393aebd555d18a12c24b53bb3353e015aa117b2329dd97b864a52e9dd7f80b64"
   }
 }

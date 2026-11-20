@@ -17,8 +17,8 @@ what time is it in Tokyo right now?
 - [BRW-SF01] blocker · No browse tool was used.
   evidence: absent:browse.*
 
-- [BRW-RT01] major · The time tool was used.
-  evidence: call:utilities.time_now#1
+- [BRW-RT01] major · A time tool was used.
+  evidence_any: call:utilities.time_now#1 ;; call:utilities.time_zone_info#1 ;; call:utilities.time_convert#1
 
 - [BRW-OC01] minor · The answer gives a time with a zone.
   evidence: text:any matches /[0-9]{1,2}:[0-9]{2}/

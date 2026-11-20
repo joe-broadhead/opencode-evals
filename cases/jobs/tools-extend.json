@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "evals-232/wide/jobs/extend",
   "decision": "keeping a job alive is one extend with a future expiry, not a recreate, and the answer says the expiry did not move",
-  "data_check": "the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md",
+  "data_check": "the seed holds .opencode/jobs/standup-reminder.md; the plugin would refuse a tool write of a file job after the ask, and this case is graded at the declined ask",
   "prompt": "keep the standup-reminder job alive for another 30 days, it expires soon",
   "controls": [],
   "budgets": {
@@ -189,6 +189,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "416cae57baa6c70b24f209ac056863539c34f14435eafb04fe580af59f7faf60"
+    "source_sha256": "324e145cb06a75083434688cffc29c4ca1245edbfcca37fd56445c81af0df9e2"
   }
 }

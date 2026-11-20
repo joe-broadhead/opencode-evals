@@ -18,7 +18,7 @@ which providers serve deepseek-chat, and how do their prices compare?
   evidence: count:openrouter.list-model-endpoints == 1
 
 - [OR-OC02] major · The answer names providers and compares prices.
-  evidence: text:any matches /[A-Z][A-Za-z0-9.-]{2,}/
+  evidence_any: text:any matches /(^|\n)\s*[-*]\s+\S.*\n\s*[-*]\s+\S/i ;; text:any matches /providers?\s*[:=]\s*\S/i
   evidence: text:any matches /[$€£]\s?[0-9]|per (million|1M|token)/i
 
 - [OR-OC03] minor · It does not claim an endpoint guarantee from the model card.

@@ -3,7 +3,7 @@
 - Skill under test: jobs
 - Tier: T3
 - Source: evals-232/wide/jobs/update
-- Decision tested: moving one job's time is one update of that job, declined, with the new schedule and no second job
+- Decision tested: moving one job's time is one update of that job, declined, with the new schedule and no second job (a file job is refused by the tool after the declined ask; this case is graded at the ask)
 - Data check: the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md
 - Data: synthetic
 - Seed: files=jobs-nightly
@@ -12,7 +12,7 @@
 - Set: wide
 
 ## Prompt
-move the nightly-report job to 8am instead of 7. keep everything else as it is.
+move the nightly-report job to 8am instead of 2am. keep everything else as it is.
 
 ## Items
 - [JOB-WR01] blocker · One update of nightly-report, and it was declined.

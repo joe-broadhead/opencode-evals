@@ -134,8 +134,8 @@
           "op": "not-matches",
           "value": {
             "kind": "regex",
-            "source": "\\b(top story|headline)\\b.{0,30}(is|:)\\s*[A-Z]",
-            "flags": "i"
+            "source": "\\b([Tt]op story|[Hh]eadline)\\b.{0,30}(is|:)\\s*[A-Z]",
+            "flags": ""
           }
         }
       ],
@@ -201,6 +201,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b0767ba2e1fd52118f81bee666a556164a1827771d62809eec0af7994ecd378c"
+    "source_sha256": "49ba6282bd7424356674716084097b53133c5d87f5147b766807da46b62a3c0d"
   }
 }

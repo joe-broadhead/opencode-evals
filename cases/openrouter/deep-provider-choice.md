@@ -22,8 +22,7 @@ recommendation.
   evidence: count:openrouter.list-model-endpoints <= 1
 
 - [OR-OC03] major · The answer names providers and one recommendation.
-  evidence: text:any matches /recommend|pin|prefer/i
-  evidence: text:any matches /[A-Z][A-Za-z0-9.-]{2,}/
+  evidence: text:any matches /[Pp]in(ned|ning)?\s+[A-Z][A-Za-z0-9.-]{2,}|[Rr]ecommend\w*(\s+\w+){0,3}\s+[A-Z][A-Za-z0-9.-]{2,}/  evidence_any: text:any matches /(^|\n)\s*[-*]\s+\S.*\n\s*[-*]\s+\S/i ;; text:any matches /providers?\s*[:=]\s*\S/i
 
 - [OR-OC04] major · It states what it could not verify, such as regional handling.
   evidence: text:any matches /cannot (verify|confirm)|not (stated|documented|shown)|assum/i

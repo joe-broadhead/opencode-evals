@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "[A-Z][A-Za-z0-9.-]{2,}.{0,40}[A-Z][A-Za-z0-9.-]{2,}",
+              "source": "(^|\\n)\\s*[-*]\\s+\\S.*\\n\\s*[-*]\\s+\\S",
               "flags": "i"
             }
           },
@@ -70,7 +70,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "providers?:\\s*\\S",
+              "source": "providers?\\s*[:=]\\s*\\S",
               "flags": "i"
             }
           }
@@ -118,6 +118,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c39406d4f6af3bdec8c36ff158f86a11cfb3814b74243f692187f78e1bc746c8"
+    "source_sha256": "264d71b04aee42f44ab1c41acd2d7583e2011d0641f68e29c8ea638997c24634"
   }
 }

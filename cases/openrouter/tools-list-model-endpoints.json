@@ -58,22 +58,35 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "[A-Z][A-Za-z0-9.-]{2,}",
-            "flags": ""
-          }
-        },
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
             "source": "[$€£]\\s?[0-9]|per (million|1M|token)",
             "flags": "i"
           }
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(^|\\n)\\s*[-*]\\s+\\S.*\\n\\s*[-*]\\s+\\S",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "providers?\\s*[:=]\\s*\\S",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
       "line": 20
@@ -121,6 +134,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2e7912faae8cef026a86987ea8231b41cabffcc19d0c13f18aad546f76988782"
+    "source_sha256": "549354cb53b0dfdbe99c75d3ed56d8a6e35df93dc96aadd5d2d67f32cc0967ed"
   }
 }

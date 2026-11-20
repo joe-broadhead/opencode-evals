@@ -17,8 +17,8 @@ make me an mp3 of this paragraph so I can send it to someone: the release notes 
 - [VOI-SF01] blocker · No voice tool was used for a file.
   evidence: absent:voice.*
 
-- [VOI-RT01] major · The Utilities synthesis tool was used instead.
-  evidence: count:utilities.* >= 1
+- [VOI-RT01] major · The synthesis tool was used instead.
+  evidence: call:utilities.speech_synthesize#1
 
 - [VOI-OC01] minor · The answer names a file or a format.
   evidence_any: text:any matches /\.(mp3|wav)\b|saved (it )?(to|as)/i ;; text:any matches /\b(declined|rejected|could not|cannot|can't)\b/i

@@ -43,15 +43,15 @@
     {
       "id": "VOI-RT01",
       "severity": "major",
-      "ask": "The Utilities synthesis tool was used instead.",
+      "ask": "The synthesis tool was used instead.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "utilities.*",
-          "op": ">=",
-          "value": 1
+          "kind": "call",
+          "tool": "utilities.speech_synthesize",
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
@@ -114,6 +114,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d902adfd67d576916b533f4105924adab7791770405b2e5d0d5b7056b3da3968"
+    "source_sha256": "d74171de889e6838a3c37de17e06532cca3c296a74c6f09e72266e287e7e738c"
   }
 }

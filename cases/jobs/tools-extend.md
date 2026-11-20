@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: evals-232/wide/jobs/extend
 - Decision tested: keeping a job alive is one extend with a future expiry, not a recreate, and the answer says the expiry did not move
-- Data check: the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md
+- Data check: the seed holds .opencode/jobs/standup-reminder.md; the plugin would refuse a tool write of a file job after the ask, and this case is graded at the declined ask
 - Data: synthetic
 - Seed: files=jobs-nightly
 - Checkable: id, expires

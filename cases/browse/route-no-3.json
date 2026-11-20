@@ -43,18 +43,32 @@
     {
       "id": "BRW-RT01",
       "severity": "major",
-      "ask": "The time tool was used.",
+      "ask": "A time tool was used.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "utilities.time_now",
-          "n": 1,
-          "arg": null
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "utilities.time_now",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "utilities.time_zone_info",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "utilities.time_convert",
+            "n": 1,
+            "arg": null
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 20
@@ -102,6 +116,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "72039d5a51144393b45dfe534d2e6f1b32e62034e485b0938dc23c3785c9e42b"
+    "source_sha256": "f19ea3c2e6b6f9d7efe9e65c8c99c200aa60ef5c6c254f077ba0f157957418af"
   }
 }
