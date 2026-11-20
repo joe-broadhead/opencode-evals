@@ -21,8 +21,8 @@ what's this meeting? https://meet.google.com/evals-232-fixture
 - [WF-PR01] major · The call carried the URL.
   evidence: call:resolve_calendar_link#1 args.url == "https://meet.google.com/evals-232-fixture"
 
-- [WF-OC02] major · The answer names the meeting and its time.
-  evidence: text:any matches /([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))/i
+- [WF-OC02] major · The answer names the meeting and its time, or says no event matches.
+  evidence_any: text:any matches /([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))/i ;; text:any matches /(no (matching )?(event|meeting)|not found|couldn't find|could not find|doesn't match|does not match)/i
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

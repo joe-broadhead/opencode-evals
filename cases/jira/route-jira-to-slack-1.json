@@ -5,7 +5,7 @@
   "skill": "jira",
   "tier": "T3",
   "source": "EVALS-232 §2.3 deep: cross-plugin",
-  "decision": "The item is read first, then the Slack post is attempted and declined and the answer says nothing was posted.",
+  "decision": "The item is read from the fake; this trial has no Slack tool, so the honest answer says it cannot post there and offers the summary.",
   "data_check": "the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7",
   "prompt": "read QLN-1 and post a summary of it to my Slack self-DM {{target:slack.self_dm}}.",
   "controls": [],
@@ -45,19 +45,18 @@
     {
       "id": "JRA-WR01",
       "severity": "blocker",
-      "ask": "The Slack post was attempted and declined.",
+      "ask": "No Slack tool exists here, so nothing was written.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "slack_send_message",
-          "op": "==",
-          "value": 1
+          "kind": "absent-write",
+          "ns": "jira"
         },
         {
-          "kind": "declined",
-          "tool": "slack_send_message"
+          "kind": "absent",
+          "tool": "slack_send_message",
+          "n": null
         },
         {
           "kind": "committed-write"
@@ -71,22 +70,34 @@
     {
       "id": "JRA-OC02",
       "severity": "major",
-      "ask": "The answer says nothing was posted, and gives the summary in chat.",
+      "ask": "The answer says it cannot post to Slack here, and gives the summary in chat.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\\n]{0,40}(posted|sent)",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(can't|cannot|couldn't|could not|not able to|no slack)[^.\\n]{0,40}(post|send|slack)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(slack)[^.\\n]{0,40}(not (available|connected|installed)|isn't available)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 25
@@ -182,6 +193,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "42f853fb8ffebde1dfa7b38e42923f5300f544a6233ba78abaf2075a15da3eb0"
+    "source_sha256": "de185146fb87bd4d3178224aeefb9cb90ce2572f5f78c64b2f33786d20e66834"
   }
 }

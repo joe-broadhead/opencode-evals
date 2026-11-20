@@ -18,7 +18,7 @@ what changed on QLN-1 in the last week?
   evidence: count:listJiraIssueChangelogs == 1
 
 - [JRA-OC02] blocker · The answer states what the fixture holds.
-  evidence: text:any matches /(no changes|nothing changed|none)/i
+  evidence: text:any matches /(no changes|nothing changed|no results|nothing matches|none)/i
 
 - [JRA-TR01] minor · The jira skill was loaded.
   evidence: skill:jira

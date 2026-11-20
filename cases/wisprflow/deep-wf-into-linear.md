@@ -11,7 +11,7 @@
 - Set: deep
 
 ## Prompt
-prep me for tomorrow's pricing call, then create the follow-up issues from the last one in Linear.
+prep me for tomorrow's pricing call, then create the follow-up issues from the last one in the {{target:linear.team_key}} team in Linear.
 
 ## Items
 - [WF-OC01] blocker · It read the upcoming meeting and the earlier one.
@@ -24,7 +24,7 @@ prep me for tomorrow's pricing call, then create the follow-up issues from the l
   evidence: committed-write:none
 
 - [WF-CT01] major · The issue was aimed at the sandbox team.
-  evidence: target:save_issue#1 args.team in @linear.team
+  evidence: target:save_issue#1 args.team in @linear.team,@linear.team_key
 
 - [WF-OC02] major · The answer says no issues were created.
   evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(created|filed|opened|added)/i

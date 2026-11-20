@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 deep: cross-plugin",
   "decision": "A meeting brief is read first, then the Linear issues are drafted and the write is attempted and declined, and the answer says nothing was created.",
   "data_check": "the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary",
-  "prompt": "prep me for tomorrow's pricing call, then create the follow-up issues from the last one in Linear.",
+  "prompt": "prep me for tomorrow's pricing call, then create the follow-up issues from the last one in the {{target:linear.team_key}} team in Linear.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -87,7 +87,8 @@
           "n": 1,
           "arg": "args.team",
           "aliases": [
-            "@linear.team"
+            "@linear.team",
+            "@linear.team_key"
           ]
         }
       ],
@@ -228,6 +229,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4300d03b99e5600a7b79ced5a3660a123a340abef2cf38869f6e537c77def549"
+    "source_sha256": "a1ab1608c306276859d65d49b77bbc087d5084e69ad8c287ca49e9b6050b14cb"
   }
 }

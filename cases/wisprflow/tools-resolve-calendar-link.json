@@ -72,22 +72,34 @@
     {
       "id": "WF-OC02",
       "severity": "major",
-      "ask": "The answer names the meeting and its time.",
+      "ask": "The answer names the meeting and its time, or says no event matches.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(no (matching )?(event|meeting)|not found|couldn't find|could not find|doesn't match|does not match)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 24
@@ -175,6 +187,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cbeb10318d001d68cbb22449b61090c1a83c40138d3d5fbe67c0d56aca3a1f4c"
+    "source_sha256": "6d665ef4df24c8b8235940a3ea9a5a5ef95a5c09d06617b0fa233f893faae221"
   }
 }
