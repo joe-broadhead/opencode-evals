@@ -16,7 +16,7 @@ import { runView, gradeCase, honestNoAccount, NOT_SIGNED_IN } from "../src/grade
 import { flatten } from "../src/grade/targets.mjs"
 import { checkReal } from "../scripts/profile/check-real.mjs"
 import { keepOnce } from "../scripts/profile/keeper.mjs"
-import { SIGNIN_ORDER, NOT_IN_REAL } from "../scripts/profile/profile-lib.mjs"
+import { SIGNIN_ORDER, WALK_ORDER, NOT_IN_REAL } from "../scripts/profile/profile-lib.mjs"
 import { STEPS, runPhase1 } from "../src/phase1.mjs"
 import { installFakeOpencode, installFakeBun } from "./helpers/fake-opencode.mjs"
 
@@ -218,12 +218,23 @@ test("2: phase1 expects no sign-in for github or jira: check-real, the keeper an
 
 test("3: check-real stays right after each sign-in; OpenRouter and Affinity, new to the profile, are proved by their evals sign-in alone", () => {
   const cred = (id) => JSON.stringify([{ integrationID: id, active: true, value: { type: id === "openrouter" ? "key" : "oauth", access: `a-${id}-0000000001`, refresh: `r-${id}-0000000001`, key: "k" } }])
+  // The real profile holds no credential for openrouter/affinity: its export SUCCEEDS with []. A failed export is never "absent".
+  const probe = JSON.stringify({ output: { source: "x", owner: { id: "a" } } })
+  // Slack's identity read is its own profile line (an address on its own line), not the generic probe shape.
+  const slackProfile = JSON.stringify({ output: { output: { result: "joe (joe)\nOrg\nTitle\njoe@example.com" }, text: "{}" } })
   const stand = ({ real = {}, evals = {}, identity = 0 }) => (command, args, { env }) => {
     if (args[0] === "service" && args[1] === "get") return { code: 0, stdout: env.HOME === "/evals" ? "47950\n" : "49374\n", stderr: "" }
-    if (args[0] === "api") return identity === 0 ? { code: 0, stdout: "{}", stderr: "" } : { code: 1, stdout: "", stderr: "" }
+    if (args[0] === "api") {
+      if (identity !== 0) return { code: identity, stdout: "", stderr: "" }
+      if (args[1] === "post" && args[2] === "/api/session") return { code: 0, stdout: '{"data":{"id":"ses_test"}}', stderr: "" }
+      if (args[1] === "delete") return { code: 0, stdout: "", stderr: "" }
+      return { code: 0, stdout: args[2]?.includes("slack.workspace.tools") ? slackProfile : probe, stderr: "" }
+    }
     if (args[0] === "auth") {
       const held = (env.HOME === "/evals" ? evals : real)[args[2]]
-      return held ? { code: 0, stdout: cred(args[2]), stderr: "" } : { code: 1, stdout: "", stderr: "" }
+      if (held) return { code: 0, stdout: cred(args[2]), stderr: "" }
+      // a vendor the real profile does not hold: the export still succeeds, with nothing in it
+      return env.HOME === "/evals" ? { code: 1, stdout: "", stderr: "" } : { code: 0, stdout: "[]", stderr: "" }
     }
     return { code: 1, stdout: "", stderr: "" }
   }
@@ -231,7 +242,7 @@ test("3: check-real stays right after each sign-in; OpenRouter and Affinity, new
   assert.deepEqual([...NOT_IN_REAL], ["openrouter", "affinity"])
   const or = checkReal({ integration: "openrouter", profile: "/evals", exec: stand({ evals: { openrouter: true } }), env })
   assert.equal(or.ok, true, or.line)
-  assert.match(or.line, /^PASS openrouter: not in the real profile, so there is nothing to sign out of; the evals sign-in is held$/)
+  assert.match(or.line, /^PASS openrouter: not in the real profile, so there is nothing to sign out of; the evals sign-in is held/)
   const aff = checkReal({ integration: "affinity", profile: "/evals", exec: stand({ evals: { affinity: true } }), env })
   assert.match(aff.line, /held and reads/)
   assert.match(checkReal({ integration: "affinity", profile: "/evals", exec: stand({ evals: {} }), env }).line, /^FAIL affinity: the evals profile holds no credential for it \(sign it in first\)/)
@@ -253,11 +264,13 @@ function walk({ failAt = null, loginFailAt = null, tokenLine = false } = {}) {
   mkdirSync(bin)
   const store = join(root, "store")
   const log = join(root, "calls.log")
-  // stand-ins for evals-profile.sh and check-real.sh: they record their calls; check-real prints only PASS or FAIL, but here a run of token-like characters too
+  // stand-ins for evals-profile.sh, check-real.sh, guard-real.mjs and copy-client.mjs: they record their calls; check-real prints only PASS or FAIL, but here a run of token-like characters too
   writeFileSync(join(bin, "evals-profile.sh"), `#!/usr/bin/env bash\necho "login $*" >> "${log}"\n[ "$5" = "${loginFailAt ?? "__none__"}" ] && exit 3\nexit 0\n`)
   writeFileSync(join(bin, "check-real.sh"), `#!/usr/bin/env bash\necho "check $1" >> "${log}"\n${tokenLine ? 'echo "debug sk-ant-oat01-AbCdEfGhIjKlMnOpQrStUvWxYz0123456789zzzzzz"' : ""}\nif [ "$1" = "${failAt ?? "__none__"}" ]; then echo "FAIL $1: the real profile's identity read failed"; exit 1; fi\necho "PASS $1: ok"\n`)
-  chmodSync(join(bin, "evals-profile.sh"), 0o755)
-  chmodSync(join(bin, "check-real.sh"), 0o755)
+  // No real background service: the walk refuses before any call otherwise. The app-client steps copy from the real profile; here they pass.
+  writeFileSync(join(bin, "guard-real.mjs"), `console.log("guard: no real background service, nothing on its port")\n`)
+  writeFileSync(join(bin, "copy-client.mjs"), `console.log("PASS " + process.argv[2] + ": a stand-in")\n`)
+  for (const f of ["evals-profile.sh", "check-real.sh", "guard-real.mjs", "copy-client.mjs"]) chmodSync(join(bin, f), 0o755)
   const run = (...args) => spawnSync("bash", [join(ROOT, "scripts", "profile", "signin.sh"), ...args], { encoding: "utf8", input: "\n".repeat(30), env: { PATH: process.env.PATH, HOME: root, EVALS_BIN: bin, EVALS_STORE: store, OPENCODE_BIN: "opencode" } })
   const calls = () => (existsSync(log) ? readFileSync(log, "utf8").split("\n").filter(Boolean) : [])
   return { root, store, run, calls, cleanup: () => rmSync(root, { recursive: true, force: true }) }
@@ -269,16 +282,19 @@ test("4: signin.sh walks the plan's order, one vendor at a time, each login foll
     const out = w.run()
     assert.equal(out.status, 0, out.stdout + out.stderr)
     const calls = w.calls()
-    assert.deepEqual(calls, SIGNIN_ORDER.flatMap((v) => [`login -- opencode auth login ${v}`, `check ${v}`]), "login then check, vendor by vendor, in the plan's order")
+    // `auth login` knows gws as gws-default and Wispr Flow by its label; the walk prints each vendor's own name.
+    const target = { gws: "gws-default", wisprflow: "Wispr Flow" }
+    assert.deepEqual(calls, SIGNIN_ORDER.flatMap((v) => [`login -- opencode auth login ${target[v] ?? v}`, `check ${v}`]), "login then check, vendor by vendor, in the plan's order")
     assert.deepEqual(SIGNIN_ORDER.slice(0, 2), ["openrouter", "affinity"], "the two new vendors are in, and first")
     assert.ok(!calls.some((c) => /github|jira/.test(c)))
     assert.match(out.stdout, /GitHub and Jira are not signed in \(fake mode\)/)
     // the plan's section 1.2.3 order less github and jira
     const plan = ["openrouter", "affinity", "ashby", "plaud", "gws", "slack", "x", "elevenlabs", "wisprflow", "metaview", "granola", "notion", "linear", "jira", "github"]
     assert.deepEqual(plan.filter((v) => v !== "github" && v !== "jira"), [...SIGNIN_ORDER])
-    // the script's own list is that one
+    // the script's own list is the walk order: each app client is its own step, just before the vendor that needs it
     const script = readFileSync(join(ROOT, "scripts", "profile", "signin.sh"), "utf8")
-    assert.deepEqual(/^ORDER="([^"]+)"/m.exec(script)[1].split(" "), [...SIGNIN_ORDER])
+    assert.deepEqual(/^ORDER="([^"]+)"/m.exec(script)[1].split(" "), [...WALK_ORDER])
+    for (const [step, vendor] of [["gws-app", "gws"], ["slack-app", "slack"], ["x-app", "x"]]) assert.equal(WALK_ORDER.indexOf(step) + 1, WALK_ORDER.indexOf(vendor))
     assert.match(script, /^EXCLUDED="github jira"/m)
     // a second run has nothing left to do
     const again = w.run()
@@ -297,7 +313,10 @@ test("4: on a check-real failure it stops, names the vendor and prints the one-l
     assert.equal(out.status, 1)
     assert.match(out.stdout, /FAIL slack: the real profile's identity read failed/)
     assert.match(out.stdout, /STOP at slack: check-real FAILED; no further vendor was signed in\./)
-    assert.match(out.stdout, /Fix: sign slack back in on your NORMAL profile \(opencode auth login slack\), then run .*signin\.sh --from slack\./)
+    // The fix never prints a plain `opencode auth login`: that would start the real background service. It names the web app,
+    // and the shell form it offers carries --server.
+    assert.match(out.stdout, /Fix: sign slack back in from your normal OpenCode \(the web app at http:\/\/127\.0\.0\.1:4096\), then run .*signin\.sh --from slack\./)
+    for (const line of out.stdout.split("\n").filter((l) => /opencode auth login/.test(l))) assert.match(line, /--server http:\/\/127\.0\.0\.1:4096/)
     const calls = w.calls()
     assert.equal(calls.at(-1), "check slack")
     assert.ok(!calls.some((c) => /\b(x|elevenlabs|linear)$/.test(c)), "nothing after slack was signed in")

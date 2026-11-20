@@ -30,6 +30,7 @@ The tiers that need more than Node are configured, never assumed:
 ```sh
 node bin/evals check --plugin x    # T0, T-G and the T1 checks that are configured
 node --test test/*.test.mjs
+npm run test:profile               # the profile sign-in walk's own suite (scripts/profile/)
 node bin/evals privacy --scan      # must be clean: this repository is public
 ```
 

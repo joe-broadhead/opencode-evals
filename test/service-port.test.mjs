@@ -34,10 +34,12 @@ function service({ ports = {}, running = {} } = {}) {
 }
 const REAL = { HOME: "/real", PATH: "/usr/bin" }
 const MINE = { HOME: "/evals", PATH: "/usr/bin" }
+// The real service's port is read from its record under EVALS_REAL_HOME, never with `opencode service get port`.
+const NO_RECORD = { EVALS_REAL_HOME: "/real" }
 
 test("a free 47950 is the profile's port, and the real service's port is never it", () => {
   const s = service({ ports: { "/real": 49374 } })
-  const out = ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: s.exec, isFree: () => true, env: {} })
+  const out = ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: s.exec, isFree: () => true, env: NO_RECORD })
   assert.deepEqual(out, { port: EVALS_PORT, real: 49374, changed: true })
   assert.equal(s.ports["/evals"], 47950)
   assert.equal(s.calls.filter((c) => /service set/.test(c.args)).every((c) => c.home === "/evals"), true, "only the profile's own configuration is written")
@@ -47,21 +49,25 @@ test("a free 47950 is the profile's port, and the real service's port is never i
 test("a busy 47950 gives the next free port; one already set and free is kept; one equal to the real service's is replaced", () => {
   const busy = new Set([47950, 47951])
   const s = service({ ports: { "/real": 49374 } })
-  assert.equal(ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: s.exec, isFree: (p) => !busy.has(p), env: {} }).port, 47952)
-  assert.deepEqual(ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: s.exec, isFree: () => true, env: {} }), { port: 47952, real: 49374, changed: false }, "second call: kept")
+  assert.equal(ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: s.exec, isFree: (p) => !busy.has(p), env: NO_RECORD }).port, 47952)
+  assert.deepEqual(ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: s.exec, isFree: () => true, env: NO_RECORD }), { port: 47952, real: 49374, changed: false }, "second call: kept")
   const same = service({ ports: { "/real": 47950, "/evals": 47950 } })
-  const moved = ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: same.exec, isFree: () => true, env: {} })
+  const moved = ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: same.exec, isFree: () => true, env: { EVALS_REAL_HOME: "/real", EVALS_REAL_SERVICE_PORT: "47950" } })
   assert.equal(moved.port, 47951, "the real service holds 47950, so the profile moves off it")
   assert.equal(same.ports["/real"], 47950)
   // a port the profile's own running service holds is its own, though busy
   const mine = service({ ports: { "/real": 49374, "/evals": 47960 }, running: { "/evals": true } })
-  assert.equal(ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: mine.exec, isFree: () => false, env: {} }).changed, false)
-  assert.throws(() => ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: service().exec, isFree: () => false, env: {} }), /no free port from 47950 to 47999/)
+  assert.equal(ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: mine.exec, isFree: () => false, env: NO_RECORD }).changed, false)
+  assert.throws(() => ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: service().exec, isFree: () => false, env: NO_RECORD }), /no free port from 47950 to 47999/)
 })
 
 test("when the real service's port cannot be read, EVALS_REAL_SERVICE_PORT or the host's default stands in for it", () => {
   const none = service()
-  assert.equal(realServicePort({ opencode: "oc", realEnv: REAL, exec: none.exec, env: {} }), REAL_DEFAULT_PORT)
+  // From its own record: NEVER an `opencode` command with the real env (that could start the real background service).
+  let calls = 0
+  const counted = (command, args, o) => { calls++; return none.exec(command, args, o) }
+  assert.equal(realServicePort({ opencode: "oc", realEnv: REAL, exec: counted, env: NO_RECORD }), REAL_DEFAULT_PORT)
+  assert.equal(calls, 0, "no opencode call to read the real service's port")
   assert.equal(realServicePort({ opencode: "oc", realEnv: REAL, exec: none.exec, env: { EVALS_REAL_SERVICE_PORT: "50000" } }), 50000)
   assert.equal(getServicePort({ opencode: "oc", env: REAL, exec: () => ({ code: 1, stdout: "47950", stderr: "" }) }), null)
   assert.equal(getServicePort({ opencode: "oc", env: REAL, exec: () => ({ code: 0, stdout: "banana", stderr: "" }) }), null)
@@ -85,7 +91,7 @@ test("the profile's port is really tried against the kernel: a listening port is
   }
   try {
     const s = service({ ports: { "/real": 49374 } })
-    const out = ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: s.exec, env: {} })
+    const out = ensureServicePort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: s.exec, env: NO_RECORD })
     assert.notEqual(out.port, 47950)
     assert.ok(out.port > 47950 && out.port < 48000)
   } finally {
@@ -94,32 +100,37 @@ test("the profile's port is really tried against the kernel: a listening port is
 })
 
 test("check-real and the keeper refuse a profile on the real service's port, or on none", () => {
-  const same = service({ ports: { "/real": 47950, "/evals": 47950 } })
-  assert.throws(() => assertDistinctPort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: same.exec, env: {} }), /is the real service's/)
-  assert.throws(() => assertDistinctPort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: service({ ports: { "/real": 49374 } }).exec, env: {} }), /no service port of its own/)
-  assert.equal(assertDistinctPort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: service({ ports: { "/real": 49374, "/evals": 47950 } }).exec, env: {} }), 47950)
+  const same = service({ ports: { "/real": 49997, "/evals": 49997 } })
+  const realOn = { EVALS_REAL_HOME: "/real", EVALS_REAL_SERVICE_PORT: "49997" }
+  assert.throws(() => assertDistinctPort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: same.exec, env: realOn }), /is the real service's/)
+  assert.throws(() => assertDistinctPort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: service({ ports: { "/real": 49374 } }).exec, env: NO_RECORD }), /no service port of its own/)
+  assert.equal(assertDistinctPort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: service({ ports: { "/real": 49374, "/evals": 47950 } }).exec, env: NO_RECORD }), 47950)
   const exported = JSON.stringify([{ integrationID: "linear", active: true, value: { type: "oauth", access: "a-token-00000001", refresh: "r-token-00000001" } }])
   const base = (s) => (command, args, o) => (args[0] === "service" ? s.exec(command, args, o) : args[0] === "api" ? { code: 0, stdout: "{}", stderr: "" } : { code: 0, stdout: exported, stderr: "" })
-  const env = { EVALS_REAL_HOME: "/real", PATH: "/usr/bin" }
+  // The real service's port is read from its own record (EVALS_REAL_SERVICE_PORT here), never from `opencode service get port` in the real env.
+  // A port nothing listens on, so the guard lets the run reach the port comparison.
+  const env = { ...realOn, PATH: "/usr/bin" }
   const out = checkReal({ integration: "linear", profile: "/evals", exec: base(same), env })
   assert.equal(out.ok, false)
-  assert.match(out.line, /^FAIL linear: the evals profile's service port \(47950\) is the real service's/)
+  assert.match(out.line, /^FAIL linear: the evals profile's service port \(49997\) is the real service's/)
   assert.throws(() => keepOnce({ profile: "/evals", exec: base(same), env }), /is the real service's/)
 })
 
 test("the keeper sees a token that was due and did not move, and one that was refreshed", () => {
   const now = 1_800_000_000_000
   const ports = { "/real": 49374, "/evals": 47950 }
+  // A check session with the one read: the session is made, the probe answers its expected shape, and the session is deleted.
+  const probe = JSON.stringify({ output: { source: "linear", owner: { id: "a" } } })
   const run = (expiries) => {
     const s = service({ ports })
     let exports = 0
     const exec = (command, args, o) => {
       if (args[0] === "service") return s.exec(command, args, o)
-      if (args[0] === "api") return { code: 0, stdout: "{}", stderr: "" }
+      if (args[0] === "api") return args[1] === "post" && args[2] === "/api/session" ? { code: 0, stdout: '{"data":{"id":"ses_test"}}', stderr: "" } : args[1] === "delete" ? { code: 0, stdout: "", stderr: "" } : { code: 0, stdout: probe, stderr: "" }
       const expires = expiries[Math.min(exports++, expiries.length - 1)]
       return { code: 0, stdout: JSON.stringify([{ integrationID: args[2], active: true, value: { type: "oauth", access: "a-token-00000001", refresh: "r-token-00000001", expires } }]), stderr: "" }
     }
-    return keepOnce({ profile: "/evals", exec, env: { EVALS_REAL_HOME: "/real", PATH: "/usr/bin" }, only: ["linear"], now })
+    return keepOnce({ profile: "/evals", exec, env: { EVALS_REAL_HOME: "/real", EVALS_REAL_SERVICE_PORT: "49374", PATH: "/usr/bin" }, only: ["linear"], now })
   }
   const due = now + REFRESH_WINDOW_MS - 1000
   assert.deepEqual(run([due, due + 3_600_000]), [{ integration: "linear", ok: true, due: true, refreshed: true }])
@@ -147,6 +158,9 @@ exit 1
     writeFileSync(join(real, "port"), "49374\n")
     const profile = join(root, "profile")
     const env = { PATH: `${bin}:${process.env.PATH}`, HOME: real, OPENCODE_BIN: join(bin, "opencode"), EVALS_PROFILE: profile, EVALS_STORE: join(root, "store") }
+    // The profile's config lists the walk's pins, so the store needs its one file.
+    mkdirSync(env.EVALS_STORE)
+    writeFileSync(join(env.EVALS_STORE, "evals-plugins.json"), JSON.stringify({ linear: "github:o/opencode-linear#v1" }))
     const script = join(import.meta.dirname, "..", "scripts", "profile", "evals-profile.sh")
     const out = spawnSync("bash", [script, "--", "sh", "-c", 'cat "$HOME/port"'], { env, encoding: "utf8" })
     assert.equal(out.status, 0, out.stderr)

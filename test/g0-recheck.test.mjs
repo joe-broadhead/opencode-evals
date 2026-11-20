@@ -125,11 +125,11 @@ test("4: `opencode service status` printing the service's URL is running, so a s
   const real = { HOME: "/real" }
   let busy = new Set()
   const isFree = (p) => !busy.has(p)
-  const first = ensureServicePort({ opencode: "oc", profileEnv: mine, realEnv: real, exec, isFree, env: {} })
+  const first = ensureServicePort({ opencode: "oc", profileEnv: mine, realEnv: real, exec, isFree, env: { EVALS_REAL_HOME: "/real" } })
   assert.deepEqual([first.port, first.changed], [47950, true])
   busy = new Set([47950]) // its own service now holds the port
   for (let i = 0; i < 4; i++) {
-    const again = ensureServicePort({ opencode: "oc", profileEnv: mine, realEnv: real, exec, isFree, env: {} })
+    const again = ensureServicePort({ opencode: "oc", profileEnv: mine, realEnv: real, exec, isFree, env: { EVALS_REAL_HOME: "/real" } })
     assert.deepEqual([again.port, again.changed], [47950, false], `call ${i + 2}`)
   }
   assert.equal(calls.filter((c) => /service set/.test(c)).length, 1, "the port was set once, not on every call")
