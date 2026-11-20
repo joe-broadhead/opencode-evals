@@ -1,0 +1,91 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-list-field-dropdown-options",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: get_list_field_dropdown_options (the options of a dropdown field)",
+  "decision": "A what-stages-are-there question is one dropdown read for the list field",
+  "data_check": "affinity: {{target:affinity.list}} has a stage dropdown",
+  "prompt": "what stages can a deal be in on our {{target:affinity.list}} list?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used get_list_field_dropdown_options once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.get_list_field_dropdown_options",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It read the list it resolved.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_list_field_dropdown_options",
+          "n": 1,
+          "arg": "args.list_id",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-OC03",
+      "severity": "major",
+      "ask": "The answer lists the options in order.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(stage|option|term sheet|diligence)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "b548fbb38465981d86bb13c247ad80f3a937c9f224c9e83130c13d4118022c6c"
+  }
+}

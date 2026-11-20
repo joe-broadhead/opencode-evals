@@ -1,0 +1,91 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-search-companies-top-matches",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: search_companies_top_matches (structured and semantic company search)",
+  "decision": "A find-this-company question is one top-matches search on the name, and namesakes are shown not merged",
+  "data_check": "affinity: {{target:affinity.company}} is tracked",
+  "prompt": "find {{target:affinity.company}} in the CRM for me.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used search_companies_top_matches once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.search_companies_top_matches",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It searched on the name or domain.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.search_companies_top_matches",
+          "n": 1,
+          "arg": "args.search_criteria",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-OC03",
+      "severity": "major",
+      "ask": "The answer names the company, with its domain, and asks if several match.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(found|match|domain|which)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "40b3b11e139993c8b7dbe9c4de66aa7f07a9fe82ca09efafacdc4e79b6553946"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-portfolio-attention-score",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: portfolio_attention_score (Affinity's attention routine)",
+  "decision": "A which-portfolio-companies-need-attention request calls the routine once",
+  "data_check": "affinity: portfolio companies with recent activity",
+  "prompt": "which portfolio companies need my attention this month?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used portfolio_attention_score once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.portfolio_attention_score",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "major",
+      "ask": "The answer names the companies and why, from the CRM.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(portfolio|attention|company|why)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
+      "line": 21
+    }
+  ],
+  "hashes": {
+    "source_sha256": "c97a4d8518f6125da89d0b5c4e55b0bf0b6681f3d87a5bd7460856594669664f"
+  }
+}

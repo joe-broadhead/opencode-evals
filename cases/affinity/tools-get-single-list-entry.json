@@ -1,0 +1,91 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-single-list-entry",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: get_single_list_entry (one company's entry on one list)",
+  "decision": "A show-me-the-entry question is one get_single_list_entry",
+  "data_check": "affinity: {{target:affinity.company}} is on {{target:affinity.list}}",
+  "prompt": "show me {{target:affinity.company}}'s entry on the {{target:affinity.list}} list — stage, owner, the lot.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used get_single_list_entry once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.get_single_list_entry",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It read the list it resolved.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_single_list_entry",
+          "n": 1,
+          "arg": "args.list_id",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-OC03",
+      "severity": "major",
+      "ask": "The answer gives the entry's fields.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(stage|owner|entry)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "987030e7920634dc6c273d6bd058a11279ed0899af5ebd6347e9f6e415892cff"
+  }
+}

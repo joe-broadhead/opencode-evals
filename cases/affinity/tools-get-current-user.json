@@ -1,0 +1,71 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-current-user",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: get_current_user (the signed-in user, organisation and grant scopes)",
+  "decision": "A who-am-I question is one get_current_user, and a read-only grant is reported as one",
+  "data_check": "affinity: the signed-in user and their scopes",
+  "prompt": "which Affinity organisation am I signed into, and can I make changes or only read?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used get_current_user once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.get_current_user",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "major",
+      "ask": "The answer names the organisation and whether changes are allowed.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(organisation|organization|scope|read-only|change)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "fc7c9efeb38260345b6105cc8c293f8d97d793773198064756c3a38ca7cd8ff3"
+  }
+}

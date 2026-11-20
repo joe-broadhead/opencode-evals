@@ -1,0 +1,91 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-render-market-map",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: render_market_map (draws nothing here; the same data as a short table)",
+  "decision": "A market-map render is called once, and the answer gives the same data as a table",
+  "data_check": "affinity: the thesis, companies and explore list are the user's own",
+  "prompt": "render the market map for our AI infrastructure thesis with the companies we track and the ones to watch.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used render_market_map once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.render_market_map",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It passed the thesis.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.render_market_map",
+          "n": 1,
+          "arg": "args.thesis",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-OC03",
+      "severity": "major",
+      "ask": "The answer gives a short table, not an image.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(\\||table|company|thesis)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "38d903b9d3247a3626d277a708198e2d9f84d6fe657594b2603244b9e01bc121"
+  }
+}

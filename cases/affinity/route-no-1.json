@@ -1,0 +1,70 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-1",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "should-not-call: a calendar question belongs to the calendar, not the CRM",
+  "decision": "A what-is-on-my-calendar question reaches no Affinity tool",
+  "data_check": "the user's calendar holds at least one event tomorrow",
+  "prompt": "what's on my calendar tomorrow?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "AFF-RL01",
+      "severity": "blocker",
+      "ask": "No Affinity tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "affinity.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "major",
+      "ask": "The answer answers the calendar question.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(calendar|tomorrow|event|meeting)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "45cb78de986fd401de03bdca17a4d03bc9fc048467dfb11166207e36466b491a"
+  }
+}

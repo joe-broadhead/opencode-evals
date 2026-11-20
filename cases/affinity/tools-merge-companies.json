@@ -1,0 +1,147 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-merge-companies",
+  "plugin": "affinity",
+  "skill": "affinity-write",
+  "tier": "T3",
+  "source": "wide sweep: merge_companies (merges two company records)",
+  "decision": "A merge request is one call, graded at the declined call, with both records named",
+  "data_check": "affinity: two company records are duplicates",
+  "prompt": "merge Acme Test Co into {{target:affinity.company}} — they're the same company.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one merge companies call, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.merge_companies",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "affinity_merge_companies"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It named the record to keep.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.merge_companies",
+          "n": 1,
+          "arg": "args.primary_company_id",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "AFF-PR02",
+      "severity": "major",
+      "ask": "It named the record to merge in.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.merge_companies",
+          "n": 1,
+          "arg": "args.duplicate_company_id",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "AFF-OC04",
+      "severity": "major",
+      "ask": "The answer says nothing changed, and whom it would have reached.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(merged|combined)\\b",
+              "flags": "i"
+            }
+          }
+        ],
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was committed, and no second change was made.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "aa762adeb422223749084879e750978c22665171820d7368ccdbe890b1005969"
+  }
+}

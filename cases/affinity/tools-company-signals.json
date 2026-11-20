@@ -1,0 +1,77 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-company-signals",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: company_signals (Affinity's signals routine)",
+  "decision": "A what-signals-are-on-this-company request calls company_signals once",
+  "data_check": "affinity: {{target:affinity.company}} exists",
+  "prompt": "what signals are on {{target:affinity.company}} right now? hiring, funding, anything the CRM picked up.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used company_signals once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.company_signals",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "major",
+      "ask": "The answer reports signals, labelled as Affinity's where they are.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(signal|hiring|funding|Affinity)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
+      "line": 21
+    }
+  ],
+  "hashes": {
+    "source_sha256": "a5d7c6160dbba1fd8956bd090c3bf17aeda5ac1d334a0a5c079b30724cda79c2"
+  }
+}

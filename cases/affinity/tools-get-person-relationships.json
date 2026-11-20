@@ -1,0 +1,96 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-person-relationships",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: get_person_relationships (who knows this person, by Affinity's score)",
+  "decision": "A who-knows-them question is one relationships read ordered by score, labelled Affinity's",
+  "data_check": "affinity: {{target:affinity.person}} has at least one relationship",
+  "prompt": "who at the firm knows {{target:affinity.person}} best?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used get_person_relationships once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.get_person_relationships",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It ordered by interaction score.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_person_relationships",
+          "n": 1,
+          "arg": "args.order_by",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "interactionScore",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-OC03",
+      "severity": "major",
+      "ask": "The answer names colleagues and says the score is Affinity's.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(Affinity|score|knows)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "7aade1b7d8cc16aa559c8fff19a65cd2cacece49fa5eedf1751af965bb3ea9da"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-4",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "should-not-call: issue tracking is Linear's, not the CRM's",
+  "decision": "A how-many-open-issues question reaches no Affinity tool",
+  "data_check": "the user's Linear workspace has open issues",
+  "prompt": "how many open issues do we have in Linear right now?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "AFF-RL01",
+      "severity": "blocker",
+      "ask": "No Affinity tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "affinity.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "major",
+      "ask": "The answer answers about the issue tracker.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(Linear|issue|open|tracker)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "0391bc5c729990c967f08e8f3f4abad9c23e4a1e7a581bfc863546ec12fe14f4"
+  }
+}

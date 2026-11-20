@@ -1,0 +1,20 @@
+# tools-get-entity-fields
+- Plugin: affinity
+- Skill under test: affinity
+- Tier: T3
+- Source: wide sweep: get_entity_fields (the fields a record type supports)
+- Decision tested: A which-fields question is one get_entity_fields for the type
+- Data check: affinity: the CRM's company fields
+- Budget: outer_calls <= 12, inner_calls <= 8
+- Set: wide
+
+## Prompt
+what fields do we keep on companies in Affinity?
+
+## Items
+- [AFF-OC01] blocker · It used get_entity_fields once.
+  evidence: count:affinity.get_entity_fields == 1
+- [AFF-PR01] major · It asked for the company type.
+  evidence: call:affinity.get_entity_fields#1 args.entity_type present
+- [AFF-OC03] major · The answer lists the fields.
+  evidence: text:any matches /(field|name|domain|stage)/i

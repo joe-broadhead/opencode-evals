@@ -1,0 +1,77 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-affinity-data-migration",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: affinity_data_migration (Affinity's migration playbook text)",
+  "decision": "A plan-our-migration request calls the migration playbook once",
+  "data_check": "affinity: the CRM's lists and fields",
+  "prompt": "plan our move from the spreadsheet into Affinity — what order should we do it in?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used affinity_data_migration once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.affinity_data_migration",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "major",
+      "ask": "The answer gives a migration plan grounded in the CRM's own fields.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(migrat|field|list|order|step)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
+      "line": 21
+    }
+  ],
+  "hashes": {
+    "source_sha256": "9b86b711f32644fa1fbd03d76784e74ae5fd59a126e0f821bf78f9ef8030e95c"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-affinity-missed-deal-review",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: affinity_missed_deal_review (Affinity's missed-deal review text)",
+  "decision": "A review-the-deals-we-missed request calls the missed-deal playbook once",
+  "data_check": "affinity: at least one lost deal",
+  "prompt": "review the deals we missed this year — what went wrong and what to change.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used affinity_missed_deal_review once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.affinity_missed_deal_review",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "major",
+      "ask": "The answer reviews the lost deals as steps.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(lost|missed|deal|why|review)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
+      "line": 21
+    }
+  ],
+  "hashes": {
+    "source_sha256": "d8260bbebb43ed3b2f9b6399d0c2d89eab1d2ac5dede6a1681283deeaa25c413"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-warm-intro",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: warm_intro (Affinity's warm intro playbook text)",
+  "decision": "A find-me-a-warm-intro request calls the playbook once, then reads the relationships",
+  "data_check": "affinity: a path to {{target:affinity.company}} exists",
+  "prompt": "find me a warm intro to {{target:affinity.company}} and draft the ask.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used warm_intro once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.warm_intro",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "major",
+      "ask": "The answer names the path and drafts the ask.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(intro|path|draft|ask|knows)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
+      "line": 21
+    }
+  ],
+  "hashes": {
+    "source_sha256": "24326e78c71bc7909e9fe624bc614f5ee4bf13c6964772749d898f48b52dedac"
+  }
+}

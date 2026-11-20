@@ -1,0 +1,118 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-company-miss",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "deep, error: a company name that does not resolve",
+  "decision": "A miss says what was searched, asks for the domain or list, and offers no other source",
+  "data_check": "affinity: the name 'Northwind Dynamics' matches no company",
+  "prompt": "find Northwind Dynamics in Affinity — I'm sure we track them.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It searched the company name once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.search_companies_top_matches",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "major",
+      "ask": "The answer says nothing matched, and names what it searched.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(no match|not found|couldn't find|could not find|nothing matched)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-OC03",
+      "severity": "major",
+      "ask": "It asks for the domain, the company or the list.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(domain|which list|company name)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "It did not retry with a shortened or variant name, and did not offer another source.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.search_companies_top_matches",
+          "op": "<=",
+          "value": 2
+        },
+        {
+          "kind": "absent",
+          "tool": "affinity.create_company",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "1a796c60bbc2cba22911017378c16fdd8a4f02a0daae7bae50b326a3dd04d750"
+  }
+}

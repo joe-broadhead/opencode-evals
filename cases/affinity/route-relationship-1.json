@@ -1,0 +1,107 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-relationship-1",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "overlap routing: who-knows-them is the CRM's relationships, not mail or calendar",
+  "decision": "A who-at-the-firm-knows-them question is answered from Affinity's relationships, not from mail or calendar",
+  "data_check": "affinity: {{target:affinity.person}} has at least one relationship",
+  "prompt": "who at the firm knows {{target:affinity.person}} best?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "AFF-RL01",
+      "severity": "blocker",
+      "ask": "It read the CRM's relationships.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-RL02",
+      "severity": "blocker",
+      "ask": "It did not search mail or calendar for it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "gws.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "major",
+      "ask": "The answer names the colleagues and labels the score as Affinity's.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Affinity",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "5d87645c5bc2ba6c99784a584ea2e7a027934309cbd4a04250803b0b7fa3354d"
+  }
+}

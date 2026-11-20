@@ -1,0 +1,127 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-notes-week-window",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "deep, date window: notes added last week, in the user's local days",
+  "decision": "The window is the user's local week, converted to UTC in the filter, and the answer names the zone",
+  "data_check": "affinity: notes created in the last week",
+  "prompt": "what notes did we add last week? group them by company.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": "utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It queried the notes with a window.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.query_notes",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "The filter is a UTC instant range.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.query_notes",
+          "n": 1,
+          "arg": "args.filter_expr",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Z",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "major",
+      "ask": "The answer names the window and groups the notes by company.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(last week|2026-|company)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "AFF-OC03",
+      "severity": "minor",
+      "ask": "It names the zone the local days were taken in.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "It did not page every note to filter itself.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.query_notes",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "5f6bea052f4514f55579936ea902225ebc1e15126c4026967e901a3a35f1084f"
+  }
+}

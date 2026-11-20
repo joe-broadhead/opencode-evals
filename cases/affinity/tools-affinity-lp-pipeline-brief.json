@@ -1,0 +1,77 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-affinity-lp-pipeline-brief",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: affinity_lp_pipeline_brief (Affinity's LP brief text)",
+  "decision": "A brief-me-on-the-LP-pipeline request calls the LP brief playbook once",
+  "data_check": "affinity: an LP pipeline list exists",
+  "prompt": "brief me on our LP pipeline — where each conversation stands.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "AFF-OC01",
+      "severity": "blocker",
+      "ask": "It used affinity_lp_pipeline_brief once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.affinity_lp_pipeline_brief",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "major",
+      "ask": "The answer gives the LP brief, grounded in the list.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(LP|pipeline|commit|conversation)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
+      "line": 21
+    }
+  ],
+  "hashes": {
+    "source_sha256": "63d2bc2e295463b705c018b2eaa396110d5afe77d269e80ce0180cb15926b74f"
+  }
+}

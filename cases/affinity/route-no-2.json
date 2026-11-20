@@ -1,0 +1,70 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "should-not-call: a non-hiring meeting recap belongs to Granola, not the CRM",
+  "decision": "A what-did-we-decide-in-the-planning-meeting question reaches no Affinity tool",
+  "data_check": "the user has a planning meeting note from yesterday",
+  "prompt": "what did we decide in yesterday's planning meeting?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "AFF-RL01",
+      "severity": "blocker",
+      "ask": "No Affinity tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "affinity.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "major",
+      "ask": "The answer looks for the meeting notes, not a CRM record.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(meeting|notes|Granola|decided)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "59561764eeb19652f6fb2e168fdc03f79ed3f3363e361dd3d81658ddf42445ae"
+  }
+}
