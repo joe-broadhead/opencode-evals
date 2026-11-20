@@ -6,38 +6,39 @@
   "tier": "T3",
   "source": "wide sweep: get_company_list_entries (the lists a company is on)",
   "decision": "A which-lists question is one list-entries read for the company",
-  "data_check": "affinity: {{target:affinity.company}} is on at least one list",
+  "data_check": "{{target:affinity.company}} is on at least one list",
   "prompt": "which of our lists is {{target:affinity.company}} on?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": null,
+  "seed": "plugins=affinity",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "AFF-OC01",
+      "id": "AFF-TR01",
       "severity": "blocker",
       "ask": "It used get_company_list_entries once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
+          "kind": "call",
           "tool": "affinity.get_company_list_entries",
-          "op": "==",
-          "value": 1
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "AFF-PR01",
@@ -57,10 +58,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
     },
     {
-      "id": "AFF-OC03",
+      "id": "AFF-OC01",
       "severity": "major",
       "ask": "The answer names the lists and the stage.",
       "forbidden": false,
@@ -80,12 +81,60 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f57224da7577f9f6a3c2f292c1de750d27a59547218be9335542dce36c810e47"
+    "source_sha256": "ee7740254df12bd28fe0c0797f0db6d43bdbc0e99126eba9cb7195d192cd303f"
   }
 }

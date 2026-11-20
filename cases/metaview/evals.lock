@@ -1,0 +1,9 @@
+{
+  "plugin": "metaview",
+  "epoch": 1,
+  "cases": 79,
+  "items": 574,
+  "cases_sha256": "9802c1d21bd310c2c2c337d477ecb4326e0db8e37539715b48c02dcd3692e464",
+  "grader_sha256": "388a7395d4e8d280aa52c5ec2dc62d877ebf9c2b627ebb33ad44de62ae0010c4",
+  "frozen_at": "2026-11-19T11:27:34.523Z"
+}

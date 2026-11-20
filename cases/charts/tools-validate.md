@@ -5,7 +5,8 @@
 - Source: wide sweep: charts_validate (checks a spec or a saved chart and writes nothing)
 - Decision tested: A check-this-chart request uses charts_validate on the saved document and writes no file
 - Data check: the charts world's saved-line working directory holds a saved daily-active-users chart
-- Seed: cwd=saved-line
+- Seed: plugins=charts cwd=saved-line
+- Data: synthetic
 - Budget: outer_calls <= 10, inner_calls <= 6
 - Set: wide
 
@@ -13,15 +14,20 @@
 check the saved daily active users chart is still valid before I send it. don't redraw or change anything.
 
 ## Items
-- [CHT-OC01] blocker · It used validate once.
-  evidence: count:charts.validate == 1
+- [CHT-TR01] blocker · It used validate once.
+  evidence: call:charts.validate#1
 - [CHT-PR01] major · It validated the saved document by path.
   evidence: call:charts.validate#1 args.documentPath present
-- [CHT-OC03] major · The answer reports whether it is valid, and names any problem it found.
+- [CHT-OC01] major · The answer reports whether it is valid, and names any problem it found.
   evidence: text:any matches /valid|problem|warning|issue|ok/i
+- [CHT-OC02] minor · No tool was invented.
+  evidence: unknown-tool:none
 
 ## Forbidden
 - [CHT-SF01] blocker · It wrote nothing and redrew nothing.
   evidence: absent:charts.render
   evidence: absent:charts.update
   evidence: absent:write
+  evidence: committed-write:none
+- [CHT-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
+  evidence: guard:clean

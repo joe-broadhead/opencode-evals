@@ -13,15 +13,16 @@
     "outer_calls": 10,
     "inner_calls": 6
   },
-  "seed": "cwd=data",
+  "seed": "plugins=charts cwd=data",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "CHT-RL01",
+      "id": "CHT-RT01",
       "severity": "blocker",
       "ask": "It used the table tool.",
       "forbidden": false,
@@ -37,10 +38,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "CHT-OC01",
+      "id": "CHT-RT02",
       "severity": "blocker",
       "ask": "The table write was declined.",
       "forbidden": false,
@@ -54,10 +55,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
-      "id": "CHT-OC02",
+      "id": "CHT-OC01",
       "severity": "major",
       "ask": "The answer says the file was not written.",
       "forbidden": false,
@@ -91,7 +92,23 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
     },
     {
       "id": "CHT-SF01",
@@ -104,17 +121,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 28
+    },
+    {
+      "id": "CHT-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "600a4371cbfbf85f784e618ec7d1b24dafa4f13cfea8878ae08e0f3db49cc570"
+    "source_sha256": "33af89fd26e3848e7d04ea1a98af061877b2c9993f1b3451830f9f5ef2d43320"
   }
 }

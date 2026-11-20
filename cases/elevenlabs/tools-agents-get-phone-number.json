@@ -6,38 +6,39 @@
   "tier": "T3",
   "source": "wide sweep: agents_get_phone_number (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_phone_number reads is answered with one call and its arguments, and nothing is changed",
-  "data_check": "elevenlabs: the workspace holds the object the question names, or the answer says it does not",
+  "data_check": "the workspace holds the object the question names, or the answer says it does not",
   "prompt": "which phone number is assigned to {{target:elevenlabs.agent}}?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": null,
+  "seed": "plugins=elevenlabs",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "wide"
   ],
+  "data": "own",
   "items": [
     {
-      "id": "ELV-OC01",
+      "id": "ELV-TR01",
       "severity": "blocker",
       "ask": "It read it with agents_get_phone_number once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
+          "kind": "call",
           "tool": "elevenlabs.agents_get_phone_number",
-          "op": "==",
-          "value": 1
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "ELV-PR01",
@@ -57,7 +58,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
     },
     {
       "id": "ELV-SF01",
@@ -90,17 +107,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 25
+    },
+    {
+      "id": "ELV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8beff289c14cb40bb762130a64fe887290274752b3c0bf95462ece066d5b4a1e"
+    "source_sha256": "634e5f3c8445762aa9cd3be2d35c84f1ee96ffa743cabe6bd52bf2a234d81fc4"
   }
 }

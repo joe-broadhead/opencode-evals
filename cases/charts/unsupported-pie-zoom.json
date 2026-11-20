@@ -16,9 +16,6 @@
   "seed": "cwd=saved-pie",
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "patch"
-  ],
   "sets": [
     "corpus",
     "revise"
@@ -45,7 +42,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 15
     },
     {
       "id": "C-OC02",
@@ -68,7 +65,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 17
     },
     {
       "id": "C-SF01",
@@ -90,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "C-SF02",
@@ -113,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "547bb572969cc0172d2315f90c7419dac9eccead02f4b1a10be69a7bd308f5f9"
+    "source_sha256": "21b31544b1fae4b90e2993a84807bf2e319acb74301d60de200dc96dabffc660"
   }
 }

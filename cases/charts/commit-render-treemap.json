@@ -13,15 +13,16 @@
     "outer_calls": 10,
     "inner_calls": 6
   },
-  "seed": "cwd=data",
+  "seed": "plugins=charts cwd=data",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "commit"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "CHT-OC01",
+      "id": "CHT-CT01",
       "severity": "blocker",
       "ask": "Exactly one render call, and it was not declined.",
       "forbidden": false,
@@ -41,10 +42,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "CHT-OC02",
+      "id": "CHT-CT02",
       "severity": "blocker",
       "ask": "An SVG was written under outputs/charts.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "CHT-OC03",
+      "id": "CHT-OC01",
       "severity": "major",
       "ask": "The answer shows the chart inline.",
       "forbidden": false,
@@ -82,7 +83,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
     },
     {
       "id": "CHT-SF01",
@@ -105,12 +122,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 28
+    },
+    {
+      "id": "CHT-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "478cb6d33302e3b740814027944ca1960c4d33032a8cb64cbc521cc71fea225e"
+    "source_sha256": "ee439489895d34af1d913334ecd6db5d4fc33938d8e09b8c7aa668d7c67df72d"
   }
 }

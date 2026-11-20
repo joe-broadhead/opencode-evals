@@ -1,0 +1,9 @@
+{
+  "plugin": "elevenlabs",
+  "epoch": 1,
+  "cases": 249,
+  "items": 1380,
+  "cases_sha256": "9dced3b0ede0d71560e929076b9785de98b8b7cf881204b90ba56b52cc4f6263",
+  "grader_sha256": "388a7395d4e8d280aa52c5ec2dc62d877ebf9c2b627ebb33ad44de62ae0010c4",
+  "frozen_at": "2026-11-19T11:27:34.785Z"
+}

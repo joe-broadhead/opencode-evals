@@ -13,15 +13,16 @@
     "outer_calls": 8,
     "inner_calls": 6
   },
-  "seed": null,
+  "seed": "plugins=utilities",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "UTL-RL01",
+      "id": "UTL-RT01",
       "severity": "blocker",
       "ask": "It used the Utilities transcriber.",
       "forbidden": false,
@@ -37,10 +38,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "UTL-RL02",
+      "id": "UTL-RT02",
       "severity": "blocker",
       "ask": "It did not use the voice tools.",
       "forbidden": false,
@@ -55,12 +56,60 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
+    },
+    {
+      "id": "UTL-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "UTL-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "UTL-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d40717ef938ceb1faa781303b0e9949c14f1b8373913b80281fd2e638aeeeff6"
+    "source_sha256": "a60b885d4f70ecc023205be08fdcf688230a3cfe5760ea7fe16a1360734e48f4"
   }
 }

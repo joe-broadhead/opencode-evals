@@ -6,57 +6,58 @@
   "tier": "T3",
   "source": "overlap routing: a candidate call is Metaview's, a pricing meeting is Granola's",
   "decision": "The hiring call is read from Metaview and the non-hiring meeting from Granola, and the answer keeps them apart",
-  "data_check": "candidate data: one recorded candidate call yesterday, and one non-hiring meeting note yesterday",
+  "data_check": "one recorded candidate call yesterday, and one non-hiring meeting note yesterday",
   "prompt": "summarise yesterday's call with the candidate and the pricing meeting — keep them separate.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": null,
+  "seed": "plugins=metaview,granola",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "candidate",
   "items": [
     {
-      "id": "MV-RL01",
+      "id": "MV-RT01",
       "severity": "blocker",
       "ask": "It read the candidate call with Metaview.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "metaview.*",
-          "op": ">=",
-          "value": 1
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 15
-    },
-    {
-      "id": "MV-RL02",
-      "severity": "major",
-      "ask": "It read the pricing meeting with Granola.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "granola.*",
-          "op": ">=",
-          "value": 1
+          "kind": "call",
+          "tool": "metaview.search_conversations",
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
+    },
+    {
+      "id": "MV-RT02",
+      "severity": "major",
+      "ask": "It read the pricing meeting with Granola.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "granola.search_meetings",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
     },
     {
       "id": "MV-OC01",
@@ -89,7 +90,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
+    },
+    {
+      "id": "MV-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
     },
     {
       "id": "MV-SF01",
@@ -102,17 +119,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 28
+    },
+    {
+      "id": "MV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9942e3f8e9870d977fa28d4424f3121de1abb6d8e66ebe31a7d13ed7b7a956e5"
+    "source_sha256": "08334e7034389b974486584f5dfe8605114b553b4be23eaeccb6a0f1501cb1e1"
   }
 }

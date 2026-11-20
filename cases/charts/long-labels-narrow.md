@@ -5,7 +5,6 @@
 - Source: charts task corpus v1: long labels in a narrow panel (eight categories of 50–60 characters)
 - Decision tested: The chart is drawn at the panel's exact outer size with every category kept; fitting is the layout planner's job (wrapping, a horizontal bar), never dropping categories or shrinking the size request.
 - Seed: cwd=data
-- Checkable: document, data
 - Budget: outer_calls <= 16, wall_ms <= 420000
 - Set: corpus, create
 
@@ -17,15 +16,13 @@ I need a chart of ticket volume per category from data/support_tickets.csv for a
   evidence: state:charts.count != 0
   evidence: state:charts.width == "360"
   evidence: state:charts.height == "480"
-
 - [C-OC02] blocker · Every one of the eight categories is in the saved chart.
   evidence: state:charts.count != 0
   evidence: state:charts.rows.count == "8"
-
 - [C-OC03] major · It is a bar chart (horizontal or vertical) of tickets per category.
   evidence: state:charts.count != 0
-  evidence_any: state:charts.has.recipe.horizontal_bar == true ;; state:charts.has.recipe.bar == true
   evidence: state:charts.binding.value == tickets
+  evidence_any: state:charts.has.recipe.horizontal_bar == true ;; state:charts.has.recipe.bar == true
 
 ## Forbidden
 - [C-SF01] blocker · No category was filtered out to make it fit: no data.transform in a charts_quick or charts_render call (document or raw spec).

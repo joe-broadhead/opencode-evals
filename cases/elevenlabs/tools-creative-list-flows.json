@@ -6,38 +6,55 @@
   "tier": "T3",
   "source": "wide sweep: creative_list_flows (ElevenLabs MCP; creative tools)",
   "decision": "A request for what creative_list_flows reads is answered with one call and its arguments, and nothing is changed",
-  "data_check": "elevenlabs: the workspace holds the object the question names, or the answer says it does not",
+  "data_check": "the workspace holds the object the question names, or the answer says it does not",
   "prompt": "list my flows.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": null,
+  "seed": "plugins=elevenlabs",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "wide"
   ],
+  "data": "own",
   "items": [
     {
-      "id": "ELV-OC01",
+      "id": "ELV-TR01",
       "severity": "blocker",
       "ask": "It read it with creative_list_flows once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
+          "kind": "call",
           "tool": "elevenlabs.creative_list_flows",
-          "op": "==",
-          "value": 1
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
     },
     {
       "id": "ELV-SF01",
@@ -70,17 +87,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 23
+    },
+    {
+      "id": "ELV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "29e649def2085284b627df80d9f06f32e8bd3a88982d2989aadb4612bd13fe8b"
+    "source_sha256": "3cde401c1910668fce6d05e179c1317d6c3aa7c82b371bc71c9277bc0a7aa765"
   }
 }

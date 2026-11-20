@@ -6,41 +6,50 @@
   "tier": "T3",
   "source": "overlap routing: the CRM's own notes and transcripts are Affinity's; Granola only when named",
   "decision": "A what-did-they-say-about-the-company question reads Affinity's notes and transcripts, and does not reach for Granola",
-  "data_check": "affinity: {{target:affinity.company}} has an AI Notetaker note with a transcript",
+  "data_check": "{{target:affinity.company}} has an AI Notetaker note with a transcript",
   "prompt": "what did {{target:affinity.company}} say about their raise in the last call?",
   "controls": [],
   "budgets": {
     "outer_calls": 14,
     "inner_calls": 10
   },
-  "seed": null,
+  "seed": "plugins=affinity",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "AFF-RL01",
+      "id": "AFF-RT01",
       "severity": "blocker",
       "ask": "It read the CRM's own notes or transcript.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "affinity.*",
-          "op": ">=",
-          "value": 1
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.get_notes_for_entity",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.get_transcript_fragments",
+            "n": 1,
+            "arg": null
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "AFF-RL02",
+      "id": "AFF-RT02",
       "severity": "blocker",
       "ask": "It did not go to Granola, which the user did not name.",
       "forbidden": false,
@@ -55,7 +64,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
     },
     {
       "id": "AFF-OC01",
@@ -78,7 +87,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
     },
     {
       "id": "AFF-SF01",
@@ -91,17 +116,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 27
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "02bfa6e2c84bbb7f8d59cd538e76bd914e7ff82fa82ad31ccf59319ef58a94b9"
+    "source_sha256": "357e1b23810f6a58a7627a2022a713f430e495d9696478d512e7718961810465"
   }
 }

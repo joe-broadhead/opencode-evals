@@ -6,38 +6,39 @@
   "tier": "T3",
   "source": "wide sweep: get_chart_data (a chart's numbers for a report)",
   "decision": "A chart-my-numbers question is one get_chart_data with chart inputs, not a row fetch",
-  "data_check": "candidate data: the workspace has conversations in the last month",
+  "data_check": "the workspace has conversations in the last month",
   "prompt": "give me the numbers for interviews per week over the last month — I want to chart them.",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
     "inner_calls": 6
   },
-  "seed": null,
+  "seed": "plugins=metaview",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "wide"
   ],
+  "data": "candidate",
   "items": [
     {
-      "id": "MV-OC01",
+      "id": "MV-TR01",
       "severity": "blocker",
       "ask": "It used get_chart_data once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
+          "kind": "call",
           "tool": "metaview.get_chart_data",
-          "op": "==",
-          "value": 1
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "MV-PR01",
@@ -57,7 +58,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
     },
     {
       "id": "MV-PR02",
@@ -77,10 +78,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
     },
     {
-      "id": "MV-OC04",
+      "id": "MV-OC01",
       "severity": "major",
       "ask": "The answer gives weekly numbers.",
       "forbidden": false,
@@ -100,12 +101,60 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 23
+    },
+    {
+      "id": "MV-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "MV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "MV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "dabb96efa4c52577c1465bc02b18f7e5546d478db7f6288f3341abbb62edeffb"
+    "source_sha256": "5af488e6394c11612d405a55315d5aa308cf31f71fddfab41851075dcb3083be"
   }
 }

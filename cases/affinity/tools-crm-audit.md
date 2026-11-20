@@ -4,7 +4,9 @@
 - Tier: T3
 - Source: wide sweep: crm_audit (Affinity's CRM hygiene audit text)
 - Decision tested: An audit-our-CRM request calls crm_audit once
-- Data check: affinity: the CRM's records
+- Data check: the CRM's records
+- Seed: plugins=affinity
+- Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
@@ -12,10 +14,18 @@
 audit our CRM hygiene — what's missing, stale or duplicated?
 
 ## Items
-- [AFF-OC01] blocker · It used crm_audit once.
-  evidence: count:affinity.crm_audit == 1
-- [AFF-OC02] major · The answer gives the audit as findings and steps.
+- [AFF-TR01] blocker · It used crm_audit once.
+  evidence: call:affinity.crm_audit#1
+- [AFF-OC01] major · The answer gives the audit as findings and steps.
   evidence: text:any matches /(missing|stale|duplicate|audit|field)/i
+- [AFF-OC02] minor · No tool was invented.
+  evidence: unknown-tool:none
+
+## Forbidden
+- [AFF-SF01] blocker · Nothing committed.
+  evidence: committed-write:none
+- [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
+  evidence: guard:clean
 
 ## Notes
 - A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.

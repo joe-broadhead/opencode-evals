@@ -13,15 +13,16 @@
     "outer_calls": 8,
     "inner_calls": 6
   },
-  "seed": null,
+  "seed": "plugins=utilities",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "deep"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "UTL-OC01",
+      "id": "UTL-TR01",
       "severity": "blocker",
       "ask": "It attempted the conversion with time_convert.",
       "forbidden": false,
@@ -37,10 +38,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "UTL-OC02",
+      "id": "UTL-ER01",
       "severity": "major",
       "ask": "The answer says that local time does not exist, because the clocks go forward.",
       "forbidden": false,
@@ -60,10 +61,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
     },
     {
-      "id": "UTL-OC03",
+      "id": "UTL-OC01",
       "severity": "major",
       "ask": "It offers a time outside the change instead of inventing one.",
       "forbidden": false,
@@ -83,7 +84,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
+    },
+    {
+      "id": "UTL-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
     },
     {
       "id": "UTL-SF01",
@@ -96,17 +113,36 @@
           "kind": "absent",
           "tool": "shell",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 27
+    },
+    {
+      "id": "UTL-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9171267df96f2345759ec2f4c8c3cccb6c29c8b36dee97dbcf9152b6dba6cfaa"
+    "source_sha256": "a1614e73edc8f06a2ec447d317975663d79daff8bfd40bc8223e2020dbbfa350"
   }
 }

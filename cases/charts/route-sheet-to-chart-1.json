@@ -13,50 +13,59 @@
     "outer_calls": 10,
     "inner_calls": 6
   },
-  "seed": null,
+  "seed": "plugins=charts,gws",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "CHT-RL01",
+      "id": "CHT-RT01",
       "severity": "blocker",
       "ask": "It read the sheet with the Google Workspace tools.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "gws.*",
-          "op": ">=",
-          "value": 1
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 15
-    },
-    {
-      "id": "CHT-RL02",
-      "severity": "major",
-      "ask": "It drew with a charts tool.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "charts.*",
-          "op": ">=",
-          "value": 1
+          "kind": "call",
+          "tool": "gws.read",
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
+    },
+    {
+      "id": "CHT-RT02",
+      "severity": "major",
+      "ask": "It drew with a charts tool.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "charts.quick",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "charts.render",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
     },
     {
       "id": "CHT-OC01",
@@ -93,7 +102,23 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
     },
     {
       "id": "CHT-SF01",
@@ -111,17 +136,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 28
+    },
+    {
+      "id": "CHT-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9e217150a0fc72612ed90e47ddb948907762cc116142064215a739935cb94578"
+    "source_sha256": "f48d99949b861028660f007738af41d6ca858cb345d73865cb96771e97b56f9a"
   }
 }

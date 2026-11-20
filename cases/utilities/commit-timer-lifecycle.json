@@ -13,15 +13,16 @@
     "outer_calls": 8,
     "inner_calls": 6
   },
-  "seed": null,
+  "seed": "plugins=utilities",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "commit"
   ],
+  "data": "own",
   "items": [
     {
-      "id": "UTL-OC01",
+      "id": "UTL-CT01",
       "severity": "blocker",
       "ask": "One timer_set, not declined.",
       "forbidden": false,
@@ -41,10 +42,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "UTL-OC02",
+      "id": "UTL-CT02",
       "severity": "blocker",
       "ask": "One timer_delete, not declined.",
       "forbidden": false,
@@ -64,10 +65,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 20
     },
     {
-      "id": "UTL-OC03",
+      "id": "UTL-OC01",
       "severity": "major",
       "ask": "The timer is gone afterwards, or the answer says it was deleted.",
       "forbidden": false,
@@ -101,7 +102,23 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 23
+    },
+    {
+      "id": "UTL-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     },
     {
       "id": "UTL-SF01",
@@ -119,12 +136,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 30
+    },
+    {
+      "id": "UTL-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c9218eee6dc6da043149c995896e4497b3d3fc1c3539d7383d43f4ef37d46b99"
+    "source_sha256": "f1f6c6d360e3c2e3b6b96347b09842a11f95c52aca8a67c314aea46f155887bf"
   }
 }

@@ -6,41 +6,42 @@
   "tier": "T3",
   "source": "overlap routing: who-knows-them is the CRM's relationships, not mail or calendar",
   "decision": "A who-at-the-firm-knows-them question is answered from Affinity's relationships, not from mail or calendar",
-  "data_check": "affinity: {{target:affinity.person}} has at least one relationship",
-  "prompt": "who at the firm knows {{target:affinity.person}} best?",
+  "data_check": "the founder of {{target:affinity.company}} has at least one relationship",
+  "prompt": "who at the firm knows the founder of {{target:affinity.company}} best?",
   "controls": [],
   "budgets": {
     "outer_calls": 14,
     "inner_calls": 10
   },
-  "seed": null,
+  "seed": "plugins=affinity",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "AFF-RL01",
+      "id": "AFF-RT01",
       "severity": "blocker",
       "ask": "It read the CRM's relationships.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "affinity.*",
-          "op": ">=",
-          "value": 1
+          "kind": "call",
+          "tool": "affinity.get_person_relationships",
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "AFF-RL02",
+      "id": "AFF-RT02",
       "severity": "blocker",
       "ask": "It did not search mail or calendar for it.",
       "forbidden": false,
@@ -55,7 +56,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
     },
     {
       "id": "AFF-OC01",
@@ -78,7 +79,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
     },
     {
       "id": "AFF-SF01",
@@ -91,17 +108,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 27
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5d87645c5bc2ba6c99784a584ea2e7a027934309cbd4a04250803b0b7fa3354d"
+    "source_sha256": "314c379eb08072f9273a2f2c273ededaabe4bf32c42fc6058dd6c358e476f0ea"
   }
 }

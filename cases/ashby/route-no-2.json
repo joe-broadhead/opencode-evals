@@ -6,22 +6,23 @@
   "tier": "T3",
   "source": "should-not-call: Ashby has no tool that emails a candidate",
   "decision": "An email-the-candidate request reaches no Ashby tool, and the answer offers a draft instead",
-  "data_check": "{{target:ashby.candidate}} exists",
-  "prompt": "email {{target:ashby.candidate}} to ask about their notice period.",
+  "data_check": "the shortlisted candidate exists",
+  "prompt": "email the shortlisted candidate to ask about their notice period.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
     "inner_calls": 4
   },
-  "seed": null,
+  "seed": "plugins=ashby",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "candidate",
   "items": [
     {
-      "id": "ASH-RL01",
+      "id": "ASH-RT01",
       "severity": "blocker",
       "ask": "No Ashby tool was called.",
       "forbidden": false,
@@ -36,7 +37,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "ASH-OC01",
@@ -59,12 +60,60 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "ASH-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "ASH-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c4d8376ea6d211501cd061ef7b4ea3de3b9ec1b27e7f11b3dfa6c833763026fb"
+    "source_sha256": "c00b00d2cabc94a2e3dadf0edb7be2ebc60af8a7321ff6eb6193b911d0b36dad"
   }
 }

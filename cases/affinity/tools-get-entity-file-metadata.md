@@ -4,7 +4,9 @@
 - Tier: T3
 - Source: wide sweep: get_entity_file_metadata (one file's size, type and dates)
 - Decision tested: A what-is-that-file question is one metadata read
-- Data check: affinity: a file exists on {{target:affinity.company}}
+- Data check: a file exists on {{target:affinity.company}}
+- Seed: plugins=affinity
+- Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
@@ -12,9 +14,17 @@
 what's the file we have on {{target:affinity.company}} — size, type and when it was uploaded?
 
 ## Items
-- [AFF-OC01] blocker · It used get_entity_file_metadata once.
-  evidence: count:affinity.get_entity_file_metadata == 1
+- [AFF-TR01] blocker · It used get_entity_file_metadata once.
+  evidence: call:affinity.get_entity_file_metadata#1
 - [AFF-PR01] major · It read the file it resolved.
   evidence: call:affinity.get_entity_file_metadata#1 args.file_id present
-- [AFF-OC03] major · The answer gives the metadata.
+- [AFF-OC01] major · The answer gives the metadata.
   evidence: text:any matches /(size|type|upload|date)/i
+- [AFF-OC02] minor · No tool was invented.
+  evidence: unknown-tool:none
+
+## Forbidden
+- [AFF-SF01] blocker · Nothing committed.
+  evidence: committed-write:none
+- [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
+  evidence: guard:clean

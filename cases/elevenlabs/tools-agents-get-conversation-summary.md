@@ -4,7 +4,9 @@
 - Tier: T3
 - Source: wide sweep: agents_get_conversation_summary (ElevenLabs MCP; agents tools)
 - Decision tested: A request for what agents_get_conversation_summary reads is answered with one call and its arguments, and nothing is changed
-- Data check: elevenlabs: the workspace holds the object the question names, or the answer says it does not
+- Data check: the workspace holds the object the question names, or the answer says it does not
+- Seed: plugins=elevenlabs
+- Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
@@ -12,12 +14,14 @@
 summarise that call for me.
 
 ## Items
-- [ELV-OC01] blocker · It read it with agents_get_conversation_summary once.
-  evidence: count:elevenlabs.agents_get_conversation_summary == 1
+- [ELV-TR01] blocker · It read it with agents_get_conversation_summary once.
+  evidence: call:elevenlabs.agents_get_conversation_summary#1
 - [ELV-PR01] major · It passed the conversation id the question needs.
   evidence: call:elevenlabs.agents_get_conversation_summary#1 args.conversation_id present
-- [ELV-OC03] major · The answer gives a summary in its own words.
+- [ELV-OC01] major · The answer gives a summary in its own words.
   evidence: text:any matches /(caller|said|summary|asked)/i
+- [ELV-OC02] minor · No tool was invented.
+  evidence: unknown-tool:none
 
 ## Forbidden
 - [ELV-SF01] blocker · No change and no credit spend.
@@ -26,3 +30,6 @@ summarise that call for me.
   evidence: absent:elevenlabs.creative_generate_speech
   evidence: absent:elevenlabs.creative_generate_video
   evidence: absent:write
+  evidence: committed-write:none
+- [ELV-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
+  evidence: guard:clean

@@ -6,22 +6,23 @@
   "tier": "T3",
   "source": "deep, date window: last week's interviews by interviewer, in the user's local days",
   "decision": "The window is the user's local week, bounded absolutely and named with its zone, and the counts come from one grouped call",
-  "data_check": "candidate data: at least ten conversations in the last week",
+  "data_check": "at least ten conversations in the last week",
   "prompt": "how many interviews did each interviewer run last week? and which days does that cover?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": "utc-hours=9-17",
+  "seed": "plugins=metaview utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "deep"
   ],
+  "data": "candidate",
   "items": [
     {
-      "id": "MV-OC01",
+      "id": "MV-TR01",
       "severity": "blocker",
       "ask": "It grouped rather than fetching rows.",
       "forbidden": false,
@@ -37,7 +38,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "MV-PR01",
@@ -57,10 +58,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
-      "id": "MV-OC02",
+      "id": "MV-DT01",
       "severity": "major",
       "ask": "The answer names the window and the zone.",
       "forbidden": false,
@@ -80,10 +81,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "MV-OC03",
+      "id": "MV-OC02",
       "severity": "major",
       "ask": "It gives a count per interviewer.",
       "forbidden": false,
@@ -103,7 +104,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "MV-OC03",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
     },
     {
       "id": "MV-SF01",
@@ -117,17 +134,36 @@
           "tool": "metaview.search_conversations",
           "op": "<=",
           "value": 2
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 29
+    },
+    {
+      "id": "MV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "71364ba35ab9cfa020bc492375e8413d7470300681c51ba5e8edee053e667578"
+    "source_sha256": "7cee4b5eb38fd0b89520d0ab6aab54b86abd744245944293b5df0dc10173c4c7"
   }
 }

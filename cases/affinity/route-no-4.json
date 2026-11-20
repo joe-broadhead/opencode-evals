@@ -13,15 +13,16 @@
     "outer_calls": 14,
     "inner_calls": 10
   },
-  "seed": null,
+  "seed": "plugins=affinity",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "AFF-RL01",
+      "id": "AFF-RT01",
       "severity": "blocker",
       "ask": "No Affinity tool was called.",
       "forbidden": false,
@@ -36,7 +37,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "AFF-OC01",
@@ -59,12 +60,60 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0391bc5c729990c967f08e8f3f4abad9c23e4a1e7a581bfc863546ec12fe14f4"
+    "source_sha256": "3fa816265b2a5226f8573dcc2ee9cac5ea0d1ac056db025880594d5e361ffd57"
   }
 }

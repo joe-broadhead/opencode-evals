@@ -6,38 +6,55 @@
   "tier": "T3",
   "source": "wide sweep: creative_list_brand_kits (ElevenLabs MCP; creative tools)",
   "decision": "A request for what creative_list_brand_kits reads is answered with one call and its arguments, and nothing is changed",
-  "data_check": "elevenlabs: the workspace holds the object the question names, or the answer says it does not",
+  "data_check": "the workspace holds the object the question names, or the answer says it does not",
   "prompt": "list our brand kits.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": null,
+  "seed": "plugins=elevenlabs",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "wide"
   ],
+  "data": "own",
   "items": [
     {
-      "id": "ELV-OC01",
+      "id": "ELV-TR01",
       "severity": "blocker",
       "ask": "It read it with creative_list_brand_kits once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
+          "kind": "call",
           "tool": "elevenlabs.creative_list_brand_kits",
-          "op": "==",
-          "value": 1
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
     },
     {
       "id": "ELV-SF01",
@@ -70,17 +87,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 23
+    },
+    {
+      "id": "ELV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "503be87af2c8e213ee4684e74592e06c94afd9948ca3287c7345eb3a48901840"
+    "source_sha256": "7818e9ad36b856dd31087bd5936fadddbb37973a244875f73d42bc2986bdf0f1"
   }
 }

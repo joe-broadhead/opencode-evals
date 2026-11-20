@@ -16,10 +16,6 @@
   "seed": "cwd=saved-line",
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "patch",
-    "formats"
-  ],
   "sets": [
     "corpus",
     "revise"
@@ -42,7 +38,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 15
     },
     {
       "id": "C-OC01",
@@ -64,7 +60,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 17
     },
     {
       "id": "C-OC02",
@@ -82,7 +78,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 19
     },
     {
       "id": "C-OC03",
@@ -113,7 +109,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 21
     },
     {
       "id": "C-OC04",
@@ -136,7 +132,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 24
     }
   ],
   "oracle": [],
@@ -144,10 +140,10 @@
     {
       "id": null,
       "text": "The zoom itself is verified by the plugin's browser suite (recipe-x-zoom), not per run: this case grades that the agent asked for the supported preset and the format that carries it.",
-      "line": 33
+      "line": 28
     }
   ],
   "hashes": {
-    "source_sha256": "4bb4d886e23b98399d2770f7101c18fc4904e7a66d0db6e070abe6ff56e18e66"
+    "source_sha256": "caf35b9ebecee31112671fa0d5abbeeb3ee76894c78f88ff7e1fbde6783e069d"
   }
 }

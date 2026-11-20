@@ -6,38 +6,39 @@
   "tier": "T3",
   "source": "wide sweep: get_entity_fields (the fields a record type supports)",
   "decision": "A which-fields question is one get_entity_fields for the type",
-  "data_check": "affinity: the CRM's company fields",
+  "data_check": "the CRM's company fields",
   "prompt": "what fields do we keep on companies in Affinity?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": null,
+  "seed": "plugins=affinity",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "AFF-OC01",
+      "id": "AFF-TR01",
       "severity": "blocker",
       "ask": "It used get_entity_fields once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
+          "kind": "call",
           "tool": "affinity.get_entity_fields",
-          "op": "==",
-          "value": 1
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "AFF-PR01",
@@ -57,10 +58,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
     },
     {
-      "id": "AFF-OC03",
+      "id": "AFF-OC01",
       "severity": "major",
       "ask": "The answer lists the fields.",
       "forbidden": false,
@@ -80,12 +81,60 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ba33fe737d50d445dcb9605129ff2720defa4a64e9ff29c5c99894e238c4b27c"
+    "source_sha256": "6c83865579295367f0a7f4bc0611e879fb9d515d06f2bc9463514ca6516255cd"
   }
 }

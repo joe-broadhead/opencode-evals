@@ -16,9 +16,6 @@
   "seed": "cwd=data",
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "document"
-  ],
   "sets": [
     "corpus",
     "create"
@@ -44,7 +41,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 15
     },
     {
       "id": "C-OC02",
@@ -102,7 +99,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 17
     },
     {
       "id": "C-OC03",
@@ -142,7 +139,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 23
     },
     {
       "id": "C-PR01",
@@ -162,7 +159,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 27
     },
     {
       "id": "C-EF01",
@@ -181,7 +178,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 29
     },
     {
       "id": "C-TR01",
@@ -198,7 +195,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 31
     },
     {
       "id": "C-SF01",
@@ -229,7 +226,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 41
+      "line": 35
     }
   ],
   "oracle": [],
@@ -237,10 +234,10 @@
     {
       "id": null,
       "text": "The expected totals are worked out by hand from fixtures/data/sales.csv (three months by two channels per region); the adapter recomputes them from the rows the saved chart captured.",
-      "line": 46
+      "line": 40
     }
   ],
   "hashes": {
-    "source_sha256": "619e37fdda11fbab8155d06948d8ce488247c643c36a2b7e8603ba0083674656"
+    "source_sha256": "c0df0a271da5a9d19c97a5c9df594470e5b04e2a87e29e833c4db8389ecf9cac"
   }
 }

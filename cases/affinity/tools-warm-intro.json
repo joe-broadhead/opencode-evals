@@ -6,41 +6,42 @@
   "tier": "T3",
   "source": "wide sweep: warm_intro (Affinity's warm intro playbook text)",
   "decision": "A find-me-a-warm-intro request calls the playbook once, then reads the relationships",
-  "data_check": "affinity: a path to {{target:affinity.company}} exists",
+  "data_check": "a path to {{target:affinity.company}} exists",
   "prompt": "find me a warm intro to {{target:affinity.company}} and draft the ask.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": null,
+  "seed": "plugins=affinity",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "AFF-OC01",
+      "id": "AFF-TR01",
       "severity": "blocker",
       "ask": "It used warm_intro once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
+          "kind": "call",
           "tool": "affinity.warm_intro",
-          "op": "==",
-          "value": 1
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "AFF-OC02",
+      "id": "AFF-OC01",
       "severity": "major",
       "ask": "The answer names the path and drafts the ask.",
       "forbidden": false,
@@ -60,7 +61,55 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     }
   ],
   "oracle": [],
@@ -68,10 +117,10 @@
     {
       "id": null,
       "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
-      "line": 21
+      "line": 31
     }
   ],
   "hashes": {
-    "source_sha256": "24326e78c71bc7909e9fe624bc614f5ee4bf13c6964772749d898f48b52dedac"
+    "source_sha256": "a8f36e39bf1b0e66f83abb6e1731e4f135bc6cb1da65192c2d9575032c305c3c"
   }
 }

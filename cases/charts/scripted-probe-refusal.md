@@ -5,7 +5,6 @@
 - Source: harness probe: the scripted model asks for x zoom on a pie (through Code Mode's execute), which the plugin refuses (INTERACTION_UNSUPPORTED) before writing anything
 - Decision tested: A refused document call saves nothing, and the adapter reports no chart rather than a wrong one.
 - Seed: cwd=data
-- Checkable: document
 - Budget: outer_calls <= 4, wall_ms <= 180000
 - Set: scripted
 

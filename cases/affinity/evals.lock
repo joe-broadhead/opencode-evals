@@ -1,0 +1,9 @@
+{
+  "plugin": "affinity",
+  "epoch": 1,
+  "cases": 93,
+  "items": 565,
+  "cases_sha256": "4a5357c7e5f8e9371c5274ecad386fba4321fceeaf2458630982c30e9716f4c8",
+  "grader_sha256": "388a7395d4e8d280aa52c5ec2dc62d877ebf9c2b627ebb33ad44de62ae0010c4",
+  "frozen_at": "2026-11-19T11:27:34.648Z"
+}

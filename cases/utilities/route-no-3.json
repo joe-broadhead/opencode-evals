@@ -13,15 +13,16 @@
     "outer_calls": 8,
     "inner_calls": 6
   },
-  "seed": null,
+  "seed": "plugins=utilities",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "UTL-RL01",
+      "id": "UTL-RT01",
       "severity": "blocker",
       "ask": "No utilities tool was called.",
       "forbidden": false,
@@ -36,7 +37,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "UTL-OC01",
@@ -59,12 +60,60 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
+    },
+    {
+      "id": "UTL-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "UTL-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "UTL-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "61bcd74a14e228767971f503dae288760d4159d39f27ff2f53f0aa2e9482ac82"
+    "source_sha256": "3e7cb512555807c99d385a3c43a72d62ba573644789f3332a80c8687e2f53380"
   }
 }

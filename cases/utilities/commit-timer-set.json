@@ -13,15 +13,16 @@
     "outer_calls": 8,
     "inner_calls": 6
   },
-  "seed": null,
+  "seed": "plugins=utilities",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "commit"
   ],
+  "data": "own",
   "items": [
     {
-      "id": "UTL-OC01",
+      "id": "UTL-CT01",
       "severity": "blocker",
       "ask": "Exactly one timer_set, and it was not declined.",
       "forbidden": false,
@@ -41,10 +42,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "UTL-OC02",
+      "id": "UTL-CT02",
       "severity": "blocker",
       "ask": "The timer exists afterwards, read back with timer_get.",
       "forbidden": false,
@@ -60,10 +61,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 20
     },
     {
-      "id": "UTL-OC03",
+      "id": "UTL-CT03",
       "severity": "major",
       "ask": "The deadline is tomorrow at 09:00 with an offset.",
       "forbidden": false,
@@ -85,7 +86,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
+    },
+    {
+      "id": "UTL-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
     },
     {
       "id": "UTL-SF01",
@@ -103,12 +120,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 28
+    },
+    {
+      "id": "UTL-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c7b831c342eba547eb6bb81a26b302a6818d853a50b0788a77f39efb56b6d2de"
+    "source_sha256": "6710383129aec9002e28269e62b44ee106617c6c6a222a2325628532f5988fcd"
   }
 }

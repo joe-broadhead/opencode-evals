@@ -6,38 +6,39 @@
   "tier": "T3",
   "source": "wide sweep: query_notes (notes across records, filtered)",
   "decision": "A recent-notes question is one query_notes with a window, not a sweep of every record",
-  "data_check": "affinity: notes created in the last week",
+  "data_check": "notes created in the last week",
   "prompt": "show me the notes we added across the CRM this week.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": null,
+  "seed": "plugins=affinity",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "AFF-OC01",
+      "id": "AFF-TR01",
       "severity": "blocker",
       "ask": "It used query_notes once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
+          "kind": "call",
           "tool": "affinity.query_notes",
-          "op": "==",
-          "value": 1
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "AFF-PR01",
@@ -57,10 +58,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
     },
     {
-      "id": "AFF-OC03",
+      "id": "AFF-OC01",
       "severity": "major",
       "ask": "The answer lists the notes with the records they belong to.",
       "forbidden": false,
@@ -80,12 +81,60 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "18f73ee032b10673a60264c3d10b909dee88018f68596914bf30ca9147934bc6"
+    "source_sha256": "ea643bcb5e382e0f9c595f5c3d4dbc288009aac64a5460417a2557e877d1f071"
   }
 }

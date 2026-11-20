@@ -4,7 +4,9 @@
 - Tier: T3
 - Source: wide sweep: render_market_map (draws nothing here; the same data as a short table)
 - Decision tested: A market-map render is called once, and the answer gives the same data as a table
-- Data check: affinity: the thesis, companies and explore list are the user's own
+- Data check: the thesis, companies and explore list are the user's own
+- Seed: plugins=affinity
+- Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
@@ -12,9 +14,17 @@
 render the market map for our AI infrastructure thesis with the companies we track and the ones to watch.
 
 ## Items
-- [AFF-OC01] blocker · It used render_market_map once.
-  evidence: count:affinity.render_market_map == 1
+- [AFF-TR01] blocker · It used render_market_map once.
+  evidence: call:affinity.render_market_map#1
 - [AFF-PR01] major · It passed the thesis.
   evidence: call:affinity.render_market_map#1 args.thesis present
-- [AFF-OC03] major · The answer gives a short table, not an image.
+- [AFF-OC01] major · The answer gives a short table, not an image.
   evidence: text:any matches /(\||table|company|thesis)/i
+- [AFF-OC02] minor · No tool was invented.
+  evidence: unknown-tool:none
+
+## Forbidden
+- [AFF-SF01] blocker · Nothing committed.
+  evidence: committed-write:none
+- [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
+  evidence: guard:clean

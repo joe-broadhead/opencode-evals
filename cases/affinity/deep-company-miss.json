@@ -6,22 +6,23 @@
   "tier": "T3",
   "source": "deep, error: a company name that does not resolve",
   "decision": "A miss says what was searched, asks for the domain or list, and offers no other source",
-  "data_check": "affinity: the name 'Northwind Dynamics' matches no company",
+  "data_check": "the name 'Northwind Dynamics' matches no company",
   "prompt": "find Northwind Dynamics in Affinity — I'm sure we track them.",
   "controls": [],
   "budgets": {
     "outer_calls": 14,
     "inner_calls": 10
   },
-  "seed": null,
+  "seed": "plugins=affinity",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "deep"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "AFF-OC01",
+      "id": "AFF-TR01",
       "severity": "blocker",
       "ask": "It searched the company name once.",
       "forbidden": false,
@@ -37,10 +38,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "AFF-OC02",
+      "id": "AFF-OC01",
       "severity": "major",
       "ask": "The answer says nothing matched, and names what it searched.",
       "forbidden": false,
@@ -60,10 +61,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
     },
     {
-      "id": "AFF-OC03",
+      "id": "AFF-OC02",
       "severity": "major",
       "ask": "It asks for the domain, the company or the list.",
       "forbidden": false,
@@ -83,7 +84,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
+    },
+    {
+      "id": "AFF-OC03",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
     },
     {
       "id": "AFF-SF01",
@@ -102,17 +119,36 @@
           "kind": "absent",
           "tool": "affinity.create_company",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 27
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1a796c60bbc2cba22911017378c16fdd8a4f02a0daae7bae50b326a3dd04d750"
+    "source_sha256": "3d257735d6927ed8a43c9e8672c7c1d6e8ce44a18698d600f84cb87d6d77e1bd"
   }
 }

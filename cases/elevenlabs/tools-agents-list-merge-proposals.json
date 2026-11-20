@@ -6,38 +6,39 @@
   "tier": "T3",
   "source": "wide sweep: agents_list_merge_proposals (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_list_merge_proposals reads is answered with one call and its arguments, and nothing is changed",
-  "data_check": "elevenlabs: the workspace holds the object the question names, or the answer says it does not",
+  "data_check": "the workspace holds the object the question names, or the answer says it does not",
   "prompt": "list the open merge proposals.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": null,
+  "seed": "plugins=elevenlabs",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "wide"
   ],
+  "data": "own",
   "items": [
     {
-      "id": "ELV-OC01",
+      "id": "ELV-TR01",
       "severity": "blocker",
       "ask": "It read it with agents_list_merge_proposals once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
+          "kind": "call",
           "tool": "elevenlabs.agents_list_merge_proposals",
-          "op": "==",
-          "value": 1
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "ELV-PR01",
@@ -57,7 +58,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
     },
     {
       "id": "ELV-SF01",
@@ -90,17 +107,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 25
+    },
+    {
+      "id": "ELV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "996f695313e6577423a3aaf285150ce2144e25b6aee43fce322746815efd5126"
+    "source_sha256": "eb48a0873697ec4dde6b916be12ca3391ee7ab8503aded791daf2c79a848bda7"
   }
 }

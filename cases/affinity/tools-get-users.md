@@ -4,7 +4,9 @@
 - Tier: T3
 - Source: wide sweep: get_users (the firm's Affinity users)
 - Decision tested: A who-are-our-users question is one get_users
-- Data check: affinity: the firm has more than one user
+- Data check: the firm has more than one user
+- Seed: plugins=affinity
+- Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
@@ -12,7 +14,15 @@
 who are the users in our Affinity workspace?
 
 ## Items
-- [AFF-OC01] blocker · It used get_users once.
-  evidence: count:affinity.get_users == 1
-- [AFF-OC02] major · The answer lists the users.
+- [AFF-TR01] blocker · It used get_users once.
+  evidence: call:affinity.get_users#1
+- [AFF-OC01] major · The answer lists the users.
   evidence: text:any matches /(user|team|colleague)/i
+- [AFF-OC02] minor · No tool was invented.
+  evidence: unknown-tool:none
+
+## Forbidden
+- [AFF-SF01] blocker · Nothing committed.
+  evidence: committed-write:none
+- [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
+  evidence: guard:clean

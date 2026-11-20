@@ -4,7 +4,9 @@
 - Tier: T3
 - Source: wide sweep: get_reminders (reminders on records, filtered)
 - Decision tested: A what-reminders-are-due question is one get_reminders for the window
-- Data check: affinity: at least one reminder due this week
+- Data check: at least one reminder due this week
+- Seed: plugins=affinity
+- Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
@@ -12,9 +14,17 @@
 what CRM reminders are due this week?
 
 ## Items
-- [AFF-OC01] blocker · It used get_reminders once.
-  evidence: count:affinity.get_reminders == 1
+- [AFF-TR01] blocker · It used get_reminders once.
+  evidence: call:affinity.get_reminders#1
 - [AFF-PR01] major · It bounded the window.
   evidence: call:affinity.get_reminders#1 args.due_before present
-- [AFF-OC03] major · The answer lists the reminders and the records they are on.
+- [AFF-OC01] major · The answer lists the reminders and the records they are on.
   evidence: text:any matches /(reminder|due|company|none)/i
+- [AFF-OC02] minor · No tool was invented.
+  evidence: unknown-tool:none
+
+## Forbidden
+- [AFF-SF01] blocker · Nothing committed.
+  evidence: committed-write:none
+- [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
+  evidence: guard:clean

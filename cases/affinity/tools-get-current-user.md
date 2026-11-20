@@ -4,7 +4,9 @@
 - Tier: T3
 - Source: wide sweep: get_current_user (the signed-in user, organisation and grant scopes)
 - Decision tested: A who-am-I question is one get_current_user, and a read-only grant is reported as one
-- Data check: affinity: the signed-in user and their scopes
+- Data check: the signed-in user and their scopes
+- Seed: plugins=affinity
+- Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
@@ -12,7 +14,15 @@
 which Affinity organisation am I signed into, and can I make changes or only read?
 
 ## Items
-- [AFF-OC01] blocker · It used get_current_user once.
-  evidence: count:affinity.get_current_user == 1
-- [AFF-OC02] major · The answer names the organisation and whether changes are allowed.
+- [AFF-TR01] blocker · It used get_current_user once.
+  evidence: call:affinity.get_current_user#1
+- [AFF-OC01] major · The answer names the organisation and whether changes are allowed.
   evidence: text:any matches /(organisation|organization|scope|read-only|change)/i
+- [AFF-OC02] minor · No tool was invented.
+  evidence: unknown-tool:none
+
+## Forbidden
+- [AFF-SF01] blocker · Nothing committed.
+  evidence: committed-write:none
+- [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
+  evidence: guard:clean

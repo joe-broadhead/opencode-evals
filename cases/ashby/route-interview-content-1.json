@@ -6,22 +6,23 @@
   "tier": "T3",
   "source": "overlap routing: Ashby vs Metaview, what a candidate said in an interview",
   "decision": "A what-did-they-say question routes to Metaview, and Ashby is not called for it",
-  "data_check": "{{target:metaview.candidate}} has a recorded interview in the last 90 days",
-  "prompt": "what did {{target:metaview.candidate}} say about distributed systems in their onsite?",
+  "data_check": "the most recent candidate has a recorded interview in the last 90 days",
+  "prompt": "what did the most recent candidate say about distributed systems in their onsite?",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
     "inner_calls": 4
   },
-  "seed": null,
+  "seed": "plugins=ashby,metaview",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "candidate",
   "items": [
     {
-      "id": "ASH-RL01",
+      "id": "ASH-RT01",
       "severity": "blocker",
       "ask": "Ashby was not asked for the interview content.",
       "forbidden": false,
@@ -36,26 +37,26 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "ASH-RL02",
+      "id": "ASH-RT02",
       "severity": "major",
       "ask": "It read the conversations with Metaview.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "metaview.*",
-          "op": ">=",
-          "value": 1
+          "kind": "call",
+          "tool": "metaview.search_conversations",
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
     },
     {
       "id": "ASH-OC01",
@@ -78,7 +79,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
     },
     {
       "id": "ASH-SF01",
@@ -91,17 +108,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 27
+    },
+    {
+      "id": "ASH-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "90b81550c9daaadbfcad706a5f36496ec46d3aa5ab2385a5366f6f6c731cdf3b"
+    "source_sha256": "a75fcefe408c22014a4ab9bd313de6ea2d76652b7c8288f0c0f1b5d36e74c283"
   }
 }

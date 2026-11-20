@@ -6,38 +6,39 @@
   "tier": "T3",
   "source": "wide sweep: find_candidate_in_sequences (whether a candidate is already in outreach)",
   "decision": "A is-she-already-in-a-sequence question is one lookup by email or profile",
-  "data_check": "candidate data: {{target:metaview.candidate}} has an email on file",
-  "prompt": "is {{target:metaview.candidate}} already in any of our outreach sequences? I don't want to add them twice.",
+  "data_check": "the most recent candidate has an email on file",
+  "prompt": "is the most recent candidate already in any of our outreach sequences? I don't want to add them twice.",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
     "inner_calls": 6
   },
-  "seed": null,
+  "seed": "plugins=metaview",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "wide"
   ],
+  "data": "candidate",
   "items": [
     {
-      "id": "MV-OC01",
+      "id": "MV-TR01",
       "severity": "blocker",
       "ask": "It used find_candidate_in_sequences once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
+          "kind": "call",
           "tool": "metaview.find_candidate_in_sequences",
-          "op": "==",
-          "value": 1
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "MV-PR01",
@@ -57,10 +58,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
     },
     {
-      "id": "MV-OC03",
+      "id": "MV-OC01",
       "severity": "major",
       "ask": "The answer says whether they are in a sequence, and names it if so.",
       "forbidden": false,
@@ -80,12 +81,60 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
+    },
+    {
+      "id": "MV-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "MV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "MV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "58ac20b9d46adfb20c5ae03cb779da553a759d6b39f4fd15d17ba9f445fbe4ad"
+    "source_sha256": "db288d4724e3d50dcddce2b31cfec29584039670631d57d2598d13fadcf9f6d9"
   }
 }

@@ -6,22 +6,23 @@
   "tier": "T3",
   "source": "deep, date window: notes added last week, in the user's local days",
   "decision": "The window is the user's local week, converted to UTC in the filter, and the answer names the zone",
-  "data_check": "affinity: notes created in the last week",
+  "data_check": "notes created in the last week",
   "prompt": "what notes did we add last week? group them by company.",
   "controls": [],
   "budgets": {
     "outer_calls": 14,
     "inner_calls": 10
   },
-  "seed": "utc-hours=9-17",
+  "seed": "plugins=affinity utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "deep"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "AFF-OC01",
+      "id": "AFF-DT01",
       "severity": "blocker",
       "ask": "It queried the notes with a window.",
       "forbidden": false,
@@ -37,7 +38,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "AFF-PR01",
@@ -62,10 +63,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
-      "id": "AFF-OC02",
+      "id": "AFF-OC01",
       "severity": "major",
       "ask": "The answer names the window and groups the notes by company.",
       "forbidden": false,
@@ -85,10 +86,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "AFF-OC03",
+      "id": "AFF-OC02",
       "severity": "minor",
       "ask": "It names the zone the local days were taken in.",
       "forbidden": false,
@@ -97,7 +98,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "AFF-OC03",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
     },
     {
       "id": "AFF-SF01",
@@ -111,17 +128,36 @@
           "tool": "affinity.query_notes",
           "op": "<=",
           "value": 2
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 29
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5f6bea052f4514f55579936ea902225ebc1e15126c4026967e901a3a35f1084f"
+    "source_sha256": "e5a0c27dcbbb407e3c4dd7bd9bec36d8c7cdab6aa9381e796d860c2b89bd4035"
   }
 }

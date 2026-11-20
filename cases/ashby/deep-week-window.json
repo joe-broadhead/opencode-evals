@@ -13,15 +13,16 @@
     "outer_calls": 6,
     "inner_calls": 4
   },
-  "seed": "utc-hours=9-17",
+  "seed": "plugins=ashby utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "deep"
   ],
+  "data": "candidate",
   "items": [
     {
-      "id": "ASH-OC01",
+      "id": "ASH-TR01",
       "severity": "blocker",
       "ask": "It counted with one filter call.",
       "forbidden": false,
@@ -37,7 +38,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "ASH-PR01",
@@ -57,10 +58,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
-      "id": "ASH-OC02",
+      "id": "ASH-DT01",
       "severity": "major",
       "ask": "The answer names the window it used, with the user's local days.",
       "forbidden": false,
@@ -80,10 +81,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "ASH-OC03",
+      "id": "ASH-RT01",
       "severity": "minor",
       "ask": "It gives the count by job, or says which jobs the applications are for.",
       "forbidden": false,
@@ -92,7 +93,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
     },
     {
       "id": "ASH-SF01",
@@ -106,17 +123,36 @@
           "tool": "ashby.filter_records",
           "op": "<=",
           "value": 2
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 29
+    },
+    {
+      "id": "ASH-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aee6c4666a18e4178ce949294e29aba9b2cd4b1ebb46718b4a281f96b8acb461"
+    "source_sha256": "572dedaf19d0d8b4d62462e4a6341fa207c29a83f6c503ca0067fbec7bf8d871"
   }
 }

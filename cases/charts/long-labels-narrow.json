@@ -16,10 +16,6 @@
   "seed": "cwd=data",
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "document",
-    "data"
-  ],
   "sets": [
     "corpus",
     "create"
@@ -63,7 +59,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 15
     },
     {
       "id": "C-OC02",
@@ -94,7 +90,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 19
     },
     {
       "id": "C-OC03",
@@ -146,7 +142,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 22
     },
     {
       "id": "C-SF01",
@@ -177,7 +173,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 28
     }
   ],
   "oracle": [],
@@ -185,10 +181,10 @@
     {
       "id": null,
       "text": "A saved artifact at 360 × 480 means the planner met the inline profile's 11 px label floor: an unsatisfiable layout is refused with LAYOUT_UNSATISFIABLE and saves nothing.",
-      "line": 37
+      "line": 34
     }
   ],
   "hashes": {
-    "source_sha256": "0f0b47e2f44f77d7c355245752be8fc7b45a3ccde2691665437eb74ba2b7ae91"
+    "source_sha256": "061eaeca046305bc0e14196a52154e0ad2c0360fea28a98bb9e4ad761a55a618"
   }
 }

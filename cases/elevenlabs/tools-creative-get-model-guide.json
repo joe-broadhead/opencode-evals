@@ -6,38 +6,39 @@
   "tier": "T3",
   "source": "wide sweep: creative_get_model_guide (ElevenLabs MCP; creative tools)",
   "decision": "A request for what creative_get_model_guide reads is answered with one call and its arguments, and nothing is changed",
-  "data_check": "elevenlabs: the workspace holds the object the question names, or the answer says it does not",
+  "data_check": "the workspace holds the object the question names, or the answer says it does not",
   "prompt": "how should I prompt the image model for a product shot?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": null,
+  "seed": "plugins=elevenlabs",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "wide"
   ],
+  "data": "own",
   "items": [
     {
-      "id": "ELV-OC01",
+      "id": "ELV-TR01",
       "severity": "blocker",
       "ask": "It read it with creative_get_model_guide once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
+          "kind": "call",
           "tool": "elevenlabs.creative_get_model_guide",
-          "op": "==",
-          "value": 1
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "ELV-PR01",
@@ -57,7 +58,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
     },
     {
       "id": "ELV-SF01",
@@ -90,17 +107,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 25
+    },
+    {
+      "id": "ELV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6a3610dbc811ee1fe0ec30fe5f5bceb5d14e5467a251d02a143e7e8d2c6411cd"
+    "source_sha256": "41f84dad8362c43ab9031c7718550de88666df85311db7b933142be2a0f66ec4"
   }
 }

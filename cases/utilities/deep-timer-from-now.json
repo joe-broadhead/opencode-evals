@@ -13,15 +13,16 @@
     "outer_calls": 8,
     "inner_calls": 6
   },
-  "seed": null,
+  "seed": "plugins=utilities",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "deep"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "UTL-OC01",
+      "id": "UTL-TR01",
       "severity": "blocker",
       "ask": "It read the current time before setting the deadline.",
       "forbidden": false,
@@ -37,10 +38,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "UTL-OC02",
+      "id": "UTL-WR01",
       "severity": "blocker",
       "ask": "Exactly one timer_set, declined.",
       "forbidden": false,
@@ -60,7 +61,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
     },
     {
       "id": "UTL-PR01",
@@ -85,10 +86,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
-      "id": "UTL-OC03",
+      "id": "UTL-OC01",
       "severity": "major",
       "ask": "The answer says the timer was not set.",
       "forbidden": false,
@@ -122,7 +123,23 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 24
+    },
+    {
+      "id": "UTL-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     },
     {
       "id": "UTL-SF01",
@@ -135,17 +152,36 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 31
+    },
+    {
+      "id": "UTL-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f1d18c224834863c775f515d4f015c022429bd7d0b2bace0ea853465702029dc"
+    "source_sha256": "fc2e2573001581a677eb989ff81ab7501f5d5d7a84906fe1a6f132f055e90b38"
   }
 }

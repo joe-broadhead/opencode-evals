@@ -6,19 +6,20 @@
   "tier": "T3",
   "source": "deep, ambiguous: a weekend forecast with no place",
   "decision": "A forecast with no place asks which place, and fetches nothing before the answer",
-  "data_check": "none: the user names no place",
+  "data_check": "the user names no place",
   "prompt": "what's the weather looking like this weekend?",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
     "inner_calls": 6
   },
-  "seed": null,
+  "seed": "plugins=utilities",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "deep"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "UTL-OC01",
@@ -56,10 +57,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "UTL-OC02",
+      "id": "UTL-RT01",
       "severity": "major",
       "ask": "It asks which place the user means.",
       "forbidden": false,
@@ -79,10 +80,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 23
     },
     {
-      "id": "UTL-OC03",
+      "id": "UTL-OC02",
       "severity": "minor",
       "ask": "It says it can cover the weekend once it has the place.",
       "forbidden": false,
@@ -91,7 +92,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 25
+    },
+    {
+      "id": "UTL-OC03",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     },
     {
       "id": "UTL-SF01",
@@ -109,17 +126,36 @@
           "kind": "absent",
           "tool": "utilities.weather_daily",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 31
+    },
+    {
+      "id": "UTL-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "03d1dea35ecbcfb3c52f727f52e2710242890f7ce649f9096c88613d8290652a"
+    "source_sha256": "824466b9da1fa5ea3a938019d177c18116431a65385e043ea00274acb1fb2301"
   }
 }

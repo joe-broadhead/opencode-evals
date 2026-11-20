@@ -6,22 +6,23 @@
   "tier": "T3",
   "source": "overlap routing: a spoken line with no credits to spend belongs to Utilities' on-device speech",
   "decision": "A read-this-aloud request that must not spend credits routes to the local speech tool, not ElevenLabs",
-  "data_check": "none: the line is the user's own",
+  "data_check": "the line is the user's own",
   "prompt": "read this aloud for me, but don't spend any credits: \"standup in five minutes.\"",
   "controls": [],
   "budgets": {
     "outer_calls": 14,
     "inner_calls": 10
   },
-  "seed": null,
+  "seed": "plugins=elevenlabs,utilities",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "own",
   "items": [
     {
-      "id": "ELV-RL01",
+      "id": "ELV-RT01",
       "severity": "blocker",
       "ask": "It did not spend ElevenLabs credits.",
       "forbidden": false,
@@ -36,10 +37,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
-      "id": "ELV-RL02",
+      "id": "ELV-RT02",
       "severity": "major",
       "ask": "It used the on-device speech tool.",
       "forbidden": false,
@@ -55,12 +56,60 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "ELV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "ELV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d71b8dfa60b449a1f44564f62d86b9d4340f1fcc6efebf3522d64ae6aefc43da"
+    "source_sha256": "d0b0d099bc8d2ed930be7a506d8321e9e48bea5523bb7a8bf7bbd9280d921380"
   }
 }

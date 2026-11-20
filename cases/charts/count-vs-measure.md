@@ -5,7 +5,6 @@
 - Source: charts task corpus v1: count versus measure (one row per order, with an amount)
 - Decision tested: "How many" is a count of rows, with no measure bound; the order amount is not summed.
 - Seed: cwd=data
-- Checkable: document
 - Budget: outer_calls <= 16, wall_ms <= 420000
 - Set: corpus, create
 
@@ -18,12 +17,10 @@ How many orders came through each channel? Chart it from data/orders.csv.
   evidence: state:charts.values.Web == 5
   evidence: state:charts.values.Store == 4
   evidence: state:charts.values.Phone == 3
-
 - [C-OC02] major · The aggregate is count, and channel is the category.
   evidence: state:charts.count != 0
   evidence: state:charts.aggregate == count
   evidence: state:charts.binding.category == channel
-
 - [C-EF01] minor · Drawn on the first attempt: one charts_quick call.
   evidence: count:charts.quick <= 1
 

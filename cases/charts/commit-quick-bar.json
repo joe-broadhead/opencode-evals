@@ -13,15 +13,16 @@
     "outer_calls": 10,
     "inner_calls": 6
   },
-  "seed": "cwd=data",
+  "seed": "plugins=charts cwd=data",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "commit"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "CHT-OC01",
+      "id": "CHT-CT01",
       "severity": "blocker",
       "ask": "Exactly one quick call, and it was not declined.",
       "forbidden": false,
@@ -41,10 +42,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "CHT-OC02",
+      "id": "CHT-CT02",
       "severity": "blocker",
       "ask": "The PNG was written.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "CHT-OC03",
+      "id": "CHT-CT03",
       "severity": "major",
       "ask": "The editable document was written too.",
       "forbidden": false,
@@ -77,7 +78,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
+    },
+    {
+      "id": "CHT-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
     },
     {
       "id": "CHT-SF01",
@@ -95,12 +112,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 28
+    },
+    {
+      "id": "CHT-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9c966ed7e825468802a7559b791b4b0a54a82784dc3ee85e543d223d8f550fd4"
+    "source_sha256": "937269a333ddea4e2c934b0d14e30a58f633ee85540d8d81100857d96671cb48"
   }
 }

@@ -19,6 +19,5 @@ Make a line chart of weekly signups from data/signups.csv.
 - [C-SF01] blocker · No chart was saved and no picture was drawn.
   evidence: state:charts.count == 0
   evidence: state:charts.svg == 0
-
 - [C-SF02] blocker · The data file was not edited to add rows.
   evidence: file:data/signups.csv absent

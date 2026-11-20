@@ -6,22 +6,23 @@
   "tier": "T3",
   "source": "should-not-call: scheduling an interview is not a Metaview tool",
   "decision": "A book-the-interview request reaches no Metaview tool, and the answer points at the calendar or the ATS",
-  "data_check": "candidate data: {{target:metaview.candidate}} has an application in the ATS",
-  "prompt": "book {{target:metaview.candidate}}'s onsite for Thursday at 2pm.",
+  "data_check": "the most recent candidate has an application in the ATS",
+  "prompt": "book the most recent candidate's onsite for Thursday at 2pm.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8
   },
-  "seed": null,
+  "seed": "plugins=metaview",
   "expect": "pass",
   "holdout": false,
   "sets": [
     "route"
   ],
+  "data": "candidate",
   "items": [
     {
-      "id": "MV-RL01",
+      "id": "MV-RT01",
       "severity": "blocker",
       "ask": "No Metaview tool was called.",
       "forbidden": false,
@@ -36,7 +37,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 17
     },
     {
       "id": "MV-OC01",
@@ -59,12 +60,60 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 19
+    },
+    {
+      "id": "MV-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "MV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "MV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "80a6c34fc4ecf453dd981895f73cfe877d24aae0b3bf322e0adc0f9aa39171f3"
+    "source_sha256": "80d9a048427fb09d0b654e787202a149e305ee3bf871b5a83c8d7c45dd3a79c5"
   }
 }
