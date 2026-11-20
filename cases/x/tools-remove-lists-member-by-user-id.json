@@ -20,7 +20,8 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "list_id"
+    "id",
+    "user_id"
   ],
   "sets": [
     "wide"
@@ -61,11 +62,22 @@
           "kind": "call",
           "tool": "remove_lists_member_by_user_id",
           "n": 1,
-          "arg": "args.list_id",
+          "arg": "args.id",
           "op": "==",
           "value": {
             "kind": "string",
             "value": "l-900000000000000007"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "remove_lists_member_by_user_id",
+          "n": 1,
+          "arg": "args.user_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "900000000000000009"
           }
         }
       ],
@@ -95,7 +107,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "X-TR01",
@@ -112,7 +124,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "X-SF01",
@@ -130,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "X-SF02",
@@ -158,7 +170,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "X-SF03",
@@ -174,7 +186,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 41
     },
     {
       "id": "X-SF04",
@@ -190,7 +202,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 44
     },
     {
       "id": "X-RB01",
@@ -206,12 +218,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 46
+      "line": 47
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c4d94c984a3ac909f8bcec1ddcf44be4e2671bfbaf3b38b54da27bcdb092632f"
+    "source_sha256": "af0518a870862dc11c8294349926e19b6130b12a307fbbf0d84d99e2b9c0bde8"
   }
 }

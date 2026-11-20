@@ -25,8 +25,8 @@ summarise the last pricing call and post it to my Slack self-DM {{target:slack.s
 - [WF-OC02] major · The answer says nothing was posted, and gives the summary in chat.
   evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(posted|sent)/i
 
-- [WF-OC03] major · It labels the summary as Wispr Flow's.
-  evidence: text:any matches /(Wispr Flow|summary)/i
+- [WF-CT01] major · It cites the meeting by its share link.
+  evidence: text:any matches /notes\.wisprflow\.ai/
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

@@ -8,11 +8,11 @@
 - Data: real
 - Budget: outer_calls <= 6, inner_calls <= 4, billed_calls <= 2, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=x
-- Checkable: user_id
+- Checkable: id, user_id
 - Set: wide
 
 ## Prompt
-mute user 900000000000000009 (@evals232fixturehandle) in my broadcast chat.
+mute user 900000000000000009 (@evals232fixturehandle) in my broadcast chat b-900000000000000001.
 
 ## Items
 - [X-WR01] blocker · Exactly one mute_broadcast_chat_user call, and it was declined.
@@ -20,6 +20,7 @@ mute user 900000000000000009 (@evals232fixturehandle) in my broadcast chat.
   evidence: declined:mute_broadcast_chat_user
 
 - [X-PR01] major · The call carries the value the user named.
+  evidence: call:mute_broadcast_chat_user#1 args.id == "b-900000000000000001"
   evidence: call:mute_broadcast_chat_user#1 args.user_id == "900000000000000009"
 
 - [X-OC01] major · The answer says the call was declined, and nothing changed.

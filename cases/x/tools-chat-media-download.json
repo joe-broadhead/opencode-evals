@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This change is one chat_media_download call with the value the user named, asked and declined, and the answer says nothing changed.",
   "data_check": "none: the id is invented, so the write is declined before it reaches X",
-  "prompt": "download the media from chat message 900000000000000003.",
+  "prompt": "download media hash mhk-evals232-1 from chat message 900000000000000003.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -20,7 +20,8 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "id"
+    "id",
+    "media_hash_key"
   ],
   "sets": [
     "wide"
@@ -67,6 +68,17 @@
             "kind": "string",
             "value": "900000000000000003"
           }
+        },
+        {
+          "kind": "call",
+          "tool": "chat_media_download",
+          "n": 1,
+          "arg": "args.media_hash_key",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "mhk-evals232-1"
+          }
         }
       ],
       "evidence_any": [],
@@ -95,7 +107,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "X-TR01",
@@ -112,7 +124,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "X-SF01",
@@ -130,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "X-SF02",
@@ -158,7 +170,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "X-SF03",
@@ -174,7 +186,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 41
     },
     {
       "id": "X-SF04",
@@ -190,7 +202,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 44
     },
     {
       "id": "X-RB01",
@@ -206,12 +218,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 46
+      "line": 47
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e4e9c7cb0acd03170e3fe2219ceff316d90bfbb1632137d4e57b3e356a5a1660"
+    "source_sha256": "a5df33a45e3841a145cb5d38648085bf48cb9b70caac7507f266eea907f77dfa"
   }
 }

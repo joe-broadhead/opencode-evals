@@ -29,15 +29,23 @@
       "ask": "It read the recordings first.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "recent",
-          "op": ">=",
-          "value": 1
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "recent",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "count",
+            "tool": "list_files",
+            "op": ">=",
+            "value": 1
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
@@ -214,6 +222,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8cb660ac874f8c73db4428a1b1f0b8453175cbaa08b0091a3ef634b26cb18236"
+    "source_sha256": "ec8744a459a38e481bcb16dd42717839dfdf12beeba2d88a0bf1504abbce28cd"
   }
 }

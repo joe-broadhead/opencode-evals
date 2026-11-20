@@ -20,8 +20,8 @@ what's the status of QLN-1, and what is it about?
 - [JRA-OC02] blocker · The answer states what the fixture holds.
   evidence: text:any contains @fixture.jira.highest_priority_summary
 
-- [JRA-CT01] major · The answer names the item by its key.
-  evidence: text:any contains @fixture.jira.highest_priority_key
+- [JRA-OC03] major · The answer gives the item's status.
+  evidence: text:any matches /In Progress/i
 
 - [JRA-TR01] minor · The jira skill was loaded.
   evidence: skill:jira

@@ -20,7 +20,8 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "name"
+    "name",
+    "region"
   ],
   "sets": [
     "wide"
@@ -67,6 +68,17 @@
             "kind": "string",
             "value": "evals-232"
           }
+        },
+        {
+          "kind": "call",
+          "tool": "create_source",
+          "n": 1,
+          "arg": "args.region",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "US"
+          }
         }
       ],
       "evidence_any": [],
@@ -95,7 +107,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "X-TR01",
@@ -112,7 +124,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "X-SF01",
@@ -130,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "X-SF02",
@@ -158,7 +170,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "X-SF03",
@@ -174,7 +186,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 41
     },
     {
       "id": "X-SF04",
@@ -190,7 +202,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 44
     },
     {
       "id": "X-RB01",
@@ -206,12 +218,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 46
+      "line": 47
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e2a98183ae6179dd27727d9592de81d74e1c3edaae7ef55e0979b5dc09e5b98f"
+    "source_sha256": "5f75b73e134238b0ac9bf60044ccde1e550a63e17adb66d1c437b7d1d15d4a50"
   }
 }

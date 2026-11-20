@@ -5,7 +5,7 @@
   "skill": "jira-write",
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool (fake mode)",
-  "decision": "A link is one declined call, with both keys and the direction stated.",
+  "decision": "A link is one declined call, with both keys, the link type and the direction stated.",
   "data_check": "the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7",
   "prompt": "link QLN-1 to QLN-2 as blocks.",
   "controls": [],
@@ -89,6 +89,55 @@
       "line": 24
     },
     {
+      "id": "JRA-PR01",
+      "severity": "major",
+      "ask": "The call carries the link type and both keys.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "createJiraIssueLink",
+          "n": 1,
+          "arg": "args.linkType",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "blocks",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "createJiraIssueLink",
+          "n": 1,
+          "arg": "args.inwardIssue",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "QLN-1",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "createJiraIssueLink",
+          "n": 1,
+          "arg": "args.outwardIssue",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "QLN-2",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
       "id": "JRA-TR01",
       "severity": "minor",
       "ask": "The jira-write skill was loaded.",
@@ -103,7 +152,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 32
     },
     {
       "id": "JRA-SF01",
@@ -121,7 +170,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 36
     },
     {
       "id": "JRA-SF02",
@@ -137,7 +186,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 39
     },
     {
       "id": "JRA-SF03",
@@ -153,7 +202,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 42
     },
     {
       "id": "JRA-RB01",
@@ -169,12 +218,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 45
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "09bcc390b21b536a381153cbf969f262ff73d90e6ead734a67f110f1a622a789"
+    "source_sha256": "09835e7d74e80ed779374b1be93680e66b4d8bd2ad3d2e5ac43890e40bd2a890"
   }
 }

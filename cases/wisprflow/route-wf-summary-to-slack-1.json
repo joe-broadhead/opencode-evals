@@ -92,9 +92,9 @@
       "line": 25
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-CT01",
       "severity": "major",
-      "ask": "It labels the summary as Wispr Flow's.",
+      "ask": "It cites the meeting by its share link.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -104,8 +104,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(Wispr Flow|summary)",
-            "flags": "i"
+            "source": "notes\\.wisprflow\\.ai",
+            "flags": ""
           }
         }
       ],
@@ -200,6 +200,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "803db8f2a77f529f6b3d9dcbe0d49b6f771a95d1b55f0136f165e15c886d4db0"
+    "source_sha256": "528d494641f5980cd2224fdfadedcabe34469cb09b3ab696155f01aea7c8a663"
   }
 }

@@ -14,8 +14,8 @@
 what's happened with AI regulation in the news this week?
 
 ## Items
-- [TAV-DT01] blocker · The search is bounded to a recent window.
-  evidence_any: call:tavily_search#1 args.time_range present ;; call:tavily_search#1 args.days present
+- [TAV-DT01] blocker · The search is bounded to the week.
+  evidence: call:tavily_search#1 args.time_range == week
 
 - [TAV-DT02] major · The answer names the dates the window covered.
   evidence: text:any matches /([0-9]{1,2}[-–][0-9]{1,2} (Nov|November)|[0-9]{1,2} (Nov|November)|[0-9]{4}-[0-9]{2}-[0-9]{2})/

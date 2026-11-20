@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This change is one add_conversation_keys call with the value the user named, asked and declined, and the answer says nothing changed.",
   "data_check": "none: the id is invented, so the write is declined before it reaches X",
-  "prompt": "add conversation key version kv-3 to conversation 900000000000000002.",
+  "prompt": "add conversation key version kv-3 to conversation 900000000000000002, with participant keys [{\"user_id\":\"900000000000000009\",\"encrypted_key\":\"ZmFrZS1rZXk=\"}].",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -20,7 +20,8 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "conversation_key_version"
+    "conversation_key_version",
+    "id"
   ],
   "sets": [
     "wide"
@@ -67,6 +68,24 @@
             "kind": "string",
             "value": "kv-3"
           }
+        },
+        {
+          "kind": "call",
+          "tool": "add_conversation_keys",
+          "n": 1,
+          "arg": "args.id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "900000000000000002"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "add_conversation_keys",
+          "n": 1,
+          "arg": "args.conversation_participant_keys",
+          "op": "present"
         }
       ],
       "evidence_any": [],
@@ -95,7 +114,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 27
     },
     {
       "id": "X-TR01",
@@ -112,7 +131,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 30
     },
     {
       "id": "X-SF01",
@@ -130,7 +149,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 34
     },
     {
       "id": "X-SF02",
@@ -158,7 +177,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 37
     },
     {
       "id": "X-SF03",
@@ -174,7 +193,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 42
     },
     {
       "id": "X-SF04",
@@ -190,7 +209,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 45
     },
     {
       "id": "X-RB01",
@@ -206,12 +225,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 46
+      "line": 48
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "96f730bc5d08a8561cbd4fc50894f4ab500e9fc21b4bcc9426089489df1e92e1"
+    "source_sha256": "329a496eb4c98bbba38a6dce4de05f904a6fb3338074ab3bb2f4f78e3b0dc13d"
   }
 }

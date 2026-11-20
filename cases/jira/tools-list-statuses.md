@@ -18,7 +18,12 @@ what statuses does the QLN workflow have?
   evidence: count:listJiraStatuses == 1
 
 - [JRA-OC02] blocker · The answer states what the fixture holds.
+  evidence: text:any matches /To Do/i
+
+- [JRA-OC03] major · It lists all four statuses.
+  evidence: text:any matches /In Progress/i
   evidence: text:any matches /In Review/i
+  evidence: text:any matches /Done/i
 
 - [JRA-TR01] minor · The jira skill was loaded.
   evidence: skill:jira

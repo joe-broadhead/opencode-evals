@@ -44,6 +44,34 @@
       "line": 17
     },
     {
+      "id": "X-PR02",
+      "severity": "major",
+      "ask": "It resolved the account's own id, or passed it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "get_users_me",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "call",
+            "tool": "get_users_bookmark_folders",
+            "n": 1,
+            "arg": "args.id",
+            "op": "present"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
       "id": "X-TR01",
       "severity": "minor",
       "ask": "The x skill was loaded.",
@@ -58,7 +86,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 23
     },
     {
       "id": "X-SF01",
@@ -80,7 +108,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 27
     },
     {
       "id": "X-EF01",
@@ -99,7 +127,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 31
     },
     {
       "id": "X-RB01",
@@ -115,12 +143,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3b8a8d4ee26d6529b717bc47f4ae3b63b8523e8e882ada879e8a48c1e0e74441"
+    "source_sha256": "63a671e9926d0eff8832750f05ac0a701a4422d3ac82385196d719e09ccb6a5b"
   }
 }

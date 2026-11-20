@@ -17,6 +17,9 @@ what have I bookmarked recently?
 - [X-OC01] blocker · The read ran once, with get_users_bookmarks.
   evidence: count:get_users_bookmarks >= 1
 
+- [X-PR02] major · It resolved the account's own id, or passed it.
+  evidence_any: count:get_users_me >= 1 ;; call:get_users_bookmarks#1 args.id present
+
 - [X-TR01] minor · The x skill was loaded.
   evidence: skill:x
 

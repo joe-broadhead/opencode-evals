@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This change is one create_scheduled_broadcast call with the value the user named, asked and declined, and the answer says nothing changed.",
   "data_check": "none: the id is invented, so the write is declined before it reaches X",
-  "prompt": "schedule a broadcast for 2026-12-01T10:00:00Z called \"evals test\".",
+  "prompt": "schedule a broadcast from source src-900000000000000012 for 1796119200000 (2026-12-01T10:00:00Z), called \"evals test\".",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -20,7 +20,8 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "scheduled_start_ms"
+    "scheduled_start_ms",
+    "source_id"
   ],
   "sets": [
     "wide"
@@ -62,11 +63,21 @@
           "tool": "create_scheduled_broadcast",
           "n": 1,
           "arg": "args.scheduled_start_ms",
-          "op": "matches",
+          "op": "==",
           "value": {
-            "kind": "regex",
-            "source": "2026-12-01",
-            "flags": "i"
+            "kind": "string",
+            "value": "1796119200000"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "create_scheduled_broadcast",
+          "n": 1,
+          "arg": "args.source_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "src-900000000000000012"
           }
         }
       ],
@@ -96,7 +107,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "X-TR01",
@@ -113,7 +124,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "X-SF01",
@@ -131,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "X-SF02",
@@ -159,7 +170,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "X-SF03",
@@ -175,7 +186,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 41
     },
     {
       "id": "X-SF04",
@@ -191,7 +202,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 44
     },
     {
       "id": "X-RB01",
@@ -207,12 +218,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 46
+      "line": 47
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d5be80759b94d600d1bd1980a2259e564f23876b15fc36462bba15d6e85365d1"
+    "source_sha256": "4b3c0e65792e9a6ca6208e02e23db4cbf3eeea3ffb5b4bd9994b64cd93646b93"
   }
 }

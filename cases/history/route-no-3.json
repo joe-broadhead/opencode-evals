@@ -82,6 +82,25 @@
       "line": 23
     },
     {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "The answer comes from a web search, not from memory.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "tavily_search",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
       "id": "H-SF01",
       "severity": "blocker",
       "ask": "Nothing was written: no file, no edit, and no pin.",
@@ -111,7 +130,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 30
     },
     {
       "id": "H-RB01",
@@ -127,12 +146,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "14ca019e7c1351b2e1b88573d5ac2d91cdee029e82e7c2dc37bcf98acd900e24"
+    "source_sha256": "8fb1ba2fdf558b81afae41a917834ffcc08d2c53a8c1a8394a841d37a5361cbe"
   }
 }

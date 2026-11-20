@@ -20,7 +20,8 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "id"
+    "id",
+    "start_time"
   ],
   "sets": [
     "wide"
@@ -67,6 +68,18 @@
             "kind": "string",
             "value": "c-900000000000000005"
           }
+        },
+        {
+          "kind": "call",
+          "tool": "update_scheduled_call",
+          "n": 1,
+          "arg": "args.start_time",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "2026-12-01",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -95,7 +108,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "X-TR01",
@@ -112,7 +125,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "X-SF01",
@@ -130,7 +143,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "X-SF02",
@@ -158,7 +171,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "X-SF03",
@@ -174,7 +187,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 41
     },
     {
       "id": "X-SF04",
@@ -190,7 +203,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 44
     },
     {
       "id": "X-RB01",
@@ -206,12 +219,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 46
+      "line": 47
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "05d9a1fc8b364fec0e88f9a3ec9fe2596a992183dff4c64c3b76b7e52296f6cd"
+    "source_sha256": "f7f7e6ef38bf10dc9d44d557dd4fedddea83c2b58cd226ab81b10cc0d81cada8"
   }
 }

@@ -55,7 +55,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "In Review",
+            "source": "To Do",
             "flags": "i"
           }
         }
@@ -64,6 +64,49 @@
       "na_when": [],
       "maps_to": [],
       "line": 20
+    },
+    {
+      "id": "JRA-OC03",
+      "severity": "major",
+      "ask": "It lists all four statuses.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "In Progress",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "In Review",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Done",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
     },
     {
       "id": "JRA-TR01",
@@ -80,7 +123,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 28
     },
     {
       "id": "JRA-SF01",
@@ -112,7 +155,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 32
     },
     {
       "id": "JRA-RB01",
@@ -128,12 +171,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8cca1a4d70536a6a40c462e7882a15f9a4565aac95a71822e217fe21bfa8f6e5"
+    "source_sha256": "6492d62e91e040d45aa2de162a41fa458e34203d80e0c1e5406021eea35eed3e"
   }
 }

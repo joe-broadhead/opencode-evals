@@ -11,14 +11,15 @@
 - Set: deep
 
 ## Prompt
-what did I record last week? give me the days and lengths.
+what did I record between 9 and 15 November 2026? give me the days and lengths.
 
 ## Items
-- [PLD-DT01] blocker · The read was bounded to last week.
-  evidence_any: call:list_files#1 args.date_from present ;; call:recent#1
+- [PLD-DT01] blocker · The read is bounded to 9 and 15 November.
+  evidence: call:list_files#1 args.date_from == "2026-11-09"
+  evidence: call:list_files#1 args.date_to == "2026-11-15"
 
-- [PLD-DT02] major · The answer names the dates the window covered.
-  evidence: text:any matches /([0-9]{1,2}[-–][0-9]{1,2} (Nov|November)|[0-9]{1,2} (Nov|November)|[0-9]{4}-[0-9]{2}-[0-9]{2})/
+- [PLD-DT02] major · It gives each recording's length.
+  evidence: text:any matches /([0-9]+ ?(min|minutes|h|hours)|[0-9]{1,2}:[0-9]{2})/i
 
 - [PLD-OC01] major · Each recording is named with its day and length.
   evidence: text:any matches /([0-9]+ ?(min|minutes|h|hours)|[0-9]{1,2}:[0-9]{2})/i

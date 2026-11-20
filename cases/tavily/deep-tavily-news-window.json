@@ -26,28 +26,23 @@
     {
       "id": "TAV-DT01",
       "severity": "blocker",
-      "ask": "The search is bounded to a recent window.",
+      "ask": "The search is bounded to the week.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "call",
-            "tool": "tavily_search",
-            "n": 1,
-            "arg": "args.time_range",
-            "op": "present"
-          },
-          {
-            "kind": "call",
-            "tool": "tavily_search",
-            "n": 1,
-            "arg": "args.days",
-            "op": "present"
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "tavily_search",
+          "n": 1,
+          "arg": "args.time_range",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "week"
           }
-        ]
+        }
       ],
+      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
@@ -201,6 +196,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c25d5dfa961a0bc1d6ae09b7972e46207420f37e73e062c47aeb0ef6f8fa2ad7"
+    "source_sha256": "9cd072d50b5ddcfbf7aefa440d364761e62b4928f69def609d16c0c0d0ebef7b"
   }
 }

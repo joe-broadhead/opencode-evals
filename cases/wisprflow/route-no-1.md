@@ -7,7 +7,7 @@
 - Data check: none
 - Data: real
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000, wall_ms <= 240000
-- Seed: plugins=wisprflow
+- Seed: plugins=wisprflow,granola
 - Set: route
 
 ## Prompt

@@ -15,7 +15,7 @@
     "tokens": 300000,
     "wall_ms": 240000
   },
-  "seed": "plugins=wisprflow",
+  "seed": "plugins=wisprflow,granola",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -137,6 +137,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "06773974277f4d36ce94c21c2d5161cfb7fcbc12520e083802e8750f00d55af3"
+    "source_sha256": "e8842db9d2adb4d1ed67b23d5372213fcc2a04d60a53312a97b9dc14e17e4ab7"
   }
 }

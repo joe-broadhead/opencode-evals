@@ -17,6 +17,9 @@ which lists have I pinned?
 - [X-OC01] blocker · The read ran once, with get_users_pinned_lists.
   evidence: count:get_users_pinned_lists >= 1
 
+- [X-PR02] major · It resolved the account's own id, or passed it.
+  evidence_any: count:get_users_me >= 1 ;; call:get_users_pinned_lists#1 args.id present
+
 - [X-TR01] minor · The x skill was loaded.
   evidence: skill:x
 

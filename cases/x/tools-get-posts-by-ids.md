@@ -20,6 +20,8 @@ read these three posts and tell me what they have in common: https://x.com/evals
 
 - [X-PR01] major · The call carries the value the user named.
   evidence: call:get_posts_by_ids#1 args.ids matches /1000001/i
+  evidence: call:get_posts_by_ids#1 args.ids matches /1000002/i
+  evidence: call:get_posts_by_ids#1 args.ids matches /1000003/i
 
 - [X-TR01] minor · The x skill was loaded.
   evidence: skill:x

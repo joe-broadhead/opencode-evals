@@ -68,6 +68,13 @@
             "source": "Why evals matter",
             "flags": "i"
           }
+        },
+        {
+          "kind": "call",
+          "tool": "article_create_draft",
+          "n": 1,
+          "arg": "args.content_state",
+          "op": "present"
         }
       ],
       "evidence_any": [],
@@ -96,7 +103,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "X-TR01",
@@ -113,7 +120,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "X-SF01",
@@ -131,7 +138,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "X-SF02",
@@ -159,7 +166,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "X-SF03",
@@ -175,7 +182,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 41
     },
     {
       "id": "X-SF04",
@@ -191,7 +198,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 44
     },
     {
       "id": "X-RB01",
@@ -207,12 +214,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 46
+      "line": 47
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a890c807a9f6388ac6ab6ced283dc11b0f683a36bfef319474b63acfec54b1ba"
+    "source_sha256": "67a35129267af6c4ffd116d99fc97519e0595c5b9d3697e7f14c4b7408032246"
   }
 }

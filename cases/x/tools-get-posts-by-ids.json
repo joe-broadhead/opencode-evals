@@ -64,6 +64,30 @@
             "source": "1000001",
             "flags": "i"
           }
+        },
+        {
+          "kind": "call",
+          "tool": "get_posts_by_ids",
+          "n": 1,
+          "arg": "args.ids",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "1000002",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "get_posts_by_ids",
+          "n": 1,
+          "arg": "args.ids",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "1000003",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -86,7 +110,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 26
     },
     {
       "id": "X-SF01",
@@ -108,7 +132,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 30
     },
     {
       "id": "X-EF01",
@@ -127,7 +151,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 34
     },
     {
       "id": "X-RB01",
@@ -143,12 +167,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 37
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a2cebc13ef8a74421b41fa38527a946a5510306d75beb2f1e3a965aaa9dd9307"
+    "source_sha256": "26dfe86c34ba8ee3b45d6b7a544e00a147bbdf5bf8361290fec3ac8349372dfa"
   }
 }

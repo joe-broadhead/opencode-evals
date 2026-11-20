@@ -22,6 +22,9 @@ unpin my list l-900000000000000007.
 - [X-PR01] major · The call carries the value the user named.
   evidence: call:unpin_list#1 args.list_id == "l-900000000000000007"
 
+- [X-PR02] major · It resolved the account's own id, or passed it.
+  evidence_any: count:get_users_me >= 1 ;; call:unpin_list#1 args.id present
+
 - [X-OC01] major · The answer says the call was declined, and nothing changed.
   evidence: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not|nothing|no longer)\b[^.\n]{0,60}\b(sent|send|posted|post|created|create|added|add|removed|remove|changed|change|updated|update|archived|archive|started|start|scheduled|schedule|deleted|delete|muted|mute|pinned|pin|followed|follow|blocked|block|unblocked|unblock|read|shown|fetched|downloaded|uploaded|accepted|accept|cancelled|canceled|renamed|rename|drafted|draft|published|publish|live|moved|move|closed|close|written|write|saved|save|exported|export)\b/i ;; text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i
 

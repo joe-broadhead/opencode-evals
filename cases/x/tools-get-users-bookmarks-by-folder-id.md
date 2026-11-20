@@ -21,6 +21,9 @@ what's in my bookmark folder f-900000000000000006?
 - [X-PR01] major · The call carries the value the user named.
   evidence: call:get_users_bookmarks_by_folder_id#1 args.folder_id == "f-900000000000000006"
 
+- [X-PR02] major · It resolved the account's own id, or passed it.
+  evidence_any: count:get_users_me >= 1 ;; call:get_users_bookmarks_by_folder_id#1 args.id present
+
 - [X-ER01] major · It reports the invented id as not found, rather than inventing content.
   evidence: text:any matches /(not found|no such|does not exist|couldn't find|could not find|error)/i
   evidence: text:any not-matches /(here (is|are) (the|your)|the (broadcast|list|user|space|conversation|community) is)/i

@@ -15,7 +15,7 @@ recap what I recorded this week and post the highlights to my Slack self-DM {{ta
 
 ## Items
 - [PLD-OC01] blocker · It read the recordings first.
-  evidence: count:recent >= 1
+  evidence_any: count:recent >= 1 ;; count:list_files >= 1
 
 - [PLD-WR01] blocker · The Slack post was attempted and declined.
   evidence: count:slack_send_message == 1

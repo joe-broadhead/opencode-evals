@@ -3,7 +3,7 @@
 - Skill under test: jira-write
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool (fake mode)
-- Decision tested: A link is one declined call, with both keys and the direction stated.
+- Decision tested: A link is one declined call, with both keys, the link type and the direction stated.
 - Data check: the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
@@ -23,6 +23,11 @@ link QLN-1 to QLN-2 as blocks.
 
 - [JRA-EF01] major · It made a bounded number of Jira calls, with no loop.
   evidence: count:getAccessibleAtlassianResources <= 1
+
+- [JRA-PR01] major · The call carries the link type and both keys.
+  evidence: call:createJiraIssueLink#1 args.linkType matches /blocks/i
+  evidence: call:createJiraIssueLink#1 args.inwardIssue matches /QLN-1/
+  evidence: call:createJiraIssueLink#1 args.outwardIssue matches /QLN-2/
 
 - [JRA-TR01] minor · The jira-write skill was loaded.
   evidence: skill:jira-write

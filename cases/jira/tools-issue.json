@@ -62,17 +62,21 @@
       "line": 20
     },
     {
-      "id": "JRA-CT01",
+      "id": "JRA-OC03",
       "severity": "major",
-      "ask": "The answer names the item by its key.",
+      "ask": "The answer gives the item's status.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "fixture",
+          "kind": "text",
           "span": "any",
-          "plugin": "jira",
-          "name": "highest_priority_key"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "In Progress",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -149,6 +153,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7c655f9f102323b50537241319708f8769bd0727ca70fcc7592a998d17d3a036"
+    "source_sha256": "5bbc048778e8595f6f5e8d3e26dd7ba442de57e4ae66acb6a18654837de41918"
   }
 }

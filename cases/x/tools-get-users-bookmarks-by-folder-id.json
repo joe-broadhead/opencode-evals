@@ -71,6 +71,34 @@
       "line": 21
     },
     {
+      "id": "X-PR02",
+      "severity": "major",
+      "ask": "It resolved the account's own id, or passed it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "get_users_me",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "call",
+            "tool": "get_users_bookmarks_by_folder_id",
+            "n": 1,
+            "arg": "args.id",
+            "op": "present"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
       "id": "X-ER01",
       "severity": "major",
       "ask": "It reports the invented id as not found, rather than inventing content.",
@@ -101,7 +129,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 27
     },
     {
       "id": "X-TR01",
@@ -118,7 +146,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 31
     },
     {
       "id": "X-SF01",
@@ -140,7 +168,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 35
     },
     {
       "id": "X-EF01",
@@ -159,7 +187,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 39
     },
     {
       "id": "X-RB01",
@@ -175,12 +203,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 42
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cb13d04cb39b2997d89c0621d111aa7cd131abaa03d21ec93f71d84cb85348ec"
+    "source_sha256": "251966ca2af9d79403850c1534e79e352b40416de49da0ba897460d43ea4aec7"
   }
 }
