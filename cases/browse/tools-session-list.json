@@ -20,7 +20,7 @@
   "sets": [
     "wide"
   ],
-  "data": "synthetic",
+  "data": "own",
   "items": [
     {
       "id": "BRW-OC01",
@@ -119,6 +119,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2fa09d94c13b842bd3a53a259e4efc26514ab130e51554c5fde0092379bfbb7b"
+    "source_sha256": "e8ae58a38cf33991fb660eb33b3111713853531c03341464e5d3c09121c8c13d"
   }
 }

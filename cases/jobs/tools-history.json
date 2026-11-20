@@ -23,7 +23,7 @@
   "sets": [
     "wide"
   ],
-  "data": "synthetic",
+  "data": "own",
   "items": [
     {
       "id": "JOB-OC01",
@@ -140,6 +140,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ba8db65a206e06886a77bded5261c1cb57013435d4a36eb86d07f7909c4483c6"
+    "source_sha256": "55f1a8bbff4bd4f02564684a36bff98f973ae5ab52ae3e4ac47d0e7e34576208"
   }
 }

@@ -6,7 +6,7 @@
 - Decision tested: a calendar question is answered from the calendar tools, not by opening a browser tab
 - Data check: the Google Workspace plugin is installed
 - Seed: plugins=browse,gws,notion utc-hours=9-17
-- Data: own
+- Data: real
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: route
 

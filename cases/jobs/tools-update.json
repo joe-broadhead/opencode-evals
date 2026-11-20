@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "evals-232/wide/jobs/update",
   "decision": "moving one job's time is one update of that job, declined, with the new schedule and no second job (a file job is refused by the tool after the declined ask; this case is graded at the ask)",
-  "data_check": "the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md",
+  "data_check": "the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md; the plugin would refuse a tool write of a file job after the ask, and this case is graded at the declined ask",
   "prompt": "move the nightly-report job to 8am instead of 2am. keep everything else as it is.",
   "controls": [],
   "budgets": {
@@ -188,6 +188,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7bd985ebb92ae00e548cee8ce47ea063982526f13dbba359341c64b139db4ea3"
+    "source_sha256": "514f42195b89c3bf06d0e74170755dd4bb5bf9f0be93a3293de427a0f43d66fb"
   }
 }

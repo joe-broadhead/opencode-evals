@@ -5,7 +5,7 @@
 - Source: evals-232/wide/boxd/read
 - Decision tested: one file is read from a work's tree without a harvest, and an unreachable boxd is reported plainly
 - Data check: no boxd CLI in the trial
-- Data: synthetic
+- Data: own
 - Checkable: workId, path
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide

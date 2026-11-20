@@ -20,7 +20,7 @@
   "sets": [
     "route"
   ],
-  "data": "synthetic",
+  "data": "own",
   "items": [
     {
       "id": "BRW-RT01",
@@ -114,6 +114,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "20778194908b74223e4b6ff8809acb20f16f1d5437deaccfb026783ac00cb1a1"
+    "source_sha256": "9976c6615ee6aa7b551f3c66ce3c3dddb3e9bb10ebb3b7f0dbb5e31955138394"
   }
 }

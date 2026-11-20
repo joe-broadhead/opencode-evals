@@ -5,7 +5,7 @@
 - Source: evals-232/wide/boxd/job
 - Decision tested: one work is read live by its id with a short tail, and an unreachable boxd is reported as such
 - Data check: no boxd CLI in the trial
-- Data: synthetic
+- Data: own
 - Checkable: workId
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide

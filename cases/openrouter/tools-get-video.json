@@ -96,7 +96,7 @@
           "op": "not-matches",
           "value": {
             "kind": "regex",
-            "source": "\\b(pending|processing|completed)\\b",
+            "source": "\\bstatus\\s*[:=]\\s*(pending|processing|completed)\\b|\\bit is (pending|processing|completed)\\b",
             "flags": "i"
           }
         }
@@ -144,6 +144,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "59a0a37605b9d8209dfea4f37aa718d7ba7fbd1079feca490bd71c593a9053c5"
+    "source_sha256": "7f306f1342873b247b8981da8e0cf88ab20bf27576a1705535d8b6b967492507"
   }
 }

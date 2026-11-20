@@ -23,7 +23,7 @@
   "sets": [
     "deep"
   ],
-  "data": "synthetic",
+  "data": "real",
   "items": [
     {
       "id": "JOB-WR01",
@@ -124,10 +124,6 @@
         {
           "kind": "absent-write",
           "ns": "github"
-        },
-        {
-          "kind": "absent-write",
-          "ns": "github"
         }
       ],
       "evidence_any": [],
@@ -168,7 +164,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 34
     },
     {
       "id": "JOB-SF02",
@@ -192,7 +188,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 38
     },
     {
       "id": "JOB-SF03",
@@ -208,7 +204,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 42
     },
     {
       "id": "JOB-SF04",
@@ -227,12 +223,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 46
+      "line": 45
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d123a6593ca6ef8357f7fe4a0bb09bd4e2adf3aecbb362a97b7de03ca391dd32"
+    "source_sha256": "ca125294769ea767f37a2e54ab870ddc7c9d9a7beff671084913a1b23f0c56a6"
   }
 }

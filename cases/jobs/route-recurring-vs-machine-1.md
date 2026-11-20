@@ -6,7 +6,7 @@
 - Decision tested: a nightly recurring task is scheduled by jobs; the machine it will run on is not started now
 - Data check: none
 - Seed: plugins=jobs,boxd
-- Data: synthetic
+- Data: own
 - Budget: outer_calls <= 10, inner_calls <= 6, tokens <= 400000
 - Set: route
 

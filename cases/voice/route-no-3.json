@@ -24,7 +24,7 @@
   "sets": [
     "route"
   ],
-  "data": "synthetic",
+  "data": "own",
   "items": [
     {
       "id": "VOI-SF01",
@@ -227,6 +227,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c269845cfbb5d027e0017fe9a3e606d5aeae8644d78ad90dc978706e9c7ab6de"
+    "source_sha256": "77b174a5a98d2cd6026c28c103190b1b92b6c03ecf7d704b2987a410ade21ccb"
   }
 }

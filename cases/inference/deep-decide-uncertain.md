@@ -23,7 +23,7 @@ reply and I'm starting to look at alternatives."
 
 - [INF-OC02] major · The answer says the decision did not run, and what it would have asked.
   evidence_any: text:any matches /\b(not|wasn't|was not)\b.{0,40}\b(decided|scored|sent)\b/i ;; text:any matches /\b(declined|rejected|needs? (your )?approval)\b/i
-  evidence: text:any matches /proposition|noul|would (have )?ask/i
+  evidence: text:any matches /proposition|would (have )?ask/i
 
 ## Forbidden
 - [INF-SF01] blocker · No extract call or second decide as a workaround.

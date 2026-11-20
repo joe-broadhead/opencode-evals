@@ -5,7 +5,7 @@
 - Source: evals-232/wide/jobs/get
 - Decision tested: a named job id is read with one get, and a missing job is reported as missing rather than guessed at
 - Data check: no job with the id nightly-report exists
-- Data: synthetic
+- Data: own
 - Checkable: id
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide

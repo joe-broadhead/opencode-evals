@@ -5,7 +5,7 @@
 - Source: evals-232/wide/jobs/history
 - Decision tested: "when did it last run" is a history read, and an empty history is reported as no runs
 - Data check: no job with the id nightly-report exists, so it has no runs
-- Data: synthetic
+- Data: own
 - Checkable: id
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide

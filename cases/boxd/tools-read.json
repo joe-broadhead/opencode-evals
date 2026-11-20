@@ -24,7 +24,7 @@
   "sets": [
     "wide"
   ],
-  "data": "synthetic",
+  "data": "own",
   "items": [
     {
       "id": "BOX-OC01",
@@ -155,6 +155,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aadf80f1d6125d65da035392deed75e0195614e4e39b56375f67ac8271f8f1e8"
+    "source_sha256": "0d51d5ac60f3368df07eda37bea5e33afa9ef20102aa1e243c4f72a7b4fcf48d"
   }
 }

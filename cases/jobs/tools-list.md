@@ -5,7 +5,7 @@
 - Source: evals-232/wide/jobs/list
 - Decision tested: "what jobs do I have" is one list read, with no history call and no invented names
 - Data check: the job store is empty and no job file is committed
-- Data: synthetic
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 

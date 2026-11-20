@@ -6,7 +6,7 @@
 - Decision tested: a page behind the user's own login is browser work, and a cloud machine is not the answer
 - Data check: no browser in the trial; the choice is what is measured
 - Seed: plugins=browse,boxd
-- Data: synthetic
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: route
 

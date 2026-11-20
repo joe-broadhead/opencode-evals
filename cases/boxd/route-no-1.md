@@ -6,7 +6,7 @@
 - Decision tested: a signed-in page is browser work, not a cloud machine
 - Data check: the browse plugin is installed; no boxd CLI
 - Seed: plugins=boxd,browse
-- Data: synthetic
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: route
 

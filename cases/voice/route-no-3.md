@@ -6,7 +6,7 @@
 - Decision tested: a reminder is a scheduled job, not a spoken message now
 - Data check: the Jobs plugin is installed
 - Seed: plugins=voice,jobs utc-hours=9-17
-- Data: synthetic
+- Data: own
 - Checkable: action, schedule
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: route

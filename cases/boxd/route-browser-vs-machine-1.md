@@ -6,7 +6,7 @@
 - Decision tested: a signed-in site is browser work; boxd is for a machine that runs sessions, not for opening a page
 - Data check: the browse plugin is installed; no boxd CLI
 - Seed: plugins=boxd,browse
-- Data: synthetic
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: route
 

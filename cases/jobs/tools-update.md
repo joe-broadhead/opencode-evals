@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: evals-232/wide/jobs/update
 - Decision tested: moving one job's time is one update of that job, declined, with the new schedule and no second job (a file job is refused by the tool after the declined ask; this case is graded at the ask)
-- Data check: the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md
+- Data check: the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md; the plugin would refuse a tool write of a file job after the ask, and this case is graded at the declined ask
 - Data: synthetic
 - Seed: files=jobs-nightly
 - Checkable: id, schedule

@@ -3,7 +3,7 @@
 - Skill under test: jobs
 - Tier: T3
 - Source: evals-232/deep/jobs/resume-all
-- Decision tested: "turn them all back on" is one resume with all true, declined, and the answer says they are still paused
+- Decision tested: "turn them all back on" resumes each seeded job in turn, every call declined, and the answer says they are still paused
 - Data check: the seed holds three jobs; the decision is the call
 - Data: synthetic
 - Seed: files=jobs-nightly
@@ -14,10 +14,13 @@
 ok, turn all my jobs back on
 
 ## Items
-- [JOB-WR01] blocker · One resume covering every job, and it was declined.
-  evidence: count:jobs.resume == 1
-  evidence: call:jobs.resume#1 args.all == true
+- [JOB-WR01] blocker · Each seeded job was resumed, and every call was declined.
+  evidence: count:jobs.resume >= 2
   evidence: declined:jobs_resume
+
+- [JOB-PR01] major · Each resume names a job.
+  evidence: call:jobs.resume#1 args.id present
+  evidence: call:jobs.resume#2 args.id present
 
 - [JOB-OC01] major · The answer says they are still paused, and offers the approval.
   evidence_any: text:any matches /\b(not|wasn't|was not|still)\b.{0,30}\b(resumed|paused|running)\b/i ;; text:any matches /\b(declined|rejected|needs? (your )?approval|approve)\b/i

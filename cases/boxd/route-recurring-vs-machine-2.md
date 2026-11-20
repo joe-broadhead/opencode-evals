@@ -6,7 +6,7 @@
 - Decision tested: a nightly task is a schedule first; the machine is not created until the schedule fires
 - Data check: the jobs plugin is installed; no boxd CLI
 - Seed: plugins=boxd,jobs
-- Data: synthetic
+- Data: own
 - Checkable: schedule
 - Budget: outer_calls <= 10, inner_calls <= 6, tokens <= 400000
 - Set: route

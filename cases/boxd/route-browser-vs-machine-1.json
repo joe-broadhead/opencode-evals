@@ -20,7 +20,7 @@
   "sets": [
     "route"
   ],
-  "data": "synthetic",
+  "data": "own",
   "items": [
     {
       "id": "BOX-RT01",
@@ -79,6 +79,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "87e96628d167e547f7925bb7dd1c93f4d3c394df204affcd21cfb45faaad472b"
+    "source_sha256": "bd771b38e57b0fe54cf77de740782fe6ee6299c05c56c71a7d4b305e4086dbc5"
   }
 }

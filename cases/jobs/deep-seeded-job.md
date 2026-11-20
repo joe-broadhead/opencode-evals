@@ -5,7 +5,7 @@
 - Source: evals-232/deep/jobs/seeded-job
 - Decision tested: a job committed as a project file is read back with its schedule and its prompt, and the answer quotes the file rather than inventing one
 - Data check: the seed holds .opencode/jobs/nightly-report.md
-- Data: synthetic
+- Data: own
 - Seed: files=jobs-nightly
 - Checkable: id
 - Budget: outer_calls <= 8, inner_calls <= 5, tokens <= 350000

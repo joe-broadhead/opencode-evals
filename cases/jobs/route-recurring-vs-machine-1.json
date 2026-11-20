@@ -20,7 +20,7 @@
   "sets": [
     "route"
   ],
-  "data": "synthetic",
+  "data": "own",
   "items": [
     {
       "id": "JOB-WR01",
@@ -142,6 +142,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5fa4d1ea4798314f65b3fb13ca09d82e9a30677ea7bcda2c7cf9de6fc8d82082"
+    "source_sha256": "b9677c6618f0c0789d5e97eb155defc0009ed0d290bbd47799eb1b102dd40fed"
   }
 }

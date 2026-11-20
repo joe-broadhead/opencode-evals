@@ -5,7 +5,7 @@
 - Source: evals-232/wide/browse/session_list
 - Decision tested: the open sessions are listed in one read, with no page action
 - Data check: the browse server may be unregistered in this trial
-- Data: synthetic
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
