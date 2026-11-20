@@ -1,0 +1,146 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-affinity-reference-check",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: affinity_reference_check (Affinity's reference check text)",
+  "decision": "A run-a-reference-check request calls the reference playbook once",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "run a backchannel reference check on a founder at a portfolio company we track — who can tell us what they're like to work with?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": "plugins=affinity",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "AFF-TR01",
+      "severity": "blocker",
+      "ask": "It used affinity_reference_check once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.affinity_reference_check",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer gives a reference-check plan from the playbook and the record, naming who to ask and why, not a restatement of the question.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
+      "line": 34
+    }
+  ],
+  "hashes": {
+    "source_sha256": "aa49612b9469b1bc3a5250a3915460e3cbde0def4af2847042487d2f6f508f52"
+  }
+}

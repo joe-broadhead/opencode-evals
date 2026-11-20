@@ -1,0 +1,125 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-1",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "should-not-call: a calendar question belongs to the calendar, not the CRM",
+  "decision": "A what-is-on-my-calendar question reaches no Affinity tool",
+  "data_check": "the user's calendar holds at least one event tomorrow",
+  "prompt": "what's on my calendar tomorrow?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": "plugins=affinity,gws utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "AFF-RT01",
+      "severity": "blocker",
+      "ask": "No Affinity tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "affinity.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "major",
+      "ask": "It read the calendar with the Google Workspace tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "gws.read",
+          "n": 1,
+          "arg": "args.operation",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^calendar\\.",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "50723a5a2fdc157fd61db3542f9b6eab1e61fee120b14cde8a1a4432543413f0"
+  }
+}

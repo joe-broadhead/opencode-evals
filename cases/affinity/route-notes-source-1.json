@@ -1,0 +1,157 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-notes-source-1",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "overlap routing: the CRM's own notes and transcripts are Affinity's; Granola only when named",
+  "decision": "A what-did-they-say-about-the-company question reads Affinity's notes and transcripts, and does not reach for Granola",
+  "data_check": "{{target:affinity.company}} has an AI Notetaker note with a transcript",
+  "prompt": "what did {{target:affinity.company}} say about their raise in the last call?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": "plugins=affinity",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "status": "deferred",
+  "data": "real",
+  "items": [
+    {
+      "id": "AFF-RT01",
+      "severity": "blocker",
+      "ask": "It read the CRM's own notes or transcript.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.get_notes_for_entity",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.get_transcript_fragments",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "AFF-RT02",
+      "severity": "blocker",
+      "ask": "It did not go to Granola, which the user did not name.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "granola.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "major",
+      "ask": "The answer reports what was said in its own words, labelled as the CRM's transcript.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(transcript|notes from|call notes)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: no AI Notetaker note with a transcript is visible (20 Nov).",
+      "line": 35
+    }
+  ],
+  "hashes": {
+    "source_sha256": "f6255b20aaf898eeed089ea37875566765b1b8df64312f9c7eeefea6ce646bb2"
+  }
+}

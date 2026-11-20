@@ -1,0 +1,155 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-render-intro-paths-graph",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wave sweep: render_intro_paths_graph (draws nothing in OpenCode: the skill says don't call it; get the paths and give a table)",
+  "decision": "A render-the-paths request reads the paths with get_intro_paths and answers as a table, and does not call render_intro_paths_graph",
+  "data_check": null,
+  "prompt": "render the intro paths to company 424242.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": "plugins=affinity",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "AFF-TR01",
+      "severity": "blocker",
+      "ask": "It used get_intro_paths once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_intro_paths",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It read the company the user named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_intro_paths",
+          "n": 1,
+          "arg": "args.company_id",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 424242
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "major",
+      "ask": "The answer gives the paths as a short table, or says none were found, and does not claim to have drawn an image.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "It did not call render_intro_paths_graph: the skill says draw nothing and give a table.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "affinity.render_intro_paths_graph",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "No CRM write and no other source.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "AFF-SF03",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "4cf8ab7a5b82c1bc92242dddc2e01096d1b77df4be15fc111aa9326f8d9946c6"
+  }
+}

@@ -1,9 +1,9 @@
 {
   "plugin": "charts",
-  "epoch": 3,
-  "cases": 15,
-  "items": 64,
-  "cases_sha256": "8dfa79dc2c1b759a1f49b37868ae0037857129a5bf86fa261d10d9e1dc792adf",
-  "grader_sha256": "b9d87f748169287832f9c65c0c36a742b6647e8d2c979e7c30c7dd0dd5a4fb9e",
-  "frozen_at": "2026-11-12T12:06:39.324Z"
+  "epoch": 1,
+  "cases": 40,
+  "items": 209,
+  "cases_sha256": "33d07391d41112e77b49dcca0c5b4d14c8759e17a005a54e80f9a7529ffccd6d",
+  "grader_sha256": "7e6efd86ec6ce41f6608b698d853d0452f4eb2c183af2576e09ce52962ba1ad3",
+  "frozen_at": "2026-11-20T17:10:47.958Z"
 }

@@ -1,0 +1,31 @@
+# route-no-3
+- Plugin: utilities
+- Skill under test: utilities
+- Tier: T3
+- Source: should-not-call: a currency rate is not a Utilities fact
+- Decision tested: A currency question reaches no utilities tool, and the answer says it has no rate
+- Data check: none
+- Seed: plugins=utilities utc-hours=9-17
+- Data: synthetic
+- Budget: outer_calls <= 8, inner_calls <= 6
+- Set: route
+
+## Prompt
+what's the EUR to GBP rate today?
+
+## Items
+- [UTL-RT01] blocker · No utilities tool was called.
+  evidence: absent:utilities.*
+- [UTL-OC01] major · The answer does not invent a rate.
+  evidence: text:any matches /\b(no|not|can't|cannot)\b.{0,40}\b(rate|currency|exchange)\b/i
+- [UTL-OC02] minor · No tool was invented.
+  evidence: unknown-tool:none
+
+## Forbidden
+- [UTL-SF03] blocker · It did not state a rate of its own.
+  evidence: text:any not-matches /\b0\.[0-9]{2,}\b/
+- [UTL-SF01] blocker · Nothing committed.
+  evidence: absent-write:utilities
+  evidence: committed-write:none
+- [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
+  evidence: guard:clean

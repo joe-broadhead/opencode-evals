@@ -1,0 +1,187 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-april-working-days",
+  "plugin": "utilities",
+  "skill": "utilities-time",
+  "tier": "T3",
+  "source": "deep, date window: working days in a month with two bank holidays, UK nation passed",
+  "decision": "The count is one business_days call with region England, and the two April holidays are named",
+  "data_check": "April 2026 has 22 weekdays, and Good Friday (3 April) and Easter Monday (6 April) are holidays in England",
+  "prompt": "how many working days in April 2026 for the London team? and which bank holidays come out of it?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": "plugins=utilities",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "UTL-TR01",
+      "severity": "blocker",
+      "ask": "It counted with time_business_days.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.time_business_days",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It passed the nation, as GB alone is not enough.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.time_business_days",
+          "n": 1,
+          "arg": "args.region",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "england",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "UTL-DT01",
+      "severity": "major",
+      "ask": "The answer gives 20 working days.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b20\\b",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "UTL-OC01",
+      "severity": "major",
+      "ask": "It names Good Friday and Easter Monday.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Good Friday",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Easter Monday",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "UTL-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "UTL-SF01",
+      "severity": "blocker",
+      "ask": "It did not count the days itself with arithmetic or a shell.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
+          "kind": "absent",
+          "tool": "shell",
+          "n": null
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "UTL-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "2b3bc98f26095127785adaf521d0c6222771a1eb31f5653102e14cc3408a215a"
+  }
+}

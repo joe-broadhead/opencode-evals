@@ -1,0 +1,150 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-render-treemap",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "commit set: a real render to outputs/charts, inside the trial",
+  "decision": "The treemap is really rendered: one render call, an SVG on disk, and no decline",
+  "data_check": "the charts world's data working directory holds data/sales.csv",
+  "prompt": "draw a treemap of revenue by region from data/sales.csv and save the SVG.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "plugins=charts cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "commit"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "CHT-CT01",
+      "severity": "blocker",
+      "ask": "Exactly one render call, and it was not declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.render",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "absent-declined",
+          "tool": "charts_render"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "CHT-CT02",
+      "severity": "blocker",
+      "ask": "An SVG was written under outputs/charts.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "outputs/charts/**/*.svg",
+          "op": "exists"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "CHT-OC01",
+      "severity": "major",
+      "ask": "The answer shows the chart inline.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "!\\[|\\.svg",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "CHT-SF01",
+      "severity": "blocker",
+      "ask": "No source file was edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "CHT-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Commit plan: `charts.render` is `local: true`: the write touches only the trial's own sandbox.",
+      "line": 34
+    }
+  ],
+  "hashes": {
+    "source_sha256": "0dd5db6914883931406af3d546a9f397e8a064e3c220a904e58f342a386cf8a6"
+  }
+}

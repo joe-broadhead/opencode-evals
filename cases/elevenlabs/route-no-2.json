@@ -1,0 +1,125 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs",
+  "tier": "T3",
+  "source": "should-not-call: a calendar question is the calendar's",
+  "decision": "A what-is-on-my-calendar question reaches no ElevenLabs tool",
+  "data_check": "the user's calendar holds at least one event tomorrow",
+  "prompt": "what's on my calendar tomorrow?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": "plugins=elevenlabs,gws utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "ELV-RT01",
+      "severity": "blocker",
+      "ask": "No ElevenLabs tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "ELV-OC02",
+      "severity": "major",
+      "ask": "It read the calendar with the Google Workspace tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "gws.read",
+          "n": 1,
+          "arg": "args.operation",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^calendar\\.",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "ELV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "elevenlabs"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "ELV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c88ee55fcba5b022750eba3bfc2a4b3825fc8dd75ead0b263be05a47a7fa2feb"
+  }
+}

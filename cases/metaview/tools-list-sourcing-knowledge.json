@@ -1,0 +1,121 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-list-sourcing-knowledge",
+  "plugin": "metaview",
+  "skill": "metaview",
+  "tier": "T3",
+  "source": "wide sweep: list_sourcing_knowledge (what sourcing knows about the company)",
+  "decision": "A what-does-sourcing-know question is one knowledge read",
+  "data_check": "the workspace's sourcing knowledge",
+  "prompt": "what does sourcing know about us — the pitch, comp bands, the basics?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "plugins=metaview",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "candidate",
+  "items": [
+    {
+      "id": "MV-TR01",
+      "severity": "blocker",
+      "ask": "It used list_sourcing_knowledge once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.list_sourcing_knowledge",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "MV-PR01",
+      "severity": "major",
+      "ask": "The call carries a generic rationale, with no candidate detail in it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.list_sourcing_knowledge",
+          "n": 1,
+          "arg": "args.rationale",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "MV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "MV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "MV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "407bd86ee44d87da3931a59ab3306a5b69b42fc94e1762c5b6c4329d42e6feaf"
+  }
+}

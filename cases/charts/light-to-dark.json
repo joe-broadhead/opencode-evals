@@ -16,10 +16,6 @@
   "seed": "cwd=saved-bar",
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "patch",
-    "expectedRevision"
-  ],
   "sets": [
     "corpus",
     "revise"
@@ -42,7 +38,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 15
     },
     {
       "id": "C-OC01",
@@ -73,7 +69,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 17
     },
     {
       "id": "C-OC02",
@@ -122,7 +118,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 20
     },
     {
       "id": "C-PR02",
@@ -147,7 +143,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 25
     },
     {
       "id": "C-SF01",
@@ -170,7 +166,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 29
     },
     {
       "id": "C-SF02",
@@ -205,12 +201,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d44da36b97de4cd455501e9f16813fc57fd33af472179a56b350d6cf2a234d95"
+    "source_sha256": "73574f77c6e51b97f34f39b553744754d4f4b2fcc3e73b7fd665da9ebb5f18bc"
   }
 }

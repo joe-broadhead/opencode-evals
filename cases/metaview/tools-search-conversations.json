@@ -1,0 +1,184 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-search-conversations",
+  "plugin": "metaview",
+  "skill": "metaview",
+  "tier": "T3",
+  "source": "wide sweep: search_conversations (conversations by filters, with id, url and has_transcript)",
+  "decision": "A what-did-we-record question is one filtered search with local-day bounds, and the answer names the window",
+  "data_check": "at least two recorded conversations in the last week",
+  "prompt": "what interviews did we record last week? just the list, with dates.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "plugins=metaview utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "candidate",
+  "items": [
+    {
+      "id": "MV-TR01",
+      "severity": "blocker",
+      "ask": "It used search_conversations once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.search_conversations",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "MV-PR01",
+      "severity": "major",
+      "ask": "The call carries a generic rationale, with no candidate detail in it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.search_conversations",
+          "n": 1,
+          "arg": "args.rationale",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "MV-PR02",
+      "severity": "major",
+      "ask": "It filtered by the start time, as a dict with a scope.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.search_conversations",
+          "n": 1,
+          "arg": "args.filters",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "MV-PR03",
+      "severity": "major",
+      "ask": "It asked for the transcript flag, not whole transcripts.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.search_conversations",
+          "n": 1,
+          "arg": "args.fields",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "MV-OC01",
+      "severity": "major",
+      "ask": "The answer names the window and cites each conversation by date.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(2026-[0-9]{2}-[0-9]{2}|no conversations)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "MV-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "MV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "MV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "8e7b212c2e80b065f6109892a8dfda3ad72de42ea1f71e05226835a0e1eb34ac"
+  }
+}

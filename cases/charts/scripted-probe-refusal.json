@@ -16,9 +16,6 @@
   "seed": "cwd=data",
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "document"
-  ],
   "sets": [
     "scripted"
   ],
@@ -40,7 +37,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 15
     },
     {
       "id": "C-SF01",
@@ -71,12 +68,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 19
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "138acf03e621faec85525c9b3812da51bbd4b7b4866e2a338f89452d0b278062"
+    "source_sha256": "81a26b33b3c20edbad5bc2271daf08cb3ac3e9f02076ab440f87e73357d8702e"
   }
 }

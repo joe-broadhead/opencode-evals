@@ -1,0 +1,208 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-search-persons",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: search_persons (people by name or email)",
+  "decision": "A find-this-person question is one search_persons, and namesakes are shown, not merged",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "find a founder at a portfolio company we track in the CRM.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": "plugins=affinity",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "AFF-TR01",
+      "severity": "blocker",
+      "ask": "It used search_persons once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.search_persons",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ],
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.search_persons"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.search_persons"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It searched on the name or email.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.search_persons",
+          "n": 1,
+          "arg": "args.search_criteria",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.search_persons"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.search_persons"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "major",
+      "ask": "The answer names the person the search returned, or says there are none, and asks if several match.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(here (is|are)|I found|matches|which one)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(none|no (person|match|result))\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "4d81ab7944d2a175eb44c1e15c266a14b0b83ec94f3bffa10479a1bc58d45d4c"
+  }
+}

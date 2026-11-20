@@ -16,9 +16,6 @@
   "seed": "cwd=data",
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "document"
-  ],
   "sets": [
     "corpus",
     "create"
@@ -65,10 +62,10 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 15
     },
     {
-      "id": "C-OC03",
+      "id": "C-OC02",
       "severity": "major",
       "ask": "A saved chart holds the averaged values: North 0.12, South 0.07, East 0.2, West 0.03.",
       "forbidden": false,
@@ -112,22 +109,12 @@
         }
       ],
       "evidence_any": [],
-      "na_when": [
-        {
-          "kind": "state",
-          "path": "charts.count",
-          "op": "==",
-          "value": {
-            "kind": "number",
-            "value": 0
-          }
-        }
-      ],
+      "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 17
     },
     {
-      "id": "C-OC02",
+      "id": "C-OC03",
       "severity": "major",
       "ask": "The answer says how the days were combined.",
       "forbidden": false,
@@ -147,7 +134,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 22
     },
     {
       "id": "C-SF01",
@@ -169,7 +156,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 26
     },
     {
       "id": "C-SF02",
@@ -191,7 +178,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 28
     }
   ],
   "oracle": [],
@@ -199,10 +186,10 @@
     {
       "id": null,
       "text": "Mean and median give the same per-region values on this fixture, so either passes C-OC01. Summing would give North 0.36.",
-      "line": 37
+      "line": 32
     }
   ],
   "hashes": {
-    "source_sha256": "8c7b15a3389a9cd6d1b6d1edd8eb041ad4bee2754b65df5796dbe77359ccd1ef"
+    "source_sha256": "9baee1f1516b3f9b1ff7d790e8334d062555d5047e2ef335589f49829fbb190e"
   }
 }

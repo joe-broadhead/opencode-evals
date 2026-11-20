@@ -1,0 +1,125 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-1",
+  "plugin": "metaview",
+  "skill": "metaview",
+  "tier": "T3",
+  "source": "should-not-call: a general calendar question is the calendar's, not Metaview's",
+  "decision": "A what-is-on-my-calendar question reaches no Metaview tool",
+  "data_check": "the user's calendar holds at least one event tomorrow",
+  "prompt": "what's on my calendar tomorrow?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": "plugins=metaview,gws utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "candidate",
+  "items": [
+    {
+      "id": "MV-RT01",
+      "severity": "blocker",
+      "ask": "No Metaview tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "metaview.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "MV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "MV-OC02",
+      "severity": "major",
+      "ask": "It read the calendar with the Google Workspace tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "gws.read",
+          "n": 1,
+          "arg": "args.operation",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^calendar\\.",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "MV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "MV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "ec1b67be2baa0e1137a5873800d83697140edc702d2ab3d55c42b1057da05594"
+  }
+}

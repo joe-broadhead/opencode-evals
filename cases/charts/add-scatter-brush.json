@@ -16,10 +16,6 @@
   "seed": "cwd=saved-scatter",
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "patch",
-    "formats"
-  ],
   "sets": [
     "corpus",
     "revise"
@@ -42,7 +38,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 15
     },
     {
       "id": "C-OC01",
@@ -64,7 +60,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 17
     },
     {
       "id": "C-OC02",
@@ -82,7 +78,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 19
     },
     {
       "id": "C-OC03",
@@ -122,7 +118,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 21
     }
   ],
   "oracle": [],
@@ -130,10 +126,10 @@
     {
       "id": null,
       "text": "The brush itself is verified by the plugin's browser suite (recipe-interval-brush), not per run.",
-      "line": 31
+      "line": 27
     }
   ],
   "hashes": {
-    "source_sha256": "7db77df4587b5a96679ec376f1113db580f2dbc939ed3fe66a8e41dede955f7a"
+    "source_sha256": "93835054c9259220f0b0c8dccda6ae2046b9168325a8942628af98c943123211"
   }
 }

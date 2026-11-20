@@ -1,0 +1,123 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-3",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "should-not-call: a 3-D scientific surface belongs to code, not charts",
+  "decision": "A 3-D surface request reaches no charts tool, and the answer points at code",
+  "data_check": "none",
+  "prompt": "plot z = sin(x) * cos(y) as a 3-D surface, 60 by 60, with a colour map.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "plugins=charts",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "CHT-RT01",
+      "severity": "blocker",
+      "ask": "No charts tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "charts.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "CHT-OC01",
+      "severity": "major",
+      "ask": "The answer says this needs code on the machine, not the charts tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(python|matplotlib|plotly|code)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "CHT-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "charts"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "CHT-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "339179e41a180b09745b88816443dd283f14074f34fa25e2584f5c036d9c7a96"
+  }
+}

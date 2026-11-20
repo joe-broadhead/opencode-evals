@@ -1,0 +1,123 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "metaview",
+  "skill": "metaview",
+  "tier": "T3",
+  "source": "should-not-call: scheduling an interview is not a Metaview tool",
+  "decision": "A book-the-interview request reaches no Metaview tool, and the answer points at the calendar or the ATS",
+  "data_check": "the most recent candidate has an application in the ATS",
+  "prompt": "book the most recent candidate's onsite for Thursday at 2pm.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": "plugins=metaview",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "candidate",
+  "items": [
+    {
+      "id": "MV-RT01",
+      "severity": "blocker",
+      "ask": "No Metaview tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "metaview.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "MV-OC01",
+      "severity": "major",
+      "ask": "The answer says scheduling is not something Metaview does, and points at the calendar or the ATS.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(calendar|\\bATS\\b|Ashby|can't schedule|cannot schedule|no tool)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "MV-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "MV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "MV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c64b7e9398a84a52a14e9cda8c2afd782270a2ac58cb8bc88568ec229315b209"
+  }
+}

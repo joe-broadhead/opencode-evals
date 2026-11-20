@@ -16,9 +16,6 @@
   "seed": "cwd=saved-bar",
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "patch"
-  ],
   "sets": [
     "corpus",
     "revise"
@@ -41,7 +38,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 15
     },
     {
       "id": "C-OC01",
@@ -72,7 +69,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 17
     },
     {
       "id": "C-OC02",
@@ -103,7 +100,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 20
     },
     {
       "id": "C-OC03",
@@ -143,7 +140,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 23
     },
     {
       "id": "C-SF01",
@@ -161,12 +158,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9aae80b47726cf52b17ffaa6a733994f360e93eb0b7da8b61729da6079bb17f8"
+    "source_sha256": "20993d5bd4246b6ba68477d649d33e495de76bc71b80183010fea90bf6d9a39f"
   }
 }

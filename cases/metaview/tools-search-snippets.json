@@ -1,0 +1,169 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-search-snippets",
+  "plugin": "metaview",
+  "skill": "metaview",
+  "tier": "T3",
+  "source": "wide sweep: search_snippets (the moments in one conversation that answer a prompt)",
+  "decision": "A where-did-they-say-it question is one search_snippets on the conversation, with timed ranges",
+  "data_check": "the most recent interview has a transcript",
+  "prompt": "where did the most recent candidate explain why they want to leave their current job? give me the moments.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "plugins=metaview",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "candidate",
+  "items": [
+    {
+      "id": "MV-TR01",
+      "severity": "blocker",
+      "ask": "It used search_snippets once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.search_snippets",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "MV-PR01",
+      "severity": "major",
+      "ask": "The call carries a generic rationale, with no candidate detail in it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.search_snippets",
+          "n": 1,
+          "arg": "args.rationale",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "MV-PR02",
+      "severity": "major",
+      "ask": "It searched for the reason they gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.search_snippets",
+          "n": 1,
+          "arg": "args.prompt",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "leave",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "MV-OC01",
+      "severity": "major",
+      "ask": "The answer gives timed ranges, not a paraphrase of the whole call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "[0-9]+:[0-9]{2}\\s*-\\s*[0-9]+:[0-9]{2}",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "MV-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "MV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "MV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "379c49bbbca730a40b480251cc4df779a6aa5d7a02bc4ae2c2912ac74be6c374"
+  }
+}

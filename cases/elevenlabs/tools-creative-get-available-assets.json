@@ -1,0 +1,101 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-creative-get-available-assets",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs-creative",
+  "tier": "T3",
+  "source": "wide sweep: creative_get_available_assets (ElevenLabs MCP; creative tools)",
+  "decision": "A request for what creative_get_available_assets reads is answered with one call and its arguments, and nothing is changed",
+  "data_check": "the workspace holds the object the question names, or the answer says it does not",
+  "prompt": "what assets can I use in a flow?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": "plugins=elevenlabs",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "ELV-TR01",
+      "severity": "blocker",
+      "ask": "It read it with creative_get_available_assets once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_get_available_assets",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "ELV-SF01",
+      "severity": "blocker",
+      "ask": "No change and no credit spend.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "elevenlabs"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "ELV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "f11182db3a98781a2d3b04ee3abe25407bac086de5525a76981e3ed71f0a2b2d"
+  }
+}

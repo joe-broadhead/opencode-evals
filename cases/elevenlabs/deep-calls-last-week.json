@@ -1,0 +1,168 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-calls-last-week",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs-calls",
+  "tier": "T3",
+  "source": "deep, date window: last week's call count, in the user's local days",
+  "decision": "The count is one call with a local-week window converted to instants, and the answer names the window",
+  "data_check": "at least a few conversations in the last week",
+  "prompt": "how many calls did {{target:elevenlabs.agent}} take last week, and how many were successful?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": "plugins=elevenlabs utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "ELV-TR01",
+      "severity": "blocker",
+      "ask": "It counted with one call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "elevenlabs.agents_count_conversations",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "The count carries a start and end for the window.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_count_conversations",
+          "n": 1,
+          "arg": "args.call_start_after_unix",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^1[0-9]{9}$",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_count_conversations",
+          "n": 1,
+          "arg": "args.call_start_before_unix",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^1[0-9]{9}$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "minor",
+      "ask": "The answer gives the count and the successful count the tool returned.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "ELV-OC02",
+      "severity": "minor",
+      "ask": "It names the window it used.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "ELV-OC03",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "ELV-SF01",
+      "severity": "blocker",
+      "ask": "It did not list every call to count them itself.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "elevenlabs"
+        },
+        {
+          "kind": "count",
+          "tool": "elevenlabs.agents_list_conversations",
+          "op": "<=",
+          "value": 2
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "ELV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "b5a82a5ae9b146c3e4fd24371d52835ec4c8f3a7c346d7d94a8d9202fd80649d"
+  }
+}

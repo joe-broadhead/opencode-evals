@@ -1,0 +1,172 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-entity-file-metadata",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "wide sweep: get_entity_file_metadata (one file's size, type and dates)",
+  "decision": "A what-is-that-file question searches the files, takes the one it finds, and reads its metadata",
+  "data_check": "the CRM holds at least one file",
+  "prompt": "what's the most recent file we have — size, type and when it was uploaded?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": "plugins=affinity",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "AFF-TR01",
+      "severity": "blocker",
+      "ask": "It used get_entity_file_metadata once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_entity_file_metadata",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It searched the files first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.search_files",
+          "n": 1,
+          "arg": null
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.search_files",
+          "other": "affinity.get_entity_file_metadata"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It read the file it found.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_entity_file_metadata",
+          "n": 1,
+          "arg": "args.file_id",
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.search_files",
+          "other": "affinity.get_entity_file_metadata"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "major",
+      "ask": "The answer reports the file's metadata the calls returned, or says there is none, and invents none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The harness cannot prove the file id came from the earlier read (`created` counts write results only); the before order and a non-empty id are the strongest code checks, and a judge settles provenance.",
+      "line": 38
+    }
+  ],
+  "hashes": {
+    "source_sha256": "a28cd875ba687e0f5e9a8793a2625c4f82a60f193708f4d5f15b7044103146ed"
+  }
+}

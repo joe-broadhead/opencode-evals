@@ -1,0 +1,150 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-quick-bar",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "commit set: a real recipe render with its editable document",
+  "decision": "The bar chart is really rendered from a typed document: one quick call, the PNG and the .chart.json on disk",
+  "data_check": "the charts world's data working directory holds data/sales.csv",
+  "prompt": "quick bar chart of revenue by region from data/sales.csv, summed, saved with its editable document so I can restyle it later.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "plugins=charts cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "commit"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "CHT-CT01",
+      "severity": "blocker",
+      "ask": "Exactly one quick call, and it was not declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.quick",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "absent-declined",
+          "tool": "charts_quick"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "CHT-CT02",
+      "severity": "blocker",
+      "ask": "The PNG was written.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "outputs/charts/**/*.png",
+          "op": "exists"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "CHT-CT03",
+      "severity": "major",
+      "ask": "The editable document was written too.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "outputs/charts/**/*.chart.json",
+          "op": "exists"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "CHT-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "CHT-SF01",
+      "severity": "blocker",
+      "ask": "It did not fall back to a raw render.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "charts.render",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "CHT-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Commit plan: `charts.quick` is `local: true`: the write touches only the trial's own sandbox.",
+      "line": 35
+    }
+  ],
+  "hashes": {
+    "source_sha256": "940f1ed74d2ae08454ccdee40b748056b053bd2be99cceb0c0d8bc307a8ad93a"
+  }
+}

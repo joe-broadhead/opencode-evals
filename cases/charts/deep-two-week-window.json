@@ -1,0 +1,192 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-two-week-window",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "deep, date window: only the last two weeks of a daily file",
+  "decision": "The window is applied to the data, and the answer states the dates it covers",
+  "data_check": "the charts world's data working directory holds data/daily.csv covering January and February 2024",
+  "prompt": "line chart of daily active users from data/daily.csv, but only the last two weeks in the file. label the axis with the dates.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "plugins=charts cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "document",
+    "spec",
+    "data"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "CHT-WR01",
+      "severity": "blocker",
+      "ask": "Exactly one chart write was attempted, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "charts_quick"
+          },
+          {
+            "kind": "declined",
+            "tool": "charts_render"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "CHT-DT01",
+      "severity": "major",
+      "ask": "The data was filtered to the last two weeks in the file.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "charts.quick",
+            "n": 1,
+            "arg": "args.document",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "2024-02-(1[6-9]|2[0-9])",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "charts.render",
+            "n": 1,
+            "arg": "args.spec",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "2024-02-(1[6-9]|2[0-9])",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "charts.render",
+            "n": 1,
+            "arg": "args.data",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "2024-02-(1[6-9]|2[0-9])",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "charts.quick",
+            "n": 1,
+            "arg": "args.data",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "2024-02-(1[6-9]|2[0-9])",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "CHT-OC01",
+      "severity": "minor",
+      "ask": "It did not restyle or update the saved chart instead of drawing the window.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "charts.update",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "CHT-SF01",
+      "severity": "blocker",
+      "ask": "It did not edit or rewrite the CSV.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "CHT-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c71630aacacba165d72e83f88c4952900b6efcb247cfc84eeed94913e1f3771c"
+  }
+}

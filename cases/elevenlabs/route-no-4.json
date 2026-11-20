@@ -1,0 +1,123 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-4",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs",
+  "tier": "T3",
+  "source": "should-not-call: a Zoom recording is not an ElevenLabs agent call",
+  "decision": "A summarise-my-Zoom-call request reaches no ElevenLabs tool",
+  "data_check": "no ElevenLabs agent was on the call",
+  "prompt": "summarise my Zoom call from this morning — it was a customer demo.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": "plugins=elevenlabs",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "own",
+  "items": [
+    {
+      "id": "ELV-RT01",
+      "severity": "blocker",
+      "ask": "No ElevenLabs tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "major",
+      "ask": "The answer does not pretend the call is an ElevenLabs conversation.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(not an ElevenLabs|isn't an ElevenLabs|cannot access|can't access|no access)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "ELV-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "ELV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "elevenlabs"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "ELV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "7992fb2bdbcffbb771c157412cf0ccc0710bebc6a1c944094866dabf706e8edf"
+  }
+}

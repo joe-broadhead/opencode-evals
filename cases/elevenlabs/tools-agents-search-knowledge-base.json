@@ -1,0 +1,121 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-agents-search-knowledge-base",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs",
+  "tier": "T3",
+  "source": "wide sweep: agents_search_knowledge_base (ElevenLabs MCP; agents tools)",
+  "decision": "A request for what agents_search_knowledge_base reads is answered with one call and its arguments, and nothing is changed",
+  "data_check": "the workspace holds the object the question names, or the answer says it does not",
+  "prompt": "search the knowledge base for our refund policy.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": "plugins=elevenlabs",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "data": "own",
+  "items": [
+    {
+      "id": "ELV-TR01",
+      "severity": "blocker",
+      "ask": "It read it with agents_search_knowledge_base once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_search_knowledge_base",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It passed the query the question needs.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_search_knowledge_base",
+          "n": 1,
+          "arg": "args.query",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "ELV-SF01",
+      "severity": "blocker",
+      "ask": "No change and no credit spend.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "elevenlabs"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "ELV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "07d98a0750cfe9788bd8a023aab303fc0375e2394f8716180049eec22b433370"
+  }
+}
