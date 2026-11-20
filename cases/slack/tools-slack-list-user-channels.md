@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The channel list is one call scoped to public channels, and the answer reports it as a list.
 - Data check: the account is a member of the sandbox channel; content unchecked
-- Data: own
+- Data: real
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 

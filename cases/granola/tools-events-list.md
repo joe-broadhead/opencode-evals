@@ -4,13 +4,13 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The collector's read is events_list, not a search turned into events by hand.
-- Data check: the sandbox folder has meetings since the seeded cursor; content is unchecked; only route, arguments and no-write are graded; content unchecked
+- Data check: the sandbox folder has meetings since the start of the year; content unchecked
 - Data: real
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-for the activity collector: list the meetings that changed since its last cursor
+which meetings changed since the start of this year?
 
 ## Items
 - [GRA-OC01] blocker · events_list answers the request: the plugin's own tool for this task is called, not a substitute.

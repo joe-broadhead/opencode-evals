@@ -20,7 +20,7 @@
   "sets": [
     "deep"
   ],
-  "data": "seeded",
+  "data": "real",
   "items": [
     {
       "id": "GWS-OC01",
@@ -37,8 +37,8 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\?",
-              "flags": ""
+              "source": "(which doc|what change|do you mean|what would you like)",
+              "flags": "i"
             }
           }
         ]
@@ -127,6 +127,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "ea45a5bb7e8bbbab218ad81934e9c91392af94c3cd1dc2e058eabb2e141e6cd8"
+    "source_sha256": "d6301e11c7881c5425b474e2d8cead5bbb6001ce5a100ad8c95c740022740f65"
   }
 }

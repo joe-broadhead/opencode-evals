@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: A channel that does not exist is reported as not found, with the search shown; no id is guessed and no other channel is summarised.
 - Data check: no channel has that name; content unchecked
-- Data: seeded
+- Data: real
 - Checkable: query
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

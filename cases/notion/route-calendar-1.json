@@ -20,7 +20,7 @@
   "sets": [
     "route"
   ],
-  "data": "seeded",
+  "data": "own",
   "items": [
     {
       "id": "NOT-RT01",
@@ -121,6 +121,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "02da349124c09f0e015885fe56e7f67100ea20dc28f7aff39dcbb4dc67c656c4"
+    "source_sha256": "84ec5acbcba43bfb876a2ea110123d7532daaa809773680175a4da0804152cde"
   }
 }

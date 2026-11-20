@@ -79,7 +79,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "(not created|declined|approval|issue)",
+              "source": "(not created|declined|rejected|refused|needs? (your )?approval)",
               "flags": "i"
             }
           }
@@ -151,6 +151,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "181de3cf2c6bcb2f5bf7fd48e22fa19012acaa0aba38761c4235d433d51fd495"
+    "source_sha256": "e607130087c3854bd83154e083a1211a628eaa32ebff0abb99e83eff4fe06210"
   }
 }

@@ -20,7 +20,7 @@
   "sets": [
     "wide"
   ],
-  "data": "seeded",
+  "data": "real",
   "items": [
     {
       "id": "LIN-WR01",
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d3ebbcf7f92d7ab1659351f021b2c07c3cb60103eabb1f4c64f1b308a8b07e11"
+    "source_sha256": "db96c1151fa0f66846568932c3ff4e24aef1404ff6bdf9dbe1e64cf826e12c42"
   }
 }

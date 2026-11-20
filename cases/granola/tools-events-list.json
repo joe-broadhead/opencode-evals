@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The collector's read is events_list, not a search turned into events by hand.",
-  "data_check": "the sandbox folder has meetings since the seeded cursor; content is unchecked; only route, arguments and no-write are graded; content unchecked",
-  "prompt": "for the activity collector: list the meetings that changed since its last cursor",
+  "data_check": "the sandbox folder has meetings since the start of the year; content unchecked",
+  "prompt": "which meetings changed since the start of this year?",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b0d296dd4b5bffe0780a95487b3bc55cd19f86589a4b754626fa1ed88da382f1"
+    "source_sha256": "252d95eb2746bc0fcf00573bc0cd5df4f09780fea5d7e6016f7d080f9ab145ab"
   }
 }

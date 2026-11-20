@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The notion-link-meeting-note-to-calendar-event change is the one the task needs, and at ask-changes it is asked once and declined.
 - Data check: the private evals-232 page and its database exist
-- Data: seeded
+- Data: own
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 

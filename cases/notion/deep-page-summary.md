@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: The page is found, fetched whole, and summarised from its own words, with the action items separated from the prose.
 - Data check: the evals-232 page holds a summary and three action items; content unchecked
-- Data: seeded
+- Data: real
 - Checkable: query
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

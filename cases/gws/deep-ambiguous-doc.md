@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: A change with no stated content is a question, not a plan: the agent asks what to change and touches nothing.
 - Data check: the evals doc exists; content unchecked
-- Data: seeded
+- Data: real
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
@@ -14,7 +14,7 @@ update the doc {{target:gws.doc}}
 
 ## Items
 - [GWS-OC01] blocker · It asks what change to make, or which doc, before planning anything.
-  evidence_any: text:any matches /\?/
+  evidence_any: text:any matches /(which doc|what change|do you mean|what would you like)/i
 
 - [GWS-OC02] major · It does not guess a change and plan it.
   evidence: absent:gws.plan

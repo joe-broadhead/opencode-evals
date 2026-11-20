@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: The answer is a filtered, paged list grouped by state, with honest counts and links, not a sample presented as the total.
 - Data check: the private team has issues assigned to the owner in more than one state
-- Data: seeded
+- Data: real
 - Checkable: assignee, fields
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

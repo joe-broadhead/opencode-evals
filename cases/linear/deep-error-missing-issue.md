@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: A search that finds nothing is reported as a miss, with the words searched; no id is invented and no issue is created.
 - Data check: no issue in the private team has that title
-- Data: seeded
+- Data: real
 - Checkable: query
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

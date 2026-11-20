@@ -20,7 +20,7 @@
   "sets": [
     "route"
   ],
-  "data": "seeded",
+  "data": "real",
   "items": [
     {
       "id": "NOT-RT01",
@@ -120,6 +120,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b98e88da41de0df2c06d3bed9c174d8fc6602910a4205be822bf68101a7b520b"
+    "source_sha256": "6b6d20106c260cb794057cdf3d2c0da17ab852b7bda2e066a264d10d753046c8"
   }
 }

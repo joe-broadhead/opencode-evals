@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: A completed-last-week question filters by completedAt over the week, and the answer names the window and the issues.
 - Data check: the private team has issues completed last week or none
-- Data: seeded
+- Data: real
 - Checkable: completedAt, assignee
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

@@ -22,7 +22,7 @@ create a Linear issue in the {{target:linear.team_key}} team for the issue {{can
   evidence: absent:jira.*
 
 - [LIN-OC01] major · The answer reports what it found, from the source it used.
-  evidence_any: text:any matches /(not created|declined|approval|issue)/i
+  evidence_any: text:any matches /(not created|declined|rejected|refused|needs? (your )?approval)/i
 
 - [LIN-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

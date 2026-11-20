@@ -23,23 +23,31 @@
   "sets": [
     "deep"
   ],
-  "data": "seeded",
+  "data": "real",
   "items": [
     {
       "id": "SLK-OC01",
       "severity": "blocker",
-      "ask": "It searches the channel rather than reading it end to end.",
+      "ask": "It searches or reads the sandbox channel rather than nothing at all.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "slack.slack_search_public",
-          "n": 1,
-          "arg": null
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "slack.slack_search_public",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "slack.slack_read_channel",
+            "n": 1,
+            "arg": null
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
@@ -79,7 +87,7 @@
             "source": "https:\\/\\/[a-z0-9.-]+\\/archives\\/[A-Z0-9]+\\/p[0-9]+",
             "flags": ""
           },
-          "n": 2
+          "n": 1
         }
       ],
       "evidence_any": [],
@@ -149,6 +157,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "6a4a4ded11e8d1081e9ef176b318cdb3d590347e3b9dbd87746898a7f978b163"
+    "source_sha256": "f517c2d61ad09c0da4b63766b387c2e05278e6ad6c5973bc84cb0ec1aa7cc9d9"
   }
 }

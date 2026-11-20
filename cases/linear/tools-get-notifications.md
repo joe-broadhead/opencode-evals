@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The get_notifications read answers this request from Linear, and changes nothing.
 - Data check: the private evals team and its seeded issues exist; content unchecked
-- Data: own
+- Data: real
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 

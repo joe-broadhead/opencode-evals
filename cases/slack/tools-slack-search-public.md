@@ -5,13 +5,13 @@
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: A channel-scoped search is one search with the channel and the words in the query, and the hits are cited.
 - Data check: the sandbox channel holds the seeded canary message about the launch checklist
-- Data: seeded
+- Data: real
 - Checkable: query
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-search #{{target:slack.sandbox_channel_name}} for the message about the launch checklist
+search the public channels for the launch checklist
 
 ## Items
 - [SLK-OC01] blocker · slack_search_public answers the request: the plugin's own tool for this task is called, not a substitute.

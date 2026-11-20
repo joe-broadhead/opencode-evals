@@ -8,6 +8,7 @@
 - Data: real
 - Set: route
 - Budget: outer_calls <= 3, inner_calls <= 2, tokens <= 300000
+- Seed: plugins=gws
 
 ## Prompt
 check my inbox for anything from the landlord

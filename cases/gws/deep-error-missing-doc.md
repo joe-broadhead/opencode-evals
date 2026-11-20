@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: A name that does not exist is reported as not found, with the search shown and a question; no id is invented and nothing is created.
 - Data check: no Drive file has that name
-- Data: seeded
+- Data: real
 - Checkable: operation
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

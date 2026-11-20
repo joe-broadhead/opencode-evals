@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: A page that does not exist is reported as a miss, with the words searched; no page is created and no id is guessed.
 - Data check: no page in the workspace has that title; content unchecked
-- Data: seeded
+- Data: real
 - Checkable: query
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

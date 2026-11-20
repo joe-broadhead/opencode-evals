@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: A channel lookup is one channel search, and the answer gives the id it found.
 - Data check: the sandbox channel exists and is named evals-232
-- Data: seeded
+- Data: real
 - Checkable: query
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000

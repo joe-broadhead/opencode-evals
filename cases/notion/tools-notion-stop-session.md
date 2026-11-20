@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The notion-stop-session change is the one the task needs, and at ask-changes it is asked once and declined.
 - Data check: the private evals-232 page and its database exist
-- Data: seeded
+- Data: real
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 

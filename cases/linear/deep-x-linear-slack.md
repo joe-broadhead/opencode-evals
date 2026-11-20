@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: The cross-plugin task reads Linear and posts with Slack; the post is declined and the answer says it was not posted.
 - Data check: the private team has in-progress issues, and the sandbox channel exists
-- Data: seeded
+- Data: real
 - Seed: plugins=linear,slack
 - Checkable: state, channel_id
 - Set: deep

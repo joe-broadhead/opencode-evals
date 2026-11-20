@@ -23,7 +23,7 @@
   "sets": [
     "deep"
   ],
-  "data": "seeded",
+  "data": "real",
   "items": [
     {
       "id": "SLK-OC01",
@@ -165,6 +165,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "05fd3babba5ac6f1115f60163a817ced70b7c839dd3ea25428f43a3c0810ae54"
+    "source_sha256": "f41558ab896b267fd2aad0b5288b2d62ee3b46a5c2d30fd2475b8e697a43854d"
   }
 }
