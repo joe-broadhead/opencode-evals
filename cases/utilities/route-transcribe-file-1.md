@@ -5,7 +5,7 @@
 - Source: overlap routing: transcribing a file is Utilities', not voice's
 - Decision tested: A transcribe-this-WAV request routes to Utilities' transcriber, not to the voice tools
 - Data check: clip.wav is a 16-bit PCM WAV in the trial's working directory
-- Seed: plugins=utilities
+- Seed: plugins=utilities files=utilities-clip
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: route

@@ -5,7 +5,7 @@
 - Source: wide sweep: speech_transcribe (a 16-bit PCM WAV, transcribed on this machine)
 - Decision tested: A transcribe request is one speech_transcribe on the file named, and a missing speech asset is reported, not worked around
 - Data check: clip.wav is a 16-bit PCM WAV in the trial's working directory, and the speech assets may need a download the trial's egress blocks
-- Seed: plugins=utilities
+- Seed: plugins=utilities files=utilities-clip
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6
 - Set: wide
