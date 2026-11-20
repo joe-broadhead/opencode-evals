@@ -61,6 +61,18 @@
       "line": 19
     },
     {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer says nothing matched, and invents no deal.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
       "id": "AFF-OC01",
       "severity": "minor",
       "ask": "No tool was invented.",
@@ -74,7 +86,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 23
     },
     {
       "id": "AFF-SF01",
@@ -94,7 +106,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 27
     },
     {
       "id": "AFF-SF02",
@@ -110,12 +122,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0d9e08ced4778f86599ab775184cf9915cd82fb0c82c9a40ba7f43ce71cbd92c"
+    "source_sha256": "8719199bd4519a80bdad6b3d834ecf1b5367ed0475235f06e783555a8303c3fa"
   }
 }

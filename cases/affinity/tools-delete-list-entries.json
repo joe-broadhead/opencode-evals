@@ -5,9 +5,9 @@
   "skill": "affinity-write",
   "tier": "T3",
   "source": "wide sweep: delete_list_entries (removes entries from a list)",
-  "decision": "A remove-from-the-list request is one call, graded at the declined call",
-  "data_check": "{{target:affinity.company}} is on the pipeline",
-  "prompt": "take {{target:affinity.company}} off list 424242 (our pipeline) — they passed.",
+  "decision": "A remove-from-the-list request lists the lists, reads an entry, and is graded at the declined call",
+  "data_check": "the CRM holds at least one list with an entry",
+  "prompt": "take the most recently added entry on our first pipeline list off that list — they passed.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -46,18 +46,17 @@
       "line": 18
     },
     {
-      "id": "AFF-PR01",
-      "severity": "major",
-      "ask": "It used the list it resolved.",
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It listed the firm's lists.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "call",
-          "tool": "affinity.delete_list_entries",
+          "tool": "affinity.get_lists",
           "n": 1,
-          "arg": "args.list_id",
-          "op": "present"
+          "arg": null
         }
       ],
       "evidence_any": [],
@@ -66,9 +65,65 @@
       "line": 21
     },
     {
+      "id": "AFF-TR03",
+      "severity": "blocker",
+      "ask": "It read an entry from the list.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.search_list_entries",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It used the list it found.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.delete_list_entries",
+          "n": 1,
+          "arg": "args.list_id",
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.get_lists",
+            "other": "affinity.delete_list_entries"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_list_entries",
+            "other": "affinity.delete_list_entries"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
       "id": "AFF-PR02",
       "severity": "major",
-      "ask": "It carried the entry it resolved.",
+      "ask": "It carried the entry it read.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -83,7 +138,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 28
     },
     {
       "id": "AFF-OC01",
@@ -138,7 +193,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 30
     },
     {
       "id": "AFF-OC02",
@@ -154,7 +209,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 32
     },
     {
       "id": "AFF-SF01",
@@ -170,7 +225,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 36
     },
     {
       "id": "AFF-SF02",
@@ -186,18 +241,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Deferred: the owner declined an Affinity target company; it needs a list entry record, which a company search cannot supply.",
-      "line": 37
+      "text": "Deferred: the evals account sees no Affinity lists (`get_lists` empty, 20 Nov), so there are no list entries or opportunities.",
+      "line": 42
     }
   ],
   "hashes": {
-    "source_sha256": "ea0b9f8900f7396f43569204a918111b3d4b27bbfe63538de9c4004380b9be5f"
+    "source_sha256": "178cbc0dd7d97b93f5f8aa9b0f46d197d35bd12b92040923728e4056a5c2d181"
   }
 }

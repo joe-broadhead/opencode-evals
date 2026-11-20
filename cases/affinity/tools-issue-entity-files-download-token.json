@@ -5,9 +5,9 @@
   "skill": "affinity-write",
   "tier": "T3",
   "source": "wide sweep: issue_entity_files_download_token (a signed link for a file)",
-  "decision": "A download-link request is one token issue, graded at the declined call",
-  "data_check": "a file exists on {{target:affinity.company}}",
-  "prompt": "get me a download link for the deck on {{target:affinity.company}}.",
+  "decision": "A download-link request searches the files, takes the one it finds, and is graded at the declined call",
+  "data_check": "the CRM holds at least one file",
+  "prompt": "get me a download link for the most recent deck.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -19,7 +19,6 @@
   "sets": [
     "wide"
   ],
-  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -43,12 +42,31 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 17
+    },
+    {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It searched the files first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.search_files",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
     },
     {
       "id": "AFF-PR01",
       "severity": "major",
-      "ask": "It used the file it resolved.",
+      "ask": "It used the file it found.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -57,13 +75,22 @@
           "tool": "affinity.issue_entity_files_download_token",
           "n": 1,
           "arg": "args.file_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.search_files",
+          "other": "affinity.issue_entity_files_download_token"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "AFF-OC01",
@@ -118,7 +145,19 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 25
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The file id it passed came from the file search; it invented none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     },
     {
       "id": "AFF-OC02",
@@ -134,7 +173,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 29
     },
     {
       "id": "AFF-SF01",
@@ -150,7 +189,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 33
     },
     {
       "id": "AFF-SF02",
@@ -166,18 +205,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Deferred: the owner declined an Affinity target company; it needs a file record, which a company search cannot supply.",
-      "line": 35
+      "text": "The harness cannot prove the file id came from the earlier read (`created` counts write results only); the before order and a non-empty id are the strongest code checks, and a judge settles provenance.",
+      "line": 39
     }
   ],
   "hashes": {
-    "source_sha256": "41500036c924f6faf768144c7bc6b88742d65f9a07ba7844af59ab803a4cd8a9"
+    "source_sha256": "95aebb50810bafe70630e3fcd926542fba252e8ddb1513886c9ee7c45e5e840b"
   }
 }

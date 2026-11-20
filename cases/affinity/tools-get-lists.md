@@ -16,6 +16,8 @@ list our pipeline lists in Affinity.
 ## Items
 - [AFF-TR01] blocker · It used get_lists once.
   evidence: call:affinity.get_lists#1
+- [AFF-OC09] major · The answer says none of the firm's lists are visible, and invents none.
+  grader: judge
 - [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 

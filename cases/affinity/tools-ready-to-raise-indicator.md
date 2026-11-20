@@ -10,12 +10,12 @@
 - Set: wide
 
 ## Prompt
-which companies on list 424242 are due to raise again?
+which companies in our portfolio are due to raise again?
 
 ## Items
 - [AFF-TR01] blocker · It used ready_to_raise_indicator once.
   evidence: call:affinity.ready_to_raise_indicator#1
-- [AFF-OC01] major · The answer names the companies due to raise and the evidence, or says the list holds none, and invents no company.
+- [AFF-OC01] major · The answer names the companies due to raise and the evidence, or says there are none, and invents no company.
   grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none

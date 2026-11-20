@@ -18,6 +18,8 @@ search our deals for anything with 'seed' in the name.
   evidence: call:affinity.search_opportunities#1
 - [AFF-PR01] major · It searched for the term.
   evidence: call:affinity.search_opportunities#1 args.term present
+- [AFF-OC09] major · The answer says nothing matched, and invents no deal.
+  grader: judge
 - [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 

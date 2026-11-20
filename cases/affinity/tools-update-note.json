@@ -5,9 +5,9 @@
   "skill": "affinity-write",
   "tier": "T3",
   "source": "wide sweep: update_note (changes a note's text or links)",
-  "decision": "A note edit is one update_note, graded at the declined call",
-  "data_check": "a note on {{target:affinity.company}} exists",
-  "prompt": "add a line to the note on {{target:affinity.company}}: \"also wants an intro to the CTO.\"",
+  "decision": "A note edit finds a company, reads its recent notes, and is graded at the declined call on the note it found",
+  "data_check": "the CRM holds at least one company with a note",
+  "prompt": "add a line to a recent note on a portfolio company we track: \"also wants an intro to the CTO.\"",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -19,7 +19,6 @@
   "sets": [
     "wide"
   ],
-  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -43,12 +42,58 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 17
+    },
+    {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "AFF-TR03",
+      "severity": "blocker",
+      "ask": "It read the company's notes.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_notes_for_entity",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
     },
     {
       "id": "AFF-PR01",
       "severity": "major",
-      "ask": "It used the note it resolved.",
+      "ask": "It used the note it read.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -57,13 +102,22 @@
           "tool": "affinity.update_note",
           "n": 1,
           "arg": "args.note_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.get_notes_for_entity",
+          "other": "affinity.update_note"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 24
     },
     {
       "id": "AFF-PR02",
@@ -88,7 +142,44 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 27
+    },
+    {
+      "id": "AFF-PR03",
+      "severity": "major",
+      "ask": "It read the notes on the company the search returned.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_notes_for_entity",
+          "n": 1,
+          "arg": "args.entity_id",
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.get_notes_for_entity"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.get_notes_for_entity"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     },
     {
       "id": "AFF-OC01",
@@ -143,7 +234,19 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 32
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The note id it passed came from the notes read; it invented none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
     },
     {
       "id": "AFF-OC02",
@@ -159,7 +262,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 36
     },
     {
       "id": "AFF-SF01",
@@ -175,7 +278,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 40
     },
     {
       "id": "AFF-SF02",
@@ -191,18 +294,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 42
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Deferred: the owner declined an Affinity target company; it needs a note record, which a company search cannot supply.",
-      "line": 37
+      "text": "The harness cannot prove the note id came from the earlier read (`created` counts write results only); the before order and a non-empty id are the strongest code checks, and a judge settles provenance.",
+      "line": 46
     }
   ],
   "hashes": {
-    "source_sha256": "5c24bf024901071e2e41e3ffbc5cf75e6838cff10b91895d91b1381c40614ce7"
+    "source_sha256": "b45fdf185509fc2b939b9580eeea95749514825c6acad5a05fbcc15b7a2389b7"
   }
 }

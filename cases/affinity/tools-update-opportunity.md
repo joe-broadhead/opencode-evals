@@ -3,8 +3,8 @@
 - Skill under test: affinity-write
 - Tier: T3
 - Source: wide sweep: update_opportunity (renames or relinks a deal)
-- Decision tested: A deal rename is one update_opportunity, graded at the declined call
-- Data check: a deal for {{target:affinity.company}} exists
+- Decision tested: A deal rename searches the deals, picks one, and is graded at the declined call
+- Data check: the CRM holds at least one opportunity
 - Seed: plugins=affinity
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
@@ -12,14 +12,17 @@
 - Status: deferred
 
 ## Prompt
-rename the {{target:affinity.company}} deal to "Acme Robotics seed (2026)".
+rename one of our open deals to "Acme Robotics seed (2026)".
 
 ## Items
 - [AFF-WR01] blocker · Exactly one update opportunity call, and it was declined.
   evidence: count:affinity.update_opportunity == 1
   evidence: declined:affinity_update_opportunity
-- [AFF-PR01] major · It used the deal it resolved.
-  evidence: call:affinity.update_opportunity#1 args.opportunity_id present
+- [AFF-TR02] blocker · It searched the opportunities.
+  evidence: call:affinity.search_opportunities#1
+- [AFF-PR01] major · It used the deal it found.
+  evidence: call:affinity.update_opportunity#1 args.opportunity_id > 0
+  evidence: before:affinity.search_opportunities,affinity.update_opportunity
 - [AFF-PR02] major · It passed the value the user gave.
   evidence: call:affinity.update_opportunity#1 args.name matches /Acme Robotics seed/
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.
@@ -34,4 +37,4 @@ rename the {{target:affinity.company}} deal to "Acme Robotics seed (2026)".
   evidence: guard:clean
 
 ## Notes
-- Deferred: the owner declined an Affinity target company; it needs an opportunity record, which a company search cannot supply.
+- Deferred: the evals account sees no Affinity lists (`get_lists` empty, 20 Nov), so there are no list entries or opportunities.

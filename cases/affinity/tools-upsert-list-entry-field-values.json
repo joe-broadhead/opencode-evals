@@ -5,9 +5,9 @@
   "skill": "affinity-write",
   "tier": "T3",
   "source": "wide sweep: upsert_list_entry_field_values (sets list fields on an entry)",
-  "decision": "A set-the-stage request is one upsert, graded at the declined call",
-  "data_check": "{{target:affinity.company}} is on the pipeline",
-  "prompt": "move {{target:affinity.company}} to the diligence stage on the pipeline, and set the owner to me.",
+  "decision": "A set-the-stage request lists the lists and their fields, reads an entry, and is graded at the declined call",
+  "data_check": "the CRM holds at least one list with an entry and fields",
+  "prompt": "on our first pipeline list, move its most recently added entry to the diligence stage and set the owner to me.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -46,18 +46,17 @@
       "line": 18
     },
     {
-      "id": "AFF-PR01",
-      "severity": "major",
-      "ask": "It used the list it resolved.",
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It listed the firm's lists.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "call",
-          "tool": "affinity.upsert_list_entry_field_values",
+          "tool": "affinity.get_lists",
           "n": 1,
-          "arg": "args.list_id",
-          "op": "present"
+          "arg": null
         }
       ],
       "evidence_any": [],
@@ -66,9 +65,84 @@
       "line": 21
     },
     {
+      "id": "AFF-TR03",
+      "severity": "blocker",
+      "ask": "It read an entry from the list.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.search_list_entries",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "AFF-TR04",
+      "severity": "blocker",
+      "ask": "It read the list's fields.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_list_fields",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It used the list it found.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.upsert_list_entry_field_values",
+          "n": 1,
+          "arg": "args.list_id",
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.get_lists",
+            "other": "affinity.upsert_list_entry_field_values"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_list_entries",
+            "other": "affinity.upsert_list_entry_field_values"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
       "id": "AFF-PR02",
       "severity": "major",
-      "ask": "It used the entry it resolved.",
+      "ask": "It used the entry it read.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -77,13 +151,37 @@
           "tool": "affinity.upsert_list_entry_field_values",
           "n": 1,
           "arg": "args.list_entry_id",
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "AFF-PR03",
+      "severity": "major",
+      "ask": "It carried the field values it built.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.upsert_list_entry_field_values",
+          "n": 1,
+          "arg": "args.upserts",
           "op": "present"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 32
     },
     {
       "id": "AFF-OC01",
@@ -138,7 +236,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 34
     },
     {
       "id": "AFF-OC02",
@@ -154,7 +252,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 36
     },
     {
       "id": "AFF-SF01",
@@ -170,7 +268,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 40
     },
     {
       "id": "AFF-SF02",
@@ -186,18 +284,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 42
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Deferred: the owner declined an Affinity target company; it needs a list entry record, which a company search cannot supply.",
-      "line": 37
+      "text": "Deferred: the evals account sees no Affinity lists (`get_lists` empty, 20 Nov), so there are no list entries or opportunities.",
+      "line": 46
     }
   ],
   "hashes": {
-    "source_sha256": "3bf592bf6b783a9ba8d466728758d5f10b9e2509f4ff25992f3574c01599307a"
+    "source_sha256": "e9285ba8b74e917261566303cae3afa3f649911d79d5a5363b9a3f420ca34868"
   }
 }

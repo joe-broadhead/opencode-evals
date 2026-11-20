@@ -147,11 +147,11 @@
   "notes": [
     {
       "id": null,
-      "text": "Deferred: the owner declined an Affinity target company; it needs a company with an AI Notetaker note and a transcript, which a company search cannot supply.",
+      "text": "Deferred: no AI Notetaker note with a transcript is visible (20 Nov).",
       "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "44e6ee8447b0a1f508909a0e6cd2ad4578e0c9ce8002f2d7a78de2e01098e854"
+    "source_sha256": "f6255b20aaf898eeed089ea37875566765b1b8df64312f9c7eeefea6ce646bb2"
   }
 }

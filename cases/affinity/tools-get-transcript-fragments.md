@@ -30,4 +30,4 @@ what did {{target:affinity.company}} say about their raise in the last call? use
   evidence: guard:clean
 
 ## Notes
-- Deferred: the owner declined an Affinity target company; it needs a transcript record, which a company search cannot supply.
+- Deferred: no AI Notetaker note with a transcript is visible (20 Nov).

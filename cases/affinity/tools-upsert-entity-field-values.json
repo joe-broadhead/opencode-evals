@@ -5,9 +5,9 @@
   "skill": "affinity-write",
   "tier": "T3",
   "source": "wide sweep: upsert_entity_field_values (sets field values on a record)",
-  "decision": "A set-the-field request is one upsert, graded at the declined call",
-  "data_check": "{{target:affinity.company}} exists and has the 'Thesis fit' field",
-  "prompt": "set {{target:affinity.company}}'s thesis fit to \"strong\".",
+  "decision": "A set-the-field request finds a company, reads its fields, uses one that exists, and is graded at the declined call",
+  "data_check": "the CRM holds at least one company; its fields are read before any value is set",
+  "prompt": "set a portfolio company's thesis fit to \"strong\" — read its fields first and use the one that exists.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -19,13 +19,12 @@
   "sets": [
     "wide"
   ],
-  "status": "deferred",
   "data": "real",
   "items": [
     {
       "id": "AFF-WR01",
       "severity": "blocker",
-      "ask": "Exactly one upsert entity field values call, and it was declined.",
+      "ask": "If a field holds a thesis fit, exactly one upsert entity field values call, and it was declined.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -41,14 +40,66 @@
         }
       ],
       "evidence_any": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.upsert_entity_field_values",
+          "n": null
+        }
+      ],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 21
+    },
+    {
+      "id": "AFF-TR03",
+      "severity": "blocker",
+      "ask": "It read the company's fields.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_entity_fields",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
     },
     {
       "id": "AFF-PR01",
       "severity": "major",
-      "ask": "It used the company it resolved.",
+      "ask": "It used the company it found.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -57,18 +108,41 @@
           "tool": "affinity.upsert_entity_field_values",
           "n": 1,
           "arg": "args.entity_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
         }
       ],
-      "evidence_any": [],
-      "na_when": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.upsert_entity_field_values"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.upsert_entity_field_values"
+          }
+        ]
+      ],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.upsert_entity_field_values",
+          "n": null
+        }
+      ],
       "maps_to": [],
-      "line": 21
+      "line": 25
     },
     {
       "id": "AFF-PR02",
       "severity": "major",
-      "ask": "It carried the field and value.",
+      "ask": "It carried the field values it built.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -78,17 +152,70 @@
           "n": 1,
           "arg": "args.upserts",
           "op": "present"
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.get_entity_fields",
+          "other": "affinity.upsert_entity_field_values"
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.upsert_entity_field_values",
+          "n": null
+        }
+      ],
       "maps_to": [],
-      "line": 23
+      "line": 29
     },
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer says nothing changed, and whom it would have reached.",
+      "ask": "If no field holds a thesis fit, it says so and invents no field.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(no|none|not)\\b.{0,40}\\b(field|thesis)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(couldn't|could not|can't|cannot|unable to)\\b.{0,40}\\b(find|set|match)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [
+        {
+          "kind": "call",
+          "tool": "affinity.upsert_entity_field_values",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "AFF-OC02",
+      "severity": "major",
+      "ask": "If it set one, the answer says nothing changed, and whom it would have reached.",
       "forbidden": false,
       "grader": "code",
       "evidence": [],
@@ -136,12 +263,36 @@
           }
         ]
       ],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.upsert_entity_field_values",
+          "n": null
+        }
+      ],
       "maps_to": [],
-      "line": 25
+      "line": 36
     },
     {
-      "id": "AFF-OC02",
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The field id it passed came from the fields read; it invented none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.upsert_entity_field_values",
+          "n": null
+        }
+      ],
+      "maps_to": [],
+      "line": 39
+    },
+    {
+      "id": "AFF-OC03",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -154,7 +305,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 42
     },
     {
       "id": "AFF-SF01",
@@ -170,7 +321,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 46
     },
     {
       "id": "AFF-SF02",
@@ -186,18 +337,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 48
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Deferred: the owner declined an Affinity target company; it needs the company's custom \"Thesis fit\" field, which a company search cannot supply.",
-      "line": 37
+      "text": "The harness cannot prove the field id came from the earlier read (`created` counts write results only); the before order and a non-empty id are the strongest code checks, and a judge settles provenance.",
+      "line": 52
     }
   ],
   "hashes": {
-    "source_sha256": "544e1ea10dbf7d030d9798ed4113f454eb7b8f5889fae1c440f06592bc3d301a"
+    "source_sha256": "cd63a0bee8a1e5602768b08e52cae75179b5419765e88e6087b81245f806edeb"
   }
 }

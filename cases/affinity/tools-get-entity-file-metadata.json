@@ -5,9 +5,9 @@
   "skill": "affinity",
   "tier": "T3",
   "source": "wide sweep: get_entity_file_metadata (one file's size, type and dates)",
-  "decision": "A what-is-that-file question is one metadata read",
-  "data_check": "a file exists on {{target:affinity.company}}",
-  "prompt": "what's the file we have on {{target:affinity.company}} — size, type and when it was uploaded?",
+  "decision": "A what-is-that-file question searches the files, takes the one it finds, and reads its metadata",
+  "data_check": "the CRM holds at least one file",
+  "prompt": "what's the most recent file we have — size, type and when it was uploaded?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -19,7 +19,6 @@
   "sets": [
     "wide"
   ],
-  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -39,12 +38,31 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 17
+    },
+    {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It searched the files first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.search_files",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
     },
     {
       "id": "AFF-PR01",
       "severity": "major",
-      "ask": "It read the file it resolved.",
+      "ask": "It read the file it found.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -53,16 +71,37 @@
           "tool": "affinity.get_entity_file_metadata",
           "n": 1,
           "arg": "args.file_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.search_files",
+          "other": "affinity.get_entity_file_metadata"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "AFF-OC01",
+      "severity": "major",
+      "ask": "The answer reports the file's metadata the calls returned, or says there is none, and invents none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "AFF-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -75,7 +114,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 26
     },
     {
       "id": "AFF-SF01",
@@ -95,7 +134,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 30
     },
     {
       "id": "AFF-SF02",
@@ -111,18 +150,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Deferred: the owner declined an Affinity target company; it needs a file record, which a company search cannot supply.",
-      "line": 33
+      "text": "The harness cannot prove the file id came from the earlier read (`created` counts write results only); the before order and a non-empty id are the strongest code checks, and a judge settles provenance.",
+      "line": 37
     }
   ],
   "hashes": {
-    "source_sha256": "3d1bf2412e630e40ad63be7c3a587d9ebbc739953e00f3d1e4331074a116267a"
+    "source_sha256": "f3cd4371c002d84f9ba7ebbafb1a1ae68a1a26cb1c5e0a445a07a2b0a8fcc893"
   }
 }

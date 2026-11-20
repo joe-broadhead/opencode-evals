@@ -9,6 +9,7 @@
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
+- Status: deferred
 
 ## Prompt
 add a portfolio company we track to our pipeline list.
@@ -37,3 +38,6 @@ add a portfolio company we track to our pipeline list.
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
+
+## Notes
+- Deferred: the evals account sees no Affinity lists (`get_lists` empty, 20 Nov), so there are no list entries or opportunities.

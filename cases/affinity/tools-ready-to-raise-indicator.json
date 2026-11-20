@@ -7,7 +7,7 @@
   "source": "wave sweep: ready_to_raise_indicator (companies on a list due to raise again)",
   "decision": "A who-is-due-to-raise request calls the routine once",
   "data_check": null,
-  "prompt": "which companies on list 424242 are due to raise again?",
+  "prompt": "which companies in our portfolio are due to raise again?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -43,7 +43,7 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer names the companies due to raise and the evidence, or says the list holds none, and invents no company.",
+      "ask": "The answer names the companies due to raise and the evidence, or says there are none, and invents no company.",
       "forbidden": false,
       "grader": "judge",
       "evidence": [],
@@ -108,6 +108,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c6726e6ed642e67f343af6fc442df3fcec22db8f141ede04a8c2e4277e3dd6f7"
+    "source_sha256": "6aa0599dd4b2a092a8f10416678f3b987f1c16f520940816abc3c6def15c2e8e"
   }
 }

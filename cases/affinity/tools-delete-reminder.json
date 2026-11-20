@@ -5,9 +5,9 @@
   "skill": "affinity-write",
   "tier": "T3",
   "source": "wide sweep: delete_reminder (deletes a reminder)",
-  "decision": "A delete-the-reminder request is one call, graded at the declined call",
-  "data_check": "a reminder on the founder of {{target:affinity.company}} exists",
-  "prompt": "delete my follow-up reminder for the founder of {{target:affinity.company}}.",
+  "decision": "A delete-the-reminder request lists the firm's reminders, takes the next due one, and is graded at the declined call",
+  "data_check": "the firm has at least one reminder",
+  "prompt": "delete the firm's next due follow-up reminder.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -19,7 +19,6 @@
   "sets": [
     "wide"
   ],
-  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -43,12 +42,31 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 17
+    },
+    {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It listed the firm's reminders.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_reminders",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
     },
     {
       "id": "AFF-PR01",
       "severity": "major",
-      "ask": "It carried the reminder it resolved.",
+      "ask": "It carried the reminder it found.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -57,13 +75,22 @@
           "tool": "affinity.delete_reminder",
           "n": 1,
           "arg": "args.reminder_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.get_reminders",
+          "other": "affinity.delete_reminder"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "AFF-OC01",
@@ -118,7 +145,19 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 25
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The reminder id it passed came from the reminders read; it invented none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     },
     {
       "id": "AFF-OC02",
@@ -134,7 +173,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 29
     },
     {
       "id": "AFF-SF01",
@@ -150,7 +189,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 33
     },
     {
       "id": "AFF-SF02",
@@ -166,18 +205,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Deferred: the owner declined an Affinity target company; it needs a reminder record, which a company search cannot supply.",
-      "line": 35
+      "text": "The harness cannot prove the reminder id came from the earlier read (`created` counts write results only); the before order and a non-empty id are the strongest code checks, and a judge settles provenance.",
+      "line": 39
     }
   ],
   "hashes": {
-    "source_sha256": "ef3f0d48149298874d9374d18cf8c48fc555e4c744a5b724e7252dd888a4a942"
+    "source_sha256": "e51219514c8750e0d7d1452d152a3b4f99988dea83e54ef6a8c40df9ca3a2e34"
   }
 }

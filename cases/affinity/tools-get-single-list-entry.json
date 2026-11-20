@@ -4,10 +4,10 @@
   "plugin": "affinity",
   "skill": "affinity",
   "tier": "T3",
-  "source": "wide sweep: get_single_list_entry (one company's entry on one list)",
-  "decision": "A show-me-the-entry question is one get_single_list_entry",
-  "data_check": "{{target:affinity.company}} is on the pipeline",
-  "prompt": "show me {{target:affinity.company}}'s entry on our pipeline — stage, owner, the lot.",
+  "source": "wide sweep: get_single_list_entry (one entry on one list)",
+  "decision": "A show-me-the-entry question lists the firm's lists, reads an entry from one, and opens it by its ids",
+  "data_check": "the CRM holds at least one list with an entry",
+  "prompt": "show me the most recently added entry on our first pipeline list — stage, owner, the lot.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -42,18 +42,17 @@
       "line": 18
     },
     {
-      "id": "AFF-PR01",
-      "severity": "major",
-      "ask": "It read the list it resolved.",
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It listed the firm's lists.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "call",
-          "tool": "affinity.get_single_list_entry",
+          "tool": "affinity.get_lists",
           "n": 1,
-          "arg": "args.list_id",
-          "op": "present"
+          "arg": null
         }
       ],
       "evidence_any": [],
@@ -62,7 +61,99 @@
       "line": 20
     },
     {
+      "id": "AFF-TR03",
+      "severity": "blocker",
+      "ask": "It read an entry from the list.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.search_list_entries",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It opened the entry on the list it found.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_single_list_entry",
+          "n": 1,
+          "arg": "args.list_id",
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.get_lists",
+            "other": "affinity.get_single_list_entry"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_list_entries",
+            "other": "affinity.get_single_list_entry"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "AFF-PR02",
+      "severity": "major",
+      "ask": "It used the entry it read.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_single_list_entry",
+          "n": 1,
+          "arg": "args.list_entry_id",
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
       "id": "AFF-OC01",
+      "severity": "major",
+      "ask": "The answer reports the entry the calls returned, and invents none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "AFF-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -75,7 +166,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 31
     },
     {
       "id": "AFF-SF01",
@@ -95,7 +186,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 35
     },
     {
       "id": "AFF-SF02",
@@ -111,18 +202,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Deferred: the owner declined an Affinity target company; it needs a list entry record, which a company search cannot supply.",
-      "line": 33
+      "text": "Deferred: the evals account sees no Affinity lists (`get_lists` empty, 20 Nov), so there are no list entries or opportunities.",
+      "line": 42
     }
   ],
   "hashes": {
-    "source_sha256": "bd64834634a22ce3bd9b0dc3f2e494f33f5de374a274061e5e694ed2c7a6f252"
+    "source_sha256": "10a80b74a47a07769e3c164f5331ddb4a85017a2bd02a3e6a9e923d425e2f09f"
   }
 }

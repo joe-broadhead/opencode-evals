@@ -41,6 +41,18 @@
       "line": 17
     },
     {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer says none of the firm's lists are visible, and invents none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
       "id": "AFF-OC01",
       "severity": "minor",
       "ask": "No tool was invented.",
@@ -54,7 +66,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
     },
     {
       "id": "AFF-SF01",
@@ -74,7 +86,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 25
     },
     {
       "id": "AFF-SF02",
@@ -90,12 +102,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d4c14030abf716dd303e095db48f00394fd6c8eafd58cf57c5933b7760c2545c"
+    "source_sha256": "191c9adb28343050b90d1f1b5156cb033494b55ba4d6852fb6699696b8d4d499"
   }
 }
