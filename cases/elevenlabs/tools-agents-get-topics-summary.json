@@ -78,6 +78,16 @@
         },
         {
           "kind": "absent",
+          "tool": "elevenlabs.creative_generate_speech",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.creative_generate_video",
+          "n": null
+        },
+        {
+          "kind": "absent",
           "tool": "write",
           "n": null
         }
@@ -91,6 +101,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "614ff399b83ab8acfef075ff9359542d4f7060d64f4a9da3a711bfe980cfe229"
+    "source_sha256": "9f1a40872ef61fb08487cb15d7f0c636d52ae3981c969b147c51bde9e059847c"
   }
 }

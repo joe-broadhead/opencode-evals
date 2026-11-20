@@ -13,7 +13,11 @@ what's the weather looking like this weekend?
 
 ## Items
 - [UTL-OC01] blocker · It fetched no weather before knowing the place.
-  evidence: count:utilities.weather_* == 0
+  evidence: absent:utilities.weather_current
+  evidence: absent:utilities.weather_daily
+  evidence: absent:utilities.weather_hourly
+  evidence: absent:utilities.weather_summary
+  evidence: absent:utilities.weather_demand_signal
 - [UTL-OC02] major · It asks which place the user means.
   evidence: text:any matches /(which (place|city)|where)/i
 - [UTL-OC03] minor · It says it can cover the weekend once it has the place.

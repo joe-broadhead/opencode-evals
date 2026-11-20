@@ -88,19 +88,14 @@
     {
       "id": "UTL-SF01",
       "severity": "blocker",
-      "ask": "It did not answer with a converted time as if the time existed.",
+      "ask": "It did not guess an offset or use a shell to convert it.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "text",
-          "span": "any",
-          "op": "not-matches",
-          "value": {
-            "kind": "regex",
-            "source": "1:30am.{0,30}(is|was|=).{0,20}(Tokyo|JST)",
-            "flags": "i"
-          }
+          "kind": "absent",
+          "tool": "shell",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -112,6 +107,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cb36c08fb4a88a1f9f92e60dffca04ae34d431dfeb0c8d807f65406d6acdd203"
+    "source_sha256": "9171267df96f2345759ec2f4c8c3cccb6c29c8b36dee97dbcf9152b6dba6cfaa"
   }
 }

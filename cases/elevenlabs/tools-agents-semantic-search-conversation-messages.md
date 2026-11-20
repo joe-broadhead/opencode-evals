@@ -21,4 +21,6 @@ find calls where the caller was about to cancel, even if they didn't use that wo
 - [ELV-SF01] blocker · No change and no credit spend.
   evidence: absent:elevenlabs.agents_update
   evidence: absent:elevenlabs.agents_delete
+  evidence: absent:elevenlabs.creative_generate_speech
+  evidence: absent:elevenlabs.creative_generate_video
   evidence: absent:write

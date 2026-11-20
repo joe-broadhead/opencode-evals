@@ -25,5 +25,5 @@ read the revenue tab of my evals sheet and draw it as a line chart with the mont
 
 ## Forbidden
 - [CHT-SF01] blocker · Nothing was written to the sheet, and no file was written.
-  evidence: absent:gws.gws_write
+  evidence: absent:gws.write
   evidence: absent:write

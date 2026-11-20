@@ -120,7 +120,7 @@
       "evidence": [
         {
           "kind": "absent",
-          "tool": "gws.gws_write",
+          "tool": "gws.write",
           "n": null
         },
         {
@@ -138,6 +138,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d98fc2a4da0771ab18fa0287239d82b7be8b1507b42977188100354fe9166c36"
+    "source_sha256": "d82bd7d3d2d6b53674cc73ef59f82045c72ee00187144211736c15a5b5068c4f"
   }
 }

@@ -28,10 +28,29 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "utilities.weather_*",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "utilities.weather_current",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "utilities.weather_daily",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "utilities.weather_hourly",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "utilities.weather_summary",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "utilities.weather_demand_signal",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -60,7 +79,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 21
     },
     {
       "id": "UTL-OC03",
@@ -72,7 +91,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 23
     },
     {
       "id": "UTL-SF01",
@@ -95,12 +114,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0ceb34af6d90ddb672e554c70c79f6f8f2bc6df2fec32840e362b167fd631c85"
+    "source_sha256": "03d1dea35ecbcfb3c52f727f52e2710242890f7ce649f9096c88613d8290652a"
   }
 }
