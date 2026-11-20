@@ -1,12 +1,14 @@
 // The credentialed phase's gated order (G0 re-check, section D): each step only if the previous one passed, and a clear stop otherwise.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from "node:fs"
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync, symlinkSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
+import { randomBytes } from "node:crypto"
 import { spawnSync } from "node:child_process"
-import { STEPS, runPhase1, readState, entriesOf, STATE_FILE } from "../src/phase1.mjs"
+import { STEPS, runPhase1, readState, entriesOf, STATE_FILE, pulseLinkVerdict, defaultDeps } from "../src/phase1.mjs"
 import { writeHalt } from "../src/run/halt.mjs"
+import { SIGNIN_ORDER, exportTarget } from "../scripts/profile/profile-lib.mjs"
 
 const scratch = () => mkdtempSync(join(tmpdir(), "evals-phase1-"))
 const ids = STEPS.map((s) => s.id)
@@ -63,6 +65,77 @@ function world({ writes = ["slack", "linear"], reads = ["slack", "linear"], pilo
   if (pilot) writeFileSync(join(store, "pilot.json"), JSON.stringify([{ plugin: "history", iteration: "pilot-a", model: "claude-agent/haiku" }]))
   return { root, store, profile, cleanup: () => rmSync(root, { recursive: true, force: true }) }
 }
+
+test("preflight: the pulse runtime link is accepted, a stale one is removed, and anything else refuses (the walk\'s rule)", async () => {
+  const w = world()
+  const pulse = join(w.profile, ".config", "pulse")
+  mkdirSync(pulse, { recursive: true })
+  const live = join("/tmp", `pulse-${randomBytes(4).toString("hex")}`)
+  mkdirSync(live)
+  const gone = join("/tmp", `pulse-${randomBytes(4).toString("hex")}`)
+  const okLink = join(pulse, "abcdef-runtime")
+  const staleLink = join(pulse, "123456-runtime")
+  const badLink = join(pulse, "notruntime")
+  symlinkSync(live, okLink)
+  symlinkSync(gone, staleLink)
+  symlinkSync("/home/elsewhere", badLink)
+  try {
+    const step = STEPS.find((s) => s.id === "preflight")
+    assert.ok(step)
+    const s = stand()
+    // the verdict itself: exactly the shell's three cases
+    assert.equal(pulseLinkVerdict(okLink, w.profile), "ok")
+    assert.equal(pulseLinkVerdict(staleLink, w.profile), "stale")
+    assert.equal(pulseLinkVerdict(badLink, w.profile), "refuse")
+    const good = await step.run({ store: w.store, profile: w.profile, deps: { ...s.deps, linksIn: () => [okLink, staleLink] } })
+    assert.equal(good.ok, true, good.message)
+    assert.equal(existsSync(staleLink), false, "the stale link was removed")
+    assert.equal(existsSync(okLink), true, "the legitimate one is kept")
+    assert.match(good.lines.join("\n"), /removed the stale PulseAudio link/)
+    const refused = await step.run({ store: w.store, profile: w.profile, deps: { ...s.deps, linksIn: () => [badLink] } })
+    assert.equal(refused.ok, false)
+    assert.match(refused.message, /a symbolic link under the profile: .*notruntime/)
+  } finally {
+    rmSync(live, { recursive: true, force: true })
+    w.cleanup()
+  }
+})
+
+test("signedIn: gws and Wispr Flow are found by their export target, and a missing SIGNIN_ORDER credential fails", async () => {
+  const root = scratch()
+  const profile = join(root, "profile")
+  mkdirSync(profile)
+  const bin = join(root, "opencode")
+  const log = join(root, "calls.log")
+  const bodyFor = (vendor) => {
+    const integrationID = vendor === "gws" ? "gws-default" : vendor === "wisprflow" ? "mcp_abc123" : vendor
+    const label = vendor === "gws" ? "default" : vendor === "wisprflow" ? "Wispr Flow" : vendor
+    return JSON.stringify([{ id: "cred_x", integrationID, label, active: true, value: { type: "oauth" } }])
+  }
+  const writeStub = (available) => {
+    const map = Object.fromEntries(SIGNIN_ORDER.map((v) => [exportTarget(v), available.includes(v) ? bodyFor(v) : "[]"]))
+    writeFileSync(bin, `#!${process.execPath}\nconst a = process.argv.slice(2)\nconst fs = require("fs")\nfs.appendFileSync(${JSON.stringify(log)}, [process.env.HOME, ...a].join(" ") + "\\n")\nif (a[0] === "auth" && a[1] === "export") { console.log(${JSON.stringify(map)}[a[2]] || "[]"); process.exit(0) }\nprocess.exit(0)\n`, { mode: 0o700 })
+  }
+  const caller = { EVALS_REAL_HOME: root, HOME: root, PATH: process.env.PATH }
+  const ctx = { opencode: bin, profile, caller, noAccount: new Set(), store: join(root, "store") }
+  try {
+    writeStub([...SIGNIN_ORDER])
+    const deps = await defaultDeps({ store: ctx.store, caller, companions: [] })
+    const all = deps.signedIn(ctx)
+    assert.ok(all.includes("gws"), "gws-default is found")
+    assert.ok(all.includes("wisprflow"), "the Wispr Flow label is found")
+    assert.equal(all.length, SIGNIN_ORDER.length)
+    assert.equal(deps.credentialType(ctx, "gws"), "oauth", "credentialType uses the export target")
+    assert.equal(deps.logout(ctx, "gws").ok, true)
+    assert.match(readFileSync(log, "utf8"), /auth logout gws-default/)
+    // a vendor the walk was supposed to sign in must fail, not be skipped
+    writeStub(SIGNIN_ORDER.filter((v) => v !== "gws"))
+    const d2 = await defaultDeps({ store: ctx.store, caller, companions: [] })
+    assert.throws(() => d2.signedIn(ctx), /the evals profile holds no credential for gws: sign it in with signin\.sh --from gws/)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
 
 const run = async (w, s, extra = {}, options = {}) => {
   const lines = []

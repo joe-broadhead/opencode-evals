@@ -53,7 +53,7 @@ function fake({ profile, signedIn = ["linear", "slack"], realPort = "49374", pro
   const exec = (command, args, { env } = {}) => {
     calls.push({ args, home: env?.HOME })
     if (args[0] === "service" && args[1] === "get") return { code: 0, stdout: `${env?.HOME === profile ? profilePort : realPort}\n`, stderr: "" }
-    if (args[0] === "auth" && args[1] === "export") return signedIn.includes(args[2]) ? { code: 0, stdout: JSON.stringify([{ integrationID: args[2], active: true, value: { type: "oauth", access: `tok-${args[2]}-00001`, refresh: `ref-${args[2]}-00001` } }]), stderr: "" } : { code: 1, stdout: "", stderr: "" }
+    if (args[0] === "auth" && args[1] === "export") return signedIn.includes(args[2]) ? { code: 0, stdout: JSON.stringify([{ id: "cred_x", integrationID: args[2], label: args[2], active: true, value: { type: "oauth", access: `tok-${args[2]}-00001`, refresh: `ref-${args[2]}-00001` } }]), stderr: "" } : { code: 1, stdout: "", stderr: "" }
     if (args[0] === "api" && args[1] === "post") {
       const path = args[2]
       const body = JSON.parse(args[args.indexOf("--data") + 1])

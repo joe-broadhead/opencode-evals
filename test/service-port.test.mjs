@@ -105,7 +105,7 @@ test("check-real and the keeper refuse a profile on the real service's port, or 
   assert.throws(() => assertDistinctPort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: same.exec, env: realOn }), /is the real service's/)
   assert.throws(() => assertDistinctPort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: service({ ports: { "/real": 49374 } }).exec, env: NO_RECORD }), /no service port of its own/)
   assert.equal(assertDistinctPort({ opencode: "oc", profileEnv: MINE, realEnv: REAL, exec: service({ ports: { "/real": 49374, "/evals": 47950 } }).exec, env: NO_RECORD }), 47950)
-  const exported = JSON.stringify([{ integrationID: "linear", active: true, value: { type: "oauth", access: "a-token-00000001", refresh: "r-token-00000001" } }])
+  const exported = JSON.stringify([{ id: "cred_x", integrationID: "linear", label: "Linear", active: true, value: { type: "oauth", access: "a-token-00000001", refresh: "r-token-00000001" } }])
   const base = (s) => (command, args, o) => (args[0] === "service" ? s.exec(command, args, o) : args[0] === "api" ? { code: 0, stdout: "{}", stderr: "" } : { code: 0, stdout: exported, stderr: "" })
   // The real service's port is read from its own record (EVALS_REAL_SERVICE_PORT here), never from `opencode service get port` in the real env.
   // A port nothing listens on, so the guard lets the run reach the port comparison.
@@ -128,7 +128,7 @@ test("the keeper sees a token that was due and did not move, and one that was re
       if (args[0] === "service") return s.exec(command, args, o)
       if (args[0] === "api") return args[1] === "post" && args[2] === "/api/session" ? { code: 0, stdout: '{"data":{"id":"ses_test"}}', stderr: "" } : args[1] === "delete" ? { code: 0, stdout: "", stderr: "" } : { code: 0, stdout: probe, stderr: "" }
       const expires = expiries[Math.min(exports++, expiries.length - 1)]
-      return { code: 0, stdout: JSON.stringify([{ integrationID: args[2], active: true, value: { type: "oauth", access: "a-token-00000001", refresh: "r-token-00000001", expires } }]), stderr: "" }
+      return { code: 0, stdout: JSON.stringify([{ id: "cred_x", integrationID: args[2], label: args[2], active: true, value: { type: "oauth", access: "a-token-00000001", refresh: "r-token-00000001", expires } }]), stderr: "" }
     }
     return keepOnce({ profile: "/evals", exec, env: { EVALS_REAL_HOME: "/real", EVALS_REAL_SERVICE_PORT: "49374", PATH: "/usr/bin" }, only: ["linear"], now })
   }

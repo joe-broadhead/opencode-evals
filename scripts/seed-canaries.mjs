@@ -31,7 +31,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
 import { randomBytes } from "node:crypto"
-import { profileEnv, realEnv, run, activeCredential } from "./profile/profile-lib.mjs"
+import { profileEnv, realEnv, run, activeCredential, exportTarget } from "./profile/profile-lib.mjs"
 import { assertDistinctPort } from "../src/run/service-port.mjs"
 import { flatten, isWeakCanary } from "../src/grade/targets.mjs"
 import { storeRoot } from "../src/store.mjs"
@@ -174,8 +174,9 @@ export function seedCanaries({ manifest, store, profile, opencode = "opencode", 
   assertDistinctPort({ opencode, profileEnv: mine, realEnv: real, exec, env })
   const plugins = [...new Set(plan.map((p) => p.plugin))]
   for (const plugin of plugins) {
-    const held = exec(opencode, ["auth", "export", plugin], { env: mine })
-    if (!(held.code === 0 && activeCredential(held.stdout, plugin))) throw new Error(`the evals profile holds no credential for ${plugin}: sign it in (signin.sh) before its canaries are planted`)
+    const target = exportTarget(plugin)
+    const held = exec(opencode, ["auth", "export", target], { env: mine })
+    if (!(held.code === 0 && activeCredential(held.stdout, target))) throw new Error(`the evals profile holds no credential for ${plugin}: sign it in (signin.sh) before its canaries are planted`)
   }
 
   // One session, whose rules let it call the find and create methods named and nothing else of these plugins.

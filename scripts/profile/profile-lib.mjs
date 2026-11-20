@@ -54,13 +54,67 @@ export function rpcFailure(out) {
   let parsed = null
   try { parsed = JSON.parse(text) } catch {}
   if (parsed?._tag === "RpcError") return `${parsed.type ?? "rpc error"}: ${clip(parsed.message)}`
+  // The body is judged on its content, whatever the exit code: a valid answer with a non-zero exit is the answer (its shape decides), and an
+  // auth error belongs to its normal class. Only a call with no body at all is judged by its exit code.
+  if (parsed && typeof parsed === "object") return null
   if (out?.code !== 0) return `exit ${out?.code}${clip(out?.stderr) ? `: ${clip(out.stderr)}` : ""}`
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "no JSON object answer"
-  return null
+  return "no JSON object answer"
 }
 
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v)
 const ERROR_WORD = /UNAVAILABLE|UNREADABLE|UPSTREAM|AUTH_REQUIRED|AUTH_SCOPE_MISSING|UNAUTHORI[SZ]ED|FORBIDDEN|FAILED|ERROR/i
+
+/** Exit codes a CLI may report when it is killed by its own timeout (124 is GNU timeout, 137/143 SIGKILL/SIGTERM). `run()`'s own spawnSync
+ *  timeout is NOT one of these: it reports `status: null` with an ETIMEDOUT error. A non-null code is the CLI's own, so only a body-less one
+ *  is treated as a timeout. */
+export const TIMEOUT_EXIT_CODES = Object.freeze([124, 137, 143])
+
+/** Does stdout carry a parseable JSON body (an answer of some kind)? An empty, truncated or non-JSON stdout does not. */
+export function hasBody(result) {
+  const text = String(result?.stdout ?? "").trim()
+  if (!text) return false
+  try {
+    JSON.parse(text)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Was this call killed by its own timeout? Only when it carries NO parseable body: a body is judged on its content, whatever the code. */
+export function timedOut(result) {
+  if (hasBody(result)) return false
+  if (TIMEOUT_EXIT_CODES.includes(Number(result?.code))) return true
+  return Boolean(result?.error && /ETIMEDOUT|timed?\s*out|timeout/i.test(String(result.error)))
+}
+
+/** How long the check waits for the evals service's route to answer when it is still starting (EVALS_RPC_WAIT_MS overrides, for tests). */
+export const RPC_WAIT_MS = 60_000
+export const rpcWaitMs = (env = process.env) => {
+  const n = Number(env.EVALS_RPC_WAIT_MS)
+  return Number.isFinite(n) && n >= 0 ? n : RPC_WAIT_MS
+}
+
+/**
+ * Waits until the evals service answers this vendor's `describe`. A service that has just started answers `rpc.unavailable` for a while (its
+ * plugins are still loading); that is "not ready", not a failure of the evals sign-in. Polls up to `waitMs`. Any other answer — including a
+ * describe that fails for another reason — counts as answered, and the read itself reports it.
+ */
+export function waitForEvalsRoute(call, vendor, directory, { waitMs = RPC_WAIT_MS, sleep = sleepBriefly } = {}) {
+  const route = IDENTITY[vendor]
+  if (!route) return { ok: true, skipped: true }
+  const ns = route.split("/")[0]
+  const deadline = Date.now() + waitMs
+  let last = "no answer"
+  while (true) {
+    const out = call(["api", "post", `/api/rpc/${ns}/describe`, "-H", `x-opencode-directory:${directory}`, "-d", JSON.stringify({ input: {} })])
+    const why = rpcFailure(out)
+    if (!why) return { ok: true }
+    last = why
+    if (!/^rpc\.unavailable\b/i.test(why) || Date.now() >= deadline) return /^rpc\.unavailable\b/i.test(why) ? { ok: false, why } : { ok: true }
+    sleep(50)
+  }
+}
 
 /** An error signal in the answer's top levels (root, `output`, `output.output`): an RpcError (also under `data`), an error/isError/failed/refused key, an error-like code or status. Data deeper down is not scanned: it is other people's content. */
 export function errorSignal(answer) {
@@ -145,7 +199,7 @@ export function identityRead(call, { vendor, directory, sessionID }) {
   let raw = ""
   try { raw = String(JSON.parse(out.stdout).message ?? "") } catch {}
   const notInstalled = /GWS_UNAVAILABLE: gws is not installed/.test(raw)
-  return why ? { ok: false, why, notInstalled, method: route.split("/")[1], needs: /PERMISSION_DENIED|deny rule/.test(raw) ? neededAction(raw) : null } : { ok: true, method: route.split("/")[1] }
+  return why ? { ok: false, why, notInstalled, timeout: timedOut(out), code: out.code, method: route.split("/")[1], needs: /PERMISSION_DENIED|deny rule/.test(raw) ? neededAction(raw) : null } : { ok: true, method: route.split("/")[1] }
 }
 
 /** The `read`-class actions one plugin lists (describe is free and calls no vendor). */
@@ -385,10 +439,46 @@ export function linksIn(dir) {
   return found
 }
 
-/** Runs a command and returns { code, stdout, stderr }; never throws, never echoes. */
+/**
+ * Runs a command and returns { code, stdout, stderr }; never throws, never echoes. spawnSync reports ITS OWN timeout as `code: null` with an
+ * ETIMEDOUT error (the kill signal is SIGTERM), never as 137 or 143: a non-null 124/137/143 below is the CLI's own exit code.
+ */
 export function run(command, args, { env, input, timeoutMs = 60_000 } = {}) {
   const out = spawnSync(command, args, { env, input, encoding: "utf8", timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024 })
   return { code: out.status, stdout: out.stdout ?? "", stderr: out.stderr ?? "", error: out.error ? String(out.error.message) : null }
+}
+
+/** Is this element credential-shaped (OpenCode's Credential.Entry): a string id and integrationID, a boolean active, an object value with
+ *  a string type, and no RpcError/_tag or error key? An export is only an answer when every element is. */
+export const credentialShaped = (c) =>
+  isObject(c) &&
+  typeof c.id === "string" &&
+  typeof c.integrationID === "string" &&
+  typeof c.active === "boolean" &&
+  isObject(c.value) &&
+  typeof c.value.type === "string" &&
+  !("_tag" in c) &&
+  !("error" in c)
+
+/**
+ * Is this stdout a real `auth export` ANSWER: a JSON credential array (or `{credentials:[…]}`, no top-level `_tag`/`error`) in which EVERY element
+ * is credential-shaped? Only such a body counts as an export (a failed export's error object, or a mixed body, is a read failure — never
+ * "nothing there"). Returns the list or null.
+ */
+export function exportAnswer(out) {
+  const text = String(out?.stdout ?? "").trim()
+  if (!text) return null
+  let parsed
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    return null
+  }
+  if (!isObject(parsed) && !Array.isArray(parsed)) return null
+  if ("_tag" in parsed || "error" in parsed) return null
+  const list = Array.isArray(parsed) ? parsed : Array.isArray(parsed.credentials) ? parsed.credentials : null
+  if (!list) return null
+  return list.every(credentialShaped) ? list : null
 }
 
 /** The active credential of an integration from `opencode auth export` output, or null. Returns the parsed object (secrets inside: keep it in memory). */
@@ -403,12 +493,12 @@ export function activeCredential(exported, integration) {
   const want = normName(integration)
   // The integration id first, then the label; then EVERY entry of that integration (a re-sign-in leaves an inactive `Linear` beside the active
   // `Linear 2`, both with the same id), and only the ACTIVE one is returned: never a stale inactive credential.
-  const named = list.filter((c) => normName(c?.integrationID) === want)
+  const named = list.filter((c) => credentialShaped(c) && normName(c?.integrationID) === want)
   // (a re-sign-in's label gets a number: `Linear 2`, `X app 2`)
   const byLabel = (c) => normName(c?.label) === want || normName(c?.label).replace(/\d+$/, "") === want
-  const hits = named.length ? named : list.filter(byLabel)
+  const hits = named.length ? named : list.filter((c) => credentialShaped(c) && byLabel(c))
   const ids = new Set(hits.map((c) => c.integrationID))
-  return list.find((c) => ids.has(c?.integrationID) && c?.active) ?? null
+  return list.find((c) => credentialShaped(c) && ids.has(c?.integrationID) && c?.active) ?? null
 }
 
 /**
@@ -655,6 +745,31 @@ export function refreshChain({ expires, baseline, identityOk = true, now = Date.
 export function logRound(store, entry) {
   mkdirSync(store, { recursive: true, mode: 0o700 })
   appendFileSync(join(store, "round-232.log"), `${JSON.stringify({ at: new Date().toISOString(), ...entry })}\n`, { mode: 0o600 })
+}
+
+/** How many check timeouts for this integration are consecutive at the end of its round-log entries (a finished check ends the streak). */
+export function checkTimeoutStreak(store, integration) {
+  if (!store) return 0
+  let text
+  try {
+    text = readFileSync(join(store, "round-232.log"), "utf8")
+  } catch {
+    return 0
+  }
+  let streak = 0
+  for (const line of text.split("\n").reverse()) {
+    if (!line.trim()) continue
+    let entry
+    try {
+      entry = JSON.parse(line)
+    } catch {
+      continue
+    }
+    if (entry?.integration !== integration) continue
+    if (entry.event === "check-timeout") streak++
+    else if (entry.event === "check-real") break
+  }
+  return streak
 }
 
 export { readFileSync }

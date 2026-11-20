@@ -20,7 +20,8 @@ signin.sh --yes            no Enter prompts
 
 `evals-profile.sh -- <command>` runs any command inside the profile (the sign-in is
 `evals-profile.sh -- opencode auth login <vendor>`); `check-real.mjs` is the check on its own; `keeper.mjs` refreshes the evals profile's
-tokens on a timer; `guard-real.mjs` refuses while the real background service is running; `copy-client.mjs` copies an app client;
+tokens on a timer, through the same `identityCheck` learning path (an inner read the table lacks is learned as a read of the same plugin, never a
+wildcard); `guard-real.mjs` refuses while the real background service is running; `copy-client.mjs` copies an app client;
 `log-signin.mjs` records (or, with `--forget`, clears) a sign-in's baseline, for the refresh-chain proof below.
 
 ## The refresh-chain proof
@@ -50,6 +51,21 @@ next `check-real` does.
 `--redo` is a **full redo**: it forgets what passed and clears `refresh-baseline.json`, so every vendor's baseline is taken again at its next
 sign-in or check-real.
 
+## Transient failures are not sign-outs
+
+A call is a **timeout** only when its stdout carries **no parseable body**: the body is judged on its content, whatever the exit code. A valid
+answer wins over a non-zero code; an RpcError, an `errorSignal` hit, 401/403 or `authentication rejected` takes its normal class — a real-profile
+failure (exit 1) or an evals failure (exit 4) — and is **not retried**. Only a body-less call with exit 124, 137 or 143, or a spawn timeout
+(`run()` reports its own as `status: null` with an ETIMEDOUT error, never as 137/143), is transient: it is retried **once**, then its own side,
+`timeout`, says *the check could not finish, so the real sign-in is unproven* (exit 5: sign in no further vendor, `--recheck`, and if it times
+out again open the vendor in your normal OpenCode and see whether it asks you to sign in). An `auth export` is narrower: only a body in which
+**every** element is credential-shaped (a string `id`, a string `integrationID`, a boolean `active`, an object `value` with a string `type`,
+no `_tag`/`error`), or `{credentials:[…]}` of such elements, **with exit 0** is an answer. A failed export's error object, a mixed array or a
+top-level `error` is a read failure (exit 5; evals exit 4), never "not in the real profile". `signin.sh` keeps "nothing was changed or signed out"
+for the guard and unreachable-server cases only, and check-real says when a vendor has timed out twice in a row. A `rpc.unavailable` on the evals
+side while the service is still loading its plugins means *not ready*: before the check, the walk waits for that vendor's route to answer (up to
+60 s; `EVALS_RPC_WAIT_MS` overrides, for tests), then fails the evals side only, never the real one.
+
 ## Safety rules
 
 These are the rules the tests enforce; a change that drops one fails `npm run test:profile`.
@@ -62,7 +78,9 @@ These are the rules the tests enforce; a change that drops one fails `npm run te
 2. **A read only.** The real profile gets `auth export` and one tools-RPC read. No write, no sign-in, no logout, no revoke.
 3. **Check sessions are least privilege and always deleted.** Every identity read runs in a session that starts `deny *` and allows only
    that read's action plus the inner reads the host lists (`identity-methods.json`) — nothing else, no wildcard. The session is deleted in
-   `finally` on every path; one that cannot be deleted is named on PASS as well as FAIL.
+   `finally` on every path; one that cannot be deleted is named on PASS as well as FAIL. The keeper uses the same path, so a new inner
+   read is learned exactly as `check-real` learns it, and a gws keeper failure says the binary is not installed in the evals profile
+   (run `/gws-install` there): the keeper never downloads it.
 4. **Only a real answer passes.** A non-zero exit, an RpcError, an error/isError/failed field, an error-word code, or an answer without the
    method's expected fields is a FAIL. A "probe" that only reads whether OpenCode holds a credential is not used for the four vendors whose
    probe calls nothing.
