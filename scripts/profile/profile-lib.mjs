@@ -448,6 +448,23 @@ export function run(command, args, { env, input, timeoutMs = 60_000 } = {}) {
   return { code: out.status, stdout: out.stdout ?? "", stderr: out.stderr ?? "", error: out.error ? String(out.error.message) : null }
 }
 
+/** Is this stdout a real `auth export` ANSWER: a JSON array of credentials, or `{credentials:[…]}`, with no RpcError and no `error` key?
+ *  Only such a body counts as an export (a failed export's error object is a read failure, never "nothing there"). Returns the list or null. */
+export function exportAnswer(out) {
+  const text = String(out?.stdout ?? "").trim()
+  if (!text) return null
+  let parsed
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    return null
+  }
+  if (parsed?._tag === "RpcError" || parsed?.error) return null
+  if (Array.isArray(parsed)) return parsed
+  if (parsed && typeof parsed === "object" && Array.isArray(parsed.credentials)) return parsed.credentials
+  return null
+}
+
 /** The active credential of an integration from `opencode auth export` output, or null. Returns the parsed object (secrets inside: keep it in memory). */
 export function activeCredential(exported, integration) {
   let list

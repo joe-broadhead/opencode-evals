@@ -51,6 +51,8 @@ const fx = (side, id) => ${JSON.stringify(root)} + "/" + side + "-" + id + ".jso
 if (a[0] === "auth" && a[1] === "export" && real && process.env.STUB_FAIL_REAL_EXPORT) { console.error("STUB: the web server is not reachable"); process.exit(5) }
 // A real export that times out (empty stdout, every time) or that answers its body with exit 143 (the body is judged, the code is not).
 if (a[0] === "auth" && a[1] === "export" && real && process.env.STUB_EXPORT_TIMEOUT) process.exit(143)
+// A body the test chose for the real or the evals export (an RpcError, an error object, anything): the export must judge it as export-shaped or not.
+if (a[0] === "auth" && a[1] === "export" && (real ? process.env.STUB_EXPORT_BODY : process.env.STUB_EVALS_EXPORT_BODY) !== undefined) { console.log(real ? process.env.STUB_EXPORT_BODY : process.env.STUB_EVALS_EXPORT_BODY); process.exit(Number(process.env.STUB_EXPORT_BODY_EXIT) || 0) }
 if (a[0] === "auth" && a[1] === "export" && real && process.env.STUB_EXPORT_ANSWER_143) { const f = fx("real", a[2]); console.log(fs.existsSync(f) ? fs.readFileSync(f, "utf8") : "[]"); process.exit(143) }
 if (a[0] === "auth" && a[1] === "export" && a[2] && fs.existsSync(fx(real ? "real" : "evals", a[2]))) { console.log(fs.readFileSync(fx(real ? "real" : "evals", a[2]), "utf8")); process.exit(0) }
 if (a[0] === "auth" && a[1] === "export" && /-app$|^gws-default$/.test(a[2])) { const f = fx(real ? "real" : "evals", a[2]); console.log(fs.existsSync(f) ? fs.readFileSync(f, "utf8") : "[]"); process.exit(0) }
@@ -523,7 +525,7 @@ test("check-real: a failed real export is `could not read the real profile`, not
     writeFileSync(join(r.root, "evals-linear.json"), cred("linear", "Linear", "E-A", "E-R"))
     const out = checkReal(r, "linear", { STUB_FAIL_REAL_EXPORT: "1" })
     assert.equal(out.status, 5, out.stdout)
-    assert.match(out.stdout, /^FAIL linear: could not read the real profile through the web server \(exit 5\); check the web server, then run signin\.sh --recheck linear/)
+    assert.match(out.stdout, /^FAIL linear: could not read the real profile through the web server \(the export exited 5\); check the web server, then run signin\.sh --recheck linear/)
     assert.doesNotMatch(out.stdout, /holds no/)
   } finally {
     r.done()
@@ -1599,14 +1601,72 @@ test("check-real: a real export with an empty body and exit 143 is a timeout (ex
   }
 })
 
-test("check-real: a real export that answers with exit 143 is judged on its body", () => {
+test("check-real: a failed real export with an error body is a read failure, never `not in the real profile`", () => {
+  // X2 and X3: an RpcError, or an `error` object, with exit 1. It is not an export answer, so it cannot mean "nothing there".
+  const bodies = [
+    ['{"_tag":"RpcError","type":"rpc.unauthorized","message":"authentication rejected (401)"}', "1"],
+    ['{"error":"Unauthorized"}', "1"],
+    ['{"_tag":"RpcError","type":"rpc.server_error","message":"boom"}', "0"],
+  ]
+  for (const [body, code] of bodies) {
+    const r = rig()
+    try {
+      const out = checkReal(r, "affinity", { STUB_EXPORT_BODY: body, STUB_EXPORT_BODY_EXIT: code })
+      assert.equal(out.status, 5, `${body} exit ${code}: ${out.stdout}${out.stderr}`)
+      assert.match(out.stdout, /^FAIL affinity: could not read the real profile through the web server/)
+      assert.doesNotMatch(out.stdout, /PASS|not in the real profile/, `${body} exit ${code}`)
+    } finally {
+      r.done()
+    }
+  }
+})
+
+test("check-real: an export array with no credential takes the not-in-real path only for NOT_IN_REAL, with exit 0", () => {
+  // affinity: [] with exit 0 is truly absent -> the not-in-real PASS.
+  const a = rig()
+  try {
+    writeFileSync(join(a.root, "real-affinity.json"), "[]")
+    writeFileSync(join(a.root, "evals-affinity.json"), cred("affinity", "Affinity", "E-A", "E-R"))
+    const out = checkReal(a, "affinity")
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stdout, /^PASS affinity: not in the real profile/)
+  } finally {
+    a.done()
+  }
+  // linear (a real-profile vendor): [] with exit 0 is a real profile with no credential -> exit 1, never the not-in-real path.
+  const l = rig()
+  try {
+    writeFileSync(join(l.root, "real-linear.json"), "[]")
+    writeFileSync(join(l.root, "evals-linear.json"), cred("linear", "Linear", "E-A", "E-R"))
+    const out = checkReal(l, "linear")
+    assert.equal(out.status, 1, out.stdout + out.stderr)
+    assert.match(out.stdout, /the real profile holds no active credential/)
+    assert.doesNotMatch(out.stdout, /not in the real profile/)
+  } finally {
+    l.done()
+  }
+  // affinity: [] with a NON-zero exit is not exit 0, so it is a read failure too.
+  const n = rig()
+  try {
+    writeFileSync(join(n.root, "real-affinity.json"), "[]")
+    writeFileSync(join(n.root, "evals-affinity.json"), cred("affinity", "Affinity", "E-A", "E-R"))
+    const out = checkReal(n, "affinity", { STUB_EXPORT_ANSWER_143: "1" })
+    assert.equal(out.status, 5, out.stdout + out.stderr)
+    assert.doesNotMatch(out.stdout, /PASS|not in the real profile/)
+  } finally {
+    n.done()
+  }
+})
+
+test("check-real: a non-export evals export is an evals failure (exit 4)", () => {
   const r = rig()
   try {
-    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R"))
-    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R"))
-    const out = checkReal(r, "linear", { STUB_EXPORT_ANSWER_143: "1" })
-    assert.equal(out.status, 0, out.stdout + out.stderr)
-    assert.match(out.stdout, /^PASS linear/)
+    writeFileSync(join(r.root, "real-affinity.json"), "[]") // real: truly absent
+    writeFileSync(join(r.root, "evals-affinity.json"), cred("affinity", "Affinity", "E-A", "E-R"))
+    const out = checkReal(r, "affinity", { STUB_EVALS_EXPORT_BODY: '{"error":"Unauthorized"}', STUB_EXPORT_BODY_EXIT: "0" })
+    assert.equal(out.status, 4, out.stdout + out.stderr)
+    assert.match(out.stdout, /^FAIL affinity: the evals profile did not answer with an export/)
+    assert.doesNotMatch(out.stdout, /sign the real profile back in/)
   } finally {
     r.done()
   }

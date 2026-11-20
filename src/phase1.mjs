@@ -87,9 +87,11 @@ export const STEPS = [
           const message =
             result.side === "evals"
               ? `check-real failed for ${integration}: the evals profile, your normal profile is not involved`
-              : result.side === "read"
+              : result.side === "timeout"
                 ? `check-real failed for ${integration}: the check could not finish, so the real sign-in is unproven: sign in no further vendor; run signin.sh --recheck ${integration}; if it times out again, open ${integration} in your normal OpenCode (the web app) and see whether it asks you to sign in`
-                : `check-real failed for ${integration}: sign the real profile back in for ${integration} and sign in NO further vendor`
+                : result.side === "read"
+                  ? `check-real failed for ${integration}: the real profile could not be read (see the line above: the guard or the web server), so sign in NO further vendor and fix that first`
+                  : `check-real failed for ${integration}: sign the real profile back in for ${integration} and sign in NO further vendor`
           return fail(message, lines)
         }
       }

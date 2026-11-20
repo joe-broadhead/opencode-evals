@@ -219,10 +219,14 @@ test("2: the phase1 check-real step words its failure by the side that failed", 
   assert.ok(step, "the check-real step")
   const run = (side) => step.run({ vendors: ["linear"], noAccount: new Set(), deps: { checkReal: () => ({ ok: false, side, line: "FAIL linear: x" }) } })
   assert.match((await run(undefined)).message, /check-real failed for linear: sign the real profile back in for linear/)
+  const timeout = await run("timeout")
+  assert.match(timeout.message, /the check could not finish, so the real sign-in is unproven/)
+  assert.match(timeout.message, /sign in no further vendor/)
+  assert.match(timeout.message, /--recheck linear/)
+  // a guard or unreachable-server read is NOT a timeout: it says what is known and points at the line above
   const read = await run("read")
-  assert.match(read.message, /the check could not finish, so the real sign-in is unproven/)
-  assert.match(read.message, /sign in no further vendor/)
-  assert.match(read.message, /--recheck linear/)
+  assert.match(read.message, /the real profile could not be read/)
+  assert.doesNotMatch(read.message, /unproven|open linear in your normal OpenCode/)
   const evals = await run("evals")
   assert.match(evals.message, /the evals profile, your normal profile is not involved/)
   assert.doesNotMatch(evals.message, /sign the real profile back in/)
@@ -247,8 +251,8 @@ test("3: check-real stays right after each sign-in; OpenRouter and Affinity, new
     if (args[0] === "auth") {
       const held = (env.HOME === "/evals" ? evals : real)[args[2]]
       if (held) return { code: 0, stdout: cred(args[2]), stderr: "" }
-      // a vendor the real profile does not hold: the export still succeeds, with nothing in it
-      return env.HOME === "/evals" ? { code: 1, stdout: "", stderr: "" } : { code: 0, stdout: "[]", stderr: "" }
+      // a vendor a profile does not hold: a successful export with nothing in it (as the CLI does), never a failed one
+      return { code: 0, stdout: "[]", stderr: "" }
     }
     return { code: 1, stdout: "", stderr: "" }
   }
