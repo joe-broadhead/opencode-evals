@@ -2,9 +2,9 @@
  "schema": "oc-registered/1",
  "plugin": "boxd",
  "release": {
-  "version": "0.1.2",
-  "tag": "v0.1.2",
-  "commit": "f18f7104bffba785a417cecdec74f51df355d939"
+  "version": "0.1.3",
+  "tag": "v0.1.3",
+  "commit": "395a296b2604b812de6226eac2234860de2d69e1"
  },
  "host": "opencode v2.3.2",
  "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",
