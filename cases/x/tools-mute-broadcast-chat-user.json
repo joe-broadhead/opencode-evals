@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This change is one mute_broadcast_chat_user call with the value the user named, asked and declined, and the answer says nothing changed.",
   "data_check": "none: the id is invented, so the write is declined before it reaches X",
-  "prompt": "mute @evals232fixturehandle in my broadcast chat.",
+  "prompt": "mute user 900000000000000009 (@evals232fixturehandle) in my broadcast chat.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -212,6 +212,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3529249486818d21deb8c7e2743eb1fcc1e16277deeed075075bc0c09f6d6819"
+    "source_sha256": "c0aa2157fa461f78fbb867d265f4e70bcab559cd75d0fb9f77dc2970e3f0cc5e"
   }
 }

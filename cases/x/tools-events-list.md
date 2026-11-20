@@ -4,21 +4,22 @@
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: This request is one events_list read, with the id or topic the user named, and no write.
-- Data check: none: the id is invented, so the call may return not found; the case grades the call
+- Data check: none
 - Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, billed_calls <= 4, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=x
+- Checkable: since
 - Set: wide
 
 ## Prompt
-pull the X events since the start of this year.
+pull the X events since 1 January 2026.
 
 ## Items
 - [X-OC01] blocker · The read ran once, with events_list.
   evidence: count:events_list >= 1
 
 - [X-PR01] major · The call carries the value the user named.
-  evidence: call:events_list#1 args.since present
+  evidence: call:events_list#1 args.since matches /2026-01-01/i
 
 - [X-TR01] minor · The x skill was loaded.
   evidence: skill:x

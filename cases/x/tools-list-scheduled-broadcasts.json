@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one list_scheduled_broadcasts read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what broadcasts do I have scheduled?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e238b09c06c993787ae6bbe504b84d070ef88c15f0cb1ece7dc37b2aaede88e0"
+    "source_sha256": "8df1bfd1c3a10f57d3dba85325c90983f8988a9f1b6e0361336045b6aa2f48a0"
   }
 }

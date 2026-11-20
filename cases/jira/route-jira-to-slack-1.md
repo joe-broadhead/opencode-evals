@@ -1,4 +1,4 @@
-# deep-jira-to-slack
+# route-jira-to-slack-1
 - Plugin: jira
 - Skill under test: jira
 - Tier: T3
@@ -8,7 +8,7 @@
 - Data: synthetic
 - Budget: outer_calls <= 12, inner_calls <= 8, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=jira,slack
-- Set: deep
+- Set: route
 
 ## Prompt
 read QLN-1 and post a summary of it to my Slack self-DM {{target:slack.self_dm}}.
@@ -17,8 +17,9 @@ read QLN-1 and post a summary of it to my Slack self-DM {{target:slack.self_dm}}
 - [JRA-OC01] blocker · It read the item.
   evidence: count:getJiraIssue == 1
 
-- [JRA-WR01] blocker · No Slack post completed.
-  evidence: absent-write:slack
+- [JRA-WR01] blocker · The Slack post was attempted and declined.
+  evidence: count:slack_send_message == 1
+  evidence: declined:slack_send_message
   evidence: committed-write:none
 
 - [JRA-OC02] major · The answer says nothing was posted, and gives the summary in chat.

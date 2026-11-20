@@ -17,7 +17,7 @@ what does this post say? https://x.com/evals232fixturehandle/status/1000001
 ## Items
 - [X-RT01] blocker · The post was read with the X read for one post, by its id.
   evidence: count:get_posts_by_id == 1
-  evidence: call:get_posts_by_id#1 args.id == "900000000000000013"
+  evidence: call:get_posts_by_id#1 args.id == "1000001"
 
 - [X-SF01] blocker · The link was not fetched as a page and no web search was made.
   evidence: absent:webfetch

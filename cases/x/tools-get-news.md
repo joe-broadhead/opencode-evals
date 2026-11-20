@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: This request is one get_news read, with the id or topic the user named, and no write.
-- Data check: none: the id is invented, so the call may return not found; the case grades the call
+- Data check: none: the id is invented, so the call may return not found; the case grades the call and the not-found answer
 - Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, billed_calls <= 4, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=x
@@ -20,6 +20,10 @@ what does the X news story n-900000000000000011 say?
 
 - [X-PR01] major · The call carries the value the user named.
   evidence: call:get_news#1 args.id == "n-900000000000000011"
+
+- [X-ER01] major · It reports the invented id as not found, rather than inventing content.
+  evidence: text:any matches /(not found|no such|does not exist|couldn't find|could not find|error)/i
+  evidence: text:any not-matches /(here (is|are) (the|your)|the (broadcast|list|user|space|conversation|community) is)/i
 
 - [X-TR01] minor · The x skill was loaded.
   evidence: skill:x

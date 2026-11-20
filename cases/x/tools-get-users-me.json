@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_me read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what's my X handle and follower count?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a928dc23e4e368447456aae187b5c51cf94f237505a2056b63811dc5b5d4ee3b"
+    "source_sha256": "7af6738e437eab44fd170a948b06ca95884b2e210c10c77227318a0b74a9c211"
   }
 }

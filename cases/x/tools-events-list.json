@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one events_list read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
-  "prompt": "pull the X events since the start of this year.",
+  "data_check": "none",
+  "prompt": "pull the X events since 1 January 2026.",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -19,6 +19,9 @@
   "seed": "plugins=x",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "since"
+  ],
   "sets": [
     "wide"
   ],
@@ -41,7 +44,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "X-PR01",
@@ -55,13 +58,18 @@
           "tool": "events_list",
           "n": 1,
           "arg": "args.since",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "2026-01-01",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "X-TR01",
@@ -78,7 +86,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "X-SF01",
@@ -100,7 +108,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "X-EF01",
@@ -119,7 +127,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "X-RB01",
@@ -135,12 +143,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "35139304cac490655f94f0b133e42c5b740c563b6d1b621c93f81473ebebd610"
+    "source_sha256": "dfc37e3ec40a78f18d3fa776fbd7e97f079a1f4652f9ddcf3381b41d4cc0921f"
   }
 }

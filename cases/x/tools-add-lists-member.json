@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This change is one add_lists_member call with the value the user named, asked and declined, and the answer says nothing changed.",
   "data_check": "none: the id is invented, so the write is declined before it reaches X",
-  "prompt": "add @evals232fixturehandle to my list l-900000000000000007.",
+  "prompt": "add user 900000000000000009 (@evals232fixturehandle) to my list l-900000000000000007.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -212,6 +212,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "70cd4b5ce7a7f07a6c3fd614b24d51d716b9c3324ebb3d3db236bc79c7023bbe"
+    "source_sha256": "96e693afefc95dee7f8477c4ae3420f74267cbead74c378691ec440165104215"
   }
 }

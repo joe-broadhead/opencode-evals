@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_bookmarks read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what have I bookmarked recently?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "45a78e2e5c8e33ff7588ab4b65d0a04c1238b1a5f00d7e3d4417b21002741c98"
+    "source_sha256": "ccc165e6b9da9192d09cd6130159050565eb6f33aec6c286f4da2a80bd20ce46"
   }
 }

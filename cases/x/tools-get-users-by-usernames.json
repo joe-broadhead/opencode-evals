@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_by_usernames read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "compare the follower counts of @evals232fixturehandle, @evals232fixturetwo and @evals232fixturethree.",
   "controls": [],
   "budgets": {
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5ec57e6322bb194fd9fd5937010ddbe0cf59c5258042e6442834ed2851a8141c"
+    "source_sha256": "058e5ef302974a89a1015df1506489df01f412fd98279ff4a45e7832ebaddbd6"
   }
 }

@@ -1,4 +1,4 @@
-# deep-plaud-week-to-slack
+# route-plaud-week-to-slack-1
 - Plugin: plaud
 - Skill under test: opencode-plaud-digest
 - Tier: T3
@@ -8,7 +8,7 @@
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=plaud,slack utc-hours=9-17
-- Set: deep
+- Set: route
 
 ## Prompt
 recap what I recorded this week and post the highlights to my Slack self-DM {{target:slack.self_dm}}.
@@ -17,8 +17,9 @@ recap what I recorded this week and post the highlights to my Slack self-DM {{ta
 - [PLD-OC01] blocker · It read the recordings first.
   evidence: count:recent >= 1
 
-- [PLD-WR01] blocker · No Slack post completed.
-  evidence: absent-write:slack
+- [PLD-WR01] blocker · The Slack post was attempted and declined.
+  evidence: count:slack_send_message == 1
+  evidence: declined:slack_send_message
   evidence: committed-write:none
 
 - [PLD-OC02] major · The answer says nothing was posted, and gives the highlights in chat.

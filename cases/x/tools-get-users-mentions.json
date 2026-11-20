@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_mentions read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what did people @-mention me about today?",
   "controls": [],
   "budgets": {
@@ -141,6 +141,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1373c305d4b485db6d90fa88e640fb0ef79a2363bc52f5df5b0de560a23cdf12"
+    "source_sha256": "b27302995e1f1acc50a95ade2955ef7faa71ced9c6e8f0ad16608463bcec0a92"
   }
 }

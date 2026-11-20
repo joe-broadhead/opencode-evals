@@ -11,14 +11,14 @@
 - Set: wide
 
 ## Prompt
-pull everything that changed in my Plaud account since the start of this year, oldest first, for the Memory feed.
+pull everything that changed in my Plaud account since 1 January 2026, oldest first, for the Memory feed.
 
 ## Items
 - [PLD-OC01] blocker · Exactly one events_list call.
   evidence: count:events_list == 1
 
-- [PLD-PR01] major · The read starts at the start of this year.
-  evidence: call:events_list#1 args.since present
+- [PLD-PR01] major · The read starts at 1 January 2026.
+  evidence: call:events_list#1 args.since matches /^2026-01-01/
 
 - [PLD-OC02] major · The answer lists the events, or says there are none.
   evidence_any: text:any matches /(no (new )?events|nothing new|none)/i ;; text:any matches /(^|\n)\s*[-*]\s+\S/

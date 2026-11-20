@@ -12,7 +12,7 @@
 - Set: wide
 
 ## Prompt
-make @evals232fixturehandle a moderator of my broadcast chat.
+make user 900000000000000009 (@evals232fixturehandle) a moderator of my broadcast chat.
 
 ## Items
 - [X-WR01] blocker · Exactly one add_chat_moderator call, and it was declined.

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_by_id read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none: the id is invented, so the call may return not found; the case grades the call and the not-found answer",
   "prompt": "who is the X user 900000000000000009?",
   "controls": [],
   "budgets": {
@@ -71,6 +71,39 @@
       "line": 21
     },
     {
+      "id": "X-ER01",
+      "severity": "major",
+      "ask": "It reports the invented id as not found, rather than inventing content.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(not found|no such|does not exist|couldn't find|could not find|error)",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(here (is|are) (the|your)|the (broadcast|list|user|space|conversation|community) is)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
       "id": "X-TR01",
       "severity": "minor",
       "ask": "The x skill was loaded.",
@@ -85,7 +118,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 28
     },
     {
       "id": "X-SF01",
@@ -107,7 +140,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 32
     },
     {
       "id": "X-EF01",
@@ -126,7 +159,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 36
     },
     {
       "id": "X-RB01",
@@ -142,12 +175,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3e00cd7c3b90f73e5587ea129faed5a2e45ed77881fba14ca0412f1095bbc8a2"
+    "source_sha256": "530b755172b903c667b3b2685a05c97cd2324cd5597c0b491adf0d50dbe24a40"
   }
 }

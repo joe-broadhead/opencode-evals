@@ -36,7 +36,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(what would you like|do you mean|which|I (looked|checked|read))",
+            "source": "(what would you like|do you mean|\\bwhich\\b (items|ones|part|backlog)|I (looked|checked|read))",
             "flags": "i"
           }
         }
@@ -185,6 +185,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5906feb07c10e7beafc24fc0e0a55945a2c5729291c4ddab4660595d9079160a"
+    "source_sha256": "d2cb8dada534a69834d24798629d19a8b4d360aa4f3ca587334bafb665128a9f"
   }
 }

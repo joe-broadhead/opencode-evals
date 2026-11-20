@@ -12,7 +12,7 @@
 - Set: wide
 
 ## Prompt
-remove @evals232fixturehandle as a chat moderator.
+remove user 900000000000000009 (@evals232fixturehandle) as a chat moderator.
 
 ## Items
 - [X-WR01] blocker · Exactly one remove_chat_moderator call, and it was declined.

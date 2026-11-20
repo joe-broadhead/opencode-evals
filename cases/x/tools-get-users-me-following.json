@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_me_following read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "who am I following on X? first page.",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6f5bbdad9ea0eaede6af872f722ae5e9b6507ba732ca1660ec4c08b57d6b8a83"
+    "source_sha256": "5c736e59add21fc3fa53e29aac91c3e5e497133073060d39abb6102e6a394e4c"
   }
 }

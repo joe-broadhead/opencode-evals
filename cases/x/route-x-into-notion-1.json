@@ -1,57 +1,79 @@
 {
   "schema": "oc-case/1",
-  "id": "deep-plaud-week-to-slack",
-  "plugin": "plaud",
-  "skill": "opencode-plaud-digest",
+  "id": "route-x-into-notion-1",
+  "plugin": "x",
+  "skill": "x",
   "tier": "T3",
   "source": "EVALS-232 §2.3 deep: cross-plugin",
-  "decision": "A week's recordings are read for highlights, then the Slack post is attempted and declined and the answer says nothing was posted.",
-  "data_check": "the week holds the test recording",
-  "prompt": "recap what I recorded this week and post the highlights to my Slack self-DM {{target:slack.self_dm}}.",
+  "decision": "Posts are found first, then the Notion write is attempted and declined and the answer says the page was not updated.",
+  "data_check": "the Notion sandbox page exists",
+  "prompt": "find the top posts about sourdough baking this week and put the links on my Notion sandbox page {{target:notion.sandbox_page}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
     "inner_calls": 8,
+    "billed_calls": 4,
     "tokens": 400000,
     "wall_ms": 300000
   },
-  "seed": "plugins=plaud,slack utc-hours=9-17",
+  "seed": "plugins=x,notion",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "query"
+  ],
   "sets": [
-    "deep"
+    "route"
   ],
   "data": "real",
   "items": [
     {
-      "id": "PLD-OC01",
+      "id": "X-OC01",
       "severity": "blocker",
-      "ask": "It read the recordings first.",
+      "ask": "It searched X for the topic first.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "count",
-          "tool": "recent",
+          "tool": "search_posts_all",
           "op": ">=",
           "value": 1
+        },
+        {
+          "kind": "call",
+          "tool": "search_posts_all",
+          "n": 1,
+          "arg": "args.query",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "sourdough",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
-      "id": "PLD-WR01",
+      "id": "X-WR01",
       "severity": "blocker",
-      "ask": "No Slack post completed.",
+      "ask": "The Notion write was attempted and declined.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent-write",
-          "ns": "slack"
+          "kind": "count",
+          "tool": "notion-update-page",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "notion-update-page"
         },
         {
           "kind": "committed-write"
@@ -60,12 +82,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
-      "id": "PLD-OC02",
+      "id": "X-OC02",
       "severity": "major",
-      "ask": "The answer says nothing was posted, and gives the highlights in chat.",
+      "ask": "The answer says the page was not updated, and gives the links in chat.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -75,31 +97,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\\n]{0,40}(posted|sent)",
+            "source": "(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\\n]{0,40}(updated|written|changed|saved)",
             "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 24
-    },
-    {
-      "id": "PLD-DT01",
-      "severity": "major",
-      "ask": "The answer names the dates the week covered.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "([0-9]{1,2}[-–][0-9]{1,2} (Nov|November)|[0-9]{1,2} (Nov|November)|[0-9]{4}-[0-9]{2}-[0-9]{2})",
-            "flags": ""
           }
         }
       ],
@@ -109,15 +108,22 @@
       "line": 27
     },
     {
-      "id": "PLD-TR01",
-      "severity": "minor",
-      "ask": "The digest skill was loaded.",
+      "id": "X-CT01",
+      "severity": "major",
+      "ask": "The posts are cited by handle and status link.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "skill",
-          "skill": "opencode-plaud-digest"
+          "kind": "text-count",
+          "span": "any",
+          "op": ">=",
+          "value": {
+            "kind": "regex",
+            "source": "x\\.com\\/[A-Za-z0-9_]+\\/status\\/[0-9]+",
+            "flags": ""
+          },
+          "n": 2
         }
       ],
       "evidence_any": [],
@@ -126,7 +132,24 @@
       "line": 30
     },
     {
-      "id": "PLD-SF01",
+      "id": "X-TR01",
+      "severity": "minor",
+      "ask": "The x skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "x"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "X-SF01",
       "severity": "blocker",
       "ask": "No other destination.",
       "forbidden": true,
@@ -134,35 +157,7 @@
       "evidence": [
         {
           "kind": "absent-write",
-          "ns": "gws"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 34
-    },
-    {
-      "id": "PLD-SF02",
-      "severity": "blocker",
-      "ask": "Nothing was written outside the trial: no file, no edit.",
-      "forbidden": true,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "absent",
-          "tool": "write",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "edit",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "patch",
-          "n": null
+          "ns": "slack"
         }
       ],
       "evidence_any": [],
@@ -171,25 +166,29 @@
       "line": 37
     },
     {
-      "id": "PLD-SF03",
+      "id": "X-SF02",
       "severity": "blocker",
-      "ask": "No full-file read.",
+      "ask": "No write of any kind: every X write is covered.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
+          "kind": "absent-write",
+          "ns": "x"
+        },
+        {
           "kind": "absent",
-          "tool": "get_file",
+          "tool": "write",
           "n": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 42
+      "line": 40
     },
     {
-      "id": "PLD-RB01",
+      "id": "X-RB01",
       "severity": "major",
       "ask": "No call named a tool that does not exist.",
       "forbidden": true,
@@ -202,12 +201,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 45
+      "line": 44
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b16a4861501cc2f4ff865799724a7e101b0a2eb98514c15cb80e34c4a0e0338a"
+    "source_sha256": "589b24b4493d652eb051932a4161de19a63bae760e486370a06a5d84c1ff4a6a"
   }
 }

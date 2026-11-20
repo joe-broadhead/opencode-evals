@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_spaces_by_creator_ids read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
-  "prompt": "what Spaces has @evals232fixturehandle hosted?",
+  "data_check": "none",
+  "prompt": "what Spaces has user 900000000000000009 (@evals232fixturehandle) hosted?",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0b4215b5b5ab63082def33d3dcfa7b516761a5a1fece69405debe5e7b4d34950"
+    "source_sha256": "41fe8f3cc6989b8fded9aef07b16e9001a0eae1e91e59911a9a95278e51aaeb2"
   }
 }

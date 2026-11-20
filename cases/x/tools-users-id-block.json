@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This change is one users_id_block call with the value the user named, asked and declined, and the answer says nothing changed.",
   "data_check": "none: the id is invented, so the write is declined before it reaches X",
-  "prompt": "block @evals232fixturehandle.",
+  "prompt": "block user 900000000000000009 (@evals232fixturehandle).",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -212,6 +212,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "dea72beb7caeb776e0b7741d64024ee05efdd720aeca61513efea7d279b555d7"
+    "source_sha256": "ec9ec8fbec7b426576f5c1e47396eb9233942682415461ea5d20b8644cf8e446"
   }
 }

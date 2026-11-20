@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one search_users read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "find X accounts of technical writers in Berlin.",
   "controls": [],
   "budgets": {
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "89e07994b0087221ec376eaed0ffc34d4718108cd9cbd0b24b7f599c22c95a77"
+    "source_sha256": "87b65529d126f44398b4d51a40d703c5446d303830bef2cabc3eb391fce419c8"
   }
 }

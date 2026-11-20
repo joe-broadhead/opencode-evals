@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This change is one users_id_unblock call with the value the user named, asked and declined, and the answer says nothing changed.",
   "data_check": "none: the id is invented, so the write is declined before it reaches X",
-  "prompt": "unblock @evals232fixturehandle.",
+  "prompt": "unblock user 900000000000000009 (@evals232fixturehandle).",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -212,6 +212,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ec0cd06059ff99f1ecd608c5d76e6b77458b1c2fda94f5fef1bf0bebd12c7b71"
+    "source_sha256": "37afbc4c7e60596629e2800485f5ddf6ca38dc14eda178526e10725fc7742826"
   }
 }

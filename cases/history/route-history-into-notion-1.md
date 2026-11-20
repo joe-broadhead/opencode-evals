@@ -1,4 +1,4 @@
-# deep-history-into-notion
+# route-history-into-notion-1
 - Plugin: history
 - Skill under test: history-recall
 - Tier: T3
@@ -8,7 +8,7 @@
 - Data: own
 - Budget: outer_calls <= 12, inner_calls <= 10, tokens <= 400000, wall_ms <= 300000
 - Seed: cwd=api plugins=history,notion
-- Set: deep
+- Set: route
 
 ## Prompt
 find every decision we made about the catalog cache and add them to my Notion sandbox page {{target:notion.sandbox_page}}.
@@ -17,8 +17,9 @@ find every decision we made about the catalog cache and add them to my Notion sa
 - [H-OC01] blocker · It looked in history first.
   evidence: count:history.search >= 1
 
-- [H-WR01] blocker · No Notion write completed.
-  evidence: absent-write:notion
+- [H-WR01] blocker · The Notion write was attempted and declined.
+  evidence: count:notion-update-page == 1
+  evidence: declined:notion-update-page
   evidence: committed-write:none
 
 - [H-OC02] major · The answer says the page was not updated.

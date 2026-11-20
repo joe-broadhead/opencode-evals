@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_timeline read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "show me my home timeline, first page.",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9239a9441a7ff24a3f1ad822d98fdcb258e1c74a93e1b2d8df18b7528625d631"
+    "source_sha256": "b4251b3c380adc82043aed57a5a10ab95dd1b64281db624b67c1dc906d3febdd"
   }
 }

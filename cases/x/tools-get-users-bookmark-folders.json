@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_bookmark_folders read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what bookmark folders do I have?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c827d964bbbc378ba38d50ba003e895c438e7e5b0c827ef410a392ec0f6676d9"
+    "source_sha256": "3b8a8d4ee26d6529b717bc47f4ae3b63b8523e8e882ada879e8a48c1e0e74441"
   }
 }

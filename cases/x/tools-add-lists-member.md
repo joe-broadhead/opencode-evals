@@ -12,7 +12,7 @@
 - Set: wide
 
 ## Prompt
-add @evals232fixturehandle to my list l-900000000000000007.
+add user 900000000000000009 (@evals232fixturehandle) to my list l-900000000000000007.
 
 ## Items
 - [X-WR01] blocker · Exactly one add_lists_member call, and it was declined.

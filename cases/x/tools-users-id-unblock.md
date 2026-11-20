@@ -12,7 +12,7 @@
 - Set: wide
 
 ## Prompt
-unblock @evals232fixturehandle.
+unblock user 900000000000000009 (@evals232fixturehandle).
 
 ## Items
 - [X-WR01] blocker · Exactly one users_id_unblock call, and it was declined.

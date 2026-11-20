@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one search_spaces read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "find X Spaces about sourdough baking that are live.",
   "controls": [],
   "budgets": {
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "556bfcb35b9410ecf6f9e264413a4b800a9ce18fe8d258da3e5943fb9e4f83f0"
+    "source_sha256": "22003c4b2ebb04dc3bf5b4ccef76ee21a13e55daf85dd51b9dc500003dd1e18d"
   }
 }

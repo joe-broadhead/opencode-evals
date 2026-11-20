@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_public_keys read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what are the public keys for 900000000000000009 and 900000000000000019?",
   "controls": [],
   "budgets": {
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bbbb3e57bd8a35d274c1b7a46aa34567bf0e6d5183a5fab9514443928417a825"
+    "source_sha256": "5bfef7397695fc1a1c8a1ef4ffd4c87a886a5efd33b8c28620a9c092e691ba03"
   }
 }

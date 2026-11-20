@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_spaces_by_ids read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what are these two Spaces? s-900000000000000008, s-900000000000000018",
   "controls": [],
   "budgets": {
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "311ccd795091885de0039a837cd70343d06d00eafc968e6a3cd6843366d1466b"
+    "source_sha256": "a3c453ac30efcedc6e459c5dc42beca871cfc08ae380a5721ebff5aa7724ba31"
   }
 }

@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This change is one add_chat_moderator call with the value the user named, asked and declined, and the answer says nothing changed.",
   "data_check": "none: the id is invented, so the write is declined before it reaches X",
-  "prompt": "make @evals232fixturehandle a moderator of my broadcast chat.",
+  "prompt": "make user 900000000000000009 (@evals232fixturehandle) a moderator of my broadcast chat.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -212,6 +212,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7f4d50259216ec01a498403d29cad5a6cf2c06b9dcb7ebd3c2aaa75c8ff0d384"
+    "source_sha256": "9aa18c7fbd3c78d544a0c759b80a9c450418b22976a2eec13ca5e1a1bc25ee3f"
   }
 }

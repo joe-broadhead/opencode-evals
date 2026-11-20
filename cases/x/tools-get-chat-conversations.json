@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_chat_conversations read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what chat conversations do I have, unread first?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d50f60bf69f72c89e5515fb3f9b69c41076649459d30372f4e2fe5aad54a708e"
+    "source_sha256": "f5e44f9ed688ae14f151f1c9bd44a2834dc2405fdd0147c155a4f1d6c9498cb7"
   }
 }

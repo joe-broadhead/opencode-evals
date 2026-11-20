@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_me_followers read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "who are my newest followers?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ac0479aa7b55d7b360384c106f0d3e7b1d522ccb570ee79426e5ee10ec5cdc5d"
+    "source_sha256": "471a922e6226a6e09dce3c5253731698636dc0229330feabe5e5ee147f74a988"
   }
 }

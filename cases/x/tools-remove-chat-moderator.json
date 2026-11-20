@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This change is one remove_chat_moderator call with the value the user named, asked and declined, and the answer says nothing changed.",
   "data_check": "none: the id is invented, so the write is declined before it reaches X",
-  "prompt": "remove @evals232fixturehandle as a chat moderator.",
+  "prompt": "remove user 900000000000000009 (@evals232fixturehandle) as a chat moderator.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -212,6 +212,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6fddef8025bae3e70e45e82bbb4de624592d0d250992d58610232490c1883195"
+    "source_sha256": "9bf7f9867ebb32e70689dcda606ec3722a3bfa6f585924a97315ddb01b894ac2"
   }
 }

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one list_scheduled_calls read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what calls do I have scheduled this week?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d474d730d17cb292a3f75ad5bded83bd5e364df39e55aa30579535aeb5818b1f"
+    "source_sha256": "c910a0da399b9c5256ac589090d01f8e043bc5278419c8a4d53c90f85958f7aa"
   }
 }

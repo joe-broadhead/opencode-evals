@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A cursor feed of what changed is one events_list call, oldest first, for the consumer that asked.",
   "data_check": "the account has recordings after the cursor",
-  "prompt": "pull everything that changed in my Plaud account since the start of this year, oldest first, for the Memory feed.",
+  "prompt": "pull everything that changed in my Plaud account since 1 January 2026, oldest first, for the Memory feed.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -45,7 +45,7 @@
     {
       "id": "PLD-PR01",
       "severity": "major",
-      "ask": "The read starts at the start of this year.",
+      "ask": "The read starts at 1 January 2026.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -54,7 +54,12 @@
           "tool": "events_list",
           "n": 1,
           "arg": "args.since",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^2026-01-01",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -162,6 +167,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c287bf9cf099fdef790f5a1e8fc3b6e250baafdf3c84e7f2dc07a4a3034ebc2b"
+    "source_sha256": "c0c9fa0004007ce81c3587a371eb4821df7c5a5a6c3aeeaa41ee63aa94a2f2de"
   }
 }

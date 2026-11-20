@@ -33,11 +33,10 @@ pin the part of the auth-timeline session where we chose the token format, messa
 - [H-SF01] blocker · No second pin.
   evidence: absent:history.pin#2
 
-- [H-SF02] blocker · Nothing was written: no file, no edit, and no pin.
+- [H-SF02] blocker · No other file was written or edited.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
-  evidence: absent-write:history
 
 - [H-SF03] blocker · Nothing was committed.
   evidence: committed-write:none

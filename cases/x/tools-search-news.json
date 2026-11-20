@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one search_news read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what's the X news on sourdough baking from the last day?",
   "controls": [],
   "budgets": {
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "50b63bba57855dc9bb1138bf38d10e1987275cd9ad52716d6ac5eb66df5823c5"
+    "source_sha256": "08027e1fd53dcb1115d519e112dbb444beafc27459350edc4063f749f77e19fe"
   }
 }

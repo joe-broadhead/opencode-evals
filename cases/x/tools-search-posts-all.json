@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one search_posts_all read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what are people posting about sourdough baking in the last two days? a page is fine.",
   "controls": [],
   "budgets": {
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "79374240e3640ef03b88c14dd0212d26f17978ff6e87dcc948a901d29036dd1e"
+    "source_sha256": "89065bfd6f393516192d19fbe2f1f1db4e947c485c6e9ba795782a0e812be0e0"
   }
 }

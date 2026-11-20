@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_blocking read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "who do I block on X?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b3e422f4210c2065a6322c7e2a99136859553fe830c25323b5a7d856fd91b228"
+    "source_sha256": "4d6c8f2ca516687fc7269dcb3918cfc5f69f2b65fd1d803935e5b040f6459cd3"
   }
 }

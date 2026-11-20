@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one list_sources read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what X sources are configured?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "49ffc7551152f76ae91166ac1e7a07adf8436faf84d4a6403202e604abdf75d5"
+    "source_sha256": "b8d26770334b31583cb51495b52256a1e6340391320421e68e888718132282af"
   }
 }

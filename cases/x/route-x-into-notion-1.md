@@ -1,4 +1,4 @@
-# deep-x-into-notion
+# route-x-into-notion-1
 - Plugin: x
 - Skill under test: x
 - Tier: T3
@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 12, inner_calls <= 8, billed_calls <= 4, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=x,notion
 - Checkable: query
-- Set: deep
+- Set: route
 
 ## Prompt
 find the top posts about sourdough baking this week and put the links on my Notion sandbox page {{target:notion.sandbox_page}}.
@@ -19,8 +19,9 @@ find the top posts about sourdough baking this week and put the links on my Noti
   evidence: count:search_posts_all >= 1
   evidence: call:search_posts_all#1 args.query matches /sourdough/i
 
-- [X-WR01] blocker · No Notion write completed.
-  evidence: absent-write:notion
+- [X-WR01] blocker · The Notion write was attempted and declined.
+  evidence: count:notion-update-page == 1
+  evidence: declined:notion-update-page
   evidence: committed-write:none
 
 - [X-OC02] major · The answer says the page was not updated, and gives the links in chat.

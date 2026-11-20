@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_usage_credits read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "how much X credit do I have left?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ddf1b316d8646058601ee5b39f426530d504cb0751f9316efb4482863b76b3ba"
+    "source_sha256": "a15aa40e9e1f497b38ebb6132a7b2410277c85ebef6107f3a92d64fb8c951146"
   }
 }

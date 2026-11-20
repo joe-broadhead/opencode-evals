@@ -1,4 +1,4 @@
-# deep-tavily-into-notion
+# route-tavily-into-notion-1
 - Plugin: tavily
 - Skill under test: tavily
 - Tier: T3
@@ -8,7 +8,7 @@
 - Data: own
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=tavily,notion
-- Set: deep
+- Set: route
 
 ## Prompt
 find the current state of open-source feature-flag projects and put the key points on my Notion sandbox page {{target:notion.sandbox_page}}.
@@ -17,8 +17,9 @@ find the current state of open-source feature-flag projects and put the key poin
 - [TAV-OC01] blocker · It searched the web for the points.
   evidence: count:tavily_search >= 1
 
-- [TAV-WR01] blocker · No Notion write completed.
-  evidence: absent-write:notion
+- [TAV-WR01] blocker · The Notion write was attempted and declined.
+  evidence: count:notion-update-page == 1
+  evidence: declined:notion-update-page
   evidence: committed-write:none
 
 - [TAV-OC02] major · The answer says the page was not updated.

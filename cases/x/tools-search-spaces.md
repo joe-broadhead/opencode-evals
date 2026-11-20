@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: This request is one search_spaces read, with the id or topic the user named, and no write.
-- Data check: none: the id is invented, so the call may return not found; the case grades the call
+- Data check: none
 - Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, billed_calls <= 4, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=x

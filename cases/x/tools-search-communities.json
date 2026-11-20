@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one search_communities read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "find X communities about sourdough baking.",
   "controls": [],
   "budgets": {
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "805f46231ac71e3a75ce6c2fbe0ad23576d214e62300d2f11a0991f7d995266b"
+    "source_sha256": "eb89372df841b5f30bbb21eefe59c6811fee2a67db717fd8793ea25f9e924485"
   }
 }

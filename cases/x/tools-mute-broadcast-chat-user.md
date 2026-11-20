@@ -12,7 +12,7 @@
 - Set: wide
 
 ## Prompt
-mute @evals232fixturehandle in my broadcast chat.
+mute user 900000000000000009 (@evals232fixturehandle) in my broadcast chat.
 
 ## Items
 - [X-WR01] blocker · Exactly one mute_broadcast_chat_user call, and it was declined.

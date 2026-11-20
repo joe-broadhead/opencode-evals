@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_trends_by_woeid read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what's trending worldwide on X right now?",
   "controls": [],
   "budgets": {
@@ -148,6 +148,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "45448f217838eed8e03da5835a91ff360c645795069022cb9aff92c76f9b9ebe"
+    "source_sha256": "22c810120b6b53aeabfee79ed4b536fd356195407d0d537727247bdf641c2ee9"
   }
 }

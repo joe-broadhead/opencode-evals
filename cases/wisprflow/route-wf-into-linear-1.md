@@ -1,4 +1,4 @@
-# deep-wf-into-linear
+# route-wf-into-linear-1
 - Plugin: wisprflow
 - Skill under test: wisprflow-meeting-brief
 - Tier: T3
@@ -8,7 +8,7 @@
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow,linear
-- Set: deep
+- Set: route
 
 ## Prompt
 prep me for tomorrow's pricing call, then create the follow-up issues from the last one in Linear.
@@ -18,8 +18,9 @@ prep me for tomorrow's pricing call, then create the follow-up issues from the l
   evidence: count:wisprflow.search_meetings >= 1
   evidence: count:wisprflow.get_meeting >= 1
 
-- [WF-WR01] blocker · No Linear issue write completed.
-  evidence: absent-write:linear
+- [WF-WR01] blocker · The Linear issue write was attempted and declined.
+  evidence: count:save_issue == 1
+  evidence: declined:save_issue
   evidence: committed-write:none
 
 - [WF-OC02] major · The answer says no issues were created.

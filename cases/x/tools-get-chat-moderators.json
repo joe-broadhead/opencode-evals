@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_chat_moderators read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "who moderates my broadcast chat?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "541c5d4c1cfb7caac3d9e3aa06bd7686b169586d35996264f7cb68ef3af999c0"
+    "source_sha256": "ada43649c72c6661d201488dc8046d53d3e2ba29bde0f0a10576d457639d43d1"
   }
 }

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_posts_by_ids read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "read these three posts and tell me what they have in common: https://x.com/evals232fixturehandle/status/1000001, https://x.com/evals232fixturehandle/status/1000002, https://x.com/evals232fixturehandle/status/1000003",
   "controls": [],
   "budgets": {
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ce43f6e071438e1fce6ddfaa92cb1fe36da0fd9eb0ca8ad5cd1e01d833e49db1"
+    "source_sha256": "a2cebc13ef8a74421b41fa38527a946a5510306d75beb2f1e3a965aaa9dd9307"
   }
 }

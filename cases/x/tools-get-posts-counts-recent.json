@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_posts_counts_recent read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "how many posts mention sourdough baking in the last 24 hours?",
   "controls": [],
   "budgets": {
@@ -149,6 +149,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fe031899dfc66741ce8377d4abf3e1f093b64ab982e2ccc58655d63950ab5893"
+    "source_sha256": "f2829e4181e26ceb12de201f474f9c2520a215811acffbb20c23fe6677fee00d"
   }
 }

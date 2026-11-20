@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_owned_lists read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "which lists do I own?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "57343e04c6a5abdf1670cb5382c9811e8c6b8cb65a2b59151225e078b178f1dc"
+    "source_sha256": "53c6136627062d17de3d3ebf42c3e5531d36c055260eeb5f88ff24d4c6511d1a"
   }
 }

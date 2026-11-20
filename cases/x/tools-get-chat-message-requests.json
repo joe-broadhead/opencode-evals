@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_chat_message_requests read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "what chat message requests are waiting?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4c22a2804f9593ebaa8dfa5bf9d33cf90ce44907636c47949cf902f954b7c13f"
+    "source_sha256": "24c8e8cb3dc852e342a5df6c558812db839caad3dcce20a10f81c24d7e34660f"
   }
 }

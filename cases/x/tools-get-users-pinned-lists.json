@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This request is one get_users_pinned_lists read, with the id or topic the user named, and no write.",
-  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "data_check": "none",
   "prompt": "which lists have I pinned?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6cba93903a68e8bd7bb9f02ccc2f7d1675a4b03f569679e519217ac31f94b902"
+    "source_sha256": "6b888fb624d686ed803ab7b2920aa8a09d96b2e8d78a4ea705d5d47408b80070"
   }
 }
