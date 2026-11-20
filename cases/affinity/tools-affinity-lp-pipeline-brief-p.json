@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 paraphrase twin of tools-affinity-lp-pipeline-brief (lane L6b)",
   "decision": "A brief-me-on-the-LP-pipeline request calls the LP brief playbook once",
-  "data_check": "an LP pipeline list exists",
+  "data_check": "the playbook text is returned",
   "prompt": "give me a status rundown on each of our limited partner conversations.",
   "controls": [],
   "budgets": {
@@ -103,6 +103,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "3bfb8dfa3804ad96e81f2d3a392e38006d33046fef0ee04d14e44cc2e0ae7404"
+    "source_sha256": "e052d886f3a2988652636eba0e532ddd1e863822349de9ab4869d29aa66f12b3"
   }
 }

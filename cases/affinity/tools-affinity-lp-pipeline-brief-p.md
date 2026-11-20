@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 paraphrase twin of tools-affinity-lp-pipeline-brief (lane L6b)
 - Decision tested: A brief-me-on-the-LP-pipeline request calls the LP brief playbook once
-- Data check: an LP pipeline list exists
+- Data check: the playbook text is returned
 - Seed: plugins=affinity
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8

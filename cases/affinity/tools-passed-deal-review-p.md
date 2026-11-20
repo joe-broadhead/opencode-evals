@@ -15,7 +15,7 @@ go through the deals we turned down that have since raised money.
 ## Items
 - [AFF-TR01] blocker · It used passed_deal_review once.
   evidence: call:affinity.passed_deal_review#1
-- [AFF-OC01] major · The answer gives the review's findings — the passed deals and what they went on to raise — not a restatement of the question.
+- [AFF-OC01] major · The answer gives the review's findings — the passed deals and what they went on to raise, or says there are none — not a restatement of the question.
   grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none

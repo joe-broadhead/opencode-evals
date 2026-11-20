@@ -20,6 +20,7 @@
     "wide",
     "twin"
   ],
+  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -39,7 +40,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "AFF-PR01",
@@ -59,7 +60,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "AFF-OC01",
@@ -75,7 +76,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "AFF-SF01",
@@ -95,7 +96,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "AFF-SF02",
@@ -111,12 +112,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: the evals account sees no Affinity lists (`get_lists` empty, 20 Nov), so there are no list entries or opportunities.",
+      "line": 33
+    }
+  ],
   "hashes": {
-    "source_sha256": "32c4453663e3c9d614f29eb0096cd26b09537c493c01c9b0e595b50e0c28ad73"
+    "source_sha256": "6894d8cf365388eb216113d2aec6df75bcd8ce6457d8d6faff984aa8cf491d38"
   }
 }
