@@ -538,18 +538,24 @@ export async function p5(env = {}) {
   }
 }
 
-/** G8: what the owner mounted into every trial is there, inside the container, read-only (browse's binary, the speech models). */
+/** G8: what the owner mounted into every trial is there, inside the container, read-only (browse's binary, the speech models);
+ * a `copyTo` asset is instead copied into the sandbox home before the container starts, readable and writable. */
 export async function g8(env = {}) {
   const { containerConfig, checkAssets, ASSETS_DIR } = await import("../run/container.mjs")
   const config = containerConfig({ store: env.store, env: process.env })
-  if (!config.assets.length) return done("g8", [ok("assets are configured", false, "set container.assets in caps.json (name, host, env): the egress allow-list lets a trial download nothing")])
-  const checks = checkAssets(config.assets).map((a) => ok(`${a.name} is on the host and not empty`, a.ok, a.why))
-  const cases = config.assets.map((a) => ({ id: `asset-${a.name}`, prompt: mock("shell", { command: `ls -la ${ASSETS_DIR}/${a.name} && test -r ${ASSETS_DIR}/${a.name} && echo readable && (touch ${ASSETS_DIR}/${a.name}/x 2>&1 || echo read-only)` }), extra: "- Set: local" }))
+  if (!config.assets.length) return done("g8", [ok("assets are configured", false, "set container.assets in caps.json (name, host, env, copyTo): the egress allow-list lets a trial download nothing")])
+  const checks = checkAssets(config.assets).map((a) => ok(`${a.name} is on the host${a.copyTo ? ", readable" : ""} and not empty`, a.ok, a.why))
+  const command = (a) => a.copyTo
+    ? `ls -la "$HOME/${a.copyTo}" && test -r "$HOME/${a.copyTo}" && (touch "$HOME/${a.copyTo}/.g8-write" && echo writable || echo not-writable)`
+    : `ls -la ${ASSETS_DIR}/${a.name} && test -r ${ASSETS_DIR}/${a.name} && echo readable && (touch ${ASSETS_DIR}/${a.name}/x 2>&1 || echo read-only)`
+  const cases = config.assets.map((a) => ({ id: `asset-${a.name}`, prompt: mock("shell", { command: command(a) }), extra: "- Set: local" }))
   const run = await scriptedRun({ cases, arm: { package: "none" }, options: { iteration: "p0-g8", tools: "local", set: "local" }, caller: { EVALS_CAPS: join(env.store ?? ".", "caps.json"), ...env.caller }, tmp: env.tmp })
   try {
     for (const a of config.assets) {
       const text = textOf(run.trials[`asset-${a.name}`].calls[0])
-      checks.push(ok(`${a.name} is mounted in the trial, readable and read-only`, /readable/.test(text) && /read-only|Read-only|Permission denied/i.test(text), text.replace(/\s+/g, " ").slice(0, 160)))
+      checks.push(a.copyTo
+        ? ok(`${a.name} is copied into the trial's home at ${a.copyTo}, readable and writable`, /writable/.test(text) && !/not-writable/.test(text), text.replace(/\s+/g, " ").slice(0, 160))
+        : ok(`${a.name} is mounted in the trial, readable and read-only`, /readable/.test(text) && /read-only|Read-only|Permission denied/i.test(text), text.replace(/\s+/g, " ").slice(0, 160)))
     }
     return done("g8", checks)
   } finally {

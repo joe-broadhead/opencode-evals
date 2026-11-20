@@ -15,7 +15,7 @@ import { connect } from "node:net"
 import { spawn, spawnSync } from "node:child_process"
 import { randomBytes } from "node:crypto"
 import { clean, clientHelloSni, createProxy, parseAllow, privateAddress } from "../docker/egress-proxy.mjs"
-import { containerBackend, containerConfig, trialEnv, imageTag, findBinary, CONTAINER_PATH, DEFAULT_ALLOW, EGRESS_URL } from "../src/run/container.mjs"
+import { containerBackend, containerConfig, trialEnv, imageTag, findBinary, parseAssets, CONTAINER_PATH, DEFAULT_ALLOW, EGRESS_URL } from "../src/run/container.mjs"
 import { selectIsolation } from "../src/run/isolation.mjs"
 import { makeSandbox, removeSandbox, removeInside, repairPermissions, runToEnd } from "../src/run/sandbox.mjs"
 import { runBatch, trialBinaries } from "../src/run/runner.mjs"
@@ -441,6 +441,68 @@ test("offline: a browse trial mounts Node at /opt/evals/bin/node with its sha; a
     await plain.backend.teardown()
   } finally {
     plain.cleanup()
+  }
+})
+
+test("offline: a copyTo asset is copied into the sandbox home writable with its modes; mounted assets stay read-only", async () => {
+  const f = offlineFixture()
+  try {
+    const cache = join(f.root, "native-cache")
+    mkdirSync(join(cache, "opencode-x"), { recursive: true })
+    writeFileSync(join(cache, "opencode-x", "bin"), "#!/bin/sh\n")
+    chmodSync(join(cache, "opencode-x", "bin"), 0o755)
+    writeFileSync(join(cache, "opencode-x", "data"), "x")
+    chmodSync(join(cache, "opencode-x", "data"), 0o644)
+    const mounted = join(f.root, "models")
+    mkdirSync(mounted)
+    writeFileSync(join(mounted, "m.bin"), "x")
+    const assets = parseAssets([{ name: "native-cache", host: cache, copyTo: ".cache", env: { CACHE_DIR: "" } }, { name: "models", host: mounted }])
+    const backend = containerBackend({ ...containerConfig({ env: {} }), docker: f.docker.file, watchMs: 3_600_000, assets })
+    await backend.prepare({ batchRoot: f.batchRoot, caller: f.caller, binaries: { opencode: f.opencode } })
+    const trial = await backend.enter({ name: "case.t1", sandbox: f.sandbox, mounts: [{ host: f.arm, ro: true }], cwd: f.sandbox.project })
+    const copiedBin = join(f.sandbox.home, ".cache", "opencode-x", "bin")
+    assert.equal(readFileSync(copiedBin, "utf8"), "#!/bin/sh\n", "the asset's file is in the sandbox home")
+    assert.equal(statSync(copiedBin).mode & 0o777, 0o755, "an executable stays executable")
+    assert.equal(statSync(join(f.sandbox.home, ".cache", "opencode-x", "data")).mode & 0o777, 0o644, "a plain file keeps its mode")
+    writeFileSync(join(f.sandbox.home, ".cache", "opencode-x", "written"), "ok")
+    assert.equal(readFileSync(join(f.sandbox.home, ".cache", "opencode-x", "written"), "utf8"), "ok", "the copy is writable")
+    assert.equal(trial.wrap({ command: "true" }).env.CACHE_DIR, join(f.sandbox.home, ".cache"), "a copyTo asset's env names its copied path")
+    const copy = backend.describe().asset_copies.find((c) => c.name === "native-cache")
+    assert.equal(copy.trial, "case.t1")
+    assert.equal(copy.copyTo, ".cache")
+    assert.equal(copy.bytes, 11, "both files counted")
+    assert.match(copy.digest, /^[0-9a-f]{64}$/)
+    assert.deepEqual(copy.files, [".cache/opencode-x/bin", ".cache/opencode-x/data"])
+    const run = f.docker.calls().find((c) => c.args[0] === "run" && c.args.includes(trial.ref)).args
+    assert.equal(run.some((arg) => arg.includes(`src=${cache}`)), false, "a copyTo asset is not mounted")
+    assert.ok(run.includes(`type=bind,src=${mounted},dst=/opt/evals/assets/models,readonly`), "an asset without copyTo is still a read-only mount")
+    await trial.leave()
+    await backend.teardown()
+  } finally {
+    f.cleanup()
+  }
+
+  // A missing source fails the trial before anything is created, with a sentence that names the asset.
+  const missing = offlineFixture()
+  try {
+    const backend = containerBackend({ ...containerConfig({ env: {} }), docker: missing.docker.file, watchMs: 3_600_000, assets: parseAssets([{ name: "gone", host: join(missing.root, "no-such-asset"), copyTo: ".cache" }]) })
+    await backend.prepare({ batchRoot: missing.batchRoot, caller: missing.caller, binaries: { opencode: missing.opencode } })
+    await assert.rejects(backend.enter({ name: "case.t1", sandbox: missing.sandbox, mounts: [{ host: missing.arm, ro: true }], cwd: missing.sandbox.project }), /gone.*does not exist, so it cannot be copied/)
+  } finally {
+    missing.cleanup()
+  }
+
+  // A symlink anywhere in the source is refused, never followed.
+  const linked = offlineFixture()
+  try {
+    const cache = join(linked.root, "linked-cache")
+    mkdirSync(cache, { recursive: true })
+    symlinkSync("/etc/passwd", join(cache, "escape"))
+    const backend = containerBackend({ ...containerConfig({ env: {} }), docker: linked.docker.file, watchMs: 3_600_000, assets: parseAssets([{ name: "linked", host: cache, copyTo: ".cache" }]) })
+    await backend.prepare({ batchRoot: linked.batchRoot, caller: linked.caller, binaries: { opencode: linked.opencode } })
+    await assert.rejects(backend.enter({ name: "case.t1", sandbox: linked.sandbox, mounts: [{ host: linked.arm, ro: true }], cwd: linked.sandbox.project }), /symbolic link, and a copyTo asset is copied, never followed/)
+  } finally {
+    linked.cleanup()
   }
 })
 

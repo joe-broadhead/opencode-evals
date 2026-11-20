@@ -77,7 +77,11 @@ committed, and nothing in the repository may reference a machine path: `evals pr
     "memory_mb": 4096, "cpus": 2, "pids": 512, "tmpfs_mb": 256,
     "disk_mb": 2048, "disk_floor_mb": 2048, "inodes": 200000, "inode_floor": 100000, "measure_s": 10,
     "max_parallel": 8, "tunnels_per_trial": 16, "tunnels_total": 64,
-    "image": "opencode-evals-sandbox:<tag>"
+    "image": "opencode-evals-sandbox:<tag>",
+    "assets": [
+      { "name": "browse-bin", "host": "/abs/path/browse-bin" },
+      { "name": "native-cache", "host": "/abs/path/native-cache", "copyTo": ".cache" }
+    ]
   },
   "run_overhead_s": 120
 }
@@ -89,6 +93,15 @@ nothing else. `max_parallel` bounds `--parallel`, since each trial takes one of 
 below which a trial is stopped, and `measure_s` the longest a measurement may take before the trial is stopped as
 unmeasurable; all are enforced by a watchdog, not a quota. `tunnels_per_trial` and `tunnels_total` cap the egress
 proxy's open tunnels. The image is built from `docker/` with `evals isolation build`.
+
+`assets` are host files or directories every trial gets, because the egress allow-list lets a trial download nothing. By
+default an asset is mounted read-only at `/opt/evals/assets/<name>`, and `env` maps a variable name to a path inside it
+(`""` for the asset itself). An asset with `copyTo` (a path relative to the sandbox home, with no `..` and not absolute)
+is instead **copied** into `<sandbox home>/<copyTo>` before the container starts: file modes are kept, symlinks are
+refused, the destination is checked with realpath so the copy cannot leave the sandbox, and a missing or unreadable
+source fails the trial. That is for caches a plugin makes private with `chmod` (gws's `discovery`, utilities' weather
+cache, voice's engine cache), which a read-only mount would break. `evals isolation assets` checks each source, and that a
+`copyTo` source is readable; `p0 g8` checks mounted assets are read-only in the trial and copied ones are writable.
 
 ## Packs
 

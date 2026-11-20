@@ -99,8 +99,9 @@ rule; **p5** what `auth import` accepts (an oauth credential needs a refresh tok
 import merges); **p13** the Claude Agent surface: a capture server on the trial's loopback (`--capture-server`, an Anthropic-API
 stand-in, no model call) shows the request holds only the host's three MCP tools and no Claude Code built-in, and a Bash `tool_use`
 it sends is answered "No such tool available: Bash"; **g8** the owner's assets (`container.assets` in `caps.json`: browse's pinned
-binary, utilities' speech models, voice's engine) are on the host and mounted read-only in every trial (`evals isolation assets`
-checks the host half). The probes that need a credential (P0-6 keeper timing, P0-6b the GitHub token, P0-6c logout, P0-7 egress and
+binary, utilities' speech models, voice's engine) are on the host and mounted read-only in every trial, and a `copyTo` asset
+(the plugins' native caches) is copied into the sandbox home, writable, with its modes kept (`evals isolation assets`
+checks the host half, including that a `copyTo` source is readable). The probes that need a credential (P0-6 keeper timing, P0-6b the GitHub token, P0-6c logout, P0-7 egress and
 data) and the paid pilot (P0-8) are not here: they run after the owner's sign-ins.
 
 Other run flags: `--preflight data` defers a case whose clauses name a target, a canary or a seed the store lacks, with the missing

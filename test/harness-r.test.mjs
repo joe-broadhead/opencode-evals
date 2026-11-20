@@ -3,7 +3,7 @@
 // Synthetic credentials and a stand-in host only.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync, existsSync, statSync } from "node:fs"
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync, existsSync, statSync, chmodSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { Buffer } from "node:buffer"
@@ -631,6 +631,23 @@ test("assets the owner mounts into every trial are validated, found on the host,
     assert.throws(() => parseAssets([{ name: "a", host: "/x,y" }]), /comma/)
     assert.throws(() => parseAssets([{ name: "a", host: "/x", env: { V: "../up" } }]), /relative path inside the asset/)
     assert.throws(() => parseAssets([{ name: "a", host: "/x", env: { "bad name": "" } }]), /relative path inside the asset/)
+    // copyTo: a path relative to the sandbox home only; no "..", no absolute path, no backslash, no "." or empty segment.
+    assert.equal(parseAssets([{ name: "cache", host: join(dir, "speech"), copyTo: ".cache" }])[0].copyTo, ".cache")
+    assert.equal(parseAssets([{ name: "cache", host: join(dir, "speech"), copyTo: "a/b-c_d" }])[0].copyTo, "a/b-c_d")
+    for (const copyTo of ["..", "../x", "a/../b", "/abs", "a\\b", "", ".", "a//b"]) assert.throws(() => parseAssets([{ name: "a", host: "/x", copyTo }]), /copyTo/, JSON.stringify(copyTo))
+    assert.equal("copyTo" in parseAssets([{ name: "a", host: "/x" }])[0], false)
+    // The copyTo source must be readable (the trial copies it, where a mounted asset is checked in the trial by g8).
+    const unreadable = join(dir, "speech", "model.bin")
+    chmodSync(unreadable, 0o000)
+    try {
+      const checked = checkAssets(parseAssets([{ name: "speech", host: join(dir, "speech"), copyTo: ".speech" }]))[0]
+      assert.equal(checked.ok, false, "a file the owner cannot read is not a copyable asset")
+      assert.equal(checked.copyTo, ".speech")
+      assert.match(checked.why, /cannot read/)
+    } finally {
+      chmodSync(unreadable, 0o644)
+    }
+    assert.equal(checkAssets(parseAssets([{ name: "speech", host: join(dir, "speech"), copyTo: ".speech" }]))[0].ok, true)
     // the configuration reads them from the owner's caps.json, never from a case or an arm
     const store = join(dir, "store")
     mkdirSync(store)

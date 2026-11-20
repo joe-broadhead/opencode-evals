@@ -18,9 +18,9 @@
 
 import { spawn } from "node:child_process"
 import { createHash, randomBytes } from "node:crypto"
-import { createReadStream, existsSync, readFileSync, realpathSync, statSync, accessSync, constants, writeFileSync, openSync, fstatSync, closeSync, readdirSync } from "node:fs"
+import { createReadStream, existsSync, readFileSync, realpathSync, statSync, accessSync, chmodSync, cpSync, constants, lstatSync, mkdirSync, writeFileSync, openSync, fstatSync, closeSync, readdirSync } from "node:fs"
 import { lstat, opendir, statfs } from "node:fs/promises"
-import { delimiter, dirname, isAbsolute, join, resolve } from "node:path"
+import { basename, delimiter, dirname, isAbsolute, join, relative, resolve } from "node:path"
 import { removeSandbox } from "./sandbox.mjs"
 import { within } from "./paths.mjs"
 import { parseAllow } from "../../docker/egress-proxy.mjs"
@@ -87,38 +87,100 @@ export const ASSETS_DIR = "/opt/evals/assets"
  * because the egress allow-list lets a trial download nothing (browse's pinned binary, utilities' ~105 MB of speech models, voice's
  * engine). `env` maps a variable name to a path inside the asset ("" for the asset itself), set in every trial:
  *   { "name": "speech", "host": "/path/to/speech-assets", "env": { "UTILITIES_SPEECH_DIR": "" } }
+ *
+ * `copyTo` (optional) is a path relative to the sandbox home: the asset is COPIED there, writable, before the trial starts,
+ * instead of mounted read-only. The plugin caches that chmod their own folders (gws's discovery, utilities' weather cache,
+ * voice's engine cache) need that, and a mounted asset is read-only by design (p0 g8). The copy keeps file modes, refuses
+ * symlinks, and may not leave the sandbox home. No `..`, no absolute path, no backslash:
+ *   { "name": "native-cache", "host": "/path/to/native-cache", "copyTo": ".cache" }
  */
 export function parseAssets(list) {
   if (list === undefined || list === null) return []
-  if (!Array.isArray(list)) throw new Error("caps.json container.assets must be a list of { name, host, env? }")
+  if (!Array.isArray(list)) throw new Error("caps.json container.assets must be a list of { name, host, env?, copyTo? }")
   return list.map((a, i) => {
     if (!a || typeof a.name !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(a.name)) throw new Error(`caps.json container.assets[${i}].name must be lower-case words joined by dashes`)
     if (typeof a.host !== "string" || !isAbsolute(a.host)) throw new Error(`caps.json container.assets[${i}].host must be an absolute path`)
     if (/[,\n"]/.test(a.host)) throw new Error(`caps.json container.assets[${i}].host has a comma, quote or newline, which a bind mount cannot name`)
     for (const [key, inner] of Object.entries(a.env ?? {})) if (!NAME.test(key) || typeof inner !== "string" || inner.includes("..") || isAbsolute(inner)) throw new Error(`caps.json container.assets[${i}].env.${key} must map a variable name to a relative path inside the asset`)
-    return { name: a.name, host: a.host, env: a.env ?? {} }
+    const copyTo = a.copyTo
+    if (copyTo !== undefined && (typeof copyTo !== "string" || copyTo === "" || isAbsolute(copyTo) || copyTo.includes("\\") || copyTo.includes("\0") || /[,\n"]/.test(copyTo) || copyTo.split("/").some((part) => part === "" || part === "." || part === ".."))) {
+      throw new Error(`caps.json container.assets[${i}].copyTo must be a path relative to the sandbox home, with no "..", no absolute path and no backslash`)
+    }
+    return { name: a.name, host: a.host, env: a.env ?? {}, ...(copyTo === undefined ? {} : { copyTo }) }
   })
 }
 
-/** What the assets hold on the host: { name, ok, why, bytes } each, for `evals isolation assets` and probe g8. */
+/** What the assets hold on the host: { name, ok, why, bytes } each, for `evals isolation assets` and probe g8. A `copyTo`
+ * asset is also checked readable, since the trial copies it rather than mounting it. */
 export function checkAssets(assets = []) {
+  const readable = (path) => {
+    try {
+      accessSync(path, constants.R_OK)
+      return true
+    } catch {
+      return false
+    }
+  }
   return assets.map((a) => {
-    if (!existsSync(a.host)) return { name: a.name, ok: false, why: `${a.host} does not exist` }
+    if (!existsSync(a.host)) return { name: a.name, ok: false, why: `${a.host} does not exist`, ...(a.copyTo ? { copyTo: a.copyTo } : {}) }
     const stat = statSync(a.host)
     let bytes = stat.size
+    const unreadable = []
     if (stat.isDirectory()) {
       bytes = 0
       const walk = (dir) => {
         for (const entry of readdirSync(dir, { withFileTypes: true })) {
           const path = join(dir, entry.name)
           if (entry.isDirectory()) walk(path)
-          else if (entry.isFile()) bytes += statSync(path).size
+          else if (entry.isFile()) {
+            bytes += statSync(path).size
+            if (a.copyTo && !readable(path)) unreadable.push(relative(a.host, path))
+          }
         }
       }
       walk(a.host)
-    }
-    return bytes > 0 ? { name: a.name, ok: true, why: `${bytes} bytes`, bytes } : { name: a.name, ok: false, why: `${a.host} is empty` }
+    } else if (a.copyTo && !readable(a.host)) unreadable.push(basename(a.host))
+    const extra = a.copyTo ? { copyTo: a.copyTo } : {}
+    if (a.copyTo && unreadable.length) return { name: a.name, ok: false, why: `${a.host} holds ${unreadable.length} file(s) it cannot read (${unreadable.slice(0, 3).join(", ")}), and the trial copies it`, bytes, ...extra }
+    return bytes > 0 ? { name: a.name, ok: true, why: `${bytes} bytes`, bytes, ...extra } : { name: a.name, ok: false, why: `${a.host} is empty`, ...extra }
   })
+}
+
+const fileDigest = (path) => createHash("sha256").update(readFileSync(path)).digest("hex")
+
+/**
+ * Copies a `copyTo` asset from the host into the sandbox home (`<home>/<copyTo>`), writable, keeping every mode. A symlink
+ * anywhere in the source is refused (never followed), and the destination is checked with realpath so the copy cannot leave
+ * the sandbox. Returns { name, copyTo, bytes, digest, files } for the batch record; a missing source throws, failing the trial.
+ */
+export function copyAsset(asset, sandbox) {
+  const home = resolve(sandbox.home)
+  const dest = within(home, join(home, asset.copyTo), `the copyTo of asset ${asset.name}`)
+  if (!existsSync(asset.host)) throw new Error(`caps.json container.assets ${asset.name}: ${asset.host} does not exist, so it cannot be copied into the trial`)
+  const source = lstatSync(asset.host)
+  if (source.isSymbolicLink()) throw new Error(`caps.json container.assets ${asset.name}: ${asset.host} is a symbolic link, and a copyTo asset is copied, never followed`)
+  if (!source.isFile() && !source.isDirectory()) throw new Error(`caps.json container.assets ${asset.name}: ${asset.host} is neither a file nor a directory`)
+  mkdirSync(dest, { recursive: true, mode: 0o700 })
+  within(home, realpathSync(dest), `the copyTo of asset ${asset.name}`)
+  const copied = []
+  const copy = (from, to) => {
+    const stat = lstatSync(from)
+    if (stat.isSymbolicLink()) throw new Error(`caps.json container.assets ${asset.name}: ${from} is a symbolic link, and a copyTo asset is copied, never followed`)
+    if (stat.isDirectory()) {
+      mkdirSync(to, { recursive: true, mode: stat.mode & 0o7777 })
+      for (const entry of readdirSync(from, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) copy(join(from, entry.name), join(to, entry.name))
+      chmodSync(to, stat.mode & 0o7777)
+      return
+    }
+    if (!stat.isFile()) throw new Error(`caps.json container.assets ${asset.name}: ${from} is not a regular file`)
+    cpSync(from, to, { force: true })
+    chmodSync(to, stat.mode & 0o7777)
+    copied.push({ rel: relative(home, to), bytes: stat.size, sha256: fileDigest(to) })
+  }
+  if (source.isFile()) copy(asset.host, join(dest, basename(asset.host)))
+  else copy(asset.host, dest)
+  const digest = createHash("sha256").update(copied.map((f) => `${f.rel}\u0000${f.sha256}`).join("\n")).digest("hex")
+  return { name: asset.name, copyTo: asset.copyTo, bytes: copied.reduce((n, f) => n + f.bytes, 0), digest, files: copied.map((f) => f.rel).sort() }
 }
 
 /** A command on a PATH, as its real absolute path, or null. */
@@ -290,7 +352,7 @@ export function containerBackend(config = containerConfig()) {
   const proxyName = `evals-${id}-proxy`
   const egressNet = `evals-${id}-egress`
   const trials = new Set()
-  const state = { prepared: false, tornDown: false, docker: null, dockerEnv: null, image: null, imageId: null, version: null, binaries: new Map(), shas: {}, batchRoot: null, egress: null, log: () => {} }
+  const state = { prepared: false, tornDown: false, docker: null, dockerEnv: null, image: null, imageId: null, version: null, binaries: new Map(), shas: {}, batchRoot: null, egress: null, copies: [], log: () => {} }
   let counter = 0
 
   const docker = (args, options = {}) => dockerRun(state.docker, args, { env: state.dockerEnv, ...options })
@@ -476,6 +538,10 @@ export function containerBackend(config = containerConfig()) {
       }
       trial.leave = leave
       try {
+        // A `copyTo` asset is copied into the sandbox home (writable), never mounted; a missing source fails the trial here,
+        // before anything is created.
+        trial.asset_copies = (config.assets ?? []).filter((a) => a.copyTo).map((a) => copyAsset(a, sandbox))
+        for (const copy of trial.asset_copies) state.copies.push({ trial: name, ...copy })
         trial.network = ref
         await mustNetwork(["network", "create", "--internal", "-o", "com.docker.network.bridge.gateway_mode_ipv4=isolated", "-o", "com.docker.network.bridge.gateway_mode_ipv6=isolated", ...labelArgs({ "evals.role": "trial", "evals.trial": name }), ref], "creating the trial network")
         await must(["network", "connect", "--alias", "egress", ref, proxyName], "joining the proxy to the trial network")
@@ -484,7 +550,7 @@ export function containerBackend(config = containerConfig()) {
           ["--mount", `type=bind,src=${root},dst=${root}`],
           ...mounts.map((m) => ["--mount", `type=bind,src=${resolve(m.host)},dst=${resolve(m.host)},readonly`]),
           ...[...state.binaries.values()].map((b) => ["--mount", `type=bind,src=${b.host},dst=${b.inside},readonly`]),
-          ...(config.assets ?? []).map((a) => ["--mount", `type=bind,src=${a.host},dst=${ASSETS_DIR}/${a.name},readonly`]),
+          ...(config.assets ?? []).filter((a) => !a.copyTo).map((a) => ["--mount", `type=bind,src=${a.host},dst=${ASSETS_DIR}/${a.name},readonly`]),
         ].flat()
         // Fake mode: the vendor's host name is this trial's own loopback address (its /etc/hosts; the trial has no DNS), and the namespaced sysctl lets the
         // fake bind :443 with every capability dropped.
@@ -552,8 +618,12 @@ export function containerBackend(config = containerConfig()) {
         const mapped = [...state.binaries.values()].find((b) => b.command === command || b.host === command || (isAbsolute(command) && existsSync(command) && realpathSync(command) === b.host))
         const inside = mapped ? mapped.inside : command
         const containerEnv = { ...trialEnv(env), ...extraEnv }
-        // The mounted assets' own variables: where, inside the trial, each one lives.
-        for (const a of config.assets ?? []) for (const [key, inner] of Object.entries(a.env ?? {})) containerEnv[key] = inner ? `${ASSETS_DIR}/${a.name}/${inner}` : `${ASSETS_DIR}/${a.name}`
+        // The assets' own variables: where, inside the trial, each one lives. A `copyTo` asset lives in the sandbox home
+        // (the copy made before the container started), not at /opt/evals/assets.
+        for (const a of config.assets ?? []) for (const [key, inner] of Object.entries(a.env ?? {})) {
+          const base = a.copyTo ? join(sandbox.home, a.copyTo) : `${ASSETS_DIR}/${a.name}`
+          containerEnv[key] = inner ? `${base}/${inner}` : base
+        }
         const names = Object.keys(containerEnv)
         const bad = names.filter((key) => !NAME.test(key))
         if (bad.length) throw new Error(`refusing to pass ${bad.map((k) => JSON.stringify(k)).join(", ")} into a trial: not a variable name`)
@@ -676,6 +746,7 @@ export function containerBackend(config = containerConfig()) {
       egress_allow: config.allow,
       limits: config.limits,
       binaries: state.shas,
+      asset_copies: state.copies,
     }),
   }
   return backend
