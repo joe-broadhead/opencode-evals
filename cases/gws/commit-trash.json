@@ -1,0 +1,144 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-trash",
+  "plugin": "gws",
+  "skill": "opencode-gws-recipes",
+  "tier": "T3",
+  "source": "EVALS-232 §2.5 (commit set)",
+  "decision": "In commit mode the planned trash is committed with gws_delete, and the doc is recoverable from the bin.",
+  "data_check": "the evals scratch doc exists and the owner owns it",
+  "prompt": "put the doc {{target:gws.doc}} in the bin",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "operation",
+    "params",
+    "body"
+  ],
+  "sets": [
+    "commit"
+  ],
+  "data": "seeded",
+  "items": [
+    {
+      "id": "GWS-CT01",
+      "severity": "blocker",
+      "ask": "The trash is planned as a drive update with trashed true.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "gws-plan",
+          "n": 1,
+          "what": "op",
+          "op": "==",
+          "value": "drive.files.update"
+        },
+        {
+          "kind": "call",
+          "tool": "plan",
+          "n": 1,
+          "arg": "args.body.trashed",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "GWS-CT02",
+      "severity": "blocker",
+      "ask": "It commits with gws_delete, not a permanent delete.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "gws_delete",
+          "n": 1,
+          "arg": "args.planId",
+          "op": "present"
+        },
+        {
+          "kind": "absent-declined",
+          "tool": "gws_delete"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "GWS-CT03",
+      "severity": "blocker",
+      "ask": "The write reaches only the sandbox target the user named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "gws-plan",
+          "n": 1,
+          "what": "target",
+          "aliases": [
+            "@gws.doc"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "GWS-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "GWS-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "aa944bc80960169b93e4803c23929980368a7843f784f89b8713d6d3710c2df3"
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-my-work",
+  "plugin": "linear",
+  "skill": "linear",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "The answer is a filtered, paged list grouped by state, with honest counts and links, not a sample presented as the total.",
+  "data_check": "the private team has issues assigned to the owner in more than one state",
+  "prompt": "what am I working on right now?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "assignee",
+    "fields"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "LIN-OC01",
+      "severity": "blocker",
+      "ask": "It filters by the owner rather than listing everyone's issues.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "list_issues",
+          "n": 1,
+          "arg": "args.assignee",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "me"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "LIN-OC02",
+      "severity": "major",
+      "ask": "Each issue it names carries its identifier and link.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text-count",
+          "span": "any",
+          "op": ">=",
+          "value": {
+            "kind": "regex",
+            "source": "[A-Z]{2,5}-[0-9]+",
+            "flags": ""
+          },
+          "n": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "LIN-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "LIN-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "LIN-SF01",
+      "severity": "blocker",
+      "ask": "No write.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "linear"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The count item is graded on the wording ('total' only when everything was counted), which is what the skill requires.",
+      "line": 35
+    }
+  ],
+  "hashes": {
+    "source_sha256": "785a47664992d57ca53ef6de65415a864c5317850b9940ce25571a9c6495d448"
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-window-recent",
+  "plugin": "notion",
+  "skill": "notion",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "Recent edits are one recent-pages read, and the answer names the window and the pages it found.",
+  "data_check": "the workspace has pages edited last week or none; content unchecked",
+  "prompt": "what did I edit in Notion last week?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "NOT-OC01",
+      "severity": "blocker",
+      "ask": "It reads the recent pages rather than searching for a topic.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "notion-list-recent-pages",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "NOT-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "NOT-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "NOT-SF01",
+      "severity": "blocker",
+      "ask": "No change.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "notion"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "29cf6b74b9aa2655a70bf50a9b57ba0fd15dd657c529e39a3053158b4107b75e"
+  }
+}

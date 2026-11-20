@@ -1,0 +1,211 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-x-github-linear",
+  "plugin": "linear",
+  "skill": "linear-write",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep, cross-plugin)",
+  "decision": "The cross-plugin task reads the issue with GitHub and creates with Linear; the create is asked and declined, and the answer shows what it would have filed.",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; the Linear team is named by target and nothing of Linear's is read; content unchecked",
+  "prompt": "take issue 1 from the quill-notes repo and create a matching issue in the {{target:linear.team_key}} team",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": "plugins=github,linear",
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "team"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "data": "seeded",
+  "items": [
+    {
+      "id": "LIN-OC01",
+      "severity": "blocker",
+      "ask": "The issue is read from GitHub first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "github.issue_read",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "LIN-WR01",
+      "severity": "blocker",
+      "ask": "One Linear issue is attempted at most.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "save_issue",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "LIN-WR02",
+      "severity": "major",
+      "ask": "The create names the private team and nothing else.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "save_issue",
+          "n": 1,
+          "arg": "args.team",
+          "aliases": [
+            "@linear.team",
+            "@linear.team_key"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "LIN-WR03",
+      "severity": "blocker",
+      "ask": "The create is asked and declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "declined",
+          "tool": "save_issue"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "LIN-WR04",
+      "severity": "major",
+      "ask": "The answer shows the issue it would have created and says none was.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not|nothing)\\b.{0,60}\\b(created|filed|made)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "LIN-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "LIN-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    },
+    {
+      "id": "LIN-SF00",
+      "severity": "blocker",
+      "ask": "No GitHub write runs.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "issue_write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "add_issue_comment",
+          "n": null
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 40
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "This runs as a linear case: GitHub is fake, so a github case cannot carry the real Linear companion it needs. The issue is read from the fake, the create is graded at its declined call.",
+      "line": 46
+    }
+  ],
+  "hashes": {
+    "source_sha256": "7be43eabc1a648c541d763cd88a9a2d80015dd041f722af39aafef7f3cf2bb36"
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-calendar-event",
+  "plugin": "gws",
+  "skill": "opencode-gws-recipes",
+  "tier": "T3",
+  "source": "EVALS-232 §2.5 (commit set)",
+  "decision": "In commit mode the planned calendar insert is committed with its planId, on the evals calendar only.",
+  "data_check": "the evals-232 secondary calendar exists and the owner owns it",
+  "prompt": "put a 30-minute event called evals-232 check on the calendar {{target:gws.calendar}} tomorrow at 9am",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "operation",
+    "params",
+    "body"
+  ],
+  "sets": [
+    "commit"
+  ],
+  "data": "seeded",
+  "items": [
+    {
+      "id": "GWS-CT01",
+      "severity": "blocker",
+      "ask": "The event is planned as a calendar insert.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "gws-plan",
+          "n": 1,
+          "what": "op",
+          "op": "==",
+          "value": "calendar.events.insert"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "GWS-CT02",
+      "severity": "blocker",
+      "ask": "The plan is committed with its planId, and the commit is not declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "gws_write",
+          "n": 1,
+          "arg": "args.planId",
+          "op": "present"
+        },
+        {
+          "kind": "absent-declined",
+          "tool": "gws_write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "GWS-CT03",
+      "severity": "blocker",
+      "ask": "The write reaches only the sandbox target the user named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "gws-plan",
+          "n": 1,
+          "what": "target",
+          "aliases": [
+            "@gws.calendar"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "GWS-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "GWS-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "sendUpdates other than none would make this a send; the plan's category catches that.",
+      "line": 34
+    }
+  ],
+  "hashes": {
+    "source_sha256": "4d420de747568ac125dbd705a0119e0cbf4148576357be2a4bc68aab18179296"
+  }
+}

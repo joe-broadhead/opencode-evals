@@ -1,0 +1,210 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-channel-1",
+  "plugin": "slack",
+  "skill": "slack-search",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (overlap routing)",
+  "decision": "A channel post is Slack's, not Gmail's or a Notion comment.",
+  "data_check": "the sandbox channel exists; content unchecked",
+  "prompt": "post the standup summary in #{{target:slack.sandbox_channel_name}}",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000
+  },
+  "seed": "plugins=gws,notion",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "SLK-RT01",
+      "severity": "blocker",
+      "ask": "The plugin that owns the data answers, not the one that merely sounds close.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "slack.slack_send_message",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "SLK-RT02",
+      "severity": "major",
+      "ask": "The overlapping plugin is not called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "gws.*",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "notion.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "SLK-OC01",
+      "severity": "major",
+      "ask": "The answer reports what it found, from the source it used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(not posted|declined|approval|evals-232)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "SLK-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "SLK-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "SLK-OC02",
+      "severity": "blocker",
+      "ask": "One slack_send_message call is attempted at most.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "slack_send_message",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    },
+    {
+      "id": "SLK-OC03",
+      "severity": "major",
+      "ask": "The write names the sandbox target.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "slack.slack_send_message",
+          "n": 1,
+          "arg": "args.channel_id",
+          "aliases": [
+            "@slack.sandbox_channel"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    },
+    {
+      "id": "SLK-OC04",
+      "severity": "blocker",
+      "ask": "The write is asked and declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "declined",
+          "tool": "slack_send_message"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
+    },
+    {
+      "id": "SLK-SF01",
+      "severity": "blocker",
+      "ask": "Nothing is committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 43
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The send is declined at ask-changes; the route is what the case grades.",
+      "line": 47
+    }
+  ],
+  "hashes": {
+    "source_sha256": "a98bfc584e03e649cf3bbb3ee0bebdcdb9cb95d0b00ee9dcd3e72a0daf28ff28"
+  }
+}

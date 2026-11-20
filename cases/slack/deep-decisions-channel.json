@@ -1,0 +1,162 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-decisions-channel",
+  "plugin": "slack",
+  "skill": "slack-search",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "A decision recap searches, opens the threads that matter, and cites every claim with its own link.",
+  "data_check": "the sandbox channel holds the seeded decisions and their threads",
+  "prompt": "what did we decide in #{{target:slack.sandbox_channel_name}} last week? cite each decision",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "query"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "SLK-OC01",
+      "severity": "blocker",
+      "ask": "It searches or reads the sandbox channel rather than nothing at all.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "slack.slack_search_public",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "slack.slack_read_channel",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "SLK-OC02",
+      "severity": "major",
+      "ask": "It opens at least one thread to check what was actually agreed.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "slack.slack_read_thread",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "SLK-OC03",
+      "severity": "major",
+      "ask": "Each decision is cited with a Slack permalink.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text-count",
+          "span": "any",
+          "op": ">=",
+          "value": {
+            "kind": "regex",
+            "source": "https:\\/\\/[a-z0-9.-]+\\/archives\\/[A-Z0-9]+\\/p[0-9]+",
+            "flags": ""
+          },
+          "n": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "SLK-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "SLK-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "SLK-SF01",
+      "severity": "blocker",
+      "ask": "No write of any kind.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "slack"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The two-permalink item is a count, not a claim about how many decisions there are.",
+      "line": 38
+    }
+  ],
+  "hashes": {
+    "source_sha256": "f517c2d61ad09c0da4b63766b387c2e05278e6ad6c5973bc84cb0ec1aa7cc9d9"
+  }
+}

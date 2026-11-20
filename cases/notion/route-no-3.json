@@ -1,0 +1,84 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-3",
+  "plugin": "notion",
+  "skill": "notion",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (should-not-call)",
+  "decision": "A local file is read with the local tools, not imported into Notion.",
+  "data_check": "the credential-free local arm has spec.md in the working directory; content unchecked",
+  "prompt": "read the spec.md in my repo and tell me what it says",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 3,
+    "inner_calls": 2,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route",
+    "local"
+  ],
+  "data": "seeded",
+  "items": [
+    {
+      "id": "NOT-SF01",
+      "severity": "blocker",
+      "ask": "It does not act: no tool of this plugin is called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "notion"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "NOT-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "NOT-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "d84cd2bc149c1a1d2114bc6ad382590ce3e4c3002397932f54f30061f0a84f48"
+  }
+}

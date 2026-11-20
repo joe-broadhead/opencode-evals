@@ -1,0 +1,143 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-issue",
+  "plugin": "linear",
+  "skill": "linear-write",
+  "tier": "T3",
+  "source": "EVALS-232 §2.5 (commit set)",
+  "decision": "In commit mode the one issue create runs in the private team, and the answer gives its identifier and link.",
+  "data_check": "the private evals team exists with no other members",
+  "prompt": "create an issue in the {{target:linear.team_key}} team titled 'evals-232 commit check' with one line of description",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "title",
+    "team"
+  ],
+  "sets": [
+    "commit"
+  ],
+  "data": "seeded",
+  "items": [
+    {
+      "id": "LIN-CT01",
+      "severity": "blocker",
+      "ask": "One issue is created in the private team with the title the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "save_issue",
+          "op": "<=",
+          "value": 1
+        },
+        {
+          "kind": "call",
+          "tool": "save_issue",
+          "n": 1,
+          "arg": "args.title",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "evals-232 commit check"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "LIN-CT02",
+      "severity": "blocker",
+      "ask": "The create is not declined in commit mode.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "save_issue"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "LIN-CT03",
+      "severity": "blocker",
+      "ask": "The create names the private team and nothing else.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "save_issue",
+          "n": 1,
+          "arg": "args.team",
+          "aliases": [
+            "@linear.team",
+            "@linear.team_key"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "LIN-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "LIN-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Runs only in the private team (§2.5); the team key is a sandbox target.",
+      "line": 34
+    }
+  ],
+  "hashes": {
+    "source_sha256": "d599959f7b33d929cc028af64a61ca8cd48dc47cd744d732b883f60458b5eb0b"
+  }
+}

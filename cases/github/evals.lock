@@ -1,0 +1,9 @@
+{
+  "plugin": "github",
+  "epoch": 1,
+  "cases": 112,
+  "items": 626,
+  "cases_sha256": "ea53ced505d6f2aa585b146eef19879e48178e2ebfe45b184f3e6cc700556211",
+  "grader_sha256": "7e6efd86ec6ce41f6608b698d853d0452f4eb2c183af2576e09ce52962ba1ad3",
+  "frozen_at": "2026-11-20T15:38:00.366Z"
+}

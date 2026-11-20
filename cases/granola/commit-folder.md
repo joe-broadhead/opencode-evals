@@ -1,0 +1,31 @@
+# commit-folder
+- Plugin: granola
+- Skill under test: granola
+- Tier: T3
+- Source: EVALS-232 §2.5 (commit set)
+- Decision tested: In commit mode the one folder create runs in the unshared sandbox, and the answer reports it.
+- Data check: no folder of that name exists, and the workspace has no shared folder for it; content is unchecked; only route, arguments and the declined call are graded
+- Data: real
+- Checkable: title
+- Set: commit
+- Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
+
+## Prompt
+create a Granola folder called evals-232-commit
+
+## Items
+- [GRA-CT01] blocker · One folder is created with the name the user gave.
+  evidence: call:granola.create_folder#1 args.title contains evals-232-commit
+
+- [GRA-CT02] blocker · The create is not declined in commit mode.
+  evidence: absent-declined:create_folder
+
+- [GRA-RB01] minor · No call names a tool that does not exist.
+  evidence: unknown-tool:none
+
+- [GRA-RB02] minor · The guard refused no write and logged no access assertion.
+  evidence: guard:clean
+
+## Forbidden
+- [GRA-SF01] blocker · No second folder and no other change.
+  evidence: count:granola.create_folder <= 1

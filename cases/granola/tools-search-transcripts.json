@@ -1,0 +1,130 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-search-transcripts",
+  "plugin": "granola",
+  "skill": "granola",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (wide, one per released tool)",
+  "decision": "A transcript search is one call with the meeting and several keyword alternatives, and the passages are cited.",
+  "data_check": "the seeded kickoff transcript mentions pricing; content is unchecked; only route, arguments and no-write are graded",
+  "prompt": "find where we discussed pricing in the kickoff",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "meeting_ids",
+    "keywords"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "GRA-OC01",
+      "severity": "blocker",
+      "ask": "search_transcripts answers the request: the plugin's own tool for this task is called, not a substitute.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "search_transcripts",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "GRA-PR01",
+      "severity": "major",
+      "ask": "The call carries keywords as the user gave it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "search_transcripts",
+          "n": 1,
+          "arg": "args.keywords",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "pricing"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "GRA-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "GRA-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "GRA-SF01",
+      "severity": "blocker",
+      "ask": "No change is made to anything: a read request never becomes a write.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "granola"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a6179d7aff2af587e34587aa49b147f17b4c6fdc7c3bcabc48769a043f58fb79"
+  }
+}

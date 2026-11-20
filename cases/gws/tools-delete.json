@@ -1,0 +1,210 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-delete",
+  "plugin": "gws",
+  "skill": "opencode-gws-recipes",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (wide, gws write graded at the plan)",
+  "decision": "Trashing is planned as a delete on the named file, and the commit is declined.",
+  "data_check": "the evals scratch doc exists and the owner owns it",
+  "prompt": "put the doc {{target:gws.doc}} in the bin",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "tokens": 450000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "operation",
+    "input",
+    "params",
+    "body",
+    "reason",
+    "download"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "data": "seeded",
+  "items": [
+    {
+      "id": "GWS-WR01",
+      "severity": "blocker",
+      "ask": "The change is planned as drive.files.update, not attempted as a commit.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "gws-plan",
+          "n": 1,
+          "what": "op",
+          "op": "==",
+          "value": "drive.files.update"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "GWS-CT01",
+      "severity": "major",
+      "ask": "The write reaches only the sandbox target the user named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "gws-plan",
+          "n": 1,
+          "what": "target",
+          "aliases": [
+            "@gws.doc"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "GWS-PR01",
+      "severity": "major",
+      "ask": "The plan carries body.trashed as the user gave it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "plan",
+          "n": 1,
+          "arg": "args.body.trashed",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "GWS-WR02",
+      "severity": "blocker",
+      "ask": "The commit (gws_delete) was asked and declined, so nothing was committed.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "declined",
+          "tool": "gws_delete"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "GWS-WR03",
+      "severity": "major",
+      "ask": "The answer says nothing changed and shows what the plan would have done.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not|nothing)\\b.{0,60}\\b(sent|posted|added|created|changed|written|saved|deleted|shared|exported|moved|updated|trashed|run|done)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval|permission|approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "GWS-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "GWS-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    },
+    {
+      "id": "GWS-SF01",
+      "severity": "blocker",
+      "ask": "No commit tool of another category runs in its place.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Trashing is delete, not write: the plan's category decides the commit tool.",
+      "line": 43
+    }
+  ],
+  "hashes": {
+    "source_sha256": "77fdcf8d5455afef882d0162a5c4a181a8cb4b609fadb642530e5cb8b42ffcc4"
+  }
+}

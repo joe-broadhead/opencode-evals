@@ -1,0 +1,9 @@
+{
+  "plugin": "gws",
+  "epoch": 1,
+  "cases": 27,
+  "items": 151,
+  "cases_sha256": "dcb1b4711e5198e91bdcd5f0cd3c19d8738263fc501d7bcd487f832f400ac98a",
+  "grader_sha256": "7e6efd86ec6ce41f6608b698d853d0452f4eb2c183af2576e09ce52962ba1ad3",
+  "frozen_at": "2026-11-20T15:37:59.934Z"
+}

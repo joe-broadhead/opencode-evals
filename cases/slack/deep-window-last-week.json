@@ -1,0 +1,182 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-window-last-week",
+  "plugin": "slack",
+  "skill": "slack-search",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "A past week is one channel read bounded by the week's own Unix seconds, and the answer names the window it covered.",
+  "data_check": "the sandbox channel holds messages from last week or none; both are a report",
+  "prompt": "what was posted in #{{target:slack.sandbox_channel_name}} last week?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "channel_id",
+    "oldest",
+    "latest"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "data": "seeded",
+  "items": [
+    {
+      "id": "SLK-CT01",
+      "severity": "blocker",
+      "ask": "The call reaches only the sandbox target the user named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "slack.slack_read_channel",
+          "n": 1,
+          "arg": "args.channel_id",
+          "aliases": [
+            "@slack.sandbox_channel"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "SLK-DT01",
+      "severity": "major",
+      "ask": "The read carries an oldest bound, so it is a window and not the channel's whole history.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "slack.slack_read_channel",
+          "n": 1,
+          "arg": "args.oldest",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^[0-9]{10}$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "SLK-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "SLK-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "SLK-OC01",
+      "severity": "blocker",
+      "ask": "The read is scoped to the sandbox: channel_id is the alias, not anything else.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "slack_read_channel",
+          "n": 1,
+          "arg": "args.channel_id",
+          "aliases": [
+            "@slack.sandbox_channel"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "SLK-OC02",
+      "severity": "blocker",
+      "ask": "One slack_read_channel call is made at most.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "slack_read_channel",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "SLK-SF01",
+      "severity": "blocker",
+      "ask": "No search is passed off as the week's full record, and no write.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "slack"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The exact instants depend on the day, so the case grades that a bound was passed and that the answer names its window.",
+      "line": 41
+    }
+  ],
+  "hashes": {
+    "source_sha256": "1b140a271ed3168f07caf15e2df2f3008a17a952b583b6bb0c2778a49cc2994b"
+  }
+}

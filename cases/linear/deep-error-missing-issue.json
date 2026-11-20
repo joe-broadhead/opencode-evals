@@ -1,0 +1,171 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-error-missing-issue",
+  "plugin": "linear",
+  "skill": "linear",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "A search that finds nothing is reported as a miss, with the words searched; no id is invented and no issue is created.",
+  "data_check": "no issue in the private team has that title",
+  "prompt": "open the issue called zzz evals 232 missing and show me its comments",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "query"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "LIN-OC01",
+      "severity": "blocker",
+      "ask": "It searches Linear for the title before concluding anything.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "list_issues",
+          "n": 1,
+          "arg": "args.query",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "zzz"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "LIN-ER01",
+      "severity": "major",
+      "ask": "It says no such issue was found, naming what it searched for.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(not found|no issue|couldn't find|could not find|didn't find)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "LIN-ER02",
+      "severity": "major",
+      "ask": "It asks which issue the user means rather than opening a different one.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(which issue|did you mean|closest)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "LIN-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "LIN-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "LIN-SF01",
+      "severity": "blocker",
+      "ask": "No invented identifier and no create.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "linear"
+        },
+        {
+          "kind": "committed-write"
+        },
+        {
+          "kind": "absent",
+          "tool": "get_issue",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The search parameter differs between list_issues and issues; the case grades that a search happened, not which of the two tools ran.",
+      "line": 39
+    }
+  ],
+  "hashes": {
+    "source_sha256": "c4df15a3fa22d0202d86d1eb01a84a4f6a4b5c77f94688758fc5637becb6bd92"
+  }
+}

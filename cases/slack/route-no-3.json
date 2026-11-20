@@ -1,0 +1,84 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-3",
+  "plugin": "slack",
+  "skill": "slack-search",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (should-not-call)",
+  "decision": "A local export is read with the local file tools, not by searching Slack for the same text.",
+  "data_check": "the credential-free local arm has chat-export.csv in the working directory; content unchecked",
+  "prompt": "summarise the chat-export.csv on my Desktop and list the busiest channels",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 3,
+    "inner_calls": 2,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route",
+    "local"
+  ],
+  "data": "seeded",
+  "items": [
+    {
+      "id": "SLK-SF01",
+      "severity": "blocker",
+      "ask": "It does not act: no tool of this plugin is called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "slack"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "SLK-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "SLK-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "5006771e7d606eb9fe30e36548c4dee7278217ced465aaa5ea7d87fafc022579"
+  }
+}

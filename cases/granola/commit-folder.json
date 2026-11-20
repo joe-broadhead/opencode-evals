@@ -1,0 +1,126 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-folder",
+  "plugin": "granola",
+  "skill": "granola",
+  "tier": "T3",
+  "source": "EVALS-232 §2.5 (commit set)",
+  "decision": "In commit mode the one folder create runs in the unshared sandbox, and the answer reports it.",
+  "data_check": "no folder of that name exists, and the workspace has no shared folder for it; content is unchecked; only route, arguments and the declined call are graded",
+  "prompt": "create a Granola folder called evals-232-commit",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "title"
+  ],
+  "sets": [
+    "commit"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "GRA-CT01",
+      "severity": "blocker",
+      "ask": "One folder is created with the name the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "granola.create_folder",
+          "n": 1,
+          "arg": "args.title",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "evals-232-commit"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "GRA-CT02",
+      "severity": "blocker",
+      "ask": "The create is not declined in commit mode.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "create_folder"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "GRA-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "GRA-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "GRA-SF01",
+      "severity": "blocker",
+      "ask": "No second folder and no other change.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "granola.create_folder",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "2354bb5214e11ff813644e5bd328da70d26a8c98bd7eb4d22362af225d85b3ab"
+  }
+}

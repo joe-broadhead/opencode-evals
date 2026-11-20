@@ -1,0 +1,124 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-page-summary",
+  "plugin": "notion",
+  "skill": "notion",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "The page is found, fetched whole, and summarised from its own words, with the action items separated from the prose.",
+  "data_check": "the evals-232 page holds a summary and three action items; content unchecked",
+  "prompt": "summarise the page {{target:notion.sandbox_page}} and list its action items",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "query"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "NOT-OC01",
+      "severity": "blocker",
+      "ask": "It searches for the page before fetching it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "notion-search",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "NOT-OC02",
+      "severity": "blocker",
+      "ask": "The page is fetched, not summarised from the search result.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "notion-fetch",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "NOT-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "NOT-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "NOT-SF01",
+      "severity": "blocker",
+      "ask": "No change to the page.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "notion"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "17b022e3e8dda12865ef80d1045df98a0f49110270e5d7dd262c8f559b1c5742"
+  }
+}
