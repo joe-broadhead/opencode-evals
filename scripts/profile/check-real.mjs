@@ -104,7 +104,7 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
       : chain.recheckAt
         ? `provisional: the real refresh chain is checked again by ${chain.recheckAt} (repeat on days 1 and 2)`
         : "provisional: unknown: recheck after the real token next refreshes"
-  if (store) logRound(store, { event: "check-real", integration, result: "PASS", provisional: Boolean(chain?.provisional), recheck_at: chain?.recheckAt ?? null, ...(chain?.verified ? { refresh_chain: "verified" } : {}), ...(chain?.provisional && !chain.recheckAt ? { recheck: "unknown" } : {}) })
+  if (store) logRound(store, { event: "check-real", integration, result: "PASS", provisional: Boolean(chain?.provisional), recheck_at: chain?.recheckAt ?? null, ...(chain?.verified ? { refresh_chain: "verified" } : {}), ...(chain?.provisional && !chain.recheckAt ? { recheck: "unknown: recheck after the real token next refreshes" } : {}) })
   // A different token string is not a different grant: a GitHub OAuth app, for one, hands every sign-in the same grant under a new string,
   // so revoking the evals profile's grant would sign the owner out. The end of the round is `auth logout` in the evals profile, never a revoke.
   return { ok: true, line: `PASS ${integration}: ${identity}; ${compared}${proof ? `; ${proof}` : ""}. A distinct token does not prove a distinct grant: end the round with \`auth logout\` in the evals profile only, never by revoking a grant` }

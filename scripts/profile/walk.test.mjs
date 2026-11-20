@@ -844,7 +844,7 @@ test("check-real: an export with no expiry says the recheck time is unknown, and
     const out = checkReal(r, "linear")
     assert.equal(out.status, 0, out.stdout + out.stderr)
     assert.match(out.stdout, /provisional: unknown: recheck after the real token next refreshes/)
-    assert.deepEqual({ provisional: lastCheck(r).provisional, recheck_at: lastCheck(r).recheck_at, recheck: lastCheck(r).recheck }, { provisional: true, recheck_at: null, recheck: "unknown" })
+    assert.deepEqual({ provisional: lastCheck(r).provisional, recheck_at: lastCheck(r).recheck_at, recheck: lastCheck(r).recheck }, { provisional: true, recheck_at: null, recheck: "unknown: recheck after the real token next refreshes" })
   } finally {
     r.done()
   }
