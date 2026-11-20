@@ -3,7 +3,7 @@
   "id": "slack",
   "name": "Slack",
   "package": "@joe-broadhead/opencode-slack",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "private": true,
   "pluginId": "slack.workspace",
   "rpc": "slack.workspace.tools",
@@ -234,15 +234,15 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "c9609731f49d5b4020404f1c56ddb98875e13ffe56ac917929d816e7eb4b2302",
+  "digest": "eadc6f67dc6f2cf187c0924612711c6e425cd401562aba4568bdbbea9167a69c",
   "t1": [],
   "egress": [
     "mcp.slack.com",
     "slack.com"
   ],
   "release": {
-    "version": "0.0.6",
-    "tag": "v0.0.6",
-    "commit": "c37d3712c1536c36f51ad9dafd7c8e663ed2b35d"
+    "version": "0.0.7",
+    "tag": "v0.0.7",
+    "commit": "162a5a88ba99c71be4c2b1fd94c33158f8a8a15b"
   }
 }

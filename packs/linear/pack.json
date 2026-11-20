@@ -4,7 +4,7 @@
   "id": "linear",
   "name": "Linear",
   "package": "@joe-broadhead/opencode-linear",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "private": true,
   "pluginId": "linear.workspace",
   "skills": [
@@ -595,7 +595,7 @@
       "body_lines": 50
     }
   },
-  "digest": "9bfc2008e0f6fb4f1c521ff1af40cc311381c6e9ea9567e22c0146bd19ddaf1d",
+  "digest": "bc1db9b1c8bbffa4f43cba2d2d75dbbc30457fe7b7c10287f16fc208ff229fca",
   "access": {
     "key": "access",
     "default": "all"
@@ -604,8 +604,8 @@
     "mcp.linear.app"
   ],
   "release": {
-    "version": "0.0.6",
-    "tag": "v0.0.6",
-    "commit": "6c4447bdbd2a25f6d7729375f3e60c8a12e08666"
+    "version": "0.0.8",
+    "tag": "v0.0.8",
+    "commit": "8c2f93d53e70fd50a90c60ebd1ba333dae958c95"
   }
 }

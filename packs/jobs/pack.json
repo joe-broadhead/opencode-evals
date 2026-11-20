@@ -3,7 +3,7 @@
   "id": "jobs",
   "name": "Jobs",
   "package": "@joe-broadhead/opencode-jobs",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "pluginId": "jobs.scheduler",
   "rpc": "jobs.scheduler.tools",
@@ -133,11 +133,11 @@
   "notes": [
     "access: jobs v0.0.0 declares the access setting (default \"all\") with no choices list, so the host shows a free-text field instead of the family's three choices (all, ask-changes, read-only). Its description names them. jobs has not had the family settings release yet; this pack records the gap and changes nothing in opencode-jobs."
   ],
-  "digest": "b6b729a9234b4f3713f3e605729ea580c3f6887dc907e12b1abbae5fcec6acef",
+  "digest": "b84c61b377335d88b5d8516be45d748eed569caa2bbba89c864cffecff55225f",
   "egress": [],
   "release": {
-    "version": "0.0.3",
-    "tag": "v0.0.3",
-    "commit": "bbc52c66fd15eaacf5b8a4596ca89effe6912a4f"
+    "version": "0.0.4",
+    "tag": "v0.0.4",
+    "commit": "87453e668e0300146b1f9f7e43d3f1dff8701fa7"
   }
 }
