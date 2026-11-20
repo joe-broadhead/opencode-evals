@@ -1,0 +1,66 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-local-speech-1",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs-creative",
+  "tier": "T3",
+  "source": "overlap routing: a spoken line with no credits to spend belongs to Utilities' on-device speech",
+  "decision": "A read-this-aloud request that must not spend credits routes to the local speech tool, not ElevenLabs",
+  "data_check": "none: the line is the user's own",
+  "prompt": "read this aloud for me, but don't spend any credits: \"standup in five minutes.\"",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "ELV-RL01",
+      "severity": "blocker",
+      "ask": "It did not spend ElevenLabs credits.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.creative_generate_speech",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ELV-RL02",
+      "severity": "major",
+      "ask": "It used the on-device speech tool.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.speech_synthesize",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "d71b8dfa60b449a1f44564f62d86b9d4340f1fcc6efebf3522d64ae6aefc43da"
+  }
+}

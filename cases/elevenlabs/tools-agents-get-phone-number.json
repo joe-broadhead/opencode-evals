@@ -1,0 +1,96 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-agents-get-phone-number",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs",
+  "tier": "T3",
+  "source": "wide sweep: agents_get_phone_number (ElevenLabs MCP; agents tools)",
+  "decision": "A request for what agents_get_phone_number reads is answered with one call and its arguments, and nothing is changed",
+  "data_check": "elevenlabs: the workspace holds the object the question names, or the answer says it does not",
+  "prompt": "which phone number is assigned to {{target:elevenlabs.agent}}?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ELV-OC01",
+      "severity": "blocker",
+      "ask": "It read it with agents_get_phone_number once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "elevenlabs.agents_get_phone_number",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It passed the phone number id the question needs.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_get_phone_number",
+          "n": 1,
+          "arg": "args.phone_number_id",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ELV-SF01",
+      "severity": "blocker",
+      "ask": "No change and no credit spend.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.agents_update",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.agents_delete",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "0df9334713dcf42baa4e6fe8c618c4e75a0e80edde7b3bbd9ec6d19fd1567d95"
+  }
+}

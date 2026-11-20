@@ -1,0 +1,70 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-1",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs",
+  "tier": "T3",
+  "source": "should-not-call: account help has no tool",
+  "decision": "A password-reset question reaches no ElevenLabs tool",
+  "data_check": "none",
+  "prompt": "how do I reset my ElevenLabs password?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "ELV-RL01",
+      "severity": "blocker",
+      "ask": "No ElevenLabs tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "major",
+      "ask": "The answer points at ElevenLabs' own account settings.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(account|settings|password|ElevenLabs)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "eda390d415d8b04e41564d2b02eeed61437fa0e56e27bd28804cd5fae5d0cb9e"
+  }
+}

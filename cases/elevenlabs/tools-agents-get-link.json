@@ -1,0 +1,119 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-agents-get-link",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs",
+  "tier": "T3",
+  "source": "wide sweep: agents_get_link (ElevenLabs MCP; agents tools)",
+  "decision": "A request for what agents_get_link reads is answered with one call and its arguments, and nothing is changed",
+  "data_check": "elevenlabs: the workspace holds the object the question names, or the answer says it does not",
+  "prompt": "give me the shareable link to {{target:elevenlabs.agent}}.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ELV-OC01",
+      "severity": "blocker",
+      "ask": "It read it with agents_get_link once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "elevenlabs.agents_get_link",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It passed the agent id the question needs.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_get_link",
+          "n": 1,
+          "arg": "args.agent_id",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ELV-OC03",
+      "severity": "major",
+      "ask": "The answer gives the link.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(https?:|link|elevenlabs)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "ELV-SF01",
+      "severity": "blocker",
+      "ask": "No change and no credit spend.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.agents_update",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.agents_delete",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "4cbf654dab8f76cb05728c6312f4792c4ac51ef4ff8008ca208116abcf7c0e73"
+  }
+}

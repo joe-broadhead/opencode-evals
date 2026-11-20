@@ -1,0 +1,70 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-3",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs",
+  "tier": "T3",
+  "source": "should-not-call: a non-hiring meeting recap belongs to Granola",
+  "decision": "A what-did-we-decide-in-the-planning-meeting question reaches no ElevenLabs tool",
+  "data_check": "the user has a planning meeting note from yesterday",
+  "prompt": "what did we decide in yesterday's planning meeting?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "ELV-RL01",
+      "severity": "blocker",
+      "ask": "No ElevenLabs tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ELV-OC01",
+      "severity": "major",
+      "ask": "The answer looks for the meeting notes.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(meeting|notes|Granola|decided)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "151524e0bf082d4828784e14d52d05a6daaeaa53e8b157c203fb06b77eead1be"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-local-transcribe-1",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs-creative",
+  "tier": "T3",
+  "source": "overlap routing: transcribing a local WAV without uploading it is Utilities'",
+  "decision": "A transcribe-on-this-machine request routes to the local transcriber, not ElevenLabs",
+  "data_check": "clip.wav is a 16-bit PCM WAV in the trial's working directory",
+  "prompt": "transcribe clip.wav on this machine — don't upload it anywhere.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "ELV-RL01",
+      "severity": "blocker",
+      "ask": "It did not send the audio to ElevenLabs.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.creative_transcribe_audio",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ELV-RL02",
+      "severity": "major",
+      "ask": "It used the local transcriber.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.speech_transcribe",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "7ab29616db40b70c31b087c67441754e46966b13e1a70d29c5faff92501684f4"
+  }
+}

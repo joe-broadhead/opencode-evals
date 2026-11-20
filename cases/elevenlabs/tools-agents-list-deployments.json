@@ -1,0 +1,96 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-agents-list-deployments",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs",
+  "tier": "T3",
+  "source": "wide sweep: agents_list_deployments (ElevenLabs MCP; agents tools)",
+  "decision": "A request for what agents_list_deployments reads is answered with one call and its arguments, and nothing is changed",
+  "data_check": "elevenlabs: the workspace holds the object the question names, or the answer says it does not",
+  "prompt": "list the deployments of the agent.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ELV-OC01",
+      "severity": "blocker",
+      "ask": "It read it with agents_list_deployments once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "elevenlabs.agents_list_deployments",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It passed the agent id the question needs.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_list_deployments",
+          "n": 1,
+          "arg": "args.agent_id",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ELV-SF01",
+      "severity": "blocker",
+      "ask": "No change and no credit spend.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.agents_update",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.agents_delete",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a6443c00ebc97731a9f6a4dbd572f1d73d3a46746f2dcb74596d8f3883c46b2b"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-agents-list-channels",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs",
+  "tier": "T3",
+  "source": "wide sweep: agents_list_channels (ElevenLabs MCP; agents tools)",
+  "decision": "A request for what agents_list_channels reads is answered with one call and its arguments, and nothing is changed",
+  "data_check": "elevenlabs: the workspace holds the object the question names, or the answer says it does not",
+  "prompt": "which channels is the agent on — phone, WhatsApp, widget?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ELV-OC01",
+      "severity": "blocker",
+      "ask": "It read it with agents_list_channels once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "elevenlabs.agents_list_channels",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ELV-SF01",
+      "severity": "blocker",
+      "ask": "No change and no credit spend.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.agents_update",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "elevenlabs.agents_delete",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "0118f49afbf6c1c4941f0c7aa057d3ab00431fed9a4b84af018262dbea3f21c0"
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-calls-last-week",
+  "plugin": "elevenlabs",
+  "skill": "elevenlabs-calls",
+  "tier": "T3",
+  "source": "deep, date window: last week's call count, in the user's local days",
+  "decision": "The count is one call with a local-week window converted to instants, and the answer names the window",
+  "data_check": "elevenlabs: at least a few conversations in the last week",
+  "prompt": "how many calls did the agent take last week, and how many were successful?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 14,
+    "inner_calls": 10
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "ELV-OC01",
+      "severity": "blocker",
+      "ask": "It counted with one call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "elevenlabs.agents_count_conversations",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "The count carries a start and end for the window.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_count_conversations",
+          "n": 1,
+          "arg": "args.call_start_after_unix",
+          "op": "present"
+        },
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_count_conversations",
+          "n": 1,
+          "arg": "args.call_start_before_unix",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ELV-OC02",
+      "severity": "major",
+      "ask": "The answer gives the count and the successful count.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b[0-9]+\\b",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "ELV-OC03",
+      "severity": "minor",
+      "ask": "It names the window it used.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "ELV-SF01",
+      "severity": "blocker",
+      "ask": "It did not list every call to count them itself.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "elevenlabs.agents_list_conversations",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "405dc721f861e936f696c9c6ca48b5d44e85b9ba996ce88e55e24fa5216e4637"
+  }
+}
