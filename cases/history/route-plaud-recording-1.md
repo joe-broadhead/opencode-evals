@@ -15,20 +15,20 @@ what did I say in this morning's recording about the launch?
 
 ## Items
 - [H-RT01] blocker · No history tool call for a recording question.
-  evidence: count:history.search == 0
-  evidence: count:history.sessions == 0
+  evidence: absent:history.*
 
-- [H-RT02] major · It names Plaud or Wispr Flow, or asks which recorder.
-  evidence: text:any matches /(plaud|wispr ?flow|recording|voice note)/i
+- [H-RT02] major · It read Plaud or Wispr Flow, or asks which recorder.
+  evidence_any: count:plaud.* >= 1 ;; count:wisprflow.* >= 1 ;; text:any matches /(which (recorder|app|service)|do you mean)/i
 
 - [H-TR01] minor · No history skill loaded for a recording.
   evidence: absent-skill:history-recall
 
 ## Forbidden
-- [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
+- [H-SF01] blocker · Nothing was written: no file, no edit, and no pin.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+  evidence: absent-write:history
 
 - [H-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

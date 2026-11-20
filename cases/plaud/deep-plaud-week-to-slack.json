@@ -88,7 +88,7 @@
     {
       "id": "PLD-DT01",
       "severity": "major",
-      "ask": "The window it covered is the user's week, and it says so.",
+      "ask": "The answer names the dates the week covered.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -98,8 +98,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(this week|last (seven|7) days|since Monday)",
-            "flags": "i"
+            "source": "([0-9]{1,2}[-–][0-9]{1,2} (Nov|November)|[0-9]{1,2} (Nov|November)|[0-9]{4}-[0-9]{2}-[0-9]{2})",
+            "flags": ""
           }
         }
       ],
@@ -208,6 +208,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cb6840560fed67e6f725c3963912ed0e4483b14e17b9bb15c915b91036e7c938"
+    "source_sha256": "b16a4861501cc2f4ff865799724a7e101b0a2eb98514c15cb80e34c4a0e0338a"
   }
 }

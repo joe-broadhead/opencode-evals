@@ -54,7 +54,7 @@
     {
       "id": "PLD-DT02",
       "severity": "major",
-      "ask": "The answer names the window it covered.",
+      "ask": "The answer names the dates the window covered.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -64,8 +64,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(last week|week of|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)",
-            "flags": "i"
+            "source": "([0-9]{1,2}[-–][0-9]{1,2} (Nov|November)|[0-9]{1,2} (Nov|November)|[0-9]{4}-[0-9]{2}-[0-9]{2})",
+            "flags": ""
           }
         }
       ],
@@ -185,6 +185,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7806bd5f9b3f4b960f80d2ddf7b054dcec0fcf0b37f7c6dd06cb642b671fde38"
+    "source_sha256": "9e846bfbbb1cced4b81539fab4446ce99c59bdf631ad7a326885719a182b8849"
   }
 }

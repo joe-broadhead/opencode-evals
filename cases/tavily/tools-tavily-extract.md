@@ -5,7 +5,7 @@
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: A URL the user already has is read with extract, not searched for.
 - Data check: the page is public and states its price
-- Data: real
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=tavily
 - Set: wide

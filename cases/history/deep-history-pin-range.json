@@ -49,7 +49,7 @@
     {
       "id": "H-PR01",
       "severity": "major",
-      "ask": "The pin names that session and that range.",
+      "ask": "The pin names that session and exactly messages 40 to 48.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -65,14 +65,22 @@
           "tool": "history.pin",
           "n": 1,
           "arg": "args.from",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 40
+          }
         },
         {
           "kind": "call",
           "tool": "history.pin",
           "n": 1,
           "arg": "args.to",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 48
+          }
         }
       ],
       "evidence_any": [],
@@ -141,7 +149,7 @@
     {
       "id": "H-SF02",
       "severity": "blocker",
-      "ask": "No file was written or edited: a lookup changes nothing.",
+      "ask": "Nothing was written: no file, no edit, and no pin.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -159,6 +167,10 @@
           "kind": "absent",
           "tool": "patch",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "history"
         }
       ],
       "evidence_any": [],
@@ -180,7 +192,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 41
+      "line": 42
     },
     {
       "id": "H-SF04",
@@ -196,7 +208,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 44
+      "line": 45
     },
     {
       "id": "H-RB01",
@@ -212,12 +224,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 47
+      "line": 48
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "846dbca7e11a9a28f0dea1a488bbf3be6b125d0915e3fb22fa311d5c9bbdb9e2"
+    "source_sha256": "f7b827b7d7a51330a87992cf2872cfecd99a5c7dcd8ed2a769ce66b6c1acb1dc"
   }
 }

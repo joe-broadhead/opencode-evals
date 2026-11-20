@@ -5,13 +5,13 @@
 - Source: EVALS-232 §2.2 overlap routing
 - Decision tested: A question about what people post on X is X's, not a web search: no Tavily call.
 - Data check: none
-- Data: real
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=tavily,x
 - Set: route
 
 ## Prompt
-what are people posting about <a harmless public topic> on X this week?
+what are people posting about sourdough baking on X this week?
 
 ## Items
 - [TAV-RT01] blocker · No Tavily skill loaded when X is named.
@@ -19,11 +19,10 @@ what are people posting about <a harmless public topic> on X this week?
   evidence: absent-skill:tavily-research
 
 - [TAV-RT02] blocker · No Tavily tool call.
-  evidence: count:tavily_search == 0
-  evidence: count:tavily_extract == 0
+  evidence: absent:tavily.*
 
-- [TAV-OC01] major · The answer names X (or asks whether X is meant).
-  evidence: text:any matches /(\bX\b|Twitter)/
+- [TAV-RT03] major · It read X, or asks whether X is meant.
+  evidence_any: count:x.* >= 1 ;; text:any matches /(do you mean X|X or the web|which (one|platform))/i
 
 ## Forbidden
 - [TAV-SF01] blocker · Nothing was written or edited: every Tavily tool only reads the web.

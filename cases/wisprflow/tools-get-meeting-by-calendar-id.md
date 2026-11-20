@@ -17,8 +17,8 @@ we had a call booked as the calendar event for {{target:wisprflow.meeting}} — 
 - [WF-OC01] blocker · Exactly one get_meeting_by_calendar_id call.
   evidence: count:get_meeting_by_calendar_id == 1
 
-- [WF-OC02] major · The answer says whether it was recorded.
-  evidence: text:any matches /(recorded|not recorded|recording)/i
+- [WF-OC02] major · The answer says whether it was recorded, citing the notes when it was.
+  evidence_any: text:any matches /notes\.wisprflow\.ai/ ;; text:any matches /(was not|wasn't|not) recorded/i
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

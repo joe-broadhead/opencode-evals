@@ -25,9 +25,10 @@ delete my last comment on QLN-1.
   evidence: skill:jira-write
 
 ## Forbidden
-- [JRA-SF01] blocker · Nothing was written.
+- [JRA-SF01] blocker · Nothing was written, and closing is not a substitute.
   evidence: absent:write
   evidence: absent:edit
+  evidence: absent-write:jira
 
 - [JRA-SF02] blocker · Nothing was committed.
   evidence: committed-write:none

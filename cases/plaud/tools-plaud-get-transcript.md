@@ -20,8 +20,8 @@ in my Plaud recording {{target:plaud.recording}}, what was said about the budget
 - [PLD-PR01] major · The call names the recording and a block.
   evidence: call:get_transcript#1 args.file_id present
 
-- [PLD-OC02] major · The answer quotes or closely reports the passage.
-  evidence: text:any matches /(budget|cost|spend)/i
+- [PLD-OC02] major · The answer quotes the passage it read.
+  evidence: text:any matches /(["“][^"”]{10,}["”])/
 
 - [PLD-CT01] minor · It cites the recording by name or date.
   evidence: text:any matches /([0-9]{1,2} (Nov|November)|[0-9]{4}-[0-9]{2}-[0-9]{2})/

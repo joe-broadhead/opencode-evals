@@ -18,10 +18,13 @@
   "seed": "plugins=tavily",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "search_depth"
+  ],
   "sets": [
     "wide"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-OC01",
@@ -40,12 +43,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "TAV-PR01",
       "severity": "major",
-      "ask": "The query is the user's topic.",
+      "ask": "The search is basic and bounded to a few results.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -53,14 +56,29 @@
           "kind": "call",
           "tool": "tavily_search",
           "n": 1,
-          "arg": "args.query",
-          "op": "present"
+          "arg": "args.search_depth",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "basic"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "tavily_search",
+          "n": 1,
+          "arg": "args.max_results",
+          "op": "<=",
+          "value": {
+            "kind": "number",
+            "value": 5
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "TAV-CT01",
@@ -83,7 +101,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 25
     },
     {
       "id": "TAV-TR01",
@@ -100,7 +118,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 28
     },
     {
       "id": "TAV-SF01",
@@ -128,7 +146,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 32
     },
     {
       "id": "TAV-SF02",
@@ -156,7 +174,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 37
     },
     {
       "id": "TAV-RB01",
@@ -172,12 +190,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 42
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "26f4caa8790ddc02f720c401a9046d76e7d3732ab5c797fcea5831bfa53dabf1"
+    "source_sha256": "dc269ffbc1abb4548a701d3214dcc06b8383eee19b47babbdfe151742cbe0078"
   }
 }

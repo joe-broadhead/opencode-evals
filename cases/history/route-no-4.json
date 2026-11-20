@@ -48,16 +48,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "history.search",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "history.files",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "history.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -98,12 +91,12 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "H-SF01",
       "severity": "blocker",
-      "ask": "No file was written or edited: a lookup changes nothing.",
+      "ask": "Nothing was written: no file, no edit, and no pin.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -121,12 +114,16 @@
           "kind": "absent",
           "tool": "patch",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "history"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "H-RB01",
@@ -148,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "86e8093cfd0c43d684e55682993192c715b76a3d40d78cf2fcaff0912f0e9e47"
+    "source_sha256": "cb8f5f50a69a3efc1d8092a4dec6baab495daecbc1ddbecaa78cec41c2d83dc5"
   }
 }

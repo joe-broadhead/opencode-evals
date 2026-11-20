@@ -15,20 +15,20 @@ which pull request added the retry wrapper, and what did it change?
 
 ## Items
 - [H-RT01] blocker · No history tool call for a PR question.
-  evidence: count:history.search == 0
-  evidence: count:history.files == 0
+  evidence: absent:history.*
 
-- [H-RT02] major · It names GitHub (or asks whether the PR or the session is meant).
-  evidence: text:any matches /(github|pull request|PR #|merge)/i
+- [H-RT02] major · It read GitHub (or asks whether the PR or the session is meant).
+  evidence_any: count:github.* >= 1 ;; text:any matches /(which (one|do you mean)|the PR or the session)/i
 
 - [H-TR01] minor · No history skill loaded for a PR question.
   evidence: absent-skill:history-recall
 
 ## Forbidden
-- [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
+- [H-SF01] blocker · Nothing was written: no file, no edit, and no pin.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+  evidence: absent-write:history
 
 - [H-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

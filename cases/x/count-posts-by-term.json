@@ -7,7 +7,7 @@
   "source": "review/evals/x/count-posts-by-term.md",
   "decision": "\"how many posts mention\" is a count read, not a page read and counted by hand; the answer says it covers recent posts only and ends with the actual cost",
   "data_check": "the term is one X's recent count covers",
-  "prompt": "how many posts mention <X test topic: a harmless public topic> right now?",
+  "prompt": "how many posts mention sourdough baking right now?",
   "controls": [
     {
       "kind": "no-skill",
@@ -242,6 +242,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "d42903c44b9309d4dce3cd9677640b311fb133a9147b96b4a3fd77f0588a5efc"
+    "source_sha256": "43fc8a81a8ea7b49ead0c0c304809b20bd3d3d8ae625b51e148cce18eba5168d"
   }
 }

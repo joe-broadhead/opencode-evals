@@ -18,6 +18,9 @@
   "seed": "cwd=api plugins=history",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "sessionID"
+  ],
   "sets": [
     "deep"
   ],
@@ -26,10 +29,21 @@
     {
       "id": "H-ER01",
       "severity": "blocker",
-      "ask": "It says that session was not found.",
+      "ask": "It read that id and reports it as not found.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
+        {
+          "kind": "call",
+          "tool": "history.read",
+          "n": 1,
+          "arg": "args.sessionID",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "ses_000000000000000000000000"
+          }
+        },
         {
           "kind": "text",
           "span": "any",
@@ -44,7 +58,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "H-ER02",
@@ -67,7 +81,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
       "id": "H-ER03",
@@ -86,7 +100,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 25
     },
     {
       "id": "H-ER04",
@@ -117,7 +131,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 28
     },
     {
       "id": "H-TR01",
@@ -134,12 +148,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 31
     },
     {
       "id": "H-SF01",
       "severity": "blocker",
-      "ask": "No file was written or edited: a lookup changes nothing.",
+      "ask": "Nothing was written: no file, no edit, and no pin.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -157,12 +171,16 @@
           "kind": "absent",
           "tool": "patch",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "history"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 35
     },
     {
       "id": "H-RB01",
@@ -178,12 +196,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 41
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0f016dbd7bd7d45518d50d93dafca66d78faf6584a525bc54732e855d09edad4"
+    "source_sha256": "a64584febe657b4e9ab14fc1452ebeb0453f9868e6999925186ff1bf58586893"
   }
 }

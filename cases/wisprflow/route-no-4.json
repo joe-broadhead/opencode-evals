@@ -31,16 +31,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "search_meetings",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "get_meeting",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "wisprflow.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -69,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "WF-OC02",
@@ -100,7 +93,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "WF-SF01",
@@ -123,7 +116,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     },
     {
       "id": "WF-SF02",
@@ -151,7 +144,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     },
     {
       "id": "WF-RB01",
@@ -167,12 +160,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0a70444ac8f487e897510f07471ac72f447831d7d540840493cfb1f5be790c48"
+    "source_sha256": "39c0f2008819ee947f0ef56f574dd020406c02e628f7a63375f8c4ca6b26ac69"
   }
 }

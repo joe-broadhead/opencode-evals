@@ -5,9 +5,10 @@
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: A question that needs current web sources is one bounded search, answered from the results with their URLs.
 - Data check: the topic has public pages in the index
-- Data: real
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=tavily
+- Checkable: search_depth
 - Set: wide
 
 ## Prompt
@@ -17,8 +18,9 @@ what changed in Node 24's permission model? a couple of good sources is enough.
 - [TAV-OC01] blocker · Exactly one search ran.
   evidence: count:tavily_search == 1
 
-- [TAV-PR01] major · The query is the user's topic.
-  evidence: call:tavily_search#1 args.query present
+- [TAV-PR01] major · The search is basic and bounded to a few results.
+  evidence: call:tavily_search#1 args.search_depth == basic
+  evidence: call:tavily_search#1 args.max_results <= 5
 
 - [TAV-CT01] major · The answer cites at least one URL the search returned.
   evidence: text:any matches /https?:\/\/[^\s)<>]+/

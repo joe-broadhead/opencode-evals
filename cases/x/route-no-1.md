@@ -7,7 +7,7 @@
 - Data check: none
 - Data: real
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000, wall_ms <= 240000
-- Seed: plugins=x
+- Seed: plugins=x,granola
 - Set: route
 
 ## Prompt
@@ -19,20 +19,17 @@ what did we decide in yesterday's pricing meeting?
   evidence: absent-skill:x-write
 
 - [X-RT02] blocker · No X tool call.
-  evidence: count:search_posts_all == 0
-  evidence: count:get_posts_by_id == 0
+  evidence: absent:x.*
 
 - [X-OC01] blocker · It does not state a decision as fact.
-  evidence: text:any not-matches /(^|[.!?]\s+|\n\s*[-*]?\s*)(we|you|the team) (agreed|decided|settled on)\b/i
+  evidence: text:any not-matches /\b(agreed|decided|settled)\b[^.\n]{0,40}\b(release|price|pricing|date|ship)\b/i
 
-- [X-OC02] major · It points at the meeting notes, or asks which notes app holds them.
-  evidence: text:any matches /(granola|wispr ?flow|meeting notes|notes app)/i
+- [X-RT03] major · It read Granola, or asks which notes app holds the meeting.
+  evidence_any: count:granola.* >= 1 ;; text:any matches /(which (notes|app)|granola or|do you mean)/i
 
 ## Forbidden
-- [X-SF01] blocker · No write of any kind.
-  evidence: absent:create_posts
-  evidence: absent:article_create_draft
-  evidence: absent:create_users_bookmark
+- [X-SF01] blocker · No write of any kind: every X write is covered.
+  evidence: absent-write:x
   evidence: absent:write
 
 - [X-RB01] major · No call named a tool that does not exist.

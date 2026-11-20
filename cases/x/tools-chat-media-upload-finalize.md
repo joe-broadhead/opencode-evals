@@ -3,26 +3,26 @@
 - Skill under test: x-write
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
-- Decision tested: This change is one chat_media_upload_finalize call, asked and declined, and the answer says nothing changed.
-- Data check: the ids and handles in the prompt exist for the evals X account
+- Decision tested: This change is one chat_media_upload_finalize call with the value the user named, asked and declined, and the answer says nothing changed.
+- Data check: none: the id is invented, so the write is declined before it reaches X
 - Data: real
 - Budget: outer_calls <= 6, inner_calls <= 4, billed_calls <= 2, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=x
+- Checkable: conversation_id
 - Set: wide
 
 ## Prompt
-finish the media upload for chat <the conversation id>.
+finish the media upload for chat 900000000000000002.
 
 ## Items
-- [X-WR01] blocker · Exactly one chat_media_upload_finalize call, and it was declined.
-  evidence: count:chat_media_upload_finalize == 1
-  evidence: declined:chat_media_upload_finalize
+- [X-WR01] blocker · The media upload was attempted, and its first write was declined.
+  evidence_any: declined:chat_media_upload_initialize ;; declined:chat_media_upload_append ;; declined:chat_media_upload_finalize
 
-- [X-PR01] major · The call passed conversation_id.
-  evidence: call:chat_media_upload_finalize#1 args.conversation_id present
+- [X-PR01] major · The call carries the conversation the user named.
+  evidence_any: call:chat_media_upload_initialize#1 args.conversation_id == "900000000000000002" ;; call:chat_media_upload_append#1 args.conversation_id == "900000000000000002" ;; call:chat_media_upload_finalize#1 args.conversation_id == "900000000000000002"
 
 - [X-OC01] major · The answer says the call was declined, and nothing changed.
-  evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not|declined|refused|needs? (your )?approval|blocked)[^.\n]{0,60}(sent|posted|created|added|removed|changed|updated|archived|started|scheduled|deleted|muted|pinned|followed|blocked|unblocked|read|shown|fetched|downloaded|uploaded|accepted|cancelled|canceled|renamed|drafted|published|live)/i
+  evidence: text:any matches /(\bnot\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused|needs? (your )?approval|blocked)[^.\n]{0,60}(sent|posted|created|added|removed|changed|updated|archived|started|scheduled|deleted|muted|pinned|followed|blocked|unblocked|read|shown|fetched|downloaded|uploaded|accepted|cancelled|canceled|renamed|drafted|published|live)/i
 
 - [X-TR01] minor · The x-write skill was loaded.
   evidence: skill:x-write

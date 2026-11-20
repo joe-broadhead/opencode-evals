@@ -5,9 +5,9 @@
   "skill": "x",
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
-  "decision": "This request is one get_posts_by_ids read, answered from its result, with no second page and no write.",
-  "data_check": "the ids and handles in the prompt exist for the evals X account",
-  "prompt": "read these three posts and tell me what they have in common: <three post URLs>",
+  "decision": "This request is one get_posts_by_ids read, with the id or topic the user named, and no write.",
+  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "prompt": "read these three posts and tell me what they have in common: https://x.com/evals232fixturehandle/status/1000001, https://x.com/evals232fixturehandle/status/1000002, https://x.com/evals232fixturehandle/status/1000003",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -19,6 +19,9 @@
   "seed": "plugins=x",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "ids"
+  ],
   "sets": [
     "wide"
   ],
@@ -41,12 +44,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "X-PR01",
       "severity": "major",
-      "ask": "The call passed ids.",
+      "ask": "The call carries the value the user named.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -55,28 +58,10 @@
           "tool": "get_posts_by_ids",
           "n": 1,
           "arg": "args.ids",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
-      "id": "X-OC02",
-      "severity": "major",
-      "ask": "The answer carries what the read returned.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(@|common|all three)",
+            "source": "1000001",
             "flags": "i"
           }
         }
@@ -84,30 +69,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
-    },
-    {
-      "id": "X-CT01",
-      "severity": "minor",
-      "ask": "The answer ends with the plugin's cost line.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "last-line",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "^Cost: ",
-            "flags": ""
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 26
+      "line": 21
     },
     {
       "id": "X-TR01",
@@ -124,34 +86,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 24
     },
     {
       "id": "X-SF01",
       "severity": "blocker",
-      "ask": "No write of any kind.",
+      "ask": "No write of any kind: every X write is covered.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "create_posts",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_create_draft",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "create_users_bookmark",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "follow_list",
-          "n": null
+          "kind": "absent-write",
+          "ns": "x"
         },
         {
           "kind": "absent",
@@ -162,7 +108,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 28
     },
     {
       "id": "X-EF01",
@@ -181,7 +127,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 32
     },
     {
       "id": "X-RB01",
@@ -197,18 +143,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 35
     }
   ],
   "oracle": [],
-  "notes": [
-    {
-      "id": null,
-      "text": "X's own tool descriptions are long; the skill's names and fields are exact, so a search() for this tool is a wasted step, not a failure.",
-      "line": 47
-    }
-  ],
+  "notes": [],
   "hashes": {
-    "source_sha256": "0efdeebefc69e065323b12919f1f1014de4a69fa7c2b1157dbb69587f4484909"
+    "source_sha256": "ce43f6e071438e1fce6ddfaa92cb1fe36da0fd9eb0ca8ad5cd1e01d833e49db1"
   }
 }

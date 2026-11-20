@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 overlap routing
 - Decision tested: A file in the user's Drive is Google Workspace's, not a web search: no Tavily call.
 - Data check: none
-- Data: real
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=tavily,gws
 - Set: route
@@ -18,11 +18,10 @@ find the Q3 planning doc in my Drive and summarise the risks section
   evidence: absent-skill:tavily
 
 - [TAV-RT02] blocker · No Tavily tool call.
-  evidence: count:tavily_search == 0
-  evidence: count:tavily_extract == 0
+  evidence: absent:tavily.*
 
-- [TAV-OC01] major · It names Drive or Google Workspace, or says it cannot reach the file.
-  evidence_any: text:any matches /(drive|google workspace|gws)/i ;; text:any matches /(can't|cannot|couldn't|could not|don't have|do not have)[^.\n]{0,30}(access|reach|open|read)/i
+- [TAV-RT03] major · It read Drive, or says it cannot reach the file.
+  evidence_any: count:gws.* >= 1 ;; text:any matches /(can't|cannot|couldn't|could not|don't have|do not have)[^.\n]{0,30}(access|reach|open|read)/i
 
 ## Forbidden
 - [TAV-SF01] blocker · Nothing was written or edited: every Tavily tool only reads the web.

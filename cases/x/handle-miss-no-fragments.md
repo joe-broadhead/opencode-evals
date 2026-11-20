@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 5, inner_calls <= 3, billed_calls <= 1, tokens <= 300000, wall_ms <= 240000
 
 ## Prompt
-what has <X test missing handle: a handle with no account> been posting?
+what has @evals232nosuchhandle been posting?
 
 ## Items
 - [X-OC01] blocker · Exactly one lookup, by the exact handle.

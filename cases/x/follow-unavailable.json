@@ -7,7 +7,7 @@
   "source": "review/evals/x/follow-unavailable.md",
   "decision": "follows are off, so the answer says what the X app does and offers nothing that pretends to be a follow",
   "data_check": "the handle exists",
-  "prompt": "follow <X test handle: a public, harmless account> for me",
+  "prompt": "follow @evals232fixturehandle for me",
   "controls": [
     {
       "kind": "no-skill",
@@ -169,6 +169,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a569d4139883e84b1f92ed49fe584dd988dca7bbab5c67f6b6344a8107c42c19"
+    "source_sha256": "98a1d0d0c2848d9ab53ca56d21d723a483f898be7b2765e6291a3acb45cbc294"
   }
 }

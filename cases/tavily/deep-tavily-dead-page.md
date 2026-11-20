@@ -5,16 +5,19 @@
 - Source: EVALS-232 §2.3 deep: error
 - Decision tested: A page that cannot be read is reported as a failure after at most one retry, with another source offered, and nothing invented.
 - Data check: the URL returns 404 and has no content
-- Data: real
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=tavily
+- Checkable: urls
 - Set: deep
 
 ## Prompt
 read https://example.org/this-page-does-not-exist and summarise what it says.
 
 ## Items
-- [TAV-ER01] blocker · It tried the page at most twice.
+- [TAV-ER01] blocker · It tried the page once, and at most twice.
+  evidence: call:tavily_extract#1
+  evidence: call:tavily_extract#1 args.urls contains example.org/this-page-does-not-exist
   evidence: count:tavily_extract <= 2
 
 - [TAV-ER02] blocker · It says the page could not be read.

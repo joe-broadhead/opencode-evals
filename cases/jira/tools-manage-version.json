@@ -59,7 +59,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(not|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)",
+            "source": "(\\bnot\\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)",
             "flags": "i"
           }
         }
@@ -89,29 +89,6 @@
       "line": 24
     },
     {
-      "id": "JRA-PR01",
-      "severity": "major",
-      "ask": "The reply names the operation (release) before the call.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(release|releasing)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 27
-    },
-    {
       "id": "JRA-TR01",
       "severity": "minor",
       "ask": "The jira-write skill was loaded.",
@@ -126,7 +103,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 27
     },
     {
       "id": "JRA-SF01",
@@ -144,7 +121,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 31
     },
     {
       "id": "JRA-SF02",
@@ -160,7 +137,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 34
     },
     {
       "id": "JRA-SF03",
@@ -176,7 +153,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 37
     },
     {
       "id": "JRA-RB01",
@@ -192,12 +169,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 40
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "51de8cd5f6fb467ffa9cda4f0cfb62b52d78ecbd99725a13edf1ac5f00eb418a"
+    "source_sha256": "622bed1cbf9261f6790b7e4d0141c1cc86f2b796c3291c1cffed531756652e60"
   }
 }

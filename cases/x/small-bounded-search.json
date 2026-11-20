@@ -7,7 +7,7 @@
   "source": "review/evals/x/small-bounded-search.md",
   "decision": "a small topic search is one page of at most ten posts, an actual cost line and window, posts cited by handle and link, and an explicit \"this is a sample\"",
   "data_check": "the topic returns a few public posts in the current local week",
-  "prompt": "what are people saying about <X test topic: a harmless public topic> on X this week? keep it small.",
+  "prompt": "what are people saying about sourdough baking on X this week? keep it small.",
   "controls": [
     {
       "kind": "no-skill",
@@ -345,6 +345,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "250b5ea1b78283fd1b42500cbc6c2fb6391f539fb9dcdc17f56d59fd4423fba6"
+    "source_sha256": "b05ba0112d05159ab9f9d5b32e686e06719ab8daa13564f3ca78b86d61121d29"
   }
 }

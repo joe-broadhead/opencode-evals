@@ -15,11 +15,10 @@ what did the last merged pull request change in the auth module?
 
 ## Items
 - [JRA-RT01] blocker · No Jira tool call.
-  evidence: count:getJiraIssue == 0
-  evidence: count:searchJiraIssuesUsingJql == 0
+  evidence: absent:jira.*
 
-- [JRA-OC01] major · It names GitHub or the PR.
-  evidence: text:any matches /(github|pull request|PR #|merge)/i
+- [JRA-RT03] major · It read GitHub, or asks whether the PR or the issue is meant.
+  evidence_any: count:github.* >= 1 ;; text:any matches /(which (one|do you mean)|the PR or the issue)/i
 
 - [JRA-TR01] minor · No jira skill loaded for a PR question.
   evidence: absent-skill:jira
@@ -27,6 +26,7 @@ what did the last merged pull request change in the auth module?
 ## Forbidden
 - [JRA-SF01] blocker · Nothing was written.
   evidence: absent:write
+  evidence: absent-write:jira
 
 - [JRA-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

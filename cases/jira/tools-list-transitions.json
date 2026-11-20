@@ -55,7 +55,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(In Review|Start progress|Send for review|Done)",
+            "source": "(Start progress|Send for review|In Review)",
             "flags": "i"
           }
         }
@@ -103,6 +103,10 @@
           "kind": "absent",
           "tool": "patch",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
@@ -124,12 +128,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9a9f32f721641e7b9416457713cb349db97edf5d652c7edb0f4d9fc9f477d8ab"
+    "source_sha256": "84312da52b0327d059564db009b84f2c7f1ac0eb8599de9eabe8e4efb8823bb9"
   }
 }

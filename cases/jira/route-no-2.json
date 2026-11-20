@@ -31,16 +31,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "getJiraIssue",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "searchJiraIssuesUsingJql",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "jira.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -49,27 +42,35 @@
       "line": 17
     },
     {
-      "id": "JRA-OC01",
+      "id": "JRA-RT03",
       "severity": "major",
-      "ask": "It names GitHub or the PR.",
+      "ask": "It read GitHub, or asks whether the PR or the issue is meant.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(github|pull request|PR #|merge)",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "github.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(which (one|do you mean)|the PR or the issue)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "JRA-TR01",
@@ -86,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "JRA-SF01",
@@ -99,12 +100,16 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "JRA-RB01",
@@ -126,6 +131,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "35f1cb55c02abe2cd7b439a1681221dd2dc0eb004bfc620f725b6e3e1bd9bf3e"
+    "source_sha256": "bbeeefa229969bc2691650a5dcaa79c1472ba3bca0ad3f31e82600802d19df52"
   }
 }

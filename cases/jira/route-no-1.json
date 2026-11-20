@@ -31,16 +31,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "getJiraIssue",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "searchJiraIssuesUsingJql",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "jira.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -69,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "JRA-TR01",
@@ -86,7 +79,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "JRA-SF01",
@@ -99,12 +92,16 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "JRA-RB01",
@@ -126,6 +123,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b35ad8800cd1a5195e017b47ebf47f99ad3587efa7ded50397043e938808ee5e"
+    "source_sha256": "2bf98e0ed19aebe8c33a051bc333b18e95edc4b234f537f49a60d0661c538429"
   }
 }

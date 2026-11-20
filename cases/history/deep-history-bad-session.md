@@ -8,13 +8,15 @@
 - Data: own
 - Budget: outer_calls <= 10, inner_calls <= 12, tokens <= 400000, wall_ms <= 300000
 - Seed: cwd=api plugins=history
+- Checkable: sessionID
 - Set: deep
 
 ## Prompt
 read session ses_000000000000000000000000 and tell me what we decided in it.
 
 ## Items
-- [H-ER01] blocker · It says that session was not found.
+- [H-ER01] blocker · It read that id and reports it as not found.
+  evidence: call:history.read#1 args.sessionID == "ses_000000000000000000000000"
   evidence: text:any matches /(not found|doesn't exist|does not exist|no such session|SESSION_NOT_FOUND)/i
 
 - [H-ER02] blocker · It does not invent a decision from that session.
@@ -30,10 +32,11 @@ read session ses_000000000000000000000000 and tell me what we decided in it.
   evidence: skill:history-recall
 
 ## Forbidden
-- [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
+- [H-SF01] blocker · Nothing was written: no file, no edit, and no pin.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+  evidence: absent-write:history
 
 - [H-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

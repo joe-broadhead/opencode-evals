@@ -18,6 +18,9 @@
   "seed": "plugins=jira",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "jql"
+  ],
   "sets": [
     "wide"
   ],
@@ -40,7 +43,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "JRA-OC02",
@@ -59,22 +62,24 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "JRA-PR01",
       "severity": "major",
-      "ask": "The answer states the JQL it used.",
+      "ask": "The JQL it ran filters on that status.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "text",
-          "span": "any",
+          "kind": "call",
+          "tool": "searchJiraIssuesUsingJql",
+          "n": 1,
+          "arg": "args.jql",
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(project\\s*=\\s*\"?QLN|status\\s*=\\s*\"?In Progress|JQL)",
+            "source": "status\\s*=\\s*\"?In Progress",
             "flags": "i"
           }
         }
@@ -82,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "JRA-TR01",
@@ -99,7 +104,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "JRA-SF01",
@@ -122,12 +127,16 @@
           "kind": "absent",
           "tool": "patch",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "JRA-RB01",
@@ -143,12 +152,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 37
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "62db291ef5f2477eed0de28a73dc51569bb30f6ed228504b6701d04abb66584b"
+    "source_sha256": "3ec8a8005ae6e633574b875c1276ac04d2052f20f9bd871acbe7aa8f793c131c"
   }
 }

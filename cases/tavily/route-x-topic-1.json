@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 overlap routing",
   "decision": "A question about what people post on X is X's, not a web search: no Tavily call.",
   "data_check": "none",
-  "prompt": "what are people posting about <a harmless public topic> on X this week?",
+  "prompt": "what are people posting about sourdough baking on X this week?",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -21,7 +21,7 @@
   "sets": [
     "route"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-RT01",
@@ -52,16 +52,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "tavily_search",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "tavily_extract",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "tavily.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -70,27 +63,35 @@
       "line": 21
     },
     {
-      "id": "TAV-OC01",
+      "id": "TAV-RT03",
       "severity": "major",
-      "ask": "The answer names X (or asks whether X is meant).",
+      "ask": "It read X, or asks whether X is meant.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(\\bX\\b|Twitter)",
-            "flags": ""
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "x.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(do you mean X|X or the web|which (one|platform))",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 24
     },
     {
       "id": "TAV-SF01",
@@ -118,7 +119,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     },
     {
       "id": "TAV-RB01",
@@ -134,12 +135,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ef13197aba99b1edeea44aa90d78d966066ca72bb73e7ac27cf0c7937deb076c"
+    "source_sha256": "ae8441146cbde437d8854f893bbbc001fe4020c8a19b37b2a46d3b6a9ab15351"
   }
 }

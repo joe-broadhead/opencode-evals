@@ -65,7 +65,7 @@
     {
       "id": "WF-OC02",
       "severity": "major",
-      "ask": "The answer gives a role and a company, and says where the details came from.",
+      "ask": "The answer gives a role and a company, and says it looked the profile up.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -75,7 +75,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(title|role|company|works at|Wispr)",
+            "source": "(looked up|Wispr Contacts|profile)",
             "flags": "i"
           }
         }
@@ -150,6 +150,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5f2b8ab4c5e61d08ed6b69a56be7a4e7cfd1f912bda6edc550d1290aadfe722d"
+    "source_sha256": "0542573e30c6afcdd9ce26b18a8c63e5cd589a9c8e543dbee162aaee92041fac"
   }
 }

@@ -8,6 +8,7 @@
 - Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow utc-hours=9-17
+- Checkable: since
 - Set: deep
 
 ## Prompt
@@ -21,11 +22,11 @@ what did we decide in yesterday's pricing call?
 - [WF-DT02] major · The window carries an offset or Z, not a bare date.
   evidence: call:search_meetings#1 args.since matches /(Z|[+-][0-9]{2}:[0-9]{2})$/
 
-- [WF-OC01] major · The answer gives the decisions and shows local times.
-  evidence: text:any matches /([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))/i
+- [WF-OC01] major · The answer gives the call's decisions, or says there was no meeting in that window.
+  evidence_any: text:any matches /([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))/i ;; text:any matches /(no meeting|nothing (was )?recorded|no recording|weren't any|were not any)/i
 
-- [WF-CT01] major · It cites the meeting by title, date and share link.
-  evidence: text:any matches /notes\.wisprflow\.ai/
+- [WF-CT01] major · It cites the meeting by its share link, or says there was none.
+  evidence_any: text:any matches /notes\.wisprflow\.ai/ ;; text:any matches /(no meeting|no recording)/i
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

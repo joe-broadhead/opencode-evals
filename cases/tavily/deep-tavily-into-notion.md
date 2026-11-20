@@ -5,13 +5,13 @@
 - Source: EVALS-232 §2.3 deep: cross-plugin
 - Decision tested: Research first, then the page write is attempted and declined, and the answer says the page was not updated.
 - Data check: the Notion sandbox page exists
-- Data: real
+- Data: own
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=tavily,notion
 - Set: deep
 
 ## Prompt
-find the current state of <open-source feature-flag projects> and put the key points on my Notion sandbox page {{target:notion.sandbox_page}}.
+find the current state of open-source feature-flag projects and put the key points on my Notion sandbox page {{target:notion.sandbox_page}}.
 
 ## Items
 - [TAV-OC01] blocker · It searched the web for the points.

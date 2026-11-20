@@ -21,7 +21,7 @@
   "sets": [
     "wide"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-OC01",
@@ -65,7 +65,7 @@
     {
       "id": "TAV-OC02",
       "severity": "major",
-      "ask": "The answer is about retries, from the pages read.",
+      "ask": "The answer gives the findings as a list.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -75,8 +75,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "retr(y|ies|ying)",
-            "flags": "i"
+            "source": "(^|\\n)\\s*[-*]\\s+\\S",
+            "flags": ""
           }
         }
       ],
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bf690a171472453e6048ca5e6351b331e8b3a2561c70b9ce38641343f74353cf"
+    "source_sha256": "11add91e1c64a20c9b20aad11b65335e02a0f6fc393f1a0c79cae8fa50be6ac5"
   }
 }

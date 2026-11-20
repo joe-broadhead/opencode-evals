@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 4, billed_calls <= 1, tokens <= 300000, wall_ms <= 240000
 
 ## Prompt
-DM <X test handle: a public, harmless account> and ask if they're open to a chat about a collaboration
+DM @evals232fixturehandle and ask if they're open to a chat about a collaboration
 
 ## Items
 - [X-TR01] blocker · The change skill loads for a request to message someone.

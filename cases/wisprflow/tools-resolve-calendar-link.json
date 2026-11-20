@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A pasted invite or Meet link is resolved as a calendar link, never fetched as a page.",
   "data_check": "a calendar event matches the link",
-  "prompt": "what's this meeting? <a Google Calendar or Meet link for the round's meeting>",
+  "prompt": "what's this meeting? https://meet.google.com/evals-232-fixture",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -18,6 +18,9 @@
   "seed": "plugins=wisprflow",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "url"
+  ],
   "sets": [
     "wide"
   ],
@@ -40,7 +43,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "WF-PR01",
@@ -54,13 +57,17 @@
           "tool": "resolve_calendar_link",
           "n": 1,
           "arg": "args.url",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "https://meet.google.com/evals-232-fixture"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "WF-OC02",
@@ -75,7 +82,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm)|meeting)",
+            "source": "([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))",
             "flags": "i"
           }
         }
@@ -83,7 +90,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "WF-TR01",
@@ -100,7 +107,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-SF01",
@@ -118,7 +125,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "WF-SF02",
@@ -146,7 +153,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     },
     {
       "id": "WF-RB01",
@@ -162,12 +169,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1054955f3ec0c06b4088788b8febf8967e71b27b09e7fb4a9aa6642bfd7c3261"
+    "source_sha256": "cbeb10318d001d68cbb22449b61090c1a83c40138d3d5fbe67c0d56aca3a1f4c"
   }
 }

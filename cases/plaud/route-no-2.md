@@ -15,8 +15,7 @@ what did I dictate this morning?
 
 ## Items
 - [PLD-RT01] blocker · No Plaud call for dictation history.
-  evidence: count:recent == 0
-  evidence: count:list_files == 0
+  evidence: absent:plaud.*
 
 - [PLD-OC01] major · It says dictation history is not readable here.
   evidence: text:any matches /(dictation|dictated)[^.\n]{0,60}(can't|cannot|not available|don't have|do not have|no access|isn't)/i

@@ -21,7 +21,7 @@
   "sets": [
     "route"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-OC01",
@@ -70,7 +70,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(v?[0-9]{1,2}(\\.[0-9]{1,2})?|LTS)",
+            "source": "\\bv?[0-9]{1,2}(\\.[0-9]{1,2})+\\b",
             "flags": "i"
           }
         }
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d69c185d8feebcef0c23e2900ce7d399afbe285fa134a7a2ff47d7fcea95e762"
+    "source_sha256": "79a86aafa2751b5d6cb4f4de9479156c7379436219986066d89548893bf83f29"
   }
 }

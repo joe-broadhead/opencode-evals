@@ -5,7 +5,7 @@
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: Which pages a site has is a map, answered as URLs without reading the pages.
 - Data check: the site publishes an index of its pages
-- Data: real
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=tavily
 - Set: wide

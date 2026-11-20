@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 deep: cross-plugin",
   "decision": "Posts are found first, then the Notion write is attempted and declined and the answer says the page was not updated.",
-  "data_check": "the topic has public posts this week; the Notion sandbox page exists",
-  "prompt": "find the top posts about <a harmless public topic> this week and put the links on my Notion sandbox page {{target:notion.sandbox_page}}.",
+  "data_check": "the Notion sandbox page exists",
+  "prompt": "find the top posts about sourdough baking this week and put the links on my Notion sandbox page {{target:notion.sandbox_page}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -19,6 +19,9 @@
   "seed": "plugins=x,notion",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "query"
+  ],
   "sets": [
     "deep"
   ],
@@ -27,7 +30,7 @@
     {
       "id": "X-OC01",
       "severity": "blocker",
-      "ask": "It searched X first.",
+      "ask": "It searched X for the topic first.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -36,12 +39,24 @@
           "tool": "search_posts_all",
           "op": ">=",
           "value": 1
+        },
+        {
+          "kind": "call",
+          "tool": "search_posts_all",
+          "n": 1,
+          "arg": "args.query",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "sourdough",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "X-WR01",
@@ -61,7 +76,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
       "id": "X-OC02",
@@ -84,7 +99,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 26
     },
     {
       "id": "X-CT01",
@@ -108,7 +123,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 29
     },
     {
       "id": "X-TR01",
@@ -125,7 +140,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 32
     },
     {
       "id": "X-SF01",
@@ -142,29 +157,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 36
     },
     {
       "id": "X-SF02",
       "severity": "blocker",
-      "ask": "No write of any kind.",
+      "ask": "No write of any kind: every X write is covered.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "create_posts",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_create_draft",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "create_users_bookmark",
-          "n": null
+          "kind": "absent-write",
+          "ns": "x"
         },
         {
           "kind": "absent",
@@ -175,7 +179,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 39
     },
     {
       "id": "X-RB01",
@@ -197,6 +201,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bd370dbd08a3a5ef0b95ed575943f9642ec91de5eabe2ce24689b9720317ffbe"
+    "source_sha256": "b561f3eca99b1c8fd4fad8340db1b878341a3bf83205c3b88546cac290e29305"
   }
 }

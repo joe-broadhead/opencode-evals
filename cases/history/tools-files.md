@@ -33,10 +33,11 @@ which past sessions edited src/config/settings.ts? I only care about sessions th
   evidence: skill:history-recall
 
 ## Forbidden
-- [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
+- [H-SF01] blocker · Nothing was written: no file, no edit, and no pin.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+  evidence: absent-write:history
 
 - [H-SF02] blocker · It pinned nothing: the user asked a question.
   evidence: absent:history.pin

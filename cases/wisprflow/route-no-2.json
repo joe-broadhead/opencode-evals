@@ -31,16 +31,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "search_meetings",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "get_meeting",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "wisprflow.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -49,27 +42,35 @@
       "line": 17
     },
     {
-      "id": "WF-OC01",
+      "id": "WF-RT03",
       "severity": "major",
-      "ask": "It uses Plaud, or says Plaud holds the recording.",
+      "ask": "It read Plaud, or says it cannot reach the recording.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "plaud",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "plaud.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(can't|cannot|couldn't|could not|don't have|do not have)[^.\\n]{0,30}(access|reach|read)[^.\\n]{0,20}(recording|audio)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "WF-RT02",
@@ -86,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "WF-SF01",
@@ -114,7 +115,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "WF-RB01",
@@ -130,12 +131,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "256c8acc677e9a47a34982b1eead7cfa7fd002e215d1c0edc9793caac4a8683b"
+    "source_sha256": "5d037644e0c84b71d76ac300525e6ee702b64070a3b2d90ef2f05d10e802482f"
   }
 }

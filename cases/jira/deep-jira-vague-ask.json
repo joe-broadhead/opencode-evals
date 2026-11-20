@@ -117,8 +117,8 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\?",
-              "flags": ""
+              "source": "(what would you like|which (items|ones|part)|do you mean)",
+              "flags": "i"
             }
           }
         ]
@@ -138,6 +138,10 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
@@ -159,7 +163,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 37
     },
     {
       "id": "JRA-RB01",
@@ -175,12 +179,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4301c96ce62adaeb6076b564daf1a89f956eafdc972d2fd7b974a9db95a6a704"
+    "source_sha256": "5906feb07c10e7beafc24fc0e0a55945a2c5729291c4ddab4660595d9079160a"
   }
 }

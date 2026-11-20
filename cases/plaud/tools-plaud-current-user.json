@@ -45,7 +45,7 @@
     {
       "id": "PLD-OC02",
       "severity": "major",
-      "ask": "The answer names the account.",
+      "ask": "The answer names the account, by its address.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -55,8 +55,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(account|signed in|@|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+)",
-            "flags": "i"
+            "source": "@[A-Za-z0-9.-]+",
+            "flags": ""
           }
         }
       ],
@@ -158,6 +158,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e0054a7dea5ca76f3947d839447674181037e91cb1ce44bb89aa3dc3e866d7a0"
+    "source_sha256": "d8ec84ef30542a6528832121815058ae27f3c1461a111baeaeb9940727dac22a"
   }
 }

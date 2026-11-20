@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A cursor feed of meeting events is one events_list call, oldest first.",
   "data_check": "meetings exist after the cursor",
-  "prompt": "pull the meeting events since <the cursor the last sync returned>, oldest first, for Memory.",
+  "prompt": "pull the meeting events since the start of this year, oldest first, for Memory.",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -45,7 +45,7 @@
     {
       "id": "WF-PR01",
       "severity": "major",
-      "ask": "The cursor the user gave was passed.",
+      "ask": "The read starts at the start of this year.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -53,7 +53,7 @@
           "kind": "call",
           "tool": "events_list",
           "n": 1,
-          "arg": "args.cursor",
+          "arg": "args.since",
           "op": "present"
         }
       ],
@@ -65,7 +65,7 @@
     {
       "id": "WF-OC02",
       "severity": "major",
-      "ask": "The answer reports the events in order, or says there are none.",
+      "ask": "The answer lists the events, or says there are none.",
       "forbidden": false,
       "grader": "code",
       "evidence": [],
@@ -87,8 +87,8 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "(first|oldest)",
-              "flags": "i"
+              "source": "(^|\\n)\\s*[-*]\\s+\\S",
+              "flags": ""
             }
           }
         ]
@@ -162,6 +162,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6cf91692f4e9de9ec52aae17d9df48e4a21d3511c0212c0ef568c1e0adee0f7b"
+    "source_sha256": "5b354609a7fb36aa3ec17d935538b341b05e04f206de7ba51cae17c3fbdd829e"
   }
 }

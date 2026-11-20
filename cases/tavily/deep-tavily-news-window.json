@@ -21,7 +21,7 @@
   "sets": [
     "deep"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-DT01",
@@ -55,7 +55,7 @@
     {
       "id": "TAV-DT02",
       "severity": "major",
-      "ask": "The answer names the window it covered.",
+      "ask": "The answer names the dates the window covered.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -65,8 +65,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(this week|last (seven|7) days|past week|since (Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)|[0-9]{1,2} (Nov|November))",
-            "flags": "i"
+            "source": "([0-9]{1,2}[-–][0-9]{1,2} (Nov|November)|[0-9]{1,2} (Nov|November)|[0-9]{4}-[0-9]{2}-[0-9]{2})",
+            "flags": ""
           }
         }
       ],
@@ -201,6 +201,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "982dc5a0d6b4be3016668dbc81d1e17142710d8d776b19b3a3260b9b2720cfbd"
+    "source_sha256": "c25d5dfa961a0bc1d6ae09b7972e46207420f37e73e062c47aeb0ef6f8fa2ad7"
   }
 }

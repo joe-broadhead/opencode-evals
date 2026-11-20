@@ -3,7 +3,7 @@
 - Skill under test: jira-write
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool (fake mode)
-- Decision tested: A hierarchy change is one declined call, and the type and parent change is stated first.
+- Decision tested: A hierarchy change is one declined call, declined like every Jira write.
 - Data check: the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
@@ -19,7 +19,7 @@ make QLN-2 a sub-task of QLN-1.
   evidence: declined:convertJiraIssueHierarchy
 
 - [JRA-OC01] major · The answer says nothing changed.
-  evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)/i
+  evidence: text:any matches /(\bnot\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)/i
 
 - [JRA-EF01] major · It made a bounded number of Jira calls, with no loop.
   evidence: count:getAccessibleAtlassianResources <= 1

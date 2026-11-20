@@ -90,7 +90,7 @@
     {
       "id": "JRA-SF01",
       "severity": "blocker",
-      "ask": "Nothing was written.",
+      "ask": "Nothing was written, and closing is not a substitute.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -103,6 +103,10 @@
           "kind": "absent",
           "tool": "edit",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
@@ -124,7 +128,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "JRA-RB01",
@@ -140,12 +144,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6e371e5d182ee79fc2ffa6e60eb93efab8721b059931130a8a581f7acb3a4339"
+    "source_sha256": "df37384405ffc5c20306c8b22ae9fc760ba15805a1c305f824a87fa47c9f8c52"
   }
 }

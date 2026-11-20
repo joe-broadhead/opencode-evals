@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 should-not-call
 - Decision tested: One fact is one search at most: no Research, crawl or map, and no report.
 - Data check: none
-- Data: real
+- Data: own
 - Budget: outer_calls <= 4, inner_calls <= 3, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=tavily
 - Set: route
@@ -21,7 +21,7 @@ what's the latest Node LTS version?
   evidence: absent:tavily_map
 
 - [TAV-OC02] major · The answer gives a version number.
-  evidence: text:any matches /(v?[0-9]{1,2}(\.[0-9]{1,2})?|LTS)/i
+  evidence: text:any matches /\bv?[0-9]{1,2}(\.[0-9]{1,2})+\b/i
 
 - [TAV-RT01] minor · The research skill was not loaded for one fact.
   evidence: absent-skill:tavily-research

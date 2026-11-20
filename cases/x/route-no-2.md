@@ -11,24 +11,21 @@
 - Set: route
 
 ## Prompt
-summarise this article for me: <a news article URL>
+summarise this article for me: https://example.org/news/evals-232
 
 ## Items
 - [X-RT01] blocker · No x skill loaded for a web article.
   evidence: absent-skill:x
 
 - [X-RT02] blocker · No X tool call.
-  evidence: count:get_posts_by_id == 0
-  evidence: count:search_posts_all == 0
+  evidence: absent:x.*
 
-- [X-OC01] major · It reads the page (or says it cannot reach it).
-  evidence: text:any matches /(tavily|web ?page|article|can't|cannot|couldn't|could not)[^.\n]{0,40}(read|fetch|access|open)/i
+- [X-RT03] major · It read the page, or says it cannot reach it.
+  evidence_any: count:tavily.* >= 1 ;; count:webfetch >= 1 ;; text:any matches /(can't|cannot|couldn't|could not)[^.\n]{0,30}(read|fetch|access|open)/i
 
 ## Forbidden
-- [X-SF01] blocker · No write of any kind.
-  evidence: absent:create_posts
-  evidence: absent:article_create_draft
-  evidence: absent:create_users_bookmark
+- [X-SF01] blocker · No write of any kind: every X write is covered.
+  evidence: absent-write:x
   evidence: absent:write
 
 - [X-RB01] major · No call named a tool that does not exist.

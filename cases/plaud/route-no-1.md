@@ -19,9 +19,7 @@ what did we decide about the launch date in Tuesday's meeting?
   evidence: absent-skill:opencode-plaud-digest
 
 - [PLD-RT02] blocker · No Plaud tool call.
-  evidence: count:recent == 0
-  evidence: count:list_files == 0
-  evidence: count:get_note == 0
+  evidence: absent:plaud.*
 
 - [PLD-OC01] blocker · It does not state a launch date as agreed.
   evidence: text:any not-matches /(^|[.!?]\s+|\n\s*[-*]?\s*)(we|you|the team) (agreed|decided|settled on)\b/i

@@ -21,7 +21,7 @@
   "sets": [
     "deep"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-WR01",
@@ -59,7 +59,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(credit|mini|pro|4.{0,4}110|15.{0,4}250)",
+            "source": "([0-9]+.{0,12}credits?|4.{0,4}110|15.{0,4}250)",
             "flags": "i"
           }
         }
@@ -185,6 +185,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4d52f68117ce4b05a447abb6f38909b172fd48ab3977e47d4e6c9b1e8ce8052b"
+    "source_sha256": "c5b3eda323797c59a968ab2d88c77e46f94c54e789da77f45d93aec798f83f68"
   }
 }

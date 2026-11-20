@@ -15,9 +15,7 @@ transcribe ~/Downloads/standup.wav for me
 
 ## Items
 - [PLD-RT01] blocker · No Plaud call and no upload.
-  evidence: count:recent == 0
-  evidence: count:list_files == 0
-  evidence: count:export == 0
+  evidence: absent:plaud.*
 
 - [PLD-OC01] major · It says the file is transcribed on this machine, or that Plaud takes no audio.
   evidence: text:any matches /(on this machine|on-?device|local(ly)?|plaud[^.\n]{0,40}(no|can't|cannot|doesn't take) audio)/i

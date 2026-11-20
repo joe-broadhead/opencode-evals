@@ -10,7 +10,7 @@
 - Expect: fail
 
 ## Prompt
-what are people saying about <X test topic: a harmless public topic> lately?
+what are people saying about sourdough baking lately?
 
 ## Items
 - [X-TR01] blocker · No X skill loads when X is not named.

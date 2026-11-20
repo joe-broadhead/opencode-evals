@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 deep: cross-plugin",
   "decision": "Research first, then the page write is attempted and declined, and the answer says the page was not updated.",
   "data_check": "the Notion sandbox page exists",
-  "prompt": "find the current state of <open-source feature-flag projects> and put the key points on my Notion sandbox page {{target:notion.sandbox_page}}.",
+  "prompt": "find the current state of open-source feature-flag projects and put the key points on my Notion sandbox page {{target:notion.sandbox_page}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -21,7 +21,7 @@
   "sets": [
     "deep"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-OC01",
@@ -206,6 +206,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "315ff65062d800a8dbd6526c7039993a13a48ff47b1f7341225c888677f61fe0"
+    "source_sha256": "6a5e14da29f8314cec3b049e05b06f1275899b51c1db9cdfec247dfb30b76db4"
   }
 }

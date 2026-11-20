@@ -7,7 +7,7 @@
   "source": "review/evals/x/bookmark-asks-first.md",
   "decision": "a bookmark is private and reversible, so the reply says whose post it is and that only the user sees it, then makes one call. The runner declines it, and the agent says nothing changed.",
   "data_check": "the post is public, harmless and still exists at run time",
-  "prompt": "bookmark <X test post: a public post URL to bookmark>",
+  "prompt": "bookmark https://x.com/evals232fixturehandle/status/1000001",
   "controls": [
     {
       "kind": "no-skill",
@@ -206,6 +206,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6da0e551961c44afffa6a77195590d1c30977d5c30188393b5ab7b4861a6820b"
+    "source_sha256": "a2b46458aa27b5fd62c2547cde5fb54e66a8516aaca29b797cf17b2df5210e19"
   }
 }

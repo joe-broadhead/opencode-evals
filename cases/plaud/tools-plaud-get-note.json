@@ -65,7 +65,7 @@
     {
       "id": "PLD-OC02",
       "severity": "major",
-      "ask": "The answer gives a summary and action items.",
+      "ask": "The answer gives the note's action items as a list.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -75,8 +75,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(action item|to-?do|next step|follow[- ]up)",
-            "flags": "i"
+            "source": "(^|\\n)\\s*[-*]\\s+\\S",
+            "flags": ""
           }
         }
       ],
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "437f83e8e82bc06ac77774e14f983d1d32234f1a5d0d5249e9e911e727d8330a"
+    "source_sha256": "348e6ad0d7c4163d23b8877ba2915d4563a0abe9558021dd8f08a1dfa9ac8930"
   }
 }

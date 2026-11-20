@@ -18,6 +18,10 @@
   "seed": "plugins=plaud",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "kind",
+    "date_from"
+  ],
   "sets": [
     "deep"
   ],
@@ -53,7 +57,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "PLD-WR01",
@@ -76,10 +80,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "PLD-PR01",
+      "id": "PLD-CT01",
       "severity": "major",
       "ask": "The export is of the note for that recording.",
       "forbidden": false,
@@ -97,17 +101,19 @@
           }
         },
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "export",
           "n": 1,
           "arg": "args.recordingId",
-          "op": "present"
+          "aliases": [
+            "@plaud.recording"
+          ]
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "PLD-OC02",
@@ -130,7 +136,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "PLD-TR01",
@@ -147,7 +153,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "PLD-SF01",
@@ -170,7 +176,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "PLD-SF02",
@@ -188,7 +194,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
     },
     {
       "id": "PLD-SF03",
@@ -204,7 +210,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 42
+      "line": 43
     },
     {
       "id": "PLD-SF04",
@@ -220,7 +226,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 45
+      "line": 46
     },
     {
       "id": "PLD-RB01",
@@ -236,12 +242,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 48
+      "line": 49
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "87a30ad836fcabf3ea73dd8d5ba42837b1a30d0af697b1cff7ebc451ec536807"
+    "source_sha256": "d91ea4b1e124fb67f256b8e1d8c373e41915a5cb04699f7541e1f9b46c3f26f4"
   }
 }

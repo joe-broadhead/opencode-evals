@@ -3,11 +3,12 @@
 - Skill under test: x-write
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
-- Decision tested: This change is one create_users_bookmark_folder call, asked and declined, and the answer says nothing changed.
-- Data check: the ids and handles in the prompt exist for the evals X account
+- Decision tested: This change is one create_users_bookmark_folder call with the value the user named, asked and declined, and the answer says nothing changed.
+- Data check: none: the id is invented, so the write is declined before it reaches X
 - Data: real
 - Budget: outer_calls <= 6, inner_calls <= 4, billed_calls <= 2, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=x
+- Checkable: name
 - Set: wide
 
 ## Prompt
@@ -18,11 +19,11 @@ create a bookmark folder called evals.
   evidence: count:create_users_bookmark_folder == 1
   evidence: declined:create_users_bookmark_folder
 
-- [X-PR01] major · The call passed id.
-  evidence: call:create_users_bookmark_folder#1 args.id present
+- [X-PR01] major · The call carries the value the user named.
+  evidence: call:create_users_bookmark_folder#1 args.name == "evals"
 
 - [X-OC01] major · The answer says the call was declined, and nothing changed.
-  evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not|declined|refused|needs? (your )?approval|blocked)[^.\n]{0,60}(sent|posted|created|added|removed|changed|updated|archived|started|scheduled|deleted|muted|pinned|followed|blocked|unblocked|read|shown|fetched|downloaded|uploaded|accepted|cancelled|canceled|renamed|drafted|published|live)/i
+  evidence: text:any matches /(\bnot\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused|needs? (your )?approval|blocked)[^.\n]{0,60}(sent|posted|created|added|removed|changed|updated|archived|started|scheduled|deleted|muted|pinned|followed|blocked|unblocked|read|shown|fetched|downloaded|uploaded|accepted|cancelled|canceled|renamed|drafted|published|live)/i
 
 - [X-TR01] minor · The x-write skill was loaded.
   evidence: skill:x-write

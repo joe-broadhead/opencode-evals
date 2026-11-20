@@ -11,17 +11,17 @@
 - Set: wide
 
 ## Prompt
-pull the meeting events since <the cursor the last sync returned>, oldest first, for Memory.
+pull the meeting events since the start of this year, oldest first, for Memory.
 
 ## Items
 - [WF-OC01] blocker · Exactly one events_list call.
   evidence: count:events_list == 1
 
-- [WF-PR01] major · The cursor the user gave was passed.
-  evidence: call:events_list#1 args.cursor present
+- [WF-PR01] major · The read starts at the start of this year.
+  evidence: call:events_list#1 args.since present
 
-- [WF-OC02] major · The answer reports the events in order, or says there are none.
-  evidence_any: text:any matches /(no (new )?events|nothing new|none)/i ;; text:any matches /(first|oldest)/i
+- [WF-OC02] major · The answer lists the events, or says there are none.
+  evidence_any: text:any matches /(no (new )?events|nothing new|none)/i ;; text:any matches /(^|\n)\s*[-*]\s+\S/
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

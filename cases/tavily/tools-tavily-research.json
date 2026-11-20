@@ -21,7 +21,7 @@
   "sets": [
     "wide"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-WR01",
@@ -49,22 +49,34 @@
     {
       "id": "TAV-OC01",
       "severity": "major",
-      "ask": "The answer asks for confirmation before the task runs.",
+      "ask": "The answer says the task did not run, and asks for a yes.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(confirm|shall I|should I|would you like|propose|agree|go ahead)",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(not run|wasn't run|was not run|not started|declined)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(confirm|shall I|should I|would you like|propose|go ahead)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 21
@@ -194,6 +206,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6342f42cd9afa57987eae2976cca8c66d02fce2e9facb73537685678389c2e94"
+    "source_sha256": "50de69eb918909e64ee2874742b92013cb8e15efff556e2b2a991e97de5335c2"
   }
 }

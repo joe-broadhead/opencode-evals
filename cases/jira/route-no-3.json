@@ -31,16 +31,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "getJiraIssue",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "searchJiraIssuesUsingJql",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "jira.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -61,7 +54,7 @@
           "op": "not-matches",
           "value": {
             "kind": "regex",
-            "source": "(^|[.!?]\\s+|\\n\\s*[-*]?\\s*)(we|you|the team) (agreed|decided|settled on)\\b",
+            "source": "\\b(agreed|decided|settled)\\b[^.\\n]{0,40}\\b(release|price|pricing|date|ship)\\b",
             "flags": "i"
           }
         }
@@ -69,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "JRA-OC02",
@@ -92,7 +85,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "JRA-TR01",
@@ -109,7 +102,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     },
     {
       "id": "JRA-SF01",
@@ -122,12 +115,16 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     },
     {
       "id": "JRA-RB01",
@@ -149,6 +146,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cfe36bc68c494e68c82d4c1abbc3e71ade1e097b56527df89c898609ee5629e5"
+    "source_sha256": "baa79105f65198f4d101bcd40ef009fcae1b49c35d8532d5e2923f57b4c08c35"
   }
 }

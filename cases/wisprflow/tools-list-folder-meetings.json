@@ -69,9 +69,9 @@
       "line": 21
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-CT01",
       "severity": "major",
-      "ask": "The answer names the folder and its meetings.",
+      "ask": "The meetings are cited by their share links.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -81,8 +81,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(folder|meeting)",
-            "flags": "i"
+            "source": "notes\\.wisprflow\\.ai",
+            "flags": ""
           }
         }
       ],
@@ -156,6 +156,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e7ad12f2654f8b01b4c087718efd1aab90fa7f91389a921f2d2bb578743626be"
+    "source_sha256": "f13180d6e8747c9eea7e94d846413415f7829e2ca3f5bf97996a5ff7d9c557a5"
   }
 }

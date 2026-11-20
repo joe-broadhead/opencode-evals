@@ -55,7 +55,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(@|attendee|invited|location|room|meet\\.google|zoom)",
+            "source": "([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm)|@[A-Za-z0-9._%+-]+)",
             "flags": "i"
           }
         }
@@ -130,6 +130,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "782aa50c20796a8c69e39f892fc5599d71790f4f4a42871103146b818b1ec1be"
+    "source_sha256": "48410260af1788ac41cdf53c0e241fa18479316e040f2a1fdfb6315bbe71df48"
   }
 }

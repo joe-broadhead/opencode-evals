@@ -5,8 +5,8 @@
   "skill": "x",
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
-  "decision": "This request is one get_usage_credits read, answered from its result, with no second page and no write.",
-  "data_check": "the ids and handles in the prompt exist for the evals X account",
+  "decision": "This request is one get_usage_credits read, with the id or topic the user named, and no write.",
+  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
   "prompt": "how much X credit do I have left?",
   "controls": [],
   "budgets": {
@@ -44,29 +44,6 @@
       "line": 17
     },
     {
-      "id": "X-OC02",
-      "severity": "major",
-      "ask": "The answer carries what the read returned.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(\\$|credit|balance)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
       "id": "X-TR01",
       "severity": "minor",
       "ask": "The x skill was loaded.",
@@ -81,34 +58,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 20
     },
     {
       "id": "X-SF01",
       "severity": "blocker",
-      "ask": "No write of any kind.",
+      "ask": "No write of any kind: every X write is covered.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "create_posts",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_create_draft",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "create_users_bookmark",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "follow_list",
-          "n": null
+          "kind": "absent-write",
+          "ns": "x"
         },
         {
           "kind": "absent",
@@ -119,7 +80,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 24
     },
     {
       "id": "X-EF01",
@@ -138,7 +99,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 28
     },
     {
       "id": "X-RB01",
@@ -154,18 +115,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 31
     }
   ],
   "oracle": [],
-  "notes": [
-    {
-      "id": null,
-      "text": "X's own tool descriptions are long; the skill's names and fields are exact, so a search() for this tool is a wasted step, not a failure.",
-      "line": 41
-    }
-  ],
+  "notes": [],
   "hashes": {
-    "source_sha256": "9fff401488c56faf5c79b3d45a40e5c3ffe3eb556c5109779aef84c2392ab72f"
+    "source_sha256": "ddf1b316d8646058601ee5b39f426530d504cb0751f9316efb4482863b76b3ba"
   }
 }

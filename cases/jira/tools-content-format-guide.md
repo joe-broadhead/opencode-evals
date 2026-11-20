@@ -28,6 +28,7 @@ what formatting does Jira accept in a comment description? I want to write one t
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+  evidence: absent-write:jira
 
 - [JRA-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

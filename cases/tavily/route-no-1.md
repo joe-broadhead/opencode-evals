@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 should-not-call
 - Decision tested: A local file is not a web question: no Tavily call, and no invented content.
 - Data check: none
-- Data: real
+- Data: own
 - Budget: outer_calls <= 4, inner_calls <= 3, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=tavily
 - Set: route
@@ -19,9 +19,7 @@ summarise ~/notes/q3-plan.md for me
   evidence: absent-skill:tavily-research
 
 - [TAV-RT02] blocker · No Tavily tool call at all.
-  evidence: count:tavily_search == 0
-  evidence: count:tavily_extract == 0
-  evidence: count:tavily_research == 0
+  evidence: absent:tavily.*
 
 - [TAV-OC01] major · It says it cannot read the local file, or asks for its contents.
   evidence_any: text:any matches /(can't|cannot|couldn't|could not|not able to|don't have|do not have)[^.\n]{0,30}(access|read|open)/i ;; text:any matches /(paste|share|attach|give me) (the|its|it|the file|the contents)/i

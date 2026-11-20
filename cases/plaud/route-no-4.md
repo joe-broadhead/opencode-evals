@@ -15,11 +15,10 @@ summarise my Granola meeting from yesterday
 
 ## Items
 - [PLD-RT01] blocker · No Plaud tool call.
-  evidence: count:recent == 0
-  evidence: count:list_files == 0
+  evidence: absent:plaud.*
 
-- [PLD-OC01] major · It uses Granola, or says Granola holds it.
-  evidence: text:any matches /granola/i
+- [PLD-RT03] major · It read Granola, or says it cannot reach the notes.
+  evidence_any: count:granola.* >= 1 ;; text:any matches /(can't|cannot|couldn't|could not|don't have|do not have)[^.\n]{0,30}(access|reach|read)[^.\n]{0,20}(notes|meeting)/i
 
 - [PLD-RT02] minor · No Plaud skill loaded when Granola is named.
   evidence: absent-skill:opencode-plaud

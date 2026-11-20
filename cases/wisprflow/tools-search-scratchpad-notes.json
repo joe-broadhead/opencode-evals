@@ -65,7 +65,7 @@
     {
       "id": "WF-OC02",
       "severity": "major",
-      "ask": "The answer names the note it found.",
+      "ask": "The answer names the note it found, as a result.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -75,8 +75,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(hiring|note)",
-            "flags": "i"
+            "source": "(^|\\n)\\s*[-*]\\s+\\S",
+            "flags": ""
           }
         }
       ],
@@ -150,6 +150,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "dc9a60524dd0ab09516e7bee65f61f59bbbf50eba7427ec18b4c8a094f3da80d"
+    "source_sha256": "e78865ec754cd7c0ca797ff35ffddf7a31ca5667f030fb9563c63c783db2d373"
   }
 }

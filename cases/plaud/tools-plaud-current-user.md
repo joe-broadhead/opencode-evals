@@ -17,8 +17,8 @@ which Plaud account am I signed into here?
 - [PLD-OC01] blocker · Exactly one get_current_user call.
   evidence: count:get_current_user == 1
 
-- [PLD-OC02] major · The answer names the account.
-  evidence: text:any matches /(account|signed in|@|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+)/i
+- [PLD-OC02] major · The answer names the account, by its address.
+  evidence: text:any matches /@[A-Za-z0-9.-]+/
 
 - [PLD-TR01] minor · The opencode-plaud skill was loaded.
   evidence: skill:opencode-plaud

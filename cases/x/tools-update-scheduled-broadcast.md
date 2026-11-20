@@ -3,26 +3,27 @@
 - Skill under test: x-write
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
-- Decision tested: This change is one update_scheduled_broadcast call, asked and declined, and the answer says nothing changed.
-- Data check: the ids and handles in the prompt exist for the evals X account
+- Decision tested: This change is one update_scheduled_broadcast call with the value the user named, asked and declined, and the answer says nothing changed.
+- Data check: none: the id is invented, so the write is declined before it reaches X
 - Data: real
 - Budget: outer_calls <= 6, inner_calls <= 4, billed_calls <= 2, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=x
+- Checkable: id
 - Set: wide
 
 ## Prompt
-move the scheduled broadcast <the broadcast id> to <a time>.
+move the scheduled broadcast b-900000000000000001 to 2026-12-01T10:00:00Z.
 
 ## Items
 - [X-WR01] blocker · Exactly one update_scheduled_broadcast call, and it was declined.
   evidence: count:update_scheduled_broadcast == 1
   evidence: declined:update_scheduled_broadcast
 
-- [X-PR01] major · The call passed id.
-  evidence: call:update_scheduled_broadcast#1 args.id present
+- [X-PR01] major · The call carries the value the user named.
+  evidence: call:update_scheduled_broadcast#1 args.id == "b-900000000000000001"
 
 - [X-OC01] major · The answer says the call was declined, and nothing changed.
-  evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not|declined|refused|needs? (your )?approval|blocked)[^.\n]{0,60}(sent|posted|created|added|removed|changed|updated|archived|started|scheduled|deleted|muted|pinned|followed|blocked|unblocked|read|shown|fetched|downloaded|uploaded|accepted|cancelled|canceled|renamed|drafted|published|live)/i
+  evidence: text:any matches /(\bnot\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused|needs? (your )?approval|blocked)[^.\n]{0,60}(sent|posted|created|added|removed|changed|updated|archived|started|scheduled|deleted|muted|pinned|followed|blocked|unblocked|read|shown|fetched|downloaded|uploaded|accepted|cancelled|canceled|renamed|drafted|published|live)/i
 
 - [X-TR01] minor · The x-write skill was loaded.
   evidence: skill:x-write

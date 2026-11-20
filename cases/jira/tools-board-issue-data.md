@@ -3,7 +3,7 @@
 - Skill under test: jira
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool (fake mode)
-- Decision tested: A board count comes from getJiraBoardIssueData, and it matches the fixture's three.
+- Decision tested: A board count comes from getJiraBoardIssueData, and it matches the fixture's two.
 - Data check: the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-how many items are in progress on the Quill Notes board right now?
+how many items on the Quill Notes board have the status In Progress right now? name them.
 
 ## Items
 - [JRA-OC01] blocker · The read ran once, with getJiraBoardIssueData.
@@ -19,6 +19,9 @@ how many items are in progress on the Quill Notes board right now?
 
 - [JRA-OC02] blocker · The answer states what the fixture holds.
   evidence: text:any contains @fixture.jira.in_progress_count
+
+- [JRA-OC03] blocker · It names both items that are In Progress.
+  evidence: text:any contains @fixture.jira.in_progress_keys
 
 - [JRA-TR01] minor · The jira skill was loaded.
   evidence: skill:jira
@@ -28,6 +31,7 @@ how many items are in progress on the Quill Notes board right now?
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+  evidence: absent-write:jira
 
 - [JRA-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

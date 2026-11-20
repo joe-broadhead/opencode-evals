@@ -7,7 +7,7 @@
   "source": "review/evals/x/topic-without-x-named-routes-to-web.md",
   "decision": "\"what are people saying about X\" with no X in it is a web question, so it goes to Tavily or asks; it does not become an X search, and a web answer is never dressed up as X posts",
   "data_check": "none; the topic is a public topic, not a name",
-  "prompt": "what are people saying about <X test topic: a harmless public topic> lately?",
+  "prompt": "what are people saying about sourdough baking lately?",
   "controls": [
     {
       "kind": "with-skill",
@@ -136,6 +136,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "9423cf23dfade145b19a2b462c5c830431d6e353421772544379cb2a9a1e05b7"
+    "source_sha256": "bf2c81ef394ccbfa93c03262d33651ed65f2d9b0ed522469b83647c8e0fabca3"
   }
 }

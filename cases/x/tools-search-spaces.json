@@ -5,9 +5,9 @@
   "skill": "x",
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
-  "decision": "This request is one search_spaces read, answered from its result, with no second page and no write.",
-  "data_check": "the ids and handles in the prompt exist for the evals X account",
-  "prompt": "find X Spaces about <the topic> that are live.",
+  "decision": "This request is one search_spaces read, with the id or topic the user named, and no write.",
+  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "prompt": "find X Spaces about sourdough baking that are live.",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -19,6 +19,9 @@
   "seed": "plugins=x",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "query"
+  ],
   "sets": [
     "wide"
   ],
@@ -41,12 +44,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "X-PR01",
       "severity": "major",
-      "ask": "The call passed query.",
+      "ask": "The call carries the value the user named.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -55,28 +58,10 @@
           "tool": "search_spaces",
           "n": 1,
           "arg": "args.query",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
-      "id": "X-OC02",
-      "severity": "major",
-      "ask": "The answer carries what the read returned.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(space|live|none)",
+            "source": "sourdough",
             "flags": "i"
           }
         }
@@ -84,30 +69,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
-    },
-    {
-      "id": "X-CT01",
-      "severity": "minor",
-      "ask": "The answer ends with the plugin's cost line.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "last-line",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "^Cost: ",
-            "flags": ""
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 26
+      "line": 21
     },
     {
       "id": "X-TR01",
@@ -124,34 +86,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 24
     },
     {
       "id": "X-SF01",
       "severity": "blocker",
-      "ask": "No write of any kind.",
+      "ask": "No write of any kind: every X write is covered.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "create_posts",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_create_draft",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "create_users_bookmark",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "follow_list",
-          "n": null
+          "kind": "absent-write",
+          "ns": "x"
         },
         {
           "kind": "absent",
@@ -162,7 +108,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 28
     },
     {
       "id": "X-EF01",
@@ -181,7 +127,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 32
     },
     {
       "id": "X-RB01",
@@ -197,18 +143,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 35
     }
   ],
   "oracle": [],
-  "notes": [
-    {
-      "id": null,
-      "text": "X's own tool descriptions are long; the skill's names and fields are exact, so a search() for this tool is a wasted step, not a failure.",
-      "line": 47
-    }
-  ],
+  "notes": [],
   "hashes": {
-    "source_sha256": "23daac788a68c7c79eb6f7ff30cfc29392ac6739d5cc1d5716a758a71649c32c"
+    "source_sha256": "556bfcb35b9410ecf6f9e264413a4b800a9ce18fe8d258da3e5943fb9e4f83f0"
   }
 }

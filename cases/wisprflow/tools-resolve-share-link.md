@@ -8,20 +8,21 @@
 - Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
+- Checkable: url
 - Set: wide
 
 ## Prompt
-summarise this shared note: <a notes.wisprflow.ai share link for the round>
+summarise this shared note: https://notes.wisprflow.ai/shared/evals232fixture
 
 ## Items
 - [WF-OC01] blocker · Exactly one resolve_share_link call.
   evidence: count:resolve_share_link == 1
 
 - [WF-PR01] major · The call carried the URL.
-  evidence: call:resolve_share_link#1 args.url present
+  evidence: call:resolve_share_link#1 args.url == "https://notes.wisprflow.ai/shared/evals232fixture"
 
-- [WF-OC02] major · The answer summarises the note.
-  evidence: text:any matches /(summary|summarised|note)/i
+- [WF-OC02] major · The answer says whose note it is and summarises it.
+  evidence: text:any matches /(owner|belongs to|shared by)/i
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

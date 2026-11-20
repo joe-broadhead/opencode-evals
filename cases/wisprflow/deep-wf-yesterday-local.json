@@ -18,6 +18,9 @@
   "seed": "plugins=wisprflow utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "since"
+  ],
   "sets": [
     "deep"
   ],
@@ -48,7 +51,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "WF-DT02",
@@ -73,53 +76,77 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "WF-OC01",
       "severity": "major",
-      "ask": "The answer gives the decisions and shows local times.",
+      "ask": "The answer gives the call's decisions, or says there was no meeting in that window.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(no meeting|nothing (was )?recorded|no recording|weren't any|were not any)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "WF-CT01",
       "severity": "major",
-      "ask": "It cites the meeting by title, date and share link.",
+      "ask": "It cites the meeting by its share link, or says there was none.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "notes\\.wisprflow\\.ai",
-            "flags": ""
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "notes\\.wisprflow\\.ai",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(no meeting|no recording)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "WF-TR01",
@@ -136,7 +163,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "WF-SF01",
@@ -164,7 +191,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     },
     {
       "id": "WF-RB01",
@@ -180,12 +207,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "367e1d8da1f31e80830bdcf01ac62eed7703501475b0be00f9c1cdd3c2f1a465"
+    "source_sha256": "40dfcd7d6381e03f0657f0fcd70246d44288b34e004e034f6d4683fe0245211a"
   }
 }

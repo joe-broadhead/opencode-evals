@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 4, billed_calls <= 2, tokens <= 300000, wall_ms <= 240000
 
 ## Prompt
-bookmark <X test post: a public post URL to bookmark>
+bookmark https://x.com/evals232fixturehandle/status/1000001
 
 ## Items
 - [X-TR01] blocker · The change skill loads.

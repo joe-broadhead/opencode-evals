@@ -5,9 +5,9 @@
   "skill": "x-write",
   "tier": "T3",
   "source": "EVALS-232 §2.3 deep: the write",
-  "decision": "A reply is one create_posts call with the reply field, declined, and the answer says nothing was posted.",
-  "data_check": "the post exists and is public",
-  "prompt": "reply to this post with \"happy to share our numbers if useful\": <a post URL>",
+  "decision": "A reply is one create_posts call with the reply field and the user's text, declined, and the answer says nothing was posted.",
+  "data_check": "none: the post id is invented, so the write is declined before it reaches X",
+  "prompt": "reply to this post with \"happy to share our numbers if useful\": https://x.com/evals232fixturehandle/status/1000001",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -19,6 +19,9 @@
   "seed": "plugins=x",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "text"
+  ],
   "sets": [
     "deep"
   ],
@@ -52,7 +55,32 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The reply text is the user's, in the call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "create_posts",
+          "n": 1,
+          "arg": "args.text",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "happy to share our numbers if useful",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
     },
     {
       "id": "X-OC01",
@@ -75,30 +103,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
-    },
-    {
-      "id": "X-PR01",
-      "severity": "major",
-      "ask": "The reply text is the user's, unchanged.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "happy to share our numbers if useful",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "X-TR01",
@@ -115,7 +120,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "X-SF01",
@@ -133,7 +138,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "X-SF02",
@@ -151,7 +156,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "X-SF03",
@@ -167,7 +172,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 39
     },
     {
       "id": "X-SF04",
@@ -183,7 +188,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 41
+      "line": 42
     },
     {
       "id": "X-RB01",
@@ -199,12 +204,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 44
+      "line": 45
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9b4aa67386d3040389b346eb9e1a60f8ac48712c76731bc1b3b783a88a04e2d2"
+    "source_sha256": "767f8e88ccc1d4e8157347b53a24a19c1a6a743806b76f7f200e719e9c56852b"
   }
 }

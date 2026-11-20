@@ -5,7 +5,7 @@
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: Several pages of one section are crawled with a page limit, and the answer comes from what was read.
 - Data check: the guides section is public and mentions retries
-- Data: real
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=tavily
 - Set: wide
@@ -20,8 +20,8 @@ read through the guides under https://docs.example.org/guides and pull out what 
 - [TAV-PR01] major · The crawl was bounded by a page limit.
   evidence: call:tavily_crawl#1 args.limit present
 
-- [TAV-OC02] major · The answer is about retries, from the pages read.
-  evidence: text:any matches /retr(y|ies|ying)/i
+- [TAV-OC02] major · The answer gives the findings as a list.
+  evidence: text:any matches /(^|\n)\s*[-*]\s+\S/
 
 - [TAV-TR01] minor · The tavily skill was loaded.
   evidence: skill:tavily

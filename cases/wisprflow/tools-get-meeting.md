@@ -20,8 +20,8 @@ summarise the Wispr Flow meeting {{target:wisprflow.meeting}} for me.
 - [WF-PR01] major · The meeting id the user gave was passed.
   evidence: call:get_meeting#1 args.meeting_id present
 
-- [WF-OC02] major · The answer gives a summary and labels it as Wispr Flow's.
-  evidence: text:any matches /(summary|summarised|Wispr Flow)/i
+- [WF-CT01] major · It cites the meeting by its share link.
+  evidence: text:any matches /notes\.wisprflow\.ai/
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

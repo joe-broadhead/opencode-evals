@@ -66,29 +66,6 @@
       "line": 20
     },
     {
-      "id": "JRA-PR01",
-      "severity": "major",
-      "ask": "The reply names the operation (close) before the call.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(close|closing)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 24
-    },
-    {
       "id": "JRA-PR02",
       "severity": "major",
       "ask": "It says where the incomplete work goes.",
@@ -109,7 +86,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 24
     },
     {
       "id": "JRA-OC02",
@@ -132,7 +109,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 27
     },
     {
       "id": "JRA-TR01",
@@ -149,7 +126,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 30
     },
     {
       "id": "JRA-SF01",
@@ -172,7 +149,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 34
     },
     {
       "id": "JRA-SF02",
@@ -188,7 +165,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 41
+      "line": 38
     },
     {
       "id": "JRA-SF03",
@@ -204,7 +181,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 44
+      "line": 41
     },
     {
       "id": "JRA-RB01",
@@ -220,12 +197,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 47
+      "line": 44
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e6702a4b2c79661b0adf4ef4511b79b90d601bc8f56974ec3ce18e2013c6dbb5"
+    "source_sha256": "c78f660d39a96178036c2f33c33ab88eb3d6197946dba3cfa50292a6a7ff9e5a"
   }
 }

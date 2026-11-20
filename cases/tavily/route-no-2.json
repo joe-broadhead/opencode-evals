@@ -21,7 +21,7 @@
   "sets": [
     "route"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-RT01",
@@ -48,16 +48,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "tavily_search",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "tavily_extract",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "tavily.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -98,7 +91,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "TAV-SF01",
@@ -126,7 +119,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "TAV-RB01",
@@ -142,12 +135,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f0c39e4fe3d500fdb7f9e52b08fe5a3128cd79fc3e5aac55947a756591fbde29"
+    "source_sha256": "268e3bc878dee86c8e367ac862a59490ba08e2e8d1032de544110d75ba9429a8"
   }
 }

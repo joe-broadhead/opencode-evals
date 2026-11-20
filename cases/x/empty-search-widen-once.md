@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, billed_calls <= 3, tokens <= 450000, wall_ms <= 300000
 
 ## Prompt
-any posts on X about <X test quiet topic: a topic with almost no posts in the last two days> in the last two days?
+any posts on X about evals232quiettopic in the last two days?
 
 ## Items
 - [X-OC01] blocker · At least one search, at most two, each capped at ten.

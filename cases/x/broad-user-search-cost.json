@@ -7,7 +7,7 @@
   "source": "review/evals/x/broad-user-search-cost.md",
   "decision": "a broad account search reads one capped page, calls the result a sample, and the answer ends with the actual cost, never an earlier estimate",
   "data_check": "the broad term matches many public accounts",
-  "prompt": "who on X is talking about <X test broad topic: a broad term for an account search>? pull as many accounts as you can.",
+  "prompt": "who on X is talking about technical writers? pull as many accounts as you can.",
   "controls": [
     {
       "kind": "no-skill",
@@ -269,6 +269,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "99893ec6a283dacb2cb1e3ccea1973cf17dc57ecb0fc7faba1872298b0cda06b"
+    "source_sha256": "8c1a964cebc4eb2b716e6d3f62f5b232427446675e8f145fcfb334d37e13df41"
   }
 }

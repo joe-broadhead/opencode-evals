@@ -5,9 +5,9 @@
   "skill": "x-write",
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
-  "decision": "This change is one cancel_scheduled_call call, asked and declined, and the answer says nothing changed.",
-  "data_check": "the ids and handles in the prompt exist for the evals X account",
-  "prompt": "cancel the scheduled call <the call id>.",
+  "decision": "This change is one cancel_scheduled_call call with the value the user named, asked and declined, and the answer says nothing changed.",
+  "data_check": "none: the id is invented, so the write is declined before it reaches X",
+  "prompt": "cancel the scheduled call c-900000000000000005.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -19,6 +19,9 @@
   "seed": "plugins=x",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "id"
+  ],
   "sets": [
     "wide"
   ],
@@ -45,12 +48,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "X-PR01",
       "severity": "major",
-      "ask": "The call passed id.",
+      "ask": "The call carries the value the user named.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -59,13 +62,17 @@
           "tool": "cancel_scheduled_call",
           "n": 1,
           "arg": "args.id",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "c-900000000000000005"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "X-OC01",
@@ -80,7 +87,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(not|wasn't|was not|couldn't|could not|didn't|did not|declined|refused|needs? (your )?approval|blocked)[^.\\n]{0,60}(sent|posted|created|added|removed|changed|updated|archived|started|scheduled|deleted|muted|pinned|followed|blocked|unblocked|read|shown|fetched|downloaded|uploaded|accepted|cancelled|canceled|renamed|drafted|published|live)",
+            "source": "(\\bnot\\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused|needs? (your )?approval|blocked)[^.\\n]{0,60}(sent|posted|created|added|removed|changed|updated|archived|started|scheduled|deleted|muted|pinned|followed|blocked|unblocked|read|shown|fetched|downloaded|uploaded|accepted|cancelled|canceled|renamed|drafted|published|live)",
             "flags": "i"
           }
         }
@@ -88,7 +95,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "X-TR01",
@@ -105,7 +112,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "X-SF01",
@@ -123,7 +130,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "X-SF02",
@@ -151,7 +158,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     },
     {
       "id": "X-SF03",
@@ -167,7 +174,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
     },
     {
       "id": "X-SF04",
@@ -183,7 +190,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 42
+      "line": 43
     },
     {
       "id": "X-RB01",
@@ -199,12 +206,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 45
+      "line": 46
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1c7e40c92d1358b13985b8e7176f83555b50dba16d5564728c6684cf06b247d5"
+    "source_sha256": "aeb13569dd655eec8f9a8c1c9ca75c4bc7b3e4116ce78c9e69bd17c2061f4d63"
   }
 }

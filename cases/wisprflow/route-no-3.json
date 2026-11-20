@@ -31,16 +31,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "search_meetings",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "search_scratchpad_notes",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "wisprflow.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -69,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "WF-OC02",
@@ -84,7 +77,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(scratchpad|meeting|note)",
+            "source": "(scratchpad|a meeting|meeting notes)",
             "flags": "i"
           }
         }
@@ -92,7 +85,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "WF-RT02",
@@ -109,7 +102,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     },
     {
       "id": "WF-SF01",
@@ -137,7 +130,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     },
     {
       "id": "WF-RB01",
@@ -153,12 +146,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2e26e14489a523e6202d35bb2a6ac611a26f0905fb7f5267f09ed3bafae394f9"
+    "source_sha256": "1a4ac7f50f63dcb926aca9f1c562ca55545ddd8caa2773a04e9471bf27f35579"
   }
 }

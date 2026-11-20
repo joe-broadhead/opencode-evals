@@ -8,6 +8,7 @@
 - Data: real
 - Budget: outer_calls <= 10, inner_calls <= 7, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=plaud
+- Checkable: kind, date_from
 - Set: deep
 
 ## Prompt
@@ -21,9 +22,9 @@ find what I recorded on 4 November and save its summary as a markdown file.
   evidence: count:export == 1
   evidence: declined:export
 
-- [PLD-PR01] major · The export is of the note for that recording.
+- [PLD-CT01] major · The export is of the note for that recording.
   evidence: call:export#1 args.kind == note
-  evidence: call:export#1 args.recordingId present
+  evidence: target:export#1 args.recordingId in @plaud.recording
 
 - [PLD-OC02] major · The answer says no file was written.
   evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(saved|exported|written)/i

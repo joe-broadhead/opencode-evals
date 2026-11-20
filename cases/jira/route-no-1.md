@@ -15,8 +15,7 @@ what's the status of ENG-123?
 
 ## Items
 - [JRA-RT01] blocker · No Jira tool call.
-  evidence: count:getJiraIssue == 0
-  evidence: count:searchJiraIssuesUsingJql == 0
+  evidence: absent:jira.*
 
 - [JRA-OC01] major · It reads Linear, or asks which tracker holds ENG-123.
   evidence: text:any matches /(linear|which tracker|which (system|tool))/i
@@ -27,6 +26,7 @@ what's the status of ENG-123?
 ## Forbidden
 - [JRA-SF01] blocker · Nothing was written.
   evidence: absent:write
+  evidence: absent-write:jira
 
 - [JRA-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

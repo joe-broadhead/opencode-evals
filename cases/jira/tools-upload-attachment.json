@@ -59,7 +59,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(not|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)",
+            "source": "(\\bnot\\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)",
             "flags": "i"
           }
         }
@@ -175,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e2b6fc2cabd1239942f00d7e3fc80cf2ac91920420f3f04d44fff54cec8fd5d0"
+    "source_sha256": "0913716f7d540aa7b473d989f60486007eb975386887c7e59762e37633662f37"
   }
 }

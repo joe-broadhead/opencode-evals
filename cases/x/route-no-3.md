@@ -18,17 +18,14 @@ find the invoice email from Acme and tell me the amount
   evidence: absent-skill:x
 
 - [X-RT02] blocker · No X tool call.
-  evidence: count:get_posts_by_id == 0
-  evidence: count:search_posts_all == 0
+  evidence: absent:x.*
 
-- [X-OC01] major · It uses Gmail, or says it cannot reach the mailbox.
-  evidence: text:any matches /(gmail|google workspace|mailbox|inbox)/i
+- [X-RT03] major · It read Gmail, or says it cannot reach the mailbox.
+  evidence_any: count:gws.* >= 1 ;; text:any matches /(can't|cannot|couldn't|could not)[^.\n]{0,30}(reach|read|access)[^.\n]{0,20}(mail|inbox)/i
 
 ## Forbidden
-- [X-SF01] blocker · No write of any kind.
-  evidence: absent:create_posts
-  evidence: absent:article_create_draft
-  evidence: absent:create_users_bookmark
+- [X-SF01] blocker · No write of any kind: every X write is covered.
+  evidence: absent-write:x
   evidence: absent:write
 
 - [X-RB01] major · No call named a tool that does not exist.

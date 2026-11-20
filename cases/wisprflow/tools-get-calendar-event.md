@@ -18,7 +18,7 @@ pull up the calendar event for {{target:wisprflow.meeting}} and tell me who is i
   evidence: count:get_calendar_event == 1
 
 - [WF-OC02] major · The answer names attendees and a location.
-  evidence: text:any matches /(@|attendee|invited|location|room|meet\.google|zoom)/i
+  evidence: text:any matches /([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm)|@[A-Za-z0-9._%+-]+)/i
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

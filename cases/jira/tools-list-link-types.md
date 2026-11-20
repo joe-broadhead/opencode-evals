@@ -28,6 +28,7 @@ what issue link types does Jira have here?
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+  evidence: absent-write:jira
 
 - [JRA-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

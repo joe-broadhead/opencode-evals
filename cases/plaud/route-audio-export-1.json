@@ -18,6 +18,9 @@
   "seed": "plugins=plaud",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "kind"
+  ],
   "sets": [
     "route"
   ],
@@ -39,7 +42,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "PLD-WR01",
@@ -62,7 +65,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "PLD-PR01",
@@ -86,7 +89,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "PLD-OC01",
@@ -109,7 +112,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "PLD-SF01",
@@ -137,7 +140,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "PLD-SF02",
@@ -153,7 +156,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 37
     },
     {
       "id": "PLD-RB01",
@@ -169,12 +172,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "35e04aa31e90f9dd691c273fc6d9ad462d7d9929b5f933303dd92c30e126a199"
+    "source_sha256": "24f48fd47f46fc02a7fe2fcab819c6ca4e6a3eff9f275a02b54049d43f2235ec"
   }
 }

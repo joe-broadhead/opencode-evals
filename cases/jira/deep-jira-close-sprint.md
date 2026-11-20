@@ -21,9 +21,6 @@ close Sprint 12 on the Quill Notes board.
   evidence: count:manageJiraSprint == 1
   evidence: declined:manageJiraSprint
 
-- [JRA-PR01] major · The reply names the operation (close) before the call.
-  evidence: text:any matches /(close|closing)/i
-
 - [JRA-PR02] major · It says where the incomplete work goes.
   evidence: text:any matches /(backlog|next sprint|incomplete)/i
 

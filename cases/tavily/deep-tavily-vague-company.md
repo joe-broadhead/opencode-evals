@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 deep: ambiguous
 - Decision tested: An unscoped "look into this company" is either one narrow search with its scope stated, or a question; it is never a Research task or a crawl.
 - Data check: the company has public pages
-- Data: real
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=tavily
 - Set: deep

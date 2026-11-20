@@ -18,6 +18,10 @@
   "seed": "plugins=plaud",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "date_from",
+    "date_to"
+  ],
   "sets": [
     "wide"
   ],
@@ -40,7 +44,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "PLD-PR01",
@@ -75,7 +79,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "PLD-OC02",
@@ -98,7 +102,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "PLD-TR01",
@@ -115,7 +119,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "PLD-SF01",
@@ -143,7 +147,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "PLD-RB01",
@@ -159,12 +163,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 37
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "02466871245d48e65203a1f816db9cde95d01a0cbce7d288849627fb248abd48"
+    "source_sha256": "daa90366bec3a224da3b7ad3b5241640f01ecce9e833297591cb43ef8e3cb168"
   }
 }

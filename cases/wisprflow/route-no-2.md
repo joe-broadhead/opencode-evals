@@ -15,11 +15,10 @@ what did my Plaud recording from this morning say about the launch?
 
 ## Items
 - [WF-RT01] blocker · No Wispr Flow tool call.
-  evidence: count:search_meetings == 0
-  evidence: count:get_meeting == 0
+  evidence: absent:wisprflow.*
 
-- [WF-OC01] major · It uses Plaud, or says Plaud holds the recording.
-  evidence: text:any matches /plaud/i
+- [WF-RT03] major · It read Plaud, or says it cannot reach the recording.
+  evidence_any: count:plaud.* >= 1 ;; text:any matches /(can't|cannot|couldn't|could not|don't have|do not have)[^.\n]{0,30}(access|reach|read)[^.\n]{0,20}(recording|audio)/i
 
 - [WF-RT02] minor · No Wispr Flow skill loaded when Plaud is named.
   evidence: absent-skill:wisprflow

@@ -18,13 +18,13 @@ pin messages 40 to 48 of the auth-timeline session so they stay in view while I 
   evidence: count:history.pin == 1
   evidence: absent-declined:history.pin
 
-- [H-PR01] major · The pin names that session and that range.
+- [H-PR01] major · The pin names that session and exactly messages 40 to 48.
   evidence: call:history.pin#1 args.sessionID present
-  evidence: call:history.pin#1 args.from present
-  evidence: call:history.pin#1 args.to present
+  evidence: call:history.pin#1 args.from == 40
+  evidence: call:history.pin#1 args.to == 48
 
 - [H-OC01] major · The answer says the range is pinned.
-  evidence: text:any matches /(pinned|in view|kept in (the )?context)/i
+  evidence: text:any matches /(pinned|kept in (the )?context)/i
 
 - [H-TR01] minor · The history-recall skill was loaded.
   evidence: skill:history-recall

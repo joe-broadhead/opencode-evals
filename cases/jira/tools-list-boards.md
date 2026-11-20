@@ -28,6 +28,7 @@ what boards are there for the QLN project?
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+  evidence: absent-write:jira
 
 - [JRA-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

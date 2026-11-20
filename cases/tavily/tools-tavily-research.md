@@ -5,7 +5,7 @@
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: A Research task is proposed with its scope and cost and waits for a yes; the trial declines it and nothing is spent on a report.
 - Data check: none: the call is declined before it runs
-- Data: real
+- Data: own
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 900000
 - Seed: plugins=tavily
 - Set: wide
@@ -18,8 +18,8 @@ write me a proper research report on the EU AI Act's duties for general-purpose 
   evidence: count:tavily_research == 1
   evidence: declined:tavily_research
 
-- [TAV-OC01] major · The answer asks for confirmation before the task runs.
-  evidence: text:any matches /(confirm|shall I|should I|would you like|propose|agree|go ahead)/i
+- [TAV-OC01] major · The answer says the task did not run, and asks for a yes.
+  evidence_any: text:any matches /(not run|wasn't run|was not run|not started|declined)/i ;; text:any matches /(confirm|shall I|should I|would you like|propose|go ahead)/i
 
 - [TAV-PR01] major · It names the cost or the time a Research task takes.
   evidence: text:any matches /(credit|minutes|4.{0,4}110|15.{0,4}250|cost)/i

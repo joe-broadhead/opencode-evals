@@ -151,7 +151,7 @@
     {
       "id": "H-SF01",
       "severity": "blocker",
-      "ask": "No file was written or edited: a lookup changes nothing.",
+      "ask": "Nothing was written: no file, no edit, and no pin.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -169,6 +169,10 @@
           "kind": "absent",
           "tool": "patch",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "history"
         }
       ],
       "evidence_any": [],
@@ -192,7 +196,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 41
+      "line": 42
     },
     {
       "id": "H-RB01",
@@ -208,12 +212,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 44
+      "line": 45
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "400019678c9ea017b4ec1f1c6fc29eab1d470409aeb2261a19e14d1ddab39407"
+    "source_sha256": "f0623e469b2a92e43d4fee7aca06a5049038380cd5a0f8462cf63b4f38237c08"
   }
 }

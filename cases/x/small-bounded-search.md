@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, billed_calls <= 2, tokens <= 400000, wall_ms <= 300000
 
 ## Prompt
-what are people saying about <X test topic: a harmless public topic> on X this week? keep it small.
+what are people saying about sourdough baking on X this week? keep it small.
 
 ## Items
 - [X-OC01] blocker · Exactly one post search, capped at ten results.

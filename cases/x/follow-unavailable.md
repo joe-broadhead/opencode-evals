@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 5, inner_calls <= 3, billed_calls <= 1, tokens <= 300000, wall_ms <= 240000
 
 ## Prompt
-follow <X test handle: a public, harmless account> for me
+follow @evals232fixturehandle for me
 
 ## Items
 - [X-TR01] blocker · The change skill loads for a request to follow someone.

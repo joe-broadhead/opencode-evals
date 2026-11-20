@@ -15,14 +15,13 @@ what did I dictate this morning? I want the exact words.
 
 ## Items
 - [WF-RT01] blocker · No Wispr Flow tool call for dictation history.
-  evidence: count:search_meetings == 0
-  evidence: count:search_scratchpad_notes == 0
+  evidence: absent:wisprflow.*
 
 - [WF-OC01] major · It says dictation history cannot be read here.
   evidence: text:any matches /(dictation|dictated)[^.\n]{0,60}(can't|cannot|not available|don't have|do not have|no access|isn't|not something)/i
 
 - [WF-OC02] major · It offers Scratchpad or a meeting instead.
-  evidence: text:any matches /(scratchpad|meeting|note)/i
+  evidence: text:any matches /(scratchpad|a meeting|meeting notes)/i
 
 - [WF-RT02] minor · No Wispr Flow skill loaded for dictation.
   evidence: absent-skill:wisprflow

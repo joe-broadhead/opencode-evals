@@ -21,8 +21,8 @@ list the meetings in my evals-232 folder.
 - [WF-PR01] major · The listing passed that folder's id.
   evidence: call:list_folder_meetings#1 args.folder_id present
 
-- [WF-OC02] major · The answer names the folder and its meetings.
-  evidence: text:any matches /(folder|meeting)/i
+- [WF-CT01] major · The meetings are cited by their share links.
+  evidence: text:any matches /notes\.wisprflow\.ai/
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

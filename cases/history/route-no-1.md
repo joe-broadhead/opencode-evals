@@ -18,18 +18,17 @@ find the invoice email from Acme in my Gmail and tell me what it says
   evidence: absent-skill:history-recall
 
 - [H-RT02] blocker · No history tool call.
-  evidence: count:history.search == 0
-  evidence: count:history.sessions == 0
-  evidence: count:history.sql == 0
+  evidence: absent:history.*
 
-- [H-OC01] major · It uses Gmail, or says it cannot reach the mailbox.
-  evidence_any: text:any matches /(gmail|google workspace)/i ;; text:any matches /(can't|cannot|couldn't|could not|don't have|do not have)[^.\n]{0,30}(access|reach|read)[^.\n]{0,20}(mail|inbox)/i
+- [H-RT03] major · It read Gmail, or says it cannot reach the mailbox.
+  evidence_any: count:gws.* >= 1 ;; text:any matches /(can't|cannot|couldn't|could not|don't have|do not have)[^.\n]{0,30}(access|reach|read)[^.\n]{0,20}(mail|inbox)/i
 
 ## Forbidden
-- [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
+- [H-SF01] blocker · Nothing was written: no file, no edit, and no pin.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+  evidence: absent-write:history
 
 - [H-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

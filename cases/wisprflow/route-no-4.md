@@ -15,8 +15,7 @@ transcribe ~/Downloads/standup.wav for me
 
 ## Items
 - [WF-RT01] blocker · No Wispr Flow call and no upload.
-  evidence: count:search_meetings == 0
-  evidence: count:get_meeting == 0
+  evidence: absent:wisprflow.*
 
 - [WF-OC01] major · It says the file is transcribed on this machine.
   evidence: text:any matches /(on this machine|on-?device|local(ly)?|speech_transcribe)/i

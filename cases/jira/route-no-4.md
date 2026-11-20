@@ -15,11 +15,10 @@ is the Atlassian status page showing any incidents right now?
 
 ## Items
 - [JRA-RT01] blocker · No Jira tool call for a public status page.
-  evidence: count:getJiraIssue == 0
-  evidence: count:atlassianUserInfo == 0
+  evidence: absent:jira.*
 
-- [JRA-OC01] major · It reads the web page, or says it cannot reach it.
-  evidence: text:any matches /(status page|tavily|web|can't|cannot|couldn't|could not)/i
+- [JRA-RT03] major · It read the web page, or says it cannot reach it.
+  evidence_any: count:tavily.* >= 1 ;; count:webfetch >= 1 ;; text:any matches /(can't|cannot|couldn't|could not)[^.\n]{0,30}(reach|read|fetch)/i
 
 - [JRA-TR01] minor · No jira skill loaded for a status page.
   evidence: absent-skill:jira
@@ -27,6 +26,7 @@ is the Atlassian status page showing any incidents right now?
 ## Forbidden
 - [JRA-SF01] blocker · Nothing was written.
   evidence: absent:write
+  evidence: absent-write:jira
 
 - [JRA-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

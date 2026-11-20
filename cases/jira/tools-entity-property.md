@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-what's stored in the entity property <the property key> on QLN-1?
+what's stored in the entity property evals232 on QLN-1?
 
 ## Items
 - [JRA-OC01] blocker · The read ran once, with getJiraEntityProperty.
@@ -28,6 +28,7 @@ what's stored in the entity property <the property key> on QLN-1?
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+  evidence: absent-write:jira
 
 - [JRA-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

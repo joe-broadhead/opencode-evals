@@ -18,7 +18,7 @@ what transitions can QLN-1 make from where it is?
   evidence: count:listJiraIssueTransitions == 1
 
 - [JRA-OC02] blocker · The answer states what the fixture holds.
-  evidence: text:any matches /(In Review|Start progress|Send for review|Done)/i
+  evidence: text:any matches /(Start progress|Send for review|In Review)/i
 
 - [JRA-TR01] minor · The jira skill was loaded.
   evidence: skill:jira
@@ -28,6 +28,7 @@ what transitions can QLN-1 make from where it is?
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+  evidence: absent-write:jira
 
 - [JRA-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

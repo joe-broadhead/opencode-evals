@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 overlap routing",
   "decision": "A notes.wisprflow.ai link goes to resolve_share_link, not to a page fetch.",
   "data_check": "a share link exists for the round",
-  "prompt": "what's in this? <a notes.wisprflow.ai share link for the round>",
+  "prompt": "what's in this? https://notes.wisprflow.ai/shared/evals232fixture",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -63,7 +63,7 @@
     {
       "id": "WF-OC01",
       "severity": "major",
-      "ask": "The answer says what the note is and whose it is.",
+      "ask": "The answer says whose note it is.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -73,7 +73,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(note|meeting|owner|shared)",
+            "source": "(owner|belongs to|shared by)",
             "flags": "i"
           }
         }
@@ -131,6 +131,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2f009e3eeff7eda6100b8149558dd12eb69162e5303f5995afd853782fac512e"
+    "source_sha256": "94e9cf0260db52418eceaf6afd6fc3faa901a303f375668113dd18683550c821"
   }
 }

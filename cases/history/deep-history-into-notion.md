@@ -35,10 +35,11 @@ find every decision we made about the catalog cache and add them to my Notion sa
   evidence: absent-write:slack
   evidence: absent-write:gws
 
-- [H-SF02] blocker · No file was written or edited: a lookup changes nothing.
+- [H-SF02] blocker · Nothing was written: no file, no edit, and no pin.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+  evidence: absent-write:history
 
 - [H-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

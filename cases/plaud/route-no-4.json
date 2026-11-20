@@ -31,16 +31,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "recent",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "list_files",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "plaud.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -49,27 +42,35 @@
       "line": 17
     },
     {
-      "id": "PLD-OC01",
+      "id": "PLD-RT03",
       "severity": "major",
-      "ask": "It uses Granola, or says Granola holds it.",
+      "ask": "It read Granola, or says it cannot reach the notes.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "granola",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "granola.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(can't|cannot|couldn't|could not|don't have|do not have)[^.\\n]{0,30}(access|reach|read)[^.\\n]{0,20}(notes|meeting)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "PLD-RT02",
@@ -86,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "PLD-SF01",
@@ -114,7 +115,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "PLD-RB01",
@@ -130,12 +131,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "58a511e420d09e069e30838bc8700f7517ac6241e4b91c384fc71f73304e671d"
+    "source_sha256": "b620e07d6d1d0f9ad44b1d94fc84d29b19dc5ba172f07670e787743a9f36656b"
   }
 }

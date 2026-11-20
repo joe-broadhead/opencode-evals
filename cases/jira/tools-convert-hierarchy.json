@@ -5,7 +5,7 @@
   "skill": "jira-write",
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool (fake mode)",
-  "decision": "A hierarchy change is one declined call, and the type and parent change is stated first.",
+  "decision": "A hierarchy change is one declined call, declined like every Jira write.",
   "data_check": "the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7",
   "prompt": "make QLN-2 a sub-task of QLN-1.",
   "controls": [],
@@ -59,7 +59,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(not|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)",
+            "source": "(\\bnot\\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)",
             "flags": "i"
           }
         }
@@ -175,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d629c3e43f5f22a74440a91596c1775ed46e01126b1579f9947f5c98252014db"
+    "source_sha256": "38fe9ae4d230ec8831fdc3f3a06f3fe703d0202dc4164b89bb01eb0d3862906a"
   }
 }

@@ -18,6 +18,9 @@
   "seed": "plugins=plaud",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "kind"
+  ],
   "sets": [
     "commit"
   ],
@@ -47,7 +50,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "PLD-PR01",
@@ -57,11 +60,13 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "export",
           "n": 1,
           "arg": "args.recordingId",
-          "op": "present"
+          "aliases": [
+            "@plaud.recording"
+          ]
         },
         {
           "kind": "call",
@@ -78,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "PLD-CT01",
@@ -96,7 +101,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "PLD-OC01",
@@ -119,7 +124,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "PLD-TR01",
@@ -136,7 +141,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "PLD-SF01",
@@ -154,7 +159,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 37
     },
     {
       "id": "PLD-SF02",
@@ -172,7 +177,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
     },
     {
       "id": "PLD-SF03",
@@ -188,7 +193,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 42
+      "line": 43
     },
     {
       "id": "PLD-RB01",
@@ -204,7 +209,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 45
+      "line": 46
     }
   ],
   "oracle": [],
@@ -212,10 +217,10 @@
     {
       "id": null,
       "text": "The export folder is ~/Plaud, so the case declares `Home files: Plaud` and the files record grades the note it wrote.",
-      "line": 49
+      "line": 50
     }
   ],
   "hashes": {
-    "source_sha256": "81c14c6e73c4694f6fa1d51da6d7a2226a57232eecae86349ff7d53139446eb4"
+    "source_sha256": "342e184a32f039d20bc122186ebf28fabfca434a6a5121bd3fcb558bd6b430ab"
   }
 }

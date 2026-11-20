@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 should-not-call
 - Decision tested: A meeting question belongs to the notes plugins: no web search, and no invented agreement.
 - Data check: none
-- Data: real
+- Data: own
 - Budget: outer_calls <= 4, inner_calls <= 3, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=tavily
 - Set: route
@@ -18,11 +18,10 @@ what did we agree about pricing in Tuesday's call?
   evidence: absent-skill:tavily
 
 - [TAV-RT02] blocker · No Tavily tool call.
-  evidence: count:tavily_search == 0
-  evidence: count:tavily_extract == 0
+  evidence: absent:tavily.*
 
 - [TAV-OC01] blocker · It does not state an agreement as fact.
-  evidence: text:any not-matches /(^|[.!?]\s+|\n\s*[-*]?\s*)(we|you|the team) (agreed|decided|settled on|landed on)\b/i
+  evidence: text:any not-matches /\b(agreed|decided|settled)\b[^.\n]{0,40}\b(release|price|pricing|date|ship)\b/i
 
 - [TAV-OC02] major · It says it has no access to the call or its notes.
   evidence_any: text:any matches /(no access|don't have|do not have|can't|cannot|couldn't|could not)[^.\n]{0,40}(call|meeting|notes|transcript)/i ;; text:any matches /(granola|wispr ?flow|plaud|meeting notes)/i

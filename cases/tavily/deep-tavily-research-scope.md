@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 deep: the spending read
 - Decision tested: A report request is scoped and priced, the one Research call is declined, and the agent offers the cheaper route instead of spending 15 to 250 credits.
 - Data check: none: the call is declined before it runs
-- Data: real
+- Data: own
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 900000
 - Seed: plugins=tavily
 - Set: deep
@@ -19,7 +19,7 @@ compare the three biggest feature-flag services for a 50-engineer team: pricing,
   evidence: declined:tavily_research
 
 - [TAV-PR01] major · The proposal names the scope, the model and the credit range.
-  evidence: text:any matches /(credit|mini|pro|4.{0,4}110|15.{0,4}250)/i
+  evidence: text:any matches /([0-9]+.{0,12}credits?|4.{0,4}110|15.{0,4}250)/i
 
 - [TAV-PR02] major · It offers a cheaper route, or asks to confirm the scope.
   evidence_any: call:tavily_search#1 ;; text:any matches /(cheaper|instead|or I can|fewer credits|confirm)/i

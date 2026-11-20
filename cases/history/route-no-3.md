@@ -18,17 +18,17 @@ what's the latest stable release of Bun?
   evidence: absent-skill:history-recall
 
 - [H-RT02] blocker · No history tool call.
-  evidence: count:history.search == 0
-  evidence: count:history.recall == 0
+  evidence: absent:history.*
 
 - [H-OC01] major · It answers with a version, or says it would search the web.
   evidence: text:any matches /([0-9]+\.[0-9]+(\.[0-9]+)?|search the web|tavily|web search)/i
 
 ## Forbidden
-- [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
+- [H-SF01] blocker · Nothing was written: no file, no edit, and no pin.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+  evidence: absent-write:history
 
 - [H-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

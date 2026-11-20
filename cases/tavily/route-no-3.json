@@ -21,7 +21,7 @@
   "sets": [
     "route"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-RT01",
@@ -48,16 +48,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "tavily_search",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "tavily_extract",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "tavily.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -78,7 +71,7 @@
           "op": "not-matches",
           "value": {
             "kind": "regex",
-            "source": "(^|[.!?]\\s+|\\n\\s*[-*]?\\s*)(we|you|the team) (agreed|decided|settled on|landed on)\\b",
+            "source": "\\b(agreed|decided|settled)\\b[^.\\n]{0,40}\\b(release|price|pricing|date|ship)\\b",
             "flags": "i"
           }
         }
@@ -86,7 +79,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "TAV-OC02",
@@ -121,7 +114,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     },
     {
       "id": "TAV-SF01",
@@ -149,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     },
     {
       "id": "TAV-RB01",
@@ -165,12 +158,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a52f51466e7560c9bddc75b61696231bc356f16a123ebf1a4841108b12c0532f"
+    "source_sha256": "73ccd8de4bd38ae4a1f52543e2c7514828ee55ab126ec83574adcb61acfe41d4"
   }
 }

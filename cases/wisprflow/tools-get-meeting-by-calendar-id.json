@@ -45,22 +45,34 @@
     {
       "id": "WF-OC02",
       "severity": "major",
-      "ask": "The answer says whether it was recorded.",
+      "ask": "The answer says whether it was recorded, citing the notes when it was.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(recorded|not recorded|recording)",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "notes\\.wisprflow\\.ai",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(was not|wasn't|not) recorded",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 20
@@ -130,6 +142,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ae3296c6db42f68389e951d89ba83e18958e5eff44f179e13c4c4f7b37684036"
+    "source_sha256": "d124385b989bae7aee81c1c2f39fb54d354e4b1378d3ea2ab0704ed7d76973a7"
   }
 }

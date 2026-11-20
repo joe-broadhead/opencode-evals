@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, billed_calls <= 2, tokens <= 400000, wall_ms <= 300000
 
 ## Prompt
-who on X is talking about <X test broad topic: a broad term for an account search>? pull as many accounts as you can.
+who on X is talking about technical writers? pull as many accounts as you can.
 
 ## Items
 - [X-OC01] blocker · One search only, and it is capped at ten results.

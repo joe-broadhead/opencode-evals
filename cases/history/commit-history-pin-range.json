@@ -49,7 +49,7 @@
     {
       "id": "H-PR01",
       "severity": "major",
-      "ask": "The pin names that session and that range.",
+      "ask": "The pin names that session and exactly messages 40 to 48.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -65,14 +65,22 @@
           "tool": "history.pin",
           "n": 1,
           "arg": "args.from",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 40
+          }
         },
         {
           "kind": "call",
           "tool": "history.pin",
           "n": 1,
           "arg": "args.to",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 48
+          }
         }
       ],
       "evidence_any": [],
@@ -93,7 +101,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(pinned|in view|kept in (the )?context)",
+            "source": "(pinned|kept in (the )?context)",
             "flags": "i"
           }
         }
@@ -190,6 +198,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "3d880c88c44bbcc806783a8e2f35a94e158392b0acb74f278d593943660a664f"
+    "source_sha256": "313c148907394287287b62ef515b0b7b04b55a5ebd61a28cc2c3492709f87b16"
   }
 }

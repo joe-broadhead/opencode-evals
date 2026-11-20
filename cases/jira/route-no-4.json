@@ -31,16 +31,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "getJiraIssue",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "atlassianUserInfo",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "jira.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -49,27 +42,41 @@
       "line": 17
     },
     {
-      "id": "JRA-OC01",
+      "id": "JRA-RT03",
       "severity": "major",
-      "ask": "It reads the web page, or says it cannot reach it.",
+      "ask": "It read the web page, or says it cannot reach it.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(status page|tavily|web|can't|cannot|couldn't|could not)",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "tavily.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "count",
+            "tool": "webfetch",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(can't|cannot|couldn't|could not)[^.\\n]{0,30}(reach|read|fetch)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "JRA-TR01",
@@ -86,7 +93,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "JRA-SF01",
@@ -99,12 +106,16 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "JRA-RB01",
@@ -126,6 +137,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f1df560cd9ac19ec4e66b3dce144e0aea0e743d084d833c1536ab94e033c023b"
+    "source_sha256": "eac079e712c89c815ce4d33ae2cef8e83ea7001e3e1cbf4ffd217582944a68ce"
   }
 }

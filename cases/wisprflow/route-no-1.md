@@ -15,12 +15,10 @@ summarise my Granola meeting from yesterday
 
 ## Items
 - [WF-RT01] blocker · No Wispr Flow tool call.
-  evidence: count:search_meetings == 0
-  evidence: count:get_meeting == 0
-  evidence: count:list_upcoming_meetings == 0
+  evidence: absent:wisprflow.*
 
-- [WF-OC01] major · It uses Granola, or says Granola holds that meeting.
-  evidence: text:any matches /granola/i
+- [WF-RT03] major · It read Granola, or says it cannot reach the notes.
+  evidence_any: count:granola.* >= 1 ;; text:any matches /(can't|cannot|couldn't|could not|don't have|do not have)[^.\n]{0,30}(access|reach|read)[^.\n]{0,20}(notes|meeting)/i
 
 - [WF-RT02] minor · No Wispr Flow skill loaded when Granola is named.
   evidence: absent-skill:wisprflow

@@ -31,22 +31,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "search_meetings",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "get_meeting",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "list_upcoming_meetings",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "wisprflow.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -55,27 +42,35 @@
       "line": 17
     },
     {
-      "id": "WF-OC01",
+      "id": "WF-RT03",
       "severity": "major",
-      "ask": "It uses Granola, or says Granola holds that meeting.",
+      "ask": "It read Granola, or says it cannot reach the notes.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "granola",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "granola.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(can't|cannot|couldn't|could not|don't have|do not have)[^.\\n]{0,30}(access|reach|read)[^.\\n]{0,20}(notes|meeting)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 20
     },
     {
       "id": "WF-RT02",
@@ -92,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "WF-SF01",
@@ -120,7 +115,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 27
     },
     {
       "id": "WF-RB01",
@@ -136,12 +131,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c5a53bc2afdac52ccf89e11cd37703e7f7044c17aa711086169695312180b2e3"
+    "source_sha256": "06773974277f4d36ce94c21c2d5161cfb7fcbc12520e083802e8750f00d55af3"
   }
 }

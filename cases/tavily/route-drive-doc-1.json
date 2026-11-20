@@ -21,7 +21,7 @@
   "sets": [
     "route"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-RT01",
@@ -48,16 +48,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "tavily_search",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "tavily_extract",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "tavily.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -66,23 +59,19 @@
       "line": 20
     },
     {
-      "id": "TAV-OC01",
+      "id": "TAV-RT03",
       "severity": "major",
-      "ask": "It names Drive or Google Workspace, or says it cannot reach the file.",
+      "ask": "It read Drive, or says it cannot reach the file.",
       "forbidden": false,
       "grader": "code",
       "evidence": [],
       "evidence_any": [
         [
           {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(drive|google workspace|gws)",
-              "flags": "i"
-            }
+            "kind": "count",
+            "tool": "gws.*",
+            "op": ">=",
+            "value": 1
           },
           {
             "kind": "text",
@@ -98,7 +87,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "TAV-SF01",
@@ -126,7 +115,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "TAV-RB01",
@@ -142,12 +131,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "465542607e62673cf97ee5065768fb3e283f014d5d4b55d813a89c490546b26c"
+    "source_sha256": "161c4f8071ce65ebddf53cfc95e14a6e045c55446760fd4c80eb814be5b5740a"
   }
 }

@@ -20,8 +20,8 @@ summarise my Plaud recording {{target:plaud.recording}} and list its action item
 - [PLD-PR01] major · The call names the recording the user gave.
   evidence: call:get_note#1 args.file_id present
 
-- [PLD-OC02] major · The answer gives a summary and action items.
-  evidence: text:any matches /(action item|to-?do|next step|follow[- ]up)/i
+- [PLD-OC02] major · The answer gives the note's action items as a list.
+  evidence: text:any matches /(^|\n)\s*[-*]\s+\S/
 
 - [PLD-TR01] minor · The opencode-plaud skill was loaded.
   evidence: skill:opencode-plaud

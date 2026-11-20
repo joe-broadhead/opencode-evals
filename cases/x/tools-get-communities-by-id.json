@@ -5,9 +5,9 @@
   "skill": "x",
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
-  "decision": "This request is one get_communities_by_id read, answered from its result, with no second page and no write.",
-  "data_check": "the ids and handles in the prompt exist for the evals X account",
-  "prompt": "what is the X community <the community id>?",
+  "decision": "This request is one get_communities_by_id read, with the id or topic the user named, and no write.",
+  "data_check": "none: the id is invented, so the call may return not found; the case grades the call",
+  "prompt": "what is the X community 150000000000000010?",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -19,6 +19,9 @@
   "seed": "plugins=x",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "id"
+  ],
   "sets": [
     "wide"
   ],
@@ -41,12 +44,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "X-PR01",
       "severity": "major",
-      "ask": "The call passed id.",
+      "ask": "The call carries the value the user named.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -55,59 +58,17 @@
           "tool": "get_communities_by_id",
           "n": 1,
           "arg": "args.id",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
-      "id": "X-OC02",
-      "severity": "major",
-      "ask": "The answer carries what the read returned.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
+          "op": "==",
           "value": {
-            "kind": "regex",
-            "source": "(community|member|about)",
-            "flags": "i"
+            "kind": "string",
+            "value": "150000000000000010"
           }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
-    },
-    {
-      "id": "X-CT01",
-      "severity": "minor",
-      "ask": "The answer ends with the plugin's cost line.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "last-line",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "^Cost: ",
-            "flags": ""
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 26
+      "line": 21
     },
     {
       "id": "X-TR01",
@@ -124,34 +85,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 24
     },
     {
       "id": "X-SF01",
       "severity": "blocker",
-      "ask": "No write of any kind.",
+      "ask": "No write of any kind: every X write is covered.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "create_posts",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_create_draft",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "create_users_bookmark",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "follow_list",
-          "n": null
+          "kind": "absent-write",
+          "ns": "x"
         },
         {
           "kind": "absent",
@@ -162,7 +107,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 28
     },
     {
       "id": "X-EF01",
@@ -181,7 +126,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 32
     },
     {
       "id": "X-RB01",
@@ -197,18 +142,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 35
     }
   ],
   "oracle": [],
-  "notes": [
-    {
-      "id": null,
-      "text": "X's own tool descriptions are long; the skill's names and fields are exact, so a search() for this tool is a wasted step, not a failure.",
-      "line": 47
-    }
-  ],
+  "notes": [],
   "hashes": {
-    "source_sha256": "201a76dcc583b33d8017242e37437c72cc4aac994b7c508f4119e8bcb324e1f9"
+    "source_sha256": "57ac4209bf233a6784ad946fc779f79453a2d76ccb88392500853398ffe1bdc6"
   }
 }

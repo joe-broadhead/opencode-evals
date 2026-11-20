@@ -21,7 +21,7 @@
   "sets": [
     "wide"
   ],
-  "data": "real",
+  "data": "own",
   "items": [
     {
       "id": "TAV-OC01",
@@ -196,6 +196,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b3605a0ba454998eb701b5cc783072feedabfa6a02aac29b35ff0d598a47f0c5"
+    "source_sha256": "ef4270aba6976354178db6c765d86c71550a31c143fb8a4f9308743f51feecb4"
   }
 }

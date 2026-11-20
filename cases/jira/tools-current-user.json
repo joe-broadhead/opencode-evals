@@ -99,6 +99,10 @@
           "kind": "absent",
           "tool": "patch",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
@@ -120,12 +124,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "899ff5ce8355f21cb97c48d3f4afec5de9ae6d639f42c2c86d8fea90f4a38f95"
+    "source_sha256": "9266b0797ca49906860987bd24e879b4fadcec890968f84e39bf2313b236f3ab"
   }
 }

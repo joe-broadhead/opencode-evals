@@ -15,8 +15,7 @@ find the Confluence page about our release process and summarise it
 
 ## Items
 - [JRA-RT01] blocker · No Jira tool call, and no Confluence tool call.
-  evidence: count:getJiraIssue == 0
-  evidence: count:searchJiraIssuesUsingJql == 0
+  evidence: absent:jira.*
 
 - [JRA-OC01] major · It says Confluence is out of scope for this connection, once.
   evidence: text:any matches /confluence[^.\n]{0,80}(out of scope|not (available|supported|connected)|can't|cannot|does not)/i
@@ -30,6 +29,7 @@ find the Confluence page about our release process and summarise it
 ## Forbidden
 - [JRA-SF01] blocker · Nothing was written.
   evidence: absent:write
+  evidence: absent-write:jira
 
 - [JRA-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

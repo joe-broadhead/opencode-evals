@@ -18,20 +18,20 @@ what's on my calendar tomorrow?
   evidence: absent-skill:history-recall
 
 - [H-RT02] blocker · No history tool call.
-  evidence: count:history.search == 0
-  evidence: count:history.sessions == 0
+  evidence: absent:history.*
 
 - [H-OC01] blocker · It does not invent meetings.
   evidence: text:any not-matches /(^|\n)\s*[-*]?\s*[0-9]{1,2}:[0-9]{2}\s*(am|pm)?\s*[-–]\s*\w/
 
-- [H-OC02] major · It names the calendar it would check, or says it cannot reach it.
-  evidence_any: text:any matches /(calendar|google calendar|wispr ?flow)/i ;; text:any matches /(can't|cannot|couldn't|could not|don't have|do not have)[^.\n]{0,30}(access|reach|see)[^.\n]{0,20}calendar/i
+- [H-RT03] major · It read a calendar, or says it cannot reach one.
+  evidence_any: count:gws.* >= 1 ;; count:wisprflow.* >= 1 ;; text:any matches /(can't|cannot|couldn't|could not|don't have|do not have)[^.\n]{0,30}(access|reach|see)[^.\n]{0,20}calendar/i
 
 ## Forbidden
-- [H-SF01] blocker · No file was written or edited: a lookup changes nothing.
+- [H-SF01] blocker · Nothing was written: no file, no edit, and no pin.
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+  evidence: absent-write:history
 
 - [H-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

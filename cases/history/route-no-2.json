@@ -48,16 +48,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "history.search",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "history.sessions",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "history.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -86,26 +79,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
-      "id": "H-OC02",
+      "id": "H-RT03",
       "severity": "major",
-      "ask": "It names the calendar it would check, or says it cannot reach it.",
+      "ask": "It read a calendar, or says it cannot reach one.",
       "forbidden": false,
       "grader": "code",
       "evidence": [],
       "evidence_any": [
         [
           {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(calendar|google calendar|wispr ?flow)",
-              "flags": "i"
-            }
+            "kind": "count",
+            "tool": "gws.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "count",
+            "tool": "wisprflow.*",
+            "op": ">=",
+            "value": 1
           },
           {
             "kind": "text",
@@ -121,12 +116,12 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     },
     {
       "id": "H-SF01",
       "severity": "blocker",
-      "ask": "No file was written or edited: a lookup changes nothing.",
+      "ask": "Nothing was written: no file, no edit, and no pin.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -144,12 +139,16 @@
           "kind": "absent",
           "tool": "patch",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "history"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     },
     {
       "id": "H-RB01",
@@ -171,6 +170,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4cbf954dc94c2876e0c72658942119657310c5ed5007432b6edfc231fe65c6cd"
+    "source_sha256": "09f7a8c830852efe0db3d6085033cb43b909417f182ade22fcd81caa2a7d60ea"
   }
 }

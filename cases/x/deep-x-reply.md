@@ -3,15 +3,16 @@
 - Skill under test: x-write
 - Tier: T3
 - Source: EVALS-232 §2.3 deep: the write
-- Decision tested: A reply is one create_posts call with the reply field, declined, and the answer says nothing was posted.
-- Data check: the post exists and is public
+- Decision tested: A reply is one create_posts call with the reply field and the user's text, declined, and the answer says nothing was posted.
+- Data check: none: the post id is invented, so the write is declined before it reaches X
 - Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, billed_calls <= 4, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=x
+- Checkable: text
 - Set: deep
 
 ## Prompt
-reply to this post with "happy to share our numbers if useful": <a post URL>
+reply to this post with "happy to share our numbers if useful": https://x.com/evals232fixturehandle/status/1000001
 
 ## Items
 - [X-WR01] blocker · Exactly one post call, with the reply field, and it was declined.
@@ -19,11 +20,11 @@ reply to this post with "happy to share our numbers if useful": <a post URL>
   evidence: declined:create_posts
   evidence: call:create_posts#1 args.reply present
 
+- [X-PR01] major · The reply text is the user's, in the call.
+  evidence: call:create_posts#1 args.text matches /happy to share our numbers if useful/i
+
 - [X-OC01] major · The answer says nothing was posted.
   evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(posted|replied|sent)/i
-
-- [X-PR01] major · The reply text is the user's, unchanged.
-  evidence: text:any matches /happy to share our numbers if useful/i
 
 - [X-TR01] minor · The x-write skill was loaded.
   evidence: skill:x-write

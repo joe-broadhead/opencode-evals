@@ -59,7 +59,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(not|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)",
+            "source": "(\\bnot\\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)",
             "flags": "i"
           }
         }
@@ -89,6 +89,29 @@
       "line": 24
     },
     {
+      "id": "JRA-PR01",
+      "severity": "major",
+      "ask": "The reply says it changes only your own notifications.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(only|just) (your|you)|your own (notification|watch)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
       "id": "JRA-TR01",
       "severity": "minor",
       "ask": "The jira-write skill was loaded.",
@@ -103,7 +126,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 30
     },
     {
       "id": "JRA-SF01",
@@ -121,7 +144,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 34
     },
     {
       "id": "JRA-SF02",
@@ -137,7 +160,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 37
     },
     {
       "id": "JRA-SF03",
@@ -153,7 +176,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 40
     },
     {
       "id": "JRA-RB01",
@@ -169,12 +192,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 43
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1d0b016fa28917e31fbcbf26c2fec3d3ccb949075e84f5ed2356de4b9a63db15"
+    "source_sha256": "fab137bfce556f17850566500b11ea9d36911ebaf5182e57ab626bf7d247ed57"
   }
 }

@@ -20,8 +20,8 @@ what does the person in my last Wispr Flow meeting do, and which company are the
 - [WF-PR01] major · The contact id the user gave was passed.
   evidence: call:get_participant_contacts#1 args.contact_ids present
 
-- [WF-OC02] major · The answer gives a role and a company, and says where the details came from.
-  evidence: text:any matches /(title|role|company|works at|Wispr)/i
+- [WF-OC02] major · The answer gives a role and a company, and says it looked the profile up.
+  evidence: text:any matches /(looked up|Wispr Contacts|profile)/i
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

@@ -27,6 +27,7 @@ create a ticket for the login timeout we saw this morning
 ## Forbidden
 - [JRA-SF01] blocker · Nothing was written.
   evidence: absent:write
+  evidence: absent-write:jira
 
 - [JRA-SF02] blocker · Nothing was committed.
   evidence: committed-write:none

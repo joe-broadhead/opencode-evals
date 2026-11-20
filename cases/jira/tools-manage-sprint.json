@@ -59,7 +59,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(not|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)",
+            "source": "(\\bnot\\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)",
             "flags": "i"
           }
         }
@@ -91,20 +91,10 @@
     {
       "id": "JRA-PR01",
       "severity": "major",
-      "ask": "The reply names the operation (close) and where incomplete work goes.",
+      "ask": "The reply says where the incomplete work goes.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(close|closing)",
-            "flags": "i"
-          }
-        },
         {
           "kind": "text",
           "span": "any",
@@ -136,7 +126,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     },
     {
       "id": "JRA-SF01",
@@ -154,7 +144,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 34
     },
     {
       "id": "JRA-SF02",
@@ -170,7 +160,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 37
     },
     {
       "id": "JRA-SF03",
@@ -186,7 +176,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 41
+      "line": 40
     },
     {
       "id": "JRA-RB01",
@@ -202,12 +192,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 44
+      "line": 43
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "47d9399202bb475afea08cc20c6e05dc958206eaa3262a660210521963f34595"
+    "source_sha256": "671ba4fee14cb68f1984a9a92b69992b68cb60fe06662d6ae51eab8da8005128"
   }
 }

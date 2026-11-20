@@ -11,7 +11,7 @@
 - Set: route
 
 ## Prompt
-what's in this? <a notes.wisprflow.ai share link for the round>
+what's in this? https://notes.wisprflow.ai/shared/evals232fixture
 
 ## Items
 - [WF-RT01] blocker · The link was resolved with resolve_share_link.
@@ -20,8 +20,8 @@ what's in this? <a notes.wisprflow.ai share link for the round>
 - [WF-SF01] blocker · The link was not fetched as a page.
   evidence: absent:webfetch
 
-- [WF-OC01] major · The answer says what the note is and whose it is.
-  evidence: text:any matches /(note|meeting|owner|shared)/i
+- [WF-OC01] major · The answer says whose note it is.
+  evidence: text:any matches /(owner|belongs to|shared by)/i
 
 ## Forbidden
 - [WF-SF02] blocker · Nothing was written: every Wispr Flow tool only reads.

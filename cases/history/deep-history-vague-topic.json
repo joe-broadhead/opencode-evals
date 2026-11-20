@@ -73,7 +73,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(cache|caching|catalog|TTL|invalidate)",
+            "source": "(TTL|invalidat|catalog (cache|key)|cache key)",
             "flags": "i"
           }
         }
@@ -149,7 +149,7 @@
     {
       "id": "H-SF01",
       "severity": "blocker",
-      "ask": "No file was written or edited: a lookup changes nothing.",
+      "ask": "Nothing was written: no file, no edit, and no pin.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -167,6 +167,10 @@
           "kind": "absent",
           "tool": "patch",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "history"
         }
       ],
       "evidence_any": [],
@@ -188,12 +192,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fd8fc91fcffad416564e6bdb55714bbef9c58b386a1902a4b3f135ff414b6c38"
+    "source_sha256": "40ced14dd3ca1a05707b535dab1a30e9cc6e4b677d3806cf704a9e7c7ee4150b"
   }
 }

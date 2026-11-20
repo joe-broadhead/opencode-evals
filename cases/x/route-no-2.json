@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 should-not-call",
   "decision": "A news article is a web page, not an X post: no X call.",
   "data_check": "none",
-  "prompt": "summarise this article for me: <a news article URL>",
+  "prompt": "summarise this article for me: https://example.org/news/evals-232",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -48,16 +48,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "get_posts_by_id",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "search_posts_all",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "x.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -66,49 +59,52 @@
       "line": 20
     },
     {
-      "id": "X-OC01",
+      "id": "X-RT03",
       "severity": "major",
-      "ask": "It reads the page (or says it cannot reach it).",
+      "ask": "It read the page, or says it cannot reach it.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(tavily|web ?page|article|can't|cannot|couldn't|could not)[^.\\n]{0,40}(read|fetch|access|open)",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "tavily.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "count",
+            "tool": "webfetch",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(can't|cannot|couldn't|could not)[^.\\n]{0,30}(read|fetch|access|open)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "X-SF01",
       "severity": "blocker",
-      "ask": "No write of any kind.",
+      "ask": "No write of any kind: every X write is covered.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "create_posts",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_create_draft",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "create_users_bookmark",
-          "n": null
+          "kind": "absent-write",
+          "ns": "x"
         },
         {
           "kind": "absent",
@@ -119,7 +115,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "X-RB01",
@@ -135,12 +131,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "72313c8bf78f681f78e6cb9f415ea01705ec3ec89e29be1ae7c80c12ffa786fa"
+    "source_sha256": "f5f0650ffcfa8def33abfde84b0303de9c8fbfdf06b4dddb58604aa3d9542a9e"
   }
 }

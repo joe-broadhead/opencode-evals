@@ -162,6 +162,10 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
@@ -183,12 +187,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1a7492cbb7d8f6307aee903c587fa950b11386ba0a89f871b83bb69b3baaccee"
+    "source_sha256": "62d931ab96dd56d39ded24ee3dae8014b15bd7170256e8502eb5441d8cb283a8"
   }
 }

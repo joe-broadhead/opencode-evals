@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool (fake mode)",
   "decision": "An item's stored property is read with getJiraEntityProperty, and an empty one is reported as empty.",
   "data_check": "the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7",
-  "prompt": "what's stored in the entity property <the property key> on QLN-1?",
+  "prompt": "what's stored in the entity property evals232 on QLN-1?",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -103,6 +103,10 @@
           "kind": "absent",
           "tool": "patch",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
@@ -124,12 +128,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6dc5b9b288f0f00a6bd1856236166dbc54f8df7ce3bd6dbcdd0bdf9282f33126"
+    "source_sha256": "f76976a77f896c100d4d83954a67f9a7824630f3e4743d6106075571431bfe42"
   }
 }

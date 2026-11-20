@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A notes.wisprflow.ai share link is resolved with resolve_share_link, never fetched.",
   "data_check": "a shared note link exists for the round",
-  "prompt": "summarise this shared note: <a notes.wisprflow.ai share link for the round>",
+  "prompt": "summarise this shared note: https://notes.wisprflow.ai/shared/evals232fixture",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -18,6 +18,9 @@
   "seed": "plugins=wisprflow",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "url"
+  ],
   "sets": [
     "wide"
   ],
@@ -40,7 +43,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "WF-PR01",
@@ -54,18 +57,22 @@
           "tool": "resolve_share_link",
           "n": 1,
           "arg": "args.url",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "https://notes.wisprflow.ai/shared/evals232fixture"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "WF-OC02",
       "severity": "major",
-      "ask": "The answer summarises the note.",
+      "ask": "The answer says whose note it is and summarises it.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -75,7 +82,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(summary|summarised|note)",
+            "source": "(owner|belongs to|shared by)",
             "flags": "i"
           }
         }
@@ -83,7 +90,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "WF-TR01",
@@ -100,7 +107,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-SF01",
@@ -118,7 +125,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "WF-SF02",
@@ -146,7 +153,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     },
     {
       "id": "WF-RB01",
@@ -162,12 +169,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "981fd4ea7f4768520bb5f7529a39453aac868edf718628098ba5b5130ea513cc"
+    "source_sha256": "f07d2d506919ee5289fd063ebf0aef51a1cdb46cc83bc96963d2599bcc24c808"
   }
 }

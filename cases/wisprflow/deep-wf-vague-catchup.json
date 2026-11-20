@@ -29,19 +29,28 @@
       "ask": "It asks which period, or states the window it used.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(which (period|week|days)|last (week|seven|7|30)|recent|upcoming|\\?)",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "which (period|week|days)|how far back|what (time ?frame|period)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "search_meetings",
+            "n": 1,
+            "arg": "args.since",
+            "op": "present"
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
@@ -155,6 +164,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a4a2c372d08768d92863d860a189a3bd4303d714de56d37e215450c828e6aee5"
+    "source_sha256": "4defe4d577a1ddc27b666357b6dbd3ff8e21d85fb07b10ca381b83690bd0fe85"
   }
 }

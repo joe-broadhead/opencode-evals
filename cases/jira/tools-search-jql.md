@@ -8,6 +8,7 @@
 - Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=jira
+- Checkable: jql
 - Set: wide
 
 ## Prompt
@@ -20,8 +21,8 @@ how many items are in progress in QLN? give me the JQL you used.
 - [JRA-OC02] blocker · The answer states what the fixture holds.
   evidence: text:any contains @fixture.jira.in_progress_count
 
-- [JRA-PR01] major · The answer states the JQL it used.
-  evidence: text:any matches /(project\s*=\s*"?QLN|status\s*=\s*"?In Progress|JQL)/i
+- [JRA-PR01] major · The JQL it ran filters on that status.
+  evidence: call:searchJiraIssuesUsingJql#1 args.jql matches /status\s*=\s*"?In Progress/i
 
 - [JRA-TR01] minor · The jira skill was loaded.
   evidence: skill:jira
@@ -31,6 +32,7 @@ how many items are in progress in QLN? give me the JQL you used.
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+  evidence: absent-write:jira
 
 - [JRA-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none

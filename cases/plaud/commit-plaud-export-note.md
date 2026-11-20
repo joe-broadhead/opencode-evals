@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=plaud
 - Home files: Plaud
+- Checkable: kind
 - Set: commit
 
 ## Prompt
@@ -20,7 +21,7 @@ save the notes of {{target:plaud.recording}} as a markdown file.
   evidence: absent-declined:export
 
 - [PLD-PR01] major · The export is of the note for the recording the user named.
-  evidence: call:export#1 args.recordingId present
+  evidence: target:export#1 args.recordingId in @plaud.recording
   evidence: call:export#1 args.kind == note
 
 - [PLD-CT01] major · The note landed as a markdown file in the export folder.

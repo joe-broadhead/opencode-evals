@@ -65,7 +65,7 @@
     {
       "id": "PLD-OC02",
       "severity": "major",
-      "ask": "The answer quotes or closely reports the passage.",
+      "ask": "The answer quotes the passage it read.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -75,8 +75,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(budget|cost|spend)",
-            "flags": "i"
+            "source": "([\"“][^\"”]{10,}[\"”])",
+            "flags": ""
           }
         }
       ],
@@ -191,6 +191,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "763b0340c18e0fa4229b14c80a02dde46ebfee7cb659f673ce05445929fcc9e7"
+    "source_sha256": "1785dfe09324e2bd9a7cb0826bbfd34fb5525938d06c40c8fbf8f0c32cdba5c2"
   }
 }

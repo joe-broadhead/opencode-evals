@@ -31,16 +31,9 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "recent",
-          "op": "==",
-          "value": 0
-        },
-        {
-          "kind": "count",
-          "tool": "list_files",
-          "op": "==",
-          "value": 0
+          "kind": "absent",
+          "tool": "plaud.*",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -69,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "PLD-OC02",
@@ -104,7 +97,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "PLD-RT02",
@@ -121,7 +114,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     },
     {
       "id": "PLD-SF01",
@@ -149,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     },
     {
       "id": "PLD-RB01",
@@ -165,12 +158,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "34e797096af81dffc33ffb42f377ef4018a57d7e15ec0250c497cdc8b86cf54a"
+    "source_sha256": "1361e3f640d42871a0e4c85f8ed881d4f94fc2447704894f056cea4e611baf06"
   }
 }

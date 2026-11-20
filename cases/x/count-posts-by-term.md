@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, billed_calls <= 2, tokens <= 400000, wall_ms <= 240000
 
 ## Prompt
-how many posts mention <X test topic: a harmless public topic> right now?
+how many posts mention sourdough baking right now?
 
 ## Items
 - [X-OC01] blocker · Exactly one recent-count read, and no post search to count by hand.

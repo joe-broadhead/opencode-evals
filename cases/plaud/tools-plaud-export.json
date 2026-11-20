@@ -18,6 +18,9 @@
   "seed": "plugins=plaud",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "kind"
+  ],
   "sets": [
     "wide"
   ],
@@ -44,21 +47,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
-      "id": "PLD-PR01",
+      "id": "PLD-CT01",
       "severity": "major",
       "ask": "The export is of the note, for the recording the user named.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "export",
           "n": 1,
           "arg": "args.recordingId",
-          "op": "present"
+          "aliases": [
+            "@plaud.recording"
+          ]
         },
         {
           "kind": "call",
@@ -75,7 +80,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "PLD-OC01",
@@ -98,7 +103,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "PLD-TR01",
@@ -115,7 +120,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "PLD-SF01",
@@ -138,7 +143,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "PLD-SF03",
@@ -154,7 +159,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 37
     },
     {
       "id": "PLD-SF04",
@@ -170,7 +175,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
     },
     {
       "id": "PLD-RB01",
@@ -186,12 +191,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 42
+      "line": 43
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "90becc2720d2cedfe7448abd54cc6b6d331998eabfff786eecdbc862c7949b41"
+    "source_sha256": "3641e870290b709596ff4b930f183e0e7d65fb4aff52646ddc5b2927c03f48d5"
   }
 }

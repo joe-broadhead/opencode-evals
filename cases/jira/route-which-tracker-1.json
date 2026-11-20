@@ -108,6 +108,10 @@
           "kind": "absent",
           "tool": "write",
           "n": null
+        },
+        {
+          "kind": "absent-write",
+          "ns": "jira"
         }
       ],
       "evidence_any": [],
@@ -129,7 +133,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "JRA-RB01",
@@ -145,12 +149,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7e94d7652dc5a961e3ce098eab6605927cf11f18157a8aee17962aae2e8dbdca"
+    "source_sha256": "162f270f172af3716c129f8712b5999de4309668c26be9d57bce92e52c11a967"
   }
 }

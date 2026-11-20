@@ -15,7 +15,7 @@ catch me up on my meetings
 
 ## Items
 - [WF-OC01] blocker · It asks which period, or states the window it used.
-  evidence: text:any matches /(which (period|week|days)|last (week|seven|7|30)|recent|upcoming|\?)/i
+  evidence_any: text:any matches /which (period|week|days)|how far back|what (time ?frame|period)/i ;; call:search_meetings#1 args.since present
 
 - [WF-EF01] blocker · It did not read every transcript.
   evidence: count:get_meeting <= 2

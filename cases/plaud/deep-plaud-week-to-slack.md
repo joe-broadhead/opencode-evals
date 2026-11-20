@@ -24,8 +24,8 @@ recap what I recorded this week and post the highlights to my Slack self-DM {{ta
 - [PLD-OC02] major · The answer says nothing was posted, and gives the highlights in chat.
   evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(posted|sent)/i
 
-- [PLD-DT01] major · The window it covered is the user's week, and it says so.
-  evidence: text:any matches /(this week|last (seven|7) days|since Monday)/i
+- [PLD-DT01] major · The answer names the dates the week covered.
+  evidence: text:any matches /([0-9]{1,2}[-–][0-9]{1,2} (Nov|November)|[0-9]{1,2} (Nov|November)|[0-9]{4}-[0-9]{2}-[0-9]{2})/
 
 - [PLD-TR01] minor · The digest skill was loaded.
   evidence: skill:opencode-plaud-digest

@@ -20,8 +20,8 @@ find my Scratchpad note about the hiring plan.
 - [WF-PR01] major · The query is the user's topic.
   evidence: call:search_scratchpad_notes#1 args.query present
 
-- [WF-OC02] major · The answer names the note it found.
-  evidence: text:any matches /(hiring|note)/i
+- [WF-OC02] major · The answer names the note it found, as a result.
+  evidence: text:any matches /(^|\n)\s*[-*]\s+\S/
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow
