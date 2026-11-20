@@ -18,9 +18,9 @@
 
 import { spawn } from "node:child_process"
 import { createHash, randomBytes } from "node:crypto"
-import { createReadStream, existsSync, readFileSync, realpathSync, statSync, accessSync, chmodSync, cpSync, constants, lstatSync, mkdirSync, writeFileSync, openSync, fstatSync, closeSync, readdirSync } from "node:fs"
+import { createReadStream, existsSync, readFileSync, realpathSync, statSync, accessSync, chmodSync, cpSync, constants, lstatSync, mkdirSync, mkdtempSync, writeFileSync, openSync, fstatSync, closeSync, readdirSync, renameSync, rmdirSync, rmSync } from "node:fs"
 import { lstat, opendir, statfs } from "node:fs/promises"
-import { basename, delimiter, dirname, isAbsolute, join, relative, resolve } from "node:path"
+import { basename, delimiter, dirname, isAbsolute, join, relative, resolve, sep } from "node:path"
 import { removeSandbox } from "./sandbox.mjs"
 import { within } from "./paths.mjs"
 import { parseAllow } from "../../docker/egress-proxy.mjs"
@@ -90,8 +90,10 @@ export const ASSETS_DIR = "/opt/evals/assets"
  *
  * `copyTo` (optional) is a path relative to the sandbox home: the asset is COPIED there, writable, before the trial starts,
  * instead of mounted read-only. The plugin caches that chmod their own folders (gws's discovery, utilities' weather cache,
- * voice's engine cache) need that, and a mounted asset is read-only by design (p0 g8). The copy keeps file modes, refuses
- * symlinks, and may not leave the sandbox home. No `..`, no absolute path, no backslash:
+ * voice's engine cache) need that, and a mounted asset is read-only by design (p0 g8). The copy keeps file modes (masked
+ * to 0o777), refuses symlinks in the source, replaces the destination rather than writing through anything already there,
+ * and may not leave the sandbox home. Segments are letters, digits, dot, dash and underscore, so the path is safe in g8's
+ * shell; no `..`, no absolute path, no backslash, and nothing under `.config/opencode`, `.local/share/opencode` or `.claude`:
  *   { "name": "native-cache", "host": "/path/to/native-cache", "copyTo": ".cache" }
  */
 export function parseAssets(list) {
@@ -103,15 +105,30 @@ export function parseAssets(list) {
     if (/[,\n"]/.test(a.host)) throw new Error(`caps.json container.assets[${i}].host has a comma, quote or newline, which a bind mount cannot name`)
     for (const [key, inner] of Object.entries(a.env ?? {})) if (!NAME.test(key) || typeof inner !== "string" || inner.includes("..") || isAbsolute(inner)) throw new Error(`caps.json container.assets[${i}].env.${key} must map a variable name to a relative path inside the asset`)
     const copyTo = a.copyTo
-    if (copyTo !== undefined && (typeof copyTo !== "string" || copyTo === "" || isAbsolute(copyTo) || copyTo.includes("\\") || copyTo.includes("\0") || /[,\n"]/.test(copyTo) || copyTo.split("/").some((part) => part === "" || part === "." || part === ".."))) {
-      throw new Error(`caps.json container.assets[${i}].copyTo must be a path relative to the sandbox home, with no "..", no absolute path and no backslash`)
+    if (copyTo !== undefined) {
+      const parts = typeof copyTo === "string" ? copyTo.split("/") : []
+      const safe = typeof copyTo === "string" && copyTo !== "" && !isAbsolute(copyTo) && !copyTo.includes("\\") && !copyTo.includes("\0") && !/[,\n"]/.test(copyTo) && parts.every((part) => /^[A-Za-z0-9._-]+$/.test(part) && part !== "." && part !== "..")
+      if (!safe) throw new Error(`caps.json container.assets[${i}].copyTo must be a path relative to the sandbox home: letters, digits, dot, dash and underscore segments, no "..", no absolute path and no backslash`)
+      const reserved = [".config/opencode", ".local/share/opencode", ".claude"].find((r) => r === copyTo || r.startsWith(`${copyTo}/`) || copyTo.startsWith(`${r}/`))
+      if (reserved) throw new Error(`caps.json container.assets[${i}].copyTo ${JSON.stringify(copyTo)} would write inside ${reserved}, which the harness owns`)
     }
     return { name: a.name, host: a.host, env: a.env ?? {}, ...(copyTo === undefined ? {} : { copyTo }) }
   })
 }
 
+/** The OS's own resolution: JS `realpathSync` collapses `..` after a link lexically, which hides a chain that leaves a root. */
+const realNative = (path) => realpathSync.native(path)
+
+/** Is `path` the root itself or under it, resolved by the OS, links and `..` after them included? */
+const insideNative = (root, path) => {
+  const base = realNative(root)
+  const target = realNative(path)
+  return target === base || target.startsWith(base.endsWith(sep) ? base : `${base}${sep}`)
+}
+
 /** What the assets hold on the host: { name, ok, why, bytes } each, for `evals isolation assets` and probe g8. A `copyTo`
- * asset is also checked readable, since the trial copies it rather than mounting it. */
+ * asset is checked by the same rules the copy applies: it must be readable, hold no symlink, FIFO or device, and every
+ * directory in it must be readable, so a source the trial could not copy fails the check rather than every trial. */
 export function checkAssets(assets = []) {
   const readable = (path) => {
     try {
@@ -122,63 +139,144 @@ export function checkAssets(assets = []) {
     }
   }
   return assets.map((a) => {
-    if (!existsSync(a.host)) return { name: a.name, ok: false, why: `${a.host} does not exist`, ...(a.copyTo ? { copyTo: a.copyTo } : {}) }
+    const extra = a.copyTo ? { copyTo: a.copyTo } : {}
+    if (!existsSync(a.host)) return { name: a.name, ok: false, why: `${a.host} does not exist`, ...extra }
+    if (a.copyTo) {
+      const top = lstatSync(a.host)
+      if (top.isSymbolicLink()) return { name: a.name, ok: false, why: `${a.host} is a symbolic link, and a copyTo asset is copied, never followed`, ...extra }
+      if (!top.isDirectory() && !top.isFile()) return { name: a.name, ok: false, why: `${a.host} is neither a regular file nor a directory, and a copyTo asset copies only those`, ...extra }
+      let bytes = top.isFile() ? top.size : 0
+      const problems = []
+      const walk = (dir) => {
+        let entries
+        try {
+          entries = readdirSync(dir, { withFileTypes: true })
+        } catch {
+          problems.push(`${dir === a.host ? "the directory" : relative(a.host, dir)} cannot be read`)
+          return
+        }
+        for (const entry of entries) {
+          const path = join(dir, entry.name)
+          if (entry.isSymbolicLink()) problems.push(`${relative(a.host, path)} is a symbolic link`)
+          else if (entry.isDirectory()) walk(path)
+          else if (entry.isFile()) {
+            bytes += statSync(path).size
+            if (!readable(path)) problems.push(`${relative(a.host, path)} cannot be read`)
+          } else problems.push(`${relative(a.host, path)} is not a regular file`)
+        }
+      }
+      if (top.isDirectory()) walk(a.host)
+      else if (!readable(a.host)) problems.push(`${basename(a.host)} cannot be read`)
+      if (problems.length) return { name: a.name, ok: false, why: `${a.host} cannot be copied: ${problems.slice(0, 3).join("; ")}${problems.length > 3 ? ` (and ${problems.length - 3} more)` : ""}`, bytes, ...extra }
+      return bytes > 0 ? { name: a.name, ok: true, why: `${bytes} bytes`, bytes, ...extra } : { name: a.name, ok: false, why: `${a.host} is empty`, ...extra }
+    }
     const stat = statSync(a.host)
     let bytes = stat.size
-    const unreadable = []
     if (stat.isDirectory()) {
       bytes = 0
       const walk = (dir) => {
         for (const entry of readdirSync(dir, { withFileTypes: true })) {
           const path = join(dir, entry.name)
           if (entry.isDirectory()) walk(path)
-          else if (entry.isFile()) {
-            bytes += statSync(path).size
-            if (a.copyTo && !readable(path)) unreadable.push(relative(a.host, path))
-          }
+          else if (entry.isFile()) bytes += statSync(path).size
         }
       }
       walk(a.host)
-    } else if (a.copyTo && !readable(a.host)) unreadable.push(basename(a.host))
-    const extra = a.copyTo ? { copyTo: a.copyTo } : {}
-    if (a.copyTo && unreadable.length) return { name: a.name, ok: false, why: `${a.host} holds ${unreadable.length} file(s) it cannot read (${unreadable.slice(0, 3).join(", ")}), and the trial copies it`, bytes, ...extra }
+    }
     return bytes > 0 ? { name: a.name, ok: true, why: `${bytes} bytes`, bytes, ...extra } : { name: a.name, ok: false, why: `${a.host} is empty`, ...extra }
   })
 }
 
 const fileDigest = (path) => createHash("sha256").update(readFileSync(path)).digest("hex")
 
+/** Removes `path` without ever following a link (a link is unlinked), emptying directories first and making one a previous
+ * copy left read-only writable, so a retry can replace it. */
+const removeTree = (path) => {
+  if (!lstatSync(path).isDirectory()) {
+    rmSync(path, { force: true })
+    return
+  }
+  chmodSync(path, 0o700)
+  for (const entry of readdirSync(path)) removeTree(join(path, entry))
+  rmdirSync(path)
+}
+
+/** Removes a temporary copy; a failure here changes nothing, since the copy that failed already fails the trial. */
+const discard = (path) => {
+  try {
+    if (existsSync(path)) removeTree(path)
+  } catch {
+    // the trial fails anyway
+  }
+}
+
 /**
- * Copies a `copyTo` asset from the host into the sandbox home (`<home>/<copyTo>`), writable, keeping every mode. A symlink
- * anywhere in the source is refused (never followed), and the destination is checked with realpath so the copy cannot leave
- * the sandbox. Returns { name, copyTo, bytes, digest, files } for the batch record; a missing source throws, failing the trial.
+ * Copies a `copyTo` asset from the host into the sandbox home (`<home>/<copyTo>`), writable, keeping every mode (masked to
+ * 0o777). A symlink anywhere in the source is refused, never followed. The copy is made in a fresh temporary directory
+ * inside the home and then renamed onto the destination: `rename` never follows a link, so anything planted in the home
+ * (a link at the destination, a link inside it, a link chain through `..`) is replaced, not written through. Every existing
+ * component of `copyTo` must be a real directory, and the result is checked with the OS's realpath, so the copy cannot
+ * leave the sandbox. An existing file at the destination is refused. Returns { name, copyTo, bytes, digest, files } for
+ * the batch record; a missing source throws, failing the trial.
  */
 export function copyAsset(asset, sandbox) {
-  const home = resolve(sandbox.home)
-  const dest = within(home, join(home, asset.copyTo), `the copyTo of asset ${asset.name}`)
+  const home = realNative(resolve(sandbox.home))
+  const parts = typeof asset.copyTo === "string" ? asset.copyTo.split("/") : []
+  if (!parts.length || parts.some((part) => !/^[A-Za-z0-9._-]+$/.test(part) || part === "." || part === "..")) throw new Error(`caps.json container.assets ${asset.name}: copyTo must be a relative path of letters, digits, dot, dash and underscore segments`)
   if (!existsSync(asset.host)) throw new Error(`caps.json container.assets ${asset.name}: ${asset.host} does not exist, so it cannot be copied into the trial`)
   const source = lstatSync(asset.host)
   if (source.isSymbolicLink()) throw new Error(`caps.json container.assets ${asset.name}: ${asset.host} is a symbolic link, and a copyTo asset is copied, never followed`)
   if (!source.isFile() && !source.isDirectory()) throw new Error(`caps.json container.assets ${asset.name}: ${asset.host} is neither a file nor a directory`)
-  mkdirSync(dest, { recursive: true, mode: 0o700 })
-  within(home, realpathSync(dest), `the copyTo of asset ${asset.name}`)
+
+  // Never through a link on the way down: every component of copyTo that exists must be a real directory.
+  let parent = home
+  for (const part of parts.slice(0, -1)) {
+    parent = join(parent, part)
+    let stat = null
+    try {
+      stat = lstatSync(parent)
+    } catch {
+      // not there yet: created below, and the part after it cannot exist either
+    }
+    if (!stat) mkdirSync(parent, { mode: 0o700 })
+    else if (stat.isSymbolicLink()) throw new Error(`caps.json container.assets ${asset.name}: ${parent} is a symbolic link, and a copyTo asset never writes through one`)
+    else if (!stat.isDirectory()) throw new Error(`caps.json container.assets ${asset.name}: ${parent} is in the way of the copy and is not a directory`)
+  }
+  const dest = join(home, ...parts)
+
+  const temp = mkdtempSync(join(home, ".evals-copy-"))
   const copied = []
   const copy = (from, to) => {
     const stat = lstatSync(from)
     if (stat.isSymbolicLink()) throw new Error(`caps.json container.assets ${asset.name}: ${from} is a symbolic link, and a copyTo asset is copied, never followed`)
     if (stat.isDirectory()) {
-      mkdirSync(to, { recursive: true, mode: stat.mode & 0o7777 })
+      mkdirSync(to, { recursive: true, mode: 0o700 })
       for (const entry of readdirSync(from, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) copy(join(from, entry.name), join(to, entry.name))
-      chmodSync(to, stat.mode & 0o7777)
+      chmodSync(to, stat.mode & 0o777)
       return
     }
     if (!stat.isFile()) throw new Error(`caps.json container.assets ${asset.name}: ${from} is not a regular file`)
     cpSync(from, to, { force: true })
-    chmodSync(to, stat.mode & 0o7777)
-    copied.push({ rel: relative(home, to), bytes: stat.size, sha256: fileDigest(to) })
+    chmodSync(to, stat.mode & 0o777)
+    copied.push({ rel: `${asset.copyTo}/${relative(temp, to)}`, bytes: stat.size, sha256: fileDigest(to) })
   }
-  if (source.isFile()) copy(asset.host, join(dest, basename(asset.host)))
-  else copy(asset.host, dest)
+  try {
+    if (source.isFile()) copy(asset.host, join(temp, basename(asset.host)))
+    else copy(asset.host, temp)
+    let existing = null
+    try {
+      existing = lstatSync(dest)
+    } catch {
+      // nothing there: the rename creates it
+    }
+    if (existing && !existing.isDirectory() && !existing.isSymbolicLink()) throw new Error(`caps.json container.assets ${asset.name}: ${dest} already exists and is not a directory, and a copyTo asset refuses to overwrite a file`)
+    if (existing) removeTree(dest)
+    renameSync(temp, dest)
+  } catch (error) {
+    discard(temp)
+    throw error
+  }
+  if (!insideNative(home, dest)) throw new Error(`caps.json container.assets ${asset.name}: the copy at ${dest} resolves outside the sandbox home`)
   const digest = createHash("sha256").update(copied.map((f) => `${f.rel}\u0000${f.sha256}`).join("\n")).digest("hex")
   return { name: asset.name, copyTo: asset.copyTo, bytes: copied.reduce((n, f) => n + f.bytes, 0), digest, files: copied.map((f) => f.rel).sort() }
 }

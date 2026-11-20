@@ -631,10 +631,13 @@ test("assets the owner mounts into every trial are validated, found on the host,
     assert.throws(() => parseAssets([{ name: "a", host: "/x,y" }]), /comma/)
     assert.throws(() => parseAssets([{ name: "a", host: "/x", env: { V: "../up" } }]), /relative path inside the asset/)
     assert.throws(() => parseAssets([{ name: "a", host: "/x", env: { "bad name": "" } }]), /relative path inside the asset/)
-    // copyTo: a path relative to the sandbox home only; no "..", no absolute path, no backslash, no "." or empty segment.
+    // copyTo: a path relative to the sandbox home only: letters, digits, dot, dash and underscore segments (safe in a
+    // shell), no "..", no absolute path, no backslash, and nothing the harness owns (the sealed config, the OpenCode
+    // trees, claude's directory).
     assert.equal(parseAssets([{ name: "cache", host: join(dir, "speech"), copyTo: ".cache" }])[0].copyTo, ".cache")
     assert.equal(parseAssets([{ name: "cache", host: join(dir, "speech"), copyTo: "a/b-c_d" }])[0].copyTo, "a/b-c_d")
-    for (const copyTo of ["..", "../x", "a/../b", "/abs", "a\\b", "", ".", "a//b"]) assert.throws(() => parseAssets([{ name: "a", host: "/x", copyTo }]), /copyTo/, JSON.stringify(copyTo))
+    const refused = ["..", "../x", "a/../b", "/abs", "a\\b", "", ".", "a//b", "a b", "a$b", "a`b", ".config/opencode", ".config/opencode/x", ".config", ".local/share/opencode", ".claude", ".claude/settings.json"]
+    for (const copyTo of refused) assert.throws(() => parseAssets([{ name: "a", host: "/x", copyTo }]), /copyTo/, JSON.stringify(copyTo))
     assert.equal("copyTo" in parseAssets([{ name: "a", host: "/x" }])[0], false)
     // The copyTo source must be readable (the trial copies it, where a mounted asset is checked in the trial by g8).
     const unreadable = join(dir, "speech", "model.bin")
@@ -643,11 +646,41 @@ test("assets the owner mounts into every trial are validated, found on the host,
       const checked = checkAssets(parseAssets([{ name: "speech", host: join(dir, "speech"), copyTo: ".speech" }]))[0]
       assert.equal(checked.ok, false, "a file the owner cannot read is not a copyable asset")
       assert.equal(checked.copyTo, ".speech")
-      assert.match(checked.why, /cannot read/)
+      assert.match(checked.why, /cannot be read/)
     } finally {
       chmodSync(unreadable, 0o644)
     }
     assert.equal(checkAssets(parseAssets([{ name: "speech", host: join(dir, "speech"), copyTo: ".speech" }]))[0].ok, true)
+    // The check applies the copy's own rules: a link (inside or at the top), a FIFO and an unreadable directory each fail
+    // clearly, rather than passing here and failing every trial.
+    const linked = join(dir, "linked")
+    mkdirSync(linked)
+    symlinkSync(join(dir, "speech", "model.bin"), join(linked, "link"))
+    const linkedCheck = checkAssets(parseAssets([{ name: "linked", host: linked, copyTo: ".linked" }]))[0]
+    assert.equal(linkedCheck.ok, false, "an inner symlink cannot be copied")
+    assert.match(linkedCheck.why, /symbolic link/)
+    const alias = join(dir, "alias")
+    symlinkSync(join(dir, "speech"), alias)
+    const aliasCheck = checkAssets(parseAssets([{ name: "alias", host: alias, copyTo: ".alias" }]))[0]
+    assert.equal(aliasCheck.ok, false, "a top-level symlink is not followed")
+    assert.match(aliasCheck.why, /symbolic link/)
+    const fifoDir = join(dir, "fifo")
+    mkdirSync(fifoDir)
+    assert.equal(spawnSync("mkfifo", [join(fifoDir, "pipe")]).status, 0)
+    const fifoCheck = checkAssets(parseAssets([{ name: "fifo", host: fifoDir, copyTo: ".fifo" }]))[0]
+    assert.equal(fifoCheck.ok, false, "a FIFO cannot be copied")
+    assert.match(fifoCheck.why, /not a regular file/)
+    const locked = join(dir, "locked")
+    mkdirSync(join(locked, "sub"), { recursive: true })
+    writeFileSync(join(locked, "sub", "x"), "x")
+    chmodSync(join(locked, "sub"), 0o000)
+    try {
+      const lockedCheck = checkAssets(parseAssets([{ name: "locked", host: locked, copyTo: ".locked" }]))[0]
+      assert.equal(lockedCheck.ok, false, "an unreadable directory is a clear failure, not a throw")
+      assert.match(lockedCheck.why, /cannot be read/)
+    } finally {
+      chmodSync(join(locked, "sub"), 0o755)
+    }
     // the configuration reads them from the owner's caps.json, never from a case or an arm
     const store = join(dir, "store")
     mkdirSync(store)

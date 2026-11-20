@@ -8,14 +8,14 @@
 //             and the one connection to an allow-listed host is a CONNECT handshake with no request in it.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs"
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { homedir, networkInterfaces, tmpdir } from "node:os"
 import { connect } from "node:net"
 import { spawn, spawnSync } from "node:child_process"
 import { randomBytes } from "node:crypto"
 import { clean, clientHelloSni, createProxy, parseAllow, privateAddress } from "../docker/egress-proxy.mjs"
-import { containerBackend, containerConfig, trialEnv, imageTag, findBinary, parseAssets, CONTAINER_PATH, DEFAULT_ALLOW, EGRESS_URL } from "../src/run/container.mjs"
+import { containerBackend, containerConfig, trialEnv, imageTag, findBinary, parseAssets, copyAsset, CONTAINER_PATH, DEFAULT_ALLOW, EGRESS_URL } from "../src/run/container.mjs"
 import { selectIsolation } from "../src/run/isolation.mjs"
 import { makeSandbox, removeSandbox, removeInside, repairPermissions, runToEnd } from "../src/run/sandbox.mjs"
 import { runBatch, trialBinaries } from "../src/run/runner.mjs"
@@ -503,6 +503,99 @@ test("offline: a copyTo asset is copied into the sandbox home writable with its 
     await assert.rejects(backend.enter({ name: "case.t1", sandbox: linked.sandbox, mounts: [{ host: linked.arm, ro: true }], cwd: linked.sandbox.project }), /symbolic link, and a copyTo asset is copied, never followed/)
   } finally {
     linked.cleanup()
+  }
+})
+
+test("offline: a copyTo asset replaces links in the sandbox home and never writes through them", () => {
+  const root = scratch("evals-copy-escape-")
+  try {
+    const assetRoot = join(root, "asset")
+    mkdirSync(join(assetRoot, "opencode-x"), { recursive: true })
+    writeFileSync(join(assetRoot, "opencode-x", "bin"), "#!/bin/sh\n")
+    chmodSync(join(assetRoot, "opencode-x", "bin"), 0o755)
+    const asset = parseAssets([{ name: "cache", host: assetRoot, copyTo: ".cache" }])[0]
+    const outside = join(root, "outside")
+    mkdirSync(outside)
+    writeFileSync(join(outside, "marker"), "untouched")
+    const newHome = (name) => {
+      const home = join(root, name)
+      mkdirSync(join(home, ".cache"), { recursive: true })
+      return home
+    }
+    const nothingOutside = () => {
+      assert.deepEqual(readdirSync(outside), ["marker"], "the copy wrote nothing outside the home")
+      assert.equal(readFileSync(join(outside, "marker"), "utf8"), "untouched")
+    }
+
+    // A: a directory link planted where the asset's own directory goes is replaced by the copy, never followed.
+    const a = newHome("home-a")
+    symlinkSync(outside, join(a, ".cache", "opencode-x"))
+    copyAsset(asset, { home: a })
+    assert.equal(lstatSync(join(a, ".cache", "opencode-x")).isSymbolicLink(), false, "the planted link is gone")
+    assert.equal(readFileSync(join(a, ".cache", "opencode-x", "bin"), "utf8"), "#!/bin/sh\n", "the copy is a real directory")
+    nothingOutside()
+
+    // A chain that looks inside lexically (`hop -> ../..`, `opencode-x -> hop/../../..`) is replaced with the whole
+    // destination, so the kernel never resolves it.
+    const b = newHome("home-b")
+    symlinkSync("../..", join(b, ".cache", "hop"))
+    symlinkSync("hop/../../..", join(b, ".cache", "opencode-x"))
+    copyAsset(asset, { home: b })
+    assert.equal(lstatSync(join(b, ".cache", "opencode-x")).isSymbolicLink(), false, "the chain is gone")
+    assert.equal(readFileSync(join(b, ".cache", "opencode-x", "bin"), "utf8"), "#!/bin/sh\n")
+    nothingOutside()
+
+    // A symlinked parent of copyTo itself is refused, never followed.
+    const c = newHome("home-c")
+    const outsideParent = join(root, "outside-parent")
+    mkdirSync(outsideParent)
+    symlinkSync(outsideParent, join(c, "linked"))
+    assert.throws(() => copyAsset(parseAssets([{ name: "cache", host: assetRoot, copyTo: "linked/cache" }])[0], { home: c }), /symbolic link, and a copyTo asset never writes through one/)
+    assert.deepEqual(readdirSync(outsideParent), [], "nothing was written through the link")
+
+    // A dangling link at the destination is replaced by the copy, and its target is not created.
+    const d = newHome("home-d")
+    rmSync(join(d, ".cache"), { recursive: true, force: true })
+    symlinkSync(join(root, "nowhere"), join(d, ".cache"))
+    copyAsset(asset, { home: d })
+    assert.equal(lstatSync(join(d, ".cache")).isSymbolicLink(), false)
+    assert.equal(existsSync(join(root, "nowhere")), false, "the dangling target is not created")
+
+    // An existing file at the destination is refused, not overwritten.
+    const e = newHome("home-e")
+    rmSync(join(e, ".cache"), { recursive: true, force: true })
+    writeFileSync(join(e, ".cache"), "keep me")
+    assert.throws(() => copyAsset(asset, { home: e }), /refuses to overwrite a file/)
+    assert.equal(readFileSync(join(e, ".cache"), "utf8"), "keep me")
+
+    // A read-only source copies: directories are created 0700 and chmod'ed after their children, setuid is masked, and
+    // the source's modes are kept otherwise.
+    const locked = join(root, "read-only-asset")
+    mkdirSync(join(locked, "sub"), { recursive: true })
+    writeFileSync(join(locked, "sub", "file"), "x")
+    chmodSync(join(locked, "sub", "file"), 0o4755)
+    chmodSync(join(locked, "sub"), 0o555)
+    chmodSync(locked, 0o555)
+    const f = newHome("home-f")
+    const summary = copyAsset(parseAssets([{ name: "locked", host: locked, copyTo: ".locked" }])[0], { home: f })
+    assert.equal(statSync(join(f, ".locked", "sub", "file")).mode & 0o7777, 0o755, "setuid is not kept")
+    assert.equal(statSync(join(f, ".locked", "sub")).mode & 0o777, 0o555, "a read-only directory stays read-only")
+    assert.equal(summary.files.length, 1)
+  } finally {
+    const unlock = (path) => {
+      try {
+        chmodSync(path, 0o700)
+      } catch {
+        // gone, or not ours
+      }
+      try {
+        for (const entry of readdirSync(path)) unlock(join(path, entry))
+      } catch {
+        // a file, or a directory that cannot be read
+      }
+      rmSync(path, { recursive: true, force: true })
+    }
+    unlock(root)
   }
 })
 
