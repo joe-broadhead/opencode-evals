@@ -1,0 +1,111 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-job-post",
+  "plugin": "metaview",
+  "skill": "metaview",
+  "tier": "T3",
+  "source": "wide sweep: get_job_post (the post's text and its latest check runs)",
+  "decision": "A how-is-the-post-doing question is one get_job_post, with the checks reported as Metaview's",
+  "data_check": "candidate data: {{target:metaview.job_post}} exists with at least one check",
+  "prompt": "show me the platform engineer job post and how it did on its checks.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "MV-OC01",
+      "severity": "blocker",
+      "ask": "It used get_job_post once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "metaview.get_job_post",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "MV-PR01",
+      "severity": "major",
+      "ask": "The call carries a generic rationale, with no candidate detail in it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.get_job_post",
+          "n": 1,
+          "arg": "args.rationale",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "MV-PR02",
+      "severity": "major",
+      "ask": "It read the post it resolved.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.get_job_post",
+          "n": 1,
+          "arg": "args.job_post_id",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "MV-OC04",
+      "severity": "major",
+      "ask": "The answer gives the text and the latest check results, labelled Metaview's.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Metaview|check|pass|fail",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "1ec78fabe439c181c628997a6ff033c7822c2af9f673cda2b5826eeb1e479ea2"
+  }
+}

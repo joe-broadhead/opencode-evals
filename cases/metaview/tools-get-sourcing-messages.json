@@ -1,0 +1,111 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-sourcing-messages",
+  "plugin": "metaview",
+  "skill": "metaview",
+  "tier": "T3",
+  "source": "wide sweep: get_sourcing_messages (the messages in a sourcing search)",
+  "decision": "A what-did-we-send question is one message read for the search",
+  "data_check": "candidate data: {{target:metaview.search}} has sent messages",
+  "prompt": "what did we actually send in the backend sourcing search? show me the messages.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "MV-OC01",
+      "severity": "blocker",
+      "ask": "It used get_sourcing_messages once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "metaview.get_sourcing_messages",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "MV-PR01",
+      "severity": "major",
+      "ask": "The call carries a generic rationale, with no candidate detail in it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.get_sourcing_messages",
+          "n": 1,
+          "arg": "args.rationale",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "MV-PR02",
+      "severity": "major",
+      "ask": "It read the search it resolved.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.get_sourcing_messages",
+          "n": 1,
+          "arg": "args.search_id",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "MV-OC04",
+      "severity": "major",
+      "ask": "The answer shows the message text or says none were sent.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(message|sent|no messages)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "2cd5d15ebdd89d6b46eeeafe89539acfe0822bb136c9615ab54f520a68cf02ad"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "metaview",
+  "skill": "metaview",
+  "tier": "T3",
+  "source": "should-not-call: scheduling an interview is not a Metaview tool",
+  "decision": "A book-the-interview request reaches no Metaview tool, and the answer points at the calendar or the ATS",
+  "data_check": "candidate data: {{target:metaview.candidate}} has an application in the ATS",
+  "prompt": "book {{target:metaview.candidate}}'s onsite for Thursday at 2pm.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "MV-RL01",
+      "severity": "blocker",
+      "ask": "No Metaview tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "metaview.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "MV-OC01",
+      "severity": "major",
+      "ask": "The answer says scheduling is not something Metaview does, and points at the calendar or the ATS.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(calendar|ATS|Ashby|can't schedule|cannot schedule|no tool)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "80a6c34fc4ecf453dd981895f73cfe877d24aae0b3bf322e0adc0f9aa39171f3"
+  }
+}

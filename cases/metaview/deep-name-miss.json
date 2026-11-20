@@ -1,0 +1,143 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-name-miss",
+  "plugin": "metaview",
+  "skill": "metaview",
+  "tier": "T3",
+  "source": "deep, error: a candidate name that does not resolve",
+  "decision": "A miss runs the one unfiltered check, explains it from access only, and asks for the email or role; no other source is offered",
+  "data_check": "candidate data: the name 'Marta Oyelaran' matches no conversation participant",
+  "prompt": "find Marta Oyelaran's interviews — she spoke to us about the platform role last month.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "MV-OC01",
+      "severity": "blocker",
+      "ask": "It searched the candidate field once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "metaview.list_field_values",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "MV-OC02",
+      "severity": "major",
+      "ask": "It ran the one unfiltered conversations check, as the skill says.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "metaview.search_conversations",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "MV-OC03",
+      "severity": "major",
+      "ask": "The answer says no match was found, and explains it from access, not a fault.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(no match|couldn't find|could not find|not find|no conversations)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "MV-OC04",
+      "severity": "major",
+      "ask": "It asks for the email or the role.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(email|which role|role)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "MV-SF01",
+      "severity": "blocker",
+      "ask": "No shortened or variant name was searched, and no other source was offered.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "metaview.list_field_values",
+          "op": "<=",
+          "value": 1
+        },
+        {
+          "kind": "absent",
+          "tool": "metaview.fetch_candidates",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The unfiltered check is the skill's own recovery step, so one search_conversations call is expected.",
+      "line": 30
+    }
+  ],
+  "hashes": {
+    "source_sha256": "8b002deeb86f90306b40e294c03ce95f73020005dcb37666959a537acbf8e8a6"
+  }
+}

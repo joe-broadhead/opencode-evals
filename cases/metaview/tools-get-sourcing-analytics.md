@@ -1,0 +1,22 @@
+# tools-get-sourcing-analytics
+- Plugin: metaview
+- Skill under test: metaview
+- Tier: T3
+- Source: wide sweep: get_sourcing_analytics (reply and response metrics)
+- Decision tested: A sourcing-metrics question is one analytics call for the metric and period
+- Data check: candidate data: sourcing messages sent this month
+- Budget: outer_calls <= 10, inner_calls <= 6
+- Set: wide
+
+## Prompt
+how many candidates replied to our sourcing messages this month?
+
+## Items
+- [MV-OC01] blocker · It used get_sourcing_analytics once.
+  evidence: count:metaview.get_sourcing_analytics == 1
+- [MV-PR01] major · The call carries a generic rationale, with no candidate detail in it.
+  evidence: call:metaview.get_sourcing_analytics#1 args.rationale present
+- [MV-PR02] major · It asked for replies.
+  evidence: call:metaview.get_sourcing_analytics#1 args.metric present
+- [MV-OC04] major · The answer gives the count and the period.
+  evidence: text:any matches /(repl|response|month|[0-9]+)/i
