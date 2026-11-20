@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide, twin
+- Status: deferred
 
 ## Prompt
 the calendar entry for {{target:wisprflow.meeting}} was a call of mine; did Wispr Flow capture it, and what was the outcome?
@@ -31,3 +32,6 @@ the calendar entry for {{target:wisprflow.meeting}} was a call of mine; did Wisp
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: needs a recorded meeting behind the calendar event (owner decision 20 Nov).

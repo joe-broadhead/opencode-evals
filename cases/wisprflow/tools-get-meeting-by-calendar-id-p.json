@@ -22,6 +22,7 @@
     "wide",
     "twin"
   ],
+  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -41,7 +42,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "WF-OC02",
@@ -76,7 +77,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "WF-TR01",
@@ -93,7 +94,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "WF-SF01",
@@ -121,7 +122,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "WF-RB01",
@@ -137,12 +138,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: needs a recorded meeting behind the calendar event (owner decision 20 Nov).",
+      "line": 37
+    }
+  ],
   "hashes": {
-    "source_sha256": "a782dafd579dbf0c740ec88544260ebec15547ea4a01d3c74f81fa412f7e6dca"
+    "source_sha256": "59d8eb642608932cb8f075b66a7af2f38849437f22052c64879f5da8b748ac31"
   }
 }
