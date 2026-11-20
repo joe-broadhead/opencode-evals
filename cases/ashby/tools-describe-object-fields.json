@@ -1,0 +1,96 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-describe-object-fields",
+  "plugin": "ashby",
+  "skill": "ashby",
+  "tier": "T3",
+  "source": "wide sweep: describe_object_fields (Ashby MCP; the fields a record type supports)",
+  "decision": "A which-fields question describes the record type once, and answers with the fields it has",
+  "data_check": "the Ashby organisation has offer records, or the answer says which fields there are",
+  "prompt": "what fields can I filter offers by in Ashby? I want to pull the ones still open.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ASH-OC01",
+      "severity": "blocker",
+      "ask": "It read it with describe_object_fields once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "ashby.describe_object_fields",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ASH-PR01",
+      "severity": "major",
+      "ask": "It described the offer record type.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "ashby.describe_object_fields",
+          "n": 1,
+          "arg": "args.objectType",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "offer",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "major",
+      "ask": "The answer lists fields, not records.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "field|status|filter",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "e3944710a9ea25a1e1626c54eeaaeab03ce63e70aa3def24420e83b0a2332023"
+  }
+}

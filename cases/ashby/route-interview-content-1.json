@@ -1,0 +1,107 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-interview-content-1",
+  "plugin": "ashby",
+  "skill": "ashby",
+  "tier": "T3",
+  "source": "overlap routing: Ashby vs Metaview, what a candidate said in an interview",
+  "decision": "A what-did-they-say question routes to Metaview, and Ashby is not called for it",
+  "data_check": "{{target:metaview.candidate}} has a recorded interview in the last 90 days",
+  "prompt": "what did {{target:metaview.candidate}} say about distributed systems in their onsite?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "ASH-RL01",
+      "severity": "blocker",
+      "ask": "Ashby was not asked for the interview content.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "ashby.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ASH-RL02",
+      "severity": "major",
+      "ask": "It read the conversations with Metaview.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "metaview.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ASH-OC01",
+      "severity": "major",
+      "ask": "The answer attributes what was said to Metaview, in the user's own words.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "Metaview",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "ASH-SF01",
+      "severity": "blocker",
+      "ask": "No Ashby record was written.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "90b81550c9daaadbfcad706a5f36496ec46d3aa5ab2385a5366f6f6c731cdf3b"
+  }
+}

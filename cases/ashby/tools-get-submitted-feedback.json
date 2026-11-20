@@ -1,0 +1,91 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-submitted-feedback",
+  "plugin": "ashby",
+  "skill": "ashby",
+  "tier": "T3",
+  "source": "wide sweep: get_submitted_feedback (Ashby MCP; the user's own scorecards for an application)",
+  "decision": "My-own-scorecards is one submitted-feedback read by application id, and it says these are only the user's",
+  "data_check": "the user has submitted a scorecard for {{target:ashby.candidate}}'s application",
+  "prompt": "what did I score on {{target:ashby.candidate}}'s onsite? my own scorecard, not the panel's.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ASH-OC01",
+      "severity": "blocker",
+      "ask": "It read it with get_submitted_feedback once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "ashby.get_submitted_feedback",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ASH-PR01",
+      "severity": "major",
+      "ask": "It read the application it resolved, by id.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "ashby.get_submitted_feedback",
+          "n": 1,
+          "arg": "args.applicationId",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "major",
+      "ask": "The answer says these are the user's own scorecards.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "your|own|you submitted",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "75d18c234282e95374ec56ff6d409bd0771ce4ae92f01f3ee831124ce52e3b89"
+  }
+}

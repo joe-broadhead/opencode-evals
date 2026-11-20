@@ -1,0 +1,91 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-candidate",
+  "plugin": "ashby",
+  "skill": "ashby",
+  "tier": "T3",
+  "source": "wide sweep: get_candidate (Ashby MCP; one candidate's profile, resume, notes and feedback)",
+  "decision": "A profile question reads the candidate once, by id, and reuses what it returns",
+  "data_check": "{{target:ashby.candidate}} has a profile with a resume or notes",
+  "prompt": "pull up {{target:ashby.candidate}}'s profile — resume summary, notes and any feedback on it — and give me the short version.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ASH-OC01",
+      "severity": "blocker",
+      "ask": "It read it with get_candidate once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "ashby.get_candidate",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ASH-PR01",
+      "severity": "major",
+      "ask": "It passed the candidate id it resolved, as a list.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "ashby.get_candidate",
+          "n": 1,
+          "arg": "args.candidateIds",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "major",
+      "ask": "The answer is about the candidate the user named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "candidate|profile",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "6f5d3883b54e4244ed4763ecee550b402b182da38ef24fcb51323014a860ccc5"
+  }
+}

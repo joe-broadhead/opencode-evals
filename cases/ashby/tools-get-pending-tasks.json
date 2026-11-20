@@ -1,0 +1,71 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-pending-tasks",
+  "plugin": "ashby",
+  "skill": "ashby",
+  "tier": "T3",
+  "source": "wide sweep: get_pending_tasks (Ashby MCP; the user's scorecards, approvals and follow-ups)",
+  "decision": "What-do-I-owe is one pending-tasks read, reported by type",
+  "data_check": "the signed-in Ashby user has at least one pending task, or none, either is answerable",
+  "prompt": "what do I owe in Ashby this week? scorecards, approvals, follow-ups, the lot.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ASH-OC01",
+      "severity": "blocker",
+      "ask": "It read it with get_pending_tasks once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "ashby.get_pending_tasks",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "major",
+      "ask": "The answer lists what is pending, by type, and says so plainly if nothing is.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "scorecard|approval|follow|task|nothing",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "26c30614f5b9cbee06c13911a33b700e4229c7d19d74b490c8d8d8ed93b31dfe"
+  }
+}

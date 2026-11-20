@@ -1,0 +1,71 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-list-interviews",
+  "plugin": "ashby",
+  "skill": "ashby",
+  "tier": "T3",
+  "source": "wide sweep: list_interviews (Ashby MCP; the past seven days through the next seven)",
+  "decision": "A what-interviews question is one list over the tool's own window, and the answer states the dates",
+  "data_check": "the user has at least one interview in the tool's window, or none",
+  "prompt": "what interviews do I have in the next week? names, jobs and times.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ASH-OC01",
+      "severity": "blocker",
+      "ask": "It read it with list_interviews once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "ashby.list_interviews",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "major",
+      "ask": "The answer names each interview with its job and a date or time.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "interview|no interviews|nothing",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "50ce6bad68eef93f5d571c413838b630d5db52e009312882e3d2672fe377a8a3"
+  }
+}

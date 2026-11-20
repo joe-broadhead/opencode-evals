@@ -1,0 +1,122 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-week-window",
+  "plugin": "ashby",
+  "skill": "ashby",
+  "tier": "T3",
+  "source": "deep, date window: applications since the user's Monday, local days",
+  "decision": "The window is the user's local week, the end exclusive, and the answer names it",
+  "data_check": "the Ashby organisation holds applications in the current local week",
+  "prompt": "how many applications have we had since Monday? and which jobs are they for?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4
+  },
+  "seed": "utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "ASH-OC01",
+      "severity": "blocker",
+      "ask": "It counted with one filter call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "ashby.filter_records",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "ASH-PR01",
+      "severity": "major",
+      "ask": "The filter carries a date range.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "ashby.filter_records",
+          "n": 1,
+          "arg": "args.filter",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "major",
+      "ask": "The answer names the window it used, with the user's local days.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(Monday|since|week)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "ASH-OC03",
+      "severity": "minor",
+      "ask": "It gives the count by job, or says which jobs the applications are for.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "ASH-SF01",
+      "severity": "blocker",
+      "ask": "It did not fetch rows to count them itself.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "ashby.filter_records",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "aee6c4666a18e4178ce949294e29aba9b2cd4b1ebb46718b4a281f96b8acb461"
+  }
+}

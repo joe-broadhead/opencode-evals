@@ -1,0 +1,96 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-record-details",
+  "plugin": "ashby",
+  "skill": "ashby",
+  "tier": "T3",
+  "source": "wide sweep: get_record_details (Ashby MCP; one application, opening, offer or scheduled interview)",
+  "decision": "Where-is-she is answered from the application record, once, without pulling the whole profile",
+  "data_check": "{{target:ashby.candidate}} has an application in {{target:ashby.job}}",
+  "prompt": "where is {{target:ashby.candidate}} in the process for {{target:ashby.job}}? just the stage and what happens next.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ASH-OC01",
+      "severity": "blocker",
+      "ask": "It read it with get_record_details once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "ashby.get_record_details",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ASH-PR01",
+      "severity": "major",
+      "ask": "It asked for the application record.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "ashby.get_record_details",
+          "n": 1,
+          "arg": "args.entityType",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "application",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "major",
+      "ask": "The answer names the stage and the next step.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "stage|next",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "3b62363dec1350658a879a2de691d1ba35d84a0e3b84ddcaadafbfd5ae9ec709"
+  }
+}

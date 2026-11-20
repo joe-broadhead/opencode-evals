@@ -1,0 +1,122 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-filter-records",
+  "plugin": "ashby",
+  "skill": "ashby",
+  "tier": "T3",
+  "source": "wide sweep: filter_records (Ashby MCP; counts and filters records by field)",
+  "decision": "A how-many question takes the count form of the filter, once, and answers with a number rather than rows",
+  "data_check": "the Ashby organisation holds at least one application in the current local week",
+  "prompt": "how many applications came in this week? just the number, no names.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ASH-OC01",
+      "severity": "blocker",
+      "ask": "It read it with filter_records once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "ashby.filter_records",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ASH-PR01",
+      "severity": "major",
+      "ask": "The filter it sent carries a date condition, not an empty string.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "ashby.filter_records",
+          "n": 1,
+          "arg": "args.filter",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ASH-PR02",
+      "severity": "major",
+      "ask": "It filtered the application records.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "ashby.filter_records",
+          "n": 1,
+          "arg": "args.objectType",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "application",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "major",
+      "ask": "The answer gives a count and says which window it used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b[0-9]+\\b",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A count is read from the tool's count form; the item does not require a particular number, which moves with the world.",
+      "line": 25
+    }
+  ],
+  "hashes": {
+    "source_sha256": "de7c3f1975a4ab252cf50a97f62c33020196eca06a77686c891d2e29fe581b7e"
+  }
+}

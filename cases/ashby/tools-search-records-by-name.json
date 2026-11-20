@@ -1,0 +1,116 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-search-records-by-name",
+  "plugin": "ashby",
+  "skill": "ashby",
+  "tier": "T3",
+  "source": "wide sweep: search_records_by_name (Ashby MCP; resolves a person, job or application by name)",
+  "decision": "A candidate named by name is resolved with one search, and the record it returns is named back",
+  "data_check": "{{target:ashby.candidate}} resolves to exactly one Ashby record, in a job the user can see",
+  "prompt": "find {{target:ashby.candidate}} in Ashby for me. I want to be sure which record is theirs before I do anything else.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "ASH-OC01",
+      "severity": "blocker",
+      "ask": "It read it with search_records_by_name once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "ashby.search_records_by_name",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "ASH-PR01",
+      "severity": "major",
+      "ask": "The search carries the name the user gave, whole.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "ashby.search_records_by_name",
+          "n": 1,
+          "arg": "args.query",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "ASH-PR02",
+      "severity": "major",
+      "ask": "It searched the person records.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "ashby.search_records_by_name",
+          "n": 1,
+          "arg": "args.entityType",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "person",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "ASH-OC02",
+      "severity": "major",
+      "ask": "The answer names the record it found and the job it is in, and invents none.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "found|match|record",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "e8a80c27e303599be804e2601f5b0fcda825283e4d27d07a64588d6835891251"
+  }
+}
