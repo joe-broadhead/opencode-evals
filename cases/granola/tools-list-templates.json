@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "Templates are one list read, and the answer names the templates it found.",
-  "data_check": "data=seeded; the account has at least one template, or none; both are a report",
+  "data_check": "the account has at least one template, or none; both are a report; content is unchecked; only route, arguments and no-write are graded",
   "prompt": "what note templates do I have?",
   "controls": [],
   "budgets": {
@@ -20,6 +20,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "GRA-OC01",
@@ -38,7 +39,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "GRA-OC02",
@@ -63,7 +64,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
+    },
+    {
+      "id": "GRA-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "GRA-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
     },
     {
       "id": "GRA-SF01",
@@ -81,17 +114,20 @@
           "kind": "absent",
           "tool": "granola.generate_summary",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7bca083aeab7738d6538a5953152248dbdcbb37d330604968acbd2c0cff265a7"
+    "source_sha256": "916dcf500a7176ccfce1577208b66adc7fd6ea1cb18bbc98ada261c8be7942b0"
   }
 }

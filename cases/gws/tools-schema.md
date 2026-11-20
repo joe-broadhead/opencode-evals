@@ -4,7 +4,8 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: A schema question is one schema call for the named operation, and the answer lists its parameters.
-- Data check: data=seeded; the Calendar service is enabled
+- Data check: the Calendar service is enabled
+- Data: seeded
 - Checkable: operation
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
@@ -22,8 +23,15 @@ what parameters does the calendar events list operation take?
 - [GWS-OC02] major · The answer shows the operation's parameters, including the time window one.
   evidence_any: text:any matches /timeMin/ ;; text:any matches /(calendarId|singleEvents)/
 
+- [GWS-RB01] minor · No call names a tool that does not exist.
+  evidence: unknown-tool:none
+
+- [GWS-RB02] minor · The guard refused no write and logged no access assertion.
+  evidence: guard:clean
+
 ## Forbidden
 - [GWS-SF01] blocker · No change is made to anything: a read request never becomes a write.
   evidence: absent:gws.read
-  evidence: absent:plan
+  evidence: absent-write:inference
   evidence: absent:gws.write
+  evidence: committed-write:none

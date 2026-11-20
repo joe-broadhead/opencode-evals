@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "A past week is one search bounded by both dates, and each meeting is reported with its date and a one-line subject.",
-  "data_check": "data=seeded; the sandbox folder holds last week's meetings, or none",
+  "data_check": "the sandbox folder holds last week's meetings, or none; content is unchecked; only route, arguments and no-write are graded",
   "prompt": "which meetings did I have last week, and what was each about?",
   "controls": [],
   "budgets": {
@@ -20,6 +20,7 @@
   "sets": [
     "deep"
   ],
+  "data": "real",
   "items": [
     {
       "id": "GRA-OC01",
@@ -46,10 +47,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
-      "id": "GRA-OC02",
+      "id": "GRA-DT01",
       "severity": "major",
       "ask": "The answer gives each meeting's date and what it was about.",
       "forbidden": false,
@@ -71,7 +72,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
+    },
+    {
+      "id": "GRA-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "GRA-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     },
     {
       "id": "GRA-SF01",
@@ -94,17 +127,20 @@
           "kind": "absent",
           "tool": "granola.export_markdown",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "79b211b8246fd405e8df831cdf49fbfb29dc9009102e86a2c0904c99aa709524"
+    "source_sha256": "d55238b06c83f16fa2e01c4dac84263a116d210ea3f32a5018d4735c595892dc"
   }
 }

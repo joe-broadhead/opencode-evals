@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A meeting transcript search is Granola's, not a Slack search of the same words.",
-  "data_check": "data=seeded; the seeded kickoff transcript mentions the budget",
+  "data_check": "the seeded kickoff transcript mentions the budget; content is unchecked; only route, arguments and no-write are graded",
   "prompt": "find where we discussed the budget in a meeting",
   "controls": [],
   "budgets": {
@@ -20,9 +20,10 @@
   "sets": [
     "route"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "GRA-TR01",
+      "id": "GRA-RT01",
       "severity": "blocker",
       "ask": "The plugin that owns the data answers, not the one that merely sounds close.",
       "forbidden": false,
@@ -38,10 +39,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "GRA-TR02",
+      "id": "GRA-RT02",
       "severity": "major",
       "ask": "The overlapping plugin is not called.",
       "forbidden": false,
@@ -56,7 +57,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "GRA-OC01",
@@ -81,12 +82,60 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "GRA-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "GRA-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "GRA-SF01",
+      "severity": "blocker",
+      "ask": "Nothing is committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d62155a3ac57e0c03e634c2638497b3659bd625826beb69e0869bfc047d2fc9c"
+    "source_sha256": "4463110f1bcb439001293ce119acd3eb66f65dc8b178b648283572589c135096"
   }
 }

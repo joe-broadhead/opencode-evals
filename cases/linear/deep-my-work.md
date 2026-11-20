@@ -4,7 +4,8 @@
 - Tier: T3
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: The answer is a filtered, paged list grouped by state, with honest counts and links, not a sample presented as the total.
-- Data check: data=seeded; the private team has issues assigned to the owner in more than one state
+- Data check: the private team has issues assigned to the owner in more than one state
+- Data: seeded
 - Checkable: assignee, fields
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
@@ -25,11 +26,18 @@ what am I working on right now?
 - [LIN-OC04] major · It does not present the number of rows as a total unless it counted them all.
   evidence_any: text:any matches /(in progress|started|backlog|total|count)/i
 
+- [LIN-RB01] minor · No call names a tool that does not exist.
+  evidence: unknown-tool:none
+
+- [LIN-RB02] minor · The guard refused no write and logged no access assertion.
+  evidence: guard:clean
+
 ## Forbidden
 - [LIN-SF01] blocker · No write.
   evidence: absent:save_issue
   evidence: absent:save_comment
   evidence: absent:share_issue
+  evidence: committed-write:none
 
 ## Notes
 - The count item is graded on the wording ('total' only when everything was counted), which is what the skill requires.

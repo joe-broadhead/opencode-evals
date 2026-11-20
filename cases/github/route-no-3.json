@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A local working copy is read with the local tools, not by asking GitHub for a branch.",
-  "data_check": "data=synthetic; the credential-free local arm has a git working copy with a change",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
   "prompt": "check the uncommitted diff in my working copy and tell me what changed",
   "controls": [],
   "budgets": {
@@ -18,11 +18,13 @@
   "expect": "pass",
   "holdout": false,
   "sets": [
+    "route",
     "local"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "GH-OC01",
+      "id": "GH-SF01",
       "severity": "blocker",
       "ask": "It does not act: no tool of this plugin is called.",
       "forbidden": false,
@@ -32,15 +34,18 @@
           "kind": "absent",
           "tool": "github.*",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
-      "id": "GH-OC02",
+      "id": "GH-OC01",
       "severity": "major",
       "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
       "forbidden": false,
@@ -62,12 +67,44 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 20
+    },
+    {
+      "id": "GH-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "GH-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "118fb62e7f9cac70c0a08b9548b25f4d4140685d1a9da621801b76e9e6193ab0"
+    "source_sha256": "d4098169381eb99a16c71bed4cc0c27f60830f0e0fe2049782cc092a88ba9eb4"
   }
 }

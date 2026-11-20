@@ -5,9 +5,9 @@
   "skill": "github-issue-triage",
   "tier": "T3",
   "source": "EVALS-232 §2.5 (commit set)",
-  "decision": "In commit mode the one issue create runs against the sandbox repo, and the answer reports the issue it opened.",
-  "data_check": "data=seeded; the sandbox repo exists and the repo-scoped token may write issues there",
-  "prompt": "open an issue in the evals-232 sandbox repo titled 'evals-232 commit check' with one line of body",
+  "decision": "In commit mode the one issue create runs against the quill-notes repo, and the answer reports the issue it opened.",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "prompt": "open an issue in the quill-notes repo titled 'evals-232 commit check' with one line of body",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -24,9 +24,10 @@
   "sets": [
     "commit"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "GH-OC01",
+      "id": "GH-CT01",
       "severity": "blocker",
       "ask": "One issue is created with the title the user gave.",
       "forbidden": false,
@@ -53,10 +54,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "GH-OC02",
+      "id": "GH-CT02",
       "severity": "blocker",
       "ask": "The create is not declined in commit mode.",
       "forbidden": false,
@@ -70,10 +71,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "GH-OC03",
+      "id": "GH-OC01",
       "severity": "major",
       "ask": "The answer gives the issue's number or link.",
       "forbidden": false,
@@ -95,7 +96,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
+    },
+    {
+      "id": "GH-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "GH-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     },
     {
       "id": "GH-SF01",
@@ -128,7 +161,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 34
     }
   ],
   "oracle": [],
@@ -136,10 +169,10 @@
     {
       "id": null,
       "text": "Runs only with the repo-scoped fine-grained token (P0-6b); `github_api` writes stay confirm-only.",
-      "line": 34
+      "line": 41
     }
   ],
   "hashes": {
-    "source_sha256": "126a693ecb543a635c13bde1314ea157720ccabd6860bb6a58c61340910ccf1a"
+    "source_sha256": "3c58ac4dd9caaf5bc393b260a221f8cc28f26884e935078149e1cd7209064547"
   }
 }

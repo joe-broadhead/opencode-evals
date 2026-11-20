@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "With no team, title or description, the agent asks for them instead of creating a placeholder issue.",
-  "data_check": "data=seeded; the workspace has more than one team",
+  "data_check": "the workspace has more than one team",
   "prompt": "create an issue for the bug",
   "controls": [],
   "budgets": {
@@ -20,6 +20,7 @@
   "sets": [
     "deep"
   ],
+  "data": "seeded",
   "items": [
     {
       "id": "LIN-OC01",
@@ -54,7 +55,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "LIN-OC02",
@@ -72,7 +73,39 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
+    },
+    {
+      "id": "LIN-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "LIN-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
     },
     {
       "id": "LIN-SF01",
@@ -90,17 +123,20 @@
           "kind": "absent",
           "tool": "save_comment",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "85568645be4e7d6d846be4fe45bb215f460f52771b0db539ad62937edb59ee9c"
+    "source_sha256": "c01fe087c0d9eb62582e7d7a8a2793f04cdada49ba07caed81ed59e984b98a85"
   }
 }

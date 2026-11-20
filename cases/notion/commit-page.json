@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.5 (commit set)",
   "decision": "In commit mode the one page create runs under the sandbox page, and the answer names the page it made.",
-  "data_check": "data=seeded; the private evals-232 page exists and is not shared",
+  "data_check": "the private evals-232 page exists and is not shared",
   "prompt": "create a page under evals-232 called evals-232 commit check with one line of text",
   "controls": [],
   "budgets": {
@@ -20,9 +20,10 @@
   "sets": [
     "commit"
   ],
+  "data": "seeded",
   "items": [
     {
-      "id": "NOT-OC01",
+      "id": "NOT-CT01",
       "severity": "blocker",
       "ask": "One page is created under the sandbox page.",
       "forbidden": false,
@@ -38,10 +39,32 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
-      "id": "NOT-OC02",
+      "id": "NOT-CT02",
+      "severity": "blocker",
+      "ask": "The page is created under the sandbox page and nowhere else.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "notion-create-pages",
+          "n": 1,
+          "arg": "args.parent.page_id",
+          "aliases": [
+            "@notion.sandbox_page"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "NOT-CT03",
       "severity": "blocker",
       "ask": "The create is not declined in commit mode.",
       "forbidden": false,
@@ -55,10 +78,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 22
     },
     {
-      "id": "NOT-OC03",
+      "id": "NOT-OC01",
       "severity": "major",
       "ask": "The answer names the page and gives its link.",
       "forbidden": false,
@@ -80,7 +103,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 25
+    },
+    {
+      "id": "NOT-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "NOT-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
     },
     {
       "id": "NOT-SF01",
@@ -108,7 +163,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 35
     }
   ],
   "oracle": [],
@@ -116,10 +171,10 @@
     {
       "id": null,
       "text": "The page inherits the sandbox page's permissions; the target is private and unshared.",
-      "line": 31
+      "line": 41
     }
   ],
   "hashes": {
-    "source_sha256": "94de9403782edd8cc78df514e3dbabf567ca54d3a25cb2cb4e0d390ef87036bd"
+    "source_sha256": "d623ec888571667460fb5dd54319349d73a69f1562f4a1ef9c4192a37d738e37"
   }
 }

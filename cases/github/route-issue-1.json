@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A GitHub issue is read from GitHub, not from Linear or Jira.",
-  "data_check": "data=seeded; the seeded issue 7 exists in the sandbox repo",
-  "prompt": "what's the status of issue 7 in the evals-232 sandbox repo?",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "prompt": "what's the status of issue 1 in the quill-notes repo?",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -20,9 +20,10 @@
   "sets": [
     "route"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "GH-TR01",
+      "id": "GH-RT01",
       "severity": "blocker",
       "ask": "The plugin that owns the data answers, not the one that merely sounds close.",
       "forbidden": false,
@@ -38,10 +39,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "GH-TR02",
+      "id": "GH-RT02",
       "severity": "major",
       "ask": "The overlapping plugin is not called.",
       "forbidden": false,
@@ -61,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "GH-OC01",
@@ -86,12 +87,60 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
+    },
+    {
+      "id": "GH-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "GH-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "GH-SF01",
+      "severity": "blocker",
+      "ask": "Nothing is committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0213432ffc9d12532bbacee769cacd67eebf92203b24ff2203664be5f2ff5f2a"
+    "source_sha256": "a739a84b1874e1542b60c704a61d0de9f8dde05a9b5ab64c6733f3de13e64e72"
   }
 }

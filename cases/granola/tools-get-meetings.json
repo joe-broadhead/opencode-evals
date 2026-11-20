@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notes of named meetings are read in one call, and the answer reports them in its own words.",
-  "data_check": "data=seeded; the seeded kickoff meeting exists in the evals-232 folder",
+  "data_check": "the seeded kickoff meeting exists in the evals-232 folder; content is unchecked; only route, arguments and no-write are graded",
   "prompt": "summarise the evals-232 kickoff meeting",
   "controls": [],
   "budgets": {
@@ -20,6 +20,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "GRA-OC01",
@@ -38,7 +39,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "GRA-OC02",
@@ -73,7 +74,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
+    },
+    {
+      "id": "GRA-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "GRA-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
     },
     {
       "id": "GRA-SF01",
@@ -91,12 +124,15 @@
           "kind": "absent",
           "tool": "granola.generate_summary",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 29
     }
   ],
   "oracle": [],
@@ -104,10 +140,10 @@
     {
       "id": null,
       "text": "The canary is the seeded meeting title; the alternative keeps the case gradeable before the canary is seeded.",
-      "line": 27
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "36a7396c43d0237fe2cd645f4e5e53bc8678f0b10ae3131ba36a2f66c2c69b47"
+    "source_sha256": "964593994dbd9f519ea50b8daa4f8d7f78c99ca2b48de0fcab6131a71b064b05"
   }
 }

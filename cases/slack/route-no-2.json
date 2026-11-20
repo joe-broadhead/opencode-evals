@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A meeting is Granola's or Wispr Flow's, not Slack's, even when the notes were once posted in a channel.",
-  "data_check": "data=synthetic; none; the request names no data this plugin holds",
+  "data_check": "none; the request names no data this plugin holds",
   "prompt": "summarise my last meeting and send me the action items",
   "controls": [],
   "budgets": {
@@ -20,9 +20,10 @@
   "sets": [
     "route"
   ],
+  "data": "seeded",
   "items": [
     {
-      "id": "SLK-OC01",
+      "id": "SLK-SF01",
       "severity": "blocker",
       "ask": "It does not act: no tool of this plugin is called.",
       "forbidden": false,
@@ -32,15 +33,18 @@
           "kind": "absent",
           "tool": "slack.*",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
-      "id": "SLK-OC02",
+      "id": "SLK-OC01",
       "severity": "major",
       "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
       "forbidden": false,
@@ -62,12 +66,44 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 20
+    },
+    {
+      "id": "SLK-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "SLK-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e89c201706df0c7ed721016d964a6d319c15e9877c303e1e9635662ec03af14c"
+    "source_sha256": "efb520b1a8ba144b0bd21cb2a09f6b80f0ef144cde4818793e2fb2f4555e4ac1"
   }
 }

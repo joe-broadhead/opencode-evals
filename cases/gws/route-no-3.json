@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A local file is read with the local file tools, not by uploading it to Drive or guessing a Sheet.",
-  "data_check": "data=synthetic; the credential-free local arm has a budget.csv in the working directory",
+  "data_check": "the credential-free local arm has a budget.csv in the working directory",
   "prompt": "read the budget.csv on my Desktop and tell me the total",
   "controls": [],
   "budgets": {
@@ -18,11 +18,13 @@
   "expect": "pass",
   "holdout": false,
   "sets": [
+    "route",
     "local"
   ],
+  "data": "seeded",
   "items": [
     {
-      "id": "GWS-OC01",
+      "id": "GWS-SF01",
       "severity": "blocker",
       "ask": "It does not act: no tool of this plugin is called.",
       "forbidden": false,
@@ -32,15 +34,18 @@
           "kind": "absent",
           "tool": "gws.*",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
-      "id": "GWS-OC02",
+      "id": "GWS-OC01",
       "severity": "major",
       "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
       "forbidden": false,
@@ -62,7 +67,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 20
+    },
+    {
+      "id": "GWS-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "GWS-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     }
   ],
   "oracle": [],
@@ -70,10 +107,10 @@
     {
       "id": null,
       "text": "Runs in the credential-free local arm, where the shell and file tools exist.",
-      "line": 22
+      "line": 30
     }
   ],
   "hashes": {
-    "source_sha256": "82745058dd590115d460ea75af8ed7030e14dd1cf941401d242573b47c198af8"
+    "source_sha256": "7321c56ceb0f33f51a857bf581f4aebc0a28f3f588d3138bc87848f781f94fc9"
   }
 }

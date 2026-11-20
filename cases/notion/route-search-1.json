@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A Notion page is found with Notion's search, not a Google Drive search or a web search.",
-  "data_check": "data=seeded; the evals-232 page holds the launch plan",
+  "data_check": "the evals-232 page holds the launch plan",
   "prompt": "search my Notion for the launch plan",
   "controls": [],
   "budgets": {
@@ -20,9 +20,10 @@
   "sets": [
     "route"
   ],
+  "data": "seeded",
   "items": [
     {
-      "id": "NOT-TR01",
+      "id": "NOT-RT01",
       "severity": "blocker",
       "ask": "The plugin that owns the data answers, not the one that merely sounds close.",
       "forbidden": false,
@@ -38,10 +39,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "NOT-TR02",
+      "id": "NOT-RT02",
       "severity": "major",
       "ask": "The overlapping plugin is not called.",
       "forbidden": false,
@@ -61,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "NOT-OC01",
@@ -86,12 +87,44 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
+    },
+    {
+      "id": "NOT-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "NOT-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9f79455b5314dfe5bc9a0b02d422391aa1c2f1ba601043d24be36320bda85776"
+    "source_sha256": "a83e7a211e0c62ad758c42a685b3e5895143f553d23b039e071d8d58c5030162"
   }
 }

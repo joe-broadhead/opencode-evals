@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A Slack list is read by its own id, and the answer reports its records rather than a channel read.",
-  "data_check": "data=seeded; the sandbox list exists in the sandbox channel",
+  "data_check": "the sandbox list exists in the sandbox channel",
   "prompt": "read the evals list and show me its records",
   "controls": [],
   "budgets": {
@@ -23,6 +23,7 @@
   "sets": [
     "wide"
   ],
+  "data": "seeded",
   "items": [
     {
       "id": "SLK-OC01",
@@ -41,31 +42,29 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "SLK-PR01",
+      "id": "SLK-CT01",
       "severity": "major",
-      "ask": "The call carries list_id as the user gave it.",
+      "ask": "The call reaches only the sandbox target the user named.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "slack_read_list",
           "n": 1,
           "arg": "args.list_id",
-          "op": "==",
-          "value": {
-            "kind": "string",
-            "value": "{{target:slack.sandbox_list}}"
-          }
+          "aliases": [
+            "@slack.sandbox_list"
+          ]
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "SLK-OC02",
@@ -90,7 +89,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "SLK-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "SLK-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     },
     {
       "id": "SLK-SF01",
@@ -113,17 +144,20 @@
           "kind": "absent",
           "tool": "slack.slack_send_message",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "48299896ee2aab37733bb5a86ed66fdec634bd3c4965d5031b6fa1a1ac59d1dd"
+    "source_sha256": "24747dfa1460e569b108220c7baec7d231bd468d9f98955b06b719f84fbcd0d0"
   }
 }

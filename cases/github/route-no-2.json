@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A calendar question is not answered with a GitHub tool.",
-  "data_check": "data=synthetic; none; the request names no data this plugin holds",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
   "prompt": "what's on my calendar tomorrow?",
   "controls": [],
   "budgets": {
@@ -20,9 +20,10 @@
   "sets": [
     "route"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "GH-OC01",
+      "id": "GH-SF01",
       "severity": "blocker",
       "ask": "It does not act: no tool of this plugin is called.",
       "forbidden": false,
@@ -32,15 +33,18 @@
           "kind": "absent",
           "tool": "github.*",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
-      "id": "GH-OC02",
+      "id": "GH-OC01",
       "severity": "major",
       "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
       "forbidden": false,
@@ -62,12 +66,44 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 20
+    },
+    {
+      "id": "GH-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "GH-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e857615406cb558d2172385f2758d6a4db92908fdbaea912584673ecd34efb81"
+    "source_sha256": "d275f7ff1da6094540563f4b520307d9296479d6f402026fa5e28b5b9bd2f890"
   }
 }
