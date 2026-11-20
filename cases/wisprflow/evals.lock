@@ -1,9 +1,9 @@
 {
   "plugin": "wisprflow",
   "epoch": 1,
-  "cases": 28,
-  "items": 177,
-  "cases_sha256": "e3e415dad03200fad791d381a950aa4cb4ce168a9ad4c1786b57c452bcd0557c",
+  "cases": 31,
+  "items": 195,
+  "cases_sha256": "99c58fcc2ce11f4cf1b46def540b376363200b66990240c4172739827135d647",
   "grader_sha256": "7e6efd86ec6ce41f6608b698d853d0452f4eb2c183af2576e09ce52962ba1ad3",
-  "frozen_at": "2026-11-20T16:13:18.297Z"
+  "frozen_at": "2026-11-20T19:24:00.886Z"
 }

@@ -1,9 +1,9 @@
 {
   "plugin": "jira",
   "epoch": 1,
-  "cases": 66,
-  "items": 413,
-  "cases_sha256": "1fffb96a4026ed5d312ff03b0037ea29289d378a4712aa53e9b174a9e445d144",
+  "cases": 77,
+  "items": 478,
+  "cases_sha256": "2b195b9bad369f217e54d4f24c1f2cffc795374e194ba187634b57fde0fe5e73",
   "grader_sha256": "7e6efd86ec6ce41f6608b698d853d0452f4eb2c183af2576e09ce52962ba1ad3",
-  "frozen_at": "2026-11-20T15:41:04.627Z"
+  "frozen_at": "2026-11-20T19:23:59.015Z"
 }

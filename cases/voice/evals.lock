@@ -1,9 +1,9 @@
 {
   "plugin": "voice",
   "epoch": 1,
-  "cases": 13,
-  "items": 64,
-  "cases_sha256": "7ca50a098fb06818c64972945611d21e375c4dd29379c1943c2e2429aa036155",
+  "cases": 14,
+  "items": 69,
+  "cases_sha256": "eb5395832f1b789ddad690119fc0621d8ac5643f91a2e7547f2fb907f0b75969",
   "grader_sha256": "7e6efd86ec6ce41f6608b698d853d0452f4eb2c183af2576e09ce52962ba1ad3",
-  "frozen_at": "2026-11-20T15:35:54.445Z"
+  "frozen_at": "2026-11-20T19:24:00.723Z"
 }
