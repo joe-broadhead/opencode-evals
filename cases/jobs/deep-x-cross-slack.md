@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: evals-232/deep/jobs/cross-slack
 - Decision tested: a weekly job that posts a summary is scheduled once; neither the schedule nor the Slack post happens now, and the answer says so
-- Data check: the Slack plugin holds a credential and GitHub runs fake; nothing is written because both calls are declined
+- Data check: the channel and the repo are the sandbox targets; the Slack plugin holds a credential and GitHub runs fake; nothing is written because both calls are declined
 - Seed: plugins=jobs,github,slack
 - Data: synthetic
 - Checkable: action
@@ -12,8 +12,8 @@
 - Set: deep
 
 ## Prompt
-every Friday at 4pm, have an agent summarise the pull requests merged that week in my sandbox repo and post the
-summary to my evals channel. Set it up now.
+every Friday at 4pm, have an agent summarise the pull requests merged that week in my sandbox repo
+({{target:github.repo}}) and post the summary to my evals channel, {{target:slack.sandbox_channel}}. Set it up now.
 
 ## Items
 - [JOB-WR01] blocker · The schedule is one create, and it was declined.
