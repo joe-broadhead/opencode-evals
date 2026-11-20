@@ -6,7 +6,7 @@
 - Decision tested: A reaction is one call on the message, declined, and the answer says no reaction was added.
 - Data check: the pinned message exists in the sandbox channel
 - Data: seeded
-- Checkable: channel_id, reaction
+- Checkable: channel_id, emoji
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
@@ -21,7 +21,7 @@ react with a check mark to the message {{canary:slack_pinned_ts}} in #{{target:s
   evidence: target:slack_add_reaction#1 args.channel_id in @slack.sandbox_channel
 
 - [SLK-PR01] major · The call carries reaction as the user gave it.
-  evidence: call:slack_add_reaction#1 args.reaction matches /(white|heavy)_check_mark/
+  evidence: call:slack_add_reaction#1 args.emoji matches /(white|heavy)_check_mark/
 
 - [SLK-WR02] blocker · The write was declined by the permission prompt, and never reached the vendor.
   evidence: declined:slack_add_reaction

@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A Linear issue is read from Linear, not from GitHub or Jira.
 - Data check: the seeded flaky issue exists in the private team; content unchecked
-- Data: seeded
+- Data: real
 - Seed: plugins=github,jira
 - Set: route
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000

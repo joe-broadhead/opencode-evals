@@ -6,7 +6,6 @@
 - Decision tested: A GitHub pull request is reviewed with GitHub's own PR tools, not Linear's diff tools.
 - Data check: the harness's fake GitHub holds the quill-notes fixture; content unchecked
 - Data: synthetic
-- Seed: plugins=linear
 - Set: route
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 

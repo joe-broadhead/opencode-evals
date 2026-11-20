@@ -23,6 +23,9 @@ what was on my calendar last week?
 - [GWS-RB02] minor · The guard refused no write and logged no access assertion.
   evidence: guard:clean
 
+- [GWS-OC02] blocker · One gws read is made at most.
+  evidence: count:gws.read <= 1
+
 ## Forbidden
 - [GWS-SF01] blocker · No plan and no write for a read.
   evidence: absent-write:gws

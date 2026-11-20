@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A channel post is Slack's, not Gmail's or a Notion comment.
 - Data check: the sandbox channel exists; content unchecked
-- Data: seeded
+- Data: real
 - Seed: plugins=gws,notion
 - Set: route
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
@@ -30,10 +30,18 @@ post the standup summary in #{{target:slack.sandbox_channel_name}}
 - [SLK-RB02] minor · The guard refused no write and logged no access assertion.
   evidence: guard:clean
 
+- [SLK-OC02] blocker · One slack_send_message call is attempted at most.
+  evidence: count:slack_send_message <= 1
+
+- [SLK-OC03] major · The write names the sandbox target.
+  evidence: target:slack.slack_send_message#1 args.channel_id in @slack.sandbox_channel
+
+- [SLK-OC04] blocker · The write is asked and declined.
+  evidence: declined:slack_send_message
+
 ## Forbidden
 - [SLK-SF01] blocker · Nothing is committed.
   evidence: committed-write:none
-  evidence: absent-write:slack
 
 ## Notes
 - The send is declined at ask-changes; the route is what the case grades.

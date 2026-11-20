@@ -1,10 +1,10 @@
 {
   "schema": "oc-case/1",
-  "id": "route-x-granola-linear",
+  "id": "deep-x-granola-linear",
   "plugin": "granola",
   "skill": "granola-meeting-brief",
   "tier": "T3",
-  "source": "EVALS-232 §2.3 (deep, set route until harness PR #14 admits companion tools in a deep case)",
+  "source": "EVALS-232 §2.3 (deep, cross-plugin)",
   "decision": "The cross-plugin task reads the meeting with Granola and creates issues with Linear; the create is asked and declined, and the answer lists what it would have filed.",
   "data_check": "the seeded meeting exists, and the private Linear team exists; content unchecked",
   "prompt": "turn the action items from the meeting {{target:granola.meetings_with_transcripts}} into Linear issues in the {{target:linear.team_key}} team",
@@ -21,7 +21,7 @@
     "team"
   ],
   "sets": [
-    "route"
+    "deep"
   ],
   "data": "real",
   "items": [
@@ -192,14 +192,8 @@
     }
   ],
   "oracle": [],
-  "notes": [
-    {
-      "id": null,
-      "text": "Set route for now: `absent-write:linear` counted the declined create, so a model that followed the user failed. When harness PR #14 lets a deep case name a companion's tool, this returns to `deep-x-granola-linear`.",
-      "line": 45
-    }
-  ],
+  "notes": [],
   "hashes": {
-    "source_sha256": "4ad928f0af71d35164d48f12b246910a8072a58b16e5c7927b36937e8365d7f0"
+    "source_sha256": "79b3613382a1c825880162eb11ad1f6f7b6491c56b700a1837e1a9dc018640c9"
   }
 }

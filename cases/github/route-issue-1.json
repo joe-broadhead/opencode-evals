@@ -14,7 +14,7 @@
     "inner_calls": 5,
     "tokens": 400000
   },
-  "seed": "plugins=linear,jira",
+  "seed": null,
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -39,7 +39,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 16
     },
     {
       "id": "GH-RT02",
@@ -62,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 19
     },
     {
       "id": "GH-RB01",
@@ -78,7 +78,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "GH-RB02",
@@ -94,7 +94,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     },
     {
       "id": "GH-SF01",
@@ -114,12 +114,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "af8ef2deb14cf384298997d6e373d6fad6dcf126f3083a6b334e1cd932d03011"
+    "source_sha256": "c89610b28a0559a3075ac673d34d72e5ff06320843fbe821c768b1258435652b"
   }
 }

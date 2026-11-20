@@ -18,7 +18,7 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "name"
+    "title"
   ],
   "sets": [
     "commit"
@@ -36,7 +36,7 @@
           "kind": "call",
           "tool": "granola.create_folder",
           "n": 1,
-          "arg": "args.name",
+          "arg": "args.title",
           "op": "contains",
           "value": {
             "kind": "string",
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "69264f43a6a33755d38198d20c93f437050922086252a4e0f666972294b33134"
+    "source_sha256": "2354bb5214e11ff813644e5bd328da70d26a8c98bd7eb4d22362af225d85b3ab"
   }
 }

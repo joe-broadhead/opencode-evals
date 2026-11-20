@@ -18,7 +18,7 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "name"
+    "channel_name"
   ],
   "sets": [
     "wide"
@@ -55,7 +55,7 @@
           "kind": "call",
           "tool": "slack_create_conversation",
           "n": 1,
-          "arg": "args.name",
+          "arg": "args.channel_name",
           "op": "contains",
           "value": {
             "kind": "string",
@@ -172,6 +172,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9f89a5db603676ecf0254d3c0e0fb0b590fbd4864c158dbbc507cea0ea437fe9"
+    "source_sha256": "1aab045fd5f5a2195c82c8a63d9f7f46235aa5cea7ac360f3780601ed7cff849"
   }
 }

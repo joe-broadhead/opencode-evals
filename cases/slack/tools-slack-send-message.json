@@ -19,7 +19,7 @@
   "holdout": false,
   "checkable": [
     "channel_id",
-    "text"
+    "message"
   ],
   "sets": [
     "wide"
@@ -78,7 +78,7 @@
           "kind": "call",
           "tool": "slack_send_message",
           "n": 1,
-          "arg": "args.text",
+          "arg": "args.message",
           "op": "contains",
           "value": {
             "kind": "string",
@@ -195,6 +195,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "56f6a4a99ac94d86bd3f01f261d854d0dfa7fe04c8c78032d94e39833b7e4966"
+    "source_sha256": "0e941786c2da2fe403bca737d7113f1a422ba5c7af4b2697a9176835e5ca5a70"
   }
 }

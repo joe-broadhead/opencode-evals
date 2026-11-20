@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: Notion Calendar is named, so its own calendar tools answer, not Google Calendar's.
 - Data check: the Notion Calendar connection lists this week's events; content unchecked
-- Data: own
+- Data: real
 - Seed: plugins=gws
 - Set: route
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000

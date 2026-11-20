@@ -6,7 +6,7 @@
 - Decision tested: In commit mode the one folder create runs in the unshared sandbox, and the answer reports it.
 - Data check: no folder of that name exists, and the workspace has no shared folder for it; content is unchecked; only route, arguments and the declined call are graded
 - Data: real
-- Checkable: name
+- Checkable: title
 - Set: commit
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
@@ -15,7 +15,7 @@ create a Granola folder called evals-232-commit
 
 ## Items
 - [GRA-CT01] blocker · One folder is created with the name the user gave.
-  evidence: call:granola.create_folder#1 args.name contains evals-232-commit
+  evidence: call:granola.create_folder#1 args.title contains evals-232-commit
 
 - [GRA-CT02] blocker · The create is not declined in commit mode.
   evidence: absent-declined:create_folder

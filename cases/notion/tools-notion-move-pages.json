@@ -52,7 +52,7 @@
           "kind": "target",
           "tool": "notion-move-pages",
           "n": 1,
-          "arg": "args.page_ids",
+          "arg": "args.page_or_database_ids",
           "aliases": [
             "@notion.sandbox_page"
           ]
@@ -167,6 +167,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "72f79bb258f72758178cf56430fe2942aa279b3b71cab646b9a640ecc0d41c10"
+    "source_sha256": "17911ca6035379e5e080baa051576e4f3de6518a3204a0b9bb8173ceab4c257a"
   }
 }

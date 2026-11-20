@@ -59,7 +59,7 @@
           "op": "==",
           "value": {
             "kind": "string",
-            "value": "open"
+            "value": "OPEN"
           }
         }
       ],
@@ -170,6 +170,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "efd78a39da179d271eb27b08659b46f9951214656cb83598f0077e4b227c4a2d"
+    "source_sha256": "5f0ee236b864e5495e20e38349ae9582faaea13d78116549be8fd0c3edc9eed2"
   }
 }

@@ -55,12 +55,8 @@
           "kind": "call",
           "tool": "update_private_notes",
           "n": 1,
-          "arg": "args.notes",
-          "op": "contains",
-          "value": {
-            "kind": "string",
-            "value": "budget"
-          }
+          "arg": "args.operations",
+          "op": "present"
         }
       ],
       "evidence_any": [],
@@ -172,6 +168,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5fcf6b784374210d8f9ae5fa4d923610c00cfcd5f713b358ef76440b214a90d6"
+    "source_sha256": "4bf010ba6312f127d60a67de675a337c48d44336c91c84400b74c7d92d7205c4"
   }
 }

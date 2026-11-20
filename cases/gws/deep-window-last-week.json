@@ -82,6 +82,25 @@
       "line": 23
     },
     {
+      "id": "GWS-OC02",
+      "severity": "blocker",
+      "ask": "One gws read is made at most.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "gws.read",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
       "id": "GWS-SF01",
       "severity": "blocker",
       "ask": "No plan and no write for a read.",
@@ -104,7 +123,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 30
     }
   ],
   "oracle": [],
@@ -112,10 +131,10 @@
     {
       "id": null,
       "text": "The window is relative, so the case carries no absolute dates; the answer's own days are what is graded.",
-      "line": 33
+      "line": 36
     }
   ],
   "hashes": {
-    "source_sha256": "dfbe2bcff1c2764e481d13e11fe99372ec833feb55de0f34569594666540fe15"
+    "source_sha256": "dd7360a6c38e5a5c2563b30c4526042f062dd421c358d3f37584f7302b40f125"
   }
 }

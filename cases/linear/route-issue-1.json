@@ -20,7 +20,7 @@
   "sets": [
     "route"
   ],
-  "data": "seeded",
+  "data": "real",
   "items": [
     {
       "id": "LIN-RT01",
@@ -120,6 +120,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7205ad39a91451ca5aa318537eb55bce93316be6bdf2cc1fb3d6efd66eed752c"
+    "source_sha256": "c01a5b342d9d4a74177a09d0e6542ba8e6b96c0eb0f6dbc71c564563da699818"
   }
 }

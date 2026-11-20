@@ -18,7 +18,7 @@ list the open issues in the quill-notes repo
   evidence: call:list_issues#1
 
 - [GH-PR01] major · The call carries state as the user gave it.
-  evidence: call:list_issues#1 args.state == open
+  evidence: call:list_issues#1 args.state == OPEN
 
 - [GH-OC02] major · The answer reports what the read returned.
   evidence_any: text:any contains @fixture.github.open_issue_titles

@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.2 (should-not-call)
 - Decision tested: A look-only request reads the issue and its comments and stops.
 - Data check: the seeded issue and its comments exist; content unchecked
-- Data: seeded
+- Data: real
 - Set: route
 - Budget: outer_calls <= 3, inner_calls <= 2, tokens <= 300000
 

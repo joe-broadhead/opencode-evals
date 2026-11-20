@@ -20,7 +20,7 @@
   "sets": [
     "wide"
   ],
-  "data": "seeded",
+  "data": "real",
   "items": [
     {
       "id": "NOT-OC01",
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4aeef8ce9caa0301ed200a9f76ba2ab1d3c6abee63c060c75ff1d74531add123"
+    "source_sha256": "8a7ea1ee4a05195f8a79b74c12c4068909a500393b2c3017b8961adeab9ea9f5"
   }
 }

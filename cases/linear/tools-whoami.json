@@ -20,7 +20,7 @@
   "sets": [
     "wide"
   ],
-  "data": "seeded",
+  "data": "own",
   "items": [
     {
       "id": "LIN-WR01",
@@ -151,6 +151,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "791f879fad39a39ed98fb40f6f7eb3c6cd95d6c0102382753af34c28541aba8f"
+    "source_sha256": "e7c217098cf99cad4c8c92c8910603cf8fb9cb6cf581bf01b993a83dadeb1a76"
   }
 }

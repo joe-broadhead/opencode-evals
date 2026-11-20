@@ -18,7 +18,7 @@ create a project called evals-232 in the {{target:linear.team_key}} team
   evidence: count:save_project <= 1
 
 - [LIN-CT01] major · The create reaches only the private team the user named.
-  evidence: target:save_project#1 args.team in @linear.team,@linear.team_key
+  evidence: target:save_project#1 args.setTeams in @linear.team,@linear.team_key
 
 - [LIN-PR01] major · The call carries name as the user gave it.
   evidence: call:save_project#1 args.name contains evals-232

@@ -6,7 +6,6 @@
 - Decision tested: A GitHub issue is read from GitHub, not from Linear or Jira.
 - Data check: the harness's fake GitHub holds the quill-notes fixture; content unchecked
 - Data: synthetic
-- Seed: plugins=linear,jira
 - Set: route
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 

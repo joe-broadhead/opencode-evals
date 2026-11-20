@@ -92,11 +92,52 @@
       "na_when": [],
       "maps_to": [],
       "line": 26
+    },
+    {
+      "id": "NOT-OC02",
+      "severity": "blocker",
+      "ask": "The read is scoped to the sandbox: id is the alias, not anything else.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "notion-fetch",
+          "n": 1,
+          "arg": "args.id",
+          "aliases": [
+            "@notion.sandbox_page"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "NOT-OC03",
+      "severity": "blocker",
+      "ask": "One notion-fetch call is made at most.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "notion-fetch",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f4f1694e69e58e7cfa02f25138a938027f55efc6692cf95f2bca0ffc132a2294"
+    "source_sha256": "de46d99206c88d04b98de7553c78f9acfd263a4c6b7cb1b7eb37e89a2c5b23b6"
   }
 }

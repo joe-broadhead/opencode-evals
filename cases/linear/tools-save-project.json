@@ -55,7 +55,7 @@
           "kind": "target",
           "tool": "save_project",
           "n": 1,
-          "arg": "args.team",
+          "arg": "args.setTeams",
           "aliases": [
             "@linear.team",
             "@linear.team_key"
@@ -195,6 +195,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b4b2f8cbcb95532a979ee71725a08b16d4a7c9fb3fc0ab60169e150366e64538"
+    "source_sha256": "3a703411dd957330e5345fc376bb9b1fc3bb58659465d369ff168e8f91982c59"
   }
 }

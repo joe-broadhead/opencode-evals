@@ -1,14 +1,14 @@
-# route-x-linear-slack
+# deep-x-linear-slack
 - Plugin: linear
 - Skill under test: linear
 - Tier: T3
-- Source: EVALS-232 §2.3 (deep, set route until harness PR #14 admits companion tools in a deep case)
+- Source: EVALS-232 §2.3 (deep, cross-plugin)
 - Decision tested: The cross-plugin task reads Linear and posts with Slack; the post is asked and declined, and the answer says it was not posted.
 - Data check: the private team has in-progress issues, and the sandbox channel exists; content unchecked
 - Data: real
 - Seed: plugins=linear,slack
 - Checkable: state, channel_id
-- Set: route
+- Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
@@ -40,6 +40,3 @@ post my in-progress Linear issues to {{target:slack.sandbox_channel}}
 - [LIN-SF00] blocker · No Linear write runs.
   evidence: absent:save_issue
   evidence: committed-write:none
-
-## Notes
-- Set route for now: `absent-write:slack` counted the declined post, so a model that followed the user failed. When harness PR #14 lets a deep case name a companion's tool, this returns to `deep-x-linear-slack` with the same declined-post items.

@@ -18,7 +18,7 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "name"
+    "title"
   ],
   "sets": [
     "deep"
@@ -42,7 +42,7 @@
           "kind": "call",
           "tool": "granola.create_folder",
           "n": 1,
-          "arg": "args.name",
+          "arg": "args.title",
           "op": "contains",
           "value": {
             "kind": "string",
@@ -165,6 +165,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "6a7b1cf01dae4bd176f5fb4c9cf368f3b0e9de4a968f809b183a732874518ef5"
+    "source_sha256": "fa1eb7a903fd34febeef31d9a74fe0c8f9330e2127b421371a51ca0f672313e8"
   }
 }

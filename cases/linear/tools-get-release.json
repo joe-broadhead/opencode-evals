@@ -20,7 +20,7 @@
   "sets": [
     "wide"
   ],
-  "data": "seeded",
+  "data": "real",
   "items": [
     {
       "id": "LIN-OC01",
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d89f22c8faaf538b4bbe8c8b5e3d81378737865160841ec08225d32f2427a3f1"
+    "source_sha256": "2c665b4b1ea141c662c16261a616f20f3d25b4e0add6e36e66da9036e6fba076"
   }
 }

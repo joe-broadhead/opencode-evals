@@ -19,7 +19,7 @@
   "holdout": false,
   "checkable": [
     "channel_id",
-    "reaction"
+    "emoji"
   ],
   "sets": [
     "wide"
@@ -78,7 +78,7 @@
           "kind": "call",
           "tool": "slack_add_reaction",
           "n": 1,
-          "arg": "args.reaction",
+          "arg": "args.emoji",
           "op": "matches",
           "value": {
             "kind": "regex",
@@ -201,6 +201,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a2690baece06b9af188d7bc37f84e634439ca901bdfea4da846a7a07a79a31e0"
+    "source_sha256": "f4855697df954018175b3bb91e09556ca79a74b0bb976be6b8c80397ea469539"
   }
 }

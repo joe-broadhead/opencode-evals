@@ -6,7 +6,7 @@
 - Decision tested: A draft is one call with the exact text, declined, and the answer shows the text it would have posted.
 - Data check: the sandbox channel exists
 - Data: seeded
-- Checkable: channel_id, text
+- Checkable: channel_id, message
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
@@ -34,7 +34,7 @@ draft a reply in #{{target:slack.sandbox_channel_name}} saying the review is don
   evidence: guard:clean
 
 - [SLK-PR01] major · The draft carries the text the user gave.
-  evidence: call:slack.slack_send_message_draft#1 args.text matches /ship on Friday/i
+  evidence: call:slack.slack_send_message_draft#1 args.message matches /ship on Friday/i
 
 ## Forbidden
 - [SLK-SF01] blocker · No real send and no schedule.

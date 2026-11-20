@@ -95,11 +95,52 @@
       "na_when": [],
       "maps_to": [],
       "line": 26
+    },
+    {
+      "id": "SLK-OC02",
+      "severity": "blocker",
+      "ask": "The read is scoped to the sandbox: channel_id is the alias, not anything else.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "slack_read_channel",
+          "n": 1,
+          "arg": "args.channel_id",
+          "aliases": [
+            "@slack.sandbox_channel"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "SLK-OC03",
+      "severity": "blocker",
+      "ask": "One slack_read_channel call is made at most.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "slack_read_channel",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5a20c6a04b2c526a4f551886e223bc64a56d791420d990df960b59318df5c8d6"
+    "source_sha256": "7f383d57e216863842056f5f733c37cd1c3d44f6a2b9174b6563d13afac739c7"
   }
 }

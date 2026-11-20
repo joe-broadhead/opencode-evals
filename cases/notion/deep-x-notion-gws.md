@@ -5,7 +5,7 @@
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: The cross-plugin task reads the Doc with gws and creates a Notion page; the create is declined and the answer shows what it would have written.
 - Data check: the evals-232 launch Doc exists, and the evals-232 page exists in Notion
-- Data: seeded
+- Data: real
 - Seed: plugins=gws,notion
 - Checkable: operation
 - Set: deep

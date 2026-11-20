@@ -6,7 +6,7 @@
 - Decision tested: A new folder is one create call, declined, and the answer says it was not made.
 - Data check: no folder of that name exists; content is unchecked; only route, arguments and the declined call are graded
 - Data: real
-- Checkable: name
+- Checkable: title
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
@@ -18,7 +18,7 @@ make a Granola folder called evals-232-scratch
   evidence: count:create_folder <= 1
 
 - [GRA-PR01] major · The call carries name as the user gave it.
-  evidence: call:create_folder#1 args.name contains evals-232-scratch
+  evidence: call:create_folder#1 args.title contains evals-232-scratch
 
 - [GRA-WR02] blocker · The write was declined by the permission prompt, and never reached the vendor.
   evidence: declined:create_folder

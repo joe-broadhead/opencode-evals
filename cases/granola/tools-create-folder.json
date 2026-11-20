@@ -18,7 +18,7 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "name"
+    "title"
   ],
   "sets": [
     "wide"
@@ -55,7 +55,7 @@
           "kind": "call",
           "tool": "create_folder",
           "n": 1,
-          "arg": "args.name",
+          "arg": "args.title",
           "op": "contains",
           "value": {
             "kind": "string",
@@ -172,6 +172,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a8ce88207dc7af9524edb69c7d381ea586e86118a0325230edc85d4e4138ce0c"
+    "source_sha256": "e94b87a17fb67af6cc4f47af5cc40c7d1ca66bf35dd26ed2cbc3d6434534d1f0"
   }
 }
