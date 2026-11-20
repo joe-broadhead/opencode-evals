@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_delete_phone_number (ElevenLabs MCP; a delete)",
   "decision": "A delete is one call, graded at the declined call, and nothing is removed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "release the unused phone number.",
+  "prompt": "release phone number phone_000000000000000000000000 — the unused one.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -56,7 +56,11 @@
           "tool": "elevenlabs.agents_delete_phone_number",
           "n": 1,
           "arg": "args.phone_number_id",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "phone_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "093a590c66af8b33b981faf5b137261dde10262e005107f5230c90ba689777c3"
+    "source_sha256": "009c7beee2c353ba92d36839bac8623fc338a1890e9d0c3a30f09bea8ceb6c1a"
   }
 }

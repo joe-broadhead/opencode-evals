@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_delete_brand_kit (ElevenLabs MCP; a delete)",
   "decision": "A delete is one call, graded at the declined call, and nothing is removed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "delete the Acme brand kit.",
+  "prompt": "delete brand kit kit_000000000000000000000000 (the Acme brand kit).",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -56,7 +56,11 @@
           "tool": "elevenlabs.creative_delete_brand_kit",
           "n": 1,
           "arg": "args.brand_kit_id",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "kit_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7f384b3cd8e413f3580321a2c97e65d0e9b46443523b1ff379ea0d0afdc7b1ea"
+    "source_sha256": "2c66addca5045bae22642cc2123f77df3c41b40383e7f4f351955b4e56309577"
   }
 }

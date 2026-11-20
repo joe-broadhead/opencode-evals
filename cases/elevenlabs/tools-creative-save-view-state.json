@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_save_view_state (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "save the current flow view so I can come back to it.",
+  "prompt": "save view state view_000000000000000000000000 with the state {pan: [0, 0], zoom: 1} so I can come back to it.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -56,6 +56,17 @@
           "tool": "elevenlabs.creative_save_view_state",
           "n": 1,
           "arg": "args.view_state_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "view_000000000000000000000000"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_save_view_state",
+          "n": 1,
+          "arg": "args.state",
           "op": "present"
         }
       ],
@@ -117,7 +128,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "ELV-OC02",
@@ -133,7 +144,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "ELV-SF01",
@@ -149,7 +160,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "ELV-SF02",
@@ -165,12 +176,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b459729daa1297b24520ef5f807c4759c3293a558ce38f61d0a025b014cc5c0d"
+    "source_sha256": "bd48980cbbf282d28847b59337038ca3a2cf0c0b8e97d7bb64c33374a64f94d4"
   }
 }

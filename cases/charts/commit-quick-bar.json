@@ -104,12 +104,13 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent-write",
-          "ns": "charts"
+          "kind": "absent",
+          "tool": "charts.render",
+          "n": null
         },
         {
           "kind": "absent",
-          "tool": "charts.render",
+          "tool": "edit",
           "n": null
         }
       ],
@@ -144,6 +145,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "34da9e057002b83fc6cecd5f202ec7509b442b68ca92686b1885a5fac55cb7b6"
+    "source_sha256": "940f1ed74d2ae08454ccdee40b748056b053bd2be99cceb0c0d8bc307a8ad93a"
   }
 }

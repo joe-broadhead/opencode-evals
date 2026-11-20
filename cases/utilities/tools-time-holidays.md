@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-is 25 December 2026 a public holiday in England?
+check whether 25 December 2026 is a public holiday in England.
 
 ## Items
 - [UTL-TR01] blocker · It used time_holidays once.

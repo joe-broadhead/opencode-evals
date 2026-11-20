@@ -6,7 +6,7 @@
 - Decision tested: A request for what agents_list_whatsapp_accounts reads is answered with one call and its arguments, and nothing is changed
 - Data check: the workspace holds the object the question names, or the answer says it does not
 - Seed: plugins=elevenlabs
-- Data: own
+- Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 

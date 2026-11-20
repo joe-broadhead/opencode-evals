@@ -19,7 +19,7 @@
   "sets": [
     "deep"
   ],
-  "data": "seeded",
+  "data": "real",
   "items": [
     {
       "id": "CHT-WR01",
@@ -168,6 +168,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "7536e49560bc0050a206e6010f95726c5edf38a1e0d2f5953279dd60f79d6916"
+    "source_sha256": "3e98fdb053cc17a07b9ba54278aa3d0569dff950b1b923873355ebefbef6cc5c"
   }
 }

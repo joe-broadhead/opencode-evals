@@ -26,7 +26,8 @@ set a timer called deploy-check for 9am tomorrow morning.
 
 ## Forbidden
 - [UTL-SF01] blocker · No file was written.
-  evidence: absent-write:utilities
+  evidence: absent:edit
+  evidence: absent:write
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
 

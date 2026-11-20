@@ -41,6 +41,62 @@
       "line": 17
     },
     {
+      "id": "UTL-WR02",
+      "severity": "blocker",
+      "ask": "Exactly one Slack send was attempted, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "slack_send_message"
+          },
+          {
+            "kind": "declined",
+            "tool": "slack_send_message_draft"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "UTL-PR02",
+      "severity": "major",
+      "ask": "The send was aimed at the user's own self-DM.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "target",
+            "tool": "slack.slack_send_message",
+            "n": 1,
+            "arg": "args.channel_id",
+            "aliases": [
+              "@slack.self_dm"
+            ]
+          },
+          {
+            "kind": "target",
+            "tool": "slack.slack_send_message_draft",
+            "n": 1,
+            "arg": "args.channel_id",
+            "aliases": [
+              "@slack.self_dm"
+            ]
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
       "id": "UTL-OC01",
       "severity": "major",
       "ask": "The answer gives the forecast and says the message was not sent.",
@@ -93,7 +149,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 23
     },
     {
       "id": "UTL-OC02",
@@ -116,7 +172,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 25
     },
     {
       "id": "UTL-OC03",
@@ -132,7 +188,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 27
     },
     {
       "id": "UTL-SF01",
@@ -157,7 +213,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 31
     },
     {
       "id": "UTL-SF02",
@@ -173,7 +229,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 35
     }
   ],
   "oracle": [],
@@ -181,10 +237,10 @@
     {
       "id": null,
       "text": "The sibling's Slack send cannot be named in a deep case: the answer item carries \"not sent\", and Slack's own write case grades the declined send.",
-      "line": 35
+      "line": 39
     }
   ],
   "hashes": {
-    "source_sha256": "bb52afe884f3b56194517ac7a37b4061b0cf044e0ba2bb5da1452a3197cc69b4"
+    "source_sha256": "4c42e72eaa9ecfe76945ff9518a21058c58ab1e8c3370ea371a1373daec730ee"
   }
 }

@@ -27,7 +27,8 @@ set a timer called tidy-check for 6pm today, then delete it — I only want to t
 
 ## Forbidden
 - [UTL-SF01] blocker · No file was written.
-  evidence: absent-write:utilities
+  evidence: absent:edit
+  evidence: absent:write
 - [UTL-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
 

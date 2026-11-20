@@ -1,14 +1,13 @@
-# route-x-interview-to-slack-1
+# deep-x-interview-to-slack
 - Plugin: metaview
 - Skill under test: metaview
 - Tier: T3
-- Source: cross-plugin routing: the themes from an interview, posted to the Slack self-DM with no name
-- Decision tested: The interview is read once, the themes are composed with no name, and the Slack send is attempted and declined
+- Decision tested: The interview is read once, the themes are composed with no name, and the Slack send is declined
 - Data check: the most recent interview has a transcript; the Slack self-DM exists
 - Seed: plugins=metaview,slack
 - Data: candidate
 - Budget: outer_calls <= 12, inner_calls <= 8
-- Set: route
+- Set: deep
 
 ## Prompt
 summarise what the most recent candidate said about scaling teams, and put the themes in my Slack self-DM — no name, just the themes.

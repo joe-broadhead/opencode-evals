@@ -19,7 +19,7 @@
   "sets": [
     "deep"
   ],
-  "data": "own",
+  "data": "real",
   "items": [
     {
       "id": "ELV-WR01",
@@ -67,6 +67,64 @@
       "na_when": [],
       "maps_to": [],
       "line": 20
+    },
+    {
+      "id": "ELV-WR02",
+      "severity": "blocker",
+      "ask": "The email send was attempted and declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "declined",
+          "tool": "gws_send"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "ELV-PR02",
+      "severity": "major",
+      "ask": "The email was addressed to the owner only.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "gws-plan",
+          "n": 1,
+          "what": "target",
+          "aliases": [
+            "@gws.self_email"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "ELV-WR03",
+      "severity": "blocker",
+      "ask": "The plan was a Gmail send.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "gws-plan",
+          "n": 1,
+          "what": "op",
+          "op": "==",
+          "value": "gmail.users.messages.send"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     },
     {
       "id": "ELV-OC01",
@@ -121,7 +179,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 28
     },
     {
       "id": "ELV-OC02",
@@ -137,7 +195,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 30
     },
     {
       "id": "ELV-SF01",
@@ -153,7 +211,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 34
     },
     {
       "id": "ELV-SF02",
@@ -169,7 +227,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 36
     }
   ],
   "oracle": [],
@@ -177,15 +235,15 @@
     {
       "id": null,
       "text": "§2.3 task 24: the estimate tool is a write, so it is graded at the declined call.",
-      "line": 34
+      "line": 40
     },
     {
       "id": null,
       "text": "The sibling's email send cannot be named in a deep case: the answer item carries \"no email\", and gws's own send case grades the plan and the decline.",
-      "line": 35
+      "line": 41
     }
   ],
   "hashes": {
-    "source_sha256": "50c5da39ede626a8e3e9e4bab564596b4bee9e90e9287afe25eb10c712d48133"
+    "source_sha256": "b7b391ef196dbd8f4c19513bf95ebe5b78577b355a102b996c77ee2385295b9d"
   }
 }

@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-clip the bit where they talk about scaling the team, from 12:30 to 14:00, and call it "scaling the team".
+clip the bit where they talk about scaling the team, from 12:30 to 14:00 (750000 ms to 840000 ms), and call it "scaling the team".
 
 ## Items
 - [MV-WR01] blocker · Exactly one create snippet call, and it was declined.

@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-turn on monitoring for our calls.
+turn on monitoring for {{target:elevenlabs.agent}}'s calls.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update conversation call, and it was declined.

@@ -19,7 +19,7 @@
   "sets": [
     "wide"
   ],
-  "data": "own",
+  "data": "real",
   "items": [
     {
       "id": "ELV-TR01",
@@ -96,6 +96,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "370b7b1835312f4911c841598c88dc3d88e91364c4fdc561eb0881ea816a363e"
+    "source_sha256": "e9c4913c89ad1d1d2d957e8753681a86c3da7e38f55b18fc3e8123eda1c324f0"
   }
 }

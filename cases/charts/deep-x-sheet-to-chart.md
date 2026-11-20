@@ -6,7 +6,7 @@
 - Decision tested: The chart is drawn from the sheet's numbers in one declined write, and the answer says it was not saved
 - Data check: {{target:gws.sheet}} holds revenue by month for 12 months
 - Seed: plugins=charts,gws
-- Data: seeded
+- Data: real
 - Budget: outer_calls <= 10, inner_calls <= 6
 - Set: deep
 

@@ -19,7 +19,7 @@
   "sets": [
     "route"
   ],
-  "data": "seeded",
+  "data": "real",
   "items": [
     {
       "id": "CHT-RT01",
@@ -209,6 +209,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ca5859800872f7f3c7f6885e2c18f94437510d3f5ec0f632d9e006f21ce533ba"
+    "source_sha256": "49ba6fae337f5e4b7cd7478b2c38d34532b24b5da35f6ea7e6663d23e9e99dd8"
   }
 }

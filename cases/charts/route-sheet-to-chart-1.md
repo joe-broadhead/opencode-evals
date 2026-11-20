@@ -6,7 +6,7 @@
 - Decision tested: A chart-from-my-sheet request reads the sheet with gws first, then draws with charts, and both writes are graded at the declined call
 - Data check: {{target:gws.sheet}} holds a small numeric table the user owns
 - Seed: plugins=charts,gws
-- Data: seeded
+- Data: real
 - Budget: outer_calls <= 10, inner_calls <= 6
 - Set: route
 

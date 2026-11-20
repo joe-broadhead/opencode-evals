@@ -7,7 +7,7 @@
   "source": "wide sweep: create_snippet (a clip with a share link; anyone_with_link only on request)",
   "decision": "A clip request is one create_snippet with the default share scope, graded at the declined call",
   "data_check": "the most recent interview has a transcript",
-  "prompt": "clip the bit where they talk about scaling the team, from 12:30 to 14:00, and call it \"scaling the team\".",
+  "prompt": "clip the bit where they talk about scaling the team, from 12:30 to 14:00 (750000 ms to 840000 ms), and call it \"scaling the team\".",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -251,6 +251,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "39c17ed5716f01f75becc5ad85868622de4fa71dd54bf42d1b0abd5dc60c7f90"
+    "source_sha256": "78b58a372435ef7b2b041d8b08ef363e378d11ba04d02580f5b697614f6156b8"
   }
 }

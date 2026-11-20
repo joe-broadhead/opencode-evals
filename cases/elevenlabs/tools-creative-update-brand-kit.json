@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_update_brand_kit (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "update the Acme brand kit's accent colour to #0b5fff.",
+  "prompt": "update brand kit kit_000000000000000000000000 (the Acme brand kit)'s accent colour to #0b5fff.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -56,7 +56,11 @@
           "tool": "elevenlabs.creative_update_brand_kit",
           "n": 1,
           "arg": "args.brand_kit_id",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "kit_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3a08ae44c911a2d89c991c0707fd874a9d903d5cece3f23d1968a7da43a1d856"
+    "source_sha256": "15eeccf65e810a06b723d025525c36ae63f7939a509be5c19dabac10f514a7a6"
   }
 }

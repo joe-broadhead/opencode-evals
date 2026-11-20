@@ -55,7 +55,7 @@
           "kind": "call",
           "tool": "charts.board",
           "n": 1,
-          "arg": "args.document",
+          "arg": "args.board",
           "op": "present"
         }
       ],
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7ee764a4ce075f7e3c007429493d825134664ab4414ad8a0d0d7f3481e795e96"
+    "source_sha256": "3a00f0ac4d4a8f93c96a0b3f97ff27e38dade5bef5661cb9a66f6f9698f28e50"
   }
 }

@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_finalize_asset_upload (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "finish the upload of the product photo.",
+  "prompt": "finish the upload of the product photo — asset asset_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -56,7 +56,11 @@
           "tool": "elevenlabs.creative_finalize_asset_upload",
           "n": 1,
           "arg": "args.asset_id",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "asset_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fa7dfdf330f09b37e91197451c70fc9beeb8100ea1900cd5574cfa18a14435d5"
+    "source_sha256": "e9375aa038e92c6dfb725fa936a73261cb91fddd9a65bf28f1b1f86d34ec01c0"
   }
 }
