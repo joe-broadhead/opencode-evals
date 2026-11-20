@@ -24,22 +24,22 @@
     {
       "id": "ELV-WR01",
       "severity": "blocker",
-      "ask": "Exactly one creative get sandbox run call, and it was declined.",
+      "ask": "The first write in the skill's order was attempted and declined.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "elevenlabs.creative_get_sandbox_run",
-          "op": "==",
-          "value": 1
-        },
-        {
-          "kind": "declined",
-          "tool": "elevenlabs_creative_get_sandbox_run"
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "elevenlabs_creative_execute_sandbox"
+          },
+          {
+            "kind": "declined",
+            "tool": "elevenlabs_creative_get_sandbox_run"
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
@@ -60,9 +60,14 @@
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "declined",
+          "tool": "elevenlabs_creative_execute_sandbox"
+        }
+      ],
       "maps_to": [],
-      "line": 20
+      "line": 19
     },
     {
       "id": "ELV-OC01",
@@ -158,6 +163,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fcdc3fd309b3bb466f732b3ebf15c1032a55704c4240da67aa960e944a1fa6da"
+    "source_sha256": "dc8e502fcb8e95f459baa2fd85c89a17eae7f294a1744793fee914e180da629f"
   }
 }
