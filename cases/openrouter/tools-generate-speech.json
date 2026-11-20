@@ -17,6 +17,9 @@
   "seed": null,
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "input"
+  ],
   "sets": [
     "wide"
   ],
@@ -43,7 +46,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "OR-OC01",
@@ -78,7 +81,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "OR-SF01",
@@ -95,7 +98,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "OR-SF02",
@@ -111,7 +114,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "OR-SF03",
@@ -130,12 +133,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "58dec8cc30faa1f38265d7c45ccf861b86113ed92a7358ec2ce62a5770336da9"
+    "source_sha256": "a5cd7d7bf86f4b871ab675803a18c5a817e9b0089ed669dc931ce90c553a70ec"
   }
 }

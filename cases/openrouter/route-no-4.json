@@ -14,7 +14,7 @@
     "inner_calls": 4,
     "tokens": 300000
   },
-  "seed": "plugins=openrouter,utilities",
+  "seed": "utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -38,7 +38,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "OR-RT01",
@@ -65,7 +65,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "OR-OC01",
@@ -80,7 +80,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "[0-9]+\\s?°|degrees|celsius|rain|sunny|cloud",
+            "source": "[0-9]+\\s?°|[0-9]+\\s?(degrees|celsius)|\\brain(y|ing)?\\b|sunny|\\bcloudy\\b|overcast",
             "flags": "i"
           }
         }
@@ -88,7 +88,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "OR-SF02",
@@ -104,12 +104,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "282f42aee30ac48fbb45256d9b734e952aab98181afb2682255ba58e9386ca64"
+    "source_sha256": "01183e77083bb5a5b98165f17c0b60425a57f80fe88f29510cff0f7c44dde422"
   }
 }

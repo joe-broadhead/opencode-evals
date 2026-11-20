@@ -50,16 +50,16 @@
       "evidence_any": [
         [
           {
-            "kind": "count",
-            "tool": "granola.*",
-            "op": ">=",
-            "value": 1
+            "kind": "call",
+            "tool": "granola.search_meetings",
+            "n": 1,
+            "arg": null
           },
           {
-            "kind": "count",
-            "tool": "wisprflow.*",
-            "op": ">=",
-            "value": 1
+            "kind": "call",
+            "tool": "wisprflow.search_meetings",
+            "n": 1,
+            "arg": null
           }
         ]
       ],
@@ -110,6 +110,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8f81b5141a19dcb6ad6bc9948092cc43379e8822eabd74698d7f16685b0132ea"
+    "source_sha256": "f8f66fd5dde05c5944a787926f820c2fe3940c4019dcac94730b7386cb4b8e75"
   }
 }

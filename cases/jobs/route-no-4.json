@@ -14,7 +14,7 @@
     "inner_calls": 4,
     "tokens": 300000
   },
-  "seed": "plugins=jobs,utilities",
+  "seed": "utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -38,7 +38,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "JOB-RT01",
@@ -57,7 +57,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "JOB-OC01",
@@ -80,7 +80,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "JOB-SF02",
@@ -96,12 +96,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "32df4b4e89e87f97fdbadcc539867a3dc5174a6214ff57cb8fb35b4b519e02d5"
+    "source_sha256": "a4adbaf1386c455a3a7f0fa7471e44066e8caafe95b5e89dfa7f747adbd2935d"
   }
 }

@@ -121,7 +121,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "nothing was (read|sent|charged)|no charge|free|local",
+            "source": "nothing was (read|sent|charged)|no charge|\\bfree\\b|\\blocal\\b",
             "flags": "i"
           }
         }
@@ -151,6 +151,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e981ed3248d89b613331855ff19ae06e966bc1623a504c23e105497ea45ed6d1"
+    "source_sha256": "7e1266fecdc6e50ab931dc483065b1794601aa8fdbd2fd0a17798bc1084fed92"
   }
 }

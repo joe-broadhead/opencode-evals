@@ -14,9 +14,13 @@
     "inner_calls": 4,
     "tokens": 300000
   },
-  "seed": "plugins=voice,jobs",
+  "seed": "plugins=voice,jobs utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "action",
+    "schedule"
+  ],
   "sets": [
     "route"
   ],
@@ -38,12 +42,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "VOI-RT01",
-      "severity": "major",
-      "ask": "The reminder became a job create instead.",
+      "severity": "blocker",
+      "ask": "The reminder became one job create, and it was declined.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -52,12 +56,114 @@
           "tool": "jobs.create",
           "op": "==",
           "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "jobs_create"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
+    },
+    {
+      "id": "VOI-PR01",
+      "severity": "major",
+      "ask": "The action is a reminder, not a prompt.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "jobs.create",
+          "n": 1,
+          "arg": "args.action.type",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "remind"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "VOI-PR02",
+      "severity": "major",
+      "ask": "The reminder is for 09:00.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "jobs.create",
+            "n": 1,
+            "arg": "args.schedule.at",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "T09:00",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "jobs.create",
+            "n": 1,
+            "arg": "args.schedule.cron",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "^0 9 \\* \\* \\*$",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "VOI-OC02",
+      "severity": "major",
+      "ask": "The answer says the reminder was not set.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not)\\b.{0,40}\\b(created|scheduled|set)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
     },
     {
       "id": "VOI-OC01",
@@ -80,7 +186,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 34
     },
     {
       "id": "VOI-SF02",
@@ -96,12 +202,31 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 38
+    },
+    {
+      "id": "VOI-SF03",
+      "severity": "blocker",
+      "ask": "Nothing was committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        },
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d8539215be82ae34869a8570d624f7fce2b9cfb880eb75cf139f7fae58da5c4a"
+    "source_sha256": "c269845cfbb5d027e0017fe9a3e606d5aeae8644d78ad90dc978706e9c7ab6de"
   }
 }

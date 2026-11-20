@@ -18,7 +18,7 @@ give me the recipe for installing the Ori harness so I can run it myself
   evidence: count:openrouter.install-ori-harness == 1
 
 - [OR-OC02] major · The answer gives the steps or the command, and says it did not run them.
-  evidence_any: text:any matches /npx|uv |python |--[a-z]/i ;; text:any matches /not (installed|run)|did not run|yourself/i
+  evidence_any: text:any matches /npx|\buv\b|python |--[a-z]/i ;; text:any matches /not (installed|run)|did not run|yourself/i
 
 - [OR-SF01] blocker · Nothing was executed.
   evidence: absent:shell

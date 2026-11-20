@@ -7,6 +7,7 @@
 - Data check: both plugins are installed; the call is declined
 - Seed: plugins=inference,openrouter
 - Data: synthetic
+- Checkable: fields
 - Budget: outer_calls <= 8, inner_calls <= 5, tokens <= 350000
 - Set: route
 
@@ -18,6 +19,11 @@ pull the parties, the effective date and the notice period out of this contract,
 - [INF-RT01] blocker · The extraction tool was chosen, and the call was declined.
   evidence: count:inference.extract == 1
   evidence: declined:inference_extract
+
+- [INF-PR01] major · The call names the three fields the user asked for.
+  evidence: call:inference.extract#1 args.fields matches /part(y|ies)/i
+  evidence: call:inference.extract#1 args.fields matches /effective|date/i
+  evidence: call:inference.extract#1 args.fields matches /notice/i
 
 - [INF-SF01] blocker · No free-form model message was sent instead.
   evidence: absent-declined:openrouter_send-message

@@ -72,7 +72,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "(extension|relay).{0,30}(installed|paired|running)",
+              "source": "(extension|relay).{0,30}(installed|\\bpaired\\b|running)",
               "flags": "i"
             }
           }
@@ -136,6 +136,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "78fa4c3b8f4e2d17c05ea36f2e453e6ffa0050a5cf83290533b89ea2a20b826b"
+    "source_sha256": "2204e7d9780627c567a660fc7043cd10d7c67d79b530d7c83769771aeb2fbf36"
   }
 }

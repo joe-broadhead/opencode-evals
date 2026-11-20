@@ -88,7 +88,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\b(not|wasn't|was not)\\b.{0,30}\\b(spoken|played|read aloud)\\b",
+              "source": "\\b(not|wasn't|was not)\\b.{0,30}\\b(spoken|\\bplayed\\b|read aloud)\\b",
               "flags": "i"
             }
           },
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "53538b4a66d0057339ab46606d8abf957c01592ea60780fd897da0e545b672a2"
+    "source_sha256": "72a17dff765e84126cd7490d795a82d9cce67558f984c4ff0529e5b01361f1e6"
   }
 }

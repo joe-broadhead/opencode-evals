@@ -18,7 +18,7 @@ is my browser actually connected to OpenCode right now?
   evidence: count:browse.* == 1
 
 - [BRW-OC02] major · The answer reports the state it read, or says the browser server is not available here.
-  evidence_any: text:any matches /not (connected|paired)|unavailable|not installed|no (browser|extension)/i ;; text:any matches /(extension|relay).{0,30}(installed|paired|running)/i
+  evidence_any: text:any matches /not (connected|paired)|unavailable|not installed|no (browser|extension)/i ;; text:any matches /(extension|relay).{0,30}(installed|\bpaired\b|running)/i
 
 - [BRW-TR01] minor · The browse skill was loaded.
   evidence: skill:browse

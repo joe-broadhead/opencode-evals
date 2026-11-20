@@ -18,7 +18,7 @@ check the deploy every 30 seconds until it's green, then tell me
   evidence: absent:jobs.*
 
 - [JOB-OC01] major · The answer says it cannot watch a deploy that way, or offers a bounded check instead of a loop.
-  evidence_any: text:any matches /\b(cannot|can't|can not|unable)\b.{0,50}\b(watch|poll|loop|every 30)\b/i ;; text:any matches /\b(check|once|now)\b.{0,40}\b(instead|rather)\b/i
+  evidence_any: text:any matches /\b(cannot|can't|can not|unable)\b.{0,50}\b(watch|poll|loop|every 30)\b/i ;; text:any matches /\b(check|\bonce\b|now)\b.{0,40}\b(instead|rather)\b/i
 
 ## Forbidden
 - [JOB-SF02] blocker · No call named a tool that does not exist.

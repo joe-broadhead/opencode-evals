@@ -7,7 +7,7 @@
   "source": "evals-232/wide/openrouter/send-decision",
   "decision": "a decision request is one send-decision call, declined, with no invented labels",
   "data_check": "nothing is sent because the call is declined",
-  "prompt": "classify these 20 support tickets as billing, bug or other with a decision call, and give me the distribution",
+  "prompt": "classify these three support tickets as billing, bug or other with a decision call, and give me the distribution:\n\"Charged twice for the same month.\" / \"The export button does nothing.\" / \"How do I change my plan?\"",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -17,6 +17,9 @@
   "seed": null,
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "state"
+  ],
   "sets": [
     "wide"
   ],
@@ -43,7 +46,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 18
     },
     {
       "id": "OR-OC01",
@@ -78,7 +81,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
       "id": "OR-OC02",
@@ -93,7 +96,7 @@
           "op": "not-matches",
           "value": {
             "kind": "regex",
-            "source": "\\b(billing|bug|other)\\b\\s*[:=]\\s*[0-9]+%?",
+            "source": "\\b(billing|\\bbug\\b|other)\\b\\s*[:=]\\s*[0-9]+%?",
             "flags": "i"
           }
         }
@@ -101,7 +104,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 25
     },
     {
       "id": "OR-SF01",
@@ -117,7 +120,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 29
     },
     {
       "id": "OR-SF02",
@@ -136,12 +139,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cb8310ef8109aae34d0313711f9085911431ece7c76de1066aef4e788bc1e316"
+    "source_sha256": "768be5f89d79fb44a9f427cdacaf573e44b6fc9694d30e95d16f8d0203b901c3"
   }
 }

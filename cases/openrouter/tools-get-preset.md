@@ -4,8 +4,9 @@
 - Tier: T3
 - Source: evals-232/wide/openrouter/get-preset
 - Decision tested: one saved preset is read by slug, and its settings are summarised without changes
-- Data check: a preset with the slug fast-coding exists
+- Data check: no preset named fast-coding is assumed, so a not-found answer is correct
 - Data: own
+- Checkable: request
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
@@ -17,7 +18,10 @@ show me my preset called fast-coding — what model and settings does it use?
   evidence: first:openrouter.get-preset
   evidence: count:openrouter.get-preset == 1
 
-- [OR-OC02] major · The answer describes the preset's model or settings, or says it is not found.
+- [OR-PR01] major · The lookup carried the preset slug the user gave.
+  evidence: call:openrouter.get-preset#1 args.request.slug matches /fast-coding/
+
+- [OR-OC02] major · The answer describes a model slug or a setting, or says it is not found.
   evidence_any: text:any matches /[a-z0-9-]+\/[a-z0-9.-]+|temperature\s*[:=]\s*[0-9]|top_p|max_tokens/i ;; text:any matches /not found|no such/i
 
 - [OR-SF01] blocker · The preset was not changed.

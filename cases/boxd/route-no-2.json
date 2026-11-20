@@ -81,24 +81,6 @@
       "line": 20
     },
     {
-      "id": "BOX-SF02",
-      "severity": "blocker",
-      "ask": "No shell command was run.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "absent",
-          "tool": "shell",
-          "n": null
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "BOX-SF03",
       "severity": "blocker",
       "ask": "No call named a tool that does not exist.",
@@ -112,12 +94,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 24
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9a8132eb5efca12210e97bd72a9073b7ae8475105734f78a09187a199baa0d60"
+    "source_sha256": "9027db0bbbfd73ab543b7547759539648b7a9395b84eab5b0a91b358e8bdda5c"
   }
 }

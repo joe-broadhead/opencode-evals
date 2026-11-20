@@ -23,7 +23,7 @@ OpenRouter keeps saying I'm out of credit, but I topped up yesterday. What's goi
 - [OR-OC03] major · The answer separates the account balance from the key's own spend limit.
   evidence: text:any matches /[$€£]\s?[0-9]/i
   evidence: text:any matches /balance|credit/i
-  evidence: text:any matches /key|limit|cap/i
+  evidence: text:any matches /\b(key|limit|cap)\b/i
 
 - [OR-OC04] minor · It names the next step: raise the key limit, or sign in again.
   evidence_any: text:any matches /raise|increase|limit|sign in again/i ;; text:any matches /next step/i

@@ -58,7 +58,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "[A-Za-z][A-Za-z0-9 .-]{2,}",
+            "source": "[A-Z][A-Za-z0-9.-]{2,}",
             "flags": ""
           }
         },
@@ -68,7 +68,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "\\$|price|per (million|1M|token)",
+            "source": "[$€£]\\s?[0-9]|per (million|1M|token)",
             "flags": "i"
           }
         }
@@ -121,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d0c52d52da93e269aeae10f1af8e5c543855616c58942ed453524da161f36392"
+    "source_sha256": "2e7912faae8cef026a86987ea8231b41cabffcc19d0c13f18aad546f76988782"
   }
 }

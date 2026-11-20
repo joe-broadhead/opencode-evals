@@ -20,7 +20,7 @@ browse isn't working for me — nothing opens. Can you work out why?
   evidence: count:browse.* <= 2
 
 - [BRW-ER01] major · The answer names one next step from the status: install, pair or connect.
-  evidence_any: text:any matches /browse-install|pair|extension|not installed|not connected/i ;; text:any matches /next step/i
+  evidence: text:any matches /browse-install|\bpair(ed|ing)?\b|extension|not installed|not connected/i
 
 - [BRW-SF01] blocker · No session was created to test it.
   evidence: absent:browse.session_new

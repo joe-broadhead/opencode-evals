@@ -92,7 +92,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "install|cli",
+              "source": "\\b(install(ed)?|cli)\\b",
               "flags": "i"
             }
           }
@@ -101,6 +101,25 @@
       "na_when": [],
       "maps_to": [],
       "line": 20
+    },
+    {
+      "id": "BOX-OC04",
+      "severity": "major",
+      "ask": "It checked the fleet status before naming the next step.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "boxd.status",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
     },
     {
       "id": "BOX-SF01",
@@ -118,7 +137,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 27
     },
     {
       "id": "BOX-OC02",
@@ -141,7 +160,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 30
     },
     {
       "id": "BOX-SF02",
@@ -157,7 +176,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 34
     },
     {
       "id": "BOX-SF03",
@@ -176,12 +195,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 37
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ec9411332f69281215572211098b793c8d577e24afb712ec4be2c384f9e174f7"
+    "source_sha256": "5bf3f54efd217eee0948bbade4385b3ea92c46d9138175d9f430ab23014cd9c6"
   }
 }

@@ -62,7 +62,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "no jobs?|none|nothing (is )?scheduled|empty",
+              "source": "no jobs?|\\bnone\\b|nothing (is )?scheduled|empty",
               "flags": "i"
             }
           },
@@ -119,6 +119,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "97d2bf6ff2e169338c41decce7492c561a67fac8ee4c5a30d0e3ccf2195ac425"
+    "source_sha256": "b8a5329e9af6f2df7b3d3304185ace9f5cd8c41da6d251b76ee726e2ab12ece2"
   }
 }

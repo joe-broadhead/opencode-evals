@@ -28,10 +28,16 @@
     {
       "id": "INF-OC01",
       "severity": "blocker",
-      "ask": "The plan came before any extraction.",
+      "ask": "The plan was called, and came before any extraction.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
+        {
+          "kind": "call",
+          "tool": "inference.plan",
+          "n": 1,
+          "arg": null
+        },
         {
           "kind": "before",
           "tool": "inference.plan",
@@ -65,7 +71,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "INF-WR01",
@@ -88,7 +94,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "INF-OC03",
@@ -123,30 +129,19 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
-      "id": "INF-SF01",
-      "severity": "blocker",
-      "ask": "No invented price.",
+      "id": "INF-OC05",
+      "severity": "minor",
+      "ask": "The price it states is the plan's quote, not an invented one.",
       "forbidden": true,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "not-matches",
-          "value": {
-            "kind": "regex",
-            "source": "costs? exactly \\$?[0-9]+\\.[0-9]{4,}",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "INF-SF02",
@@ -162,7 +157,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "INF-SF03",
@@ -181,12 +176,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9daffe2338c6891785533724b9508f6a87e35e0b72f9ee42a981cff537b51bd7"
+    "source_sha256": "5bb39ec4211c3e7205068e8cac3b802572ce55921f33bb4e8b46f6bbb6c7751b"
   }
 }

@@ -7,6 +7,7 @@
 - Data check: none
 - Seed: plugins=jobs,utilities
 - Data: synthetic
+- Seed: utc-hours=9-17
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: route
 

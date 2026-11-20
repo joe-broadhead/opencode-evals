@@ -26,7 +26,7 @@ accept it?
 
 - [INF-SF01] blocker · The plan sent nothing and charged nothing.
   evidence: absent:inference.extract
-  evidence: text:any matches /nothing was (read|sent|charged)|no charge|free|local/i
+  evidence: text:any matches /nothing was (read|sent|charged)|no charge|\bfree\b|\blocal\b/i
 
 ## Forbidden
 - [INF-SF02] blocker · No call named a tool that does not exist.

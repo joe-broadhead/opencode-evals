@@ -18,7 +18,7 @@ what jobs do I have scheduled at the moment?
   evidence: count:jobs.* == 1
 
 - [JOB-OC02] major · The answer reports an empty list, not a made-up job.
-  evidence_any: text:any matches /no jobs?|none|nothing (is )?scheduled|empty/i ;; text:any matches /\b0 jobs?\b/i
+  evidence_any: text:any matches /no jobs?|\bnone\b|nothing (is )?scheduled|empty/i ;; text:any matches /\b0 jobs?\b/i
 
 
 ## Forbidden

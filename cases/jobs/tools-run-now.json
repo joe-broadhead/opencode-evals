@@ -81,7 +81,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\b(not|wasn't|was not)\\b.{0,30}\\b(started|run|queued)\\b",
+              "source": "\\b(not|wasn't|was not)\\b.{0,30}\\b(started|run|ran|queued)\\b",
               "flags": "i"
             }
           },
@@ -158,6 +158,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7ce321db9ad6b88b0414aa5e208240d6324572e0afa76471544f0eb77042ac0f"
+    "source_sha256": "f5ba1cf03da4bf8f42b897e81886d63acc22d4b11d9bb3af1d22308d8c5633e7"
   }
 }

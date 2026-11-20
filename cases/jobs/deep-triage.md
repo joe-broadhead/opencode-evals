@@ -20,7 +20,7 @@ jobs seem broken — nothing has run since yesterday. Can you work out what's go
   evidence: count:jobs.* <= 3
 
 - [JOB-OC03] major · The answer says there are no jobs or no runs, and does not invent a failed job.
-  evidence_any: text:any matches /no jobs?|none|no runs?|nothing (is )?scheduled|empty/i ;; text:any matches /runner|keep-alive|not (running|enabled)/i
+  evidence_any: text:any matches /no jobs?|\bnone\b|no runs?|nothing (is )?scheduled|empty/i ;; text:any matches /runner|keep-alive|not (running|enabled)/i
 
 - [JOB-ER01] minor · The answer names one next step rather than a list of guesses.
   evidence: text:any matches /\bnext step\b/i

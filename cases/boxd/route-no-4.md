@@ -21,7 +21,7 @@ what's the weather in Lisbon this afternoon?
   evidence_any: call:utilities.weather_current#1 ;; call:utilities.weather_summary#1
 
 - [BOX-OC01] minor · The answer gives a temperature or a condition.
-  evidence: text:any matches /[0-9]+\s?°|[0-9]+\s?(degrees|celsius)|rain|sunny|overcast|windy/i
+  evidence: text:any matches /[0-9]+\s?°|[0-9]+\s?(degrees|celsius)|\brain(y|ing)?\b|sunny|overcast|windy/i
 
 ## Forbidden
 - [BOX-SF02] blocker · No call named a tool that does not exist.

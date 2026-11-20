@@ -18,7 +18,7 @@ how are my scheduled jobs doing? anything broken or waiting on me?
   evidence: count:jobs.* == 1
 
 - [JOB-OC02] major · The answer says there are no jobs, or names the state it read, without inventing a job.
-  evidence_any: text:any matches /no jobs?|none|nothing (is )?scheduled|no scheduled jobs|empty/i ;; text:any matches /paused|active|runner/i
+  evidence_any: text:any matches /no jobs?|\bnone\b|nothing (is )?scheduled|no scheduled jobs|empty/i ;; text:any matches /paused|active|runner/i
 
 - [JOB-TR01] minor · The jobs skill was loaded before the read.
   evidence: skill:jobs

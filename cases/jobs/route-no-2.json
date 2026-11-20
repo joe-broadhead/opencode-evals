@@ -70,7 +70,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\b(check|once|now)\\b.{0,40}\\b(instead|rather)\\b",
+              "source": "\\b(check|\\bonce\\b|now)\\b.{0,40}\\b(instead|rather)\\b",
               "flags": "i"
             }
           }
@@ -100,6 +100,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e3f8cbb671b9cca2c93ef4624197a9583df00081257e27bb5b35e8ccf6b4cde9"
+    "source_sha256": "301ebb553aee77c34010344aab5f8cdd269c34ea763f95b93e5d2e8182ab119d"
   }
 }

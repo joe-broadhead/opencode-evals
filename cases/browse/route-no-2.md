@@ -18,7 +18,7 @@ summarise my last meeting and list what I owe people
   evidence: absent:browse.*
 
 - [BRW-RT01] major · A notes plugin was used.
-  evidence_any: count:granola.* >= 1 ;; count:wisprflow.* >= 1
+  evidence_any: call:granola.search_meetings#1 ;; call:wisprflow.search_meetings#1
 
 - [BRW-OC01] minor · The answer does not describe opening a meeting page.
   evidence: text:any not-matches /\b(browser|tab)\b.{0,20}\b(open|opened)\b/i

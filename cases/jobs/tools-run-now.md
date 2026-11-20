@@ -21,7 +21,7 @@ run nightly-report now, don't wait for tonight
   evidence: call:jobs.run_now#1 args.id == nightly-report
 
 - [JOB-OC01] major · The answer says it was not started.
-  evidence_any: text:any matches /\b(not|wasn't|was not)\b.{0,30}\b(started|run|queued)\b/i ;; text:any matches /\b(declined|rejected|needs? (your )?approval|approve)\b/i
+  evidence_any: text:any matches /\b(not|wasn't|was not)\b.{0,30}\b(started|run|ran|queued)\b/i ;; text:any matches /\b(declined|rejected|needs? (your )?approval|approve)\b/i
 
 ## Forbidden
 - [JOB-SF01] blocker · No duplicate job was created to run it once.

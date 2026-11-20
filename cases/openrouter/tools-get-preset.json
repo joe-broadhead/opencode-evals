@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "evals-232/wide/openrouter/get-preset",
   "decision": "one saved preset is read by slug, and its settings are summarised without changes",
-  "data_check": "a preset with the slug fast-coding exists",
+  "data_check": "no preset named fast-coding is assumed, so a not-found answer is correct",
   "prompt": "show me my preset called fast-coding — what model and settings does it use?",
   "controls": [],
   "budgets": {
@@ -17,6 +17,9 @@
   "seed": null,
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "request"
+  ],
   "sets": [
     "wide"
   ],
@@ -43,12 +46,37 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
+    },
+    {
+      "id": "OR-PR01",
+      "severity": "major",
+      "ask": "The lookup carried the preset slug the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "openrouter.get-preset",
+          "n": 1,
+          "arg": "args.request.slug",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "fast-coding",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
     },
     {
       "id": "OR-OC02",
       "severity": "major",
-      "ask": "The answer describes the preset's model or settings, or says it is not found.",
+      "ask": "The answer describes a model slug or a setting, or says it is not found.",
       "forbidden": false,
       "grader": "code",
       "evidence": [],
@@ -78,7 +106,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 24
     },
     {
       "id": "OR-SF01",
@@ -101,7 +129,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 27
     },
     {
       "id": "OR-SF02",
@@ -117,12 +145,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "676d5855fe6142b731994bd4da3b23ef2204f49ad0d15536470ee5b728603e2b"
+    "source_sha256": "baac962faf7fb8d0060c15ea18e8fed04ebca277bac15fdad912f0feb94e8bc6"
   }
 }

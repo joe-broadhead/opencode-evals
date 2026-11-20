@@ -17,6 +17,9 @@
   "seed": "plugins=inference,openrouter",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "fields"
+  ],
   "sets": [
     "route"
   ],
@@ -43,7 +46,56 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
+    },
+    {
+      "id": "INF-PR01",
+      "severity": "major",
+      "ask": "The call names the three fields the user asked for.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "inference.extract",
+          "n": 1,
+          "arg": "args.fields",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "part(y|ies)",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "inference.extract",
+          "n": 1,
+          "arg": "args.fields",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "effective|date",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "inference.extract",
+          "n": 1,
+          "arg": "args.fields",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "notice",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
     },
     {
       "id": "INF-SF01",
@@ -60,7 +112,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 28
     },
     {
       "id": "INF-OC01",
@@ -95,7 +147,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 31
     },
     {
       "id": "INF-SF02",
@@ -111,7 +163,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 38
     },
     {
       "id": "INF-SF03",
@@ -130,7 +182,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 41
     }
   ],
   "oracle": [],
@@ -138,10 +190,10 @@
     {
       "id": "INF-SF01",
       "text": "`absent:openrouter.send-message` cannot be written while the evidence grammar rejects a hyphen in a tool name; a send-message call would be declined under ask-changes, so its absence as a decline is the same fact.",
-      "line": 29
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "3e9a927611cd0167b9ec135208d90dee2c45c504f9df625ca44c940b1d890efc"
+    "source_sha256": "a84f7df898e3817ef3925fb1236836e49fd2422e62d30dab5551280b89da8508"
   }
 }

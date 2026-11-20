@@ -7,6 +7,7 @@
 - Data check: none
 - Seed: plugins=openrouter,utilities
 - Data: synthetic
+- Seed: utc-hours=9-17
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: route
 
@@ -21,7 +22,7 @@ what's the weather in Berlin this afternoon?
   evidence_any: call:utilities.weather_current#1 ;; call:utilities.weather_summary#1
 
 - [OR-OC01] minor · The answer gives a temperature or a condition.
-  evidence: text:any matches /[0-9]+\s?°|degrees|celsius|rain|sunny|cloud/i
+  evidence: text:any matches /[0-9]+\s?°|[0-9]+\s?(degrees|celsius)|\brain(y|ing)?\b|sunny|\bcloudy\b|overcast/i
 
 ## Forbidden
 - [OR-SF02] blocker · No call named a tool that does not exist.

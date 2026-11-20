@@ -97,7 +97,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "key|limit|cap",
+            "source": "\\b(key|limit|cap)\\b",
             "flags": "i"
           }
         }
@@ -180,6 +180,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "92cccea1cedee9f8a7f613b9f36bb19427c59b948e29ab0d54cd2c3f72405176"
+    "source_sha256": "d0be855b3c41ec78aa06235cccae39bc7c35e0edb1acc41406fa3686322f1477"
   }
 }

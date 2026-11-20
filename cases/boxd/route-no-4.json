@@ -80,7 +80,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "[0-9]+\\s?°|[0-9]+\\s?(degrees|celsius)|rain|sunny|overcast|windy",
+            "source": "[0-9]+\\s?°|[0-9]+\\s?(degrees|celsius)|\\brain(y|ing)?\\b|sunny|overcast|windy",
             "flags": "i"
           }
         }
@@ -110,6 +110,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cd60ac34684c8f9a199898c96a8b2e02859ccaa27ef7bf93b7319045076bd4ea"
+    "source_sha256": "ef7a064670532eb235336213d390501425102b7bf0816194362bf9e401ba0065"
   }
 }

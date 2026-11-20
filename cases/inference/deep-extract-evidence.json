@@ -125,7 +125,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\b(not|wasn't|was not)\\b.{0,40}\\b(extracted|sent|run)\\b",
+              "source": "\\b(not|wasn't|was not)\\b.{0,40}\\b(extracted|sent|run|ran)\\b",
               "flags": "i"
             }
           },
@@ -196,6 +196,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "17ba7a635b2249fb89142d954dcb1cf42ae5954ebd7490f6ed58468acc85322a"
+    "source_sha256": "c0e98b42e2c627cd573925ca4819ac5a8c311a9af0412a9ab94eaa3e776c9249"
   }
 }

@@ -64,31 +64,19 @@
       "ask": "The answer names one next step from the status: install, pair or connect.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "browse-install|pair|extension|not installed|not connected",
-              "flags": "i"
-            }
-          },
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "next step",
-              "flags": "i"
-            }
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "browse-install|\\bpair(ed|ing)?\\b|extension|not installed|not connected",
+            "flags": "i"
           }
-        ]
+        }
       ],
+      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 22
@@ -154,6 +142,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6aaba8c7d5c7a71cc999e12d2347a62ef66ebf217f5368306d916fa28dfedb9f"
+    "source_sha256": "0e0f38a059059ab96bb44ed910e0df93a4a6e5dc9e60f6667e41014926804a0d"
   }
 }

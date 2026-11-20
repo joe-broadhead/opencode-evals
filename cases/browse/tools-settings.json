@@ -85,16 +85,6 @@
               "source": "config|option|plugin setting",
               "flags": "i"
             }
-          },
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "declined|approval",
-              "flags": "i"
-            }
           }
         ]
       ],
@@ -164,6 +154,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c6fc70794b411f86e0a16c5bc6bb9ed87b3d13c04b7213f09940815f7b70d51e"
+    "source_sha256": "17da6b19aa30e2483bb95ee73b5f23d221524a7a259ee69a4abd9cb41912b921"
   }
 }

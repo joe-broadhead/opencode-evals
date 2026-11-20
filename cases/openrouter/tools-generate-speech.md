@@ -6,6 +6,7 @@
 - Decision tested: a speech request is one generate-speech call with the text, declined, and no audio is claimed
 - Data check: nothing is generated because the call is declined
 - Data: own
+- Checkable: input
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
