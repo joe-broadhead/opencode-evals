@@ -57,9 +57,10 @@ answer wins over a non-zero code; an RpcError, an `errorSignal` hit, 401/403 or 
 failure (exit 1) or an evals failure (exit 4) — and is **not retried**. Only a body-less call with exit 124, 137 or 143, or a spawn timeout
 (`run()` reports its own as `status: null` with an ETIMEDOUT error, never as 137/143), is transient: it is retried **once**, then its own side,
 `timeout`, says *the check could not finish, so the real sign-in is unproven* (exit 5: sign in no further vendor, `--recheck`, and if it times
-out again open the vendor in your normal OpenCode and see whether it asks you to sign in). An `auth export` is narrower: only an
-**export-shaped** body (a credential array or `{credentials:[…]}`, no `_tag` and no `error`) **with exit 0** is an answer, so a failed export's
-error object is a read failure (exit 5; evals exit 4) and never "not in the real profile". `signin.sh` keeps "nothing was changed or signed out"
+out again open the vendor in your normal OpenCode and see whether it asks you to sign in). An `auth export` is narrower: only a body in which
+**every** element is credential-shaped (a string `id`, a string `integrationID`, a boolean `active`, an object `value` with a string `type`,
+no `_tag`/`error`), or `{credentials:[…]}` of such elements, **with exit 0** is an answer. A failed export's error object, a mixed array or a
+top-level `error` is a read failure (exit 5; evals exit 4), never "not in the real profile". `signin.sh` keeps "nothing was changed or signed out"
 for the guard and unreachable-server cases only, and check-real says when a vendor has timed out twice in a row. A `rpc.unavailable` on the evals
 side while the service is still loading its plugins means *not ready*: before the check, the walk waits for that vendor's route to answer (up to
 60 s; `EVALS_RPC_WAIT_MS` overrides, for tests), then fails the evals side only, never the real one.

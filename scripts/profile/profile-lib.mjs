@@ -448,8 +448,23 @@ export function run(command, args, { env, input, timeoutMs = 60_000 } = {}) {
   return { code: out.status, stdout: out.stdout ?? "", stderr: out.stderr ?? "", error: out.error ? String(out.error.message) : null }
 }
 
-/** Is this stdout a real `auth export` ANSWER: a JSON array of credentials, or `{credentials:[…]}`, with no RpcError and no `error` key?
- *  Only such a body counts as an export (a failed export's error object is a read failure, never "nothing there"). Returns the list or null. */
+/** Is this element credential-shaped (OpenCode's Credential.Entry): a string id and integrationID, a boolean active, an object value with
+ *  a string type, and no RpcError/_tag or error key? An export is only an answer when every element is. */
+export const credentialShaped = (c) =>
+  isObject(c) &&
+  typeof c.id === "string" &&
+  typeof c.integrationID === "string" &&
+  typeof c.active === "boolean" &&
+  isObject(c.value) &&
+  typeof c.value.type === "string" &&
+  !("_tag" in c) &&
+  !("error" in c)
+
+/**
+ * Is this stdout a real `auth export` ANSWER: a JSON credential array (or `{credentials:[…]}`, no top-level `_tag`/`error`) in which EVERY element
+ * is credential-shaped? Only such a body counts as an export (a failed export's error object, or a mixed body, is a read failure — never
+ * "nothing there"). Returns the list or null.
+ */
 export function exportAnswer(out) {
   const text = String(out?.stdout ?? "").trim()
   if (!text) return null
@@ -459,10 +474,11 @@ export function exportAnswer(out) {
   } catch {
     return null
   }
-  if (parsed?._tag === "RpcError" || parsed?.error) return null
-  if (Array.isArray(parsed)) return parsed
-  if (parsed && typeof parsed === "object" && Array.isArray(parsed.credentials)) return parsed.credentials
-  return null
+  if (!isObject(parsed) && !Array.isArray(parsed)) return null
+  if ("_tag" in parsed || "error" in parsed) return null
+  const list = Array.isArray(parsed) ? parsed : Array.isArray(parsed.credentials) ? parsed.credentials : null
+  if (!list) return null
+  return list.every(credentialShaped) ? list : null
 }
 
 /** The active credential of an integration from `opencode auth export` output, or null. Returns the parsed object (secrets inside: keep it in memory). */
@@ -477,12 +493,12 @@ export function activeCredential(exported, integration) {
   const want = normName(integration)
   // The integration id first, then the label; then EVERY entry of that integration (a re-sign-in leaves an inactive `Linear` beside the active
   // `Linear 2`, both with the same id), and only the ACTIVE one is returned: never a stale inactive credential.
-  const named = list.filter((c) => normName(c?.integrationID) === want)
+  const named = list.filter((c) => credentialShaped(c) && normName(c?.integrationID) === want)
   // (a re-sign-in's label gets a number: `Linear 2`, `X app 2`)
   const byLabel = (c) => normName(c?.label) === want || normName(c?.label).replace(/\d+$/, "") === want
-  const hits = named.length ? named : list.filter(byLabel)
+  const hits = named.length ? named : list.filter((c) => credentialShaped(c) && byLabel(c))
   const ids = new Set(hits.map((c) => c.integrationID))
-  return list.find((c) => ids.has(c?.integrationID) && c?.active) ?? null
+  return list.find((c) => credentialShaped(c) && ids.has(c?.integrationID) && c?.active) ?? null
 }
 
 /**

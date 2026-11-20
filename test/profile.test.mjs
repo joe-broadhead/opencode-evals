@@ -52,7 +52,7 @@ test("the active credential and its digests come out of an export without the to
   assert.equal(activeCredential("not json", "x"), null)
   assert.equal(activeCredential("[]", "x"), null)
   // an inactive `Linear` beside the active `Linear 2`: only the active one is ever compared
-  assert.equal(activeCredential(JSON.stringify([{ integrationID: "mcp_lin", label: "Linear", active: false }, { integrationID: "mcp_lin", label: "Linear 2", active: true }]), "linear").label, "Linear 2")
+  assert.equal(activeCredential(JSON.stringify([{ id: "cred_a", integrationID: "mcp_lin", label: "Linear", active: false, value: { type: "oauth" } }, { id: "cred_b", integrationID: "mcp_lin", label: "Linear 2", active: true, value: { type: "oauth" } }]), "linear").label, "Linear 2")
   assert.ok(Object.keys(IDENTITY).length === 14)
 })
 

@@ -10,6 +10,7 @@ import { tmpdir } from "node:os"
 import { fileURLToPath } from "node:url"
 import { IDENTITY, IDENTITY_INPUT, IDENTITY_ACTION, IDENTITY_INNER, IDENTITY_EXPECT, judgeAnswer, errorSignal, shapeProblem, identityCheck, rpcFailure, realServiceProblem, realServerPassword, realServerUrl, refreshChain, recordBaseline, profileConfig, loadPins, WALK_ORDER, appClientEntry, activeCredential as activeCredentialOf } from "./profile-lib.mjs"
 import { keepOnce } from "./keeper.mjs"
+import { checkReal as checkRealDirect } from "./check-real.mjs"
 import { createHash, randomBytes } from "node:crypto"
 import { statSync } from "node:fs"
 
@@ -53,11 +54,11 @@ if (a[0] === "auth" && a[1] === "export" && real && process.env.STUB_FAIL_REAL_E
 if (a[0] === "auth" && a[1] === "export" && real && process.env.STUB_EXPORT_TIMEOUT) process.exit(143)
 // A body the test chose for the real or the evals export (an RpcError, an error object, anything): the export must judge it as export-shaped or not.
 if (a[0] === "auth" && a[1] === "export" && (real ? process.env.STUB_EXPORT_BODY : process.env.STUB_EVALS_EXPORT_BODY) !== undefined) { console.log(real ? process.env.STUB_EXPORT_BODY : process.env.STUB_EVALS_EXPORT_BODY); process.exit(Number(process.env.STUB_EXPORT_BODY_EXIT) || 0) }
-if (a[0] === "auth" && a[1] === "export" && real && process.env.STUB_EXPORT_ANSWER_143) { const f = fx("real", a[2]); console.log(fs.existsSync(f) ? fs.readFileSync(f, "utf8") : "[]"); process.exit(143) }
+if (a[0] === "auth" && a[1] === "export" && real && process.env.STUB_EXPORT_ANSWER_FILE) { const f = fx("real", a[2]); console.log(fs.existsSync(f) ? fs.readFileSync(f, "utf8") : "[]"); process.exit(Number(process.env.STUB_EXPORT_ANSWER_EXIT) || 143) }
 if (a[0] === "auth" && a[1] === "export" && a[2] && fs.existsSync(fx(real ? "real" : "evals", a[2]))) { console.log(fs.readFileSync(fx(real ? "real" : "evals", a[2]), "utf8")); process.exit(0) }
 if (a[0] === "auth" && a[1] === "export" && /-app$|^gws-default$/.test(a[2])) { const f = fx(real ? "real" : "evals", a[2]); console.log(fs.existsSync(f) ? fs.readFileSync(f, "utf8") : "[]"); process.exit(0) }
 if (a[0] === "auth" && a[1] === "import") { const input = fs.readFileSync(0, "utf8"); fs.writeFileSync(${JSON.stringify(root)} + "/import-stdin.json", input); for (const c of JSON.parse(input)) fs.writeFileSync(fx("evals", c.integrationID), input); process.exit(0) }
-if (a[0] === "auth" && a[1] === "export") { console.log(JSON.stringify([{ integrationID: a[2], active: true, value: { access: real ? "REAL-ACCESS" : "EVALS-ACCESS" } }])); process.exit(0) }
+if (a[0] === "auth" && a[1] === "export") { console.log(JSON.stringify([{ id: real ? "cred_real" : "cred_evals", integrationID: a[2], label: a[2], active: true, value: { type: "oauth", access: real ? "REAL-ACCESS" : "EVALS-ACCESS" } }])); process.exit(0) }
 if (a[0] === "api") {
   const flag = (n) => { const i = a.indexOf(n); return i >= 0 ? a[i + 1] : null }
   const path = a[2] || ""
@@ -451,7 +452,7 @@ test("walk: no line the script prints holds `opencode auth login` without --serv
 test("gws-app: a store file with a different client id STOPs the walk with its fix; it is not recorded as passed", () => {
   const r = rig()
   try {
-    writeFileSync(join(r.root, "real-gws-default.json"), JSON.stringify([{ integrationID: "gws-default", label: "default", active: true, value: { type: "oauth", metadata: { clientId: "real.apps.googleusercontent.com", clientSecret: "GOCSPX-real-0123456789" } } }]))
+    writeFileSync(join(r.root, "real-gws-default.json"), JSON.stringify([{ id: "cred_x", integrationID: "gws-default", label: "default", active: true, value: { type: "oauth", metadata: { clientId: "real.apps.googleusercontent.com", clientSecret: "GOCSPX-real-0123456789" } } }]))
     writeFileSync(join(r.env.EVALS_STORE, "evals-gws-client.json"), JSON.stringify({ clientId: "other.apps.googleusercontent.com", clientSecret: "x" }))
     const out = spawnSync(join(HERE, "signin.sh"), ["--only", "gws-app", "--yes"], { env: { ...r.env, EVALS_BIN: HERE }, encoding: "utf8" })
     assert.equal(out.status, 1, out.stdout)
@@ -466,7 +467,7 @@ test("gws-app: a store file with a different client id STOPs the walk with its f
 test("gws-app: no Desktop client to copy is SKIPPED (the form will ask), never PASS", () => {
   const r = rig()
   try {
-    writeFileSync(join(r.root, "real-gws-default.json"), JSON.stringify([{ integrationID: "gws-default", label: "default", active: true, value: { type: "oauth", metadata: { access: "read" } } }]))
+    writeFileSync(join(r.root, "real-gws-default.json"), JSON.stringify([{ id: "cred_x", integrationID: "gws-default", label: "default", active: true, value: { type: "oauth", metadata: { access: "read" } } }]))
     const out = spawnSync(join(HERE, "signin.sh"), ["--only", "gws-app", "--yes"], { env: { ...r.env, EVALS_BIN: HERE }, encoding: "utf8" })
     assert.equal(out.status, 0, out.stdout)
     assert.match(out.stdout, /gws-app: SKIPPED \(the form will ask\)/)
@@ -513,7 +514,7 @@ test("check-real: an inactive stale credential beside the active one is never co
     // only an inactive entry: no credential
     assert.equal(activeCredentialOf(JSON.stringify([entry("Linear", false, "a", "b")]), "linear"), null)
     // x-app shape: ids equal the name, the active entry has another label
-    assert.equal(activeCredentialOf(JSON.stringify([{ integrationID: "x-app", label: "X app", active: false }, { integrationID: "x-app", label: "X app 2", active: true }]), "x-app").label, "X app 2")
+    assert.equal(activeCredentialOf(JSON.stringify([{ id: "cred_a", integrationID: "x-app", label: "X app", active: false, value: { type: "key" } }, { id: "cred_b", integrationID: "x-app", label: "X app 2", active: true, value: { type: "key" } }]), "x-app").label, "X app 2")
   } finally {
     r.done()
   }
@@ -1326,7 +1327,7 @@ test("keeper: each vendor's session allows its identity action AND its inner rea
   const r = rig()
   try {
     // x's probe reads x_get_users_me through the host: its session must allow both, as check-real does.
-    writeFileSync(join(r.root, "evals-x.json"), JSON.stringify([{ integrationID: "x", label: "x", active: true, value: { type: "oauth", access: "A", refresh: "R", expires: Date.now() + 60 * 60_000 } }]))
+    writeFileSync(join(r.root, "evals-x.json"), JSON.stringify([{ id: "cred_x", integrationID: "x", label: "x", active: true, value: { type: "oauth", access: "A", refresh: "R", expires: Date.now() + 60 * 60_000 } }]))
     const results = keepOnce({ opencode: r.env.OPENCODE_BIN, profile: r.env.EVALS_PROFILE, env: { ...r.env, STUB_INNER: "x_get_users_me" }, only: ["x"] })
     assert.deepEqual(results, [{ integration: "x", ok: true }])
     const sessions = permsLog(r)
@@ -1417,7 +1418,7 @@ test("--recheck all refuses while a real background service's port is listening"
 })
 
 // ---- gws: the check never downloads the binary (round 4) --------------------------------------------------------------------------------------------
-const gwsCred = (access) => JSON.stringify([{ integrationID: "gws-default", label: "default", active: true, value: { type: "oauth", access, refresh: `${access}-R` } }])
+const gwsCred = (access) => JSON.stringify([{ id: "cred_x", integrationID: "gws-default", label: "default", active: true, value: { type: "oauth", access, refresh: `${access}-R` } }])
 
 test("gws: with the binary installed the check runs its one read (gws.read, the Gmail profile) in a session that allows that action only", () => {
   const r = rig()
@@ -1602,11 +1603,17 @@ test("check-real: a real export with an empty body and exit 143 is a timeout (ex
 })
 
 test("check-real: a failed real export with an error body is a read failure, never `not in the real profile`", () => {
-  // X2 and X3: an RpcError, or an `error` object, with exit 1. It is not an export answer, so it cannot mean "nothing there".
+  // An export answer is an array in which EVERY element is credential-shaped. An RpcError, an `error` object, a mixed array or a top-level
+  // `error` is not one, whatever its exit code.
+  const good = '{"id":"cred_x","integrationID":"affinity","label":"Affinity","active":true,"value":{"type":"oauth"}}'
   const bodies = [
-    ['{"_tag":"RpcError","type":"rpc.unauthorized","message":"authentication rejected (401)"}', "1"],
-    ['{"error":"Unauthorized"}', "1"],
-    ['{"_tag":"RpcError","type":"rpc.server_error","message":"boom"}', "0"],
+    ['{"_tag":"RpcError","type":"rpc.unauthorized","message":"authentication rejected (401)"}', "1"], // X2
+    ['{"error":"Unauthorized"}', "1"], // X3
+    ['{"_tag":"RpcError","type":"rpc.server_error","message":"boom"}', "0"], // X6
+    ['[{"_tag":"RpcError","type":"rpc.unauthorized","message":"x"}]', "0"], // X9
+    ['[{"error":"Unauthorized"}]', "0"], // X10
+    [`[${good},{"error":"Unauthorized"}]`, "0"], // one good credential beside an error object
+    ['{"credentials":[],"error":"x"}', "0"], // X11
   ]
   for (const [body, code] of bodies) {
     const r = rig()
@@ -1650,7 +1657,7 @@ test("check-real: an export array with no credential takes the not-in-real path 
   try {
     writeFileSync(join(n.root, "real-affinity.json"), "[]")
     writeFileSync(join(n.root, "evals-affinity.json"), cred("affinity", "Affinity", "E-A", "E-R"))
-    const out = checkReal(n, "affinity", { STUB_EXPORT_ANSWER_143: "1" })
+    const out = checkReal(n, "affinity", { STUB_EXPORT_ANSWER_FILE: "1", STUB_EXPORT_ANSWER_EXIT: "143" })
     assert.equal(out.status, 5, out.stdout + out.stderr)
     assert.doesNotMatch(out.stdout, /PASS|not in the real profile/)
   } finally {
@@ -1670,6 +1677,67 @@ test("check-real: a non-export evals export is an evals failure (exit 4)", () =>
   } finally {
     r.done()
   }
+})
+
+test("check-real: a real export holding a credential with a non-zero exit is a read failure (exit 5)", () => {
+  // R1: the credential is there, but the export did not exit 0: not an answer.
+  const r = rig()
+  try {
+    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R"))
+    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R"))
+    const out = checkReal(r, "linear", { STUB_EXPORT_ANSWER_FILE: "1", STUB_EXPORT_ANSWER_EXIT: "1" })
+    assert.equal(out.status, 5, out.stdout + out.stderr)
+    assert.match(out.stdout, /could not read the real profile through the web server \(the export exited 1\)/)
+    assert.doesNotMatch(out.stdout, /^PASS|SAME access token/)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: an evals export holding a credential with a non-zero exit is an evals failure (exit 4)", () => {
+  // E3: the evals side's export must exit 0 too.
+  const r = rig()
+  try {
+    writeFileSync(join(r.root, "real-affinity.json"), "[]")
+    const body = JSON.stringify([{ id: "cred_x", integrationID: "affinity", label: "Affinity", active: true, value: { type: "oauth" } }])
+    const out = checkReal(r, "affinity", { STUB_EVALS_EXPORT_BODY: body, STUB_EXPORT_BODY_EXIT: "1" })
+    assert.equal(out.status, 4, out.stdout + out.stderr)
+    assert.match(out.stdout, /the evals profile did not answer with an export \(the export exited 1\)/)
+    assert.doesNotMatch(out.stdout, /sign the real profile back in/)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: step 2's evals export holding a credential with a non-zero exit is an evals failure (exit 4)", () => {
+  const r = rig()
+  try {
+    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R"))
+    const body = JSON.stringify([{ id: "cred_x", integrationID: "linear", label: "Linear", active: true, value: { type: "oauth", access: "EVALS-A", refresh: "EVALS-R" } }])
+    const out = checkReal(r, "linear", { STUB_EVALS_EXPORT_BODY: body, STUB_EXPORT_BODY_EXIT: "1" })
+    assert.equal(out.status, 4, out.stdout + out.stderr)
+    assert.match(out.stdout, /the evals profile did not answer with an export \(the export exited 1\)/)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a timeout's own side is `timeout` (a read failure is not worded as one)", () => {
+  const exec = (command, args) => {
+    if (args[0] === "service" && args[1] === "get") return { code: 0, stdout: "47950\n", stderr: "" }
+    if (args[0] === "api") {
+      const path = args[2] ?? ""
+      if (path === "/api/session") return { code: 0, stdout: '{"data":{"id":"ses_x"}}', stderr: "" }
+      if (args[1] === "delete") return { code: 0, stdout: "", stderr: "" }
+      if (path.endsWith("/describe")) return { code: 0, stdout: '{"output":{"methods":[]}}', stderr: "" }
+      return { code: 143, stdout: "", stderr: "" }
+    }
+    if (args[0] === "auth" && args[1] === "export") return { code: 0, stdout: "[]", stderr: "" }
+    return { code: 1, stdout: "", stderr: "" }
+  }
+  const result = checkRealDirect({ integration: "linear", profile: "/evals", env: { EVALS_REAL_HOME: "/real", EVALS_REAL_SERVICE_PORT: "49999" }, exec })
+  assert.equal(result.ok, false)
+  assert.equal(result.side, "timeout", "a real timeout has its own side")
 })
 
 test("check-real: a second consecutive timeout for the same vendor says so", () => {

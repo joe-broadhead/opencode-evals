@@ -235,7 +235,7 @@ test("2: the phase1 check-real step words its failure by the side that failed", 
 // ---------------------------------------------------------------------------------------------- 3: existing apps, check-real after each
 
 test("3: check-real stays right after each sign-in; OpenRouter and Affinity, new to the profile, are proved by their evals sign-in alone", () => {
-  const cred = (id) => JSON.stringify([{ integrationID: id, active: true, value: { type: id === "openrouter" ? "key" : "oauth", access: `a-${id}-0000000001`, refresh: `r-${id}-0000000001`, key: "k" } }])
+  const cred = (id) => JSON.stringify([{ id: "cred_x", integrationID: id, label: id, active: true, value: { type: id === "openrouter" ? "key" : "oauth", access: `a-${id}-0000000001`, refresh: `r-${id}-0000000001`, key: "k" } }])
   // The real profile holds no credential for openrouter/affinity: its export SUCCEEDS with []. A failed export is never "absent".
   const probe = JSON.stringify({ output: { source: "x", owner: { id: "a" } } })
   // Slack's identity read is its own profile line (an address on its own line), not the generic probe shape.
