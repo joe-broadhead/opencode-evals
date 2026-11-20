@@ -13,11 +13,11 @@
 what did we get done this week in DEMO?
 
 ## Items
-- [JRA-OC01] blocker · It searched with a bounded window, once.
+- [JRA-OC01] blocker · It made one bounded set of Jira calls.
   evidence: count:jira.* >= 1
   evidence: count:jira.* <= 3
 
-- [JRA-PR01] major · The JQL uses plain dates, with no offset and no Z.
+- [JRA-PR01] major · The answer shows JQL bounded by a date field.
   evidence: text:any matches /(created|resolved|updated|statusCategory)\s*(>=|<|=)/i
 
 - [JRA-OC02] major · The answer names the days it covered.

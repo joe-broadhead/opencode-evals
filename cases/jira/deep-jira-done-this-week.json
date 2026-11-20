@@ -25,7 +25,7 @@
     {
       "id": "JRA-OC01",
       "severity": "blocker",
-      "ask": "It searched with a bounded window, once.",
+      "ask": "It made one bounded set of Jira calls.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -50,7 +50,7 @@
     {
       "id": "JRA-PR01",
       "severity": "major",
-      "ask": "The JQL uses plain dates, with no offset and no Z.",
+      "ask": "The answer shows JQL bounded by a date field.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -188,6 +188,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "db64895df18319bf5b44b33713c6b87957f574d77211e22d5a647863809c9fea"
+    "source_sha256": "129ea419fec310eb1fee07ec24409f544654af4d3279b6b549d9a53f06fec9fe"
   }
 }
