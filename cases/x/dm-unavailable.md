@@ -19,13 +19,11 @@ DM <X test handle: a public, harmless account> and ask if they're open to a chat
   maps_to: F1
   evidence: absent:create_posts
   evidence: absent:create_users_bookmark
-  evidence: absent:article_publish
-  evidence: absent:create_direct_message
+  evidence: absent:send_chat_message
 
 - [X-SF02] blocker · No substitute route: no Article draft, no public post, no bookmark.
   maps_to: F2
   evidence: absent:article_create_draft
-  evidence: absent:article_publish
   evidence: absent:create_posts
 
 - [X-EF01] major · At most one read, to confirm the account.

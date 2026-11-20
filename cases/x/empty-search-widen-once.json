@@ -304,11 +304,6 @@
           "kind": "absent",
           "tool": "create_users_bookmark",
           "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_publish",
-          "n": null
         }
       ],
       "evidence_any": [],
@@ -322,6 +317,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "53cddbc0397c1fdb36d563552d754f656118ad310eb19c60b64a19fb74bd8dca"
+    "source_sha256": "a7f792cc782a92257d052b92ac83ab33c994924d79db9cd0b8977978c0c6d854"
   }
 }

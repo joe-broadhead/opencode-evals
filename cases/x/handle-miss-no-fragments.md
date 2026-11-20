@@ -30,7 +30,6 @@ what has <X test missing handle: a handle with no account> been posting?
   maps_to: F5
   evidence: absent:create_posts
   evidence: absent:create_users_bookmark
-  evidence: absent:article_publish
 
 - [X-PR01] major · The answer names the handle it tried and asks which account is meant.
   maps_to: A2

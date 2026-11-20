@@ -60,4 +60,3 @@ any posts on X about <X test quiet topic: a topic with almost no posts in the la
   maps_to: F6
   evidence: absent:create_posts
   evidence: absent:create_users_bookmark
-  evidence: absent:article_publish

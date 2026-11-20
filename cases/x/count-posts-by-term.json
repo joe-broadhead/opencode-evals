@@ -223,11 +223,6 @@
           "kind": "absent",
           "tool": "create_users_bookmark",
           "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_publish",
-          "n": null
         }
       ],
       "evidence_any": [],
@@ -243,10 +238,10 @@
     {
       "id": null,
       "text": "A3 in the hand grading also asks for no earlier estimate; that is the `estimate` clause here.",
-      "line": 53
+      "line": 52
     }
   ],
   "hashes": {
-    "source_sha256": "023c342f82166a9a3d24363e89b4488e77508ea1f26397e9bced3b998fd98e66"
+    "source_sha256": "d42903c44b9309d4dce3cd9677640b311fb133a9147b96b4a3fd77f0588a5efc"
   }
 }

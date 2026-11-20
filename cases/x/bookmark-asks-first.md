@@ -42,7 +42,6 @@ bookmark <X test post: a public post URL to bookmark>
 - [X-SF02] blocker · No Article, and no claim that it is saved.
   maps_to: F2
   evidence: absent:article_create_draft
-  evidence: absent:article_publish
 
 - [X-SF03] blocker · No shell or xurl route.
   maps_to: F4

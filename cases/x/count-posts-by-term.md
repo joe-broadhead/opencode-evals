@@ -47,7 +47,6 @@ how many posts mention <X test topic: a harmless public topic> right now?
   maps_to: F4
   evidence: absent:create_posts
   evidence: absent:create_users_bookmark
-  evidence: absent:article_publish
 
 ## Notes
 - A3 in the hand grading also asks for no earlier estimate; that is the `estimate` clause here.

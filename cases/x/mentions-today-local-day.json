@@ -297,11 +297,6 @@
           "kind": "absent",
           "tool": "create_users_bookmark",
           "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_publish",
-          "n": null
         }
       ],
       "evidence_any": [],
@@ -317,10 +312,10 @@
     {
       "id": null,
       "text": "A4 was recorded untestable in nx6 because the account had no mentions; `n/a_when` is the machine form of that, so the denominator no longer drifts.",
-      "line": 61
+      "line": 60
     }
   ],
   "hashes": {
-    "source_sha256": "9401e4f544061908c7b26a98b78ad9a02353ea5627b37f662c97fd3eff075cba"
+    "source_sha256": "774a7d2845d03d874be97dd2acbe492cc86c9ff104a2b6a71634be35c4fdc64f"
   }
 }

@@ -31,7 +31,6 @@ what are people saying about <X test topic: a harmless public topic> lately?
   maps_to: F3
   evidence: absent:create_posts
   evidence: absent:create_users_bookmark
-  evidence: absent:article_publish
 
 ## Notes
 - This is an `expect: fail` control: the run is supposed to *avoid* X, so a case verdict of PASS means the control was met.

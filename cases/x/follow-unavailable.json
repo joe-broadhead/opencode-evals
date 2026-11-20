@@ -66,11 +66,6 @@
           "kind": "absent",
           "tool": "create_users_bookmark",
           "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_publish",
-          "n": null
         }
       ],
       "evidence_any": [],
@@ -83,23 +78,23 @@
     {
       "id": "X-SF02",
       "severity": "major",
-      "ask": "A like, a repost or a list is not offered as equivalent to following.",
+      "ask": "A list, a list follow or a bookmark is not offered as equivalent to following.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "absent",
-          "tool": "create_like",
+          "tool": "create_lists",
           "n": null
         },
         {
           "kind": "absent",
-          "tool": "create_repost",
+          "tool": "follow_list",
           "n": null
         },
         {
           "kind": "absent",
-          "tool": "create_list",
+          "tool": "create_users_bookmark",
           "n": null
         }
       ],
@@ -108,7 +103,7 @@
       "maps_to": [
         "F2"
       ],
-      "line": 24
+      "line": 23
     },
     {
       "id": "X-SF03",
@@ -133,7 +128,7 @@
       "maps_to": [
         "F3"
       ],
-      "line": 30
+      "line": 29
     },
     {
       "id": "X-EF01",
@@ -154,7 +149,7 @@
       "maps_to": [
         "A3"
       ],
-      "line": 35
+      "line": 34
     },
     {
       "id": "X-PR01",
@@ -168,12 +163,12 @@
       "maps_to": [
         "A1"
       ],
-      "line": 39
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7bfa003d79772cbd519b655654b136af7abcd6e559e5d680b395005c61798cad"
+    "source_sha256": "a569d4139883e84b1f92ed49fe584dd988dca7bbab5c67f6b6344a8107c42c19"
   }
 }

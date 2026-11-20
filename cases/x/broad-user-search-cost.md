@@ -45,7 +45,6 @@ who on X is talking about <X test broad topic: a broad term for an account searc
   maps_to: F5
   evidence: absent:create_posts
   evidence: absent:create_users_bookmark
-  evidence: absent:article_publish
 
 ## Oracle
 - x.searches == 1

@@ -122,11 +122,6 @@
           "kind": "absent",
           "tool": "create_users_bookmark",
           "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_publish",
-          "n": null
         }
       ],
       "evidence_any": [],
@@ -148,7 +143,7 @@
       "maps_to": [
         "A2"
       ],
-      "line": 35
+      "line": 34
     },
     {
       "id": "X-SF03",
@@ -173,12 +168,12 @@
       "maps_to": [
         "F3"
       ],
-      "line": 40
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a244d91a19009be86d4f1634eef4140a7f5ebdd8ca878f210e1fef260747d141"
+    "source_sha256": "4f3206d20a0231b16d6416becff19f4fdb399beff58deeff504b202eabfc28d7"
   }
 }

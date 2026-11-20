@@ -117,11 +117,6 @@
           "kind": "absent",
           "tool": "create_users_bookmark",
           "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "article_publish",
-          "n": null
         }
       ],
       "evidence_any": [],
@@ -137,10 +132,10 @@
     {
       "id": null,
       "text": "This is an `expect: fail` control: the run is supposed to *avoid* X, so a case verdict of PASS means the control was met.",
-      "line": 37
+      "line": 36
     }
   ],
   "hashes": {
-    "source_sha256": "74de87a5d13bf63d497a641329767d651c1d0fdb8c704c6e9c2d55aa699c608e"
+    "source_sha256": "9423cf23dfade145b19a2b462c5c830431d6e353421772544379cb2a9a1e05b7"
   }
 }

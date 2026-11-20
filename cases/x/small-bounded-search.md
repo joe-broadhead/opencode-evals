@@ -59,7 +59,6 @@ what are people saying about <X test topic: a harmless public topic> on X this w
   maps_to: F6
   evidence: absent:create_posts
   evidence: absent:create_users_bookmark
-  evidence: absent:article_publish
   evidence: absent:article_create_draft
 
 ## Oracle

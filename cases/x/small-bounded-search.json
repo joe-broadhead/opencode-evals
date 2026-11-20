@@ -313,11 +313,6 @@
         },
         {
           "kind": "absent",
-          "tool": "article_publish",
-          "n": null
-        },
-        {
-          "kind": "absent",
           "tool": "article_create_draft",
           "n": null
         }
@@ -341,15 +336,15 @@
     {
       "id": null,
       "text": "A3: the plugin appends its own cost line for a non-zero read; where it appends none (a zero-result read) the answer's line is checked for shape only, and that is why the alternative clause exists.",
-      "line": 69
+      "line": 68
     },
     {
       "id": null,
       "text": "A4: nx6 answered with 8 status links for 10 posts, which is why the hand grader failed this assertion; the code item reproduces that count exactly.",
-      "line": 70
+      "line": 69
     }
   ],
   "hashes": {
-    "source_sha256": "a45b276c871eeaa762fe9174001cc508fcd164927ffd8060c7224ea0bd48a93d"
+    "source_sha256": "250b5ea1b78283fd1b42500cbc6c2fb6391f539fb9dcdc17f56d59fd4423fba6"
   }
 }
