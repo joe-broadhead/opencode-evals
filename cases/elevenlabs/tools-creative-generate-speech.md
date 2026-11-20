@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-read this line aloud in the narrator voice and save the audio: "Every great product starts with a simple idea."
+read this line aloud in voice voice_000000000000000000000000 and save the audio: "Every great product starts with a simple idea."
 
 ## Items
 - [ELV-WR01] blocker · Exactly one creative generate speech call, and it was declined.

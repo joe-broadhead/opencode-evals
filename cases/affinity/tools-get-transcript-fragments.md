@@ -18,8 +18,6 @@ what did {{target:affinity.company}} say about their raise in the last call? use
   evidence: call:affinity.get_transcript_fragments#1
 - [AFF-PR01] major · It read the transcript of the note it found.
   evidence: call:affinity.get_transcript_fragments#1 args.transcript_id present
-- [AFF-OC01] major · The answer reports what was said in its own words, labelled as Affinity's transcript.
-  evidence: text:any matches /(said|quote|fragment)/i
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

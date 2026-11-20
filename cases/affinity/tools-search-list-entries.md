@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-which companies are at term sheet stage on our pipeline list?
+which companies are at term sheet stage on list 424242 (our pipeline)?
 
 ## Items
 - [AFF-TR01] blocker · It used search_list_entries once.

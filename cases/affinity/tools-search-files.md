@@ -17,7 +17,7 @@ find the deck we have about {{target:affinity.company}}'s round.
 - [AFF-TR01] blocker · It used search_files once.
   evidence: call:affinity.search_files#1
 - [AFF-PR01] major · It searched for the deck.
-  evidence: call:affinity.search_files#1 args.prompt present
+  evidence: call:affinity.search_files#1 args.prompt matches /deck|round/i
 - [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 

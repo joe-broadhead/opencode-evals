@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_attach_kb_document (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "attach the refund policy document to {{target:elevenlabs.agent}}.",
+  "prompt": "attach knowledge-base document doc_000000000000000000000000 (the refund policy) to {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7817c5540cdcd078d4a2603d6849b571b258937533abd526cf7b8c8fb6c2db82"
+    "source_sha256": "c0c83f3f3a79693758c0cd14244688e30e9c1cf1d5b14e2fb316006273f58ea8"
   }
 }

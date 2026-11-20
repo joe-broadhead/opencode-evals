@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-what fields does our pipeline list have? I need the stage and the owner.
+what fields does list 424242 (our pipeline) have? I need the stage and the owner.
 
 ## Items
 - [AFF-TR01] blocker · It used get_list_fields once.

@@ -19,7 +19,7 @@ what can I filter interviews by in Metaview? I want job title and stage if they 
 - [MV-PR01] major · The call carries a generic rationale, with no candidate detail in it.
   evidence: call:metaview.list_fields#1 args.rationale present
 - [MV-PR02] major · It searched for the fields the user named.
-  evidence: call:metaview.list_fields#1 args.search_term present
+  evidence: call:metaview.list_fields#1 args.search_term matches /job title|stage/i
 - [MV-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 

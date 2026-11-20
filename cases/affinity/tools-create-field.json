@@ -80,7 +80,12 @@
           "tool": "affinity.create_field",
           "n": 1,
           "arg": "args.entity_type",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "company",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -195,6 +200,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f233f8800183da357436b684ad51a08bc1b0dddd608c0578bda50570d1701a70"
+    "source_sha256": "f79b9a5b043fccc68cd2bd6d79a37303e86c18cad3421539de2b23f26bc45f6b"
   }
 }

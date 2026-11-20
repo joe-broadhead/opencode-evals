@@ -53,7 +53,17 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(vega|echarts|plot|svg|png|html)",
+            "source": "(vega-lite|vega|echarts|plot|table|diagram)",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(svg|png|html)\\b",
             "flags": "i"
           }
         }
@@ -77,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "CHT-SF01",
@@ -97,7 +107,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "CHT-SF02",
@@ -113,12 +123,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aaeb41d7a19dc9a9ee3f7054bb021f5496cb4a25e88d04635ccceda2b6f13518"
+    "source_sha256": "d1d29264893cdb4f971808662cd46c5782d3cf6b8dc620ac5129fce17702c296"
   }
 }

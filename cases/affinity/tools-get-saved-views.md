@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-what saved views are on our pipeline list?
+what saved views are on list 424242 (our pipeline)?
 
 ## Items
 - [AFF-TR01] blocker · It used get_saved_views once.

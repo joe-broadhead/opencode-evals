@@ -20,7 +20,7 @@ upload the deck at ./acme-deck.pdf to {{target:affinity.company}}'s record.
 - [AFF-PR01] major · It used the company it resolved.
   evidence: call:affinity.issue_entity_files_upload_token#1 args.entity_id present
 - [AFF-PR02] major · It passed the file name.
-  evidence: call:affinity.issue_entity_files_upload_token#1 args.filename present
+  evidence: call:affinity.issue_entity_files_upload_token#1 args.filename matches /acme-deck\.pdf/
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.
   evidence_any: text:any matches /\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(uploaded|issued|created|sent)\b/i ;; text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i ;; text:any matches /\b(couldn't|could not|can't|cannot|unable to|not able to)\b.{0,40}\b(move|change|save|create|update|delete|send|post|add|archive|submit|reject|edit|record|run|query|answer|generate|write|set|rename)\b/i ;; text:any matches /\bnothing (happened|changed|was (sent|added|moved|created|saved|updated|deleted|posted|rejected))\b/i
 - [AFF-OC02] minor · No tool was invented.

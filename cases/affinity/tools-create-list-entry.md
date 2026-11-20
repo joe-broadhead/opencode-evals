@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-add {{target:affinity.company}} to our pipeline list.
+add {{target:affinity.company}} to list 424242 (our pipeline).
 
 ## Items
 - [AFF-WR01] blocker · Exactly one create list entry call, and it was declined.

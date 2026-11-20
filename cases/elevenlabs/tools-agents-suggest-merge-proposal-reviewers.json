@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_suggest_merge_proposal_reviewers (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_suggest_merge_proposal_reviewers reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "who should review this merge proposal? for {{target:elevenlabs.agent}}.",
+  "prompt": "who should review merge proposal prop_000000000000000000000000?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -118,6 +118,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "35fc3094f903ca8fea522f5e2077376b4c41bb40b44518ea8b4b324c70de7100"
+    "source_sha256": "d05f5f939d7a62417417eaa2123db9435745ef4b47e7099c17872a47d270ca47"
   }
 }

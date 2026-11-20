@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-remove the unused transfer node from the workflow for {{target:elevenlabs.agent}}.
+remove node node_000000000000000000000001 (the unused transfer node) from {{target:elevenlabs.agent}}'s workflow.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents delete workflow element call, and it was declined.

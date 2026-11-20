@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-edit the merge proposal's description to mention the refunds change for {{target:elevenlabs.agent}}.
+edit merge proposal prop_000000000000000000000000's description to mention the refunds change.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update merge proposal call, and it was declined.

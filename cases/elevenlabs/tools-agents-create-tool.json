@@ -16,6 +16,9 @@
   "seed": "plugins=elevenlabs",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "body"
+  ],
   "sets": [
     "wide"
   ],
@@ -42,7 +45,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "ELV-PR01",
@@ -56,13 +59,18 @@
           "tool": "elevenlabs.agents_create_tool",
           "n": 1,
           "arg": "args.body",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "api\\.example\\.com",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "ELV-OC01",
@@ -117,7 +125,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "ELV-OC02",
@@ -133,7 +141,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "ELV-SF01",
@@ -149,7 +157,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "ELV-SF02",
@@ -165,12 +173,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "804161c366fa1b350a4c2ec1564423e1e694aa4849c72149b7dc15436214d4bb"
+    "source_sha256": "e82bd93d4d86a548cd2bd68ca7a56f0df6c7effe8c7bf4dedcaa1d85f5d349ac"
   }
 }

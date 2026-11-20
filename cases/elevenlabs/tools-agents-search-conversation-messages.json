@@ -52,7 +52,12 @@
           "tool": "elevenlabs.agents_search_conversation_messages",
           "n": 1,
           "arg": "args.text_query",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "refund",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -139,6 +144,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "42646cac12bfd455ad0a50f481b8f7d604f172d90c6ca0056be857196ec06810"
+    "source_sha256": "a83bb4602bbcc02953b0fdea970c979de92ab234c41f37fc2075e803fa202b8c"
   }
 }

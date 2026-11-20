@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-who should review this merge proposal? for {{target:elevenlabs.agent}}.
+who should review merge proposal prop_000000000000000000000000?
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_suggest_merge_proposal_reviewers once.

@@ -52,7 +52,12 @@
           "tool": "affinity.search_files",
           "n": 1,
           "arg": "args.prompt",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "deck|round",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -116,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "711ad6d23e4a0de4fc674e185b7970135c888e7ac6eaa87f9d2801acb0bd9107"
+    "source_sha256": "eeed4a78f7fa3e0baca88cf467b4017dcdc4e9db4ba065d983004ef4fcf60860"
   }
 }

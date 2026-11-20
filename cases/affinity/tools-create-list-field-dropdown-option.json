@@ -7,7 +7,7 @@
   "source": "wide sweep: create_list_field_dropdown_option (a new stage or option)",
   "decision": "A new stage is one create, graded at the declined call",
   "data_check": "the pipeline has a stage field",
-  "prompt": "add a \"Passed\" stage to the the pipeline list, after term sheet.",
+  "prompt": "add a \"Passed\" option to the stage field field_000000000000000000000000 on list list_000000000000000000000000, after term sheet.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -195,6 +195,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ff36d096f1221552f2f6d66c3b91215a847c64328b9d0d0a73f8512b00dce0ef"
+    "source_sha256": "535ac9939c120c33462df1613d0edcf5424a6e95c81fe5676bfac4ce74edc8fa"
   }
 }

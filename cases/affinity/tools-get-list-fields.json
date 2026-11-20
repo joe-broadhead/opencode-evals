@@ -7,7 +7,7 @@
   "source": "wide sweep: get_list_fields (the fields of one list)",
   "decision": "A which-fields-on-the-pipeline question is one get_list_fields for the list",
   "data_check": "the pipeline exists",
-  "prompt": "what fields does our pipeline list have? I need the stage and the owner.",
+  "prompt": "what fields does list 424242 (our pipeline) have? I need the stage and the owner.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -116,6 +116,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0fce7c453ceb8600f477c508da80f0c9b4995c9b33eb423b5e56b2b1ba9a10b2"
+    "source_sha256": "826338b19ebc5b4bef689325930f48bc260de35438b5f4bf05417343e473e8b6"
   }
 }

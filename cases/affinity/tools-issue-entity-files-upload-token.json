@@ -76,7 +76,12 @@
           "tool": "affinity.issue_entity_files_upload_token",
           "n": 1,
           "arg": "args.filename",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "acme-deck\\.pdf",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -191,6 +196,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e71d77118b1a17a538c9a6224161388b7516a904c9961c30b925b1af9451b921"
+    "source_sha256": "644246c7a89cdcd338fa3e5c36a31f868199a7ff56f903725529d3a195f05c91"
   }
 }

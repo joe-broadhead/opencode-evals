@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-approve the merge proposal for {{target:elevenlabs.agent}}.
+approve merge proposal prop_000000000000000000000000.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents review merge proposal call, and it was declined.

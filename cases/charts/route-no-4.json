@@ -7,7 +7,7 @@
   "source": "should-not-call: photo editing is not a chart",
   "decision": "A photo-colour request reaches no charts tool",
   "data_check": "none",
-  "prompt": "warm up the colours in this product photo and remove the background.",
+  "prompt": "warm up the colours in the product photo at ./photo.png and remove the background.",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -118,6 +118,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "397ccfb7d5c7f5b59641a31f4a88243b793dc5ac1bb839d6cec4648b0eada2e3"
+    "source_sha256": "04e766ad5d568effc8879df134f8a2c5f93f7b55a99ae76ad4665a5587ee0697"
   }
 }

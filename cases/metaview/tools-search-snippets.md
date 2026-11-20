@@ -19,7 +19,7 @@ where did the most recent candidate explain why they want to leave their current
 - [MV-PR01] major · The call carries a generic rationale, with no candidate detail in it.
   evidence: call:metaview.search_snippets#1 args.rationale present
 - [MV-PR02] major · It searched for the reason they gave.
-  evidence: call:metaview.search_snippets#1 args.prompt present
+  evidence: call:metaview.search_snippets#1 args.prompt matches /leave/i
 - [MV-OC01] major · The answer gives timed ranges, not a paraphrase of the whole call.
   evidence: text:any matches /[0-9]+:[0-9]{2}\s*-\s*[0-9]+:[0-9]{2}/
 - [MV-OC02] minor · No tool was invented.

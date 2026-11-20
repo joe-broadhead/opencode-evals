@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_delete_workflow_element (ElevenLabs MCP; a delete)",
   "decision": "A delete is one call, graded at the declined call, and nothing is removed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "remove the unused transfer node from the workflow for {{target:elevenlabs.agent}}.",
+  "prompt": "remove node node_000000000000000000000001 (the unused transfer node) from {{target:elevenlabs.agent}}'s workflow.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5d82d749052185c8cb75665e540c46bbbe29e15a95a2487c3d67a7fa6865bcb0"
+    "source_sha256": "e499b330c02894e799babf39124aecc06b31d17c1588c92c45c9f810d26e023a"
   }
 }

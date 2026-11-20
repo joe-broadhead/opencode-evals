@@ -19,7 +19,7 @@ find the saved report about interview themes from the last quarter.
 - [MV-PR01] major · The call carries a generic rationale, with no candidate detail in it.
   evidence: call:metaview.search_reports#1 args.rationale present
 - [MV-PR02] major · It searched for the report the user described.
-  evidence: call:metaview.search_reports#1 args.search_term present
+  evidence: call:metaview.search_reports#1 args.search_term matches /theme/i
 - [MV-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 

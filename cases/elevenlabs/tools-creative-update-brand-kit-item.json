@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_update_brand_kit_item (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "replace the logo in the Acme brand kit with the new one.",
+  "prompt": "replace item item_000000000000000000000000 (the logo) in brand kit kit_000000000000000000000000 with the logo at ./logo-new.png.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e69f6f6e87e384782dbe0897f699850bb236cf338428f43ba55a9e3d961b526b"
+    "source_sha256": "ffefff18a1986bb6c7beda8fd5b70c9b10a248bb5880496b29f2a68e74770fb6"
   }
 }

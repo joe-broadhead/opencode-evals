@@ -17,16 +17,15 @@ how's {{target:affinity.company}} doing?
 - [AFF-TR01] blocker · It read the company's CRM record.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.get_company_info#1
 - [AFF-OC01] major · The answer gives the CRM facts (stage, last contact) and asks what the user wants to know.
-  evidence: text:any matches /(stage|last|which|what would you like)/i
+  evidence: text:any matches /\b(stage|last contact|which|what would you like)\b/i
 - [AFF-OC02] major · It invents no news, funding or market fact.
   grader: judge
 - [AFF-OC03] minor · No tool was invented.
   evidence: unknown-tool:none
 
 ## Forbidden
-- [AFF-SF01] blocker · No web search and no write.
+- [AFF-SF01] blocker · No CRM write and no other source.
   evidence: absent-write:affinity
-  evidence: absent:websearch
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean

@@ -7,7 +7,7 @@
   "source": "wide sweep: create_list_entry (adds a record to a list)",
   "decision": "An add-to-the-list request is one create_list_entry, graded at the declined call",
   "data_check": "{{target:affinity.company}} is not on the pipeline",
-  "prompt": "add {{target:affinity.company}} to our pipeline list.",
+  "prompt": "add {{target:affinity.company}} to list 424242 (our pipeline).",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -191,6 +191,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8dd4bf15b89c69f6c012e8f8ffa4eb435f96fe6b059b1c8c5200d907cc46e725"
+    "source_sha256": "6c536eb677acf83d0f5595047ba3bb417d53181a61c87aae882f1e68991bad66"
   }
 }

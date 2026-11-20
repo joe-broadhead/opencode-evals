@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-delete the "Acme Test" deal I created by mistake.
+delete opportunity opp_000000000000000000000000 (the "Acme Test" deal I created by mistake).
 
 ## Items
 - [AFF-WR01] blocker · Exactly one delete opportunity call, and it was declined.

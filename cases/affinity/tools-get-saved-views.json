@@ -7,7 +7,7 @@
   "source": "wide sweep: get_saved_views (the saved views on a list)",
   "decision": "A what-views-are-there question is one get_saved_views for the list",
   "data_check": "the pipeline has a saved view",
-  "prompt": "what saved views are on our pipeline list?",
+  "prompt": "what saved views are on list 424242 (our pipeline)?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -116,6 +116,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "df05aa1e45318a4648bde0e53c72c6b36a99e05fa7587b6a635eb662c74835cc"
+    "source_sha256": "a119a07a93c2af67adc34af7d9e16a07b64bade0ba925d5c025e388cd84e5ae5"
   }
 }

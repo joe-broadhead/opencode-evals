@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-add the billing agent as a subagent of {{target:elevenlabs.agent}}.
+add subagent sub_000000000000000000000000 (the billing agent) to {{target:elevenlabs.agent}}.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update subagents call, and it was declined.

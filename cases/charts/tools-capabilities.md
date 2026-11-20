@@ -17,7 +17,8 @@ what can you draw here, and which output formats actually work on this machine?
 - [CHT-TR01] blocker · It used capabilities once.
   evidence: call:charts.capabilities#1
 - [CHT-OC01] major · The answer names the engines and the formats that work.
-  evidence: text:any matches /(vega|echarts|plot|svg|png|html)/i
+  evidence: text:any matches /(vega-lite|vega|echarts|plot|table|diagram)/i
+  evidence: text:any matches /\b(svg|png|html)\b/i
 - [CHT-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

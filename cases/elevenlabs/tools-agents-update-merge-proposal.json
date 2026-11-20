@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_merge_proposal (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "edit the merge proposal's description to mention the refunds change for {{target:elevenlabs.agent}}.",
+  "prompt": "edit merge proposal prop_000000000000000000000000's description to mention the refunds change.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "52e9b53c1c5e445a9aa96a5bcee73079dec169caa62f0dc0854ebe34a369b4bc"
+    "source_sha256": "8924c4178a3577336e48b6aaebef4f9ff3955ab2d8af5de3535970d0a35d06e9"
   }
 }

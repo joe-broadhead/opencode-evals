@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-replace the logo in the Acme brand kit with the new one.
+replace item item_000000000000000000000000 (the logo) in brand kit kit_000000000000000000000000 with the logo at ./logo-new.png.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one creative update brand kit item call, and it was declined.

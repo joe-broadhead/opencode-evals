@@ -76,7 +76,12 @@
           "tool": "metaview.send_job_post_message",
           "n": 1,
           "arg": "args.message",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "first paragraph|tighten",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -203,6 +208,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "de42ab2f0bb0552caa36745f5a55fd26f2b21265faf08a03a83fc5cec5728f12"
+    "source_sha256": "f3964f0ecd1b14b09e13d34a99ef3794e5833ce82c36f783e380ad6615437367"
   }
 }

@@ -7,7 +7,7 @@
   "source": "wide sweep: get_list_field_dropdown_options (the options of a dropdown field)",
   "decision": "A what-stages-are-there question is one dropdown read for the list field",
   "data_check": "the pipeline has a stage dropdown",
-  "prompt": "what stages can a deal be in on our pipeline list?",
+  "prompt": "what stages can a deal be in on list 424242 (our pipeline)?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -116,6 +116,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "71e048ecd79d93597ee61eb19481a812367eef3343db2181b12164337b5e3c46"
+    "source_sha256": "ef721e6afc3e7f62eddbd43ecf2e8b56a125ed3f0b3a82bccd9e1c8d4309c4f1"
   }
 }

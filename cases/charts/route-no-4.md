@@ -11,7 +11,7 @@
 - Set: route
 
 ## Prompt
-warm up the colours in this product photo and remove the background.
+warm up the colours in the product photo at ./photo.png and remove the background.
 
 ## Items
 - [CHT-RT01] blocker · No charts tool was called.

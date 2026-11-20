@@ -7,7 +7,7 @@
   "source": "wide sweep: create_opportunity (a deal on a list)",
   "decision": "A new deal is one create_opportunity, graded at the declined call",
   "data_check": "the pipeline exists",
-  "prompt": "create a deal for {{target:affinity.company}} on the the pipeline list, called \"Acme Robotics seed\".",
+  "prompt": "create a deal for {{target:affinity.company}} on list 424242 (our pipeline), called \"Acme Robotics seed\".",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -196,6 +196,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cb2d6ec9e55f51d81d95cb77a3835206750d66cdac9802bf317ed0049d9f53ff"
+    "source_sha256": "d75f5b9f7adca1325c91c75c2e65f24850f5d37ade8c9936e01b0a9be7bbc5e5"
   }
 }

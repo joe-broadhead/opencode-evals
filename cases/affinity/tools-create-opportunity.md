@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-create a deal for {{target:affinity.company}} on the the pipeline list, called "Acme Robotics seed".
+create a deal for {{target:affinity.company}} on list 424242 (our pipeline), called "Acme Robotics seed".
 
 ## Items
 - [AFF-WR01] blocker · Exactly one create opportunity call, and it was declined.

@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-attach the refund policy document to {{target:elevenlabs.agent}}.
+attach knowledge-base document doc_000000000000000000000000 (the refund policy) to {{target:elevenlabs.agent}}.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents attach kb document call, and it was declined.

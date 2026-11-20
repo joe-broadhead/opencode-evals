@@ -7,7 +7,7 @@
   "source": "wide sweep: search_list_entries (entries filtered on list fields, with a count)",
   "decision": "A which-deals-are-at-term-sheet question is one filtered search with a count",
   "data_check": "the pipeline has entries in more than one stage",
-  "prompt": "which companies are at term sheet stage on our pipeline list?",
+  "prompt": "which companies are at term sheet stage on list 424242 (our pipeline)?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -116,6 +116,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "26f7314cb4868d205dd80c751b5b5875be8e8d44408dcf26686d7cab8a5d62cf"
+    "source_sha256": "a0b5a76415eaa41d2cbb9cd45db2e484eaadefbe87ae0f62b68f5ef61e826047"
   }
 }

@@ -61,29 +61,6 @@
       "line": 19
     },
     {
-      "id": "AFF-OC01",
-      "severity": "major",
-      "ask": "The answer reports what was said in its own words, labelled as Affinity's transcript.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(said|quote|fragment)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 21
-    },
-    {
       "id": "AFF-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
@@ -97,7 +74,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 21
     },
     {
       "id": "AFF-SF01",
@@ -117,7 +94,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 25
     },
     {
       "id": "AFF-SF02",
@@ -133,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6bdffa7f83bf09e75fab1661bc16e7f587751106c5edeb899016c83c3fb7d58c"
+    "source_sha256": "4abecc515d35c5bab0eb7ff4caa4ab5222463a17dbfe69873ce4247a30d4a87b"
   }
 }

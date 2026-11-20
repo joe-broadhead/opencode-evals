@@ -16,6 +16,11 @@
   "seed": "plugins=charts cwd=data",
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "document",
+    "spec",
+    "data"
+  ],
   "sets": [
     "deep"
   ],
@@ -27,22 +32,73 @@
       "ask": "Exactly one chart write was attempted, and it was declined.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "charts.quick",
-          "op": "==",
-          "value": 1
-        },
-        {
-          "kind": "declined",
-          "tool": "charts_quick"
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "charts_quick"
+          },
+          {
+            "kind": "declined",
+            "tool": "charts_render"
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
+    },
+    {
+      "id": "CHT-DT01",
+      "severity": "major",
+      "ask": "The data was filtered to the last two weeks in the file.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "charts.quick",
+            "n": 1,
+            "arg": "args.document",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "2024-02-(1[6-9]|2[0-9])",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "charts.render",
+            "n": 1,
+            "arg": "args.spec",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "2024-02-(1[6-9]|2[0-9])",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "charts.render",
+            "n": 1,
+            "arg": "args.data",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "2024-02-(1[6-9]|2[0-9])",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
     },
     {
       "id": "CHT-OC01",
@@ -60,7 +116,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
       "id": "CHT-OC02",
@@ -76,7 +132,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 24
     },
     {
       "id": "CHT-SF01",
@@ -97,7 +153,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 28
     },
     {
       "id": "CHT-SF02",
@@ -113,12 +169,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "56a1245c9a857839142c7b9941980bd91f034e2237c440608697829f0ad674ec"
+    "source_sha256": "f7991c1a57b5db196dab70b6f99a5456e86f9bb8ae99a2769f3ce5a96ff0ded1"
   }
 }

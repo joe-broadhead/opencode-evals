@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_connect_workflow_nodes (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "connect the greeting node to the transfer node in the workflow for {{target:elevenlabs.agent}}.",
+  "prompt": "connect node node_000000000000000000000001 to node node_000000000000000000000002 in {{target:elevenlabs.agent}}'s workflow.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8a1fc226ccdd367290959eaffdc3a6b76fd268f73b2de5abda40c050784a639a"
+    "source_sha256": "d22c4786de558661facf0e5466324c3e4299c0a31e539b1a97b45e059aa6b0fb"
   }
 }

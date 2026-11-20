@@ -72,7 +72,12 @@
           "tool": "metaview.search_snippets",
           "n": 1,
           "arg": "args.prompt",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "leave",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -159,6 +164,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "36a124eea85d41c807fe99502b2062f7a32381ae2f27e289a344f684ca48010c"
+    "source_sha256": "379c49bbbca730a40b480251cc4df779a6aa5d7a02bc4ae2c2912ac74be6c374"
   }
 }

@@ -52,7 +52,12 @@
           "tool": "affinity.get_entity_fields",
           "n": 1,
           "arg": "args.entity_type",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "company",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -116,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bb5d609fcfbf2dab8cf650d0ad9017803f699f8cf2919496e7a8386a01069599"
+    "source_sha256": "4eff1ef2e2e7d0f8e293b6dc4e01b003f6b7e4c16df4b067ca17f1efe2ef3149"
   }
 }

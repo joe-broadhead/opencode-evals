@@ -17,7 +17,7 @@ what do our notes say about pricing across the portfolio?
 - [AFF-TR01] blocker · It used search_notes once.
   evidence: call:affinity.search_notes#1
 - [AFF-PR01] major · It searched for pricing.
-  evidence: call:affinity.search_notes#1 args.prompt present
+  evidence: call:affinity.search_notes#1 args.prompt matches /pricing/i
 - [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 

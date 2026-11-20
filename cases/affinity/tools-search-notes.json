@@ -52,7 +52,12 @@
           "tool": "affinity.search_notes",
           "n": 1,
           "arg": "args.prompt",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "pricing",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -116,6 +121,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5536648881d84b11f34d28a008b3c4ea4360f133b53e737a07c42868610ca052"
+    "source_sha256": "abf0f0b283d3d70572651c26a4aa9493df9e39093bfacb10583512ca48b5ded8"
   }
 }

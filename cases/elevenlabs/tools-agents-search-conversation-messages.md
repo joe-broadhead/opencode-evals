@@ -17,7 +17,7 @@ find where a caller mentions a refund in conversation conv_000000000000000000000
 - [ELV-TR01] blocker · It read it with agents_search_conversation_messages once.
   evidence: call:elevenlabs.agents_search_conversation_messages#1
 - [ELV-PR01] major · It passed the text query the question needs.
-  evidence: call:elevenlabs.agents_search_conversation_messages#1 args.text_query present
+  evidence: call:elevenlabs.agents_search_conversation_messages#1 args.text_query matches /refund/
 - [ELV-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 - [ELV-OC09] major · It says the object was not found, and invents nothing.

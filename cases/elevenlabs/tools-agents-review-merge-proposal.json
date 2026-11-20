@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_review_merge_proposal (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "approve the merge proposal for {{target:elevenlabs.agent}}.",
+  "prompt": "approve merge proposal prop_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "26d61912a47f0dc96024dce11eb9e854260fc6613f30d128d5da999157f1d3e9"
+    "source_sha256": "3901f81b7b2755ddea1702c31d0bb68d714ce40ea062730a059ce003cca6fbca"
   }
 }

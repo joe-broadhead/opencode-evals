@@ -7,7 +7,7 @@
   "source": "wide sweep: get_list_info (one list's name and type)",
   "decision": "A what-is-this-list question is one get_list_info",
   "data_check": "the pipeline exists",
-  "prompt": "what is the the pipeline list in Affinity — what's it for?",
+  "prompt": "what is list 424242 in Affinity — what's it for?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -116,6 +116,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a74899b7688c0863351e4c013b7ddf60656c077e923fd1e1d2fbc2edcb563b6f"
+    "source_sha256": "0e1342787a31cb228ef470aa47b9236aa1dfd5e55f982329607db31188fde211"
   }
 }

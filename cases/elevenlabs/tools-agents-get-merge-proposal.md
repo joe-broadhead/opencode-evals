@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-show me the merge proposal for the agent for {{target:elevenlabs.agent}}.
+show me merge proposal prop_000000000000000000000000.
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_get_merge_proposal once.

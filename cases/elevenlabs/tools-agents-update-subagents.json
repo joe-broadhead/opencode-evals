@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_subagents (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "add the billing agent as a subagent of {{target:elevenlabs.agent}}.",
+  "prompt": "add subagent sub_000000000000000000000000 (the billing agent) to {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aa96a1b4081f5aa02020810d05313e0dad6a80dc7245712fdebf5b4535594c6d"
+    "source_sha256": "35afce257fc37befefadf21d077d36e860c994575dacef425fa636d87a011c9b"
   }
 }

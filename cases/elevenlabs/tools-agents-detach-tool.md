@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-detach the calendar tool from {{target:elevenlabs.agent}}.
+detach tool tool_000000000000000000000000 (the calendar tool) from {{target:elevenlabs.agent}}.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents detach tool call, and it was declined.

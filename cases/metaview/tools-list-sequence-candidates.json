@@ -73,7 +73,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(candidate|status|none|no candidates)",
+            "source": "\\b(status|replied|opened|bounced|completed|paused|active|not started|no candidates)\\b",
             "flags": "i"
           }
         }
@@ -139,6 +139,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bc64fdc6b47c8fab243410fd987270cf292158d6469523c3c68292a83cb4d9c8"
+    "source_sha256": "1a5da8ed03018db5ee243af75fdc4a67940292de4e198ffaf346b92595b9f8b7"
   }
 }

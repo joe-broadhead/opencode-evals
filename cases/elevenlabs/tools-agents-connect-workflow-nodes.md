@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-connect the greeting node to the transfer node in the workflow for {{target:elevenlabs.agent}}.
+connect node node_000000000000000000000001 to node node_000000000000000000000002 in {{target:elevenlabs.agent}}'s workflow.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents connect workflow nodes call, and it was declined.

@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-create a brand kit called "Acme" from our logo and colours.
+create a brand kit called "Acme" from the logo at ./logo.png and the colours #0b5fff and #1a1a1a.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one creative create brand kit call, and it was declined.

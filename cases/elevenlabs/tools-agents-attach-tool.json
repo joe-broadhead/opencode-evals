@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_attach_tool (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "attach the calendar tool to {{target:elevenlabs.agent}}.",
+  "prompt": "attach tool tool_000000000000000000000000 (the calendar tool) to {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "854108fe04ffa3373fede7325969678d67afb87996b03db6fa1870213fe2efa4"
+    "source_sha256": "99fafc56e550b1ab43f0eff97b5efc6d511334a99d187e6fb6fcec2f26d57066"
   }
 }

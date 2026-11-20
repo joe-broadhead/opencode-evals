@@ -18,7 +18,7 @@ send Affinity feedback that the company search returned the wrong match for a do
   evidence: count:affinity.send_feedback == 1
   evidence: declined:affinity_send_feedback
 - [AFF-PR01] major · It titled the feedback.
-  evidence: call:affinity.send_feedback#1 args.subject present
+  evidence: call:affinity.send_feedback#1 args.subject matches /search|match/i
 - [AFF-PR02] major · It carried the text the user described.
   evidence: call:affinity.send_feedback#1 args.body matches /wrong match|domain/
 - [AFF-OC01] major · The answer says nothing changed, and whom it would have reached.

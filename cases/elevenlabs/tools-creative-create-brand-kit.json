@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_create_brand_kit (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "create a brand kit called \"Acme\" from our logo and colours.",
+  "prompt": "create a brand kit called \"Acme\" from the logo at ./logo.png and the colours #0b5fff and #1a1a1a.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -175,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5e256c24b3fba7255d9e111f9e2668f2a6fc09edb1a69fcc96d9a504e465624d"
+    "source_sha256": "d442b2b96d7468a98b3fb1464f682736a65b00bea0c512b7352f4043fe5a27d9"
   }
 }

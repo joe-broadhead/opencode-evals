@@ -56,7 +56,12 @@
           "tool": "ashby.submit_mcp_feedback",
           "n": 1,
           "arg": "args.feedback",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "timed out",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +176,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "268733dde6a89d3fc424633d8e1602b45a51d3084a1b9f43e78d89f09ff7b605"
+    "source_sha256": "fbc1f3c565fd03c1c7df0fdb25b6c19a04b822255427a6ae99ab9408868ab913"
   }
 }

@@ -7,7 +7,7 @@
   "source": "should-not-call: Affinity Photo is a design app, not this CRM",
   "decision": "A photo-editing request reaches no Affinity CRM tool, and the answer says this is the CRM",
   "data_check": "none",
-  "prompt": "open the product photo in Affinity and warm up the colours.",
+  "prompt": "open the product photo at ./photo.png in Affinity and warm up the colours.",
   "controls": [],
   "budgets": {
     "outer_calls": 14,
@@ -118,6 +118,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8950be86fa905060df140aeec6163bad5ff23db5c2fa632ba26ab2eced0450ba"
+    "source_sha256": "959e1d4b1ef337c90e08569f8938a869e9d3af1aa92e524d93d171931039e45c"
   }
 }

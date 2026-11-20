@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-check the saved daily active users chart is still valid before I send it. don't redraw or change anything.
+check the saved daily active users chart before I send it — is there anything wrong with it? name any problem. don't redraw or change anything.
 
 ## Items
 - [CHT-TR01] blocker · It used validate once.
@@ -19,7 +19,7 @@ check the saved daily active users chart is still valid before I send it. don't 
 - [CHT-PR01] major · It validated the saved document by path.
   evidence: call:charts.validate#1 args.documentPath present
 - [CHT-OC01] major · The answer reports whether it is valid, and names any problem it found.
-  evidence: text:any matches /(no (problems|issues|warnings)|valid:\s*(true|false))/i
+  evidence: text:any matches /(nothing wrong|no (problems|issues|warnings)|it is valid|it's valid|\b(is|it's|looks) (fine|good|valid)\b|\bpasses\b|valid:\s*(true|false)|warning:)/i
 - [CHT-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

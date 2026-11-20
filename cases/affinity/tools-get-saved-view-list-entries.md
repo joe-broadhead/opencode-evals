@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-show me the entries in the 'needs review' view on our pipeline list.
+show me the entries in the 'needs review' view (view 434343) on list 424242.
 
 ## Items
 - [AFF-TR01] blocker · It used get_saved_view_list_entries once.

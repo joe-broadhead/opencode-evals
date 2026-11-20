@@ -80,7 +80,12 @@
           "tool": "affinity.create_list",
           "n": 1,
           "arg": "args.entity_type",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "company",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -195,6 +200,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b09cb4630597b43fda447f3b56298c3c97ce2c1477505967d88ebfa7390deab8"
+    "source_sha256": "aec7558bd64a47f6decce0954dbdf74a97892a4253eca8d80c42ff44dcc397cb"
   }
 }

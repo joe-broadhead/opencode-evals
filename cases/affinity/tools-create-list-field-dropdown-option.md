@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-add a "Passed" stage to the the pipeline list, after term sheet.
+add a "Passed" option to the stage field field_000000000000000000000000 on list list_000000000000000000000000, after term sheet.
 
 ## Items
 - [AFF-WR01] blocker · Exactly one create list field dropdown option call, and it was declined.

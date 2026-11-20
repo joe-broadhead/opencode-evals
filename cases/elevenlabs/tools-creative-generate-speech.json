@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_generate_speech (ElevenLabs MCP; a credit spend)",
   "decision": "A paid generation is one call, graded at the declined call, and no credits are spent",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "read this line aloud in the narrator voice and save the audio: \"Every great product starts with a simple idea.\"",
+  "prompt": "read this line aloud in voice voice_000000000000000000000000 and save the audio: \"Every great product starts with a simple idea.\"",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -196,6 +196,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9fab33ad56aa71b4d0553dd0acfa6508a82b977096ae1a498ae7e8052b14bc51"
+    "source_sha256": "a1da1ac3b878ab84c1386cbe9c79759e56de5d04c20e2eda5a9f4516f51f7ad2"
   }
 }

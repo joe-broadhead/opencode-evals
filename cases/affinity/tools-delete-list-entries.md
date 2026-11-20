@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-take {{target:affinity.company}} off the the pipeline list — they passed.
+take {{target:affinity.company}} off list 424242 (our pipeline) — they passed.
 
 ## Items
 - [AFF-WR01] blocker · Exactly one delete list entries call, and it was declined.

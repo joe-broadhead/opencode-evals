@@ -7,6 +7,7 @@
 - Data check: the charts world's data working directory holds data/daily.csv covering January and February 2024
 - Seed: plugins=charts cwd=data
 - Data: synthetic
+- Checkable: document, spec, data
 - Budget: outer_calls <= 10, inner_calls <= 6
 - Set: deep
 
@@ -15,8 +16,9 @@ line chart of daily active users from data/daily.csv, but only the last two week
 
 ## Items
 - [CHT-WR01] blocker · Exactly one chart write was attempted, and it was declined.
-  evidence: count:charts.quick == 1
-  evidence: declined:charts_quick
+  evidence_any: declined:charts_quick ;; declined:charts_render
+- [CHT-DT01] major · The data was filtered to the last two weeks in the file.
+  evidence_any: call:charts.quick#1 args.document matches /2024-02-(1[6-9]|2[0-9])/ ;; call:charts.render#1 args.spec matches /2024-02-(1[6-9]|2[0-9])/ ;; call:charts.render#1 args.data matches /2024-02-(1[6-9]|2[0-9])/
 - [CHT-OC01] minor · It did not restyle or update the saved chart instead of drawing the window.
   evidence: absent:charts.update
 - [CHT-OC02] minor · No tool was invented.

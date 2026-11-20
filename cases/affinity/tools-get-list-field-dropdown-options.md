@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-what stages can a deal be in on our pipeline list?
+what stages can a deal be in on list 424242 (our pipeline)?
 
 ## Items
 - [AFF-TR01] blocker · It used get_list_field_dropdown_options once.

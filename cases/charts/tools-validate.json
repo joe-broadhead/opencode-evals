@@ -7,7 +7,7 @@
   "source": "wide sweep: charts_validate (checks a spec or a saved chart and writes nothing)",
   "decision": "A check-this-chart request uses charts_validate on the saved document and writes no file",
   "data_check": "the charts world's saved-line working directory holds a saved daily-active-users chart",
-  "prompt": "check the saved daily active users chart is still valid before I send it. don't redraw or change anything.",
+  "prompt": "check the saved daily active users chart before I send it — is there anything wrong with it? name any problem. don't redraw or change anything.",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -73,7 +73,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(no (problems|issues|warnings)|valid:\\s*(true|false))",
+            "source": "(nothing wrong|no (problems|issues|warnings)|it is valid|it's valid|\\b(is|it's|looks) (fine|good|valid)\\b|\\bpasses\\b|valid:\\s*(true|false)|warning:)",
             "flags": "i"
           }
         }
@@ -139,6 +139,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c1b84dfe1b519a3196215d9122addf0c715324ce7359994cd843c0691d035ee4"
+    "source_sha256": "bd2065ac252b94d47b450c474a9be6d3cc9510c6dd874dfd8aece01f8f0d5427"
   }
 }

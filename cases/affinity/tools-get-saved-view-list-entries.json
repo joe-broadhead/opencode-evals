@@ -7,7 +7,7 @@
   "source": "wide sweep: get_saved_view_list_entries (the entries a saved view returns)",
   "decision": "A show-me-that-view question is one saved-view entries read",
   "data_check": "the pipeline has a saved view with entries",
-  "prompt": "show me the entries in the 'needs review' view on our pipeline list.",
+  "prompt": "show me the entries in the 'needs review' view (view 434343) on list 424242.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -139,6 +139,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ee9548cc74571b9fdc5821b7f26afe7765139ae725f4621754f2de948c447385"
+    "source_sha256": "9f9f2d77a4ce9c7d02830ea7fe5f21eb31ca9b5008ba0381fd3d8d0544e2fef5"
   }
 }

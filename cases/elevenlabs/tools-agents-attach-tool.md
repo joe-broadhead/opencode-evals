@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-attach the calendar tool to {{target:elevenlabs.agent}}.
+attach tool tool_000000000000000000000000 (the calendar tool) to {{target:elevenlabs.agent}}.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents attach tool call, and it was declined.

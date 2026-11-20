@@ -72,7 +72,12 @@
           "tool": "metaview.list_fields",
           "n": 1,
           "arg": "args.search_term",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "job title|stage",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -136,6 +141,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "603a8c93edbcae5093a3b2e8ae0bec121605eb588386f6c006af283b5c7909bb"
+    "source_sha256": "9894a6608f393909906973ee34b2c21aaeb76eb0430246e98ef96d9ce1bf4309"
   }
 }

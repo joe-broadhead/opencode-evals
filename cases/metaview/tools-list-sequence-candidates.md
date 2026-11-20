@@ -19,7 +19,7 @@ who's in the backend outreach sequence at the moment?
 - [MV-PR01] major · The call carries a generic rationale, with no candidate detail in it.
   evidence: call:metaview.list_sequence_candidates#1 args.rationale present
 - [MV-OC01] major · The answer lists the candidates and their status.
-  evidence: text:any matches /(candidate|status|none|no candidates)/i
+  evidence: text:any matches /\b(status|replied|opened|bounced|completed|paused|active|not started|no candidates)\b/i
 - [MV-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

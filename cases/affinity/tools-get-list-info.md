@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-what is the the pipeline list in Affinity — what's it for?
+what is list 424242 in Affinity — what's it for?
 
 ## Items
 - [AFF-TR01] blocker · It used get_list_info once.

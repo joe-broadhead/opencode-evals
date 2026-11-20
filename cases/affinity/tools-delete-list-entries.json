@@ -7,7 +7,7 @@
   "source": "wide sweep: delete_list_entries (removes entries from a list)",
   "decision": "A remove-from-the-list request is one call, graded at the declined call",
   "data_check": "{{target:affinity.company}} is on the pipeline",
-  "prompt": "take {{target:affinity.company}} off the the pipeline list — they passed.",
+  "prompt": "take {{target:affinity.company}} off list 424242 (our pipeline) — they passed.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -191,6 +191,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4cc783be4b36d49f3b186956d344f2406c6ee2eb18f89533ebdbe53d13f0266b"
+    "source_sha256": "689d1efd7c532e134f41e0f9865bc90d6b232b985f808861b337daabbb0bfa0e"
   }
 }

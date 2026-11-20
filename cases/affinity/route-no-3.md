@@ -11,7 +11,7 @@
 - Set: route
 
 ## Prompt
-open the product photo in Affinity and warm up the colours.
+open the product photo at ./photo.png in Affinity and warm up the colours.
 
 ## Items
 - [AFF-RT01] blocker · No Affinity tool was called.

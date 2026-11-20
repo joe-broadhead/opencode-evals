@@ -17,7 +17,7 @@ what CRM reminders are due this week?
 - [AFF-TR01] blocker · It used get_reminders once.
   evidence: call:affinity.get_reminders#1
 - [AFF-PR01] major · It bounded the window.
-  evidence: call:affinity.get_reminders#1 args.due_before present
+  evidence: call:affinity.get_reminders#1 args.due_before matches /[0-9]{4}-[0-9]{2}-[0-9]{2}/
 - [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 

@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-add a transfer node to {{target:elevenlabs.agent}}'s workflow, after the greeting.
+add a transfer node to {{target:elevenlabs.agent}}'s workflow, after node node_000000000000000000000001.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents add workflow node call, and it was declined.

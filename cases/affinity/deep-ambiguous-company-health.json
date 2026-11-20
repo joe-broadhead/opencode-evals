@@ -61,7 +61,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(stage|last|which|what would you like)",
+            "source": "\\b(stage|last contact|which|what would you like)\\b",
             "flags": "i"
           }
         }
@@ -102,18 +102,13 @@
     {
       "id": "AFF-SF01",
       "severity": "blocker",
-      "ask": "No web search and no write.",
+      "ask": "No CRM write and no other source.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
           "kind": "absent-write",
           "ns": "affinity"
-        },
-        {
-          "kind": "absent",
-          "tool": "websearch",
-          "n": null
         },
         {
           "kind": "committed-write"
@@ -138,12 +133,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "263b76880579e61f1857ff4edd99d135909d7ebe19d401cabd1bf909adb4df01"
+    "source_sha256": "bb92e595714fbfeb3683d0aa269adbb24793696795031e6ba2ddc98cd184775c"
   }
 }

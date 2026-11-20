@@ -17,7 +17,7 @@ what fields do we keep on companies in Affinity?
 - [AFF-TR01] blocker · It used get_entity_fields once.
   evidence: call:affinity.get_entity_fields#1
 - [AFF-PR01] major · It asked for the company type.
-  evidence: call:affinity.get_entity_fields#1 args.entity_type present
+  evidence: call:affinity.get_entity_fields#1 args.entity_type matches /company/i
 - [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 

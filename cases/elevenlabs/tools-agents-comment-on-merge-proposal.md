@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-comment on the merge proposal: "keep the refunds procedure from main." for {{target:elevenlabs.agent}}.
+comment on merge proposal prop_000000000000000000000000: "keep the refunds procedure from main."
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents comment on merge proposal call, and it was declined.

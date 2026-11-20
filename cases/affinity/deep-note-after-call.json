@@ -56,7 +56,12 @@
           "tool": "affinity.create_note",
           "n": 1,
           "arg": "args.content",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "term sheet|Friday",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
@@ -183,6 +188,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "df035cf0487263b230419f3eca6f0045c49cd80d05636d7e0ccfffd4ea9f8e87"
+    "source_sha256": "fc638dbb100b7714f8b42a9ee0cab659979a43ec7c336395dc385d8b92b30dd3"
   }
 }

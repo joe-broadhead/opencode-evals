@@ -137,7 +137,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(ATS|email)",
+            "source": "\\bATS\\b|\\bemail(s|ed)?\\b",
             "flags": "i"
           }
         }
@@ -199,6 +199,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aceddddf8b86f545625282fb897d5db6c01c4c610ca6c93e09e6d86dd50bbc37"
+    "source_sha256": "2b5f77d36dcb5f02859ca5d192c4a08af29acccb7e8d070275babc441e7053f0"
   }
 }
