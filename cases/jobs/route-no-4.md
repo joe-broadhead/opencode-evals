@@ -5,9 +5,8 @@
 - Source: evals-232/wide/jobs/should-not-call
 - Decision tested: a date arithmetic question is not a job, and no scheduled task is invented to answer it
 - Data check: none
-- Seed: plugins=jobs,utilities
+- Seed: plugins=jobs,utilities utc-hours=9-17
 - Data: synthetic
-- Seed: utc-hours=9-17
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: route
 

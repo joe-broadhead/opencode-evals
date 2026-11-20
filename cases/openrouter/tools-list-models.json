@@ -74,7 +74,18 @@
       "ask": "It reports the constraint it filtered on, or says none matched.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "200k|200,000",
+            "flags": "i"
+          }
+        }
+      ],
       "evidence_any": [
         [
           {
@@ -118,7 +129,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "OR-SF01",
@@ -136,7 +147,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "OR-SF02",
@@ -152,12 +163,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "408a1a5fa8155d8cc8ad216c6fa34aa9a803373bcf87294e65faf177e96d7414"
+    "source_sha256": "9e69601e46796edc8a3b89a73cbcef06c96c4047905f291a6734cc0adc20107f"
   }
 }

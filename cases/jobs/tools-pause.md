@@ -4,8 +4,9 @@
 - Tier: T3
 - Source: evals-232/wide/jobs/pause
 - Decision tested: pausing one job pauses that job only, and the answer says nothing is running
-- Data check: a job with id nightly-report exists in the world, or the answer reports it missing
+- Data check: the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md
 - Data: synthetic
+- Seed: files=jobs-nightly
 - Checkable: id
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide

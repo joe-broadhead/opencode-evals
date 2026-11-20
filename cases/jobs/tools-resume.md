@@ -4,8 +4,9 @@
 - Tier: T3
 - Source: evals-232/wide/jobs/resume
 - Decision tested: resuming one job names that job, and the answer says it is still paused when the call is declined
-- Data check: a paused job with id nightly-report exists in the world, or the answer reports it missing
+- Data check: the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md
 - Data: synthetic
+- Seed: files=jobs-nightly
 - Checkable: id
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide

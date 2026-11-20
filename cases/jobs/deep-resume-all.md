@@ -4,8 +4,9 @@
 - Tier: T3
 - Source: evals-232/deep/jobs/resume-all
 - Decision tested: "turn them all back on" is one resume with all true, declined, and the answer says they are still paused
-- Data check: the store may be empty; the decision is the call
+- Data check: the seed holds three jobs; the decision is the call
 - Data: synthetic
+- Seed: files=jobs-nightly
 - Budget: outer_calls <= 8, inner_calls <= 5, tokens <= 350000
 - Set: deep
 

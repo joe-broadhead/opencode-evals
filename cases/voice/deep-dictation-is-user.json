@@ -37,7 +37,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "ctrl\\+space|ctrl\\+shift\\+space|\\/voice-dictate|shortcut|key",
+              "source": "ctrl\\+space|ctrl\\+shift\\+space|\\/voice-dictate|shortcut|\\bkey\\b",
               "flags": "i"
             }
           },
@@ -117,6 +117,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cde81bbfdf575d97549cac8b6cbcaba4bbb48c6afe5d8f9a387a72dd9ba11f48"
+    "source_sha256": "5a95553f4c95d26aeb05bd743d7c189e796864ab162a03d1fefac7270196e396"
   }
 }

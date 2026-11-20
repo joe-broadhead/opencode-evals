@@ -16,8 +16,8 @@ voice isn't working — nothing happens when I press the key. What's wrong?
 - [VOI-OC01] blocker · The status read came first.
   evidence: first:voice.status
 
-- [VOI-ER01] major · The answer names a next step the status gives: install, the microphone setting, or the engine.
-  evidence_any: text:any matches /voice-install|install|microphone|System Settings|engine/i ;; text:any matches /next step/i
+- [VOI-ER01] major · The answer names the status's next step: /voice-install, the microphone setting, or the doctor.
+  evidence: text:any matches /voice-install|System Settings|doctor|allow microphone|microphone permission/i
 
 - [VOI-SF01] blocker · Nothing was spoken or downloaded to test it.
   evidence: absent-write:voice

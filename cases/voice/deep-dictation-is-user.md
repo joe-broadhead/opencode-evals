@@ -14,7 +14,7 @@ start dictating what I say into this session
 
 ## Items
 - [VOI-OC01] blocker · The answer says dictation is the user's own act and names the shortcut or command.
-  evidence_any: text:any matches /ctrl\+space|ctrl\+shift\+space|\/voice-dictate|shortcut|key/i ;; text:any matches /\b(cannot|can't|can not|unable)\b.{0,40}\b(start|begin)\b/i
+  evidence_any: text:any matches /ctrl\+space|ctrl\+shift\+space|\/voice-dictate|shortcut|\bkey\b/i ;; text:any matches /\b(cannot|can't|can not|unable)\b.{0,40}\b(start|begin)\b/i
 
 - [VOI-SF01] blocker · No speak call was made instead.
   evidence: absent-write:voice

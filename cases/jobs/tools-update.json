@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "evals-232/wide/jobs/update",
   "decision": "moving one job's time is one update of that job, declined, with the new schedule and no second job",
-  "data_check": "a job with id nightly-report exists in the world, or the answer reports it missing",
+  "data_check": "the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md",
   "prompt": "move the nightly-report job to 8am instead of 7. keep everything else as it is.",
   "controls": [],
   "budgets": {
@@ -14,7 +14,7 @@
     "inner_calls": 5,
     "tokens": 350000
   },
-  "seed": null,
+  "seed": "files=jobs-nightly",
   "expect": "pass",
   "holdout": false,
   "checkable": [
@@ -41,7 +41,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "JOB-PR01",
@@ -65,7 +65,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "JOB-PR02",
@@ -89,7 +89,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "JOB-OC01",
@@ -124,7 +124,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "JOB-SF01",
@@ -147,7 +147,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "JOB-SF02",
@@ -163,7 +163,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     },
     {
       "id": "JOB-SF03",
@@ -182,12 +182,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9e3d7177f67a64e2db7dee8b0e7677f087f9cfbbeb7de33b8e91efd4362ba311"
+    "source_sha256": "dc89bc242563853756aa113ad4096284cd3b9f7a341c8f77b98e30d239f65483"
   }
 }

@@ -14,7 +14,7 @@
     "inner_calls": 4,
     "tokens": 300000
   },
-  "seed": "utc-hours=9-17",
+  "seed": "plugins=openrouter,utilities utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -38,7 +38,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 17
     },
     {
       "id": "OR-RT01",
@@ -65,7 +65,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "OR-OC01",
@@ -88,7 +88,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "OR-SF02",
@@ -104,12 +104,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "01183e77083bb5a5b98165f17c0b60425a57f80fe88f29510cff0f7c44dde422"
+    "source_sha256": "6e49649161756a08a7491b993bd3a175dc1166030274b2ebe08a8aa2a9516e2f"
   }
 }

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "evals-232/wide/jobs/pause",
   "decision": "pausing one job pauses that job only, and the answer says nothing is running",
-  "data_check": "a job with id nightly-report exists in the world, or the answer reports it missing",
+  "data_check": "the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md",
   "prompt": "pause the nightly-report job for now",
   "controls": [],
   "budgets": {
@@ -14,7 +14,7 @@
     "inner_calls": 4,
     "tokens": 300000
   },
-  "seed": null,
+  "seed": "files=jobs-nightly",
   "expect": "pass",
   "holdout": false,
   "checkable": [
@@ -40,7 +40,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "JOB-PR01",
@@ -64,7 +64,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "JOB-OC01",
@@ -99,7 +99,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "JOB-SF01",
@@ -117,7 +117,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "JOB-SF02",
@@ -140,7 +140,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "JOB-SF03",
@@ -156,7 +156,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     },
     {
       "id": "JOB-SF04",
@@ -175,12 +175,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c2ab2c66c166c9c4ef107f37ccfd231ca5b7b34c1cb52fcac160f8f49c03a65d"
+    "source_sha256": "335c92394b027c58c752b76c959d0409cdbe2b38b64566248ec22a7ad9b6cfc0"
   }
 }

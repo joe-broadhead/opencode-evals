@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "evals-232/wide/jobs/extend",
   "decision": "keeping a job alive is one extend with a future expiry, not a recreate, and the answer says the expiry did not move",
-  "data_check": "a job with id standup-reminder exists in the world, or the answer reports it missing",
+  "data_check": "the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md",
   "prompt": "keep the standup-reminder job alive for another 30 days, it expires soon",
   "controls": [],
   "budgets": {
@@ -14,7 +14,7 @@
     "inner_calls": 4,
     "tokens": 300000
   },
-  "seed": null,
+  "seed": "files=jobs-nightly",
   "expect": "pass",
   "holdout": false,
   "checkable": [
@@ -41,7 +41,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "JOB-PR01",
@@ -65,7 +65,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "JOB-DT01",
@@ -90,7 +90,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "JOB-OC01",
@@ -125,7 +125,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "JOB-SF01",
@@ -148,7 +148,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "JOB-SF02",
@@ -164,7 +164,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     },
     {
       "id": "JOB-SF03",
@@ -183,12 +183,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6eb45f55a05acf5f9e0247f7aca0c29b06724c023a7bc0ed7c452341eb5a0586"
+    "source_sha256": "416cae57baa6c70b24f209ac056863539c34f14435eafb04fe580af59f7faf60"
   }
 }

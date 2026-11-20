@@ -4,8 +4,9 @@
 - Tier: T3
 - Source: evals-232/wide/jobs/extend
 - Decision tested: keeping a job alive is one extend with a future expiry, not a recreate, and the answer says the expiry did not move
-- Data check: a job with id standup-reminder exists in the world, or the answer reports it missing
+- Data check: the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md
 - Data: synthetic
+- Seed: files=jobs-nightly
 - Checkable: id, expires
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide

@@ -3,7 +3,7 @@
 - Skill under test: boxd
 - Tier: T3
 - Source: evals-232/deep/boxd/harvest-then-drop
-- Decision tested: a finished work is harvested before it is dropped, and both are declined in that order
+- Decision tested: a finished work is harvested first; when the harvest is declined the drop may be withheld, and the answer does not claim either happened
 - Data check: no boxd CLI in the trial
 - Data: synthetic
 - Checkable: workId
@@ -17,13 +17,15 @@
 - [BOX-OC01] blocker · The harvest came before the drop.
   evidence: before:boxd.harvest,boxd.drop
 
-- [BOX-WR01] blocker · Both calls were made once and both were declined.
+- [BOX-WR01] blocker · The harvest was attempted once, and it was declined.
   evidence: count:boxd.harvest == 1
-  evidence: count:boxd.drop == 1
   evidence: declined:boxd_harvest
-  evidence: declined:boxd_drop
 
-- [BOX-OC02] major · The answer says neither happened, and that the machine still bills.
+- [BOX-WR02] major · The drop was withheld, or attempted once and declined.
+  evidence_any: absent:boxd.drop ;; declined:boxd_drop
+  evidence: count:boxd.drop <= 1
+
+- [BOX-OC02] major · The answer says the harvest did not happen, and that the machine still bills.
   evidence_any: text:any matches /\b(not|wasn't|was not)\b.{0,40}\b(harvested|dropped|destroyed)\b/i ;; text:any matches /\b(declined|rejected|needs? (your )?approval|approve)\b/i
 
 ## Forbidden

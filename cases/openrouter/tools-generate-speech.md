@@ -18,6 +18,9 @@ read this with OpenRouter's speech model: the build is green and the release is 
   evidence: count:openrouter.generate-speech == 1
   evidence: declined:openrouter_generate-speech
 
+- [OR-PR01] major · The text passed is the sentence the user asked for.
+  evidence: call:openrouter.generate-speech#1 args.input matches /build is green/i
+
 - [OR-OC01] major · The answer says no audio was generated.
   evidence_any: text:any matches /\b(not|wasn't|was not)\b.{0,40}\b(generated|spoken|created)\b/i ;; text:any matches /\b(declined|rejected|needs? (your )?approval)\b/i
 

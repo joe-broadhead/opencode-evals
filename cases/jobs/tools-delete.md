@@ -4,8 +4,9 @@
 - Tier: T3
 - Source: evals-232/wide/jobs/delete
 - Decision tested: deleting one job is one delete of that id, declined, with no pause as a silent substitute
-- Data check: a job with id standup-reminder exists in the world, or the answer reports it missing
+- Data check: the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md
 - Data: synthetic
+- Seed: files=jobs-nightly
 - Checkable: id
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide

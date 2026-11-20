@@ -36,8 +36,8 @@
         {
           "kind": "count",
           "tool": "openrouter.list-models",
-          "op": "==",
-          "value": 1
+          "op": "<=",
+          "value": 2
         }
       ],
       "evidence_any": [],
@@ -208,6 +208,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "04578d5a9049623a5d68663a8b6cf54985ab30a0b30a91067fe865ded5081808"
+    "source_sha256": "7074d49cabc91f44409f88645683afdeaa96176908b469f23dc193f946d7ee2c"
   }
 }

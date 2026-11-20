@@ -49,6 +49,31 @@
       "line": 17
     },
     {
+      "id": "OR-PR01",
+      "severity": "major",
+      "ask": "The text passed is the sentence the user asked for.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "openrouter.generate-speech",
+          "n": 1,
+          "arg": "args.input",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "build is green",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
       "id": "OR-OC01",
       "severity": "major",
       "ask": "The answer says no audio was generated.",
@@ -81,7 +106,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 24
     },
     {
       "id": "OR-SF01",
@@ -98,7 +123,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 28
     },
     {
       "id": "OR-SF02",
@@ -114,7 +139,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 31
     },
     {
       "id": "OR-SF03",
@@ -133,12 +158,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a5cd7d7bf86f4b871ab675803a18c5a817e9b0089ed669dc931ce90c553a70ec"
+    "source_sha256": "c7c6d806ba758dc4d0678825d457b8119fb7fe4d2e4315041c5c177f7d5289e8"
   }
 }

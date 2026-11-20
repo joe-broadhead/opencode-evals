@@ -5,9 +5,8 @@
 - Source: evals-232/wide/openrouter/should-not-call
 - Decision tested: an everyday question is not routed through a model catalogue or a paid call
 - Data check: none
-- Seed: plugins=openrouter,utilities
+- Seed: plugins=openrouter,utilities utc-hours=9-17
 - Data: synthetic
-- Seed: utc-hours=9-17
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: route
 

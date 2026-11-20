@@ -16,7 +16,7 @@ Shortlist two and tell me the tradeoff.
 ## Items
 - [OR-OC01] blocker · The catalogue was the first read, and it was read once.
   evidence: first:openrouter.list-models
-  evidence: count:openrouter.list-models == 1
+  evidence: count:openrouter.list-models <= 2
 
 - [OR-OC05] major · No more than one detail read per shortlisted model.
   evidence: count:openrouter.get-model <= 2

@@ -42,34 +42,22 @@
     {
       "id": "VOI-ER01",
       "severity": "major",
-      "ask": "The answer names a next step the status gives: install, the microphone setting, or the engine.",
+      "ask": "The answer names the status's next step: /voice-install, the microphone setting, or the doctor.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "voice-install|install|microphone|System Settings|engine",
-              "flags": "i"
-            }
-          },
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "next step",
-              "flags": "i"
-            }
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "voice-install|System Settings|doctor|allow microphone|microphone permission",
+            "flags": "i"
           }
-        ]
+        }
       ],
+      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 19
@@ -139,6 +127,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "66dfae96731fce8cbaab25c1a4326567c491330fc66b86d724d6bc4e61dd8a4a"
+    "source_sha256": "aa0927c5644109c9edabdeb8aae5a8d939cca9366732112eb4cb579b6966e846"
   }
 }

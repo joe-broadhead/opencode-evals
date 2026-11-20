@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "evals-232/wide/jobs/resume",
   "decision": "resuming one job names that job, and the answer says it is still paused when the call is declined",
-  "data_check": "a paused job with id nightly-report exists in the world, or the answer reports it missing",
+  "data_check": "the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md",
   "prompt": "start nightly-report again, it can run on its schedule now",
   "controls": [],
   "budgets": {
@@ -14,7 +14,7 @@
     "inner_calls": 4,
     "tokens": 300000
   },
-  "seed": null,
+  "seed": "files=jobs-nightly",
   "expect": "pass",
   "holdout": false,
   "checkable": [
@@ -46,7 +46,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "JOB-PR01",
@@ -70,7 +70,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "JOB-OC01",
@@ -105,7 +105,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "JOB-SF01",
@@ -121,7 +121,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "JOB-SF02",
@@ -140,7 +140,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "JOB-SF03",
@@ -164,12 +164,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "35aefdbcd39fc107aa47c1876a35c175ed51b348e72554ba16c518f095b26e6e"
+    "source_sha256": "c9d311f2250dc1859e2ff42d6dc83424b4e22bd22ed5d70d465bf0c0b564d58a"
   }
 }

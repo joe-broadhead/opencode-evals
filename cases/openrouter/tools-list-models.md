@@ -22,6 +22,7 @@ which models on OpenRouter can take an image and also handle at least 200k token
 
 - [OR-OC03] major · It reports the constraint it filtered on, or says none matched.
   evidence_any: text:any matches /image|vision/i ;; text:any matches /no models?|none (matched|found)/i
+  evidence: text:any matches /200k|200,000/i
 
 - [OR-TR01] minor · The openrouter skill was loaded.
   evidence: skill:openrouter

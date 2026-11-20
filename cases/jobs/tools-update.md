@@ -4,8 +4,9 @@
 - Tier: T3
 - Source: evals-232/wide/jobs/update
 - Decision tested: moving one job's time is one update of that job, declined, with the new schedule and no second job
-- Data check: a job with id nightly-report exists in the world, or the answer reports it missing
+- Data check: the seed holds .opencode/jobs/nightly-report.md and standup-reminder.md
 - Data: synthetic
+- Seed: files=jobs-nightly
 - Checkable: id, schedule
 - Budget: outer_calls <= 8, inner_calls <= 5, tokens <= 350000
 - Set: wide
