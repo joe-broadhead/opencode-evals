@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-create-meeting-note change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals-232 page and its database exist",
-  "prompt": "create a meeting note for the evals review",
+  "prompt": "create a meeting note for the page {{canary:notion_page}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1e309cc4133fb4e70d5937935a44b79fd3ab8f2d4736141b7bb6b4a03466ef03"
+    "source_sha256": "a0eea58601db2a465e5d21dc1670c530040799722e98a2c1a53dcd62f0913f09"
   }
 }

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The events_list read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "for the activity collector: list what I was involved in on GitHub since its last cursor",
   "controls": [],
   "budgets": {
@@ -122,6 +122,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "424fdc0372a0462ae3108c9aa8c6a49f4c987f790a06072089f601293313bfe7"
+    "source_sha256": "69f391f152a89b51180c21c01e41c652e2663af9ad2ab075bc0b075a4d101a88"
   }
 }

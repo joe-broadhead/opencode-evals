@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: With no team, title or description, the agent asks for them instead of creating a placeholder issue.
-- Data check: the workspace has more than one team
+- Data check: the workspace has more than one team; content unchecked
 - Data: seeded
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

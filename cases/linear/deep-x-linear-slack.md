@@ -12,7 +12,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-post my in-progress Linear issues to #evals-232
+post my in-progress Linear issues to {{target:slack.sandbox_channel}}
 
 ## Items
 - [LIN-OC01] blocker · The issues are read with the in-progress filter.

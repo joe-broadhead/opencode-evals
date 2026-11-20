@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-suggest an edit to the evals-232 page: change the date to Friday
+suggest an edit to the page {{target:notion.sandbox_page}}: change the date to Friday
 
 ## Items
 - [NOT-WR01] blocker · notion-create-suggested-edit is the one write the task needs, and it is asked once at most.

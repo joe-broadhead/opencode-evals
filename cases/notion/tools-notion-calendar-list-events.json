@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-calendar-list-events read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "what's on my Notion calendar this week?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ce1eb94cf75504ad1a093faf2966864d67862b8a5f46e8217350623492967011"
+    "source_sha256": "9e98555293adab2c73b1e1a0d9326f7ac4ce08c923e12ef5d6541fd8a751fb28"
   }
 }

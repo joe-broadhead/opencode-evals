@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-disable the triage Notion skill
+disable the Notion skill {{canary:notion_skill}}
 
 ## Items
 - [NOT-WR01] blocker · notion-update-skill-settings is the one write the task needs, and it is asked once at most.

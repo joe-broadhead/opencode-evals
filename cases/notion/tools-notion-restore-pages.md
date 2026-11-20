@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-restore the evals-232 page from the trash
+restore the page {{target:notion.sandbox_page}} from the trash
 
 ## Items
 - [NOT-WR01] blocker · notion-restore-pages is the one write the task needs, and it is asked once at most.

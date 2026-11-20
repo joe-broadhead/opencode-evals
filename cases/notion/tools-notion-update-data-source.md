@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-add a status option called blocked to the evals tracker
+add a status option called blocked to the database {{target:notion.sandbox_db}}
 
 ## Items
 - [NOT-WR01] blocker · notion-update-data-source is the one write the task needs, and it is asked once at most.

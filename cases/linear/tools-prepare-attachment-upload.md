@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-prepare an upload for notes.txt on the flaky ingest issue
+prepare an upload for notes.txt on the issue {{canary:linear_issue}}
 
 ## Items
 - [LIN-WR01] blocker · prepare_attachment_upload is the one write the task needs, and it is asked once at most.

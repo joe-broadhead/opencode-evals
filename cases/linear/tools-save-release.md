@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-create a release called 1.1 in the evals team
+create a release called 1.1 in the {{target:linear.team_key}} team
 
 ## Items
 - [LIN-WR01] blocker · save_release is the one write the task needs, and it is asked once at most.

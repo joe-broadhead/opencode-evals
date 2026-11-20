@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-get-setup-guide read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "how do I set Notion up here? show me the setup guide",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6c686d71babd6dffc78df6cf9e628098ef4e1e88e0211c4e83c3d2407e2b09ed"
+    "source_sha256": "9665268b9c50820ec070a4f92e30de8d0dd6779a0188d52e4e48fea77b2c37de"
   }
 }

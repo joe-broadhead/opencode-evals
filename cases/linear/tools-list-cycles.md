@@ -11,14 +11,14 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-what cycles does the evals team have?
+what cycles does the {{target:linear.team_key}} team have?
 
 ## Items
 - [LIN-OC01] blocker · list_cycles answers the request: the plugin's own tool for this task is called, not a substitute.
   evidence: call:list_cycles#1
 
-- [LIN-PR01] major · The call carries teamId as the user gave it.
-  evidence: call:list_cycles#1 args.teamId contains evals
+- [LIN-CT01] major · The lookup names the sandbox team.
+  evidence: target:list_cycles#1 args.teamId in @linear.team,@linear.team_key
 
 - [LIN-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

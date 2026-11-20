@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_agent_skills read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
   "prompt": "list the Linear agent skills",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b0906fc929b6d16b5de3211f7ffebe1bfcce64259d68cfbd46030e2a8023b927"
+    "source_sha256": "96f5c4e4b2c58b04ef1cb90c3b2e0f3fd32dcf4a8effb770838dab308dd0f6fe"
   }
 }

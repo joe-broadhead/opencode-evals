@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "A meeting that does not exist is reported as not found, with the window shown; no query across every meeting is used to invent one.",
-  "data_check": "no meeting in the sandbox folder matches that name or day; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "no meeting in the sandbox folder matches that name or day; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "summarise the board meeting from last Tuesday",
   "controls": [],
   "budgets": {
@@ -141,6 +141,13 @@
       "grader": "code",
       "evidence": [
         {
+          "kind": "committed-write"
+        },
+        {
+          "kind": "absent-write",
+          "ns": "granola"
+        },
+        {
           "kind": "absent",
           "tool": "query_granola_meetings",
           "n": null
@@ -149,13 +156,6 @@
           "kind": "absent",
           "tool": "get_meeting_transcript",
           "n": null
-        },
-        {
-          "kind": "committed-write"
-        },
-        {
-          "kind": "absent-write",
-          "ns": "granola"
         }
       ],
       "evidence_any": [],
@@ -173,6 +173,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "b37709cf762cb190ed8108ab953b8f45d6fe6547fe239a08d9e644c97e17550c"
+    "source_sha256": "be9544b64df1f1b88fc6e25ab869779806fcce7b863316c7365c958e05c72047"
   }
 }

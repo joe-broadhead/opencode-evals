@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.5 (commit set)",
   "decision": "In commit mode the one page create runs under the sandbox page, and the answer names the page it made.",
   "data_check": "the private evals-232 page exists and is not shared",
-  "prompt": "create a page under evals-232 called evals-232 commit check with one line of text",
+  "prompt": "create a page under the page {{target:notion.sandbox_page}} called evals-232 commit check with one line of text",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -122,6 +122,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "2b297c14f61bbbc44d6930f2f84890b877685486c1c488fcdc6ee72bc9793719"
+    "source_sha256": "b101c75d8b66ed6677cf37e890631700095165f338e8614c5e8ed842854cf497"
   }
 }

@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: An attachment is one read that returns a short-lived link, and the answer hands it over in chat only.
-- Data check: the seeded kickoff meeting has one attachment; content is unchecked; only route, arguments and no-write are graded
+- Data check: the seeded kickoff meeting has one attachment; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
 - Checkable: meeting_id
 - Set: wide

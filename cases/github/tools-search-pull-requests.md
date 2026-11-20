@@ -18,7 +18,7 @@ find pull requests in the quill-notes repo that mention accents
   evidence: call:search_pull_requests#1
 
 - [GH-PR01] major · The call carries query as the user gave it.
-  evidence: call:search_pull_requests#1 args.query contains retry
+  evidence: call:search_pull_requests#1 args.query contains accents
 
 - [GH-OC02] major · The answer reports what the read returned.
   evidence_any: text:any contains @fixture.github.merged_pr_title

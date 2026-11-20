@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_release_by_tag read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "show release v0.3.0 of the quill-notes repo",
   "controls": [],
   "budgets": {
@@ -56,7 +56,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "(nothing|no |none|not found|empty)",
+              "source": "(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)",
               "flags": "i"
             }
           }
@@ -147,6 +147,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "add185d50b274a641b1dbfb874efee0becc9877a95d0af2bcd118207ec6aaa04"
+    "source_sha256": "096d5a31d8cf8b3726beaad08fb2d1b7f1fea077c6f5d5de4b06d84b6cd6752a"
   }
 }

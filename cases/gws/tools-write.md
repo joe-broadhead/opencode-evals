@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 450000
 
 ## Prompt
-add a row to the evals sheet with today's date and the word passed
+add a row to the sheet {{target:gws.sheet}} with today's date and the word passed
 
 ## Items
 - [GWS-WR01] blocker · The change is planned as sheets.spreadsheets.values.append, not attempted as a commit.

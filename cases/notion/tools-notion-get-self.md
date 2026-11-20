@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The notion-get-self read answers this request from Notion, and changes nothing.
-- Data check: the private evals-232 page and its database exist
+- Data check: the private evals-232 page and its database exist; content unchecked
 - Data: seeded
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000

@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-create an issue in the evals team titled 'evals-232 commit check' with one line of description
+create an issue in the {{target:linear.team_key}} team titled 'evals-232 commit check' with one line of description
 
 ## Items
 - [LIN-CT01] blocker · One issue is created in the private team with the title the user gave.

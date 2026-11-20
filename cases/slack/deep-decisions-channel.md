@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-what did we decide in #evals-232 last week? cite each decision
+what did we decide in #{{target:slack.sandbox_channel_name}} last week? cite each decision
 
 ## Items
 - [SLK-OC01] blocker · It searches the channel rather than reading it end to end.

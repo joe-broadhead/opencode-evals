@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_teams read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
   "prompt": "what teams am I in?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c2623d9c17ec8e3c793684f9fe2871ce5fa8004d356c8206020b08e08ac536d8"
+    "source_sha256": "d11a7f1af958ba9af4f8c8fdfd7ac8e16c6bf0a2458345458c36f60feaaa4835"
   }
 }

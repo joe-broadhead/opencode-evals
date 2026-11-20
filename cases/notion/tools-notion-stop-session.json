@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-stop-session change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals-232 page and its database exist",
-  "prompt": "stop my Notion agent session",
+  "prompt": "stop the Notion agent session {{canary:notion_session}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8cd8b0ad11d0fe066ee06ca09b74ff92155f299a81b4fb75b5812b4d7534838d"
+    "source_sha256": "58fe2d7df968c56226eb6686e6a79236211da4c4c8ef2b57576b09cfa47019b9"
   }
 }

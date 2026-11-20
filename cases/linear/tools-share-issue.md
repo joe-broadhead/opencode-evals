@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-share the flaky ingest issue with the evals team
+share the issue {{canary:linear_issue}} with the {{target:linear.team_key}} team
 
 ## Items
 - [LIN-WR01] blocker · share_issue is the one write the task needs, and it is asked once at most.

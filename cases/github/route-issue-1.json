@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A GitHub issue is read from GitHub, not from Linear or Jira.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "what's the status of issue 1 in the quill-notes repo?",
   "controls": [],
   "budgets": {
@@ -120,6 +120,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ac4cf5a48155c210fd34eb29a9a1fd339ba36f636d167f96ef4ad7ed017842d3"
+    "source_sha256": "af8ef2deb14cf384298997d6e373d6fad6dcf126f3083a6b334e1cd932d03011"
   }
 }

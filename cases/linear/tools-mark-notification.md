@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-mark that notification as read
+mark my latest Linear notification as read
 
 ## Items
 - [LIN-WR01] blocker · mark_notification is the one write the task needs, and it is asked once at most.

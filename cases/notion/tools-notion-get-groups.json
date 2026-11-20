@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-get-groups read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "what groups are in my Notion workspace?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "238af64856858c77706304c374f4cb9f07164a6c97127e6cb284a72492971008"
+    "source_sha256": "df9cb4de0943a8a80f56f383b1bd0d99c1fb8306a14dc396ea2fd8cb18ee7a5c"
   }
 }

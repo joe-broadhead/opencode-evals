@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "An addition is one update_content edit on the fetched page, declined, and never a replace_content.",
   "data_check": "the evals-232 page exists and has a body",
-  "prompt": "add a line to the evals-232 page saying status done",
+  "prompt": "add a line to the page {{target:notion.sandbox_page}} saying status done",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -179,6 +179,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "937997c6569c2735d0ba5b4d365407f4429cbb840fece1eb6c8635bbdb12ac43"
+    "source_sha256": "337f911c306b976efcdf615cde8f9122a2f13da5adc81c8c16be58a3992a4c1e"
   }
 }

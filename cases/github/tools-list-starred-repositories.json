@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_starred_repositories read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "what have I starred?",
   "controls": [],
   "budgets": {
@@ -56,7 +56,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "(nothing|no |none|not found|empty)",
+              "source": "(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)",
               "flags": "i"
             }
           }
@@ -147,6 +147,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2c63445c26971545b7ef02a161e7f8d5fc308d2e9d6e479fc8c427d8ab8fdd5e"
+    "source_sha256": "0114b1b13bfc0f90c16a1be9652a5213dd4069af2396fa96ea1b610525ac4ae8"
   }
 }

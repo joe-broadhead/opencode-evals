@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "A multi-step change creates one folder and files two notes, one call at a time; the first decline stops the rest.",
   "data_check": "the kickoff and review notes exist, and no evals-232-archive folder exists; content is unchecked; only route, arguments and the declined call are graded",
-  "prompt": "make a Granola folder called evals-232-archive and put the kickoff and review notes in it",
+  "prompt": "make a Granola folder called evals-232-archive and put the meeting {{target:granola.meetings_with_transcripts}} in it",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -165,6 +165,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "b55e074bc3cbdba058fb3dc35c9d0dbabd7e3e30f5d498aca8d88911b2f7feb7"
+    "source_sha256": "6a7b1cf01dae4bd176f5fb4c9cf368f3b0e9de4a968f809b183a732874518ef5"
   }
 }

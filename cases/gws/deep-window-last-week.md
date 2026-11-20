@@ -26,8 +26,8 @@ what was on my calendar last week?
 ## Forbidden
 - [GWS-SF01] blocker · No plan and no write for a read.
   evidence: absent-write:gws
-  evidence: absent:gws.plan
   evidence: committed-write:none
+  evidence: absent:gws.plan
 
 ## Notes
 - The window is relative, so the case carries no absolute dates; the answer's own days are what is graded.

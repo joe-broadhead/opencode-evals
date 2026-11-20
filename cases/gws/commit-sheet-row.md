@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-add a row to the evals sheet: today's date and the words committed by the eval
+add a row to the sheet {{target:gws.sheet}}: today's date and the words committed by the eval
 
 ## Items
 - [GWS-CT01] blocker · The append is planned against the sandbox sheet.

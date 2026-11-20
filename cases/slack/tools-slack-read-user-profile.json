@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The signed-in user's profile is one profile read, and the answer repeats only what it holds.",
-  "data_check": "the signed-in account has a profile",
+  "data_check": "the signed-in account has a profile; content unchecked",
   "prompt": "what does my Slack profile say about me?",
   "controls": [],
   "budgets": {
@@ -103,6 +103,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "13885d05fcb84cb67c33dcff8c8bda0a85fb4226d6539eaca1f0a8ccb16c7295"
+    "source_sha256": "afc621a4f820dae3b79b18cdaf61f1f962ba0221392ebb69ebbe58f9e22faddb"
   }
 }

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A GitHub pull request is reviewed with GitHub's own PR tools, not Linear's diff tools.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "review pull request 7 in the quill-notes repo",
   "controls": [],
   "budgets": {
@@ -115,6 +115,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "da1e6381e77dd1c4e0e35508aa785cdb18d737dd3b069c2996f92cd21412fff9"
+    "source_sha256": "d5295a78e0e48d35ff4016a2b05e825493740fea8f316414867a5cfb326b6fb9"
   }
 }

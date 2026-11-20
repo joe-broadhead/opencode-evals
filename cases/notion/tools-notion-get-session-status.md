@@ -4,13 +4,13 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The notion-get-session-status read answers this request from Notion, and changes nothing.
-- Data check: the private evals-232 page and its database exist
+- Data check: the private evals-232 page and its database exist; content unchecked
 - Data: seeded
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-what's the status of my Notion agent session?
+what's the status of the Notion agent session {{canary:notion_session}}?
 
 ## Items
 - [NOT-OC01] blocker · notion-get-session-status answers the request: the plugin's own tool for this task is called, not a substitute.

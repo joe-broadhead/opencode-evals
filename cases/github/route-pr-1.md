@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A GitHub pull request is reviewed with GitHub's own PR tools, not Linear's diff tools.
-- Data check: the harness's fake GitHub holds the quill-notes fixture
+- Data check: the harness's fake GitHub holds the quill-notes fixture; content unchecked
 - Data: synthetic
 - Seed: plugins=linear
 - Set: route

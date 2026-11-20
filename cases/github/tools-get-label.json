@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_label read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "what colour is the bug label in the quill-notes repo?",
   "controls": [],
   "budgets": {
@@ -122,6 +122,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bff8de346470a4fffd8d0d04c28222b355064af16f5574b85fbeeb916ddfc0ff"
+    "source_sha256": "621fb42e03dd29e577cb796c9b2e9a7bba24254840a156844626ffc1b32cb870"
   }
 }

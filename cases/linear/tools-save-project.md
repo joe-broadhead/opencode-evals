@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-create a project called evals-232 in the evals team
+create a project called evals-232 in the {{target:linear.team_key}} team
 
 ## Items
 - [LIN-WR01] blocker · save_project is the one write the task needs, and it is asked once at most.

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "The cross-plugin task reads Linear and posts with Slack; the post is declined and the answer says it was not posted.",
   "data_check": "the private team has in-progress issues, and the sandbox channel exists",
-  "prompt": "post my in-progress Linear issues to #evals-232",
+  "prompt": "post my in-progress Linear issues to {{target:slack.sandbox_channel}}",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f850f9c4b4954c3851bcc6dc348f59deae5ecb74a7075240eeda7b1a7b554fc7"
+    "source_sha256": "ed7e149bb574b5455913d2718ceca19bed9dc1ffac45c0856a394dcf2b0f14b5"
   }
 }

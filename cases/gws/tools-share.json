@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, gws write graded at the plan)",
   "decision": "A permission change is planned as a share to the named address, and the commit is declined.",
   "data_check": "the evals-232 folder exists and the owner owns it",
-  "prompt": "share the evals folder with my own address as a reader",
+  "prompt": "share the folder {{target:gws.folder}} with {{target:gws.self_email}} as a reader",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -175,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bae88a5d6e64010479d9f3290f3f291cfc4f33676dcdd0627c7b8ba9710b1aab"
+    "source_sha256": "e5c6897d6f3834b9f74ffa2f33a893d984f3141b1325753f8fff448e28baf483"
   }
 }

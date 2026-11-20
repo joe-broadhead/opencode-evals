@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The delete_diff_comment change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals team and its seeded issues, labels and project exist",
-  "prompt": "delete that review comment",
+  "prompt": "delete my review comment on the diff {{canary:linear_diff}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "98996c7bbafa03048171d4fd7a037cb13260a2a16b77f695784c2c97c04d0d09"
+    "source_sha256": "f6d9571f3c05275107de763e64700f3310a2af30d8ff0b0db67ff7d8a2306eb9"
   }
 }

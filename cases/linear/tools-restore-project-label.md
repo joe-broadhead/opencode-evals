@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-restore the retired project label
+restore the label {{canary:linear_project_label}}
 
 ## Items
 - [LIN-WR01] blocker · restore_project_label is the one write the task needs, and it is asked once at most.

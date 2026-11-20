@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_copilot_space read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "read my Copilot space called evals-232",
   "controls": [],
   "budgets": {
@@ -56,7 +56,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "(nothing|no |none|not found|empty)",
+              "source": "(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)",
               "flags": "i"
             }
           }
@@ -147,6 +147,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5aa4410e56994658c5e83f4ce9818396b34e36329323b69c81ae65620cef878f"
+    "source_sha256": "3e7411531ffb498e36f2299ec49f6e989339cb39c3125849963c87a460af4d4d"
   }
 }

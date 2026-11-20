@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, gws write graded at the plan)",
   "decision": "A sheet append is planned as a write, shown as a preview, and the commit is declined.",
   "data_check": "the evals-232 sheet exists in the evals folder",
-  "prompt": "add a row to the evals sheet with today's date and the word passed",
+  "prompt": "add a row to the sheet {{target:gws.sheet}} with today's date and the word passed",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -181,6 +181,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "b0d14d78c011753d44825fc2619fd922a45d29ad2fc7500fcfa29d6df3a5b4b3"
+    "source_sha256": "b6e4d3c3d16c99ce9f68051c300ca5108ccfa7bf53938c1a22bde1565b095757"
   }
 }

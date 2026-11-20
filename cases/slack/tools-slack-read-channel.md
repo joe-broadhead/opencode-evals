@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-show me the last few messages in #evals-232
+show me the last few messages in #{{target:slack.sandbox_channel_name}}
 
 ## Items
 - [SLK-OC01] blocker · slack_read_channel answers the request: the plugin's own tool for this task is called, not a substitute.

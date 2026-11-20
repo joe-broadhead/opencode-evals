@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-what was posted in #evals-232 last week?
+what was posted in #{{target:slack.sandbox_channel_name}} last week?
 
 ## Items
 - [SLK-CT01] blocker · The call reaches only the sandbox target the user named.

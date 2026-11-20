@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-who is in #evals-232?
+who is in #{{target:slack.sandbox_channel_name}}?
 
 ## Items
 - [SLK-OC01] blocker · slack_list_channel_members answers the request: the plugin's own tool for this task is called, not a substitute.

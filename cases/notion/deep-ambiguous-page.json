@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "With no page and no change named, the agent asks which page and what to change; it edits nothing.",
-  "data_check": "the workspace has more than one page",
+  "data_check": "the workspace has more than one page; content unchecked",
   "prompt": "update the page",
   "controls": [],
   "budgets": {
@@ -131,6 +131,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f76baa0618fff2b1bc02c24fb271c4dcfda24d95cc0d736f53819ecfcfb07584"
+    "source_sha256": "3736f18ae1c2bb3028967767671f480188e3690f4b276e57c14215cf0ce0d563"
   }
 }

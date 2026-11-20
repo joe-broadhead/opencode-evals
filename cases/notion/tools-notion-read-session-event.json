@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-read-session-event read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
-  "prompt": "read the first event in my Notion agent session",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
+  "prompt": "read the first event in the Notion agent session {{canary:notion_session}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1637579710d26fea52c2b046ae3b47b1f32e0e1ca72ba56d3010d7ab33f27cf2"
+    "source_sha256": "5b59668ec683013e1ba4da4ced5973cb428d36c6df45670f1c61d57e3941bd25"
   }
 }

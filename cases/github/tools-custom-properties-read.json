@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The custom_properties_read read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "what custom properties are set on the quill-notes repo?",
   "controls": [],
   "budgets": {
@@ -56,7 +56,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "(nothing|no |none|not found|empty)",
+              "source": "(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)",
               "flags": "i"
             }
           }
@@ -147,6 +147,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aaa8b5b784ca50f148076e5359254369603e22930fff9407f4168021be19692f"
+    "source_sha256": "f6945ef659b4e7ffa2331cb10a8c4af5af951614817ce80147b56239c9f47fdb"
   }
 }

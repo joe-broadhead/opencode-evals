@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-create an issue in the evals team titled 'flaky test in the ingest job'
+create an issue in the {{target:linear.team_key}} team titled 'flaky test in the ingest job'
 
 ## Items
 - [LIN-WR01] blocker · save_issue is the one write the task needs, and it is asked once at most.

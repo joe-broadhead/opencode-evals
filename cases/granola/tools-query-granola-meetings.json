@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A question across chosen meetings is one query bounded by document_ids, and its citations are kept.",
-  "data_check": "the kickoff and review meetings exist in the sandbox folder; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "the kickoff and review meetings exist in the sandbox folder; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "which questions stayed open across the kickoff and the review?",
   "controls": [],
   "budgets": {
@@ -106,6 +106,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "10781dceb00bcc0833345642b463227638531d918ffbad4d2cc922c2fd5175de"
+    "source_sha256": "7b5e42f31408ffc64b4447114f9c20ab7b8027b8f0d7ffcd3ae00c11f791c260"
   }
 }

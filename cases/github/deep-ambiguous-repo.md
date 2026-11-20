@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: With no repository named, the agent asks which one instead of guessing the first repo it can see.
-- Data check: the harness's fake GitHub holds the quill-notes fixture
+- Data check: the harness's fake GitHub holds the quill-notes fixture; content unchecked
 - Data: synthetic
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

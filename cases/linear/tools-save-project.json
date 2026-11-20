@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The save_project change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals team and its seeded issues, labels and project exist",
-  "prompt": "create a project called evals-232 in the evals team",
+  "prompt": "create a project called evals-232 in the {{target:linear.team_key}} team",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -195,6 +195,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5b9d1fd134180288e66bc4a30a2a61b85f64344272ca14e845c1e750fc085afd"
+    "source_sha256": "b4b2f8cbcb95532a979ee71725a08b16d4a7c9fb3fc0ab60169e150366e64538"
   }
 }

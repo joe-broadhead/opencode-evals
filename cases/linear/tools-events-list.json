@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The events_list read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
   "prompt": "for the activity collector: list what changed in Linear for me since its last cursor",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0c59e6db6e9f6eb8788d1a7c91083aecf6afa8c9e3d98a946d1965d38bed1b6d"
+    "source_sha256": "2c5beb14bd5de755b7ea95ae9da4db16c9fe63ad33bd07b2c9235436e7824bf7"
   }
 }

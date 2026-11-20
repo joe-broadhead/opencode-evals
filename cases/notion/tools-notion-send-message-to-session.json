@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-send-message-to-session change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals-232 page and its database exist",
-  "prompt": "send 'summarise the page' to my Notion agent session",
+  "prompt": "send 'summarise the page' to the Notion agent session {{canary:notion_session}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6acb3bc6c9ab7da6f384de762c5caf117283f95e659fddd7d7f54e532f141d50"
+    "source_sha256": "dc8778035c0b71fd70fb20bd598282abe6ed4b92b8b2e3992b0cc4d2c967d451"
   }
 }

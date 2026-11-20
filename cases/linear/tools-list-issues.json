@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_issues read answers this request from Linear, and changes nothing.",
   "data_check": "the private evals team and its seeded issues exist",
-  "prompt": "list the in-progress issues in the evals team",
+  "prompt": "list the in-progress issues in the {{target:linear.team_key}} team",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -148,6 +148,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c552013967fee95d109c5adf2e2cf9cb70f65e5c18eec9a627fe88bf79281298"
+    "source_sha256": "ab5a20ffba80cd368442751456beb763c11b30e0535c6d585bc3eb6655d110bd"
   }
 }

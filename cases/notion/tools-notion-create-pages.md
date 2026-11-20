@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-create a page under evals-232 called week one notes
+create a page under the page {{target:notion.sandbox_page}} called week one notes
 
 ## Items
 - [NOT-WR01] blocker · notion-create-pages is the one write the task needs, and it is asked once at most.

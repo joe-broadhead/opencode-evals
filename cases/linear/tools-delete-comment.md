@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-delete my comment on the flaky ingest issue
+delete my comment on the issue {{canary:linear_issue}}
 
 ## Items
 - [LIN-WR01] blocker · delete_comment is the one write the task needs, and it is asked once at most.

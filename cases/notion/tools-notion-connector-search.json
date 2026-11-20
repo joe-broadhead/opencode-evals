@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-connector-search read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "search the sources connected to Notion for the launch plan",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b74f2f33302ae08d70ede6e8dd7bd7cc0f4db4647c8a05b9ac75446c86d8649f"
+    "source_sha256": "25c1e842796e980e318e630d86405cadde148a7eb18b621ff6278c3eaf72d2e7"
   }
 }

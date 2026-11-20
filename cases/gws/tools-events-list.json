@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The collector's read is events_list, not a mailbox listing turned into events by hand.",
-  "data_check": "the account has received at least one message this week; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "the account has received at least one message this week; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "for the activity collector: give me the inbox messages that arrived since its last cursor, as events",
   "controls": [],
   "budgets": {
@@ -103,6 +103,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "9e731cccb8e5c498e82a04a5d8c03b44fb0c7ad727c50a25deaf09eb21a4063f"
+    "source_sha256": "0e2e0f505938454de3fb5991435d8b58a06fb82ae3538c5914ec701d7e812cec"
   }
 }

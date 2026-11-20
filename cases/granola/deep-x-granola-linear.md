@@ -4,14 +4,14 @@
 - Tier: T3
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: The cross-plugin task reads the meeting with Granola and creates issues with Linear; each create is declined and the answer lists what it would have filed.
-- Data check: the seeded kickoff has three action items, and the private Linear team exists; content is unchecked; only route, arguments and no-write are graded
+- Data check: the seeded kickoff has three action items, and the private Linear team exists; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
 - Seed: plugins=granola,linear
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-turn the action items from the evals-232 kickoff into Linear issues in the evals team
+turn the action items from the meeting {{target:granola.meetings_with_transcripts}} into Linear issues in the {{target:linear.team_key}} team
 
 ## Items
 - [GRA-OC01] blocker · The action items come from the meeting's notes.

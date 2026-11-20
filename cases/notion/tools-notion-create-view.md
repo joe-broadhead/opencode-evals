@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-create a saved view on the evals tracker called late
+create a saved view on the database {{target:notion.sandbox_db}} called late
 
 ## Items
 - [NOT-WR01] blocker · notion-create-view is the one write the task needs, and it is asked once at most.

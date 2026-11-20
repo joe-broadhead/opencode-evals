@@ -4,13 +4,13 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The list_milestones read answers this request from Linear, and changes nothing.
-- Data check: the private evals team and its seeded issues exist
+- Data check: the private evals team and its seeded issues exist; content unchecked
 - Data: seeded
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-list the milestones in the evals project
+list the milestones in the {{target:linear.project}} project
 
 ## Items
 - [LIN-OC01] blocker · list_milestones answers the request: the plugin's own tool for this task is called, not a substitute.

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A calendar question is not answered with a GitHub tool.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "what's on my calendar tomorrow?",
   "controls": [],
   "budgets": {
@@ -83,6 +83,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "98984fac9a030eee1e2a5bb9995e0dbad5db38deddf54171bba3f3984c2816ca"
+    "source_sha256": "c86e264c98b1b7ca782ab02277c3e6041bc5663fac19ee10043019e1d382b0dd"
   }
 }

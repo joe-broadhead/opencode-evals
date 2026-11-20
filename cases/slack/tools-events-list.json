@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The collector's read is events_list, not a search turned into events by hand.",
-  "data_check": "the sandbox channel has messages since the seeded cursor",
+  "data_check": "the sandbox channel has messages since the seeded cursor; content unchecked",
   "prompt": "for the activity collector: list what changed in my Slack since its last cursor",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1687747f64bc6eaf9e1c7b3a18f3e588e296047c7ce3f507c63d51561d37ec51"
+    "source_sha256": "ec2691c8cfcc447542e70f6b92071e89b4e7c16cb9e61480e9ba3c62540c78b0"
   }
 }

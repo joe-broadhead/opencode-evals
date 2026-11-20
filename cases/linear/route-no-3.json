@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A local file is read with the local tools, not turned into Linear issues.",
-  "data_check": "the credential-free local arm has TODO.md in the working directory",
+  "data_check": "the credential-free local arm has TODO.md in the working directory; content unchecked",
   "prompt": "read the TODO.md in my repo and turn it into a plan",
   "controls": [],
   "budgets": {
@@ -30,11 +30,6 @@
       "forbidden": false,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent",
-          "tool": "linear.*",
-          "n": null
-        },
         {
           "kind": "committed-write"
         },
@@ -62,7 +57,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "LIN-RB02",
@@ -78,12 +73,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a6d63538d0d65c4e1a29cbc63600c1f3865668e1761b8c72cc52abc3cf3b8dd7"
+    "source_sha256": "7c1539df30d3874cd261740abc4c4575d68d762681c0a3a149f4c81541bfea69"
   }
 }

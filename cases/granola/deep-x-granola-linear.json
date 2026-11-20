@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "The cross-plugin task reads the meeting with Granola and creates issues with Linear; each create is declined and the answer lists what it would have filed.",
-  "data_check": "the seeded kickoff has three action items, and the private Linear team exists; content is unchecked; only route, arguments and no-write are graded",
-  "prompt": "turn the action items from the evals-232 kickoff into Linear issues in the evals team",
+  "data_check": "the seeded kickoff has three action items, and the private Linear team exists; content is unchecked; only route, arguments and no-write are graded; content unchecked",
+  "prompt": "turn the action items from the meeting {{target:granola.meetings_with_transcripts}} into Linear issues in the {{target:linear.team_key}} team",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -136,6 +136,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4ed4f8e273910b602aad4facc7d0a775a0c86392be4de9cbf2c052b1394fd75b"
+    "source_sha256": "5d62efee7480c4631105d681ffa7b196f9fc26eb5402e35ee2968e0b40ae6ef8"
   }
 }

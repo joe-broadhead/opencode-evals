@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A Notion page is found with Notion's search, not a Google Drive search or a web search.",
-  "data_check": "the evals-232 page holds the launch plan",
+  "data_check": "the evals-232 page holds the launch plan; content unchecked",
   "prompt": "search my Notion for the launch plan",
   "controls": [],
   "budgets": {
@@ -120,6 +120,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e1720c96b3d592e37213a7792da6d1ace065eeecbb97b617b80e8cc8c630ee9a"
+    "source_sha256": "b98e88da41de0df2c06d3bed9c174d8fc6602910a4205be822bf68101a7b520b"
   }
 }

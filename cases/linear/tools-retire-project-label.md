@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-retire the old project label
+retire the label {{canary:linear_project_label}}
 
 ## Items
 - [LIN-WR01] blocker · retire_project_label is the one write the task needs, and it is asked once at most.

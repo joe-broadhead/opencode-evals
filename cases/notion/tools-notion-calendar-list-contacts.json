@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-calendar-list-contacts read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "list my Notion Calendar contacts",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "47b8977f1846c91ff8ea7b11abf1b3b7910c61c02218a212568d539279d5e58b"
+    "source_sha256": "6694741c40a8a14e1d449d1ac09f97e0ec36fc4e599b40b03922652a3f5d662c"
   }
 }

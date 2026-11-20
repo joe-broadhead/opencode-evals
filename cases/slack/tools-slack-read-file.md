@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-read the CSV I posted in #evals-232 and tell me what's in it
+read the file {{canary:slack_file_id}} I posted in #{{target:slack.sandbox_channel_name}} and tell me what's in it
 
 ## Items
 - [SLK-WR01] blocker · The file read is the one tool tried, and at most once.

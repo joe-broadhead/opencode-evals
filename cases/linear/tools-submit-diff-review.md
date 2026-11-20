@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-submit the review with one comment
+submit the review on the diff {{canary:linear_diff}} with one comment
 
 ## Items
 - [LIN-WR01] blocker · submit_diff_review is the one write the task needs, and it is asked once at most.

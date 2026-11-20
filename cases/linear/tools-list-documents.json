@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_documents read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
   "prompt": "list the Linear documents",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "85b2893f88c4cd2e5328f2c16afe67c3ca36d03ed57c14065a9f3d21db7a22c0"
+    "source_sha256": "88f0da67979c818a6daa3943d34b7e53b0a963001dbb3af7d1af6887d4fc5b21"
   }
 }

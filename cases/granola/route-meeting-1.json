@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A recorded meeting is Granola's when the user does not name another recorder.",
-  "data_check": "the sandbox folder holds yesterday's seeded design review; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "the sandbox folder holds yesterday's seeded design review; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "summarise yesterday's design review meeting",
   "controls": [],
   "budgets": {
@@ -120,6 +120,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4086b8e6c8dd09fda73d79bc3d57ddf607ca65c89fdfa4e6f98d24360c56c080"
+    "source_sha256": "9f85600ec283adfb1416ad5a1e2798ca62859cd04430b896d96ee0b4c2b66407"
   }
 }

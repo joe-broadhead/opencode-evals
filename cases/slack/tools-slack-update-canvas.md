@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-add a line to the evals canvas saying the check passed
+add a line to the canvas {{target:slack.sandbox_canvas}} saying the check passed
 
 ## Items
 - [SLK-WR01] blocker · slack_update_canvas is the one write the task needs, and it is asked once at most.

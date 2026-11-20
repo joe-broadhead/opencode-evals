@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: Recent edits are one recent-pages read, and the answer names the window and the pages it found.
-- Data check: the workspace has pages edited last week or none
+- Data check: the workspace has pages edited last week or none; content unchecked
 - Data: seeded
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

@@ -83,7 +83,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "(nothing|no |none|not found|empty)",
+              "source": "(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)",
               "flags": "i"
             }
           }
@@ -174,6 +174,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "555f1101f0a77b3a87635018db08c690d381d87a0ba0954272e05e83e06de12d"
+    "source_sha256": "0fd755c347ca3aabda8cc028fcc4e9cb6c093f12fa29b03327fc4bc82efcb587"
   }
 }

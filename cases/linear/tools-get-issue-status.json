@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_issue_status read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
-  "prompt": "what statuses does the evals team use?",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
+  "prompt": "what statuses does the {{target:linear.team_key}} team use?",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "81397836e2693721c5f12ad375221bbf9692f301ec830d367dee07750fc11525"
+    "source_sha256": "3e961a89a584bc69f3757459db6a5083940b4a610399befb10bcf5c00483100c"
   }
 }

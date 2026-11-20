@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-put a 30-minute event called evals-232 check on my evals calendar tomorrow at 9am
+put a 30-minute event called evals-232 check on the calendar {{target:gws.calendar}} tomorrow at 9am
 
 ## Items
 - [GWS-CT01] blocker · The event is planned as a calendar insert.

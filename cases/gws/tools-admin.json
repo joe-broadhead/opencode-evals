@@ -53,7 +53,7 @@
     {
       "id": "GWS-PR01",
       "severity": "major",
-      "ask": "The plan carries reason as the user gave it.",
+      "ask": "The plan carries a reason, as an admin plan requires.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -81,13 +81,25 @@
       "ask": "The commit (gws_admin) was asked and declined, so nothing was committed.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "declined",
-          "tool": "gws_admin"
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "gws_admin"
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(ADMIN_PRIVILEGE_REQUIRED|not an? (workspace )?admin|admin privileges)",
+              "flags": "i"
+            }
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 23
@@ -185,6 +197,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "6183c89f210f88b917bb52643a0568aac4a1a84db5bc662ab543132812928154"
+    "source_sha256": "29170734ac3be53e2b58b80fd16e7ace0dd092edf550e2d57040df38408622a1"
   }
 }

@@ -18,10 +18,10 @@ why did job 1 fail? show me its logs
   evidence: call:get_job_logs#1
 
 - [GH-PR01] major · The call carries job_id as the user gave it.
-  evidence: call:get_job_logs#1 args.job_id == 7001
+  evidence: call:get_job_logs#1 args.job_id == 1
 
 - [GH-OC02] major · The answer reports what the read returned.
-  evidence_any: text:any matches /(nothing|no |none|not found|empty)/i
+  evidence_any: text:any matches /(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)/i
 
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

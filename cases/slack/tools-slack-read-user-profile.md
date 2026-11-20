@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The signed-in user's profile is one profile read, and the answer repeats only what it holds.
-- Data check: the signed-in account has a profile
+- Data check: the signed-in account has a profile; content unchecked
 - Data: own
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000

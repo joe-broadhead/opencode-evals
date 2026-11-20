@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "Recent messages are one channel read bounded by a small limit, not a search.",
   "data_check": "the sandbox channel holds the seeded messages",
-  "prompt": "show me the last few messages in #evals-232",
+  "prompt": "show me the last few messages in #{{target:slack.sandbox_channel_name}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -122,6 +122,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c5f13d2e71b79df1a8903af3a5a6b785229dc1528b0facd2ac0a322612cf5b96"
+    "source_sha256": "8d0d5892e97cd8800fa0e5652df52668a6ad5b021fcf507aef13bc18fcc79da0"
   }
 }

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "An unseen final text is a draft, one call, declined, and the answer says no message was sent.",
   "data_check": "the sandbox channel exists",
-  "prompt": "draft a message in #evals-232 saying the review is done but don't send it",
+  "prompt": "draft a message in #{{target:slack.sandbox_channel_name}} saying the review is done but don't send it",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -195,6 +195,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "973a01ca2fe6f8d00912d56bef7ba31f5ffd7cfa44b1842d51e4319154775d16"
+    "source_sha256": "f60114e21ed3e900508a4268589d05ca47642532f73fab64506ac3770a9ee7d9"
   }
 }

@@ -4,14 +4,14 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The get_issue read answers this request from Linear, and changes nothing.
-- Data check: the private evals team and its seeded issues exist
+- Data check: the private evals team and its seeded issues exist; content unchecked
 - Data: seeded
 - Checkable: id
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-open the issue about the flaky ingest test
+open the issue about the issue {{canary:linear_issue}}
 
 ## Items
 - [LIN-OC01] blocker · get_issue answers the request: the plugin's own tool for this task is called, not a substitute.

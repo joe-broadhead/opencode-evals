@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_repository_tree read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "show the file tree of the quill-notes repo at main",
   "controls": [],
   "budgets": {
@@ -122,6 +122,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f4302a48210197cdc814cb1e0cc0c83f83f793901dc61acb74049942130fea35"
+    "source_sha256": "988e28bcc6b3ae165bd11900ab048965f8050779509092a12fc34cc3a90e2389"
   }
 }

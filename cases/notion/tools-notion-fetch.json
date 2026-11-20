@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-fetch read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
-  "prompt": "open the evals-232 page and show me what it says",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
+  "prompt": "open the page {{target:notion.sandbox_page}} and show me what it says",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c97a82921f1b1af6f18c556cf48dae7eab93e66c881dfb70f644006d197a1905"
+    "source_sha256": "630ac41bb302cbe219ddcf334782544134ed90fe0faaa951c3c5d644ad918d5b"
   }
 }

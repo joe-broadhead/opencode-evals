@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-upload-skill change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals-232 page and its database exist",
-  "prompt": "upload the triage skill to Notion",
+  "prompt": "upload the skill {{canary:notion_skill}} to Notion",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "22bd71a74372ce686b28cd90d0b46015248ccecb17550420e2ff7acd71e60d02"
+    "source_sha256": "ef78468a5f18a2245950a49aabc484a4fd158a823220b655b7201a484036095c"
   }
 }

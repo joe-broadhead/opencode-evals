@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-rename the evals-232 folder to evals 232 notes
+rename the folder {{target:granola.folder}} to evals 232 notes
 
 ## Items
 - [GRA-WR01] blocker · update_folder is the one write the task needs, and it is asked once at most.

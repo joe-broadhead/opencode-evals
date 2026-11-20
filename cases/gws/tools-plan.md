@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: A dry run is one plan call that returns a preview, with no commit.
-- Data check: the account can send mail
+- Data check: the account can send mail; content unchecked
 - Data: seeded
 - Checkable: operation
 - Set: wide

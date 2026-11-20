@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "Templates are one list read, and the answer names the templates it found.",
-  "data_check": "the account has at least one template, or none; both are a report; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "the account has at least one template, or none; both are a report; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "what note templates do I have?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1a232a6e23c2bd0dccbd805320babb98e860fb6928a606eae4cfaabd3f6866c6"
+    "source_sha256": "c570ec1b65dbfd8e3afeaf78bdf0d6529a99216857446a501455ef07487f84aa"
   }
 }

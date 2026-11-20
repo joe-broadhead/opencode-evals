@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-add a thumbs up reaction to the comment on evals-232
+add a thumbs up reaction to the comment {{canary:notion_comment}}
 
 ## Items
 - [NOT-WR01] blocker · notion-set-comment-reaction is the one write the task needs, and it is asked once at most.

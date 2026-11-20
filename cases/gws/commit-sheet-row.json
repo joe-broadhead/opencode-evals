@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.5 (commit set)",
   "decision": "In commit mode the planned sheet append is committed with its planId, and the row lands in the sandbox sheet.",
   "data_check": "the evals-232 sheet exists in the evals folder and the owner owns it",
-  "prompt": "add a row to the evals sheet: today's date and the words committed by the eval",
+  "prompt": "add a row to the sheet {{target:gws.sheet}}: today's date and the words committed by the eval",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -134,6 +134,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "dbb43fad5c11ed8c51b8a47f3628357200da7b75bfef06e744c625a1bb5e7aaf"
+    "source_sha256": "07cab05e016a0370ac3e92628eeb95e87f8aaa4d3ce960ca59ecae64e2e1b39a"
   }
 }

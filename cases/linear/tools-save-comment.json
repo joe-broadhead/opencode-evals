@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The save_comment change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals team and its seeded issues, labels and project exist",
-  "prompt": "comment on the flaky ingest issue: picking this up Monday",
+  "prompt": "comment on the issue {{canary:linear_issue}}: picking this up Monday",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4546f6667c94a203ac7462fd7c844f8e531ae0a5e543dee99c0dc6c5f52cb3f4"
+    "source_sha256": "b76c5281acb4ca4b41d30421735d4f08d1df2c1afe8983aa8387a192c6f5a17f"
   }
 }

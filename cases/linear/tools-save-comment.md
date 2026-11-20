@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-comment on the flaky ingest issue: picking this up Monday
+comment on the issue {{canary:linear_issue}}: picking this up Monday
 
 ## Items
 - [LIN-WR01] blocker · save_comment is the one write the task needs, and it is asked once at most.

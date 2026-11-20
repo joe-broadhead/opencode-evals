@@ -18,7 +18,7 @@ find issues in the quill-notes repo that mention vanish
   evidence: call:search_issues#1
 
 - [GH-PR01] major · The call carries query as the user gave it.
-  evidence: call:search_issues#1 args.query contains flaky
+  evidence: call:search_issues#1 args.query contains vanish
 
 - [GH-OC02] major · The answer reports what the read returned.
   evidence_any: text:any contains @fixture.github.bug_issue_title

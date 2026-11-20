@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A channel post is Slack's, not Gmail's or a Notion comment.",
-  "data_check": "the sandbox channel exists",
-  "prompt": "post the standup summary in #evals-232",
+  "data_check": "the sandbox channel exists; content unchecked",
+  "prompt": "post the standup summary in #{{target:slack.sandbox_channel_name}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -151,6 +151,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "6ed46ca28cf3b8523683098e6209da67939b833065f9bd60bbcd54991d1e09ba"
+    "source_sha256": "3449de4fe83161475c9bc303bff63ce6d895f4b59ab7bd7296c7dc12d8b10979"
   }
 }

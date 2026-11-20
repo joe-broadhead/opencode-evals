@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "A recap finds the meeting, reads its notes, and reports decisions and owners without inventing a speaker or an owner.",
-  "data_check": "the seeded kickoff meeting exists with a summary and a transcript; content is unchecked; only route, arguments and no-write are graded",
-  "prompt": "recap the evals-232 kickoff: the decisions, the action items and who owns each",
+  "data_check": "the seeded kickoff meeting exists with a summary and a transcript; content is unchecked; only route, arguments and no-write are graded; content unchecked",
+  "prompt": "recap the meeting {{target:granola.meetings_with_transcripts}}: the decisions, the action items and who owns each",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -103,6 +103,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "5a534f930a6eaf45a13d4c063774577343d61b45560c382d617b4e1fc9e4959c"
+    "source_sha256": "97ca0e1f5f02cac47f67baf7a0e4a00fd9e6b8b5baeca8ea6f594b3de6ce8ddf"
   }
 }

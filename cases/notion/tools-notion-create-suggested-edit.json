@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-create-suggested-edit change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals-232 page and its database exist",
-  "prompt": "suggest an edit to the evals-232 page: change the date to Friday",
+  "prompt": "suggest an edit to the page {{target:notion.sandbox_page}}: change the date to Friday",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -167,6 +167,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1c760d21342fc8a3ce372c70bcd0d8ce56b4ad6b9b4a177fa9995e761dfe1f59"
+    "source_sha256": "860f98ec2bb43076d0cf4495d775fab9d602663de99dff78194febddedabdddb"
   }
 }

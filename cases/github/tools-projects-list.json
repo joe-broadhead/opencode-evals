@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The projects_list read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "list the quill-notes repo's projects",
   "controls": [],
   "budgets": {
@@ -56,7 +56,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "(nothing|no |none|not found|empty)",
+              "source": "(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)",
               "flags": "i"
             }
           }
@@ -147,6 +147,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6c11bd34ffcc3107b126939a6c91c0ee92ffe8332451b8e1bb23a04e2311598e"
+    "source_sha256": "53e7b4a6e6522495416e0cc9ba53eacb39078bbb84aa9944dc032f2e9203eae3"
   }
 }

@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A Notion page is found with Notion's search, not a Google Drive search or a web search.
-- Data check: the evals-232 page holds the launch plan
+- Data check: the evals-232 page holds the launch plan; content unchecked
 - Data: seeded
 - Seed: plugins=gws,tavily
 - Set: route

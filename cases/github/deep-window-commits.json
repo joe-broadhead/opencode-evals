@@ -18,7 +18,8 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "query"
+    "query",
+    "since"
   ],
   "sets": [
     "deep"
@@ -98,6 +99,56 @@
       "line": 26
     },
     {
+      "id": "GH-PR01",
+      "severity": "major",
+      "ask": "The window is passed to the read as a since date.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "github.list_commits",
+          "n": 1,
+          "arg": "args.since",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^2026-09-0[1-7]",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "GH-OC03",
+      "severity": "major",
+      "ask": "It reports the second in-window commit as well.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "Rename the default notebook",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
       "id": "GH-SF00",
       "severity": "blocker",
       "ask": "No write.",
@@ -125,12 +176,37 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 36
+    },
+    {
+      "id": "GH-SF02",
+      "severity": "blocker",
+      "ask": "It does not report the commit outside the window.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "not-matches",
+            "value": {
+              "kind": "regex",
+              "source": "Bump the sync timeout",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 42
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a23d228620670f2ada919e84e2e423cfacfa081ffc46cc9b2c72ea8a01bf9272"
+    "source_sha256": "5d419a73844d39319002a3b54a575f646f314ef5b212ce6a9066e351ee977360"
   }
 }

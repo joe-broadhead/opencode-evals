@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-delete the evals tracker database
+delete the database {{target:notion.sandbox_db}}
 
 ## Items
 - [NOT-WR01] blocker · notion-delete-databases is the one write the task needs, and it is asked once at most.

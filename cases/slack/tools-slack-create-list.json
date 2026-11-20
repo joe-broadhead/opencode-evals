@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A new list is one create call, declined, and the answer says it was not created.",
   "data_check": "the sandbox channel exists",
-  "prompt": "create a list in #evals-232 called eval runs",
+  "prompt": "create a list in #{{target:slack.sandbox_channel_name}} called eval runs",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -172,6 +172,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a45cdbac6f44a4056b0e3ac4d31704f70cc27b1d5fb7e50cde37f517f95b98ed"
+    "source_sha256": "bea5ad332451cf978ce6c9699671670246f2145f2a9766fe5778245d5123f8a1"
   }
 }

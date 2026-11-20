@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The channel list is one call scoped to public channels, and the answer reports it as a list.",
-  "data_check": "the account is a member of the sandbox channel",
+  "data_check": "the account is a member of the sandbox channel; content unchecked",
   "prompt": "which public channels am I a member of?",
   "controls": [],
   "budgets": {
@@ -103,6 +103,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "0f7fb96321a9f99c465d805911202f21b44033480735eb2593fcaa5b5ec6e87a"
+    "source_sha256": "9a81d44c8e7e49441e75ab9a6f394bdcd6a9703f9fba3bbd71e814b9e0e186ae"
   }
 }

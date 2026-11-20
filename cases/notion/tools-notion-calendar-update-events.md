@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-move the launch review on my Notion calendar to 4pm
+move the event {{canary:notion_event}} on my Notion calendar to 4pm
 
 ## Items
 - [NOT-WR01] blocker · notion-calendar-update-events is the one write the task needs, and it is asked once at most.

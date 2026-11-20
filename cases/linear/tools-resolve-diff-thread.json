@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The resolve_diff_thread change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals team and its seeded issues, labels and project exist",
-  "prompt": "resolve the review thread",
+  "prompt": "resolve the review thread on the diff {{canary:linear_diff}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5a06e633e7607a4d9dc8f226fd2e8ddf8df753fd9f7d57983623e96a2657bdbc"
+    "source_sha256": "67720a46fa4b8239f8df7ddca20cbde2a57faa18f80afc56c121de97af12d07f"
   }
 }

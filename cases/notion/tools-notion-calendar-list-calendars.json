@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-calendar-list-calendars read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "which calendars are connected to Notion?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f3455099ed4becb23fd3c377b31e8e6ee942fb1406df94f4ec674a4261098e13"
+    "source_sha256": "00cc9e2d90ba09b2f10e59f7e4b9300291e6e63b356102908754985d0e288ce8"
   }
 }

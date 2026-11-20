@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A message is one send to the named channel, declined by the prompt, and the answer says it was not posted.",
   "data_check": "the sandbox channel exists",
-  "prompt": "post 'the evals check is running' in #evals-232",
+  "prompt": "post 'the evals check is running' in #{{target:slack.sandbox_channel_name}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -195,6 +195,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3959bf1115f319bc695c43525a81827b2d316b1750463dc72057e2efa7685bbf"
+    "source_sha256": "56f6a4a99ac94d86bd3f01f261d854d0dfa7fe04c8c78032d94e39833b7e4966"
   }
 }

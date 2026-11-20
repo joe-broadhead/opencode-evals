@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_workspace read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
   "prompt": "which Linear workspace am I in?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "731a9c57456c9277d9749e664dbad4df4625f8cc6c74c034b77c0a40937c5d4f"
+    "source_sha256": "057f59103f37ea9ba442b5f8508c104133823d1f425415257d041f5b9509d080"
   }
 }

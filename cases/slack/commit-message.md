@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-post 'evals-232 commit check' in #evals-232
+post 'evals-232 commit check' in #{{target:slack.sandbox_channel_name}}
 
 ## Items
 - [SLK-CT01] blocker · One message is sent to the sandbox channel.

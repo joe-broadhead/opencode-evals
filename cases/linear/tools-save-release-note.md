@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-add a release note to 1.0 saying the ingest fix shipped
+add a release note to {{canary:linear_release}} saying the ingest fix shipped
 
 ## Items
 - [LIN-WR01] blocker · save_release_note is the one write the task needs, and it is asked once at most.

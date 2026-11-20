@@ -12,7 +12,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-summarise my last Granola meeting and post the action items to #evals-232
+summarise my last Granola meeting and post the action items to #{{target:slack.sandbox_channel_name}}
 
 ## Items
 - [SLK-WR01] blocker · One post is attempted in the sandbox channel.

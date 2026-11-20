@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-create an issue in the evals team: the ingest job is flaky again, please fix it this week
+create an issue in the {{target:linear.team_key}} team: the ingest job is flaky again, please fix it this week
 
 ## Items
 - [LIN-WR01] blocker · One issue create is attempted, with the title the user gave.

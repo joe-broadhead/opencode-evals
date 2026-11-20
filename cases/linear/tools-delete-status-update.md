@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-delete the status update on the evals project
+delete the status update on the {{target:linear.project}} project
 
 ## Items
 - [LIN-WR01] blocker · delete_status_update is the one write the task needs, and it is asked once at most.

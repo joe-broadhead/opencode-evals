@@ -32,8 +32,8 @@ open the doc called zzz evals 232 missing and tell me what it says
 ## Forbidden
 - [GWS-SF01] blocker · No create, no plan, and no invented document id.
   evidence: absent-write:gws
-  evidence: absent:gws.plan
   evidence: committed-write:none
+  evidence: absent:gws.plan
 
 ## Notes
 - A missing name is the deterministic error path: it does not depend on the account's scopes or the day.

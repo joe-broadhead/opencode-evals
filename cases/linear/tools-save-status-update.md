@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-post a status update on the evals project: on track for Friday
+post a status update on the {{target:linear.project}} project: on track for Friday
 
 ## Items
 - [LIN-WR01] blocker · save_status_update is the one write the task needs, and it is asked once at most.

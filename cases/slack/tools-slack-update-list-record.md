@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-mark the first record in the evals list as done
+mark the record {{canary:slack_list_record}} in the list {{target:slack.sandbox_list}} as done
 
 ## Items
 - [SLK-WR01] blocker · slack_update_list_record is the one write the task needs, and it is asked once at most.

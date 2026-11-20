@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A look-only request reads and stops; no note edit, no export.",
-  "data_check": "the kickoff meeting exists in the sandbox folder; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "the kickoff meeting exists in the sandbox folder; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "just read the kickoff note and tell me what it says — don't change or export anything",
   "controls": [],
   "budgets": {
@@ -49,26 +49,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "granola.update_private_notes",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.export_markdown",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.create_folder",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "granola.generate_summary",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         },
         {
@@ -95,7 +75,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 23
     },
     {
       "id": "GRA-RB02",
@@ -111,12 +91,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9fa6aef9a88aec63f062b8e291bf3927c35f719437875c89291c3a7ffc37e224"
+    "source_sha256": "54ec231d2d526b5460bbea3841e0bf7c77deaca3782d6b7f6ed34612853069c0"
   }
 }

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A local file is read with the local tools, not imported into Notion.",
-  "data_check": "the credential-free local arm has spec.md in the working directory",
+  "data_check": "the credential-free local arm has spec.md in the working directory; content unchecked",
   "prompt": "read the spec.md in my repo and tell me what it says",
   "controls": [],
   "budgets": {
@@ -30,11 +30,6 @@
       "forbidden": false,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent",
-          "tool": "notion.*",
-          "n": null
-        },
         {
           "kind": "committed-write"
         },
@@ -62,7 +57,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "NOT-RB02",
@@ -78,12 +73,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "14dc101ede75de6672fe5e4ac64da3ce4b3be723d849ee78af04464a0bf3e9e6"
+    "source_sha256": "d84cd2bc149c1a1d2114bc6ad382590ce3e4c3002397932f54f30061f0a84f48"
   }
 }

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-list-private-pages read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "list my private Notion pages",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "086bac647fa1ffdb5e080a3088781f72faeb5a92f05b5908212ac13fe2b71d1e"
+    "source_sha256": "077acc03fbd49fa0ef9a039ef4253ce210c47114b0ef6ed8944197031df6a413"
   }
 }

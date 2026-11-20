@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-get-comments read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
-  "prompt": "show me the comments on the evals-232 page",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
+  "prompt": "show me the comments on the page {{target:notion.sandbox_page}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aba28488bc50e8b7d6739ca701c74b2737188e764871fbae6caf997c6edc5c0c"
+    "source_sha256": "618d9d3fbb4fc7aba67d4f79235553de7b0ddfea87a97de0d6d0f9c94ab42d3d"
   }
 }

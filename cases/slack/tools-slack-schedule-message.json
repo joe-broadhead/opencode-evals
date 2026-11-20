@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A scheduled message is one schedule call with an integer post_at, declined, and nothing is queued.",
   "data_check": "the sandbox channel exists",
-  "prompt": "schedule 'standup in ten' in #evals-232 for tomorrow at 9am",
+  "prompt": "schedule 'standup in ten' in #{{target:slack.sandbox_channel_name}} for tomorrow at 9am",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -202,6 +202,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "e7fe15c35bcb17c366c3ea2bb5ee3eab5dd4955fae161436485f14bd9007e9aa"
+    "source_sha256": "0bb2aa33b24b457198e8758d17822cb234869473c66585df77d6c4f092168868"
   }
 }

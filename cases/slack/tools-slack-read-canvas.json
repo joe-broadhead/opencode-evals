@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A canvas is read by its own id, and the answer reports its structure rather than a file read.",
   "data_check": "the sandbox canvas exists and is linked in the sandbox channel",
-  "prompt": "read the canvas in #evals-232 and give me its headings",
+  "prompt": "read the canvas in #{{target:slack.sandbox_channel_name}} and give me its headings",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -122,6 +122,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "680ce1b7252c29002ebdf4de6cf9b5dbeb37b85c8069ddad2cbc5bc6891afd87"
+    "source_sha256": "a1c0cdbd6f041f1d4a9302ad8e8382e088c869aa376fc2f08f145a82a4e4d473"
   }
 }

@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: A detail the notes lack is read from the transcript's own chunks, and the answer reports it without naming speakers.
-- Data check: the seeded kickoff transcript holds a passage about the budget; content is unchecked; only route, arguments and no-write are graded
+- Data check: the seeded kickoff transcript holds a passage about the budget; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
 - Checkable: meeting_id
 - Set: wide

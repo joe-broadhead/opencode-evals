@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-delete that review comment
+delete my review comment on the diff {{canary:linear_diff}}
 
 ## Items
 - [LIN-WR01] blocker · delete_diff_comment is the one write the task needs, and it is asked once at most.

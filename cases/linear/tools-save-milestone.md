@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-create a milestone called phase two in the evals project
+create a milestone called phase two in the {{target:linear.project}} project
 
 ## Items
 - [LIN-WR01] blocker · save_milestone is the one write the task needs, and it is asked once at most.

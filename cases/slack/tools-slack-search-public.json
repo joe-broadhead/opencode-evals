@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A channel-scoped search is one search with the channel and the words in the query, and the hits are cited.",
   "data_check": "the sandbox channel holds the seeded canary message about the launch checklist",
-  "prompt": "search #evals-232 for the message about the launch checklist",
+  "prompt": "search #{{target:slack.sandbox_channel_name}} for the message about the launch checklist",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -130,6 +130,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "f26571af2a4253559ed5ac78efac8697ae7d0e0a11fae9977893cc83b41105ea"
+    "source_sha256": "85b28bbbdf5fc86d24a7f863526a467956ae952024d5e99a8ec468d30acba43b"
   }
 }

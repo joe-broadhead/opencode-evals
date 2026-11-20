@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-accept the suggested edit on the evals-232 page
+accept the suggested edit {{canary:notion_suggested_edit}} on the page {{target:notion.sandbox_page}}
 
 ## Items
 - [NOT-WR01] blocker · notion-resolve-suggested-edit is the one write the task needs, and it is asked once at most.

@@ -4,13 +4,13 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The notion-search-sessions read answers this request from Notion, and changes nothing.
-- Data check: the private evals-232 page and its database exist
+- Data check: the private evals-232 page and its database exist; content unchecked
 - Data: seeded
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-find my Notion session about the evals run
+find the Notion session {{canary:notion_session}} about the evals run
 
 ## Items
 - [NOT-OC01] blocker · notion-search-sessions answers the request: the plugin's own tool for this task is called, not a substitute.

@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_projects read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
-  "prompt": "list the projects in the evals team",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
+  "prompt": "list the projects in the {{target:linear.team_key}} team",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e7bc07c98dc93a4e446a8459c810f18da9edae871bc68320940aa9555fd77ef2"
+    "source_sha256": "dd9dfeb0cb80e7df05f650affdc9bf75bcc0bd36feab6e98be9ba46e36a23264"
   }
 }

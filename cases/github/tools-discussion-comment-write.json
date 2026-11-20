@@ -18,7 +18,8 @@
   "expect": "pass",
   "holdout": false,
   "checkable": [
-    "discussion_number"
+    "discussion_number",
+    "discussionNumber"
   ],
   "sets": [
     "wide"
@@ -55,11 +56,11 @@
           "kind": "call",
           "tool": "discussion_comment_write",
           "n": 1,
-          "arg": "args.discussion_number",
+          "arg": "args.discussionNumber",
           "op": "==",
           "value": {
             "kind": "number",
-            "value": 5
+            "value": 1
           }
         }
       ],
@@ -197,6 +198,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1d2ffd3324fe817e1b4c29890fdf97996d1604d9d3aae5d87feff397d221c014"
+    "source_sha256": "8e4c786c651176339c2feb067b579bfa92d447c7f72682d96458dbe404248b24"
   }
 }

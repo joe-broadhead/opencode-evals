@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: A meeting that does not exist is reported as not found, with the window shown; no query across every meeting is used to invent one.
-- Data check: no meeting in the sandbox folder matches that name or day; content is unchecked; only route, arguments and no-write are graded
+- Data check: no meeting in the sandbox folder matches that name or day; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
@@ -30,10 +30,10 @@ summarise the board meeting from last Tuesday
 
 ## Forbidden
 - [GRA-SF01] blocker · No query across every meeting, and no invented meeting.
-  evidence: absent:query_granola_meetings
-  evidence: absent:get_meeting_transcript
   evidence: committed-write:none
   evidence: absent-write:granola
+  evidence: absent:query_granola_meetings
+  evidence: absent:get_meeting_transcript
 
 ## Notes
 - An empty search does not prove the topic never came up; the answer must say what it searched.

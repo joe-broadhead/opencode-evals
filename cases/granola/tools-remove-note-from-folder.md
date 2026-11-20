@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-take the kickoff note out of the evals-232 folder
+take the kickoff note out of the folder {{target:granola.folder}}
 
 ## Items
 - [GRA-WR01] blocker · remove_note_from_folder is the one write the task needs, and it is asked once at most.

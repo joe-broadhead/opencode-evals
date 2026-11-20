@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-list-page-backlinks read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
-  "prompt": "where is the evals-232 page mentioned?",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
+  "prompt": "where is the page {{target:notion.sandbox_page}} mentioned?",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "56ab7c662eaadfcc30a4d9b0aa116c9a237afe3b81fbb91bde24bd385ff19b83"
+    "source_sha256": "72c3195c18c54fe5d6e6db7ad2df79526f3d57274a1dbe726103b31023c60e58"
   }
 }

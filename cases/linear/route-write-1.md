@@ -4,14 +4,14 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A Linear issue is created in Linear, not in GitHub or Jira; the create is declined.
-- Data check: the private evals team exists
+- Data check: the private evals team exists; content unchecked
 - Data: seeded
 - Seed: plugins=github,jira
 - Set: route
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-create a Linear issue in the evals team for the flaky test
+create a Linear issue in the {{target:linear.team_key}} team for the issue {{canary:linear_issue}}
 
 ## Items
 - [LIN-RT01] blocker · The plugin that owns the data answers, not the one that merely sounds close.

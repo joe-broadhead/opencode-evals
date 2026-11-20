@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-add a line to the evals-232 page saying status done
+add a line to the page {{target:notion.sandbox_page}} saying status done
 
 ## Items
 - [NOT-OC01] blocker · The page is fetched before it is edited.

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_users read answers this request from Linear, and changes nothing.",
-  "data_check": "the workspace's own member list; content is unchecked and only route and arguments are graded",
+  "data_check": "the workspace's own member list; content is unchecked and only route and arguments are graded; content unchecked",
   "prompt": "list the people in the workspace",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0d76ded88b9fa3eee24f21128934b997ebf973a2b9a521c260fda6c4c1ec573a"
+    "source_sha256": "e6608c226db13fd8f758b1f32b00c8f1da1416851659bef22391b51d70dcadf7"
   }
 }

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-get-enabled-skills read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "which Notion skills are enabled?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a74c54d062fec31d60d4bd0292025318231985c133850558c400cb38fd0d0220"
+    "source_sha256": "cb824369ca892856d05e223f700c832de2357dff07d13622f6c35be69caa5d25"
   }
 }

@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A decision in a Slack channel is a Slack search, not a meeting-note query or a web search.",
-  "data_check": "the sandbox channel holds the seeded decision message; content is unchecked; only route, arguments and no-write are graded",
-  "prompt": "what did we decide in #evals-232 about the launch date?",
+  "data_check": "the sandbox channel holds the seeded decision message; content is unchecked; only route, arguments and no-write are graded; content unchecked",
+  "prompt": "what did we decide in #{{target:slack.sandbox_channel_name}} about the launch date?",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -120,6 +120,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e384433cd7296725b21cd766ab4b6a66896455d0aae6c84cc93ffa341476e6cc"
+    "source_sha256": "0fc804da353e384b570fe1f926c1ed181c25aa6a9f2630a760b28667cb04a2b2"
   }
 }

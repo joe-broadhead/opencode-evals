@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-add a record to the evals list saying the run passed
+add a record to the list {{target:slack.sandbox_list}} saying the run passed
 
 ## Items
 - [SLK-WR01] blocker · slack_add_list_record is the one write the task needs, and it is asked once at most.

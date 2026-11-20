@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (should-not-call)
 - Decision tested: A local working copy is read with the local tools, not by asking GitHub for a branch.
-- Data check: the harness's fake GitHub holds the quill-notes fixture
+- Data check: the harness's fake GitHub holds the quill-notes fixture; content unchecked
 - Data: synthetic
 - Set: route, local
 - Budget: outer_calls <= 3, inner_calls <= 2, tokens <= 300000

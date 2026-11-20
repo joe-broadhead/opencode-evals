@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A Slack list is read by its own id, and the answer reports its records rather than a channel read.",
   "data_check": "the sandbox list exists in the sandbox channel",
-  "prompt": "read the evals list and show me its records",
+  "prompt": "read the list {{target:slack.sandbox_list}} and show me its records",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -122,6 +122,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "54a2fb7a51d2016f2e24cebb1f7720641e6892cfc2091a5a841c7c7532f7f315"
+    "source_sha256": "4c8eaf2f006aa797f41569c89f00e684d0844a65be146bdcc21e663c6be7aa6c"
   }
 }

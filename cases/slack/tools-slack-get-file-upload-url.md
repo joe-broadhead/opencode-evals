@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-upload the notes.txt from my project to #evals-232
+upload the notes.txt from my project to #{{target:slack.sandbox_channel_name}}
 
 ## Items
 - [SLK-WR01] blocker · slack_get_file_upload_url is the one write the task needs, and it is asked once at most.

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, gws write graded at the plan)",
   "decision": "Trashing is planned as a delete on the named file, and the commit is declined.",
   "data_check": "the evals scratch doc exists and the owner owns it",
-  "prompt": "put the evals scratch doc in the bin",
+  "prompt": "put the doc {{target:gws.doc}} in the bin",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -205,6 +205,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "44dca986f86f0568f78491aeffb86512e80ffd2c503ba72369b45514d54945e5"
+    "source_sha256": "77fdcf8d5455afef882d0162a5c4a181a8cb4b609fadb642530e5cb8b42ffcc4"
   }
 }

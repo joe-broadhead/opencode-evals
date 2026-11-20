@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A local working copy is read with the local tools, not by asking GitHub for a branch.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "check the uncommitted diff in my working copy and tell me what changed",
   "controls": [],
   "budgets": {
@@ -84,6 +84,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "181f01a6fb354dc5e1d0eedf52f167e99bbb9ba4d74ceb7fbb8bd0dad7957527"
+    "source_sha256": "a07615dd56105aa9534ddc2b2d792cc9617a1d1eb2d701f459b127bd687ec951"
   }
 }

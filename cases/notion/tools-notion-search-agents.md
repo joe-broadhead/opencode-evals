@@ -4,13 +4,13 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The notion-search-agents read answers this request from Notion, and changes nothing.
-- Data check: the private evals-232 page and its database exist
+- Data check: the private evals-232 page and its database exist; content unchecked
 - Data: seeded
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-find the Notion agent called evals
+find the Notion agent {{canary:notion_agent}}
 
 ## Items
 - [NOT-OC01] blocker · notion-search-agents answers the request: the plugin's own tool for this task is called, not a substitute.

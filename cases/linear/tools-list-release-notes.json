@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_release_notes read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
   "prompt": "list the release notes",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "96601eeee06a1ab8e416012c689c4765707889dbba06e6193e46fb7deba8d911"
+    "source_sha256": "ff1b1d3968f898436f4ddea46f2fa22574beb4d0a58af771480dc15718e54fa8"
   }
 }

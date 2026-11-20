@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-rename the evals-232 folder to evals 232 notes
+rename the folder {{canary:notion_folder}} to evals 232 notes
 
 ## Items
 - [NOT-WR01] blocker · notion-update-folder is the one write the task needs, and it is asked once at most.

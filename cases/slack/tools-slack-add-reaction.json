@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A reaction is one call on the message, declined, and the answer says no reaction was added.",
   "data_check": "the pinned message exists in the sandbox channel",
-  "prompt": "react with a check mark to the pinned message in #evals-232",
+  "prompt": "react with a check mark to the message {{canary:slack_pinned_ts}} in #{{target:slack.sandbox_channel_name}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -200,6 +200,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "96bf2819504e14bd455abc84b444c95eaf6a47804e161c8256665c603e6370f8"
+    "source_sha256": "78e234945ac1d15adf8fa3d87e1769645e4e7e758da99a7f9d7b2359829016a3"
   }
 }

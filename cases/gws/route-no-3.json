@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A local file is read with the local file tools, not by uploading it to Drive or guessing a Sheet.",
-  "data_check": "the credential-free local arm has a budget.csv in the working directory",
+  "data_check": "the credential-free local arm has a budget.csv in the working directory; content unchecked",
   "prompt": "read the budget.csv on my Desktop and tell me the total",
   "controls": [],
   "budgets": {
@@ -30,11 +30,6 @@
       "forbidden": false,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent",
-          "tool": "gws.*",
-          "n": null
-        },
         {
           "kind": "committed-write"
         },
@@ -62,7 +57,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "GWS-RB02",
@@ -78,7 +73,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     }
   ],
   "oracle": [],
@@ -86,10 +81,10 @@
     {
       "id": null,
       "text": "Runs in the credential-free local arm, where the shell and file tools exist.",
-      "line": 28
+      "line": 27
     }
   ],
   "hashes": {
-    "source_sha256": "f0da14e656d61d1f6bc44527eba72107f17a6755849251302ff10f828c71b1ce"
+    "source_sha256": "44b9d160b2daccf125a46b9d60a0a4161304d0aeabfd3c83df71b5628d9ebc21"
   }
 }

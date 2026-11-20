@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The get_gist read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.
-- Data check: the harness's fake GitHub holds the quill-notes fixture
+- Data check: the harness's fake GitHub holds the quill-notes fixture; content unchecked
 - Data: synthetic
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
@@ -17,7 +17,7 @@ open my gist 1a2b3c4d5e
   evidence: call:get_gist#1
 
 - [GH-OC02] major · The answer reports what the read returned.
-  evidence_any: text:any matches /(nothing|no |none|not found|empty)/i
+  evidence_any: text:any matches /(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)/i
 
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

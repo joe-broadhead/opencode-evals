@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "The user's calendar is Google's when it is a Google calendar, so gws answers and Notion's calendar tools stay out.",
-  "data_check": "the evals account's primary calendar has tomorrow's events",
+  "data_check": "the evals account's primary calendar has tomorrow's events; content unchecked",
   "prompt": "what's on my calendar tomorrow?",
   "controls": [],
   "budgets": {
@@ -121,6 +121,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "7a0cd0139bc53bd2f8f0a5c30b29daa627925d434b8ffb1c03a538dada6f6028"
+    "source_sha256": "cdf40f89c2d825a56f4e0ca91f2821d35c8ff1c4a70418fc58d83de1c382ddf6"
   }
 }

@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-read the canvas in #evals-232 and give me its headings
+read the canvas in #{{target:slack.sandbox_channel_name}} and give me its headings
 
 ## Items
 - [SLK-OC01] blocker · slack_read_canvas answers the request: the plugin's own tool for this task is called, not a substitute.

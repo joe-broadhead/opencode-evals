@@ -4,13 +4,13 @@
 - Tier: T3
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: A reply with no message named is a question: the agent asks which message and sends nothing.
-- Data check: the sandbox channel holds more than one message
+- Data check: the sandbox channel holds more than one message; content unchecked
 - Data: seeded
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-reply to that message in #evals-232 and say we agree
+reply to that message in #{{target:slack.sandbox_channel_name}} and say we agree
 
 ## Items
 - [SLK-OC01] blocker · It asks which message to reply to.

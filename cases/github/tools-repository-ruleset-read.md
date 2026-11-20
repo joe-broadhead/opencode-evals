@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The repository_ruleset_read read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.
-- Data check: the harness's fake GitHub holds the quill-notes fixture
+- Data check: the harness's fake GitHub holds the quill-notes fixture; content unchecked
 - Data: synthetic
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
@@ -17,7 +17,7 @@ show the branch ruleset on the quill-notes repo
   evidence: call:repository_ruleset_read#1
 
 - [GH-OC02] major · The answer reports what the read returned.
-  evidence_any: text:any matches /(nothing|no |none|not found|empty)/i
+  evidence_any: text:any matches /(nothing|none|not found|empty|no logs|no job|no workflow|no discussion|no project|no space|no gist|no team|no advisory|no alert|no run)/i
 
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

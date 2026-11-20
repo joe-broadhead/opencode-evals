@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-make a canvas in #evals-232 called evals run notes with a heading and one line
+make a canvas in #{{target:slack.sandbox_channel_name}} called evals run notes with a heading and one line
 
 ## Items
 - [SLK-WR01] blocker · slack_create_canvas is the one write the task needs, and it is asked once at most.

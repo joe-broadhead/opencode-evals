@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-get-sidebar-tabs read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "what's in my Notion sidebar?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b9bf48a4da92e6ea7089d7ac47d3edb3fc1ac261ea661e8b8a685eacdd01303a"
+    "source_sha256": "07855b7be9c3b974d9cac9a686bb6e979656d3abc8905b0cf9f13966055506f6"
   }
 }

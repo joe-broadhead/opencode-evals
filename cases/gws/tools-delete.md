@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 450000
 
 ## Prompt
-put the evals scratch doc in the bin
+put the doc {{target:gws.doc}} in the bin
 
 ## Items
 - [GWS-WR01] blocker · The change is planned as drive.files.update, not attempted as a commit.

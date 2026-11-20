@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-post 'the evals check is running' in #evals-232
+post 'the evals check is running' in #{{target:slack.sandbox_channel_name}}
 
 ## Items
 - [SLK-WR01] blocker · slack_send_message is the one write the task needs, and it is asked once at most.

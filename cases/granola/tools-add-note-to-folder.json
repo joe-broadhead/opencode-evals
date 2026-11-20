@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A note is filed with one add call, declined, and the answer says it was not moved.",
   "data_check": "the kickoff note and the evals-232 folder exist; content is unchecked; only route, arguments and the declined call are graded",
-  "prompt": "move the kickoff note into the evals-232 folder",
+  "prompt": "move the kickoff note into the folder {{target:granola.folder}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bfa13c546405fc8f2fe1681d6fbebe0aed3e8b4d5e73e5ebcdeb5ff202f6c195"
+    "source_sha256": "280c80ea1075f2a0857118ac4f5583b73aed832371bf7698c20814d7f7ba7529"
   }
 }

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "A decision recap searches, opens the threads that matter, and cites every claim with its own link.",
   "data_check": "the sandbox channel holds the seeded decisions and their threads",
-  "prompt": "what did we decide in #evals-232 last week? cite each decision",
+  "prompt": "what did we decide in #{{target:slack.sandbox_channel_name}} last week? cite each decision",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -149,6 +149,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "94bbb7aea41cb8cd517252283b408129b3e68834a0b46ad1b1d793d2bcc17227"
+    "source_sha256": "6a4a4ded11e8d1081e9ef176b318cdb3d590347e3b9dbd87746898a7f978b163"
   }
 }
