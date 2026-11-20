@@ -24,6 +24,7 @@
   "sets": [
     "wide"
   ],
+  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -43,7 +44,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "WF-PR01",
@@ -67,7 +68,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "WF-OC02",
@@ -102,7 +103,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "WF-TR01",
@@ -119,7 +120,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "WF-SF01",
@@ -137,7 +138,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "WF-SF02",
@@ -165,7 +166,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     },
     {
       "id": "WF-RB01",
@@ -181,12 +182,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: the link resolves to a meeting the account does not hold (owner decision 20 Nov).",
+      "line": 44
+    }
+  ],
   "hashes": {
-    "source_sha256": "6d665ef4df24c8b8235940a3ea9a5a5ef95a5c09d06617b0fa233f893faae221"
+    "source_sha256": "5113ef7dad2b99e31f08f093efb306d27f3fd0fc9e44a5bed0bc97f2f3f094d2"
   }
 }

@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 7, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow,slack
 - Set: deep
+- Status: deferred
 
 ## Prompt
 summarise the last pricing call and post it to my Slack self-DM {{target:slack.self_dm}}.
@@ -46,3 +47,6 @@ summarise the last pricing call and post it to my Slack self-DM {{target:slack.s
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: needs the last pricing call recorded (owner decision 20 Nov).

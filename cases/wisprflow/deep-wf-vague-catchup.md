@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: deep
+- Status: deferred
 
 ## Prompt
 catch me up on my meetings
@@ -35,3 +36,6 @@ catch me up on my meetings
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: reads the meeting list it is asked to catch up on (owner decision 20 Nov).

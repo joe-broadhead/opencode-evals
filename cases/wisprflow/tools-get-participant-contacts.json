@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -40,7 +41,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "WF-PR01",
@@ -68,7 +69,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "WF-OC02",
@@ -91,7 +92,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "WF-TR01",
@@ -108,7 +109,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-SF01",
@@ -136,7 +137,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "WF-RB01",
@@ -152,12 +153,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: reads a participant of a recorded meeting (owner decision 20 Nov).",
+      "line": 40
+    }
+  ],
   "hashes": {
-    "source_sha256": "9ce1992ac1bfc0ca3577edc198445ad4f84933de58b676c8a78bea664ad3f93f"
+    "source_sha256": "4d5cf9c9301e7f6eeed4e0e6b758693077bbeb5ce67892f2ea8d474fcc37693d"
   }
 }

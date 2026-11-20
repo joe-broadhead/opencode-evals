@@ -21,6 +21,7 @@
   "sets": [
     "deep"
   ],
+  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -53,7 +54,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "WF-EF01",
@@ -72,7 +73,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "WF-EF02",
@@ -97,7 +98,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "WF-TR01",
@@ -114,7 +115,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "WF-SF01",
@@ -142,7 +143,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "WF-RB01",
@@ -158,12 +159,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 37
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: reads the meeting list it is asked to catch up on (owner decision 20 Nov).",
+      "line": 41
+    }
+  ],
   "hashes": {
-    "source_sha256": "4defe4d577a1ddc27b666357b6dbd3ff8e21d85fb07b10ca381b83690bd0fe85"
+    "source_sha256": "96554dfc7ef3d2e83592ef177b2e4549be126b7c8899762a1a9f0d479c14bed4"
   }
 }

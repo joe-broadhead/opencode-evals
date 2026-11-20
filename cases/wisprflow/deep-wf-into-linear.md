@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 12, inner_calls <= 8, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow,linear
 - Set: deep
+- Status: deferred
 
 ## Prompt
 prep me for tomorrow's pricing call, then create the follow-up issues from the last one in the {{target:linear.team_key}} team in Linear.
@@ -47,3 +48,6 @@ prep me for tomorrow's pricing call, then create the follow-up issues from the l
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: needs the last pricing call recorded (owner decision 20 Nov).

@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow utc-hours=9-17
 - Set: deep
+- Status: deferred
 
 ## Prompt
 did anyone mention the rebrand in last week's meetings?
@@ -38,3 +39,6 @@ did anyone mention the rebrand in last week's meetings?
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: needs last week's meetings and their transcripts (owner decision 20 Nov).

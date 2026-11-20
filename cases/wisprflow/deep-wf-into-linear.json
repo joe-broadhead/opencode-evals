@@ -21,6 +21,7 @@
   "sets": [
     "deep"
   ],
+  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -46,7 +47,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "WF-WR01",
@@ -72,7 +73,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "WF-CT01",
@@ -95,7 +96,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-OC02",
@@ -118,7 +119,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "WF-OC03",
@@ -141,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "WF-TR01",
@@ -158,7 +159,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "WF-SF01",
@@ -179,7 +180,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
     },
     {
       "id": "WF-SF02",
@@ -207,7 +208,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 43
+      "line": 44
     },
     {
       "id": "WF-RB01",
@@ -223,12 +224,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 48
+      "line": 49
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: needs the last pricing call recorded (owner decision 20 Nov).",
+      "line": 53
+    }
+  ],
   "hashes": {
-    "source_sha256": "a1ab1608c306276859d65d49b77bbc087d5084e69ad8c287ca49e9b6050b14cb"
+    "source_sha256": "2d88c8b0576356dea353602fcd7e64d9ae1ec5a682210338a532f05b730e80c3"
   }
 }

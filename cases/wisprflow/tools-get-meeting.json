@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -40,7 +41,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "WF-PR01",
@@ -60,7 +61,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "WF-CT01",
@@ -83,7 +84,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "WF-TR01",
@@ -100,7 +101,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-EF01",
@@ -119,7 +120,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "WF-SF02",
@@ -147,7 +148,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     },
     {
       "id": "WF-RB01",
@@ -163,12 +164,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 39
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: needs a recorded meeting to summarise (owner decision 20 Nov: no Wispr Flow meeting exists, targets.json wisprflow.meeting unset).",
+      "line": 43
+    }
+  ],
   "hashes": {
-    "source_sha256": "967ffa109d3769acbeea655b40bf02437a38faafc5baaf58c38fde9fd23d8104"
+    "source_sha256": "d652ba60e8a0678f6f59091a4f237d2cbe0d6b1ce26ddbc22d3aca18e9f2235e"
   }
 }

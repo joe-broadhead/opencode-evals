@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
+- Status: deferred
 
 ## Prompt
 summarise the Wispr Flow meeting {{target:wisprflow.meeting}} for me.
@@ -37,3 +38,6 @@ summarise the Wispr Flow meeting {{target:wisprflow.meeting}} for me.
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: needs a recorded meeting to summarise (owner decision 20 Nov: no Wispr Flow meeting exists, targets.json wisprflow.meeting unset).

@@ -10,6 +10,7 @@
 - Seed: plugins=wisprflow
 - Checkable: url
 - Set: wide
+- Status: deferred
 
 ## Prompt
 what's this meeting? https://meet.google.com/evals-232-fixture
@@ -38,3 +39,6 @@ what's this meeting? https://meet.google.com/evals-232-fixture
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: the link resolves to a meeting the account does not hold (owner decision 20 Nov).

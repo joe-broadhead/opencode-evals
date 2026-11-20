@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
+- Status: deferred
 
 ## Prompt
 who was in the Wispr Flow meeting {{target:wisprflow.meeting}}? I need the full list, not just the first few.
@@ -37,3 +38,6 @@ who was in the Wispr Flow meeting {{target:wisprflow.meeting}}? I need the full 
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: needs a recorded meeting and its participant list (owner decision 20 Nov).

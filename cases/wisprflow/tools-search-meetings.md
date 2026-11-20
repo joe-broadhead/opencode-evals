@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow utc-hours=9-17
 - Set: wide
+- Status: deferred
 
 ## Prompt
 find my meetings about pricing from the last month.
@@ -35,3 +36,6 @@ find my meetings about pricing from the last month.
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: searches recorded meetings (owner decision 20 Nov).

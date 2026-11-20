@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
+- Status: deferred
 
 ## Prompt
 we had a call booked as the calendar event for {{target:wisprflow.meeting}} — was it recorded, and what came out of it?
@@ -31,3 +32,6 @@ we had a call booked as the calendar event for {{target:wisprflow.meeting}} — 
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: needs a recorded meeting behind the calendar event (owner decision 20 Nov).

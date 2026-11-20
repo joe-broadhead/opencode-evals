@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
+- Status: deferred
 
 ## Prompt
 what does the person in my last Wispr Flow meeting do, and which company are they at?
@@ -34,3 +35,6 @@ what does the person in my last Wispr Flow meeting do, and which company are the
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: reads a participant of a recorded meeting (owner decision 20 Nov).
