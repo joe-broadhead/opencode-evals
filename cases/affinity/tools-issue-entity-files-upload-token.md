@@ -19,6 +19,7 @@ upload the deck at ./acme-deck.pdf (204800 bytes, application/pdf) to a portfoli
   evidence: declined:affinity_issue_entity_files_upload_token
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.issue_entity_files_upload_token ;; before:affinity.search_all_companies,affinity.issue_entity_files_upload_token
 - [AFF-PR01] major · It used the company it resolved.
   evidence: call:affinity.issue_entity_files_upload_token#1 args.entity_id > 0
   evidence_any: before:affinity.search_companies_top_matches,affinity.issue_entity_files_upload_token ;; before:affinity.search_all_companies,affinity.issue_entity_files_upload_token

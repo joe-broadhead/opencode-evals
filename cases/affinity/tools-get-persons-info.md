@@ -18,6 +18,7 @@ pull up the founders of a portfolio company we track in one go — names, roles 
   evidence: call:affinity.get_persons_info#1
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.get_persons_info ;; before:affinity.search_all_companies,affinity.get_persons_info
 - [AFF-PR01] major · It passed the people it resolved as a list.
   evidence: call:affinity.get_persons_info#1 args.person_ids present
   evidence_any: before:affinity.search_companies_top_matches,affinity.get_persons_info ;; before:affinity.search_all_companies,affinity.get_persons_info

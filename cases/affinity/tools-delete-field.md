@@ -21,6 +21,7 @@ remove the custom company field we don't use.
 - [AFF-TR02] blocker · It read the company fields before any delete.
   n/a_when: absent:affinity.delete_field
   evidence: call:affinity.get_entity_fields#1 args.entity_type == 1
+  evidence: before:affinity.get_entity_fields,affinity.delete_field
 - [AFF-PR01] major · It used the field it read.
   n/a_when: absent:affinity.delete_field
   evidence: call:affinity.delete_field#1 args.field_id matches /.+/

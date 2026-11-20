@@ -19,6 +19,7 @@ add a note to a portfolio company we track: "Wants a warm intro to the platform 
   evidence: declined:affinity_create_note
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.create_note ;; before:affinity.search_all_companies,affinity.create_note
 - [AFF-PR01] major · It passed the value the user gave.
   evidence: call:affinity.create_note#1 args.content matches /warm intro/
 - [AFF-PR02] major · It attached the note to the company.

@@ -308,6 +308,43 @@
       "line": 42
     },
     {
+      "id": "AFF-TR04",
+      "severity": "blocker",
+      "ask": "The write came after the company and field reads.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "before",
+          "tool": "affinity.get_entity_fields",
+          "other": "affinity.upsert_entity_field_values"
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.upsert_entity_field_values"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.upsert_entity_field_values"
+          }
+        ]
+      ],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.upsert_entity_field_values",
+          "n": null
+        }
+      ],
+      "maps_to": [],
+      "line": 45
+    },
+    {
       "id": "AFF-SF01",
       "severity": "blocker",
       "ask": "Nothing was committed, and no second change was made.",
@@ -321,7 +358,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 46
+      "line": 51
     },
     {
       "id": "AFF-SF02",
@@ -337,7 +374,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 48
+      "line": 53
     }
   ],
   "oracle": [],
@@ -345,10 +382,10 @@
     {
       "id": null,
       "text": "The harness cannot prove the field id came from the earlier read (`created` counts write results only); the before order and a non-empty id are the strongest code checks, and a judge settles provenance.",
-      "line": 52
+      "line": 57
     }
   ],
   "hashes": {
-    "source_sha256": "cd63a0bee8a1e5602768b08e52cae75179b5419765e88e6087b81245f806edeb"
+    "source_sha256": "7db9d6fa768c6ce2cb30bb3d09845a8c848f6e4b9dcbd56ffa8702e285557f20"
   }
 }

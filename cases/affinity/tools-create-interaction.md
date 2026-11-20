@@ -19,6 +19,7 @@ log a call with a founder at a portfolio company we track today: they're interes
   evidence: declined:affinity_create_interaction
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.create_interaction ;; before:affinity.search_all_companies,affinity.create_interaction
 - [AFF-PR01] major · It logged a call.
   evidence: call:affinity.create_interaction#1 args.interaction_type present
 - [AFF-PR02] major · It carried the note the user gave.

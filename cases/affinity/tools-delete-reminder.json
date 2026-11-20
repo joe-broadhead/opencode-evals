@@ -56,6 +56,11 @@
           "tool": "affinity.get_reminders",
           "n": 1,
           "arg": null
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.get_reminders",
+          "other": "affinity.delete_reminder"
         }
       ],
       "evidence_any": [],
@@ -90,7 +95,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "AFF-OC01",
@@ -145,7 +150,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "AFF-OC09",
@@ -157,7 +162,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "AFF-OC02",
@@ -173,7 +178,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "AFF-SF01",
@@ -189,7 +194,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     },
     {
       "id": "AFF-SF02",
@@ -205,7 +210,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     }
   ],
   "oracle": [],
@@ -213,10 +218,10 @@
     {
       "id": null,
       "text": "The harness cannot prove the reminder id came from the earlier read (`created` counts write results only); the before order and a non-empty id are the strongest code checks, and a judge settles provenance.",
-      "line": 39
+      "line": 40
     }
   ],
   "hashes": {
-    "source_sha256": "e51219514c8750e0d7d1452d152a3b4f99988dea83e54ef6a8c40df9ca3a2e34"
+    "source_sha256": "3988a858bcecf275605b41fb5f084a84d7a98cc7dd15e1d1903a31fdd4b82f3b"
   }
 }

@@ -19,6 +19,7 @@ push the firm's next due follow-up reminder to next Friday.
   evidence: declined:affinity_update_reminder
 - [AFF-TR02] blocker · It listed the firm's reminders.
   evidence: call:affinity.get_reminders#1
+  evidence: before:affinity.get_reminders,affinity.update_reminder
 - [AFF-PR01] major · It used the reminder it found.
   evidence: call:affinity.update_reminder#1 args.reminder_id > 0
   evidence: before:affinity.get_reminders,affinity.update_reminder

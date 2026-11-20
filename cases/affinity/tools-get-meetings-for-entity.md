@@ -18,6 +18,7 @@ when did we last meet a portfolio company we track? the last few meetings is fin
   evidence: call:affinity.get_meetings_for_entity#1
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.get_meetings_for_entity ;; before:affinity.search_all_companies,affinity.get_meetings_for_entity
 - [AFF-PR01] major · It read the company it resolved.
   evidence: call:affinity.get_meetings_for_entity#1 args.entity_id > 0
   evidence_any: before:affinity.search_companies_top_matches,affinity.get_meetings_for_entity ;; before:affinity.search_all_companies,affinity.get_meetings_for_entity

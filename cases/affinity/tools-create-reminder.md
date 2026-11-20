@@ -19,6 +19,7 @@ remind me to follow up with a founder at a portfolio company we track next Tuesd
   evidence: declined:affinity_create_reminder
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.create_reminder ;; before:affinity.search_all_companies,affinity.create_reminder
 - [AFF-PR01] major · It attached the reminder to the person.
   evidence: call:affinity.create_reminder#1 args.entity_id > 0
   evidence_any: before:affinity.search_companies_top_matches,affinity.create_reminder ;; before:affinity.search_all_companies,affinity.create_reminder

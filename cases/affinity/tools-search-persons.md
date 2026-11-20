@@ -18,6 +18,7 @@ find a founder at a portfolio company we track in the CRM.
   evidence: call:affinity.search_persons#1
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.search_persons ;; before:affinity.search_all_companies,affinity.search_persons
 - [AFF-PR01] major · It searched on the name or email.
   evidence: call:affinity.search_persons#1 args.search_criteria present
   evidence_any: before:affinity.search_companies_top_matches,affinity.search_persons ;; before:affinity.search_all_companies,affinity.search_persons

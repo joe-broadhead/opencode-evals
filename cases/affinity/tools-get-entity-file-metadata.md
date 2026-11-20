@@ -18,6 +18,7 @@ what's the most recent file we have — size, type and when it was uploaded?
   evidence: call:affinity.get_entity_file_metadata#1
 - [AFF-TR02] blocker · It searched the files first.
   evidence: call:affinity.search_files#1
+  evidence: before:affinity.search_files,affinity.get_entity_file_metadata
 - [AFF-PR01] major · It read the file it found.
   evidence: call:affinity.get_entity_file_metadata#1 args.file_id > 0
   evidence: before:affinity.search_files,affinity.get_entity_file_metadata

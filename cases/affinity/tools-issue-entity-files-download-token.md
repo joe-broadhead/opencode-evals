@@ -19,6 +19,7 @@ get me a download link for the most recent deck.
   evidence: declined:affinity_issue_entity_files_download_token
 - [AFF-TR02] blocker · It searched the files first.
   evidence: call:affinity.search_files#1
+  evidence: before:affinity.search_files,affinity.issue_entity_files_download_token
 - [AFF-PR01] major · It used the file it found.
   evidence: call:affinity.issue_entity_files_download_token#1 args.file_id > 0
   evidence: before:affinity.search_files,affinity.issue_entity_files_download_token

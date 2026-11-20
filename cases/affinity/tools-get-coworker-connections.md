@@ -18,6 +18,7 @@ which of my colleagues are connected to a portfolio company we track?
   evidence: call:affinity.get_coworker_connections#1
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.get_coworker_connections ;; before:affinity.search_all_companies,affinity.get_coworker_connections
 - [AFF-PR01] major · It read the company it resolved.
   evidence: call:affinity.get_coworker_connections#1 args.company_id > 0
   evidence_any: before:affinity.search_companies_top_matches,affinity.get_coworker_connections ;; before:affinity.search_all_companies,affinity.get_coworker_connections

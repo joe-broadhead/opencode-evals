@@ -56,6 +56,11 @@
           "tool": "affinity.get_reminders",
           "n": 1,
           "arg": null
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.get_reminders",
+          "other": "affinity.update_reminder"
         }
       ],
       "evidence_any": [],
@@ -90,7 +95,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "AFF-PR02",
@@ -115,7 +120,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "AFF-OC01",
@@ -170,7 +175,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "AFF-OC09",
@@ -182,7 +187,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "AFF-OC02",
@@ -198,7 +203,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "AFF-SF01",
@@ -214,7 +219,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
       "id": "AFF-SF02",
@@ -230,7 +235,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 38
     }
   ],
   "oracle": [],
@@ -238,10 +243,10 @@
     {
       "id": null,
       "text": "The harness cannot prove the reminder id came from the earlier read (`created` counts write results only); the before order and a non-empty id are the strongest code checks, and a judge settles provenance.",
-      "line": 41
+      "line": 42
     }
   ],
   "hashes": {
-    "source_sha256": "b0b28218caabcf6468e5f64fbf68124d39d9dd626bb13ff5cc2b909b0c4fbbbd"
+    "source_sha256": "799b0412ea9bdc5aff9a3627094bc459c7ec64db1422da6f463781a4804a9f94"
   }
 }

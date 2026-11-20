@@ -19,6 +19,7 @@ set a portfolio company we track's domain to acme.example and add the new websit
   evidence: declined:affinity_update_company
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.update_company ;; before:affinity.search_all_companies,affinity.update_company
 - [AFF-PR01] major · It used the company it resolved.
   evidence: call:affinity.update_company#1 args.company_id > 0
   evidence_any: before:affinity.search_companies_top_matches,affinity.update_company ;; before:affinity.search_all_companies,affinity.update_company

@@ -61,6 +61,18 @@
             "n": 1,
             "arg": null
           }
+        ],
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.get_company_list_entries"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.get_company_list_entries"
+          }
         ]
       ],
       "na_when": [],
@@ -102,7 +114,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "AFF-OC09",
@@ -114,7 +126,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "AFF-OC01",
@@ -130,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "AFF-SF01",
@@ -150,7 +162,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "AFF-SF02",
@@ -166,12 +178,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9f5b448a93bf6c05dbeec245c6442732cbc9ec3ba2e9847743a992b858c496c8"
+    "source_sha256": "763babb0af8148ee6e38ee50531d25499b6be5c6c4878a7e26cdf559194f69ee"
   }
 }

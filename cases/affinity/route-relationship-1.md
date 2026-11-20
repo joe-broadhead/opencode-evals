@@ -18,6 +18,7 @@ who at the firm knows a founder at a portfolio company we track best?
   evidence: call:affinity.get_person_relationships#1
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.get_person_relationships ;; before:affinity.search_all_companies,affinity.get_person_relationships
 - [AFF-RT02] blocker · It did not search mail or calendar for it.
   evidence: absent:gws.*
 - [AFF-PR01] major · It read the person the search returned.

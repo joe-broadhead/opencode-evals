@@ -5,7 +5,7 @@
   "skill": "affinity-write",
   "tier": "T3",
   "source": "wave sweep: update_field (renames or edits a field)",
-  "decision": "A field rename reads the company fields, picks a global one, and is graded at the declined call",
+  "decision": "A field rename reads the company fields, picks a global one, and is graded at the declined call; a request to say which field is also accepted",
   "data_check": "the evals account sees at least one global company field (20 Nov)",
   "prompt": "rename one of our custom company fields to \"Company tier\".",
   "controls": [],
@@ -24,7 +24,7 @@
     {
       "id": "AFF-WR01",
       "severity": "blocker",
-      "ask": "Exactly one update field call, and it was declined.",
+      "ask": "If it attempted the rename, exactly one update field call, and it was declined.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -40,14 +40,20 @@
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.update_field",
+          "n": null
+        }
+      ],
       "maps_to": [],
       "line": 17
     },
     {
       "id": "AFF-TR02",
       "severity": "blocker",
-      "ask": "It read the company fields first.",
+      "ask": "It read the company fields before any rename.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -61,12 +67,23 @@
             "kind": "number",
             "value": 1
           }
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.get_entity_fields",
+          "other": "affinity.update_field"
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.update_field",
+          "n": null
+        }
+      ],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "AFF-PR01",
@@ -86,17 +103,18 @@
             "source": ".+",
             "flags": ""
           }
-        },
-        {
-          "kind": "before",
-          "tool": "affinity.get_entity_fields",
-          "other": "affinity.update_field"
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.update_field",
+          "n": null
+        }
+      ],
       "maps_to": [],
-      "line": 22
+      "line": 25
     },
     {
       "id": "AFF-PR02",
@@ -118,14 +136,20 @@
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.update_field",
+          "n": null
+        }
+      ],
       "maps_to": [],
-      "line": 25
+      "line": 28
     },
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer says the field was not renamed.",
+      "ask": "If it attempted the rename, the answer says the field was not renamed.",
       "forbidden": false,
       "grader": "code",
       "evidence": [],
@@ -173,9 +197,55 @@
           }
         ]
       ],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.update_field",
+          "n": null
+        }
+      ],
       "maps_to": [],
-      "line": 27
+      "line": 31
+    },
+    {
+      "id": "AFF-OC11",
+      "severity": "major",
+      "ask": "If it did not attempt the rename, it asks which field (or lists the candidates) and says nothing was renamed.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(which field|which one|do you mean|which of|the fields|candidates|available fields)",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(not|nothing|didn't|did not|wasn't)\\b.{0,40}\\b(renamed|changed|updated)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [
+        {
+          "kind": "call",
+          "tool": "affinity.update_field",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "maps_to": [],
+      "line": 34
     },
     {
       "id": "AFF-OC09",
@@ -185,9 +255,15 @@
       "grader": "judge",
       "evidence": [],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.update_field",
+          "n": null
+        }
+      ],
       "maps_to": [],
-      "line": 29
+      "line": 38
     },
     {
       "id": "AFF-OC10",
@@ -197,9 +273,15 @@
       "grader": "judge",
       "evidence": [],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "affinity.update_field",
+          "n": null
+        }
+      ],
       "maps_to": [],
-      "line": 31
+      "line": 41
     },
     {
       "id": "AFF-OC02",
@@ -215,7 +297,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 44
     },
     {
       "id": "AFF-SF01",
@@ -231,7 +313,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 48
     },
     {
       "id": "AFF-SF02",
@@ -247,7 +329,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 50
     }
   ],
   "oracle": [],
@@ -255,10 +337,15 @@
     {
       "id": null,
       "text": "The harness cannot prove the field id came from the earlier read (`created` counts write results only); the before order and a non-empty id are the strongest code checks, and a judge settles provenance and the field's global type.",
-      "line": 43
+      "line": 54
+    },
+    {
+      "id": null,
+      "text": "A careful agent may ask which field, since the prompt names none; the case accepts that path.",
+      "line": 55
     }
   ],
   "hashes": {
-    "source_sha256": "c2b69b3ce2c1af901c3990b9aa5edf011f07cc762b34c05262d41e5c41a321c3"
+    "source_sha256": "583c00a3eaaf72c6a195b6687149eed4e5e22a9add5a9ffb336ecee692b22fd7"
   }
 }

@@ -19,6 +19,7 @@ merge a duplicate company record (424245, Acme Test Co) into a portfolio company
   evidence: declined:affinity_merge_companies
 - [AFF-TR02] blocker · It found the company by searching first.
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.merge_companies ;; before:affinity.search_all_companies,affinity.merge_companies
 - [AFF-PR01] major · It named the record to keep.
   evidence: call:affinity.merge_companies#1 args.primary_company_id > 0
   evidence_any: before:affinity.search_companies_top_matches,affinity.merge_companies ;; before:affinity.search_all_companies,affinity.merge_companies

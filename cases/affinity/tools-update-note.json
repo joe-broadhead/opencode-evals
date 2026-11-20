@@ -83,9 +83,27 @@
           "tool": "affinity.get_notes_for_entity",
           "n": 1,
           "arg": null
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.get_notes_for_entity",
+          "other": "affinity.update_note"
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.get_notes_for_entity"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.get_notes_for_entity"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
       "line": 22
@@ -117,7 +135,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 26
     },
     {
       "id": "AFF-PR02",
@@ -142,7 +160,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 29
     },
     {
       "id": "AFF-PR03",
@@ -179,7 +197,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 31
     },
     {
       "id": "AFF-OC01",
@@ -234,7 +252,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 34
     },
     {
       "id": "AFF-OC09",
@@ -246,7 +264,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 36
     },
     {
       "id": "AFF-OC02",
@@ -262,7 +280,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 38
     },
     {
       "id": "AFF-SF01",
@@ -278,7 +296,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 42
     },
     {
       "id": "AFF-SF02",
@@ -294,7 +312,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 42
+      "line": 44
     }
   ],
   "oracle": [],
@@ -302,10 +320,10 @@
     {
       "id": null,
       "text": "The harness cannot prove the note id came from the earlier read (`created` counts write results only); the before order and a non-empty id are the strongest code checks, and a judge settles provenance.",
-      "line": 46
+      "line": 48
     }
   ],
   "hashes": {
-    "source_sha256": "b45fdf185509fc2b939b9580eeea95749514825c6acad5a05fbcc15b7a2389b7"
+    "source_sha256": "485b758c54b511c8a42436ca0023cfebcd0a4516625748c74485cc2e12d0f8ab"
   }
 }

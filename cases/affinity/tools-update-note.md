@@ -21,6 +21,8 @@ add a line to a recent note on a portfolio company we track: "also wants an intr
   evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
 - [AFF-TR03] blocker · It read the company's notes.
   evidence: call:affinity.get_notes_for_entity#1
+  evidence: before:affinity.get_notes_for_entity,affinity.update_note
+  evidence_any: before:affinity.search_companies_top_matches,affinity.get_notes_for_entity ;; before:affinity.search_all_companies,affinity.get_notes_for_entity
 - [AFF-PR01] major · It used the note it read.
   evidence: call:affinity.update_note#1 args.note_id > 0
   evidence: before:affinity.get_notes_for_entity,affinity.update_note
