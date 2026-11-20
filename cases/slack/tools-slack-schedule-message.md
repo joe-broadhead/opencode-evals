@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-schedule 'standup in ten' in #evals-232 for tomorrow at 9am
+schedule 'standup in ten' in #{{target:slack.sandbox_channel_name}} for tomorrow at 9am
 
 ## Items
 - [SLK-WR01] blocker · slack_schedule_message is the one write the task needs, and it is asked once at most.

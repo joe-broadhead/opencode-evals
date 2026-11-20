@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_initiative_labels read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
   "prompt": "list the initiative labels",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "95ca98368ed4268bac03ab483e3d83d3a82836907906de0c990746716cf7a405"
+    "source_sha256": "606e9bfee615b045dbac28cd72a57c14c9fe4088fc7f70aac83b507a3e182f25"
   }
 }

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.5 (commit set)",
   "decision": "In commit mode the planned trash is committed with gws_delete, and the doc is recoverable from the bin.",
   "data_check": "the evals scratch doc exists and the owner owns it",
-  "prompt": "put the evals scratch doc in the bin",
+  "prompt": "put the doc {{target:gws.doc}} in the bin",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -139,6 +139,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "39e5aee62093defb96a73af62f02fc8f5dbcd4f0fffc6f3dc8002b394537f06b"
+    "source_sha256": "aa944bc80960169b93e4803c23929980368a7843f784f89b8713d6d3710c2df3"
   }
 }

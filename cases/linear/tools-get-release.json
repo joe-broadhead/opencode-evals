@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_release read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
-  "prompt": "show release 1.0 in the evals team",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
+  "prompt": "show release {{canary:linear_release}} in the {{target:linear.team_key}} team",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e89c0bfc5c2df880f0a4f71ce18ad329997f99ff350a819f206c3860136ed664"
+    "source_sha256": "d89f22c8faaf538b4bbe8c8b5e3d81378737865160841ec08225d32f2427a3f1"
   }
 }

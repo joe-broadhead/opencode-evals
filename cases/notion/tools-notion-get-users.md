@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The notion-get-users read answers this request from Notion, and changes nothing.
-- Data check: the workspace's own member list; content is unchecked and only route and arguments are graded
+- Data check: the workspace's own member list; content is unchecked and only route and arguments are graded; content unchecked
 - Data: real
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000

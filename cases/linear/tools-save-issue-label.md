@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-rename the flaky label to flaky-test
+rename the label {{canary:linear_issue_label}} to flaky-test
 
 ## Items
 - [LIN-WR01] blocker · save_issue_label is the one write the task needs, and it is asked once at most.

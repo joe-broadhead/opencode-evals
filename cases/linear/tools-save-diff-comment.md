@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-add a review comment on the diff saying the retry needs a bound
+add a review comment on the diff {{canary:linear_diff}} saying the retry needs a bound
 
 ## Items
 - [LIN-WR01] blocker · save_diff_comment is the one write the task needs, and it is asked once at most.

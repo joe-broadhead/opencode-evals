@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: A meeting with no name or date is a question: the agent asks which one and reads nothing.
-- Data check: the sandbox folder holds more than one meeting; content is unchecked; only route, arguments and no-write are graded
+- Data check: the sandbox folder holds more than one meeting; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

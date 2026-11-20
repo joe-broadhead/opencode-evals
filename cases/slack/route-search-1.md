@@ -4,14 +4,14 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A decision in a Slack channel is a Slack search, not a meeting-note query or a web search.
-- Data check: the sandbox channel holds the seeded decision message; content is unchecked; only route, arguments and no-write are graded
+- Data check: the sandbox channel holds the seeded decision message; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
 - Seed: plugins=granola,tavily
 - Set: route
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-what did we decide in #evals-232 about the launch date?
+what did we decide in #{{target:slack.sandbox_channel_name}} about the launch date?
 
 ## Items
 - [SLK-RT01] blocker · The plugin that owns the data answers, not the one that merely sounds close.

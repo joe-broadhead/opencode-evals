@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-restore the retired initiative label
+restore the label {{canary:linear_initiative_label}}
 
 ## Items
 - [LIN-WR01] blocker · restore_initiative_label is the one write the task needs, and it is asked once at most.

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "A past week is one channel read bounded by the week's own Unix seconds, and the answer names the window it covered.",
   "data_check": "the sandbox channel holds messages from last week or none; both are a report",
-  "prompt": "what was posted in #evals-232 last week?",
+  "prompt": "what was posted in #{{target:slack.sandbox_channel_name}} last week?",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -136,6 +136,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "fc6d2ddbb0fcdb6e08e3d087c2abfd5a35ed2a5082eeb0dc4b05ed7a4de64c9e"
+    "source_sha256": "b9878b143f3e6baf448b10054e7875609e650fc1348caeb44483d7b26721326b"
   }
 }

@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: With no page and no change named, the agent asks which page and what to change; it edits nothing.
-- Data check: the workspace has more than one page
+- Data check: the workspace has more than one page; content unchecked
 - Data: seeded
 - Set: deep
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000

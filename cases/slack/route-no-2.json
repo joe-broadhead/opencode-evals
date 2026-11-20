@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A meeting is Granola's or Wispr Flow's, not Slack's, even when the notes were once posted in a channel.",
-  "data_check": "none; the request names no data this plugin holds",
+  "data_check": "none; the request names no data this plugin holds; content unchecked",
   "prompt": "summarise my last meeting and send me the action items",
   "controls": [],
   "budgets": {
@@ -29,11 +29,6 @@
       "forbidden": false,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent",
-          "tool": "slack.*",
-          "n": null
-        },
         {
           "kind": "committed-write"
         },
@@ -61,7 +56,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "SLK-RB02",
@@ -77,12 +72,37 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
+    },
+    {
+      "id": "SLK-RT01",
+      "severity": "blocker",
+      "ask": "It says a meeting is Granola's or Wispr Flow's, not Slack's.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(granola|wispr)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c8ab61ccc2f7f5b6fc9e6a678a7b2283b9e24dca4cc0b7034a4b81954689cd3d"
+    "source_sha256": "28c740da90ca7d8e65c2f1d5110716b86e28beaead09314148efebb551dd4e9f"
   }
 }

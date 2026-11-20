@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "Recent edits are one recent-pages read, and the answer names the window and the pages it found.",
-  "data_check": "the workspace has pages edited last week or none",
+  "data_check": "the workspace has pages edited last week or none; content unchecked",
   "prompt": "what did I edit in Notion last week?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bfb791686d26ea0627176a8febc681448c5c782d9650c981b247e1210494a20b"
+    "source_sha256": "e17f723d498b66ac57cdf23041799c26255da1a536997ea4028a5dc9a1ce16b5"
   }
 }

@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-link the evals review note to its calendar event
+link the meeting note {{canary:notion_page}} to its calendar event
 
 ## Items
 - [NOT-WR01] blocker · notion-link-meeting-note-to-calendar-event is the one write the task needs, and it is asked once at most.

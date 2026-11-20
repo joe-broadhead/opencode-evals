@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-list the in-progress issues in the evals team
+list the in-progress issues in the {{target:linear.team_key}} team
 
 ## Items
 - [LIN-OC01] blocker · list_issues answers the request: the plugin's own tool for this task is called, not a substitute.

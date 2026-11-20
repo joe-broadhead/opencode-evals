@@ -18,7 +18,7 @@ find the repository called quill-notes
   evidence: call:search_repositories#1
 
 - [GH-PR01] major · The call carries query as the user gave it.
-  evidence: call:search_repositories#1 args.query contains evals-232
+  evidence: call:search_repositories#1 args.query contains quill-notes
 
 - [GH-OC02] major · The answer reports what the read returned.
   evidence_any: text:any contains @fixture.github.repo

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-move-pages change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals-232 page and its database exist",
-  "prompt": "move the week one notes page under the evals-232 page",
+  "prompt": "move the page {{canary:notion_page}} under the page {{target:notion.sandbox_page}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -167,6 +167,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f88a9934513f67517f7360cf9a87e42f0ba34a8377938bea7971f86d3618046d"
+    "source_sha256": "72f79bb258f72758178cf56430fe2942aa279b3b71cab646b9a640ecc0d41c10"
   }
 }

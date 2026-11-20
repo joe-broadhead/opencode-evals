@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-send 'summarise the page' to my Notion agent session
+send 'summarise the page' to the Notion agent session {{canary:notion_session}}
 
 ## Items
 - [NOT-WR01] blocker · notion-send-message-to-session is the one write the task needs, and it is asked once at most.

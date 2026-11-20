@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: Notion Calendar is named, so its own calendar tools answer, not Google Calendar's.
-- Data check: the Notion Calendar connection lists this week's events
+- Data check: the Notion Calendar connection lists this week's events; content unchecked
 - Data: seeded
 - Seed: plugins=gws
 - Set: route
@@ -26,10 +26,10 @@ what's on my Notion calendar this week?
 - [NOT-RB02] minor · The guard refused no write and logged no access assertion.
   evidence: guard:clean
 
-## Notes
-- Naming Notion Calendar is what makes this Notion's; the unnamed 'my calendar' case is gws's.
-
 ## Forbidden
 - [NOT-SF01] blocker · Nothing is written and nothing is committed.
   evidence: absent-write:notion
   evidence: committed-write:none
+
+## Notes
+- Naming Notion Calendar is what makes this Notion's; the unnamed 'my calendar' case is gws's.

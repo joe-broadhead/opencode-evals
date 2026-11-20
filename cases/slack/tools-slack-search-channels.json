@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A channel lookup is one channel search, and the answer gives the id it found.",
   "data_check": "the sandbox channel exists and is named evals-232",
-  "prompt": "what's the channel id for #evals-232?",
+  "prompt": "what's the channel id for #{{target:slack.sandbox_channel_name}}?",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -124,6 +124,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "eb8a4cb5df0f605eb552631997e32a053524bc7c815dd5c9ac9d0b8151ad83a6"
+    "source_sha256": "afa455b2f863738b87ce5833c8fc60401f6fd64d8dc56e28b500cffd4580c049"
   }
 }

@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-pin the evals-232 page to my sidebar
+pin the page {{target:notion.sandbox_page}} to my sidebar
 
 ## Items
 - [NOT-WR01] blocker · notion-update-sidebar-tabs is the one write the task needs, and it is asked once at most.

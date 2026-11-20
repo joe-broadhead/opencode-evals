@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-unshare the flaky ingest issue
+unshare the issue {{canary:linear_issue}}
 
 ## Items
 - [LIN-WR01] blocker · unshare_issue is the one write the task needs, and it is asked once at most.

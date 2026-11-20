@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The workspace question is one account read, and the answer names the workspace rather than an email.",
-  "data_check": "the evals account is signed in to Granola; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "the evals account is signed in to Granola; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "which Granola workspace am I in?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f59bf93275fd1eb18cbd30c9d7c65793ad7dbd57e78682147c8633b262bec6a4"
+    "source_sha256": "21dd19643a11a04bb23447bbaa5c37c3d5df06cc9f9158b02ed85a2e1d0739b8"
   }
 }

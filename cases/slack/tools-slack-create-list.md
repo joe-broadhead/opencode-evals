@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-create a list in #evals-232 called eval runs
+create a list in #{{target:slack.sandbox_channel_name}} called eval runs
 
 ## Items
 - [SLK-WR01] blocker · slack_create_list is the one write the task needs, and it is asked once at most.

@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notes of named meetings are read in one call, and the answer reports them in its own words.",
-  "data_check": "the seeded kickoff meeting exists in the evals-232 folder; content is unchecked; only route, arguments and no-write are graded",
-  "prompt": "summarise the evals-232 kickoff meeting",
+  "data_check": "the seeded kickoff meeting exists in the evals-232 folder; content is unchecked; only route, arguments and no-write are graded; content unchecked",
+  "prompt": "summarise the meeting {{target:granola.meetings_with_transcripts}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -103,6 +103,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "46e11ce4f3ea0fc718593870e399c66011775054b9ad55e577eba5d76f618b2e"
+    "source_sha256": "e854a5fd263cc590e1f95d91f3e541b39fe6bb237bfc82733df30e2da74e3ed7"
   }
 }

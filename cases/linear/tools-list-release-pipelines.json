@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_release_pipelines read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
   "prompt": "list the release pipelines",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8566e178db6760ceaeeb0b9a8436a7d5a52bd0d0aa53088542b63c8dbf805416"
+    "source_sha256": "a9e84db260bc69a049080cf7b90dffb8cbe321c01f7d19ba40b655d4ddad84fe"
   }
 }

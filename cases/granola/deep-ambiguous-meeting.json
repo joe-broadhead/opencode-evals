@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "A meeting with no name or date is a question: the agent asks which one and reads nothing.",
-  "data_check": "the sandbox folder holds more than one meeting; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "the sandbox folder holds more than one meeting; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "summarise the meeting",
   "controls": [],
   "budgets": {
@@ -136,6 +136,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7746b67f9da2297d0220e7ada887d691746e4e2a97c3d263dc2f2615ef397d7c"
+    "source_sha256": "1bec3aee3156330ba1ca0140e0ae2a94a7e44b55e78fdc80df75973e62c1cb27"
   }
 }

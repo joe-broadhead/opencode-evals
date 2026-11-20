@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The submit_diff_review change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals team and its seeded issues, labels and project exist",
-  "prompt": "submit the review with one comment",
+  "prompt": "submit the review on the diff {{canary:linear_diff}} with one comment",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bd4d4319a96e371bc7081626a134e2d9a61b69762cc48f58417fb76385312c36"
+    "source_sha256": "6791f62facff598e5733f076b96bbded0c3a5e2296a75b1e0defa1f0ceb0260e"
   }
 }

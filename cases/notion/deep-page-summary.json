@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "The page is found, fetched whole, and summarised from its own words, with the action items separated from the prose.",
-  "data_check": "the evals-232 page holds a summary and three action items",
-  "prompt": "summarise the evals-232 page and list its action items",
+  "data_check": "the evals-232 page holds a summary and three action items; content unchecked",
+  "prompt": "summarise the page {{target:notion.sandbox_page}} and list its action items",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -119,6 +119,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b24d7d732f5f20995fcdfc218de7dec3eb085be76bab9fa5130b0afbf563c7d7"
+    "source_sha256": "5e8096449355153901bc86660044969ed947617ef22e6e5fed3c50d797623861"
   }
 }

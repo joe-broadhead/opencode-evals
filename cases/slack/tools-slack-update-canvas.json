@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A canvas edit is one update on the sandbox canvas, declined, and the answer says nothing changed.",
   "data_check": "the sandbox canvas exists",
-  "prompt": "add a line to the evals canvas saying the check passed",
+  "prompt": "add a line to the canvas {{target:slack.sandbox_canvas}} saying the check passed",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -170,6 +170,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9d9f9a79f783dad50e641a6e79615b2833b97aec9be69620818de66958ab3244"
+    "source_sha256": "559bbd0bea5221bbdcc5484628078c4b91d9db97cfc99bb0ebfcc8ea19ca280e"
   }
 }

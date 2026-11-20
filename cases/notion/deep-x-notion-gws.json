@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "The cross-plugin task reads the Doc with gws and creates a Notion page; the create is declined and the answer shows what it would have written.",
   "data_check": "the evals-232 launch Doc exists, and the evals-232 page exists in Notion",
-  "prompt": "copy the launch plan from the Google Doc called evals-232 launch into a new Notion page under evals-232",
+  "prompt": "copy the launch plan from the Google Doc {{target:gws.doc}} into a new Notion page under the page {{target:notion.sandbox_page}}",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -26,6 +26,24 @@
   "data": "seeded",
   "items": [
     {
+      "id": "NOT-OC01",
+      "severity": "blocker",
+      "ask": "The answer carries a fact only the Doc holds, so the Doc was read before anything was written.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "canary",
+          "span": "any",
+          "name": "notion_doc"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
       "id": "NOT-WR01",
       "severity": "blocker",
       "ask": "One Notion page create is attempted.",
@@ -42,7 +60,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 21
     },
     {
       "id": "NOT-WR02",
@@ -59,7 +77,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 24
     },
     {
       "id": "NOT-WR03",
@@ -94,7 +112,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 27
     },
     {
       "id": "NOT-RB01",
@@ -110,7 +128,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 30
     },
     {
       "id": "NOT-RB02",
@@ -126,7 +144,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 33
     },
     {
       "id": "NOT-SF00",
@@ -146,12 +164,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 37
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "38b474b52941e6f0100ff1550b8065b8f60de88d124fbd710c44b7b3d960d052"
+    "source_sha256": "8b52e5d401bf3d4342faf137631c2d57207e7871f7dd5694a9fcf1cd64b71a38"
   }
 }

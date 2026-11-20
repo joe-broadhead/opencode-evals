@@ -4,13 +4,13 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The notion-list-page-backlinks read answers this request from Notion, and changes nothing.
-- Data check: the private evals-232 page and its database exist
+- Data check: the private evals-232 page and its database exist; content unchecked
 - Data: seeded
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-where is the evals-232 page mentioned?
+where is the page {{target:notion.sandbox_page}} mentioned?
 
 ## Items
 - [NOT-OC01] blocker · notion-list-page-backlinks answers the request: the plugin's own tool for this task is called, not a substitute.

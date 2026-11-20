@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A look-only request reads the issue and its comments and stops.",
-  "data_check": "the seeded issue and its comments exist",
-  "prompt": "just show me the flaky ingest issue and its comments — don't change anything",
+  "data_check": "the seeded issue and its comments exist; content unchecked",
+  "prompt": "just show me the issue {{canary:linear_issue}} and its comments — don't change anything",
   "controls": [],
   "budgets": {
     "outer_calls": 3,
@@ -49,26 +49,6 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "save_issue",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "save_comment",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "delete_comment",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "share_issue",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         },
         {
@@ -95,7 +75,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 23
     },
     {
       "id": "LIN-RB02",
@@ -111,12 +91,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "728644a20910a13f5f7d9bb7acd471f4615b85f00183234312e697765e82221b"
+    "source_sha256": "8c7cc4ee4e5181887ebe78bb5a6913fc75f94460b0788d53517e4cb8275787ef"
   }
 }

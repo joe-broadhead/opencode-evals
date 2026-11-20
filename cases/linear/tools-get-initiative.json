@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_initiative read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
-  "prompt": "show the evals initiative",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
+  "prompt": "show the initiative {{canary:linear_initiative}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fc4132a45e48024e9b8783e947922319324b9e28d3e4a8263d808eed5b338a79"
+    "source_sha256": "eb15c0c31c472caa5314cea524cba9b5921ae13dce725379bf1fa06ff7cfdde1"
   }
 }

@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-take the subjects of my three most recent unread messages and add them as rows to the evals sheet
+take the subjects of my three most recent unread messages and add them as rows to the sheet {{target:gws.sheet}}
 
 ## Items
 - [GWS-OC01] blocker · The unread messages are read first.

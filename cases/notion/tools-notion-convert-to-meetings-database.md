@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-turn the evals notes page into a meetings database
+turn the page {{canary:notion_page}} into a meetings database
 
 ## Items
 - [NOT-WR01] blocker · notion-convert-to-meetings-database is the one write the task needs, and it is asked once at most.

@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-finish uploading the file I just started to #evals-232
+finish uploading the file {{canary:slack_upload_id}} I started to #{{target:slack.sandbox_channel_name}}
 
 ## Items
 - [SLK-WR01] blocker · slack_complete_file_upload is the one write the task needs, and it is asked once at most.

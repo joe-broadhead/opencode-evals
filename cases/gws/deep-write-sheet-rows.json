@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "A multi-step change reads first, then plans one append, and the commit is declined; it never writes while reading.",
   "data_check": "the inbox has at least three unread messages and the evals sheet exists; content is unchecked; only route, arguments and the declined call are graded",
-  "prompt": "take the subjects of my three most recent unread messages and add them as rows to the evals sheet",
+  "prompt": "take the subjects of my three most recent unread messages and add them as rows to the sheet {{target:gws.sheet}}",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -196,6 +196,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b31213741af925ae1c501a4ae7b83ec39521d9ea256611012b84a9a26fb88a6d"
+    "source_sha256": "b76787ad952524dbb654e4d1e4ea4562a54885d04b1dacd879288ae69b189b68"
   }
 }

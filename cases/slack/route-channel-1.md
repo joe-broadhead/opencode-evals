@@ -4,14 +4,14 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A channel post is Slack's, not Gmail's or a Notion comment.
-- Data check: the sandbox channel exists
+- Data check: the sandbox channel exists; content unchecked
 - Data: seeded
 - Seed: plugins=gws,notion
 - Set: route
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-post the standup summary in #evals-232
+post the standup summary in #{{target:slack.sandbox_channel_name}}
 
 ## Items
 - [SLK-RT01] blocker · The plugin that owns the data answers, not the one that merely sounds close.

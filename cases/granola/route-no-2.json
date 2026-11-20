@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "Mail is Gmail's, not a Granola read, even when a meeting once mentioned it.",
-  "data_check": "none; the request names no data this plugin holds; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "none; the request names no data this plugin holds; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "check my inbox for anything from the landlord",
   "controls": [],
   "budgets": {
@@ -29,11 +29,6 @@
       "forbidden": false,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent",
-          "tool": "granola.*",
-          "n": null
-        },
         {
           "kind": "committed-write"
         },
@@ -61,7 +56,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "GRA-RB02",
@@ -77,12 +72,37 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
+    },
+    {
+      "id": "GRA-RT01",
+      "severity": "blocker",
+      "ask": "It says mail is Gmail's, not Granola's.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(gmail|google workspace)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f5875307b2565531f0ffb1dd3395a13e24cdf0235e3f0975d248761bb9666da6"
+    "source_sha256": "d78fd63f8d2beebf4fcc0580e1575565c5fae98fabcbc6bd362ab5a2f98f95a1"
   }
 }

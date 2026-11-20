@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-search-agents read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
-  "prompt": "find the Notion agent called evals",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
+  "prompt": "find the Notion agent {{canary:notion_agent}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a97d50ff7d1d376dc19c23e4d1c028149ed0c5bdd7e138d3400239805df4838c"
+    "source_sha256": "7369f34ed4e68e596178d593e66ed8339646cbd6bfbf1cbd4e1fa952dcba73f7"
   }
 }

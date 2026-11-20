@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A GitHub issue is read from GitHub, not from Linear or Jira.
-- Data check: the harness's fake GitHub holds the quill-notes fixture
+- Data check: the harness's fake GitHub holds the quill-notes fixture; content unchecked
 - Data: synthetic
 - Seed: plugins=linear,jira
 - Set: route

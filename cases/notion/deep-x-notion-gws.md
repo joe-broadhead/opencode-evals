@@ -12,9 +12,12 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-copy the launch plan from the Google Doc called evals-232 launch into a new Notion page under evals-232
+copy the launch plan from the Google Doc {{target:gws.doc}} into a new Notion page under the page {{target:notion.sandbox_page}}
 
 ## Items
+- [NOT-OC01] blocker · The answer carries a fact only the Doc holds, so the Doc was read before anything was written.
+  evidence: text:any contains @canary.notion_doc
+
 - [NOT-WR01] blocker · One Notion page create is attempted.
   evidence: count:notion-create-pages <= 1
 

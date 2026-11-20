@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The list_notifications read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.
-- Data check: the harness's fake GitHub holds the quill-notes fixture
+- Data check: the harness's fake GitHub holds the quill-notes fixture; content unchecked
 - Data: synthetic
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000

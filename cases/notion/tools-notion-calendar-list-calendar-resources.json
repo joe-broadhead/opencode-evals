@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-calendar-list-calendar-resources read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "what rooms and resources does Notion Calendar have?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cd9e2dc75053596cb317ab73a74f95d6be38d228551009422ab7b7ea54817abb"
+    "source_sha256": "befa2aa256bf95e1c8fc3c699d3c312f411c698c87493593e282c9f9d56b8877"
   }
 }

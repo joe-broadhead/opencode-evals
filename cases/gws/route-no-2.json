@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A question outside Google Workspace is not answered with a Workspace tool.",
-  "data_check": "none; the request names no data this plugin holds",
+  "data_check": "none; the request names no data this plugin holds; content unchecked",
   "prompt": "what's the weather in Lisbon this weekend?",
   "controls": [],
   "budgets": {
@@ -29,11 +29,6 @@
       "forbidden": false,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent",
-          "tool": "gws.*",
-          "n": null
-        },
         {
           "kind": "committed-write"
         },
@@ -61,7 +56,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "GWS-RB02",
@@ -77,7 +72,40 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
+    },
+    {
+      "id": "GWS-RT01",
+      "severity": "blocker",
+      "ask": "The weather question is routed to the weather tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "utilities.weather_summary",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "utilities.weather_current",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "utilities.weather_daily",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     }
   ],
   "oracle": [],
@@ -85,10 +113,10 @@
     {
       "id": null,
       "text": "No gws tool is called at all: the request names no mail, file, calendar or task.",
-      "line": 28
+      "line": 30
     }
   ],
   "hashes": {
-    "source_sha256": "fa30f2452e29f34cb21bd4c3bd9510a1c178940d48bb07e50dc966fb50d1c013"
+    "source_sha256": "4690002e50aa510238fc7ac0080d06b4340c9acf43ba6ef2656aaa0a0f4faf58"
   }
 }

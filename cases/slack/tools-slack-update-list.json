@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A list change is one update on the sandbox list, declined, and the answer says nothing changed.",
   "data_check": "the sandbox list exists",
-  "prompt": "rename the evals list to eval runs 232",
+  "prompt": "rename the list {{target:slack.sandbox_list}} to eval runs 232",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -170,6 +170,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "126647bb162eaa40d9e5f647664d3990a69232178e76eb2a0d05d5454311fa39"
+    "source_sha256": "ac0dbd2d6f41b00e0721c4fb5de3d1245715cc439f1bc72cd4a5acc2cbbbd6e5"
   }
 }

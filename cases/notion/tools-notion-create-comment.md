@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-comment on the evals-232 page: the review is done
+comment on the page {{target:notion.sandbox_page}}: the review is done
 
 ## Items
 - [NOT-WR01] blocker · notion-create-comment is the one write the task needs, and it is asked once at most.

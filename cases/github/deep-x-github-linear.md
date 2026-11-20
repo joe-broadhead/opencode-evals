@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.3 (deep)
 - Decision tested: The cross-plugin task reads the issue with GitHub and creates with Linear; the create is declined and the answer shows what it would have filed.
-- Data check: the harness's fake GitHub holds the quill-notes fixture
+- Data check: the harness's fake GitHub holds the quill-notes fixture; content unchecked
 - Data: synthetic
 - Seed: plugins=github,linear
 - Set: deep

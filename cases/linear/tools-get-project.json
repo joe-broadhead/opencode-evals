@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_project read answers this request from Linear, and changes nothing.",
   "data_check": "the private evals team and its seeded issues exist",
-  "prompt": "show the evals project",
+  "prompt": "show the {{target:linear.project}} project",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -45,22 +45,20 @@
       "line": 17
     },
     {
-      "id": "LIN-PR01",
+      "id": "LIN-CT01",
       "severity": "major",
-      "ask": "The call carries query as the user gave it.",
+      "ask": "The lookup names the sandbox project.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "get_project",
           "n": 1,
           "arg": "args.query",
-          "op": "contains",
-          "value": {
-            "kind": "string",
-            "value": "evals"
-          }
+          "aliases": [
+            "@linear.project"
+          ]
         }
       ],
       "evidence_any": [],
@@ -124,6 +122,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d6efac5888a5c8ee6c5033dadaeaeaccb0404a5deb8c0a863307202ad09be077"
+    "source_sha256": "847699a2b373a92205bf4dcac47a2b2760947d1abe13208588f3b612e0d2b9b9"
   }
 }

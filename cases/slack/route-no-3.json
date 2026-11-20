@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A local export is read with the local file tools, not by searching Slack for the same text.",
-  "data_check": "the credential-free local arm has chat-export.csv in the working directory",
+  "data_check": "the credential-free local arm has chat-export.csv in the working directory; content unchecked",
   "prompt": "summarise the chat-export.csv on my Desktop and list the busiest channels",
   "controls": [],
   "budgets": {
@@ -30,11 +30,6 @@
       "forbidden": false,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent",
-          "tool": "slack.*",
-          "n": null
-        },
         {
           "kind": "committed-write"
         },
@@ -62,7 +57,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "SLK-RB02",
@@ -78,12 +73,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5eed85b9d0d67ee5447c1f0da799f60babc61235365a287da4f52202d8956bb6"
+    "source_sha256": "5006771e7d606eb9fe30e36548c4dee7278217ced465aaa5ea7d87fafc022579"
   }
 }

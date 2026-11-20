@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-what's the channel id for #evals-232?
+what's the channel id for #{{target:slack.sandbox_channel_name}}?
 
 ## Items
 - [SLK-OC01] blocker · slack_search_channels answers the request: the plugin's own tool for this task is called, not a substitute.

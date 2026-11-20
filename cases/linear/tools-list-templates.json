@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_templates read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
   "prompt": "list the templates",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d4d0c1076e1be019b3940c69cb3473819e057786b410c0490d1e486fdb7dff70"
+    "source_sha256": "a1860ead412d1db40773ba71647573e61b56fed7dc59d36b3d3a27e826c54a35"
   }
 }

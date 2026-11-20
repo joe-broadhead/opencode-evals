@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "Folders are one folder list, and the answer names the sandbox folder it found.",
-  "data_check": "the evals-232 folder exists and is not shared; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "the evals-232 folder exists and is not shared; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "list my Granola folders",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5b346ea2b618b7ac0e4cec1788b8ce846539411ca89c3576849c2d6a6a883ae1"
+    "source_sha256": "a8c0b0bc5f92a961f1f1af1abe8cc90f8b09f3fcbbc6425f68767988b00855d7"
   }
 }

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "A create is one save_issue with the team's real values, declined, and the answer shows what it would have created.",
   "data_check": "the private evals team exists",
-  "prompt": "create an issue in the evals team: the ingest job is flaky again, please fix it this week",
+  "prompt": "create an issue in the {{target:linear.team_key}} team: the ingest job is flaky again, please fix it this week",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -184,6 +184,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e8d757dd11e2fafe021dfaf88173b0b628678cc96e13573a6465e13cafd72757"
+    "source_sha256": "4fe79b08af94dfc38aa6f00d0156a180ef67f687e49380907b6f4e08e28ea41f"
   }
 }

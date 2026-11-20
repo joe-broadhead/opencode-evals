@@ -93,12 +93,12 @@
           "ns": "gws"
         },
         {
+          "kind": "committed-write"
+        },
+        {
           "kind": "absent",
           "tool": "gws.plan",
           "n": null
-        },
-        {
-          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
@@ -116,6 +116,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "d11600f740f4a29df3c5861c98c925849941f95e8f80aed4ae6b327051dc68c1"
+    "source_sha256": "ae0fe697ceeece5cdbea18b68e99c3465b4d191ade2f5f5ef07cdb5c30f392e1"
   }
 }

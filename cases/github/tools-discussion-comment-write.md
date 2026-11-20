@@ -6,7 +6,7 @@
 - Decision tested: The discussion_comment_write write is the one the task needs, and at ask-changes it is asked once and declined.
 - Data check: the harness's fake GitHub holds the quill-notes fixture
 - Data: synthetic
-- Checkable: discussion_number
+- Checkable: discussion_number, discussionNumber
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
@@ -18,7 +18,7 @@ comment on discussion 1 that the proposal looks good
   evidence: count:discussion_comment_write <= 1
 
 - [GH-PR01] major · The call carries discussion_number as the user gave it.
-  evidence: call:discussion_comment_write#1 args.discussion_number == 5
+  evidence: call:discussion_comment_write#1 args.discussionNumber == 1
 
 - [GH-WR02] blocker · The write was declined by the permission prompt, and never reached the vendor.
   evidence: declined:discussion_comment_write

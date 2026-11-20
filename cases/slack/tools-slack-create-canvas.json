@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A new canvas is one create call in the named channel, declined, and the answer says it was not made.",
   "data_check": "the sandbox channel exists",
-  "prompt": "make a canvas in #evals-232 called evals run notes with a heading and one line",
+  "prompt": "make a canvas in #{{target:slack.sandbox_channel_name}} called evals run notes with a heading and one line",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -172,6 +172,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "29bba31ef314c678c9e4ce7eac3619dd05a18c6e5c3a6df0c683ace72472c47d"
+    "source_sha256": "9d14c2678939654f920241efb5cd3262df7cfe095b49f17eece4b90b2d62d9bf"
   }
 }

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "Membership is one member list for the named channel, and the answer names the members it was allowed to see.",
   "data_check": "the sandbox channel is private with the owner as its only member",
-  "prompt": "who is in #evals-232?",
+  "prompt": "who is in #{{target:slack.sandbox_channel_name}}?",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -122,6 +122,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7879d69c70f028b4db58db0f7b689a51d70fe928703826f3701ae03f5c04da83"
+    "source_sha256": "b8283324578ca6d788f1417895d6fa9ae16558bea9d178cb0443b1fb140c80ab"
   }
 }

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "With no team, title or description, the agent asks for them instead of creating a placeholder issue.",
-  "data_check": "the workspace has more than one team",
+  "data_check": "the workspace has more than one team; content unchecked",
   "prompt": "create an issue for the bug",
   "controls": [],
   "budgets": {
@@ -131,6 +131,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "cffeb3c67b1e6962285b2e1aa5048d3b58c4492a76bad7657502017beca74b6a"
+    "source_sha256": "912111be68135134cc792484bdd53e6d85a6846c2b59a2c06d1f7f7bb3525a12"
   }
 }

@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-move the kickoff note into the evals-232 folder
+move the kickoff note into the folder {{target:granola.folder}}
 
 ## Items
 - [GRA-WR01] blocker · add_note_to_folder is the one write the task needs, and it is asked once at most.

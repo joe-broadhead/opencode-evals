@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "Mail goes through Gmail, not a Slack DM, a Notion comment or a file.",
-  "data_check": "the owner's address is the signed-in account",
+  "data_check": "the owner's address is the signed-in account; content unchecked",
   "prompt": "email me the one-line summary we just agreed",
   "controls": [],
   "budgets": {
@@ -126,6 +126,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "55d5a234ed7d32f0376855d81a055f18226f38d5cfc4ad66a4ed54ef1cef42b6"
+    "source_sha256": "70ead6683e0cd3704a5ace12626daf5a01cb34411e5c966c593d245b2bff4779"
   }
 }

@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "A reply with no message named is a question: the agent asks which message and sends nothing.",
-  "data_check": "the sandbox channel holds more than one message",
-  "prompt": "reply to that message in #evals-232 and say we agree",
+  "data_check": "the sandbox channel holds more than one message; content unchecked",
+  "prompt": "reply to that message in #{{target:slack.sandbox_channel_name}} and say we agree",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -126,6 +126,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3df4c44cc1cfb54d3bc5b91bb53ce23c39f761764ed90c8b63adc7db0ec3e30e"
+    "source_sha256": "e86f93dd0a4d7638ecd6a61c2764370e8b34df55b0bf6146ed1ec9f9a9bdff1e"
   }
 }

@@ -12,7 +12,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-summarise my unread mail and post the summary to #evals-232
+summarise my unread mail and post the summary to {{target:slack.sandbox_channel}}
 
 ## Items
 - [GWS-OC01] blocker · The mail is read with gws, one list of the unread messages.
@@ -30,9 +30,9 @@ summarise my unread mail and post the summary to #evals-232
 ## Forbidden
 - [GWS-SF00] blocker · Nothing is posted to Slack and no gws write runs.
   evidence: absent-write:slack
-  evidence: absent:gws.plan
   evidence: committed-write:none
   evidence: absent-write:gws
+  evidence: absent:gws.plan
 
 ## Notes
 - A cross-plugin deep case cannot name the companion's write tool outside set route, so the declined Slack send is graded as `absent-write:slack` plus the answer.

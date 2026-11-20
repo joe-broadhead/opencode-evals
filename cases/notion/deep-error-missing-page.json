@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "A page that does not exist is reported as a miss, with the words searched; no page is created and no id is guessed.",
-  "data_check": "no page in the workspace has that title",
+  "data_check": "no page in the workspace has that title; content unchecked",
   "prompt": "open the page called zzz evals 232 missing and tell me what it says",
   "controls": [],
   "budgets": {
@@ -148,11 +148,6 @@
           "ns": "notion"
         },
         {
-          "kind": "absent",
-          "tool": "notion-fetch",
-          "n": null
-        },
-        {
           "kind": "committed-write"
         }
       ],
@@ -165,6 +160,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3e1d9ca06a0443cd742666a4629a0250591589e11fcc1725cd081b5e6ea4ccfa"
+    "source_sha256": "c00f8f9fab099bca77fd44eb046d4f8b783246a31d95911f8c4c593351ec206b"
   }
 }

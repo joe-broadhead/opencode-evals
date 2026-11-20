@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-get-version-changes read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
-  "prompt": "what changed on the evals-232 page recently?",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
+  "prompt": "what changed on the page {{target:notion.sandbox_page}} recently?",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e2ddd56384d1bbf54e826567e48611ace5e785ed4bb25ffe9ca5777850cf7256"
+    "source_sha256": "3fca61263d798c0d66a5d14010cbf5042a73230170c020bcf3d8a07b241aafad"
   }
 }

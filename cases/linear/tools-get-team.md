@@ -4,13 +4,13 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The get_team read answers this request from Linear, and changes nothing.
-- Data check: the private evals team and its seeded issues exist
+- Data check: the private evals team and its seeded issues exist; content unchecked
 - Data: seeded
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-show the evals team
+show the {{target:linear.team_key}} team
 
 ## Items
 - [LIN-OC01] blocker · get_team answers the request: the plugin's own tool for this task is called, not a substitute.

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "Reactions are one reaction read on the message, not a thread read parsed by eye.",
   "data_check": "the pinned message has at least one seeded reaction",
-  "prompt": "what reactions did the pinned message in #evals-232 get?",
+  "prompt": "what reactions did the message {{canary:slack_pinned_ts}} in #{{target:slack.sandbox_channel_name}} get?",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -122,6 +122,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0e4a7337f14b250facdccf13ecc8408d18389041ce992c0be3e97d7eb0220de5"
+    "source_sha256": "5a7fda5719d0485428c0909a372525075875d1178dd95f34d20d5e38812d4dcb"
   }
 }

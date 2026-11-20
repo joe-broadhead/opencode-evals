@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_notifications read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
   "prompt": "what are my Linear notifications?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b43ff65b57cf395e30c83e538f71cda1cd08091da2054a08f4d376d21ac76019"
+    "source_sha256": "2ca981754cf0720408a23bf60ddaf1599ef008a380c114e2fb63742df6825661"
   }
 }

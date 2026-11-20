@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.5 (commit set)",
   "decision": "In commit mode the planned calendar insert is committed with its planId, on the evals calendar only.",
   "data_check": "the evals-232 secondary calendar exists and the owner owns it",
-  "prompt": "put a 30-minute event called evals-232 check on my evals calendar tomorrow at 9am",
+  "prompt": "put a 30-minute event called evals-232 check on the calendar {{target:gws.calendar}} tomorrow at 9am",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -134,6 +134,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "2a5174a161d3ea399b0e34594125d7127944a30e695c2370a4d4668853a23401"
+    "source_sha256": "4d420de747568ac125dbd705a0119e0cbf4148576357be2a4bc68aab18179296"
   }
 }

@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A meeting transcript search is Granola's, not a Slack search of the same words.
-- Data check: the seeded kickoff transcript mentions the budget; content is unchecked; only route, arguments and no-write are graded
+- Data check: the seeded kickoff transcript mentions the budget; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
 - Seed: plugins=slack
 - Set: route

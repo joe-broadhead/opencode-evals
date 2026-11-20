@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-read the thread on the pinned message in #evals-232 and tell me what was agreed
+read the thread on the message {{canary:slack_pinned_ts}} in #{{target:slack.sandbox_channel_name}} and tell me what was agreed
 
 ## Items
 - [SLK-OC01] blocker · slack_read_thread answers the request: the plugin's own tool for this task is called, not a substitute.

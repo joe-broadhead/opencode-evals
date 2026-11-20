@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-list-recent-pages read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "what Notion pages did I edit recently?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "12565693826d78989f58490c9e80b90892e0f4edbd18e32b7a5cf473144f3a93"
+    "source_sha256": "28e60e35701e06457c147b92143c74522c2ef1cba5ab77185d6e38ec129b4ae9"
   }
 }

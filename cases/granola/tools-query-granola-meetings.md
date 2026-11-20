@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: A question across chosen meetings is one query bounded by document_ids, and its citations are kept.
-- Data check: the kickoff and review meetings exist in the sandbox folder; content is unchecked; only route, arguments and no-write are graded
+- Data check: the kickoff and review meetings exist in the sandbox folder; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
 - Checkable: document_ids
 - Set: wide

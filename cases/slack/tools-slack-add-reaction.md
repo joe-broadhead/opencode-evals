@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-react with a check mark to the pinned message in #evals-232
+react with a check mark to the message {{canary:slack_pinned_ts}} in #{{target:slack.sandbox_channel_name}}
 
 ## Items
 - [SLK-WR01] blocker · slack_add_reaction is the one write the task needs, and it is asked once at most.

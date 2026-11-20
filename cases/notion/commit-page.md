@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-create a page under evals-232 called evals-232 commit check with one line of text
+create a page under the page {{target:notion.sandbox_page}} called evals-232 commit check with one line of text
 
 ## Items
 - [NOT-CT01] blocker · One page is created under the sandbox page.

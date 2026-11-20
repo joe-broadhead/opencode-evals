@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-calendar-list-coworkers-events read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "what are my coworkers' events this week in Notion Calendar?",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4939d972686ccaf682dfdf2df75c511c702575a9ac1729123b053b60ac471fc8"
+    "source_sha256": "3ff3f6b34bd7506432f55479dbe6c6ba697ea2660ec7a29900f0d8993ce1ff32"
   }
 }

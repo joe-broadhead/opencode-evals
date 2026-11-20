@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-query-sessions read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "list my Notion agent sessions",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "59974bd3edbd5ac0a079f9d6ccb8fc211845bb6a918d219e94c8afa261899e3c"
+    "source_sha256": "df0fc3b7f1c554acbc9370c89c44064a959aa67a6c682a63d37930e499c8d5e2"
   }
 }

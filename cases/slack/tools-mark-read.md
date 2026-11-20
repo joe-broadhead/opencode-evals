@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-mark #evals-232 as read
+mark #{{target:slack.sandbox_channel_name}} as read
 
 ## Items
 - [SLK-WR01] blocker · mark_read is the one write the task needs, and it is asked once at most.

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-update-page change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals-232 page and its database exist",
-  "prompt": "add a line to the evals-232 page saying status done",
+  "prompt": "add a line to the page {{target:notion.sandbox_page}} saying status done",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -167,6 +167,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b91771ec3b8314365a843b65814203eff46d71bfce6f8e3699997318e3d06ccb"
+    "source_sha256": "f3cad7f6073fde4e856d51bfd536d027e4e37dfc8287e77c72bbf768c981da22"
   }
 }

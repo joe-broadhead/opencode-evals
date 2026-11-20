@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-what reactions did the pinned message in #evals-232 get?
+what reactions did the message {{canary:slack_pinned_ts}} in #{{target:slack.sandbox_channel_name}} get?
 
 ## Items
 - [SLK-OC01] blocker · slack_get_reactions answers the request: the plugin's own tool for this task is called, not a substitute.

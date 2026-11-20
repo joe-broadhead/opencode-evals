@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A meeting transcript search is Granola's, not a Slack search of the same words.",
-  "data_check": "the seeded kickoff transcript mentions the budget; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "the seeded kickoff transcript mentions the budget; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "find where we discussed the budget in a meeting",
   "controls": [],
   "budgets": {
@@ -115,6 +115,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "73520be13ea8d44b7db4b58dc329ebf7ee589bb9588e17c3df1f18431f604471"
+    "source_sha256": "73efd62fb0aa2525b569fa904590bc38a44621e0a1a75e5e95a5f5ed716dbbac"
   }
 }

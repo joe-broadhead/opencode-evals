@@ -11,14 +11,14 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-show the evals project
+show the {{target:linear.project}} project
 
 ## Items
 - [LIN-OC01] blocker · get_project answers the request: the plugin's own tool for this task is called, not a substitute.
   evidence: call:get_project#1
 
-- [LIN-PR01] major · The call carries query as the user gave it.
-  evidence: call:get_project#1 args.query contains evals
+- [LIN-CT01] major · The lookup names the sandbox project.
+  evidence: target:get_project#1 args.query in @linear.project
 
 - [LIN-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

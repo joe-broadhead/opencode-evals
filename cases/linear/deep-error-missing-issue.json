@@ -36,7 +36,12 @@
           "kind": "call",
           "tool": "list_issues",
           "n": 1,
-          "arg": null
+          "arg": "args.query",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "zzz"
+          }
         }
       ],
       "evidence_any": [],
@@ -78,16 +83,6 @@
       "evidence": [],
       "evidence_any": [
         [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "\\?",
-              "flags": ""
-            }
-          },
           {
             "kind": "text",
             "span": "any",
@@ -148,12 +143,12 @@
           "ns": "linear"
         },
         {
+          "kind": "committed-write"
+        },
+        {
           "kind": "absent",
           "tool": "get_issue",
           "n": null
-        },
-        {
-          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
@@ -171,6 +166,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "f823a71443c32bd56dbfb883ca3c8c82e52134f7e5f03d9b4a58ca53d21b4424"
+    "source_sha256": "6e8c170170bb856dd5461030224703c1ab93ffc06f930c08c587c7e8f644ab33"
   }
 }

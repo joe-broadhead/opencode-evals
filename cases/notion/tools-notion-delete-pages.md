@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-delete the week one notes page
+delete the page {{canary:notion_page}}
 
 ## Items
 - [NOT-WR01] blocker · notion-delete-pages is the one write the task needs, and it is asked once at most.

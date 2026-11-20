@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-rewrite my comment on the evals-232 page to say the review is done
+rewrite my comment {{canary:notion_comment}} on the page {{target:notion.sandbox_page}} to say the review is done
 
 ## Items
 - [NOT-WR01] blocker · notion-update-comment is the one write the task needs, and it is asked once at most.

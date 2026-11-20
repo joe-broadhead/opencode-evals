@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-make a Granola folder called evals-232-archive and put the kickoff and review notes in it
+make a Granola folder called evals-232-archive and put the meeting {{target:granola.meetings_with_transcripts}} in it
 
 ## Items
 - [GRA-WR01] blocker · The folder is created first, once.

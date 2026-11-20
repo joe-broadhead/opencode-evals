@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, gws write graded at the plan)",
   "decision": "Exporting a Doc is planned as an export with a download path, and the commit is declined.",
   "data_check": "the evals-232 doc exists in the evals folder",
-  "prompt": "save the evals doc as a PDF in my downloads folder",
+  "prompt": "save the doc {{target:gws.doc}} as a PDF in my downloads folder",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -206,6 +206,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "abf16c8ccf06e4102140f7d04ac04d1cdfbcf0dc53beb25a8ee4d7dc0e833fef"
+    "source_sha256": "6401220429e60561fa20e509e9530c6deae8bf58e8f8c33a6f04dc378787a250"
   }
 }

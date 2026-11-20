@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-update-data-source change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals-232 page and its database exist",
-  "prompt": "add a status option called blocked to the evals tracker",
+  "prompt": "add a status option called blocked to the database {{target:notion.sandbox_db}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8a1e01cbe6d2502d68da622c57fda4fe07dbf2eed77f1c9bf19897385778b588"
+    "source_sha256": "32b8c8a4d073859276c923d6696235e7441ecc1b5bf8c394d34c873b68bfd706"
   }
 }

@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 500000
 
 ## Prompt
-put the evals scratch doc in the bin
+put the doc {{target:gws.doc}} in the bin
 
 ## Items
 - [GWS-CT01] blocker · The trash is planned as a drive update with trashed true.

@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-add the evals-232 page to my favourites
+add the page {{target:notion.sandbox_page}} to my favourites
 
 ## Items
 - [NOT-WR01] blocker · notion-update-page-favorites is the one write the task needs, and it is asked once at most.

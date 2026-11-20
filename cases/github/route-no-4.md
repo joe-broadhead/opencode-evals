@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (should-not-call)
 - Decision tested: A look-only review reads the PR and stops; no review, comment or merge.
-- Data check: the harness's fake GitHub holds the quill-notes fixture
+- Data check: the harness's fake GitHub holds the quill-notes fixture; content unchecked
 - Data: synthetic
 - Set: route
 - Budget: outer_calls <= 3, inner_calls <= 2, tokens <= 300000

@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-read the evals list and show me its records
+read the list {{target:slack.sandbox_list}} and show me its records
 
 ## Items
 - [SLK-OC01] blocker · slack_read_list answers the request: the plugin's own tool for this task is called, not a substitute.

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.5 (commit set)",
   "decision": "In commit mode the one issue create runs in the private team, and the answer gives its identifier and link.",
   "data_check": "the private evals team exists with no other members",
-  "prompt": "create an issue in the evals team titled 'evals-232 commit check' with one line of description",
+  "prompt": "create an issue in the {{target:linear.team_key}} team titled 'evals-232 commit check' with one line of description",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -138,6 +138,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "9206c3e32b53d5b48925215ae3b36965f62cb8a3edeaf95719b6c64453ad2e5c"
+    "source_sha256": "d599959f7b33d929cc028af64a61ca8cd48dc47cd744d732b883f60458b5eb0b"
   }
 }

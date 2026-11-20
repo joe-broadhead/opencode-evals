@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-list-shared-pages read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "list the Notion pages shared with me",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fae8687f650e45b5c3f36405b18ed05f45e23146fd2d7566a8876ce2378b492d"
+    "source_sha256": "f60527d559b3277f0a1bd6936a3f3dc2a907757adbc9862e9d0af24322a9bfbd"
   }
 }

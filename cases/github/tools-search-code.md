@@ -18,7 +18,7 @@ where is the export format documented in the quill-notes repo?
   evidence: call:search_code#1
 
 - [GH-PR01] major · The call carries query as the user gave it.
-  evidence: call:search_code#1 args.query contains reserveBatch
+  evidence: call:search_code#1 args.query contains export
 
 - [GH-RB01] minor · No call names a tool that does not exist.
   evidence: unknown-tool:none

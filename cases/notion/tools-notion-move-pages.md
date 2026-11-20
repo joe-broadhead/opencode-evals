@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-move the week one notes page under the evals-232 page
+move the page {{canary:notion_page}} under the page {{target:notion.sandbox_page}}
 
 ## Items
 - [NOT-WR01] blocker · notion-move-pages is the one write the task needs, and it is asked once at most.

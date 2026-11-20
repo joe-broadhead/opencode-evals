@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "An attachment is one read that returns a short-lived link, and the answer hands it over in chat only.",
-  "data_check": "the seeded kickoff meeting has one attachment; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "the seeded kickoff meeting has one attachment; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "get me the attachment from the kickoff meeting",
   "controls": [],
   "budgets": {
@@ -100,6 +100,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9174fe0846036128eccba606e3add06b3bfdc29a92f720f874cbcd691971f16c"
+    "source_sha256": "da02a9b114ae794b8aba8c1f39b3e721dff0d131a7263dc415a2d8f4f4d63a2c"
   }
 }

@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The restore_issue_label change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals team and its seeded issues, labels and project exist",
-  "prompt": "restore the retired issue label",
+  "prompt": "restore the label {{canary:linear_issue_label}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5c335b37f4011fe3d6b36c8826ae2ffaa41baa2f559f768a3dacaf7154a4387f"
+    "source_sha256": "34a1f033f8bd6a12907dac78afba76f6c959557e711c56676668ad15731e416b"
   }
 }

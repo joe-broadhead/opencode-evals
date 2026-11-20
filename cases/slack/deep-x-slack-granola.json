@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "The cross-plugin task reads the meeting with Granola and posts with Slack; the post is declined and the answer says so.",
   "data_check": "the sandbox Granola folder holds the seeded meeting, and the sandbox channel exists; content is unchecked; only route, arguments and the declined call are graded",
-  "prompt": "summarise my last Granola meeting and post the action items to #evals-232",
+  "prompt": "summarise my last Granola meeting and post the action items to #{{target:slack.sandbox_channel_name}}",
   "controls": [],
   "budgets": {
     "outer_calls": 10,
@@ -162,6 +162,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6c91a7d6e0b396252167029dd763d789a172724177ce385af115c74c215adfd8"
+    "source_sha256": "3773589b33d68ef78bc7b80d443a13d9d6f74f8e3e85757216073689e0839f6a"
   }
 }

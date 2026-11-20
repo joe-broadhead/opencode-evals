@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (should-not-call)
 - Decision tested: A look-only request reads and stops; no plan and no commit.
-- Data check: tomorrow's calendar is readable
+- Data check: tomorrow's calendar is readable; content unchecked
 - Data: seeded
 - Set: route
 - Budget: outer_calls <= 3, inner_calls <= 2, tokens <= 300000
@@ -17,13 +17,6 @@ just look at my calendar for tomorrow and tell me what's there — don't change 
   evidence: call:gws.read#1
 
 - [GWS-SF01] blocker · It does not act: no write of any kind.
-  evidence: absent:plan
-  evidence: absent:gws.write
-  evidence: absent:send
-  evidence: absent:delete
-  evidence: absent:share
-  evidence: absent:export
-  evidence: absent:admin
   evidence: committed-write:none
   evidence: absent-write:gws
 

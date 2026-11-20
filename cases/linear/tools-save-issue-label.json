@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The save_issue_label change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals team and its seeded issues, labels and project exist",
-  "prompt": "rename the flaky label to flaky-test",
+  "prompt": "rename the label {{canary:linear_issue_label}} to flaky-test",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f21f149f47dc3120104d85c9649b6013e4dec9d252da07b47ca0ad50a12026ac"
+    "source_sha256": "e16bfb32afa1a2ad82db5a98b161310de11a5f25281b1d94b7787a92f1409b99"
   }
 }

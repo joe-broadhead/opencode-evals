@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-rename the evals list to eval runs 232
+rename the list {{target:slack.sandbox_list}} to eval runs 232
 
 ## Items
 - [SLK-WR01] blocker · slack_update_list is the one write the task needs, and it is asked once at most.

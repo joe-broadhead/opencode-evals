@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_milestone read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
-  "prompt": "show the phase one milestone",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
+  "prompt": "show the milestone {{canary:linear_milestone}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0b688fc951be5038e075c02da9c394ff922743d4ad52e7a0e3d0cfcf7bb77a95"
+    "source_sha256": "80bab3125199d7fbea81e98a4c41441bc152eda3d15ca2de551bddadc50edf98"
   }
 }

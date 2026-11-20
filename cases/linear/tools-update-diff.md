@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-update the diff with the new commit
+update the diff {{canary:linear_diff}} with the new commit
 
 ## Items
 - [LIN-WR01] blocker · update_diff is the one write the task needs, and it is asked once at most.

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A detail the notes lack is read from the transcript's own chunks, and the answer reports it without naming speakers.",
-  "data_check": "the seeded kickoff transcript holds a passage about the budget; content is unchecked; only route, arguments and no-write are graded",
+  "data_check": "the seeded kickoff transcript holds a passage about the budget; content is unchecked; only route, arguments and no-write are graded; content unchecked",
   "prompt": "what exactly was said about the budget in the kickoff?",
   "controls": [],
   "budgets": {
@@ -100,6 +100,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ce7e036bf8f1b0d4e8a70a6594834e9a956edd5668ef77f60f1863104893b20a"
+    "source_sha256": "dfedb968616eafcfb9bd4d8e71f2f498a6255ad9c94d360ec4027e703bdefa63"
   }
 }

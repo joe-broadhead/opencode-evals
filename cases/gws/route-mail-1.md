@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: Mail goes through Gmail, not a Slack DM, a Notion comment or a file.
-- Data check: the owner's address is the signed-in account
+- Data check: the owner's address is the signed-in account; content unchecked
 - Data: seeded
 - Seed: plugins=slack+notion
 - Set: route

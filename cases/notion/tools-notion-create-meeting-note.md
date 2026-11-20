@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-create a meeting note for the evals review
+create a meeting note for the page {{canary:notion_page}}
 
 ## Items
 - [NOT-WR01] blocker · notion-create-meeting-note is the one write the task needs, and it is asked once at most.

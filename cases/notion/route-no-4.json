@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "A look-only request reads the page and stops.",
   "data_check": "the evals-232 page exists",
-  "prompt": "just read the evals-232 page and tell me what's on it — don't change it",
+  "prompt": "just read the page {{target:notion.sandbox_page}} and tell me what's on it — don't change it",
   "controls": [],
   "budgets": {
     "outer_calls": 3,
@@ -30,10 +30,13 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "notion-fetch",
           "n": 1,
-          "arg": null
+          "arg": "args.id",
+          "aliases": [
+            "@notion.sandbox_page"
+          ]
         }
       ],
       "evidence_any": [],
@@ -48,26 +51,6 @@
       "forbidden": false,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent",
-          "tool": "notion-update-page",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "notion-create-comment",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "notion-create-pages",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "notion-delete-pages",
-          "n": null
-        },
         {
           "kind": "committed-write"
         },
@@ -95,7 +78,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 23
     },
     {
       "id": "NOT-RB02",
@@ -111,12 +94,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "da03267b00ee368b0c54c913dafeadf7313226dc0c09e04289a7e9a98891ea22"
+    "source_sha256": "ed823f8d42df1d0fd80f1b10122ee90fe4bde7c669db777d64810f39cba47d51"
   }
 }

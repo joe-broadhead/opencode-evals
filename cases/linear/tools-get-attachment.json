@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The get_attachment read answers this request from Linear, and changes nothing.",
-  "data_check": "the private evals team and its seeded issues exist",
-  "prompt": "open the attachment on the flaky ingest issue",
+  "data_check": "the private evals team and its seeded issues exist; content unchecked",
+  "prompt": "open the attachment on the issue {{canary:linear_issue}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "009e6954c3a7c6e1a30e0ac08f25ec8bc4ec9eaf301e25f542e82816330c31b0"
+    "source_sha256": "f4b5fa15d56ff04cf82f11574791d4c4beea87764a0409c4eff5dbdfa58a5fb4"
   }
 }

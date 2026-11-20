@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "Mail is Gmail's, not a Notion comment or page edit.",
-  "data_check": "none; the request names no data this plugin holds",
+  "data_check": "none; the request names no data this plugin holds; content unchecked",
   "prompt": "send an email to the team saying the launch moved to Friday",
   "controls": [],
   "budgets": {
@@ -29,11 +29,6 @@
       "forbidden": false,
       "grader": "code",
       "evidence": [
-        {
-          "kind": "absent",
-          "tool": "notion.*",
-          "n": null
-        },
         {
           "kind": "committed-write"
         },
@@ -61,7 +56,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 20
     },
     {
       "id": "NOT-RB02",
@@ -77,12 +72,37 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
+    },
+    {
+      "id": "NOT-RT01",
+      "severity": "blocker",
+      "ask": "It says mail is Gmail's, not Notion's.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(gmail|google workspace)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "96b86603618d852ea69d04bad971cbee15acf195c4d2130679eb2d5d145ddbc1"
+    "source_sha256": "532325a56303aa4b1ba58c0ddf4eea33f0d1752cae03896ee9b2adc2c81ff040"
   }
 }

@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: The collector's read is events_list, not a mailbox listing turned into events by hand.
-- Data check: the account has received at least one message this week; content is unchecked; only route, arguments and no-write are graded
+- Data check: the account has received at least one message this week; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000

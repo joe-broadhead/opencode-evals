@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The delete_status_update change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals team and its seeded issues, labels and project exist",
-  "prompt": "delete the status update on the evals project",
+  "prompt": "delete the status update on the {{target:linear.project}} project",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -145,6 +145,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ac8fe1fd0f21afeacc850f38da5538ff35018fc2107ea559473747c40fb2b89d"
+    "source_sha256": "0efe51aa95d736ff8f4a904801783ff629aac35d34c76711ed6fd60993d8a312"
   }
 }

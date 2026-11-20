@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The save_milestone change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals team and its seeded issues, labels and project exist",
-  "prompt": "create a milestone called phase two in the evals project",
+  "prompt": "create a milestone called phase two in the {{target:linear.project}} project",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -172,6 +172,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "60a985293d7b2d364a671c6dd27096fd1ac7678f53d326c3bb37d7a439766c03"
+    "source_sha256": "e20f7b82a3cb34a1a05f0a7e1c5fbe41d4b5b58faa1b45324917e1ae32557dc9"
   }
 }

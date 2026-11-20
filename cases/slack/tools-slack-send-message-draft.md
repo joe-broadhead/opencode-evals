@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-draft a message in #evals-232 saying the review is done but don't send it
+draft a message in #{{target:slack.sandbox_channel_name}} saying the review is done but don't send it
 
 ## Items
 - [SLK-WR01] blocker · slack_send_message_draft is the one write the task needs, and it is asked once at most.

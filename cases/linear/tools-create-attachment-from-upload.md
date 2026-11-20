@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-attach the notes.txt I uploaded to the flaky ingest issue
+attach the notes.txt I uploaded to the issue {{canary:linear_issue}}
 
 ## Items
 - [LIN-WR01] blocker · create_attachment_from_upload is the one write the task needs, and it is asked once at most.

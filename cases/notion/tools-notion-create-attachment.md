@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-attach https://example.com/evals-232.pdf to the evals-232 page
+attach https://example.com/evals-232.pdf to the page {{target:notion.sandbox_page}}
 
 ## Items
 - [NOT-WR01] blocker · notion-create-attachment is the one write the task needs, and it is asked once at most.

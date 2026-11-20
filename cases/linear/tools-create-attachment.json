@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The create_attachment change is the one the task needs, and at ask-changes it is asked once and declined.",
   "data_check": "the private evals team and its seeded issues, labels and project exist",
-  "prompt": "attach the link https://example.com/evals-232 to the flaky ingest issue",
+  "prompt": "attach the link https://example.com/evals-232 to the issue {{canary:linear_issue}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -154,6 +154,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3d47a62dcc5f271e3f7cd8883328283383887d84762e83f6def74c280df0c0f7"
+    "source_sha256": "886ab8ac1545f13e19cca140174feb8d16c1089861b2259c793df48bcdb2b846"
   }
 }

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 (deep)",
   "decision": "The cross-plugin task reads the issue with GitHub and creates with Linear; the create is declined and the answer shows what it would have filed.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "take issue 1 from the quill-notes repo and create a matching issue in the Linear evals team",
   "controls": [],
   "budgets": {
@@ -146,6 +146,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fe1930fc6a39afbc95a3332f49c7034462a09f5373f875591e57a38ba751ff49"
+    "source_sha256": "1a02cdf9fcbdca1b66a20ab279c84af671f061dfc2f98db397f9eb7332281f90"
   }
 }

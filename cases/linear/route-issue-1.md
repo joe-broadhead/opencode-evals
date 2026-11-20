@@ -4,14 +4,14 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A Linear issue is read from Linear, not from GitHub or Jira.
-- Data check: the seeded flaky issue exists in the private team
+- Data check: the seeded flaky issue exists in the private team; content unchecked
 - Data: seeded
 - Seed: plugins=github,jira
 - Set: route
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-what's the status of the flaky test issue in Linear?
+what's the status of the issue {{canary:linear_issue}} in Linear?
 
 ## Items
 - [LIN-RT01] blocker · The plugin that owns the data answers, not the one that merely sounds close.

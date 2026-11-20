@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: The user's calendar is Google's when it is a Google calendar, so gws answers and Notion's calendar tools stay out.
-- Data check: the evals account's primary calendar has tomorrow's events
+- Data check: the evals account's primary calendar has tomorrow's events; content unchecked
 - Data: seeded
 - Seed: plugins=notion
 - Set: route

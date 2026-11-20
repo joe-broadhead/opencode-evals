@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-list-favorite-pages read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "list my favourite Notion pages",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5edc96eaeef7571529214b90e1efcbc353b50286ed907837a5f8cce5a414f533"
+    "source_sha256": "29f56f01ac30d90757868ca7b490eca7eab4b2c28960a6c70b2e9bf9a32f5a8f"
   }
 }

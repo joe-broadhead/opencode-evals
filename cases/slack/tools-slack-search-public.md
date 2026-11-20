@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-search #evals-232 for the message about the launch checklist
+search #{{target:slack.sandbox_channel_name}} for the message about the launch checklist
 
 ## Items
 - [SLK-OC01] blocker · slack_search_public answers the request: the plugin's own tool for this task is called, not a substitute.

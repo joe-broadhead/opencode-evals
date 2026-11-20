@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_notifications read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.",
-  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture; content unchecked",
   "prompt": "what are my unread notifications?",
   "controls": [],
   "budgets": {
@@ -122,6 +122,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8a2f4044fbcf8dcfd2a0d3d408e862ae3bcfa30c4f9df0730f3df750917761ca"
+    "source_sha256": "87acf554a12e34649033548cf96d9da6e255ffffa3e68460fddb8c88ea751034"
   }
 }

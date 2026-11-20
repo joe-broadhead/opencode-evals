@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-wait-session read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
-  "prompt": "wait for my Notion agent session to finish",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
+  "prompt": "wait for the Notion agent session {{canary:notion_session}} to finish",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1023a3020252e78d9661397ac50883beca10eb6191e707af0a9ef13c76c3d673"
+    "source_sha256": "e0ad4e9394d73c5ae2ad83aa777bd0e704045da672a2a121a17b00beeb6e61b6"
   }
 }

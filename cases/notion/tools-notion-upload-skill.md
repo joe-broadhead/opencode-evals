@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-upload the triage skill to Notion
+upload the skill {{canary:notion_skill}} to Notion
 
 ## Items
 - [NOT-WR01] blocker · notion-upload-skill is the one write the task needs, and it is asked once at most.

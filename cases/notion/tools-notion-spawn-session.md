@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-start a Notion agent session to tidy the evals-232 page
+start a Notion agent session to tidy the page {{target:notion.sandbox_page}}
 
 ## Items
 - [NOT-WR01] blocker · notion-spawn-session is the one write the task needs, and it is asked once at most.

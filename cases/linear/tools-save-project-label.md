@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-rename the project label to evals 232
+rename the label {{canary:linear_project_label}} to evals 232
 
 ## Items
 - [LIN-WR01] blocker · save_project_label is the one write the task needs, and it is asked once at most.

@@ -4,7 +4,7 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A recorded meeting is Granola's when the user does not name another recorder.
-- Data check: the sandbox folder holds yesterday's seeded design review; content is unchecked; only route, arguments and no-write are graded
+- Data check: the sandbox folder holds yesterday's seeded design review; content is unchecked; only route, arguments and no-write are graded; content unchecked
 - Data: real
 - Seed: plugins=plaud,wisprflow
 - Set: route

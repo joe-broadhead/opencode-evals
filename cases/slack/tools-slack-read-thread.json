@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A thread is one thread read on the parent's own timestamp, and the answer reports the agreement with links.",
   "data_check": "the sandbox channel's pinned message has replies",
-  "prompt": "read the thread on the pinned message in #evals-232 and tell me what was agreed",
+  "prompt": "read the thread on the message {{canary:slack_pinned_ts}} in #{{target:slack.sandbox_channel_name}} and tell me what was agreed",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -128,6 +128,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "f11961f5dcb6a578686aecd7d338e2e8175a7ddce38c903f61eac6ae68295ce0"
+    "source_sha256": "d8cce4be74848f14c2da2a30b995c018c4c98b74c58f6da3ec6401fc56c6e42e"
   }
 }

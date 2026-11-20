@@ -11,7 +11,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 450000
 
 ## Prompt
-save the evals doc as a PDF in my downloads folder
+save the doc {{target:gws.doc}} as a PDF in my downloads folder
 
 ## Items
 - [GWS-WR01] blocker · The change is planned as drive.files.export, not attempted as a commit.

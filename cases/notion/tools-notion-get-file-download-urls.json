@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-get-file-download-urls read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
-  "prompt": "give me the download links for the files on the evals-232 page",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
+  "prompt": "give me the download links for the files on the page {{target:notion.sandbox_page}}",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "be9663c906d208040a9777488222bf3c0543c40ee644c979148c892745db65d7"
+    "source_sha256": "4aeef8ce9caa0301ed200a9f76ba2ab1d3c6abee63c060c75ff1d74531add123"
   }
 }

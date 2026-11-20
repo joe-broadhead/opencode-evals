@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-change the late view on the evals tracker to sort by due date
+change the view {{canary:notion_view}} on the database {{target:notion.sandbox_db}} to sort by due date
 
 ## Items
 - [NOT-WR01] blocker · notion-update-view is the one write the task needs, and it is asked once at most.

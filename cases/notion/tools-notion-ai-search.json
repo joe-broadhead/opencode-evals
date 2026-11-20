@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The notion-ai-search read answers this request from Notion, and changes nothing.",
-  "data_check": "the private evals-232 page and its database exist",
+  "data_check": "the private evals-232 page and its database exist; content unchecked",
   "prompt": "search my whole Notion with AI for the launch plan and tell me what it says",
   "controls": [],
   "budgets": {
@@ -97,6 +97,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "763160ab238b146f02b461b220e4af40f2292a863648d6d964d8b1250cd0c1c0"
+    "source_sha256": "069fce02e77e140e12495e08c1d82b7bfc88a44337cc086ed71f0e199225b81f"
   }
 }

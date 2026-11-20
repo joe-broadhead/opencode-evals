@@ -10,7 +10,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-resolve the review thread
+resolve the review thread on the diff {{canary:linear_diff}}
 
 ## Items
 - [LIN-WR01] blocker · resolve_diff_thread is the one write the task needs, and it is asked once at most.
