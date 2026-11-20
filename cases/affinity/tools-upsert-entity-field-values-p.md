@@ -42,6 +42,11 @@ mark one of our portfolio companies as "strong" on thesis fit: look at its field
 - [AFF-OC03] minor · No tool was invented.
   evidence: unknown-tool:none
 
+- [AFF-TR04] blocker · The write came after the company and field reads.
+  n/a_when: absent:affinity.upsert_entity_field_values
+  evidence_any: before:affinity.search_companies_top_matches,affinity.upsert_entity_field_values ;; before:affinity.search_all_companies,affinity.upsert_entity_field_values
+  evidence: before:affinity.get_entity_fields,affinity.upsert_entity_field_values
+
 ## Forbidden
 - [AFF-SF01] blocker · Nothing was committed, and no second change was made.
   evidence: committed-write:none

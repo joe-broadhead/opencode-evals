@@ -62,6 +62,18 @@
             "n": 1,
             "arg": null
           }
+        ],
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.get_person_relationships"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.get_person_relationships"
+          }
         ]
       ],
       "na_when": [],
@@ -91,7 +103,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "AFF-PR02",
@@ -128,7 +140,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "AFF-OC01",
@@ -163,7 +175,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "AFF-OC02",
@@ -179,7 +191,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "AFF-SF01",
@@ -199,7 +211,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "AFF-SF02",
@@ -215,12 +227,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "adcbd0b489b20e1484a05b2a69ec923a9c447985c5bcee8e800a8d504e339b3b"
+    "source_sha256": "c4d7f1d203c7aa2c2cc885045b01bb71d08219fd991ac21d230c196455490268"
   }
 }
