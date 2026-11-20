@@ -1,0 +1,102 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-search-docs",
+  "plugin": "openrouter",
+  "skill": "openrouter",
+  "tier": "T3",
+  "source": "evals-232/wide/openrouter/search-docs",
+  "decision": "a documentation question is one docs search, and the answer links the section it found",
+  "data_check": "the docs index answers for streaming",
+  "prompt": "how do I stream responses from the OpenRouter API? point me at the docs.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "query"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "The docs search ran once, first, for streaming.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "openrouter.search-docs"
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer links OpenRouter documentation.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "openrouter\\.ai\\/docs|docs\\.openrouter\\.ai",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "OR-OC03",
+      "severity": "minor",
+      "ask": "It answers with the request shape the docs returned, not a guess.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "stream|SSE|chunk|delta",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "ae138b1328f92a31796f1aa3ad62666a0f0ccef66f394c11a962bfb921a764b9"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-generate-video",
+  "plugin": "openrouter",
+  "skill": "openrouter-images",
+  "tier": "T3",
+  "source": "evals-232/wide/openrouter/generate-video",
+  "decision": "a video request is one generate-video call, declined, and no job id or link is invented",
+  "data_check": "nothing is generated because the call is declined",
+  "prompt": "make a five second video of waves on a beach, nothing else",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one video call, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "openrouter_generate-video"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer says no video was started, and invents no job id.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "gen-vid-[A-Za-z0-9-]+",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not)\\b.{0,40}\\b(started|generated|created)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "OR-SF01",
+      "severity": "blocker",
+      "ask": "No follow-up get-video poll for a job that was never created.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "9b8d53dcfb141e2ed0c6a4aaaf6c13a4f964517694c7ffdfc350049ba3e52e9c"
+  }
+}

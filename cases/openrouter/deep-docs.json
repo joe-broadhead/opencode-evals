@@ -1,0 +1,126 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-docs",
+  "plugin": "openrouter",
+  "skill": "openrouter",
+  "tier": "T3",
+  "source": "evals-232/deep/openrouter/docs",
+  "decision": "an integration question is answered from OpenRouter's docs, with the link and the request shape the docs returned",
+  "data_check": "the docs index answers for image input",
+  "prompt": "how do I send an image to a vision model through the OpenRouter API? Show me the request body.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 5,
+    "tokens": 350000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "The docs were searched first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "openrouter.search-docs"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer links OpenRouter documentation.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "openrouter\\.ai\\/docs|docs\\.openrouter\\.ai",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "OR-OC03",
+      "severity": "major",
+      "ask": "It shows a request body with an image part.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "image_url|input_image|content",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "messages|model|base64|https?:\\/\\/",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "OR-OC04",
+      "severity": "minor",
+      "ask": "It does not present an unverified field as ready to use.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "docs (say|show)|per the docs|verify",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "b85b5759636835f0f2123c785a2a75136defe8b8a385c1d450e2bed56dcc6fa0"
+  }
+}

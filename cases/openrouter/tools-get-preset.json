@@ -1,0 +1,111 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-preset",
+  "plugin": "openrouter",
+  "skill": "openrouter",
+  "tier": "T3",
+  "source": "evals-232/wide/openrouter/get-preset",
+  "decision": "one saved preset is read by slug, and its settings are summarised without changes",
+  "data_check": "a preset with the slug fast-coding exists",
+  "prompt": "show me my preset called fast-coding — what model and settings does it use?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "The preset was read once, first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "openrouter.get-preset"
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer describes the preset's model or settings, or says it is not found.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "model|temperature|setting|prompt",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "not found|no such",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "OR-SF01",
+      "severity": "blocker",
+      "ask": "The preset was not changed.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(updated|changed|saved) (the |your )?preset",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "68399b9de9dc0b6b68f0a842e6fa481bbfc0e7e8fb36cf17556acbd8df2393ee"
+  }
+}

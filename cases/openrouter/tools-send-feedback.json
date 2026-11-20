@@ -1,0 +1,107 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-send-feedback",
+  "plugin": "openrouter",
+  "skill": "openrouter-troubleshoot",
+  "tier": "T3",
+  "source": "evals-232/wide/openrouter/send-feedback",
+  "decision": "feedback on one generation is one send-feedback call, declined, and the answer says nothing was sent",
+  "data_check": "nothing is sent because the call is declined",
+  "prompt": "report a latency problem on generation gen-01JABCDEF to OpenRouter",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one feedback call, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "openrouter_send-feedback"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer says the feedback was not sent.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not)\\b.{0,40}\\b(sent|submitted|reported)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "OR-OC03",
+      "severity": "minor",
+      "ask": "It does not submit feedback on a generation the user did not name.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "709020fc618070ade288bd897b07d78b6ad46bd67435a16ecde87cdb158c4540"
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-generation",
+  "plugin": "openrouter",
+  "skill": "openrouter-troubleshoot",
+  "tier": "T3",
+  "source": "evals-232/wide/openrouter/get-generation",
+  "decision": "one generation is looked up by id, and its cost is reported from the record",
+  "data_check": "the id is the user's own generation",
+  "prompt": "look up generation gen-01JABCDEF and tell me what it cost and which model served it.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "The generation was looked up once, first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "openrouter.get-generation"
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer gives a cost or a model, or says the id is not found.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\$|cost|model",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "not found|no such|unavailable",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "OR-OC03",
+      "severity": "minor",
+      "ask": "It does not retry the lookup in a loop.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "48096613375025d13dde8a814c677838f46d700b8315bb76578d91aae0723881"
+  }
+}

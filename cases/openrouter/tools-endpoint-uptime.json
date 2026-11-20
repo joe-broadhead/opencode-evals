@@ -1,0 +1,111 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-endpoint-uptime",
+  "plugin": "openrouter",
+  "skill": "openrouter",
+  "tier": "T3",
+  "source": "evals-232/wide/openrouter/get-endpoint-uptime-history",
+  "decision": "a reliability question reads the uptime history for one model and a bounded window, once",
+  "data_check": "the window is within the last 72 hours",
+  "prompt": "was any provider degraded on deepseek-chat yesterday afternoon, between 12:00 and 18:00 UTC?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "The uptime history was read once, first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "openrouter.get-endpoint-uptime-history"
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer reports a degradation or says there was none in that window.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "degrad|outage|error rate|uptime|no (incident|degradation)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "no data|not available",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "OR-OC03",
+      "severity": "minor",
+      "ask": "It names the window it used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "12:00|18:00|yesterday|UTC",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "27d2699ed06ee34e2d285b2a3f30fa713ba7d95b9737bcc4e3e82bdd2e3cdd0d"
+  }
+}

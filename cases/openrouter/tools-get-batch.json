@@ -1,0 +1,105 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-batch",
+  "plugin": "openrouter",
+  "skill": "openrouter-troubleshoot",
+  "tier": "T3",
+  "source": "evals-232/wide/openrouter/get-batch",
+  "decision": "one batch is read by id, and its state is reported",
+  "data_check": "the id is the user's own batch",
+  "prompt": "check batch batch_abc123 and tell me where it is up to",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "The batch was read once, first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "openrouter.get-batch"
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer gives a state or says the batch is not found.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "validating|in_progress|completed|failed|cancelled|state|status",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "not found|no such",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "OR-OC03",
+      "severity": "minor",
+      "ask": "It does not start another batch to check this one.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "openrouter_send-batch"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a2588cdd80000d6afc35e5558db35eec569ea293c30f71abb45b966b6c9134c7"
+  }
+}

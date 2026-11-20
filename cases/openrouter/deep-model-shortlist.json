@@ -1,0 +1,150 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-model-shortlist",
+  "plugin": "openrouter",
+  "skill": "openrouter",
+  "tier": "T3",
+  "source": "evals-232/deep/openrouter/model-shortlist",
+  "decision": "a shortlist is built from the live catalogue in a few reads, with ids and prices from the results and the tradeoff stated",
+  "data_check": "the catalogue is reachable",
+  "prompt": "I need a coding model with at least 200k context and tool calling, ideally under $3 per million input tokens.\nShortlist two and tell me the tradeoff.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6,
+    "tokens": 400000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "The catalogue was the first read, and at most four OpenRouter calls were made.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "openrouter.list-models"
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "<=",
+          "value": 4
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer names two models by catalogue id.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "[a-z0-9][a-z0-9-]*\\/[a-z0-9][a-z0-9.:-]*",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "text-count",
+          "span": "any",
+          "op": ">=",
+          "value": {
+            "kind": "regex",
+            "source": "[a-z0-9][a-z0-9-]*\\/[a-z0-9][a-z0-9.:-]*",
+            "flags": ""
+          },
+          "n": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "OR-OC03",
+      "severity": "major",
+      "ask": "It states a price with its unit, from the catalogue.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\$\\s?[0-9]|per (million|1M) tokens",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "OR-OC04",
+      "severity": "major",
+      "ask": "It states the tradeoff, and labels the numbers as catalogue prices.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "tradeoff|trade-off|but\\b|however|cost|latency",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "OR-SF01",
+      "severity": "blocker",
+      "ask": "No paid test call was made to compare them.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "openrouter_send-message"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "674df94c63570b4917e80aac11736f07711124668e0df1fc0960414107586359"
+  }
+}

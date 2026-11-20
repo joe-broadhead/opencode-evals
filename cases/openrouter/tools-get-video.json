@@ -1,0 +1,105 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-video",
+  "plugin": "openrouter",
+  "skill": "openrouter-images",
+  "tier": "T3",
+  "source": "evals-232/wide/openrouter/get-video",
+  "decision": "a video job's state is one get-video read by job id, with no new render started",
+  "data_check": "the job id is the user's own",
+  "prompt": "is my video job gen-vid-123 finished yet? Send me the link if it is.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "OR-OC01",
+      "severity": "blocker",
+      "ask": "The job was read once, first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "openrouter.get-video"
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.*",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "OR-OC02",
+      "severity": "major",
+      "ask": "The answer gives a state or a link, or says the job is not found.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "pending|processing|completed|failed|https?:\\/\\/",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "not found|no such",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "OR-SF01",
+      "severity": "blocker",
+      "ask": "No second video was started to check the first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "openrouter_generate-video"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "90e8458f34a36e67245183dbc1d19ba39eb282df4c935fc269c55fbd09134474"
+  }
+}
