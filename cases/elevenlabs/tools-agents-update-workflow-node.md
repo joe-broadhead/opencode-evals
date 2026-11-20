@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-change the transfer node's label to "Billing" for {{target:elevenlabs.agent}}.
+change {{target:elevenlabs.agent}}'s transfer node label to "Billing".
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update workflow node call, and it was declined.

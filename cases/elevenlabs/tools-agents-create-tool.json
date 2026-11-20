@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_create_tool (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "create a webhook tool that posts an order lookup to our API.",
+  "prompt": "create a webhook tool that posts an order lookup to https://api.example.com/orders.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aba3bf69046ec8f2e09789b135789de88d1cea969d0ad0fd0431bf28cf953c60"
+    "source_sha256": "804161c366fa1b350a4c2ec1564423e1e694aa4849c72149b7dc15436214d4bb"
   }
 }

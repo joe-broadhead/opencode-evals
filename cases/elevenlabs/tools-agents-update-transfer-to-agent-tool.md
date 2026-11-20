@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-make the transfer tool hand off to billing after two failed answers for {{target:elevenlabs.agent}}.
+make {{target:elevenlabs.agent}}'s transfer tool hand off to billing after two failed answers.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update transfer to agent tool call, and it was declined.

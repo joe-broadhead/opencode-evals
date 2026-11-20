@@ -11,7 +11,7 @@
 - Set: deep
 
 ## Prompt
-how many calls did the agent take last week, and how many were successful?
+how many calls did {{target:elevenlabs.agent}} take last week, and how many were successful?
 
 ## Items
 - [ELV-TR01] blocker · It counted with one call.

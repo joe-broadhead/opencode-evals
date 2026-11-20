@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_create_phone_number (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "buy a new phone number for the agent in the UK.",
+  "prompt": "buy a new phone number for {{target:elevenlabs.agent}} in the UK.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7bf4a025343b5998d13f14b324815b90e8c5b7101cd6a54006100565ad7369f3"
+    "source_sha256": "abf60d6db9557a1a6e43dbd3c4d15892f126ffd35458089e138890e4e4e6a06a"
   }
 }

@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_tool (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "change the calendar tool's description to mention time zones.",
+  "prompt": "change tool tool_000000000000000000000000's description (the calendar tool) to mention time zones.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b34b9039c9342fe91fb66c4edf6910e2a0ffebde751600c8a0ce390773f773ae"
+    "source_sha256": "14d6e9d89a2d0a6d8630a37ad2aa5ae05940febf8b1bc3c3dcdf531a119ca03b"
   }
 }

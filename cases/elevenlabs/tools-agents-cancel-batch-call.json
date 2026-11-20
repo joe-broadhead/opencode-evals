@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_cancel_batch_call (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "cancel the batch call that's still running.",
+  "prompt": "cancel batch batch_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9f1801d5041ef24a17d6f192c5e42afc3e049361ae9c7e2506880a843279916c"
+    "source_sha256": "8e46d4361484a1fe669562ea2d61adbc3865d2e20b477e88386a99ce2e7e43c4"
   }
 }

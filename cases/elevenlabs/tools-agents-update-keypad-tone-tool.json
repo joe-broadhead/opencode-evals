@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_keypad_tone_tool (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "change the keypad tone tool to use the long tone for {{target:elevenlabs.agent}}.",
+  "prompt": "change {{target:elevenlabs.agent}}'s keypad tone tool to use the long tone.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a0e2f75dbfdb268f6d6ab55e07e6605b2d374dd5adc31cac8a906d873006d787"
+    "source_sha256": "9514740453ef5d500773839695715b768731fc20b38460b086b2df8744f7d735"
   }
 }

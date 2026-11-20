@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-add an MCP server for our internal order lookup.
+add an MCP server for our internal order lookup at https://mcp.example.com/orders.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents create mcp server call, and it was declined.

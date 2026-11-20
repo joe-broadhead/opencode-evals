@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-open a triage ticket for that failed call.
+open a triage ticket for conversation conv_000000000000000000000000 — the failed call.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents create triage ticket call, and it was declined.

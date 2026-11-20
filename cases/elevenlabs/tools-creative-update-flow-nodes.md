@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-change node node_000000000000000000000001's text in flow flow_000000000000000000000000 to the new script.
+change node node_000000000000000000000001's text in flow flow_000000000000000000000000 to "Hi, thanks for calling Acme."
 
 ## Items
 - [ELV-WR01] blocker · Exactly one creative update flow nodes call, and it was declined.

@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-point the WhatsApp account at the new business number.
+point WhatsApp account wa_000000000000000000000000 at the new business number +15550000001.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update whatsapp account call, and it was declined.

@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_add_triage_ticket_turn_comment (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "add a note to the third turn of that ticket: \"the caller was cut off here.\"",
+  "prompt": "add a note to the third turn of ticket ticket_000000000000000000000000: \"the caller was cut off here.\"",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "242d7debcfe385d4c33a9f2db085058e92256b6f25eda8ec950d5490f78a83c7"
+    "source_sha256": "fc26a3e103c9b79cfa299993423a38090653d1d092111dbc1613ca355a49d8dd"
   }
 }

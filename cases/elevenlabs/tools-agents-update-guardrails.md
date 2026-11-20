@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-tighten the guardrails so {{target:elevenlabs.agent}} never quotes a price.
+tighten {{target:elevenlabs.agent}}'s guardrails so it never quotes a price.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update guardrails call, and it was declined.

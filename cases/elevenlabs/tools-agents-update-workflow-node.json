@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_workflow_node (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "change the transfer node's label to \"Billing\" for {{target:elevenlabs.agent}}.",
+  "prompt": "change {{target:elevenlabs.agent}}'s transfer node label to \"Billing\".",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b060be2d6f3a1a475f0c632ac46c118240f5a4f3ed6deb2d6dda18bf9a3a62c9"
+    "source_sha256": "2c3d7de39934bb268fdc46a00195504c1245985960f6cb5937ffabcb4c9e636d"
   }
 }

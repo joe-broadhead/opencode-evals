@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_create_test (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "create a test that checks the agent asks for the order number first.",
+  "prompt": "create a test that checks {{target:elevenlabs.agent}} asks for the order number first.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fd0abd700dccf847dc54b02428a18b99cd73f19faeddf2ab7e969dca1cf49f20"
+    "source_sha256": "e96a304a9eb39201ca216ccbfad4c0a262be37a3409e303cffa24baae7796697"
   }
 }

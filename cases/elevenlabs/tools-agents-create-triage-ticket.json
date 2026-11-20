@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_create_triage_ticket (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "open a triage ticket for that failed call.",
+  "prompt": "open a triage ticket for conversation conv_000000000000000000000000 — the failed call.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e7f4cbf57af7476803b2cbd54aacaa1104cad64848964ebd775db0f0d6b8d69c"
+    "source_sha256": "7d61cbd8ec9b5b04d8cd4849373cb5466b58939eed5151603540767a2699f27e"
   }
 }

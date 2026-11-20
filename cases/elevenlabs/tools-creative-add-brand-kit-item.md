@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-add our logo to the brand kit.
+add the logo at ./logo.png to brand kit kit_000000000000000000000000.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one creative add brand kit item call, and it was declined.

@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-which channels is the agent on — phone, WhatsApp, widget?
+which channels is {{target:elevenlabs.agent}} on — phone, WhatsApp, widget?
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_list_channels once.

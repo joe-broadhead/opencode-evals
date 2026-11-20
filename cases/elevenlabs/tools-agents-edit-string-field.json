@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_edit_string_field (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "replace the agent's system prompt with this: \"You are a calm support agent. Ask for the order number first.\"",
+  "prompt": "replace {{target:elevenlabs.agent}}'s system prompt with this: \"You are a calm support agent. Ask for the order number first.\"",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7a7f7e150921a6309321644b5d40788a59e49df723a843a2f18e573960d8ca21"
+    "source_sha256": "695d33a91ad9ae5e5fa421e467a38419c292e5c2532d6339fa73dd391b103933"
   }
 }

@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-replace the agent's system prompt with this: "You are a calm support agent. Ask for the order number first."
+replace {{target:elevenlabs.agent}}'s system prompt with this: "You are a calm support agent. Ask for the order number first."
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents edit string field call, and it was declined.

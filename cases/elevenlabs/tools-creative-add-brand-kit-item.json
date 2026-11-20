@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_add_brand_kit_item (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "add our logo to the brand kit.",
+  "prompt": "add the logo at ./logo.png to brand kit kit_000000000000000000000000.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1b68dcc46351ca02883f148c7617a6afb524251e01049fd557249fec5a440586"
+    "source_sha256": "c1182821c40b5262672241c6ad46db3efac25337288b1c07ab5943904b2c6b04"
   }
 }

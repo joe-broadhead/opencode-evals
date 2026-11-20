@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-submit a batch call to all 500 numbers on the list.
+submit a batch call to +15550000001 and +15550000002.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents submit batch call call, and it was declined.

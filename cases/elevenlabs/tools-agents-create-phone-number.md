@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-buy a new phone number for the agent in the UK.
+buy a new phone number for {{target:elevenlabs.agent}} in the UK.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents create phone number call, and it was declined.

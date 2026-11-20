@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-append "Always confirm the booking date." to the agent's system prompt.
+append "Always confirm the booking date." to {{target:elevenlabs.agent}}'s system prompt.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents append to string field call, and it was declined.

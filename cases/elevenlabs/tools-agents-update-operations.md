@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-add an operation to the workflow that looks up the order for {{target:elevenlabs.agent}}.
+add an operation to {{target:elevenlabs.agent}}'s workflow that looks up the order.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update operations call, and it was declined.

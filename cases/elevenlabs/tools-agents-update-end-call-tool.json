@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_end_call_tool (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "make the end-call tool say \"Thanks, goodbye\" before hanging up for {{target:elevenlabs.agent}}.",
+  "prompt": "make {{target:elevenlabs.agent}}'s end-call tool say \"Thanks, goodbye\" before hanging up.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5b99367200947cc8105bc7b964d5a3b8f0ed81a45e611eca3c725f750beca917"
+    "source_sha256": "42d3155f7078cf0b2b8a6c899b37d5898b3db6825807e7a2918e0739a7cf62a4"
   }
 }

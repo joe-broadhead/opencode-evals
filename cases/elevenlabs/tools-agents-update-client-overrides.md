@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-set the widget's first message override to "Hi, how can I help?" for {{target:elevenlabs.agent}}.
+set {{target:elevenlabs.agent}}'s widget first-message override to "Hi, how can I help?".
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update client overrides call, and it was declined.

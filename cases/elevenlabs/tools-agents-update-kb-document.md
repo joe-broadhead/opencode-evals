@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-update the refund policy page to say 30 days instead of 14.
+update knowledge-base document doc_000000000000000000000000 (the refund policy) to say 30 days instead of 14.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update kb document call, and it was declined.

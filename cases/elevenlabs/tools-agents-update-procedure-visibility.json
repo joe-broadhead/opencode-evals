@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_procedure_visibility (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "make the refunds procedure visible to subagents for {{target:elevenlabs.agent}}.",
+  "prompt": "make procedure proc_000000000000000000000000 (the refunds procedure) visible to subagents.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ec162542ab4632032d152dae42605a9371c85e1dfd002831f3898a4d1a5068e4"
+    "source_sha256": "6cfe628d78cad3e8e3a2f701d2652a011c3c3c2ee747d0b39107d660d0323da8"
   }
 }

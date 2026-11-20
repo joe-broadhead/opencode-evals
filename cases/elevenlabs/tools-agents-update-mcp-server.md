@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-point the MCP server at the staging URL instead.
+point MCP server mcp_000000000000000000000000 at https://staging.example.com.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update mcp server call, and it was declined.

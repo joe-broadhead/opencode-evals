@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_widget (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_widget reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "show me the widget config for the agent for {{target:elevenlabs.agent}}.",
+  "prompt": "show me {{target:elevenlabs.agent}}'s widget config.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -118,6 +118,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "97ea96078139a4a9ceff3966b0733c62facda1bd188b4a785ffedb9b6a4a37a3"
+    "source_sha256": "1e8a100c747d9d758220bf2bc2bd0a4efccd60362eb4c072ce3a965e9644bbc8"
   }
 }

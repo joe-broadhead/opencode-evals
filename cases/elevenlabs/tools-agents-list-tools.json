@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_list_tools (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_list_tools reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "list the tools attached to the agent.",
+  "prompt": "list the tools attached to {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -96,6 +96,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8382f4a0d10e22e2e8ee8439b95fce39dfa410c68cf6041242aa159d8f6f490f"
+    "source_sha256": "2463b23f2a8a86940ac346814a5fdc254f088511b4561cb8809b555b27d9c388"
   }
 }

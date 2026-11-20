@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-add a condition to the edge after the greeting: only if the caller is known for {{target:elevenlabs.agent}}.
+add a condition to the edge after {{target:elevenlabs.agent}}'s greeting: only if the caller is known.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update workflow edge call, and it was declined.

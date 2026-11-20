@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_alert (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_alert reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "what's the alert on my agent about?",
+  "prompt": "what is alert alert_000000000000000000000000 on {{target:elevenlabs.agent}} about?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -77,6 +77,29 @@
       "line": 21
     },
     {
+      "id": "ELV-OC09",
+      "severity": "major",
+      "ask": "It says the object was not found, and invents nothing.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(not found|couldn't find|could not find|no such|doesn't exist|does not exist|404|no (conversation|flow|test|run|ticket|document|procedure|branch|generation|voice|item|folder|merge proposal|batch|caller|tool|connection|alert|result|node|view state))",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
       "id": "ELV-SF01",
       "severity": "blocker",
       "ask": "No change and no credit spend.",
@@ -94,7 +117,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 27
     },
     {
       "id": "ELV-SF02",
@@ -110,12 +133,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3db08b4786e0fd1998152a59a35eb9b137f49b07cd3098c19baa37b93aceeece"
+    "source_sha256": "0ccf05e2c7a48472280189f5c6952c79970c7d4246535e664a904f531da2f315"
   }
 }

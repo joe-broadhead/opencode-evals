@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-cancel the batch call that's still running.
+cancel batch batch_000000000000000000000000.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents cancel batch call call, and it was declined.

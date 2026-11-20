@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_delete_mcp_server (ElevenLabs MCP; a delete)",
   "decision": "A delete is one call, graded at the declined call, and nothing is removed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "delete the MCP server we're not using.",
+  "prompt": "delete MCP server mcp_000000000000000000000000 — we are not using it.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8c1cddbb6b2d44b2d1fa5af1f515b88ac094e326d0b22be44815db9e184abadb"
+    "source_sha256": "4fc64c9a43908409541c710179317feb7cadc581d13565d45763b4c1db811d63"
   }
 }

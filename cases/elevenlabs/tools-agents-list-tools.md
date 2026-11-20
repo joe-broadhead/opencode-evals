@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-list the tools attached to the agent.
+list the tools attached to {{target:elevenlabs.agent}}.
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_list_tools once.

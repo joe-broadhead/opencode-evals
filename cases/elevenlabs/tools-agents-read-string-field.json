@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_read_string_field (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_read_string_field reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "read me the agent's system prompt field.",
+  "prompt": "read me {{target:elevenlabs.agent}}'s system prompt field.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -116,6 +116,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f20f54ee15a201c87cf5ed0fb62cd86410c1d855b55b3773d7c6d4256624f56a"
+    "source_sha256": "bb39e2af4f8280ccc016e00a5becad8f28fa464ac54c287651123c2540d5ffec"
   }
 }

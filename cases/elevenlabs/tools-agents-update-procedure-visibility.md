@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-make the refunds procedure visible to subagents for {{target:elevenlabs.agent}}.
+make procedure proc_000000000000000000000000 (the refunds procedure) visible to subagents.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update procedure visibility call, and it was declined.

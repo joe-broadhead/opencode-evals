@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-switch {{target:elevenlabs.agent}}'s speech recognition to the multilingual model.
+switch {{target:elevenlabs.agent}}'s speech recognition to eleven_multilingual_v2.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update speech recognition call, and it was declined.

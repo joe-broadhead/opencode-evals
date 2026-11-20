@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-delete the calendar tool from the workspace.
+delete tool tool_000000000000000000000000 (the calendar tool) from the workspace.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents delete tool call, and it was declined.

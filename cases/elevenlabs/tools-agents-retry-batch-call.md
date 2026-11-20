@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-retry the failed batch call.
+retry batch batch_000000000000000000000000.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents retry batch call call, and it was declined.

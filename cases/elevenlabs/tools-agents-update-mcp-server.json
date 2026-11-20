@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_mcp_server (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "point the MCP server at the staging URL instead.",
+  "prompt": "point MCP server mcp_000000000000000000000000 at https://staging.example.com.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "222b47c100515d3cee42965f7db6bf7472a3a0d0222a63425c5fa93a245b99e7"
+    "source_sha256": "dc659034c000d7b91054fb36602d33823546cefcfe17b9f365724e6eb2059e0b"
   }
 }

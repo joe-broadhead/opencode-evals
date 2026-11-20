@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-make the end-call tool say "Thanks, goodbye" before hanging up for {{target:elevenlabs.agent}}.
+make {{target:elevenlabs.agent}}'s end-call tool say "Thanks, goodbye" before hanging up.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update end call tool call, and it was declined.

@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-add a note to the third turn of that ticket: "the caller was cut off here."
+add a note to the third turn of ticket ticket_000000000000000000000000: "the caller was cut off here."
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents add triage ticket turn comment call, and it was declined.

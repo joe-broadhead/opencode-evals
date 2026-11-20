@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-crawl our help centre into the knowledge base.
+crawl https://help.example.com into the knowledge base.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents create kb crawl call, and it was declined.

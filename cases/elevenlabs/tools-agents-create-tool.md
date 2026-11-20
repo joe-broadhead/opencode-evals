@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-create a webhook tool that posts an order lookup to our API.
+create a webhook tool that posts an order lookup to https://api.example.com/orders.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents create tool call, and it was declined.

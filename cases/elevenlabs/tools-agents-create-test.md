@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-create a test that checks the agent asks for the order number first.
+create a test that checks {{target:elevenlabs.agent}} asks for the order number first.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents create test call, and it was declined.

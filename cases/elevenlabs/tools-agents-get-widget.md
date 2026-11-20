@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-show me the widget config for the agent for {{target:elevenlabs.agent}}.
+show me {{target:elevenlabs.agent}}'s widget config.
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_get_widget once.

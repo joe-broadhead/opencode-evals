@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_create_kb_url (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "add our help centre page about shipping to the knowledge base.",
+  "prompt": "add https://help.example.com/shipping to the knowledge base.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3d3e15bf801e1752bf846de316907656894eaa49b64cefa2748f0778a370d9c2"
+    "source_sha256": "8ba094a43542b68633dbe610c09cea957f67f47b4711fec920fe19891cfd10f3"
   }
 }

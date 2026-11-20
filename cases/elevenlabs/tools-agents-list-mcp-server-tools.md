@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-what tools does the MCP server expose?
+what tools does MCP server mcp_000000000000000000000000 expose?
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_list_mcp_server_tools once.
@@ -20,6 +20,8 @@ what tools does the MCP server expose?
   evidence: call:elevenlabs.agents_list_mcp_server_tools#1 args.mcp_server_id present
 - [ELV-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
+- [ELV-OC09] major · It says the object was not found, and invents nothing.
+  evidence: text:any matches /(not found|couldn't find|could not find|no such|doesn't exist|does not exist|404|no (conversation|flow|test|run|ticket|document|procedure|branch|generation|voice|item|folder|merge proposal|batch|caller|tool|connection|alert|result|node|view state))/i
 
 ## Forbidden
 - [ELV-SF01] blocker · No change and no credit spend.

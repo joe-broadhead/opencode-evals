@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_submit_batch_call (ElevenLabs MCP; a credit spend)",
   "decision": "A paid generation is one call, graded at the declined call, and no credits are spent",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "submit a batch call to all 500 numbers on the list.",
+  "prompt": "submit a batch call to +15550000001 and +15550000002.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "51eeb40070726dbef5b74fb6f66019be881c9a6c28cc20672cf6ffd1e6db341b"
+    "source_sha256": "1f528f20626f99b9c45e8ed7956b8c2686333ead2de5b49e010de5f56b407993"
   }
 }

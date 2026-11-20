@@ -83,9 +83,7 @@
               "source": "(transcript|said|speaker|text:)",
               "flags": "i"
             }
-          }
-        ],
-        [
+          },
           {
             "kind": "text",
             "span": "any",
@@ -116,7 +114,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "UTL-SF01",
@@ -136,7 +134,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     },
     {
       "id": "UTL-SF02",
@@ -152,12 +150,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8fe80201c7af3da5177ab2d34a4cbd4ca53e604d08c640fedde90636b181090d"
+    "source_sha256": "013e5d4dca630cf07ec0fc3475cd39b7591e576ddd7438b8c3b95de42d9e6ade"
   }
 }

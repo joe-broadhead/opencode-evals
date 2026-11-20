@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-move all the refund documents into the Policy folder in the knowledge base.
+move documents doc_000000000000000000000000 and doc_000000000000000000000002 into folder folder_000000000000000000000000 in the knowledge base.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents bulk move knowledge base call, and it was declined.

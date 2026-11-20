@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_code_tool (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "change the order lookup tool to time out after 10 seconds.",
+  "prompt": "change tool tool_000000000000000000000000 (the order lookup tool) to time out after 10 seconds.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7f5eb3b9f8f5b335f380481f34710f133a14d50c3e24d8978b7f4e61dc75336e"
+    "source_sha256": "31a9c825d0ef4dd9873e69dcfe0bcd095144dd39511a8a951b6c5d456b580656"
   }
 }

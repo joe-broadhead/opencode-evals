@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-make the skip-turn tool wait two seconds before firing for {{target:elevenlabs.agent}}.
+make {{target:elevenlabs.agent}}'s skip-turn tool wait two seconds before firing.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update skip turn tool call, and it was declined.

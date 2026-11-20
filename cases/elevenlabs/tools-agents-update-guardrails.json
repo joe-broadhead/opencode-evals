@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_guardrails (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "tighten the guardrails so {{target:elevenlabs.agent}} never quotes a price.",
+  "prompt": "tighten {{target:elevenlabs.agent}}'s guardrails so it never quotes a price.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "39d3beb000f8a5c0bebccd7fc72a9e91c2639500b7b7c5f338847f3685a81689"
+    "source_sha256": "8d45cc8ab744640d80404cd8dea60752cf38141ef93d1f3e06a51c1a479b62ca"
   }
 }

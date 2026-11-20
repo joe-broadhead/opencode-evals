@@ -19,8 +19,7 @@ transcribe clip.wav for me.
 - [UTL-PR01] major · It passed the file the user named.
   evidence: call:utilities.speech_transcribe#1 args.path matches /clip\.wav/
 - [UTL-OC01] major · The answer gives the transcript, or says plainly that the speech files could not be fetched.
-  evidence_any: text:any matches /(transcript|said|speaker|text:)/i
-  evidence_any: text:any matches /(download|speech files|assets|install)/i
+  evidence_any: text:any matches /(transcript|said|speaker|text:)/i ;; text:any matches /(download|speech files|assets|install)/i
 - [UTL-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

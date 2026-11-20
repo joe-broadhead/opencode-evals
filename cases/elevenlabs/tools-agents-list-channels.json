@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_list_channels (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_list_channels reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "which channels is the agent on — phone, WhatsApp, widget?",
+  "prompt": "which channels is {{target:elevenlabs.agent}} on — phone, WhatsApp, widget?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -96,6 +96,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "34e057d1023ed55c0509086690afbbb0e92eccba27b9decdaf724c05db187584"
+    "source_sha256": "cb243bfc1eebb6d764f71a4319934e9945b35e749ed770511fc4434e8014f92a"
   }
 }

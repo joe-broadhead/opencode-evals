@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-change the transfer number to the on-call line for {{target:elevenlabs.agent}}.
+change the transfer number to the on-call line +15550000002.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update transfer to number tool call, and it was declined.

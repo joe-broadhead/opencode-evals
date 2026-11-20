@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_widget (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "change the widget's accent colour to our brand blue for {{target:elevenlabs.agent}}.",
+  "prompt": "change {{target:elevenlabs.agent}}'s widget accent colour to #0b5fff.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9188cbfe494d026c0465a97a7409573fec46e2dac050309c28dd4b36746f051a"
+    "source_sha256": "40f1a3ed5d8d592d2b15eea60322e5c95534de6d830f9a0f4b16996b9f7cf8fd"
   }
 }

@@ -21,8 +21,7 @@ set a timer called tidy-check for 6pm today, then delete it — I only want to t
   evidence: count:utilities.timer_delete == 1
   evidence: absent-declined:utilities_timer_delete
 - [UTL-OC01] major · The timer is gone afterwards, or the answer says it was deleted.
-  evidence_any: text:any matches /(deleted|removed|gone)/i
-  evidence_any: text:any matches /(no timer|not found)/i
+  evidence_any: text:any matches /(deleted|removed|gone)/i ;; text:any matches /(no timer|not found)/i
 - [UTL-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

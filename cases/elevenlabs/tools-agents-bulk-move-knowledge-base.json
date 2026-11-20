@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_bulk_move_knowledge_base (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "move all the refund documents into the Policy folder in the knowledge base.",
+  "prompt": "move documents doc_000000000000000000000000 and doc_000000000000000000000002 into folder folder_000000000000000000000000 in the knowledge base.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "27fa32b56233348c27897de9a0bc96bee4de8fd8b7121ca3cdea05b47a38714d"
+    "source_sha256": "f893a88d3800029574c71fc61f63d4ab0924207334cea953503a9d06afa34a24"
   }
 }

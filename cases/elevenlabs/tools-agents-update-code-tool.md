@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-change the order lookup tool to time out after 10 seconds.
+change tool tool_000000000000000000000000 (the order lookup tool) to time out after 10 seconds.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update code tool call, and it was declined.

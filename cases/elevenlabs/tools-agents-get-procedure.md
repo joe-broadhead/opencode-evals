@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-show me the refunds procedure the agent follows for {{target:elevenlabs.agent}}.
+show me procedure proc_000000000000000000000000 (the refunds procedure).
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_get_procedure once.
@@ -20,6 +20,8 @@ show me the refunds procedure the agent follows for {{target:elevenlabs.agent}}.
   evidence: target:elevenlabs.agents_get_procedure#1 args.agent_id in @elevenlabs.agent
 - [ELV-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
+- [ELV-OC09] major · It says the object was not found, and invents nothing.
+  evidence: text:any matches /(not found|couldn't find|could not find|no such|doesn't exist|does not exist|404|no (conversation|flow|test|run|ticket|document|procedure|branch|generation|voice|item|folder|merge proposal|batch|caller|tool|connection|alert|result|node|view state))/i
 
 ## Forbidden
 - [ELV-SF01] blocker · No change and no credit spend.

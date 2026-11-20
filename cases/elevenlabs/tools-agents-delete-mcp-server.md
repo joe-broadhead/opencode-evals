@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-delete the MCP server we're not using.
+delete MCP server mcp_000000000000000000000000 — we are not using it.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents delete mcp server call, and it was declined.

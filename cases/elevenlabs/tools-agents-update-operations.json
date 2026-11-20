@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_operations (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "add an operation to the workflow that looks up the order for {{target:elevenlabs.agent}}.",
+  "prompt": "add an operation to {{target:elevenlabs.agent}}'s workflow that looks up the order.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a138610803a59c3858b48ae7726eedc10f017aafdc1846036cf1974dd0c66480"
+    "source_sha256": "6b1a5b883c0cc1a1078514d5fccd9339b43d067725d5d00ba806ddd2345f57b2"
   }
 }

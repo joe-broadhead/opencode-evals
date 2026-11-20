@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-change the keypad tone tool to use the long tone for {{target:elevenlabs.agent}}.
+change {{target:elevenlabs.agent}}'s keypad tone tool to use the long tone.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update keypad tone tool call, and it was declined.

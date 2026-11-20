@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-read me the agent's system prompt field.
+read me {{target:elevenlabs.agent}}'s system prompt field.
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_read_string_field once.

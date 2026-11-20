@@ -85,9 +85,7 @@
               "source": "(deleted|removed|gone)",
               "flags": "i"
             }
-          }
-        ],
-        [
+          },
           {
             "kind": "text",
             "span": "any",
@@ -118,7 +116,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 25
     },
     {
       "id": "UTL-SF01",
@@ -135,7 +133,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 29
     },
     {
       "id": "UTL-SF02",
@@ -151,7 +149,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     }
   ],
   "oracle": [],
@@ -159,10 +157,10 @@
     {
       "id": null,
       "text": "Commit plan: `utilities.timer_set and utilities.timer_delete` is `local: true`: the write touches only the trial's own sandbox.",
-      "line": 36
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "ed5ccc74f0e008141c2bf52b56e7a30c49cbb603248d0f9be64dd64c63126636"
+    "source_sha256": "21272368f43a97864ed7012117debaa1088f5f244055ad2049a4c4dd0d67ea9b"
   }
 }

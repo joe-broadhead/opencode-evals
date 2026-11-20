@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-change the calendar tool's description to mention time zones.
+change tool tool_000000000000000000000000's description (the calendar tool) to mention time zones.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update tool call, and it was declined.

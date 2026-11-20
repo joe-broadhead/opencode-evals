@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-change the widget's accent colour to our brand blue for {{target:elevenlabs.agent}}.
+change {{target:elevenlabs.agent}}'s widget accent colour to #0b5fff.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update widget call, and it was declined.

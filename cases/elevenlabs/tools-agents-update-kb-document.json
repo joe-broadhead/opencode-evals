@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_kb_document (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "update the refund policy page to say 30 days instead of 14.",
+  "prompt": "update knowledge-base document doc_000000000000000000000000 (the refund policy) to say 30 days instead of 14.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4260fc2fcc1e54ff49b247553288c0e085c08642f313a4b234961bf4dfb37d6f"
+    "source_sha256": "3adbe8ea6a1717f74431e9a0e32ce580684e92ecc761c796c156ee3682b49dcb"
   }
 }

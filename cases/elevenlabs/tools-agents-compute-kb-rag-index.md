@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-build the RAG index for the refund policy so search gets better.
+build the RAG index for knowledge-base document doc_000000000000000000000000 (the refund policy).
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents compute kb rag index call, and it was declined.

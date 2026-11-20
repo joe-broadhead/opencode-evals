@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-add our help centre page about shipping to the knowledge base.
+add https://help.example.com/shipping to the knowledge base.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents create kb url call, and it was declined.

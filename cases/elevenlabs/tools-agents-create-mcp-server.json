@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_create_mcp_server (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "add an MCP server for our internal order lookup.",
+  "prompt": "add an MCP server for our internal order lookup at https://mcp.example.com/orders.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8693acedb42bfffb766aece1090796fdb3f5f9d84c696c4d178ae7a6029ab7ea"
+    "source_sha256": "416bed63e3fc18a8f8de6de10c07807a90a78e572e098535ca943bf9b48ce8e7"
   }
 }

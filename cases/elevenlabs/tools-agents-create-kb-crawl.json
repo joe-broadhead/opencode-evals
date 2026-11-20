@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_create_kb_crawl (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "crawl our help centre into the knowledge base.",
+  "prompt": "crawl https://help.example.com into the knowledge base.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f6afbf0bc217caf6331a0c5f2dd05e4ef40256feeeb3fd38ac4b06432e70a4ee"
+    "source_sha256": "e35b422fbb5fafebfe57c5b1c3f9e8fc5f607d0ec11f5d550dacee6857a7a0be"
   }
 }

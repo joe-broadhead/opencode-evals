@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_delete_tool (ElevenLabs MCP; a delete)",
   "decision": "A delete is one call, graded at the declined call, and nothing is removed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "delete the calendar tool from the workspace.",
+  "prompt": "delete tool tool_000000000000000000000000 (the calendar tool) from the workspace.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4712aad735ac12bdf8dafcd219085d6a38435df4725f8836ccfa68188557dadf"
+    "source_sha256": "8833d55f95e6e818ee65971ce5bbfc0d48457213c01bb15b942bf315a7b16a26"
   }
 }

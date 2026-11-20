@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_skip_turn_tool (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "make the skip-turn tool wait two seconds before firing for {{target:elevenlabs.agent}}.",
+  "prompt": "make {{target:elevenlabs.agent}}'s skip-turn tool wait two seconds before firing.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ebd47bb6f54889b1a2c4b3c2f16244261a558cd4220807465dc07881b65ee0f5"
+    "source_sha256": "5c10b2cf74ad29fd26a97cdb420aaed8a2f82b40db89b8834acd80e0496e4518"
   }
 }

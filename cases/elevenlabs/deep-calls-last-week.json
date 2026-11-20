@@ -7,7 +7,7 @@
   "source": "deep, date window: last week's call count, in the user's local days",
   "decision": "The count is one call with a local-week window converted to instants, and the answer names the window",
   "data_check": "at least a few conversations in the last week",
-  "prompt": "how many calls did the agent take last week, and how many were successful?",
+  "prompt": "how many calls did {{target:elevenlabs.agent}} take last week, and how many were successful?",
   "controls": [],
   "budgets": {
     "outer_calls": 14,
@@ -163,6 +163,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "19fd411d698ec49b8fcc6087ae7009164645b436b29a6612d3be732eb9c3a318"
+    "source_sha256": "b5a82a5ae9b146c3e4fd24371d52835ec4c8f3a7c346d7d94a8d9202fd80649d"
   }
 }

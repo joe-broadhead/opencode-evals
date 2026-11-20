@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_update_whatsapp_account (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "point the WhatsApp account at the new business number.",
+  "prompt": "point WhatsApp account wa_000000000000000000000000 at the new business number +15550000001.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "46c80766c99845cfb23c7fdf43e87cfe21f8e69dd4971b76c66c8ab4e6fa8530"
+    "source_sha256": "790705d99be7aedbc9cea557307ce2fb68f78a289e1943f20cc11e84573cf689"
   }
 }
