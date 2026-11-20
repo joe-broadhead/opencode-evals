@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The list_issues read answers this request from Linear, and changes nothing.",
-  "data_check": "data=seeded; the private evals team and its seeded issues exist",
+  "data_check": "the private evals team and its seeded issues exist",
   "prompt": "list the in-progress issues in the evals team",
   "controls": [],
   "budgets": {
@@ -24,6 +24,7 @@
   "sets": [
     "wide"
   ],
+  "data": "seeded",
   "items": [
     {
       "id": "LIN-OC01",
@@ -42,7 +43,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "LIN-PR01",
@@ -66,31 +67,30 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "LIN-PR02",
+      "id": "LIN-CT01",
       "severity": "major",
-      "ask": "The call carries team as the user gave it.",
+      "ask": "The list is filtered to the private team the user named.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "list_issues",
           "n": 1,
           "arg": "args.team",
-          "op": "contains",
-          "value": {
-            "kind": "string",
-            "value": "{{target:linear.team_key}}"
-          }
+          "aliases": [
+            "@linear.team",
+            "@linear.team_key"
+          ]
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "LIN-OC02",
@@ -115,7 +115,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
+    },
+    {
+      "id": "LIN-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "LIN-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     },
     {
       "id": "LIN-SF01",
@@ -148,17 +180,20 @@
           "kind": "absent",
           "tool": "save_project",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f7b10985b933d3396b2e1828e2957042c60d6f42b1a28e7a71a9e5510c82cea0"
+    "source_sha256": "b7e481247b889fce328e73369e0e3c65b08e63598bef2b4be6d62b11d8d52b83"
   }
 }

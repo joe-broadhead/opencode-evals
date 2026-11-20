@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A transcript search is one call with the meeting and several keyword alternatives, and the passages are cited.",
-  "data_check": "data=seeded; the seeded kickoff transcript mentions pricing",
+  "data_check": "the seeded kickoff transcript mentions pricing; content is unchecked; only route, arguments and no-write are graded",
   "prompt": "find where we discussed pricing in the kickoff",
   "controls": [],
   "budgets": {
@@ -24,6 +24,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "GRA-OC01",
@@ -42,7 +43,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "GRA-PR01",
@@ -56,17 +57,13 @@
           "tool": "search_transcripts",
           "n": 1,
           "arg": "args.meeting_ids",
-          "op": "==",
-          "value": {
-            "kind": "string",
-            "value": "present"
-          }
+          "op": "present"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "GRA-PR02",
@@ -80,17 +77,13 @@
           "tool": "search_transcripts",
           "n": 1,
           "arg": "args.keywords",
-          "op": "==",
-          "value": {
-            "kind": "string",
-            "value": "present"
-          }
+          "op": "present"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "GRA-OC02",
@@ -115,7 +108,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
+    },
+    {
+      "id": "GRA-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "GRA-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     },
     {
       "id": "GRA-SF01",
@@ -133,17 +158,20 @@
           "kind": "absent",
           "tool": "granola.generate_summary",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aa8de74b992edd90b79eefce41e2ec0488a9e4ca9a0d4032ad9c1895a76cf0aa"
+    "source_sha256": "834c7b44c9adf41648d14630cde587840f4caccc3d1962929c3ab2615ed99b0a"
   }
 }

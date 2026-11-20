@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A channel post is Slack's, not Gmail's or a Notion comment.",
-  "data_check": "data=seeded; the sandbox channel exists",
+  "data_check": "the sandbox channel exists",
   "prompt": "post the standup summary in #evals-232",
   "controls": [],
   "budgets": {
@@ -20,9 +20,10 @@
   "sets": [
     "route"
   ],
+  "data": "seeded",
   "items": [
     {
-      "id": "SLK-TR01",
+      "id": "SLK-RT01",
       "severity": "blocker",
       "ask": "The plugin that owns the data answers, not the one that merely sounds close.",
       "forbidden": false,
@@ -38,10 +39,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "SLK-TR02",
+      "id": "SLK-RT02",
       "severity": "major",
       "ask": "The overlapping plugin is not called.",
       "forbidden": false,
@@ -61,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "SLK-OC01",
@@ -86,7 +87,55 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
+    },
+    {
+      "id": "SLK-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "SLK-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "SLK-SF01",
+      "severity": "blocker",
+      "ask": "Nothing is committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
     }
   ],
   "oracle": [],
@@ -94,10 +143,10 @@
     {
       "id": null,
       "text": "The send is declined at ask-changes; the route is what the case grades.",
-      "line": 27
+      "line": 38
     }
   ],
   "hashes": {
-    "source_sha256": "b01a10b6820a157c4d3ceb6c44fb8d3c8a904e795c1e681f801caca5e3c6cd64"
+    "source_sha256": "37f552b7e56f13f662dda152b897aa92e5b276c37930528167a6d4d9a75e4dac"
   }
 }

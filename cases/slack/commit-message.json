@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.5 (commit set)",
   "decision": "In commit mode the one send to the sandbox channel runs, and the answer reports the message it posted.",
-  "data_check": "data=seeded; the sandbox channel exists and the owner is its only member",
+  "data_check": "the sandbox channel exists and the owner is its only member",
   "prompt": "post 'evals-232 commit check' in #evals-232",
   "controls": [],
   "budgets": {
@@ -24,24 +24,23 @@
   "sets": [
     "commit"
   ],
+  "data": "seeded",
   "items": [
     {
-      "id": "SLK-OC01",
+      "id": "SLK-CT01",
       "severity": "blocker",
       "ask": "One message is sent to the sandbox channel.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "target",
           "tool": "slack.slack_send_message",
           "n": 1,
           "arg": "args.channel_id",
-          "op": "==",
-          "value": {
-            "kind": "string",
-            "value": "{{target:slack.sandbox_channel}}"
-          }
+          "aliases": [
+            "@slack.sandbox_channel"
+          ]
         },
         {
           "kind": "call",
@@ -58,10 +57,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "SLK-OC02",
+      "id": "SLK-CT02",
       "severity": "blocker",
       "ask": "The send is not declined in commit mode.",
       "forbidden": false,
@@ -75,10 +74,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "SLK-OC03",
+      "id": "SLK-OC01",
       "severity": "major",
       "ask": "The answer says it was posted.",
       "forbidden": false,
@@ -100,7 +99,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
+    },
+    {
+      "id": "SLK-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "SLK-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     },
     {
       "id": "SLK-SF01",
@@ -129,12 +160,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "002160b4a3a338378ec5a696904d0ce8c908831d5ed9f2d04b7097b1a96392ff"
+    "source_sha256": "ab6e4ebed712efbfc90827923b6b057fb38142ce24b89a7701ed058e5f02a632"
   }
 }

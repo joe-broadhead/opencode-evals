@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.5 (commit set)",
   "decision": "In commit mode the one folder create runs in the unshared sandbox, and the answer reports it.",
-  "data_check": "data=seeded; no folder of that name exists, and the workspace has no shared folder for it",
+  "data_check": "no folder of that name exists, and the workspace has no shared folder for it; content is unchecked; only route, arguments and the declined call are graded",
   "prompt": "create a Granola folder called evals-232-commit",
   "controls": [],
   "budgets": {
@@ -23,9 +23,10 @@
   "sets": [
     "commit"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "GRA-OC01",
+      "id": "GRA-CT01",
       "severity": "blocker",
       "ask": "One folder is created with the name the user gave.",
       "forbidden": false,
@@ -46,10 +47,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "GRA-OC02",
+      "id": "GRA-CT02",
       "severity": "blocker",
       "ask": "The create is not declined in commit mode.",
       "forbidden": false,
@@ -63,10 +64,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "GRA-OC03",
+      "id": "GRA-OC01",
       "severity": "major",
       "ask": "The answer names the folder it created.",
       "forbidden": false,
@@ -88,7 +89,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "GRA-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "GRA-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     },
     {
       "id": "GRA-SF01",
@@ -117,12 +150,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7153c6924d0e7099359ba0a554d496b69db473fa31c3b6d1c4a79622f19d34d2"
+    "source_sha256": "eb25c9cfaa3b4a5be831a077c653514d812f63dde1a6a3e0ae8e5a5c342d67a8"
   }
 }

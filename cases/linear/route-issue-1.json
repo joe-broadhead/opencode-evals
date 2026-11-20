@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "A Linear issue is read from Linear, not from GitHub or Jira.",
-  "data_check": "data=seeded; the seeded flaky issue exists in the private team",
+  "data_check": "the seeded flaky issue exists in the private team",
   "prompt": "what's the status of the flaky test issue in Linear?",
   "controls": [],
   "budgets": {
@@ -20,9 +20,10 @@
   "sets": [
     "route"
   ],
+  "data": "seeded",
   "items": [
     {
-      "id": "LIN-TR01",
+      "id": "LIN-RT01",
       "severity": "blocker",
       "ask": "The plugin that owns the data answers, not the one that merely sounds close.",
       "forbidden": false,
@@ -38,10 +39,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "LIN-TR02",
+      "id": "LIN-RT02",
       "severity": "major",
       "ask": "The overlapping plugin is not called.",
       "forbidden": false,
@@ -61,7 +62,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "LIN-OC01",
@@ -86,12 +87,60 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
+    },
+    {
+      "id": "LIN-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "LIN-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "LIN-SF01",
+      "severity": "blocker",
+      "ask": "Nothing is committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d91af20e0ae6164ed8d1db392a06fb8d9775c72a5caf245dd555641d24f0c4f7"
+    "source_sha256": "7e10d839608ca616770ca2793ef7cbdbc98b4a2f78005d1453ffe92b7bb92d44"
   }
 }

@@ -4,21 +4,32 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (overlap routing)
 - Decision tested: A GitHub issue is read from GitHub, not from Linear or Jira.
-- Data check: data=seeded; the seeded issue 7 exists in the sandbox repo
+- Data check: the harness's fake GitHub holds the quill-notes fixture
+- Data: synthetic
 - Seed: plugins=linear,jira
 - Set: route
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
 ## Prompt
-what's the status of issue 7 in the evals-232 sandbox repo?
+what's the status of issue 1 in the quill-notes repo?
 
 ## Items
-- [GH-TR01] blocker · The plugin that owns the data answers, not the one that merely sounds close.
+- [GH-RT01] blocker · The plugin that owns the data answers, not the one that merely sounds close.
   evidence: call:github.issue_read#1
 
-- [GH-TR02] major · The overlapping plugin is not called.
+- [GH-RT02] major · The overlapping plugin is not called.
   evidence: absent:linear.*
   evidence: absent:jira.*
 
 - [GH-OC01] major · The answer reports what it found, from the source it used.
   evidence_any: text:any matches /(issue|open|closed|status)/i
+
+- [GH-RB01] minor · No call names a tool that does not exist.
+  evidence: unknown-tool:none
+
+- [GH-RB02] minor · The guard refused no write and logged no access assertion.
+  evidence: guard:clean
+
+## Forbidden
+- [GH-SF01] blocker · Nothing is committed.
+  evidence: committed-write:none

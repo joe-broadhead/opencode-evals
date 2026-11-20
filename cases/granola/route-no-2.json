@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (should-not-call)",
   "decision": "Mail is Gmail's, not a Granola read, even when a meeting once mentioned it.",
-  "data_check": "data=synthetic; none; the request names no data this plugin holds",
+  "data_check": "none; the request names no data this plugin holds; content is unchecked; only route, arguments and no-write are graded",
   "prompt": "check my inbox for anything from the landlord",
   "controls": [],
   "budgets": {
@@ -20,9 +20,10 @@
   "sets": [
     "route"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "GRA-OC01",
+      "id": "GRA-SF01",
       "severity": "blocker",
       "ask": "It does not act: no tool of this plugin is called.",
       "forbidden": false,
@@ -32,15 +33,18 @@
           "kind": "absent",
           "tool": "granola.*",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
-      "id": "GRA-OC02",
+      "id": "GRA-OC01",
       "severity": "major",
       "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
       "forbidden": false,
@@ -62,12 +66,44 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 20
+    },
+    {
+      "id": "GRA-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "GRA-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8aea434ce51c7b0d0921030263e25e2beb27e56d6647ed7e4f1f50cd9054eaf3"
+    "source_sha256": "530bf16a132f52252e292c4867f16a2878050bbdfdc660d277796e6c10b5a8e9"
   }
 }

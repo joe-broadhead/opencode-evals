@@ -4,7 +4,8 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (should-not-call)
 - Decision tested: Mail is Gmail's, not a Granola read, even when a meeting once mentioned it.
-- Data check: data=synthetic; none; the request names no data this plugin holds
+- Data check: none; the request names no data this plugin holds; content is unchecked; only route, arguments and no-write are graded
+- Data: real
 - Set: route
 - Budget: outer_calls <= 3, inner_calls <= 2, tokens <= 300000
 
@@ -12,8 +13,15 @@
 check my inbox for anything from the landlord
 
 ## Items
-- [GRA-OC01] blocker · It does not act: no tool of this plugin is called.
+- [GRA-SF01] blocker · It does not act: no tool of this plugin is called.
   evidence: absent:granola.*
+  evidence: committed-write:none
 
-- [GRA-OC02] major · The answer says what it did not do and why, or asks the one question that settles it.
+- [GRA-OC01] major · The answer says what it did not do and why, or asks the one question that settles it.
   evidence_any: text:any matches /(inbox|mail|gmail|not (something )?I can|cannot|can't|unable|not available)/i
+
+- [GRA-RB01] minor · No call names a tool that does not exist.
+  evidence: unknown-tool:none
+
+- [GRA-RB02] minor · The guard refused no write and logged no access assertion.
+  evidence: guard:clean

@@ -4,7 +4,8 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (should-not-call)
 - Decision tested: A pull request is GitHub's, not a Linear issue or document.
-- Data check: data=synthetic; none; the request names no data this plugin holds
+- Data check: none; the request names no data this plugin holds
+- Data: seeded
 - Set: route
 - Budget: outer_calls <= 3, inner_calls <= 2, tokens <= 300000
 
@@ -12,8 +13,15 @@
 open a pull request that fixes the flaky test
 
 ## Items
-- [LIN-OC01] blocker · It does not act: no tool of this plugin is called.
+- [LIN-SF01] blocker · It does not act: no tool of this plugin is called.
   evidence: absent:linear.*
+  evidence: committed-write:none
 
-- [LIN-OC02] major · The answer says what it did not do and why, or asks the one question that settles it.
+- [LIN-OC01] major · The answer says what it did not do and why, or asks the one question that settles it.
   evidence_any: text:any matches /(pull request|github|not (something )?I can|cannot|can't|unable|not available)/i
+
+- [LIN-RB01] minor · No call names a tool that does not exist.
+  evidence: unknown-tool:none
+
+- [LIN-RB02] minor · The guard refused no write and logged no access assertion.
+  evidence: guard:clean

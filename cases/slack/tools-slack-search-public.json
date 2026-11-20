@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "A channel-scoped search is one search with the channel and the words in the query, and the hits are cited.",
-  "data_check": "data=seeded; the sandbox channel holds the seeded canary message about the launch checklist",
+  "data_check": "the sandbox channel holds the seeded canary message about the launch checklist",
   "prompt": "search #evals-232 for the message about the launch checklist",
   "controls": [],
   "budgets": {
@@ -23,6 +23,7 @@
   "sets": [
     "wide"
   ],
+  "data": "seeded",
   "items": [
     {
       "id": "SLK-OC01",
@@ -41,7 +42,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "SLK-PR01",
@@ -65,7 +66,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "SLK-OC02",
@@ -90,7 +91,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "SLK-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "SLK-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     },
     {
       "id": "SLK-SF01",
@@ -108,12 +141,15 @@
           "kind": "absent",
           "tool": "slack.slack_add_reaction",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 33
     }
   ],
   "oracle": [],
@@ -121,10 +157,10 @@
     {
       "id": null,
       "text": "The query is free text, so it is declared checkable.",
-      "line": 31
+      "line": 39
     }
   ],
   "hashes": {
-    "source_sha256": "83bb6f59ee8438de52242e84815f30887f3abe3e19f5fc5882930049a2e7b00c"
+    "source_sha256": "7a7bebe733a2f51dc0aed0a818fd8b88e6db80ca174a4091db0b9ab616596da1"
   }
 }

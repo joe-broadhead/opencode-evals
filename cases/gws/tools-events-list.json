@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
   "decision": "The collector's read is events_list, not a mailbox listing turned into events by hand.",
-  "data_check": "data=seeded; the account has received at least one message this week",
+  "data_check": "the account has received at least one message this week; content is unchecked; only route, arguments and no-write are graded",
   "prompt": "for the activity collector: give me the inbox messages that arrived since its last cursor, as events",
   "controls": [],
   "budgets": {
@@ -20,6 +20,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "GWS-OC01",
@@ -38,7 +39,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "GWS-OC02",
@@ -63,7 +64,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
+    },
+    {
+      "id": "GWS-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "GWS-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
     },
     {
       "id": "GWS-SF01",
@@ -83,9 +116,8 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "delete",
-          "n": null
+          "kind": "absent-write",
+          "ns": "jobs"
         },
         {
           "kind": "absent",
@@ -93,20 +125,22 @@
           "n": null
         },
         {
-          "kind": "absent",
-          "tool": "export",
-          "n": null
+          "kind": "absent-write",
+          "ns": "plaud"
         },
         {
           "kind": "absent",
           "tool": "admin",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 29
     }
   ],
   "oracle": [],
@@ -114,10 +148,10 @@
     {
       "id": null,
       "text": "events_list is the source contract's read for Memory's collector; it is not the tool for 'what is in my inbox'.",
-      "line": 31
+      "line": 39
     }
   ],
   "hashes": {
-    "source_sha256": "7d12b6245e1c48529b582cc27b1aa6481eb3e9cb8a1e21bbe158521637f75c98"
+    "source_sha256": "2679c6596d822ab1150d83df5e30a2ef56f9ae443165102dfaf48d919a4351b6"
   }
 }

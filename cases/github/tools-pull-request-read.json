@@ -5,9 +5,9 @@
   "skill": "github-pr-review",
   "tier": "T3",
   "source": "EVALS-232 §2.2 (wide, one per released tool)",
-  "decision": "The pull_request_read read answers this request, from the sandbox repo, and changes nothing.",
-  "data_check": "data=seeded; the sandbox repo holds the seeded record this read needs",
-  "prompt": "read pull request 12 in the sandbox repo",
+  "decision": "The pull_request_read read answers this request from the fake GitHub's quill-notes fixture, and changes nothing.",
+  "data_check": "the harness's fake GitHub holds the quill-notes fixture",
+  "prompt": "read pull request 7 in the quill-notes repo",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -23,6 +23,7 @@
   "sets": [
     "wide"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "GH-OC01",
@@ -41,7 +42,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "GH-PR01",
@@ -58,14 +59,14 @@
           "op": "==",
           "value": {
             "kind": "number",
-            "value": 12
+            "value": 7
           }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "GH-OC02",
@@ -77,20 +78,48 @@
       "evidence_any": [
         [
           {
-            "kind": "text",
+            "kind": "fixture",
             "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "(pull|PR|title|diff)",
-              "flags": "i"
-            }
+            "plugin": "github",
+            "name": "offline_pr_title"
           }
         ]
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "GH-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "GH-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     },
     {
       "id": "GH-SF01",
@@ -123,17 +152,20 @@
           "kind": "absent",
           "tool": "issue_write",
           "n": null
+        },
+        {
+          "kind": "committed-write"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3359497ae1bdbf41b1f4d2bdd088495281a0da6034beaea2ea7a3ccf4dd0fbb4"
+    "source_sha256": "020aa8cdeb425dc953dbd739821af0857401392b17a52134e1c09773a4401a82"
   }
 }

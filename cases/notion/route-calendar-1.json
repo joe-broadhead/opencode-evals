@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.2 (overlap routing)",
   "decision": "Notion Calendar is named, so its own calendar tools answer, not Google Calendar's.",
-  "data_check": "data=seeded; the Notion Calendar connection lists this week's events",
+  "data_check": "the Notion Calendar connection lists this week's events",
   "prompt": "what's on my Notion calendar this week?",
   "controls": [],
   "budgets": {
@@ -20,9 +20,10 @@
   "sets": [
     "route"
   ],
+  "data": "seeded",
   "items": [
     {
-      "id": "NOT-TR01",
+      "id": "NOT-RT01",
       "severity": "blocker",
       "ask": "The plugin that owns the data answers, not the one that merely sounds close.",
       "forbidden": false,
@@ -38,10 +39,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "NOT-TR02",
+      "id": "NOT-RT02",
       "severity": "major",
       "ask": "The overlapping plugin is not called.",
       "forbidden": false,
@@ -56,7 +57,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "NOT-OC01",
@@ -81,7 +82,39 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "NOT-RB01",
+      "severity": "minor",
+      "ask": "No call names a tool that does not exist.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "NOT-RB02",
+      "severity": "minor",
+      "ask": "The guard refused no write and logged no access assertion.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     }
   ],
   "oracle": [],
@@ -89,10 +122,10 @@
     {
       "id": null,
       "text": "Naming Notion Calendar is what makes this Notion's; the unnamed 'my calendar' case is gws's.",
-      "line": 26
+      "line": 33
     }
   ],
   "hashes": {
-    "source_sha256": "b169af58ef3be63175e0f059d45342c2d0ca5bb467b31c21af9bb8ccfece780f"
+    "source_sha256": "368afbd212d2d655ac4e5918a858575f047cc8431c13f8892bc2dfd8b0b8ad86"
   }
 }

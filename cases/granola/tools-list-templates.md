@@ -4,7 +4,8 @@
 - Tier: T3
 - Source: EVALS-232 §2.2 (wide, one per released tool)
 - Decision tested: Templates are one list read, and the answer names the templates it found.
-- Data check: data=seeded; the account has at least one template, or none; both are a report
+- Data check: the account has at least one template, or none; both are a report; content is unchecked; only route, arguments and no-write are graded
+- Data: real
 - Set: wide
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
 
@@ -18,7 +19,14 @@ what note templates do I have?
 - [GRA-OC02] major · The answer lists the templates, or says there are none.
   evidence_any: text:any matches /(template|no templates|none)/i
 
+- [GRA-RB01] minor · No call names a tool that does not exist.
+  evidence: unknown-tool:none
+
+- [GRA-RB02] minor · The guard refused no write and logged no access assertion.
+  evidence: guard:clean
+
 ## Forbidden
 - [GRA-SF01] blocker · No change is made to anything: a read request never becomes a write.
   evidence: absent:granola.create_folder
   evidence: absent:granola.generate_summary
+  evidence: committed-write:none
