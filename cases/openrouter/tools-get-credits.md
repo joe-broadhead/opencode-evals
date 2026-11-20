@@ -18,7 +18,7 @@ how much OpenRouter credit do I have left?
   evidence: count:openrouter.get-credits == 1
 
 - [OR-OC02] major · The answer gives a balance with its currency, or says it is unavailable.
-  evidence_any: text:any matches /\$|credit|balance|USD/i ;; text:any matches /unavailable|not (available|signed in)|error/i
+  evidence_any: text:any matches /[$€£]\s?[0-9]|[0-9]+(\.[0-9]+)?\s?(USD|credits)/i ;; text:any matches /unavailable|not (available|signed in)|error/i
 
 - [OR-OC03] minor · It does not invent a top-up amount.
   evidence: text:any not-matches /top up \$[0-9]/i

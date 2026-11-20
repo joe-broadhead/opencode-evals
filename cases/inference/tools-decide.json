@@ -17,6 +17,9 @@
   "seed": null,
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "questions"
+  ],
   "sets": [
     "wide"
   ],
@@ -43,7 +46,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "INF-PR01",
@@ -64,13 +67,18 @@
           "tool": "inference.decide",
           "n": 1,
           "arg": "args.questions",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "options",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "INF-OC01",
@@ -116,7 +124,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "INF-SF01",
@@ -140,7 +148,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "INF-SF02",
@@ -156,7 +164,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     },
     {
       "id": "INF-SF03",
@@ -175,12 +183,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ac2780ad595369ce108cf0dc673de3ec11ce439ee67d246d0be25ddd671d9783"
+    "source_sha256": "e33cdccf58e60a6f0ef66643a29197bb6cac71927f2b21a2f1dc92ad6bf3c907"
   }
 }

@@ -17,7 +17,7 @@ summarise this email in two lines: "Hi, the invoice AB-72 for EUR 120 is attache
   evidence: absent:inference.*
 
 - [INF-OC01] major · The answer is a two-line summary of the text.
-  evidence: text:any matches /invoice|payment|30 days/i
+  evidence: text:any matches /due (in )?30 days|payment (is )?due|invoice AB-72/i
 
 - [INF-OC02] minor · It does not say the text was sent anywhere.
   evidence: text:any not-matches /\b(sent|uploaded)\b.{0,30}\bOpenRouter\b/i

@@ -28,13 +28,27 @@
       "ask": "The work went to the browser, and the write was declined.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "declined",
-          "tool": "browse_execute"
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "browse_execute"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_new"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_use"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_adopt"
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 16
@@ -54,7 +68,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "sign in|log in|hand ?off|person|you (need|have) to",
+              "source": "\\b(you|a person|someone)\\b.{0,30}\\b(sign|log)\\s?in\\b|hand ?off|take over",
               "flags": "i"
             }
           },
@@ -177,6 +191,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "dbd51e926493456cb785734524c6bd971bfb4b6f1e0780148767e67d6de8d711"
+    "source_sha256": "ead7480a3e004749d6a0da2551139630a0c1916357e8045617a13aef98896945"
   }
 }

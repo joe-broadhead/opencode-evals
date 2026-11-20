@@ -43,18 +43,26 @@
     {
       "id": "OR-RT01",
       "severity": "major",
-      "ask": "A Slack tool was used.",
+      "ask": "A Slack search was used.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "slack.*",
-          "op": ">=",
-          "value": 1
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "slack.slack_search_public_and_private",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "slack.slack_search_public",
+            "n": 1,
+            "arg": null
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 20
@@ -102,6 +110,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a4ec700aa4ebf7951350826bb9064bd26c5186ea0d3eafc0e7052588025ca8d2"
+    "source_sha256": "6147aed04d24cb9832494041c811808c74977b380f546166abeaabb35e8b2379"
   }
 }

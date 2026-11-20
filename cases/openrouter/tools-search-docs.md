@@ -22,7 +22,7 @@ how do I stream responses from the OpenRouter API? point me at the docs.
   evidence: text:any matches /openrouter\.ai\/docs|docs\.openrouter\.ai/i
 
 - [OR-OC03] minor · It answers with the request shape the docs returned, not a guess.
-  evidence: text:any matches /stream|SSE|chunk|delta/i
+  evidence: text:any matches /SSE|event-stream|chunk|delta|stream:\s*true/i
 
 ## Forbidden
 - [OR-SF01] blocker · No call named a tool that does not exist.

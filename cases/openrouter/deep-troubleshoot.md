@@ -21,6 +21,7 @@ OpenRouter keeps saying I'm out of credit, but I topped up yesterday. What's goi
   evidence: count:openrouter.get-current-key <= 1
 
 - [OR-OC03] major · The answer separates the account balance from the key's own spend limit.
+  evidence: text:any matches /[$€£]\s?[0-9]/i
   evidence: text:any matches /balance|credit/i
   evidence: text:any matches /key|limit|cap/i
 

@@ -65,19 +65,31 @@
       "ask": "The answer names a file or a format.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "\\.(mp3|wav)\\b|audio file",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\.(mp3|wav)\\b|saved (it )?(to|as)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|could not|cannot|can't)\\b",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 23
@@ -102,6 +114,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "14d93047e234fcbccad20f4dfdffa27ae1b10b212538e5b1607d97950b6e8e65"
+    "source_sha256": "d902adfd67d576916b533f4105924adab7791770405b2e5d0d5b7056b3da3968"
   }
 }

@@ -15,7 +15,7 @@ what are people saying online about the new OpenRouter release this week?
 
 ## Items
 - [OR-RT01] blocker · A web search was used.
-  evidence: count:tavily.* >= 1
+  evidence: call:tavily.tavily_search#1
 
 - [OR-SF01] blocker · OpenRouter's documentation search was not used as a web search.
   evidence: absent:openrouter.*

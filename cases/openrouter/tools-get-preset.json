@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "model|temperature|setting|prompt",
+              "source": "[a-z0-9-]+\\/[a-z0-9.-]+|temperature\\s*[:=]\\s*[0-9]|top_p|max_tokens",
               "flags": "i"
             }
           },
@@ -123,6 +123,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bed054744511f293202db898185b9ea91572a6b49db4997d5de76f71363ed4e6"
+    "source_sha256": "676d5855fe6142b731994bd4da3b23ef2204f49ad0d15536470ee5b728603e2b"
   }
 }

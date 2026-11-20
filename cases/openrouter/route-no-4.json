@@ -46,15 +46,23 @@
       "ask": "The weather tools were used.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "utilities.*",
-          "op": ">=",
-          "value": 1
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "utilities.weather_current",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "utilities.weather_summary",
+            "n": 1,
+            "arg": null
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 20
@@ -102,6 +110,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "01521b74c19cac0f1f8d09fab9f2c4ec6e7052d6c9906df7821e9f4d5ed3f580"
+    "source_sha256": "282f42aee30ac48fbb45256d9b734e952aab98181afb2682255ba58e9386ca64"
   }
 }

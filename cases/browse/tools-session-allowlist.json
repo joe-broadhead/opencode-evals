@@ -35,15 +35,22 @@
         {
           "kind": "count",
           "tool": "browse.session_allowlist",
-          "op": "==",
+          "op": "<=",
           "value": 1
-        },
-        {
-          "kind": "declined",
-          "tool": "browse_session_allowlist"
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "browse_session_allowlist"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_new"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
       "line": 17
@@ -68,7 +75,13 @@
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "browse.session_allowlist",
+          "n": null
+        }
+      ],
       "maps_to": [],
       "line": 21
     },
@@ -105,7 +118,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "BRW-SF01",
@@ -123,7 +136,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "BRW-SF02",
@@ -139,7 +152,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "BRW-SF03",
@@ -158,12 +171,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5f5b2bcde86339beb10022a439f55169d43124d9aafb9fc6c13224ef5e605dc0"
+    "source_sha256": "dc9ce8e3fd34bf5ec758869b6716acafafd93b2ce997723561b28cf9d8696ae1"
   }
 }

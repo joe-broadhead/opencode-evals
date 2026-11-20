@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "app|rank|usage",
+              "source": "[0-9]+\\s?%|rank(ed)?\\s*[:#]?\\s*[0-9]|#\\s?[0-9]+",
               "flags": "i"
             }
           },
@@ -123,6 +123,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "abee931eac386f2fec26e972fbb0908b16ca1a019f417e8eb2c6e126d2ab2c79"
+    "source_sha256": "1be1229fde1e138ad8795dae54c5e1b13bec9a40acd6e078f3db8878a0e630f4"
   }
 }

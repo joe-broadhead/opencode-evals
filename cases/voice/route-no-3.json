@@ -43,14 +43,14 @@
     {
       "id": "VOI-RT01",
       "severity": "major",
-      "ask": "A jobs tool was used instead.",
+      "ask": "The reminder became a job create instead.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "count",
-          "tool": "jobs.*",
-          "op": ">=",
+          "tool": "jobs.create",
+          "op": "==",
           "value": 1
         }
       ],
@@ -102,6 +102,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9ad9d7eed4377a6bc793dccfdcb8d2c350b762cc3c855975d3d34fcc84ea2929"
+    "source_sha256": "d8539215be82ae34869a8570d624f7fce2b9cfb880eb75cf139f7fae58da5c4a"
   }
 }

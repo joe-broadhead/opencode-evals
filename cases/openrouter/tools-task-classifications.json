@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "programming|coding|roleplay|translation|science|category|task",
+              "source": "programming|roleplay|translation|science|academia|finance",
               "flags": "i"
             }
           },
@@ -123,6 +123,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d3d0c38acd905a17c4b49d187897b5212cf52110e34abbe8d45eba7f5b8f912d"
+    "source_sha256": "0272941fbcf77f63913f0d874956cb2172afc1620c35c2b25930f0793d3e4716"
   }
 }

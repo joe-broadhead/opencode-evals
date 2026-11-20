@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "evals-232/wide/voice/should-not-call",
   "decision": "transcribing an audio file belongs to Utilities' speech tools, not to voice",
-  "data_check": "the Utilities plugin is installed",
+  "data_check": "the Utilities plugin is installed; the clip is seeded",
   "prompt": "transcribe recordings/clip.wav for me",
   "controls": [],
   "budgets": {
@@ -14,7 +14,7 @@
     "inner_calls": 4,
     "tokens": 300000
   },
-  "seed": "plugins=voice,utilities",
+  "seed": "plugins=voice,utilities files=voice-clip",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -43,15 +43,15 @@
     {
       "id": "VOI-RT01",
       "severity": "major",
-      "ask": "A Utilities speech tool was used instead.",
+      "ask": "The transcription tool was used instead.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "utilities.*",
-          "op": ">=",
-          "value": 1
+          "kind": "call",
+          "tool": "utilities.speech_transcribe",
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
@@ -102,6 +102,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e1256f7724fe2e3790c3b5c7dc6fba573828394e368beeca0760d834bf1f423d"
+    "source_sha256": "4a74f932f4a4099d06e4c873dafa58967973993dc51dcafd60a225f6d2df8e96"
   }
 }

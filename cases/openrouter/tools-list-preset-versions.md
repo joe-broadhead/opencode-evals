@@ -18,7 +18,7 @@ what versions does my fast-coding preset have?
   evidence: count:openrouter.list-preset-versions == 1
 
 - [OR-OC02] major · The answer lists versions or says there is only one, or that the preset is not found.
-  evidence_any: text:any matches /version|v[0-9]+|history/i ;; text:any matches /not found|no such/i
+  evidence_any: text:any matches /v[0-9]+|version [0-9]+/i ;; text:any matches /not found|no such/i
 
 - [OR-OC03] minor · It does not restore or change a version.
   evidence: text:any not-matches /restored|rolled back/i

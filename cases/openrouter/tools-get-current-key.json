@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "limit|usage|\\$|spend",
+              "source": "[$€£]\\s?[0-9]|limit\\s*(is|:)\\s*[0-9]|[0-9]+(\\.[0-9]+)?\\s?(USD|credits?)",
               "flags": "i"
             }
           },
@@ -123,6 +123,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "464c154db53eda18d60fda14762cc83bd9a0360052d26e04bb6a6d2689425e1e"
+    "source_sha256": "ea3f5f6a424af7f66ec9009cb4ed057976c9be81c8788f181b48092da007efcd"
   }
 }

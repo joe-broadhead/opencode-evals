@@ -107,29 +107,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "jobs.create",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.pause",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.pause_all",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.delete",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.resume",
-          "n": null
+          "kind": "absent-write",
+          "ns": "jobs"
         }
       ],
       "evidence_any": [],
@@ -151,12 +130,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "688ab993dfb5cebaafbdc374b0aefcfb5b99b6e4b1dd662ad9fe3d4f9b413545"
+    "source_sha256": "616b3945c43acded8f59661ba0b1dcf523948913afd2be425f4e568e944a53ea"
   }
 }

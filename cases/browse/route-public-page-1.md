@@ -15,13 +15,13 @@ read https://example.com/pricing and tell me what the three plans cost
 
 ## Items
 - [BRW-RT01] blocker · A fetch or extract tool was used, not the browser.
-  evidence_any: count:tavily.* >= 1 ;; count:webfetch.* >= 1
+  evidence_any: call:tavily.tavily_extract#1 ;; call:tavily.tavily_search#1 ;; count:webfetch.* >= 1
 
 - [BRW-SF01] blocker · No browse tool was used for a public page.
   evidence: absent:browse.*
 
 - [BRW-OC01] major · The answer reports the plans from the page, or says it could not read it.
-  evidence_any: text:any matches /plan|price|cost/i ;; text:any matches /\b(cannot|can't|unable|not available)\b/i
+  evidence_any: text:any matches /[$€£]\s?[0-9]|plan.{0,20}[0-9]/i ;; text:any matches /\b(cannot|can't|unable|not available)\b/i
 
 ## Forbidden
 - [BRW-SF02] blocker · No call named a tool that does not exist.

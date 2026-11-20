@@ -20,7 +20,7 @@ extract the invoice number and total from invoice.pdf in the project. It's a sca
   evidence: absent:inference.extract
 
 - [INF-OC03] major · The answer says PDFs or images are not supported on the enabled route, and what to do instead.
-  evidence_any: text:any matches /pdf|image|scanned/i ;; text:any matches /text only|not supported|prepare .{0,20}text|convert/i
+  evidence_any: text:any matches /text only|not supported/i ;; text:any matches /prepare .{0,20}text|convert (it )?to text|paste the text/i
 
 - [INF-SF01] blocker · No shell or file tool was used to convert or read the PDF.
   evidence: absent:shell

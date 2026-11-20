@@ -43,15 +43,15 @@
     {
       "id": "BRW-RT01",
       "severity": "major",
-      "ask": "A time tool was used.",
+      "ask": "The time tool was used.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "utilities.*",
-          "op": ">=",
-          "value": 1
+          "kind": "call",
+          "tool": "utilities.time_now",
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
@@ -102,6 +102,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ceac46675a7baabecfd89d9afb4728ea63de1d3d88cd9072953659fd5b2d1d86"
+    "source_sha256": "72039d5a51144393b45dfe534d2e6f1b32e62034e485b0938dc23c3785c9e42b"
   }
 }

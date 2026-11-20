@@ -17,6 +17,9 @@
   "seed": null,
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "include"
+  ],
   "sets": [
     "deep"
   ],
@@ -38,13 +41,18 @@
           "tool": "boxd.status",
           "n": 1,
           "arg": "args.include",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "cost",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "BOX-OC02",
@@ -71,7 +79,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\b(no|unknown|unavailable)\\b.{0,20}\\bcost\\b",
+              "source": "\\b(cost|spend)\\b.{0,20}\\b(unknown|unavailable|cannot)\\b",
               "flags": "i"
             }
           }
@@ -79,7 +87,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "BOX-OC03",
@@ -94,7 +102,7 @@
           "op": "not-matches",
           "value": {
             "kind": "regex",
-            "source": "\\$\\s?[0-9]",
+            "source": "[$€£]\\s?[0-9]|[0-9]\\s?(USD|EUR|GBP)",
             "flags": ""
           }
         }
@@ -102,7 +110,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "BOX-SF01",
@@ -112,25 +120,14 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "boxd.ensure",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "boxd.resume",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "boxd.drop",
-          "n": null
+          "kind": "absent-write",
+          "ns": "boxd"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "BOX-SF02",
@@ -146,12 +143,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ddbd9ba881b54e4c0774d311ebefc1401ae0e067749b01457abea994ecb09b1c"
+    "source_sha256": "144f308a84be25f5bd85400542062a92308775c26f772035c7be1993763aa6dc"
   }
 }

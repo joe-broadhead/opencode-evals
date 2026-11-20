@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\$|credit|balance|USD",
+              "source": "[$€£]\\s?[0-9]|[0-9]+(\\.[0-9]+)?\\s?(USD|credits)",
               "flags": "i"
             }
           },
@@ -123,6 +123,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ec78205c128e1ead5d8e01d4c75f78c962a79079fa1c72cfd6430df1557eda96"
+    "source_sha256": "098b4d2aa5a329ad7aaf5c1a1b7f4558dc20dfb27b5151447343bf045d4a0f2c"
   }
 }

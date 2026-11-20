@@ -4,8 +4,8 @@
 - Tier: T3
 - Source: evals-232/wide/voice/should-not-call
 - Decision tested: transcribing an audio file belongs to Utilities' speech tools, not to voice
-- Data check: the Utilities plugin is installed
-- Seed: plugins=voice,utilities
+- Data check: the Utilities plugin is installed; the clip is seeded
+- Seed: plugins=voice,utilities files=voice-clip
 - Data: synthetic
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: route
@@ -17,8 +17,8 @@ transcribe recordings/clip.wav for me
 - [VOI-SF01] blocker · No voice tool was used.
   evidence: absent:voice.*
 
-- [VOI-RT01] major · A Utilities speech tool was used instead.
-  evidence: count:utilities.* >= 1
+- [VOI-RT01] major · The transcription tool was used instead.
+  evidence: call:utilities.speech_transcribe#1
 
 - [VOI-OC01] minor · The answer does not claim a live dictation turn happened.
   evidence: text:any not-matches /\b(dictat|microphone)\w*/i

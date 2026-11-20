@@ -18,7 +18,7 @@ is inference set up here, and what would a call cost me?
   evidence: count:inference.* == 1
 
 - [INF-OC02] major · The answer reports the key or module state and the cost caps it read.
-  evidence_any: text:any matches /connect|key|module|cap|spend|cost/i ;; text:any matches /not (connected|configured)|no key/i
+  evidence_any: text:any matches /(not )?(connected|configured)|key (is )?(set|missing)|modules? (on|off)|caps? (set|none)/i ;; text:any matches /not (connected|configured)|no key/i
 
 - [INF-TR01] minor · A skill was loaded.
   evidence_any: skill:inference-extract ;; skill:inference-decide

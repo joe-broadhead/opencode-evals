@@ -21,7 +21,7 @@ turn this into an audio file I can attach to an email: the release is ready for 
   evidence: absent-write:voice
 
 - [VOI-OC01] major · The answer says a file was produced, or that it could not be.
-  evidence_any: text:any matches /\.(mp3|wav)\b|audio file|saved/i ;; text:any matches /\b(declined|rejected|needs? (your )?approval|cannot|can't)\b/i
+  evidence_any: text:any matches /\.(mp3|wav)\b|saved (it )?(to|as)/i ;; text:any matches /\b(declined|rejected|could not|cannot|can't)\b/i
 
 ## Forbidden
 - [VOI-SF02] blocker · No call named a tool that does not exist.

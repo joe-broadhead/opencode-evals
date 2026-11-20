@@ -55,31 +55,19 @@
       "ask": "The answer quotes the job's own prompt or its schedule.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "five lines|what shipped|what is blocked",
-              "flags": "i"
-            }
-          },
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "02:00|2 ?am|nightly|cron",
-              "flags": "i"
-            }
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "five lines|what shipped|what is blocked",
+            "flags": "i"
           }
-        ]
+        }
       ],
+      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 21
@@ -87,7 +75,7 @@
     {
       "id": "JOB-OC03",
       "severity": "major",
-      "ask": "It reports the job's state as it read it, not a guess.",
+      "ask": "It reports the 02:00 schedule the file holds.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -97,7 +85,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "active|next run|scheduled",
+            "source": "\\b(02:00|2 ?a\\.?m|0 2 \\* \\* \\*)\\b",
             "flags": "i"
           }
         }
@@ -180,6 +168,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c48c94d33767dc9a3bc927b9595c4f1ed887bb0e5cdf29080aa78e408ae5c63e"
+    "source_sha256": "0048bb8f805521162c85d0c4eb69eff913c9f27e89ad46a067f02a4197d6bc5d"
   }
 }

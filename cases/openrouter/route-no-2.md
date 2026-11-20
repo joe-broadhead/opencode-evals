@@ -17,8 +17,8 @@ find the message in my Slack about the deploy freeze
 - [OR-SF01] blocker · No OpenRouter tool was used.
   evidence: absent:openrouter.*
 
-- [OR-RT01] major · A Slack tool was used.
-  evidence: count:slack.* >= 1
+- [OR-RT01] major · A Slack search was used.
+  evidence_any: call:slack.slack_search_public_and_private#1 ;; call:slack.slack_search_public#1
 
 - [OR-OC01] minor · The answer does not claim a model was asked.
   evidence: text:any not-matches /\b(sent|asked)\b.{0,20}\bmodel\b/i

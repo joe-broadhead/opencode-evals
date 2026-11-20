@@ -19,7 +19,7 @@ set up a job that runs every weekday at 7am and asks an agent to summarise yeste
   evidence: declined:jobs_create
 
 - [JOB-PR01] major · The schedule is a weekday 07:00 cron, not every day and not an interval.
-  evidence: call:jobs.create#1 args.schedule.cron == 0 7 * * 1-5
+  evidence: call:jobs.create#1 args.schedule.cron matches /^0 7 \* \* (1-5|mon-fri)$/i
 
 - [JOB-PR02] major · The action is a prompt the agent runs, not a command or a reminder.
   evidence: call:jobs.create#1 args.action.type == prompt

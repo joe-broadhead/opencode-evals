@@ -21,7 +21,7 @@ which models are getting the most usage this week?
   evidence_any: text:any matches /[a-z0-9-]+\/[a-z0-9.-]+/ ;; text:any matches /no data|unavailable/i
 
 - [OR-OC03] minor · It calls the number an estimate or a share, not a count of the user's own calls.
-  evidence: text:any matches /estimate|share|traffic|usage/i
+  evidence: text:any matches /estimate|share of|traffic share|percentage/i
 
 ## Forbidden
 - [OR-SF01] blocker · No call named a tool that does not exist.

@@ -73,7 +73,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\.(mp3|wav)\\b|audio file|saved",
+              "source": "\\.(mp3|wav)\\b|saved (it )?(to|as)",
               "flags": "i"
             }
           },
@@ -83,7 +83,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\b(declined|rejected|needs? (your )?approval|cannot|can't)\\b",
+              "source": "\\b(declined|rejected|could not|cannot|can't)\\b",
               "flags": "i"
             }
           }
@@ -113,6 +113,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1e52c5182305891683138079d9ea407769c868e0e311fa9475459de44c6da9b5"
+    "source_sha256": "a0de04caec56835fd314a3ad05632bbd25948487dbdf05b3553f0575c73ab5a5"
   }
 }

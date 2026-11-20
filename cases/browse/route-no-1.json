@@ -14,7 +14,7 @@
     "inner_calls": 4,
     "tokens": 300000
   },
-  "seed": "plugins=browse,gws,notion",
+  "seed": "plugins=browse,gws,notion utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -50,16 +50,22 @@
       "evidence_any": [
         [
           {
-            "kind": "count",
-            "tool": "gws.*",
-            "op": ">=",
-            "value": 1
+            "kind": "call",
+            "tool": "gws.gws_read",
+            "n": 1,
+            "arg": "args.operation",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "^calendar\\.",
+              "flags": ""
+            }
           },
           {
-            "kind": "count",
-            "tool": "notion.*",
-            "op": ">=",
-            "value": 1
+            "kind": "call",
+            "tool": "notion.notion-calendar-list-events",
+            "n": 1,
+            "arg": null
           }
         ]
       ],
@@ -110,6 +116,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "199ab5bfc975fe1f3ae9a11dcd253463a5b08cf7d01ac86eb62e4eb7791c34fa"
+    "source_sha256": "a06760e185fb32a4395e2715b99f0474c47a7f1b4347925e5a6ad7d9a39b8747"
   }
 }

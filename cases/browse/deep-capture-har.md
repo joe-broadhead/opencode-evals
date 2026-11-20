@@ -21,7 +21,7 @@ the repo, and tell me where it went.
   evidence: declined:browse_network
 
 - [BRW-PR01] major · The capture is filtered to API traffic.
-  evidence: call:browse.network#1 args.urlFilter present
+  evidence: call:browse.network#1 args.urlFilter matches /api/i
 
 - [BRW-PR02] major · The output path is outside the project.
   evidence: call:browse.network#1 args.outputPath present

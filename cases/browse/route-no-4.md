@@ -18,7 +18,7 @@ search the web for what people are saying about the new OpenCode release this we
   evidence: absent:browse.*
 
 - [BRW-RT01] major · A Tavily search was used instead.
-  evidence: count:tavily.* >= 1
+  evidence: call:tavily.tavily_search#1
 
 - [BRW-OC01] minor · The answer does not claim a browser page was read.
   evidence: text:any not-matches /\b(opened|loaded)\b.{0,20}\b(tab|page|browser)\b/i

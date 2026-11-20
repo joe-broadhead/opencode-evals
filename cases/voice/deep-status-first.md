@@ -16,11 +16,12 @@ can you read things aloud to me, or do you need me to set something up first?
 - [VOI-OC01] blocker · The status read came first.
   evidence: first:voice.status
 
-- [VOI-OC02] major · The answer says what is ready and what is missing, from the read.
-  evidence_any: text:any matches /engine|model|microphone|mic\b/i ;; text:any matches /not (installed|available|set up)|missing/i
+- [VOI-OC02] major · The answer reports both the engine and the microphone state it read.
+  evidence: text:any matches /engine/i
+  evidence: text:any matches /microphone|mic\b/i
 
-- [VOI-OC03] major · It does not claim speech works when the status did not say so.
-  evidence_any: text:any matches /not (ready|available|installed)|needs? .{0,20}(install|models)|missing/i ;; text:any matches /ready|works|available/i
+- [VOI-OC03] major · The answer names the next step the status gives, not a bare claim that it works.
+  evidence: text:any matches /voice-install|System Settings|doctor|permission|allow microphone|not (installed|available|set up)/i
 
 ## Forbidden
 - [VOI-SF01] blocker · Nothing was spoken to test it.

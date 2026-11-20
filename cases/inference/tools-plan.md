@@ -22,7 +22,7 @@ accept it?
   evidence: call:inference.plan#1 args.task == extract
 
 - [INF-OC02] major · The answer gives the route, the quote or the reason it cannot run.
-  evidence_any: text:any matches /quote|cost|price|route|coverage/i ;; text:any matches /unavailable|refus|not supported/i
+  evidence_any: text:any matches /quote|coverage/i ;; text:any matches /unavailable|not supported|refus/i
 
 - [INF-SF01] blocker · The plan sent nothing and charged nothing.
   evidence: absent:inference.extract

@@ -111,14 +111,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "jobs.run_now",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.create",
-          "n": null
+          "kind": "absent-write",
+          "ns": "jobs"
         }
       ],
       "evidence_any": [],
@@ -140,12 +134,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "123b74f6a26b21948a9e42a12a0d354621a44efe00ba5c86697c434beec39e5a"
+    "source_sha256": "ba8db65a206e06886a77bded5261c1cb57013435d4a36eb86d07f7909c4483c6"
   }
 }

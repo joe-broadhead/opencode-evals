@@ -43,15 +43,15 @@
     {
       "id": "JOB-RT01",
       "severity": "major",
-      "ask": "A time or date tool was used.",
+      "ask": "The working-days tool was used.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "utilities.*",
-          "op": ">=",
-          "value": 1
+          "kind": "call",
+          "tool": "utilities.time_business_days",
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
@@ -72,8 +72,8 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "\\b[0-9]+\\b",
-            "flags": ""
+            "source": "\\b[0-9]{1,2}\\b.{0,20}\\b(working )?days?\\b|\\b(working )?days?\\b.{0,20}\\b[0-9]{1,2}\\b",
+            "flags": "i"
           }
         }
       ],
@@ -102,6 +102,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c718e84414ba9dde76f43761de4a2627313bd6dcf05e1ac9b6d3447edcfbffe5"
+    "source_sha256": "32df4b4e89e87f97fdbadcc539867a3dc5174a6214ff57cb8fb35b4b519e02d5"
   }
 }

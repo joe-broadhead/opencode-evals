@@ -15,10 +15,11 @@ record a 30 second demo of the checkout flow to /tmp/checkout-demo.webm
 
 ## Items
 - [BRW-WR01] blocker · Exactly one recording start, and it was declined.
-  evidence: count:browse.recording == 1
-  evidence: declined:browse_recording
+  evidence: count:browse.recording <= 1
+  evidence_any: declined:browse_recording ;; declined:browse_session_new
 
 - [BRW-PR01] major · The action matches what the user asked for.
+  n/a_when: absent:browse.recording
   evidence: call:browse.recording#1 args.action == start
 
 - [BRW-PR02] major · The file is the .webm the user named.

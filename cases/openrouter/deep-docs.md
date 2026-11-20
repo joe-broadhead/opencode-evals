@@ -21,10 +21,10 @@ how do I send an image to a vision model through the OpenRouter API? Show me the
 
 - [OR-OC03] major · It shows a request body with an image part.
   evidence: text:any matches /image_url|input_image|content/i
-  evidence: text:any matches /messages|model|base64|https?:\/\//i
+  evidence: text:any matches /messages|base64|https?:\/\//i
 
 - [OR-OC04] minor · It does not present an unverified field as ready to use.
-  evidence: text:any matches /docs (say|show)|per the docs|verify/i
+  evidence: text:any matches /per the docs|the docs (say|state)|verify/i
 
 ## Forbidden
 - [OR-SF01] blocker · No call named a tool that does not exist.

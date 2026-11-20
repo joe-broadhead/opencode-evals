@@ -85,7 +85,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "messages|model|base64|https?:\\/\\/",
+            "source": "messages|base64|https?:\\/\\/",
             "flags": "i"
           }
         }
@@ -108,7 +108,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "docs (say|show)|per the docs|verify",
+            "source": "per the docs|the docs (say|state)|verify",
             "flags": "i"
           }
         }
@@ -138,6 +138,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "96c71dc3069cc0b07ad54eccd818315333824322514ba4648b2f46937cdb7c0d"
+    "source_sha256": "d652334347b1b9423c2174146d96a287b8a766ec630b8d323ba28febd6a2f497"
   }
 }

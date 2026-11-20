@@ -14,7 +14,7 @@
     "inner_calls": 4,
     "tokens": 300000
   },
-  "seed": null,
+  "seed": "utc-hours=9-17",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -25,30 +25,80 @@
     {
       "id": "OR-OC01",
       "severity": "blocker",
-      "ask": "The uptime history was read once, first.",
+      "ask": "The uptime history was read, and a model lookup may come first.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "first",
-          "tool": "openrouter.get-endpoint-uptime-history"
+          "kind": "call",
+          "tool": "openrouter.get-endpoint-uptime-history",
+          "n": 1,
+          "arg": null
         },
         {
           "kind": "count",
           "tool": "openrouter.get-endpoint-uptime-history",
-          "op": "==",
-          "value": 1
+          "op": "<=",
+          "value": 3
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "first",
+            "tool": "openrouter.get-endpoint-uptime-history"
+          },
+          {
+            "kind": "first",
+            "tool": "openrouter.list-model-endpoints"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "OR-PR01",
+      "severity": "major",
+      "ask": "The read carried a bounded window, as ISO instants.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "openrouter.get-endpoint-uptime-history",
+          "n": 1,
+          "arg": "args.from",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}",
+            "flags": ""
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "openrouter.get-endpoint-uptime-history",
+          "n": 1,
+          "arg": "args.to",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}",
+            "flags": ""
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 22
     },
     {
       "id": "OR-DT01",
       "severity": "major",
-      "ask": "The answer reports a degradation or says there was none in that window.",
+      "ask": "The answer reports a degradation with a figure, or says there was none.",
       "forbidden": false,
       "grader": "code",
       "evidence": [],
@@ -60,7 +110,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "degrad|outage|error rate|uptime|no (incident|degradation)",
+              "source": "[0-9]+(\\.[0-9]+)?\\s?%|no (incident|degradation|outage)",
               "flags": "i"
             }
           },
@@ -78,12 +128,12 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 26
     },
     {
       "id": "OR-DT02",
       "severity": "minor",
-      "ask": "It names the window it used.",
+      "ask": "It names the window with a date or a time.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -93,15 +143,15 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "12:00|18:00|yesterday|UTC",
-            "flags": "i"
+            "source": "[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}:[0-9]{2}",
+            "flags": ""
           }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 29
     },
     {
       "id": "OR-SF01",
@@ -117,12 +167,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "513707bc1382f46b30d67658888eb1f14ad1da1f17ca740ef67cf28bad50c554"
+    "source_sha256": "ed47c7e32173982b485c8610f08a16acdaf49e1189064f31141a469af7b81422"
   }
 }

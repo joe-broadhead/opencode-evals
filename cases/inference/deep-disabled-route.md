@@ -20,7 +20,7 @@ use scaledown/extract to pull the invoice number and total from this text: "Invo
   evidence: absent:inference.extract
 
 - [INF-OC03] major · The answer says that model is not enabled, and names the enabled route or the next step.
-  evidence_any: text:any matches /not enabled|disabled|unavailable|canary/i ;; text:any matches /clairic|capabilit/i
+  evidence_any: text:any matches /not enabled|disabled|unavailable/i ;; text:any matches /(enabled|available).{0,40}(cloudflare\/clairic|extract-typed)/i
 
 - [INF-RB01] minor · It does not retry the same call or silently switch models without saying so.
   evidence: count:inference.* <= 2

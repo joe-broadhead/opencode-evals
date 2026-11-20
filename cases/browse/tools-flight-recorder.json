@@ -32,15 +32,22 @@
         {
           "kind": "count",
           "tool": "browse.flight_recorder",
-          "op": "==",
+          "op": "<=",
           "value": 1
-        },
-        {
-          "kind": "declined",
-          "tool": "browse_flight_recorder"
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "browse_flight_recorder"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_new"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
       "line": 16
@@ -65,7 +72,13 @@
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "browse.flight_recorder",
+          "n": null
+        }
+      ],
       "maps_to": [],
       "line": 20
     },
@@ -102,7 +115,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "BRW-SF01",
@@ -118,7 +131,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "BRW-SF02",
@@ -137,7 +150,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "BRW-SF03",
@@ -156,12 +169,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "57f665864dec0a2efd0f310cafdea8de5f4da286a2201b7c4c81cae7768c2d91"
+    "source_sha256": "f1c054b7f587fad349064f8ba3676b842c5b81196df9577ddce2bca90f296978"
   }
 }

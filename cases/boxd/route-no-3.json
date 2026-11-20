@@ -43,18 +43,26 @@
     {
       "id": "BOX-RT01",
       "severity": "major",
-      "ask": "A Slack tool was used instead.",
+      "ask": "A Slack search was used instead.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "slack.*",
-          "op": ">=",
-          "value": 1
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "slack.slack_search_public_and_private",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "slack.slack_search_public",
+            "n": 1,
+            "arg": null
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 20
@@ -102,6 +110,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2b5e9ef2d762a0ddb2b0bfa8164e9c083775c013934e9e9041631fb27c8df9db"
+    "source_sha256": "57bf19bfc75bb90999230d683d7b95c2f4ac8b30fa74a6f254be57c4ee5ea852"
   }
 }

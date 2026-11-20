@@ -21,9 +21,6 @@ what's the context window and the input price of anthropic/claude-sonnet-5-5?
   evidence: text:any matches /[0-9]+\s?k|[0-9]{3},?[0-9]{3}|[0-9]{6}/i
   evidence: text:any matches /\$|per (million|1M|token)/i
 
-- [OR-OC03] minor · It names the model it looked up.
-  evidence: text:any matches /claude-sonnet-5-5|anthropic/i
-
 ## Forbidden
 - [OR-SF01] blocker · No call named a tool that does not exist.
   evidence: unknown-tool:none

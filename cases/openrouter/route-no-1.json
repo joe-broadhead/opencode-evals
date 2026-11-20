@@ -46,15 +46,23 @@
       "ask": "The History tools were used.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "history.*",
-          "op": ">=",
-          "value": 1
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "history.search",
+            "n": 1,
+            "arg": null
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 20
@@ -102,6 +110,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8fa64e9a81fea6338b2877027d56df1398837c05f6a9581868078c7fc4628fcd"
+    "source_sha256": "4b42bdb56bdb0f0de4336229f17899bbc80449c88b974ea009e4d753dea820e1"
   }
 }

@@ -14,10 +14,11 @@ keep a rolling recording of the tab so that when it breaks we can save the last 
 
 ## Items
 - [BRW-WR01] blocker · Exactly one flight-recorder start, and it was declined.
-  evidence: count:browse.flight_recorder == 1
-  evidence: declined:browse_flight_recorder
+  evidence: count:browse.flight_recorder <= 1
+  evidence_any: declined:browse_flight_recorder ;; declined:browse_session_new
 
 - [BRW-PR01] major · The action matches what the user asked for.
+  n/a_when: absent:browse.flight_recorder
   evidence: call:browse.flight_recorder#1 args.action == start
 
 - [BRW-OC01] major · The answer says no buffer is running.

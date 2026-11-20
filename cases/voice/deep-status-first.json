@@ -42,34 +42,32 @@
     {
       "id": "VOI-OC02",
       "severity": "major",
-      "ask": "The answer says what is ready and what is missing, from the read.",
+      "ask": "The answer reports both the engine and the microphone state it read.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "engine|model|microphone|mic\\b",
-              "flags": "i"
-            }
-          },
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "not (installed|available|set up)|missing",
-              "flags": "i"
-            }
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "engine",
+            "flags": "i"
           }
-        ]
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "microphone|mic\\b",
+            "flags": "i"
+          }
+        }
       ],
+      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 19
@@ -77,37 +75,25 @@
     {
       "id": "VOI-OC03",
       "severity": "major",
-      "ask": "It does not claim speech works when the status did not say so.",
+      "ask": "The answer names the next step the status gives, not a bare claim that it works.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
-      "evidence_any": [
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "not (ready|available|installed)|needs? .{0,20}(install|models)|missing",
-              "flags": "i"
-            }
-          },
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
-              "source": "ready|works|available",
-              "flags": "i"
-            }
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "voice-install|System Settings|doctor|permission|allow microphone|not (installed|available|set up)",
+            "flags": "i"
           }
-        ]
+        }
       ],
+      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "VOI-SF01",
@@ -124,7 +110,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "VOI-SF02",
@@ -140,12 +126,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6c59286f4d446756fe57537d2c0b4a7e0baf0f74259c41c4ea062d77121a3d77"
+    "source_sha256": "22be5804b7136cfc6ed8cc8f4367cb34dcab211197f0d1a7418525ee9a9658a3"
   }
 }

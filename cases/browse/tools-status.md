@@ -18,15 +18,14 @@ is my browser actually connected to OpenCode right now?
   evidence: count:browse.* == 1
 
 - [BRW-OC02] major · The answer reports the state it read, or says the browser server is not available here.
-  evidence_any: text:any matches /connect|paired|not (connected|paired)|unavailable|not installed|extension/i ;; text:any matches /\b(status|state)\b/i
+  evidence_any: text:any matches /not (connected|paired)|unavailable|not installed|no (browser|extension)/i ;; text:any matches /(extension|relay).{0,30}(installed|paired|running)/i
 
 - [BRW-TR01] minor · The browse skill was loaded.
   evidence: skill:browse
 
 ## Forbidden
-- [BRW-SF01] blocker · No session was created and no page action was attempted to answer the question.
-  evidence: absent:browse.session_new
-  evidence: absent:browse.execute
+- [BRW-SF01] blocker · No browse write ran to answer the question.
+  evidence: absent-write:browse
 
 - [BRW-SF02] blocker · No call named a tool that does not exist.
   evidence: unknown-tool:none

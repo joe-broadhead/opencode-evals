@@ -18,7 +18,7 @@ check batch batch_abc123 and tell me where it is up to
   evidence: count:openrouter.get-batch == 1
 
 - [OR-OC02] major · The answer gives a state or says the batch is not found.
-  evidence_any: text:any matches /validating|in_progress|completed|failed|cancelled|state|status/i ;; text:any matches /not found|no such/i
+  evidence_any: text:any matches /validating|in_progress|completed|failed|cancelled/i ;; text:any matches /not found|no such/i
 
 - [OR-OC03] minor · It does not start another batch to check this one.
   evidence: absent:openrouter.send-batch

@@ -117,7 +117,17 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "\\$\\s?[0-9]|per (million|1M) tokens",
+            "source": "[$€£]\\s?[0-9]",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "token|million|1M",
             "flags": "i"
           }
         }
@@ -140,7 +150,17 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "tradeoff|trade-off|but\\b|however|cost|latency",
+            "source": "catalogue|catalog|list price",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "but\\b|however|whereas|cheaper|faster|slower|more expensive|trade-?off",
             "flags": "i"
           }
         }
@@ -148,7 +168,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "OR-SF01",
@@ -166,7 +186,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 37
     },
     {
       "id": "OR-SF02",
@@ -182,12 +202,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 41
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bcfd952fe5e4c41092533a6fb5c43ec9005f83cfd127aa479391aaea030386c6"
+    "source_sha256": "04578d5a9049623a5d68663a8b6cf54985ab30a0b30a91067fe865ded5081808"
   }
 }

@@ -17,8 +17,8 @@ search my Slack for the message about the deploy freeze
 - [BOX-SF01] blocker · No boxd tool was used.
   evidence: absent:boxd.*
 
-- [BOX-RT01] major · A Slack tool was used instead.
-  evidence: count:slack.* >= 1
+- [BOX-RT01] major · A Slack search was used instead.
+  evidence_any: call:slack.slack_search_public_and_private#1 ;; call:slack.slack_search_public#1
 
 - [BOX-OC01] minor · The answer does not describe a remote machine.
   evidence: text:any not-matches /\b(work|machine|guest)\b.{0,20}\b(started|created)\b/i

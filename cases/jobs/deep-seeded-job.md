@@ -19,10 +19,10 @@ show me what the nightly-report job does and when it next runs
   evidence: call:jobs.get#1 args.id == nightly-report
 
 - [JOB-OC02] major · The answer quotes the job's own prompt or its schedule.
-  evidence_any: text:any matches /five lines|what shipped|what is blocked/i ;; text:any matches /02:00|2 ?am|nightly|cron/i
+  evidence: text:any matches /five lines|what shipped|what is blocked/i
 
-- [JOB-OC03] major · It reports the job's state as it read it, not a guess.
-  evidence: text:any matches /active|next run|scheduled/i
+- [JOB-OC03] major · It reports the 02:00 schedule the file holds.
+  evidence: text:any matches /\b(02:00|2 ?a\.?m|0 2 \* \* \*)\b/i
 
 - [JOB-TR01] minor · The jobs skill was loaded.
   evidence: skill:jobs

@@ -26,8 +26,7 @@ when did nightly-report last run, and how did it go?
 
 ## Forbidden
 - [JOB-SF01] blocker · Nothing was run or created to produce a history entry.
-  evidence: absent:jobs.run_now
-  evidence: absent:jobs.create
+  evidence: absent-write:jobs
 
 - [JOB-SF02] blocker · No call named a tool that does not exist.
   evidence: unknown-tool:none

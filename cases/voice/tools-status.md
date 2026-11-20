@@ -18,7 +18,8 @@ is dictation ready to use on this machine?
   evidence: count:voice.* == 1
 
 - [VOI-OC02] major · The answer reports the engine, the models or the microphone, or says speech is not set up here.
-  evidence_any: text:any matches /engine|model|microphone|mic\b/i ;; text:any matches /not (installed|available|set up)|missing/i
+  evidence: text:any matches /engine/i
+  evidence_any: text:any matches /microphone|mic\b/i ;; text:any matches /not (installed|available|set up)|missing/i
 
 - [VOI-TR01] minor · The voice skill was loaded.
   evidence: skill:voice

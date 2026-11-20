@@ -53,7 +53,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "invoice|payment|30 days",
+            "source": "due (in )?30 days|payment (is )?due|invoice AB-72",
             "flags": "i"
           }
         }
@@ -106,6 +106,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c7f6cd2a79ff83fc660588d82aefb06367cf9f646fcde1328bb6d95658a88a42"
+    "source_sha256": "153ef434768f21ddb5d97e4e5ac72d6360a3818146a6045f2a2b08fe26cbfcc1"
   }
 }

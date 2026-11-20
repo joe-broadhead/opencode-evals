@@ -17,6 +17,9 @@
   "seed": null,
   "expect": "pass",
   "holdout": false,
+  "checkable": [
+    "task"
+  ],
   "sets": [
     "deep"
   ],
@@ -38,7 +41,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "INF-OC02",
@@ -52,13 +55,17 @@
           "tool": "inference.plan",
           "n": 1,
           "arg": "args.task",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "extract"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "INF-WR01",
@@ -81,7 +88,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "INF-OC03",
@@ -98,7 +105,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "quote|cost|price|unavailable",
+              "source": "quote|unavailable|not (available|priced)|[$€£]\\s?[0-9]|[0-9]+\\s?(USD|EUR)",
               "flags": "i"
             }
           },
@@ -116,7 +123,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "INF-SF01",
@@ -139,7 +146,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "INF-SF02",
@@ -155,7 +162,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     },
     {
       "id": "INF-SF03",
@@ -174,12 +181,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8a0c202730ac03d05bc2a1b4cd74ce025caec6b8ed8061256cca292e775d526a"
+    "source_sha256": "9daffe2338c6891785533724b9508f6a87e35e0b72f9ee42a981cff537b51bd7"
   }
 }

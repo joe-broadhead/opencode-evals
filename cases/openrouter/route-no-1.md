@@ -18,7 +18,7 @@ what did I work on yesterday?
   evidence: absent:openrouter.*
 
 - [OR-RT01] major · The History tools were used.
-  evidence: count:history.* >= 1
+  evidence_any: call:history.sessions#1 ;; call:history.search#1
 
 - [OR-OC01] minor · The answer does not describe OpenRouter usage.
   evidence: text:any not-matches /\b(tokens|model calls?|generations?)\b.{0,30}\byesterday\b/i

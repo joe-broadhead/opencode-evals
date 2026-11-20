@@ -53,7 +53,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "prêt|prête|version|sortie",
+            "source": "\\b(est|sont)\\b.{0,15}\\b(prêt|prête|disponible|sortie)\\b",
             "flags": "i"
           }
         }
@@ -83,6 +83,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "11f1f13ce8ea05f2647ecf98a95d9217163d8aa815a36bbe58878755c66246a0"
+    "source_sha256": "9c3cdbad7f9668482a40372b723380bfa836b5364701f0187e3434a3d48b5205"
   }
 }

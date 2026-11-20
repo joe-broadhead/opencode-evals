@@ -32,10 +32,16 @@
       "evidence_any": [
         [
           {
-            "kind": "count",
-            "tool": "tavily.*",
-            "op": ">=",
-            "value": 1
+            "kind": "call",
+            "tool": "tavily.tavily_extract",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "tavily.tavily_search",
+            "n": 1,
+            "arg": null
           },
           {
             "kind": "count",
@@ -82,7 +88,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "plan|price|cost",
+              "source": "[$€£]\\s?[0-9]|plan.{0,20}[0-9]",
               "flags": "i"
             }
           },
@@ -122,6 +128,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "af9ae2d40f57f14914e3e2e8dc71ec47a96d0595162327a3b782f6dc904df92a"
+    "source_sha256": "13da911567477ef0203b20cf8fbd079fdea16a3af87190641b0a0064c17ee5d3"
   }
 }

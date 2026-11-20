@@ -21,7 +21,7 @@ summary to my evals channel. Set it up now.
   evidence: declined:jobs_create
 
 - [JOB-PR01] major · The cron is Friday 16:00.
-  evidence: call:jobs.create#1 args.schedule.cron == 0 16 * * 5
+  evidence: call:jobs.create#1 args.schedule.cron matches /^0 16 \* \* (5|fri)$/i
 
 - [JOB-PR02] major · The prompt names the repo and the channel.
   evidence: call:jobs.create#1 args.action.text matches /pull request|merged/i

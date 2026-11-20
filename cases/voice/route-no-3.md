@@ -17,8 +17,8 @@ remind me at 9 tomorrow morning to call the bank
 - [VOI-SF01] blocker · No voice tool was used.
   evidence: absent:voice.*
 
-- [VOI-RT01] major · A jobs tool was used instead.
-  evidence: count:jobs.* >= 1
+- [VOI-RT01] major · The reminder became a job create instead.
+  evidence: count:jobs.create == 1
 
 - [VOI-OC01] minor · The answer does not say it will speak the reminder aloud.
   evidence: text:any not-matches /\b(speak|read aloud)\b.{0,30}\bremind/i

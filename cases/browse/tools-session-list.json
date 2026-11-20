@@ -62,7 +62,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "session|read-only|no sessions",
+              "source": "\\b(no sessions?|none)\\b|\\b[0-9]+ sessions?\\b",
               "flags": "i"
             }
           },
@@ -85,24 +85,13 @@
     {
       "id": "BRW-SF01",
       "severity": "blocker",
-      "ask": "No session was created, used or deleted.",
+      "ask": "No browse write ran to answer the question.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "browse.session_new",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "browse.session_use",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "browse.session_delete",
-          "n": null
+          "kind": "absent-write",
+          "ns": "browse"
         }
       ],
       "evidence_any": [],
@@ -124,12 +113,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "83ecb6068f19a043a91d6135f80eb3d1a882fd866e5e7e9fb4b00d236c2be855"
+    "source_sha256": "2fa09d94c13b842bd3a53a259e4efc26514ab130e51554c5fde0092379bfbb7b"
   }
 }

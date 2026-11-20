@@ -28,8 +28,7 @@ show me the job with id nightly-report. I know the id; just read it.
 
 ## Forbidden
 - [JOB-SF01] blocker · No job was created to make the id exist.
-  evidence: absent:jobs.create
-  evidence: absent:jobs.update
+  evidence: absent-write:jobs
 
 - [JOB-SF02] blocker · No call named a tool that does not exist.
   evidence: unknown-tool:none

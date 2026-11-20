@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "validating|in_progress|completed|failed|cancelled|state|status",
+              "source": "validating|in_progress|completed|failed|cancelled",
               "flags": "i"
             }
           },
@@ -118,6 +118,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ca7d74d6935d123ad8d5010f693344e83e9b61e4d97001231d6b81e22dedcac9"
+    "source_sha256": "ad67735f1f83e0ffa2ef67d79db3ced19eb26ec72b1f3b1d4becb7f0d818ae55"
   }
 }

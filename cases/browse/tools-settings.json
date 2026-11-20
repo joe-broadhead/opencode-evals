@@ -82,7 +82,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "config|option|setting|headless",
+              "source": "config|option|plugin setting",
               "flags": "i"
             }
           },
@@ -164,6 +164,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b98e0f253ff346740a0f3eb384a20b608ebcfa2612824c0e8b4e36c0db1dad8c"
+    "source_sha256": "c6fc70794b411f86e0a16c5bc6bb9ed87b3d13c04b7213f09940815f7b70d51e"
   }
 }

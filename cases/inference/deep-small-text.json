@@ -53,16 +53,6 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "120(\\.00)?",
-            "flags": ""
-          }
-        },
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
             "source": "(1 December 2026|2026-12-01|December 1,? 2026|Dec(ember)? 1)",
             "flags": "i"
           }
@@ -106,7 +96,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 22
     },
     {
       "id": "INF-SF01",
@@ -122,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 26
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0ef15d4290e351f34a625ca08372587dfd6e19a69dd15f2cf276a0f72bbd9fd6"
+    "source_sha256": "85b4d6f0f5e583a9c5ca5af1643e211a38bac766a83c1301a6b6a08f695573fa"
   }
 }

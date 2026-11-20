@@ -18,8 +18,7 @@ which providers does OpenRouter route to at all?
   evidence: count:openrouter.list-providers == 1
 
 - [OR-OC02] major · The answer names providers from the list.
-  evidence: text:any matches /provider|routing|region|privacy/i
-  evidence: text:any matches /[A-Z][A-Za-z0-9.-]{2,}/
+  evidence_any: text:any matches /[A-Z][A-Za-z0-9.-]{2,}.{0,40}[A-Z][A-Za-z0-9.-]{2,}/i ;; text:any matches /providers?:\s*\S/i
 
 ## Forbidden
 - [OR-SF01] blocker · No paid call was made for a provider list.

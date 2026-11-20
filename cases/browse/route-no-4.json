@@ -48,10 +48,10 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "count",
-          "tool": "tavily.*",
-          "op": ">=",
-          "value": 1
+          "kind": "call",
+          "tool": "tavily.tavily_search",
+          "n": 1,
+          "arg": null
         }
       ],
       "evidence_any": [],
@@ -102,6 +102,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5cc541c4daebd857a7d1a6e20b0ec9aef638b3f281d017e049760d433a581d52"
+    "source_sha256": "5c237f8ee6ebe8f9daf6cf90d65ea3eaa3fd77e2fe43aab745f836809b640eb9"
   }
 }

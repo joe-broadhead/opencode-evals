@@ -81,7 +81,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "proposition|probability|question|noul",
+            "source": "proposition|noul|would (have )?ask",
             "flags": "i"
           }
         }
@@ -177,6 +177,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b03019762aead0b1a8a9652b13ad13f22de22fa22e37078d2dc9b12616746725"
+    "source_sha256": "9767b5bd7e4cd73d35ec49e2a7bf396d2f4f5672c55001b6ec292fbd79c7ed5e"
   }
 }

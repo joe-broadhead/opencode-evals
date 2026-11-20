@@ -84,7 +84,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "stream|SSE|chunk|delta",
+            "source": "SSE|event-stream|chunk|delta|stream:\\s*true",
             "flags": "i"
           }
         }
@@ -114,6 +114,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f3654a4fc9ee6d7aa8827389c57af3fc4977c4d507901d9e9e25510d67d7784b"
+    "source_sha256": "f83cf0ac33c23d176683e66752f44f2a689fa24a6d1776d0af6016dd27b16302"
   }
 }

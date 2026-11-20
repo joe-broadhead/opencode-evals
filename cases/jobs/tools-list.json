@@ -90,24 +90,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "jobs.create",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.pause",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.delete",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.update",
-          "n": null
+          "kind": "absent-write",
+          "ns": "jobs"
         }
       ],
       "evidence_any": [],
@@ -129,12 +113,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "603476cfa411b001783a7c814275b1f88acd2a53f21d1f9a68711036500c3395"
+    "source_sha256": "97d2bf6ff2e169338c41decce7492c561a67fac8ee4c5a30d0e3ccf2195ac425"
   }
 }

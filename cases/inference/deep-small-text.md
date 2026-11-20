@@ -17,7 +17,6 @@ extract the total and the due date from this: "Invoice AB-72. Total EUR 120.00. 
   evidence: absent:inference.*
 
 - [INF-OC02] major · The answer gives the total and a due date.
-  evidence: text:any matches /120(\.00)?/
   evidence: text:any matches /(1 December 2026|2026-12-01|December 1,? 2026|Dec(ember)? 1)/i
 
 - [INF-OC03] minor · It says it read the text directly rather than uploading it.

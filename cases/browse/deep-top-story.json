@@ -28,13 +28,27 @@
       "ask": "The page work was attempted through the browser, and it was declined.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "declined",
-          "tool": "browse_execute"
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "browse_execute"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_new"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_use"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_adopt"
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 16
@@ -173,6 +187,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "57a55ce99bee0f4373ded27da641f130760c7f05d68183019e9fc43b3092cad4"
+    "source_sha256": "9c581b1e5d5e4e6d7d11ef490d5b727cf7b00cd299ef0b1c401738a2a6354811"
   }
 }

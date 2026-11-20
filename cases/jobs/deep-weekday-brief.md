@@ -20,7 +20,7 @@ yesterday's work and today's calendar in five lines, and skip the run if one is 
   evidence: declined:jobs_create
 
 - [JOB-PR01] blocker · The cron is weekdays at 07:00 and the zone is London.
-  evidence: call:jobs.create#1 args.schedule.cron == 0 7 * * 1-5
+  evidence: call:jobs.create#1 args.schedule.cron matches /^0 7 \* \* (1-5|mon-fri)$/i
   evidence: call:jobs.create#1 args.schedule.tz == Europe/London
 
 - [JOB-PR02] major · The agent is the read-only jobs agent.

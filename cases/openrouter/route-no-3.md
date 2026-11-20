@@ -17,7 +17,7 @@ translate "the release is ready" into German
   evidence: absent:openrouter.*
 
 - [OR-OC01] major · The answer gives a German translation.
-  evidence: text:any matches /freigabe|bereit|version|veröffentlichung/i
+  evidence: text:any matches /\b(ist|sind)\b.{0,12}\b(bereit|fertig)\b/i
 
 ## Forbidden
 - [OR-SF02] blocker · No call named a tool that does not exist.

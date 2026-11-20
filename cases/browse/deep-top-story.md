@@ -14,7 +14,7 @@ open news.ycombinator.com in my browser and tell me the top story, with the link
 
 ## Items
 - [BRW-WR01] blocker · The page work was attempted through the browser, and it was declined.
-  evidence: declined:browse_execute
+  evidence_any: declined:browse_execute ;; declined:browse_session_new ;; declined:browse_session_use ;; declined:browse_session_adopt
 
 - [BRW-OC01] major · At most two browser calls: a session and one execute, or one execute.
   evidence: count:browse.* <= 2

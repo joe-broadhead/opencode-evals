@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "version|v[0-9]+|history",
+              "source": "v[0-9]+|version [0-9]+",
               "flags": "i"
             }
           },
@@ -123,6 +123,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4cb37d5cafa9cee7e57e311ec187ecce9559d6f28aefe45c4cbfaa06dbacdcab"
+    "source_sha256": "eb1b8c885098e1f0c90f46f478665760d6810d09d44eba7f9edeff7dd4c97c0b"
   }
 }

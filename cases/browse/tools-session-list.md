@@ -18,13 +18,11 @@ what browser sessions do I have open, and are any of them read-only?
   evidence: count:browse.* == 1
 
 - [BRW-OC02] major · The answer reports the sessions or says the browser server is not available.
-  evidence_any: text:any matches /session|read-only|no sessions/i ;; text:any matches /not available|not connected|unavailable/i
+  evidence_any: text:any matches /\b(no sessions?|none)\b|\b[0-9]+ sessions?\b/i ;; text:any matches /not available|not connected|unavailable/i
 
 ## Forbidden
-- [BRW-SF01] blocker · No session was created, used or deleted.
-  evidence: absent:browse.session_new
-  evidence: absent:browse.session_use
-  evidence: absent:browse.session_delete
+- [BRW-SF01] blocker · No browse write ran to answer the question.
+  evidence: absent-write:browse
 
 - [BRW-SF02] blocker · No call named a tool that does not exist.
   evidence: unknown-tool:none

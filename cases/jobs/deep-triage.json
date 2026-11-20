@@ -106,7 +106,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "\\bnext step\\b|\\b(run|open|check)\\b",
+            "source": "\\bnext step\\b",
             "flags": "i"
           }
         }
@@ -124,29 +124,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "jobs.create",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.pause",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.pause_all",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.delete",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "jobs.resume",
-          "n": null
+          "kind": "absent-write",
+          "ns": "jobs"
         }
       ],
       "evidence_any": [],
@@ -168,12 +147,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e8d915feabe948a713b396514093f6e145f5fb55bfc4981b4c038c031ede475a"
+    "source_sha256": "8a2ee6f0f655b60d25699c83b919d32935e2b8ed7da4505c88dc77e1365a22bf"
   }
 }

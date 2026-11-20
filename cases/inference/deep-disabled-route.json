@@ -82,7 +82,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "not enabled|disabled|unavailable|canary",
+              "source": "not enabled|disabled|unavailable",
               "flags": "i"
             }
           },
@@ -92,7 +92,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "clairic|capabilit",
+              "source": "(enabled|available).{0,40}(cloudflare\\/clairic|extract-typed)",
               "flags": "i"
             }
           }
@@ -141,6 +141,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0fd21b88a34fec5b17236dcf40856a90e27f4649bd1462ad2177a725169bbd28"
+    "source_sha256": "741c7dcd9590b3cb3c42044d50b7d3b5c04336f7faaa5d15ae00ead6a90a748d"
   }
 }

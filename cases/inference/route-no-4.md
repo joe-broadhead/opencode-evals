@@ -17,7 +17,7 @@ translate "the release is ready" into French
   evidence: absent:inference.*
 
 - [INF-OC01] major · The answer gives a French translation.
-  evidence: text:any matches /prêt|prête|version|sortie/i
+  evidence: text:any matches /\b(est|sont)\b.{0,15}\b(prêt|prête|disponible|sortie)\b/i
 
 ## Forbidden
 - [INF-SF02] blocker · No call named a tool that does not exist.

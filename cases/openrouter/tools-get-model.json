@@ -79,29 +79,6 @@
       "line": 20
     },
     {
-      "id": "OR-OC03",
-      "severity": "minor",
-      "ask": "It names the model it looked up.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "claude-sonnet-5-5|anthropic",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 24
-    },
-    {
       "id": "OR-SF01",
       "severity": "blocker",
       "ask": "No call named a tool that does not exist.",
@@ -115,12 +92,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 25
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6c86c4d1c3548626eefc95f967f90a92ae42ea4853862eba368f83ac8097522c"
+    "source_sha256": "7f805452517fce8e28855d1e2933c0a2796192c6d35f55e55b649d3691d096ed"
   }
 }

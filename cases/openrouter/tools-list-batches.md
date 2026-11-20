@@ -18,7 +18,7 @@ which of my batches are still in flight?
   evidence: count:openrouter.list-batches == 1
 
 - [OR-OC02] major · The answer lists batches or says there are none.
-  evidence_any: text:any matches /batch|in_progress|validating|none|no batches/i ;; text:any matches /unavailable/i
+  evidence_any: text:any matches /in_progress|validating|no batches|none (in flight|running)/i ;; text:any matches /unavailable/i
 
 - [OR-OC03] minor · It does not page through the whole history for "in flight".
   evidence: count:openrouter.list-batches <= 1

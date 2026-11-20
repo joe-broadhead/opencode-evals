@@ -28,13 +28,27 @@
       "ask": "The browser step was attempted and declined.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "declined",
-          "tool": "browse_execute"
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "browse_execute"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_new"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_use"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_adopt"
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
@@ -133,6 +147,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0008abbeeec21b96ede13bb5b446890075516bbcd90a03451560dde6e26d512b"
+    "source_sha256": "5ea67af0deeb4c77d26359c9c1080162c08ecc8b823cc446c78787455ffd7e76"
   }
 }

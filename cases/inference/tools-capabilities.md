@@ -18,7 +18,8 @@ which models can I use for extraction in this version, and which ones are turned
   evidence: count:inference.* == 1
 
 - [INF-OC02] major · The answer names an enabled route and a disabled one, or says which are unavailable.
-  evidence_any: text:any matches /clairic|scaledown|enabled|disabled|available|unavailable/i ;; text:any matches /no routes?/i
+  evidence_any: text:any matches /clairic|scaledown/i ;; text:any matches /no routes?/i
+  evidence: text:any matches /enabled|disabled|available|unavailable/i
 
 - [INF-OC03] minor · It does not claim a disabled route will work.
   evidence: text:any not-matches /\b(scaledown)\b.{0,30}\b(works|available|enabled)\b/i

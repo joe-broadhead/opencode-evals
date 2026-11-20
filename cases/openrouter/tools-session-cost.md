@@ -18,7 +18,7 @@ what does a typical Claude Code session cost on OpenRouter? give me a range, not
   evidence: count:openrouter.get-session-cost == 1
 
 - [OR-OC02] major · The answer gives a cost with its unit or a range, or says the data is unavailable.
-  evidence_any: text:any matches /\$|cost|range/i ;; text:any matches /no data|unavailable/i
+  evidence_any: text:any matches /[$€£]\s?[0-9]|[0-9]+(\.[0-9]+)?\s?(USD|per session)/i ;; text:any matches /no data|unavailable/i
 
 - [OR-OC03] minor · It says the figure is published statistics, not the user's bill.
   evidence: text:any matches /statistic|published|average|not your/i

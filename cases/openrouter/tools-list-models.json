@@ -83,7 +83,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "image|vision|200k|context",
+              "source": "image|vision",
               "flags": "i"
             }
           },
@@ -158,6 +158,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "9da8d50b3e18753b6f150848602fd2c3d3a2c93a078780b436143b5d3717edb1"
+    "source_sha256": "408a1a5fa8155d8cc8ad216c6fa34aa9a803373bcf87294e65faf177e96d7414"
   }
 }

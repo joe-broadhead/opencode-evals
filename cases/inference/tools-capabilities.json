@@ -53,7 +53,18 @@
       "ask": "The answer names an enabled route and a disabled one, or says which are unavailable.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "enabled|disabled|available|unavailable",
+            "flags": "i"
+          }
+        }
+      ],
       "evidence_any": [
         [
           {
@@ -62,7 +73,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "clairic|scaledown|enabled|disabled|available|unavailable",
+              "source": "clairic|scaledown",
               "flags": "i"
             }
           },
@@ -103,7 +114,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "INF-SF01",
@@ -121,7 +132,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "INF-SF02",
@@ -137,12 +148,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d9da60d9efa848ce4cd1f42d7434ad0d29d11c91e18f72a6561e36d3b2685d61"
+    "source_sha256": "02859b3437950245631cf546390e7b6b585862056e19b3e684e5e198104d8401"
   }
 }

@@ -77,6 +77,16 @@
           "op": "matches",
           "value": {
             "kind": "regex",
+            "source": "[$€£]\\s?[0-9]",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
             "source": "balance|credit",
             "flags": "i"
           }
@@ -130,7 +140,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "OR-SF01",
@@ -148,7 +158,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "OR-SF02",
@@ -164,12 +174,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ee8d127f39ea046b718aabd4916995eb27811f9370c91e42d45fbac35010984e"
+    "source_sha256": "92cccea1cedee9f8a7f613b9f36bb19427c59b948e29ab0d54cd2c3f72405176"
   }
 }

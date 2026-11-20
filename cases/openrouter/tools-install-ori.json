@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "install|command|step|npx|uv ",
+              "source": "npx|uv |python |--[a-z]",
               "flags": "i"
             }
           },
@@ -118,6 +118,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b931b0ecd3ddea768f7d7bbbec1ef256d85c1c59d39663ba781f68c50e8ec013"
+    "source_sha256": "8c1206cb5c9267f3b43ab2c873bc1781e91726d471ae4ace0de7498dcbe7d76d"
   }
 }

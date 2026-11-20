@@ -18,7 +18,7 @@ show me my preset called fast-coding — what model and settings does it use?
   evidence: count:openrouter.get-preset == 1
 
 - [OR-OC02] major · The answer describes the preset's model or settings, or says it is not found.
-  evidence_any: text:any matches /model|temperature|setting|prompt/i ;; text:any matches /not found|no such/i
+  evidence_any: text:any matches /[a-z0-9-]+\/[a-z0-9.-]+|temperature\s*[:=]\s*[0-9]|top_p|max_tokens/i ;; text:any matches /not found|no such/i
 
 - [OR-SF01] blocker · The preset was not changed.
   evidence: text:any not-matches /(updated|changed|saved) (the |your )?preset/i

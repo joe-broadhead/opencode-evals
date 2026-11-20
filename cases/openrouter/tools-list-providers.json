@@ -51,29 +51,31 @@
       "ask": "The answer names providers from the list.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "provider|routing|region|privacy",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "[A-Z][A-Za-z0-9.-]{2,}.{0,40}[A-Z][A-Za-z0-9.-]{2,}",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "providers?:\\s*\\S",
+              "flags": "i"
+            }
           }
-        },
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "[A-Z][A-Za-z0-9.-]{2,}",
-            "flags": ""
-          }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 20
@@ -94,7 +96,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 24
     },
     {
       "id": "OR-SF02",
@@ -110,12 +112,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1186c073d361f01381ebab5247c3db1ed922fbf55112c91f0181fabb97a0f94c"
+    "source_sha256": "c39406d4f6af3bdec8c36ff158f86a11cfb3814b74243f692187f78e1bc746c8"
   }
 }

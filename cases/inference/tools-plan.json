@@ -83,7 +83,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "quote|cost|price|route|coverage",
+              "source": "quote|coverage",
               "flags": "i"
             }
           },
@@ -93,7 +93,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "unavailable|refus|not supported",
+              "source": "unavailable|not supported|refus",
               "flags": "i"
             }
           }
@@ -151,6 +151,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "da40ec8b3547c4d3fec2fcab9594364c56348e82b7cf8c5a857953c85a56df16"
+    "source_sha256": "e981ed3248d89b613331855ff19ae06e966bc1623a504c23e105497ea45ed6d1"
   }
 }

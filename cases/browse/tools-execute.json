@@ -32,15 +32,30 @@
         {
           "kind": "count",
           "tool": "browse.execute",
-          "op": "==",
+          "op": "<=",
           "value": 1
-        },
-        {
-          "kind": "declined",
-          "tool": "browse_execute"
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "browse_execute"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_new"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_use"
+          },
+          {
+            "kind": "declined",
+            "tool": "browse_session_adopt"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
       "line": 16
@@ -61,7 +76,13 @@
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "browse.execute",
+          "n": null
+        }
+      ],
       "maps_to": [],
       "line": 20
     },
@@ -98,7 +119,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "BRW-SF01",
@@ -121,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "BRW-SF02",
@@ -139,7 +160,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "BRW-SF03",
@@ -155,7 +176,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     },
     {
       "id": "BRW-SF04",
@@ -174,12 +195,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 37
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f6e5fcc28eefff7bc311b34217c6d5fa831ac574a521e7902ce16e2ac2868a6e"
+    "source_sha256": "b0767ba2e1fd52118f81bee666a556164a1827771d62809eec0af7994ecd378c"
   }
 }

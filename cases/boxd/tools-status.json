@@ -107,19 +107,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "boxd.ensure",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "boxd.submit",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "boxd.drop",
-          "n": null
+          "kind": "absent-write",
+          "ns": "boxd"
         }
       ],
       "evidence_any": [],
@@ -141,12 +130,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "aade6f8f64b07e7cf12eb3f2e43961176efc7d329d064a9c795d493814895638"
+    "source_sha256": "452f89f6cd5ee7b5067de3710d3389835b37a180cc0b442e185684e9e65e3b94"
   }
 }

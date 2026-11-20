@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "command|spawn|run ",
+              "source": "npx|uv |python|--[a-z]|\\bori\\b",
               "flags": "i"
             }
           },
@@ -118,6 +118,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "59ee55f62e979c7f17043cb99991988969738aa2759569ccd1cdbf8b3600436e"
+    "source_sha256": "b90e9e997836727697d822c309fd32a02b3fbda3d3a75677a34cccfb8b51f589"
   }
 }

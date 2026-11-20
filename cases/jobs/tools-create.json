@@ -62,10 +62,11 @@
           "tool": "jobs.create",
           "n": 1,
           "arg": "args.schedule.cron",
-          "op": "==",
+          "op": "matches",
           "value": {
-            "kind": "string",
-            "value": "0 7 * * 1-5"
+            "kind": "regex",
+            "source": "^0 7 \\* \\* (1-5|mon-fri)$",
+            "flags": "i"
           }
         }
       ],
@@ -196,6 +197,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ce92fa2f3848b11c5571486ec50aec3912bf0853550ee17fbc66cef2c81bb228"
+    "source_sha256": "10a7096c96db433ae29307a47ebb1ea230b6a0140dcf7530300afaf4617f5055"
   }
 }

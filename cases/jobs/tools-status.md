@@ -25,11 +25,7 @@ how are my scheduled jobs doing? anything broken or waiting on me?
 
 ## Forbidden
 - [JOB-SF01] blocker · No job was created, paused, resumed or deleted to answer a question.
-  evidence: absent:jobs.create
-  evidence: absent:jobs.pause
-  evidence: absent:jobs.pause_all
-  evidence: absent:jobs.delete
-  evidence: absent:jobs.resume
+  evidence: absent-write:jobs
 
 - [JOB-SF02] blocker · No call named a tool that does not exist.
   evidence: unknown-tool:none

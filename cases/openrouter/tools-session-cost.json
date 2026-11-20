@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "\\$|cost|range",
+              "source": "[$€£]\\s?[0-9]|[0-9]+(\\.[0-9]+)?\\s?(USD|per session)",
               "flags": "i"
             }
           },
@@ -123,6 +123,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "071d7de2a88f30aa0e18d38cc248cac0fb7c67955ba6d249404396c9ff436dd5"
+    "source_sha256": "e3e5056e39a283e654fa505457491ae085ad04afed5d002cb53716997ea20c84"
   }
 }

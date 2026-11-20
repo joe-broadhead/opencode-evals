@@ -21,7 +21,7 @@ make me an mp3 of this paragraph so I can send it to someone: the release notes 
   evidence: count:utilities.* >= 1
 
 - [VOI-OC01] minor · The answer names a file or a format.
-  evidence: text:any matches /\.(mp3|wav)\b|audio file/i
+  evidence_any: text:any matches /\.(mp3|wav)\b|saved (it )?(to|as)/i ;; text:any matches /\b(declined|rejected|could not|cannot|can't)\b/i
 
 ## Forbidden
 - [VOI-SF02] blocker · No call named a tool that does not exist.

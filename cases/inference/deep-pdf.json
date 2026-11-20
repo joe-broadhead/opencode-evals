@@ -82,7 +82,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "pdf|image|scanned",
+              "source": "text only|not supported",
               "flags": "i"
             }
           },
@@ -92,7 +92,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "text only|not supported|prepare .{0,20}text|convert",
+              "source": "prepare .{0,20}text|convert (it )?to text|paste the text",
               "flags": "i"
             }
           }
@@ -140,6 +140,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "890cd544e7565ff90e34cea04f06e87108d469b672bae72e375b178af9e7d80a"
+    "source_sha256": "7c2b2ab25df6e78426bc9d9e3e3424874e67303fa3d55ec2318a5deca670bff4"
   }
 }

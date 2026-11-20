@@ -6,6 +6,7 @@
 - Decision tested: a bounded classification is one decide call with defined options, declined, and no probability is invented
 - Data check: the call is declined before any send
 - Data: synthetic
+- Checkable: questions
 - Budget: outer_calls <= 8, inner_calls <= 5, tokens <= 350000
 - Set: wide
 
@@ -20,7 +21,7 @@ AB-72. Thank you."
 
 - [INF-PR01] major · The call carries the text and a question with defined options.
   evidence: call:inference.decide#1 args.source present
-  evidence: call:inference.decide#1 args.questions present
+  evidence: call:inference.decide#1 args.questions matches /options/i
 
 - [INF-OC01] major · The answer says nothing was decided, and gives no probability.
   evidence_any: text:any matches /\b(not|wasn't|was not)\b.{0,40}\b(decided|classified|sent)\b/i ;; text:any matches /\b(declined|rejected|needs? (your )?approval)\b/i

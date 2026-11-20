@@ -93,7 +93,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "estimate|share|traffic|usage",
+            "source": "estimate|share of|traffic share|percentage",
             "flags": "i"
           }
         }
@@ -123,6 +123,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7e8a3cb1c254d3f4d9441a455325281cc50c841b64351a07a7d64799f5d3fd47"
+    "source_sha256": "1c79a6332f2c76763f8310208a442b5673e048f29b327d4082288a21e7dd6362"
   }
 }

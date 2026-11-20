@@ -127,19 +127,13 @@
     {
       "id": "BOX-SF01",
       "severity": "blocker",
-      "ask": "The read did not turn into a submit or a harvest.",
+      "ask": "The read did not turn into a write of any kind.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "boxd.submit",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "boxd.harvest",
-          "n": null
+          "kind": "absent-write",
+          "ns": "boxd"
         }
       ],
       "evidence_any": [],
@@ -161,12 +155,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "404db9935ce5f26ec430dd70736011be211ebaad6b648e3771aef9cda61da08a"
+    "source_sha256": "dff0a392107e3486b5bf178455387844e18ef56812f694d0f2308cb861b52742"
   }
 }

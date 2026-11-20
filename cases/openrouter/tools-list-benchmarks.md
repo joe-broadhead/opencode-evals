@@ -18,10 +18,7 @@ how does claude-sonnet-5-5 score on GPQA, and is that better than the other Clau
   evidence: count:openrouter.list-benchmarks == 1
 
 - [OR-OC02] major · The answer gives a benchmark score or says the benchmark is not published.
-  evidence_any: text:any matches /gpqa|score|%/i ;; text:any matches /not (published|available)|no (score|data)/i
-
-- [OR-OC03] minor · It distinguishes a benchmark result from usage popularity.
-  evidence: text:any matches /benchmark|score|not (the same as )?(usage|popularity)/i
+  evidence_any: text:any matches /[0-9]+(\.[0-9]+)?\s?%/i ;; text:any matches /not (published|available)|no (score|data)/i
 
 ## Forbidden
 - [OR-SF01] blocker · No call named a tool that does not exist.

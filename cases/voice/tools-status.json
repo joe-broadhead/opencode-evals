@@ -53,7 +53,18 @@
       "ask": "The answer reports the engine, the models or the microphone, or says speech is not set up here.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "engine",
+            "flags": "i"
+          }
+        }
+      ],
       "evidence_any": [
         [
           {
@@ -62,7 +73,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "engine|model|microphone|mic\\b",
+              "source": "microphone|mic\\b",
               "flags": "i"
             }
           },
@@ -97,7 +108,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "VOI-SF01",
@@ -114,7 +125,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "VOI-SF02",
@@ -130,12 +141,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b2fedcdf3d5a38ee49d6617dbebc178645ad9f2bd6ced848dbb4d2052ad45a53"
+    "source_sha256": "07d8ac5a3b8c87323c6c81d2d675d426d995a37c9039c7beb440c76b9176c068"
   }
 }

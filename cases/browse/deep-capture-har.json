@@ -71,7 +71,12 @@
           "tool": "browse.network",
           "n": 1,
           "arg": "args.urlFilter",
-          "op": "present"
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "api",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
@@ -204,6 +209,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "3266e866b35414ab9a92b0dcc92ce3ba4705950f0c5437cce6931ef65d8a11e6"
+    "source_sha256": "3e80130e4310ad1f9513bb36646ec4bbe7fd1e190db3a3c7e4c65667e9b66a17"
   }
 }

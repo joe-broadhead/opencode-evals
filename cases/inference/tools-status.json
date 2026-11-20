@@ -62,7 +62,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "connect|key|module|cap|spend|cost",
+              "source": "(not )?(connected|configured)|key (is )?(set|missing)|modules? (on|off)|caps? (set|none)",
               "flags": "i"
             }
           },
@@ -148,6 +148,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fc8f19241000d75f9ea68054f889cb906cf77b5b5d194ca6d8c9898b79d17993"
+    "source_sha256": "e0c77244dea3adac080480cfee8189432e197738b1e8af0172c54d03cb19a974"
   }
 }

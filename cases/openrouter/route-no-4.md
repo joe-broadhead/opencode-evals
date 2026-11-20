@@ -18,7 +18,7 @@ what's the weather in Berlin this afternoon?
   evidence: absent:openrouter.*
 
 - [OR-RT01] major · The weather tools were used.
-  evidence: count:utilities.* >= 1
+  evidence_any: call:utilities.weather_current#1 ;; call:utilities.weather_summary#1
 
 - [OR-OC01] minor · The answer gives a temperature or a condition.
   evidence: text:any matches /[0-9]+\s?°|degrees|celsius|rain|sunny|cloud/i

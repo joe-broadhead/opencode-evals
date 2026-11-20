@@ -18,7 +18,7 @@ what kinds of tasks do people use OpenRouter for most?
   evidence: count:openrouter.list-task-classifications == 1
 
 - [OR-OC02] major · The answer names task categories, or says the data is unavailable.
-  evidence_any: text:any matches /programming|coding|roleplay|translation|science|category|task/i ;; text:any matches /no data|unavailable/i
+  evidence_any: text:any matches /programming|roleplay|translation|science|academia|finance/i ;; text:any matches /no data|unavailable/i
 
 - [OR-DT01] minor · It says the window is the trailing week.
   evidence: text:any matches /7 days|week|trailing/i

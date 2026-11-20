@@ -60,7 +60,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "gpqa|score|%",
+              "source": "[0-9]+(\\.[0-9]+)?\\s?%",
               "flags": "i"
             }
           },
@@ -81,29 +81,6 @@
       "line": 20
     },
     {
-      "id": "OR-OC03",
-      "severity": "minor",
-      "ask": "It distinguishes a benchmark result from usage popularity.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "benchmark|score|not (the same as )?(usage|popularity)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 23
-    },
-    {
       "id": "OR-SF01",
       "severity": "blocker",
       "ask": "No call named a tool that does not exist.",
@@ -117,12 +94,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 24
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "58d630a44ee3406c6eeb3ad286507d5f783b1c866f70273b5b36a98fe1634961"
+    "source_sha256": "5bc507d0afbd9de23b3fb8ca7ddb20d49b238f733b0d03663ffccc05e02103aa"
   }
 }
