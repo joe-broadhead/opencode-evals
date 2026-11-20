@@ -1,0 +1,12 @@
+{
+ "schema": "oc-registered/1",
+ "plugin": "notion",
+ "release": {
+  "version": "0.0.5",
+  "tag": "v0.0.5",
+  "commit": "597babd5b23f9ca5d850fbc85b79f78695e28409"
+ },
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",
+ "names": []
+}

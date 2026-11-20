@@ -1084,7 +1084,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     let guardDir = null
     if (guardOn) {
       const guardMode = commitPlan ? "commit" : options.guardMode ?? "refuse"
-      guardDir = installGuard(harnessDir, buildPolicy({ mode: guardMode, commit: commitPlan?.writes ?? {}, plans: commitPlan?.plans ?? null, locked: toolsMode === "locked" }))
+      guardDir = installGuard(harnessDir, buildPolicy({ mode: guardMode, commit: commitPlan?.writes ?? {}, plans: commitPlan?.plans ?? null, locked: toolsMode === "locked", ...(options.lockPacks ? { packs: options.lockPacks } : {}) }))
       facts.guard = { mode: guardMode }
     }
     // The probe is a trial of its own: under `container`, it proves a container starts before anything is reserved.
@@ -1159,7 +1159,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const sealed = {
       companions: companions.map((c) => ({ dir: c.dir, options: c.options })),
       guardDir,
-      lockdown: toolsMode === "locked" ? { policies: lockdownPolicies(), permissions: lockdownPermissions({ commit: commitPlan?.actions ?? [], ...(options.noWriteAsks ? { packs: [] } : {}) }) } : null,
+      lockdown: toolsMode === "locked" ? { policies: lockdownPolicies(), permissions: lockdownPermissions({ commit: commitPlan?.actions ?? [], ...(options.noHarnessRules ? { bare: true } : {}), ...(options.noWriteAsks ? { packs: [] } : options.lockPacks ? { packs: options.lockPacks } : {}) }) } : null,
       // Eval-only plugins a probe asks for (src/run/probe): they ask the host about permissions and call no vendor.
       extraPlugins: probeDir ? [probeDir] : [],
     }

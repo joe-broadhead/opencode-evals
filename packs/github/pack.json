@@ -745,7 +745,7 @@
     "denied": 0,
     "skills": 3
   },
-  "digest": "856049ed659f2b215bb2032a92af03def31d5fe8f3c5acc36e6443196827ed8d",
+  "digest": "99d1c81d4ee5b3949bbb5666bc58f8ec5a0849a2846d6dffab7f57b1cda8c995",
   "t1": [],
   "egress": [
     "api.github.com",
@@ -753,5 +753,10 @@
     "uploads.github.com",
     "raw.githubusercontent.com"
   ],
-  "accounts": "fake"
+  "accounts": "fake",
+  "release": {
+    "version": "0.0.6",
+    "tag": "v0.0.6",
+    "commit": "96c2076efc9aeb512b51a3b6626702a14d4d7bee"
+  }
 }

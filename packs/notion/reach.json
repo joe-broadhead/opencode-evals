@@ -1,0 +1,165 @@
+{
+ "schema": "oc-reach/1",
+ "plugin": "notion",
+ "note": "Tools that can return content that is not in a sandbox, and the least `Data:` a case that can call one may declare. Built by scripts/reach-marks.mjs; see src/case/reach.mjs for how a case's floor is worked out.",
+ "tools": {
+  "notion-ai-search": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-calendar-list-calendar-resources": {
+   "floor": "real",
+   "why": "calendars, contacts and colleagues' events",
+   "unscopable": true
+  },
+  "notion-calendar-list-calendars": {
+   "floor": "real",
+   "why": "calendars, contacts and colleagues' events",
+   "unscopable": true
+  },
+  "notion-calendar-list-contacts": {
+   "floor": "real",
+   "why": "calendars, contacts and colleagues' events",
+   "unscopable": true
+  },
+  "notion-calendar-list-coworkers-events": {
+   "floor": "real",
+   "why": "calendars, contacts and colleagues' events",
+   "unscopable": true
+  },
+  "notion-calendar-list-events": {
+   "floor": "real",
+   "why": "calendars, contacts and colleagues' events",
+   "unscopable": true
+  },
+  "notion-connector-search": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-download-attachment": {
+   "floor": "real",
+   "why": "a signed URL to a file: a credential for whatever file it names"
+  },
+  "notion-fetch": {
+   "floor": "real",
+   "why": "reads a page, database or session by id or url: any the owner can see, other people's words",
+   "scope": "id"
+  },
+  "notion-get-comments": {
+   "floor": "real",
+   "why": "reads a page, database or session by id or url: any the owner can see, other people's words",
+   "scope": "page_id"
+  },
+  "notion-get-file-download-urls": {
+   "floor": "real",
+   "why": "a signed URL to a file: a credential for whatever file it names"
+  },
+  "notion-get-groups": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-get-sidebar-tabs": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-get-suggested-edit": {
+   "floor": "real",
+   "why": "reads a page, database or session by id or url: any the owner can see, other people's words"
+  },
+  "notion-get-teams": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-get-users": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-get-version-changes": {
+   "floor": "real",
+   "why": "reads a page, database or session by id or url: any the owner can see, other people's words",
+   "scope": "page"
+  },
+  "notion-list-favorite-pages": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-list-page-backlinks": {
+   "floor": "real",
+   "why": "reads a page, database or session by id or url: any the owner can see, other people's words",
+   "scope": "page_id"
+  },
+  "notion-list-private-pages": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-list-recent-pages": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-list-session-events": {
+   "floor": "real",
+   "why": "reads a page, database or session by id or url: any the owner can see, other people's words"
+  },
+  "notion-list-shared-pages": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-memory-search": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-query-data-sources": {
+   "floor": "real",
+   "why": "reads a page, database or session by id or url: any the owner can see, other people's words"
+  },
+  "notion-query-meeting-notes": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-query-multiple-data-sources": {
+   "floor": "real",
+   "why": "reads a page, database or session by id or url: any the owner can see, other people's words"
+  },
+  "notion-query-sessions": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-read-session-event": {
+   "floor": "real",
+   "why": "reads a page, database or session by id or url: any the owner can see, other people's words"
+  },
+  "notion-search": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-search-agents": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-search-sessions": {
+   "floor": "real",
+   "why": "searches or lists the whole workspace: other people's pages, teams and people",
+   "unscopable": true
+  },
+  "notion-view-version": {
+   "floor": "real",
+   "why": "reads a page, database or session by id or url: any the owner can see, other people's words",
+   "scope": "page"
+  }
+ }
+}

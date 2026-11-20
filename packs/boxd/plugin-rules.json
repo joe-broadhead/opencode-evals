@@ -1,0 +1,29 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "boxd",
+ "release": {
+  "version": "0.1.2",
+  "tag": "v0.1.2",
+  "commit": "f18f7104bffba785a417cecdec74f51df355d939"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "boxd_job",
+  "boxd_read",
+  "boxd_status"
+ ],
+ "asked": [
+  "boxd_drop",
+  "boxd_ensure",
+  "boxd_exec",
+  "boxd_golden",
+  "boxd_harvest",
+  "boxd_reassign",
+  "boxd_resume",
+  "boxd_sleep",
+  "boxd_submit"
+ ],
+ "denied": []
+}

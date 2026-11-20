@@ -1,0 +1,18 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "voice",
+ "release": {
+  "version": "0.0.4",
+  "tag": "v0.0.4",
+  "commit": "e08ecb8083be4eb46e545201002412a7a22898ed"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "voice_speak",
+  "voice_status"
+ ],
+ "asked": [],
+ "denied": []
+}

@@ -147,7 +147,7 @@
       "body_lines": 66
     }
   },
-  "digest": "97487ec293713b952736a384b4fbbf2ed47e943d937706d72398ca3f3ffe317f",
+  "digest": "7d0843cc7cf4364900a5524e15a884c46dfdfce91efe1124ce710ff634919f37",
   "access": {
     "key": "access",
     "default": "all"
@@ -155,5 +155,10 @@
   "egress": [
     "mcp.ashbyhq.com",
     "mcp-auth.ashbyhq.com"
-  ]
+  ],
+  "release": {
+    "version": "0.0.6",
+    "tag": "v0.0.6",
+    "commit": "fb5cfada79e56feaf71080666687d493807b09c3"
+  }
 }

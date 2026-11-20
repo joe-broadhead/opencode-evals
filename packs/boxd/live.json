@@ -1,0 +1,20 @@
+{
+ "schema": "oc-live/1",
+ "plugin": "boxd",
+ "listedAt": "2026-11-20",
+ "via": "a signed-in OpenCode host's Code Mode listing (read-only: search({ namespace }), no tool call)",
+ "names": [
+  "drop",
+  "ensure",
+  "exec",
+  "golden",
+  "harvest",
+  "job",
+  "read",
+  "reassign",
+  "resume",
+  "sleep",
+  "status",
+  "submit"
+ ]
+}

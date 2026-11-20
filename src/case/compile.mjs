@@ -7,6 +7,8 @@ import { validateCase, CaseError, isLegacyCase } from "./schema.mjs"
 import { sha256 } from "../util/canonical.mjs"
 import { parseTruth } from "./truth.mjs"
 import { toolNameProblems } from "./toolnames.mjs"
+import { reachProblems } from "./reach.mjs"
+import { argumentProblems, contradictions, valueWarnings } from "./consistency.mjs"
 
 export { ParseError, CaseError }
 
@@ -36,11 +38,15 @@ export const angleTokens = (prompt) => [...String(prompt).matchAll(/(?<!<)<(?![<
  * case in one of this round's sets is also checked against its plugin's pack: a clause that names a tool the plugin does not have
  * can never fire, and is a compile error (src/case/toolnames.mjs).
  */
-export function compileCase(file, text, { packs = null } = {}) {
+export function compileCase(file, text, { packs = null, reach = null, inputs = null, warn = null, targets = null } = {}) {
   const draft = parseCase(file, text)
   if (!draft.id) throw new ParseError(file, "missing # case id")
   // A wide skeleton (scripts/wide-skeletons.mjs) carries `<<TODO ...>>` where the writer's words go: it cannot be compiled, run or committed.
   if (/<<TODO/.test(draft.prompt)) throw new CaseError(file, "the prompt is still a skeleton's <<TODO>>: write the task a user would have, without the tool's description")
+  // A Seed key written twice is read one way by the compiler (the first `plugins=`) and another by the runner (the last): refused, so the case names the plugins it seeds once.
+  const seedKeys = [...String(draft.fields.seed ?? "").matchAll(/(?:^|\s)([A-Za-z][A-Za-z0-9_-]*)=/g)].map((m) => m[1])
+  const repeated = seedKeys.find((key, i) => seedKeys.indexOf(key) !== i)
+  if (repeated) throw new CaseError(file, `the Seed: key \`${repeated}=\` is written twice: the compiler reads the first and the runner the last, so the case would name one plugin's tools and hold another's credential. Write each key once (\`plugins=a,b\`)`)
   // A literal `<placeholder>` in a prompt is a gap nobody filled (`<github sandbox repo>`, `<your channel>`): the model is asked about something that is not there, or
   // answers with the placeholder echoed back. `{{target:...}}` and `{{canary:...}}` are the way to name a value the store fills. A prompt that really quotes angle
   // brackets (HTML, a generic type, a shell redirect) lists each quoted token in `- Angle brackets: <div>, </div>`; anything else between < and > is refused.
@@ -76,6 +82,8 @@ export function compileCase(file, text, { packs = null } = {}) {
       if (!parsed.ok) problems.push(`${file}:${clause.line}: ${item.id} (n/a_when): ${parsed.why}`)
       else na_when.push(parsed.clause)
     }
+    // `in created` rests on what the guard logged of completed writes, and a write completes only in the commit set, where the guard allows a declared extractor alone: advisory, never a blocker.
+    if (item.severity === "blocker" && [...evidence, ...evidence_any.flat()].some((clause) => clause.kind === "target" && clause.created)) problems.push(`${file}:${item.line}: ${item.id}: \`in created\` is advisory: a blocker may not rest on it (a major or minor item, or an alias)`)
     return {
       id: item.id,
       severity: item.severity,
@@ -123,10 +131,20 @@ export function compileCase(file, text, { packs = null } = {}) {
     hashes: { source_sha256: sha256(text) },
   }
   validateCase(compiled, file)
+  // A case that requires a call and forbids it can never pass (src/case/consistency.mjs).
+  const contradiction = contradictions(compiled, { packs: packs ?? [] })
+  if (contradiction.length) throw new CaseError(file, `the case contradicts itself:\n  ${contradiction.join("\n  ")}`)
   if (packs) {
+    const wrong = argumentProblems(compiled, { packs, ...(inputs ? { inputs } : {}) })
+    if (wrong.length) throw new CaseError(file, `a clause names an argument its tool does not take, so it could never match:\n  ${wrong.join("\n  ")}`)
     const named = toolNameProblems(compiled, packs)
     if (named.length) throw new CaseError(file, `a clause names a tool its plugin's pack does not have, so it could never fire:\n  ${named.join("\n  ")}`)
+    // The label is a floor over the tools the case can call, its plugin's and its companions' (src/case/reach.mjs): a lower one is refused.
+    const floor = reachProblems(compiled, { packs, ...(reach ? { reach } : {}), ...(targets ? { targets } : {}) })
+    if (floor.length) throw new CaseError(file, `the Data: label is below what the tools this case can call may return:\n  ${floor.join("\n  ")}`)
   }
+  // Warnings, not errors: a value the case checks that nothing tells the model.
+  if (warn) for (const message of valueWarnings(compiled)) warn(`${file}: ${message}`)
   return compiled
 }
 

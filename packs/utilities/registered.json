@@ -1,0 +1,37 @@
+{
+ "schema": "oc-registered/1",
+ "plugin": "utilities",
+ "release": {
+  "version": "0.0.6",
+  "tag": "v0.0.6",
+  "commit": "38bfb9f6a2c693972428d66e06f316b1d5d89a71"
+ },
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",
+ "names": [
+  "speech_synthesize",
+  "speech_transcribe",
+  "status",
+  "time_add",
+  "time_between",
+  "time_business_days",
+  "time_calendar",
+  "time_convert",
+  "time_format",
+  "time_holidays",
+  "time_now",
+  "time_zone_info",
+  "time_zones",
+  "timer_check",
+  "timer_delete",
+  "timer_get",
+  "timer_list",
+  "timer_set",
+  "weather_current",
+  "weather_daily",
+  "weather_demand_signal",
+  "weather_geocode",
+  "weather_hourly",
+  "weather_summary"
+ ]
+}

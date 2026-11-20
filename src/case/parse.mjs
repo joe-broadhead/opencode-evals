@@ -45,6 +45,8 @@ export function parseCase(file, text) {
   const draft = { file, fields: {}, prompt: "", items: [], oracle: [], notes: [], unknown: [] }
   let section = "header"
   let current = null
+  // Where each header was first written: a header is one line. Written twice, only the last would count, and a Seed's `plugins=` or `egress=` would be dropped without a word.
+  const headerAt = new Map()
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i]
     const line = raw.trimEnd()
@@ -68,6 +70,11 @@ export function parseCase(file, text) {
       if (!m) throw new ParseError(file, `expected "- Key: value", got ${JSON.stringify(line)}`, lineNo)
       const key = FIELDS.get(m[1].trim().toLowerCase())
       if (!key) throw new ParseError(file, `unknown header key ${JSON.stringify(m[1])}`, lineNo)
+      if (headerAt.has(key)) {
+        const first = headerAt.get(key)
+        throw new ParseError(file, `the header \`- ${m[1].trim()}:\` is written twice (first at line ${first.line}${first.spelling.toLowerCase() === m[1].trim().toLowerCase() ? "" : `, as \`${first.spelling}\``}): a header is one line, and the last would silently replace the first. Put every value on one line (\`- Seed: plugins=a,b egress=host\`)`, lineNo)
+      }
+      headerAt.set(key, { line: lineNo, spelling: m[1].trim() })
       draft.fields[key] = m[2].trim()
       continue
     }

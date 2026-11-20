@@ -184,7 +184,7 @@
       "body_lines": 41
     }
   },
-  "digest": "cad7d0860cffde9db4376fda634adfd5edeb8781bfcb95d7d9a89b5d38691e08",
+  "digest": "53fda4c98c1ee94441571637fb22d876e5d8bb4897c54c9091e738083ad8e3ad",
   "access": {
     "key": "access",
     "default": "all"
@@ -192,5 +192,10 @@
   "egress": [
     "mcp.granola.ai",
     "mcp-auth.granola.ai"
-  ]
+  ],
+  "release": {
+    "version": "0.0.6",
+    "tag": "v0.0.6",
+    "commit": "1bce3289fba00fbbd40b44ff20ea79d264c48c00"
+  }
 }

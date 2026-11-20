@@ -1,0 +1,194 @@
+{
+ "schema": "oc-reach/1",
+ "plugin": "linear",
+ "note": "Tools that can return content that is not in a sandbox, and the least `Data:` a case that can call one may declare. Built by scripts/reach-marks.mjs; see src/case/reach.mjs for how a case's floor is worked out.",
+ "tools": {
+  "get_agent_skill": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues",
+   "scope": "id"
+  },
+  "get_attachment": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues",
+   "scope": "id"
+  },
+  "get_diff": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues",
+   "scope": "urlOrId"
+  },
+  "get_diff_threads": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues",
+   "scope": "urlOrId"
+  },
+  "get_document": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues",
+   "scope": "id"
+  },
+  "get_initiative": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues"
+  },
+  "get_issue": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues",
+   "scope": "id"
+  },
+  "get_issue_status": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues"
+  },
+  "get_milestone": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues",
+   "scope": "project"
+  },
+  "get_notifications": {
+   "floor": "real",
+   "why": "the owner's issues and mentions across every team: colleagues' words",
+   "unscopable": true
+  },
+  "get_project": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues"
+  },
+  "get_release": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues",
+   "scope": "id"
+  },
+  "get_release_note": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues",
+   "scope": "id"
+  },
+  "get_status_updates": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues"
+  },
+  "get_team": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues"
+  },
+  "get_template": {
+   "floor": "real",
+   "why": "reads a record by id or name: any in the workspace, written by colleagues",
+   "scope": "id"
+  },
+  "get_triage_responsibility": {
+   "floor": "real",
+   "why": "the workspace's people and teams: a directory",
+   "unscopable": true
+  },
+  "get_user": {
+   "floor": "real",
+   "why": "the workspace's people and teams: a directory",
+   "unscopable": true
+  },
+  "get_workspace": {
+   "floor": "real",
+   "why": "the workspace's people and teams: a directory",
+   "unscopable": true
+  },
+  "issues": {
+   "floor": "real",
+   "why": "the owner's issues and mentions across every team: colleagues' words",
+   "unscopable": true
+  },
+  "list_agent_skills": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content"
+  },
+  "list_comments": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content"
+  },
+  "list_custom_views": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content",
+   "scope": "team"
+  },
+  "list_cycles": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content",
+   "scope": "teamId"
+  },
+  "list_diffs": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content"
+  },
+  "list_documents": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content"
+  },
+  "list_initiative_labels": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content"
+  },
+  "list_initiatives": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content"
+  },
+  "list_issue_labels": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content",
+   "scope": "team"
+  },
+  "list_issue_statuses": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content",
+   "scope": "team"
+  },
+  "list_issues": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content",
+   "scope": "team"
+  },
+  "list_milestones": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content",
+   "scope": "project"
+  },
+  "list_project_labels": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content",
+   "scope": "team"
+  },
+  "list_projects": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content",
+   "scope": "team"
+  },
+  "list_release_notes": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content"
+  },
+  "list_release_pipelines": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content",
+   "scope": "team"
+  },
+  "list_releases": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content"
+  },
+  "list_teams": {
+   "floor": "real",
+   "why": "the workspace's people and teams: a directory",
+   "unscopable": true
+  },
+  "list_templates": {
+   "floor": "real",
+   "why": "lists the workspace's records when no team or project bounds it: the company's content",
+   "scope": "team"
+  },
+  "list_users": {
+   "floor": "real",
+   "why": "the workspace's people and teams: a directory",
+   "unscopable": true
+  }
+ }
+}

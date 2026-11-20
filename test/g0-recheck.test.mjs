@@ -146,7 +146,8 @@ test("5: a blocker in a wide case that rests on an argument path no signature de
   const packs = [{ id: "slack", version: "0.0.6", pluginId: "slack.workspace", tools: [{ name: "slack_send_message", permission: "slack_slack_send_message", class: "write", args: ["channel_id", "text"] }, { name: "slack_search_users", permission: "slack_slack_search_users", class: "read" }] }]
   const problems = (severity, evidence, set = "wide") => {
     const text = `# ${set === "wide" ? "tools-x" : "route-x"}\n- Plugin: slack\n- Skill under test: slack\n- Tier: T3\n- Source: t\n- Decision tested: x\n- Data: seeded\n- Set: ${set}\n\n## Prompt\np\n\n## Items\n- [SLK-PR01] ${severity} · Aimed at the sandbox the user named.\n  evidence: ${evidence}\n`
-    return toolNameProblems(compileCase("cases/slack/x.md", text), packs)
+    // the synthetic pack declares `args` and no recorded parameters: the older rule, which a recorded tool no longer needs
+    return toolNameProblems(compileCase("cases/slack/x.md", text), packs, { inputs: new Map() })
   }
   assert.match(problems("blocker", "target:slack_send_message#1 args.chnl in @slack.sandbox_channel")[0], /rests on the argument `chnl` of slack_send_message, which no signature in the pack declares/)
   assert.match(problems("blocker", "call:slack_search_users#1 args.query == x")[0], /argument `query` of slack_search_users/)

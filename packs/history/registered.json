@@ -1,0 +1,21 @@
+{
+ "schema": "oc-registered/1",
+ "plugin": "history",
+ "release": {
+  "version": "0.0.7",
+  "tag": "v0.0.7",
+  "commit": "65fcbee1696ae8a29f652fb56b2cc18c34f57fdf"
+ },
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",
+ "names": [
+  "brief",
+  "events_list",
+  "files",
+  "read",
+  "recall",
+  "search",
+  "sessions",
+  "sql"
+ ]
+}

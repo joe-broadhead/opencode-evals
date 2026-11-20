@@ -1,0 +1,204 @@
+{
+ "schema": "oc-reach/1",
+ "plugin": "elevenlabs",
+ "note": "Tools that can return content that is not in a sandbox, and the least `Data:` a case that can call one may declare. Built by scripts/reach-marks.mjs; see src/case/reach.mjs for how a case's floor is worked out.",
+ "tools": {
+  "agents_count_conversations": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_get_alert": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "alert_id"
+  },
+  "agents_get_batch_call": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "batch_id"
+  },
+  "agents_get_conversation": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "conversation_id"
+  },
+  "agents_get_conversation_audio_url": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "conversation_id"
+  },
+  "agents_get_conversation_summary": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "conversation_id"
+  },
+  "agents_get_insights_report": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_get_latest_bi_report": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_get_link": {
+   "floor": "real",
+   "why": "phone numbers, webhooks, secrets, signed links or voices of the owner's account",
+   "scope": "agent_id"
+  },
+  "agents_get_memory": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_get_overview_dashboard": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_get_phone_number": {
+   "floor": "real",
+   "why": "phone numbers, webhooks, secrets, signed links or voices of the owner's account",
+   "scope": "phone_number_id"
+  },
+  "agents_get_signed_url": {
+   "floor": "real",
+   "why": "a signed URL into a live conversation with the owner's agent: a credential for whatever the agent can do",
+   "unscopable": true
+  },
+  "agents_get_summaries": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data"
+  },
+  "agents_get_test_result": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "test_run_id"
+  },
+  "agents_get_test_run": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "test_invocation_id"
+  },
+  "agents_get_test_run_failures": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "test_invocation_id"
+  },
+  "agents_get_tool_executions": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data"
+  },
+  "agents_get_topics": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_get_topics_summary": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_get_triage_ticket": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agentqa_ticket_id"
+  },
+  "agents_get_triage_ticket_assignable_users": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_get_whatsapp_account": {
+   "floor": "real",
+   "why": "phone numbers, webhooks, secrets, signed links or voices of the owner's account",
+   "scope": "phone_number_id"
+  },
+  "agents_list_alerts": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_list_batch_calls": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_list_conversations": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_list_memories": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_list_phone_numbers": {
+   "floor": "real",
+   "why": "phone numbers, webhooks, secrets, signed links or voices of the owner's account"
+  },
+  "agents_list_secrets": {
+   "floor": "real",
+   "why": "phone numbers, webhooks, secrets, signed links or voices of the owner's account"
+  },
+  "agents_list_triage_tickets": {
+   "floor": "real",
+   "why": "what callers said to the owner's agents, and who they were: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_list_webhooks": {
+   "floor": "real",
+   "why": "phone numbers, webhooks, secrets, signed links or voices of the owner's account"
+  },
+  "agents_list_whatsapp_accounts": {
+   "floor": "real",
+   "why": "what callers said, found by search or by reference, and the WhatsApp accounts: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_query_analytics": {
+   "floor": "real",
+   "why": "analytics and queries over every conversation of the workspace: what callers said and who they were",
+   "unscopable": true
+  },
+  "agents_query_workspace_conversations": {
+   "floor": "real",
+   "why": "analytics and queries over every conversation of the workspace: what callers said and who they were",
+   "unscopable": true
+  },
+  "agents_resolve_conversation": {
+   "floor": "real",
+   "why": "what callers said, found by search or by reference, and the WhatsApp accounts: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_search_conversation_messages": {
+   "floor": "real",
+   "why": "what callers said, found by search or by reference, and the WhatsApp accounts: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "agents_semantic_search_conversation_messages": {
+   "floor": "real",
+   "why": "what callers said, found by search or by reference, and the WhatsApp accounts: other people's words and personal data",
+   "scope": "agent_id"
+  },
+  "creative_get_available_assets": {
+   "floor": "real",
+   "why": "phone numbers, webhooks, secrets, signed links or voices of the owner's account"
+  },
+  "creative_get_generations": {
+   "floor": "real",
+   "why": "phone numbers, webhooks, secrets, signed links or voices of the owner's account"
+  },
+  "creative_list_voices": {
+   "floor": "real",
+   "why": "phone numbers, webhooks, secrets, signed links or voices of the owner's account"
+  },
+  "creative_transcribe_audio": {
+   "floor": "real",
+   "why": "sends an audio file to ElevenLabs and returns what is said in it: any file the owner can reach",
+   "unscopable": true
+  }
+ }
+}

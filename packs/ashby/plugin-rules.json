@@ -1,0 +1,33 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "ashby",
+ "release": {
+  "version": "0.0.6",
+  "tag": "v0.0.6",
+  "commit": "fb5cfada79e56feaf71080666687d493807b09c3"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "ashby_describe_object_fields",
+  "ashby_filter_records",
+  "ashby_get_candidate",
+  "ashby_get_interview_details",
+  "ashby_get_interview_plan",
+  "ashby_get_job_pipeline",
+  "ashby_get_pending_tasks",
+  "ashby_get_record_details",
+  "ashby_get_submitted_feedback",
+  "ashby_list_interviews",
+  "ashby_search_records_by_name"
+ ],
+ "asked": [
+  "ashby_add_note_to_candidate",
+  "ashby_change_application_stage",
+  "ashby_consider_candidate_for_job",
+  "ashby_create_candidate",
+  "ashby_submit_mcp_feedback"
+ ],
+ "denied": []
+}

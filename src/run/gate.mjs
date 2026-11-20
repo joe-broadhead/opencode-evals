@@ -179,7 +179,7 @@ export function dataPreflight(cases, { targets = null, canaries = null, env = pr
     const needsData = !usesOnlyNoAccount(c, noAccount)
     const clauses = (c.items ?? []).flatMap((item) => [...(item.evidence ?? []), ...(item.evidence_any ?? []).flat(), ...(item.na_when ?? [])])
     for (const clause of clauses) {
-      for (const alias of clause.aliases ?? []) if (!targets?.get(String(alias).replace(/^@/, ""))) missing.add(alias)
+      for (const alias of clause.aliases ?? []) if (!targets?.get(String(alias).replace(/^@/, "").replace(/\*$/, ""))) missing.add(alias)
       if (clause.kind === "canary" && !canaries?.get(clause.name)) missing.add(`@canary.${clause.name}`)
     }
     if (needsData && missing.size) deferred.push({ case: c.id, why: `its clauses name ${[...missing].join(", ")}, which the store lacks` })

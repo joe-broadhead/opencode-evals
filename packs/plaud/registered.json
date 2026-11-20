@@ -1,0 +1,16 @@
+{
+ "schema": "oc-registered/1",
+ "plugin": "plaud",
+ "release": {
+  "version": "0.0.7",
+  "tag": "v0.0.7",
+  "commit": "f89f95a94bde45cba6a62a70f8dcc262d8cbb15c"
+ },
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",
+ "names": [
+  "events_list",
+  "export",
+  "recent"
+ ]
+}

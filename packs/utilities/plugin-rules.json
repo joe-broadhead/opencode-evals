@@ -1,0 +1,41 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "utilities",
+ "release": {
+  "version": "0.0.6",
+  "tag": "v0.0.6",
+  "commit": "38bfb9f6a2c693972428d66e06f316b1d5d89a71"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "utilities_speech_transcribe",
+  "utilities_status",
+  "utilities_time_add",
+  "utilities_time_between",
+  "utilities_time_business_days",
+  "utilities_time_calendar",
+  "utilities_time_convert",
+  "utilities_time_format",
+  "utilities_time_holidays",
+  "utilities_time_now",
+  "utilities_time_zone_info",
+  "utilities_time_zones",
+  "utilities_timer_check",
+  "utilities_timer_get",
+  "utilities_timer_list",
+  "utilities_weather_current",
+  "utilities_weather_daily",
+  "utilities_weather_demand_signal",
+  "utilities_weather_geocode",
+  "utilities_weather_hourly",
+  "utilities_weather_summary"
+ ],
+ "asked": [
+  "utilities_speech_synthesize",
+  "utilities_timer_delete",
+  "utilities_timer_set"
+ ],
+ "denied": []
+}

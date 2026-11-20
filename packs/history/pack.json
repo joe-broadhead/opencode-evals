@@ -146,7 +146,7 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "34bcf9f09fd840e0639d1e3efdeee9a71bcc9d581db4fa6147a72aa06185525d",
+  "digest": "6544e6c5f99d9d16eaa3d03b5288c0a9017d4c15fdf6fd6d6362d037e1bfa2fa",
   "vocab": [
     "project",
     "directory",
@@ -185,5 +185,10 @@
     "key": "access",
     "default": "all"
   },
-  "egress": []
+  "egress": [],
+  "release": {
+    "version": "0.0.7",
+    "tag": "v0.0.7",
+    "commit": "65fcbee1696ae8a29f652fb56b2cc18c34f57fdf"
+  }
 }

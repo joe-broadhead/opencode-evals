@@ -1,0 +1,235 @@
+{
+ "schema": "oc-reach/1",
+ "plugin": "x",
+ "note": "Tools that can return content that is not in a sandbox, and the least `Data:` a case that can call one may declare. Built by scripts/reach-marks.mjs; see src/case/reach.mjs for how a case's floor is worked out.",
+ "tools": {
+  "get_broadcast": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_broadcast_chat": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_chat_conversation": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_chat_conversation_events": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_chat_conversations": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_chat_message_requests": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_chat_moderators": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_communities_by_id": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_lists_by_id": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_lists_followers": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_lists_members": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_lists_posts": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_news": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_posts_by_id": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_posts_by_ids": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_posts_counts_recent": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_posts_liking_users": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_posts_quoted_posts": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_posts_reposted_by": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_scheduled_broadcast": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_scheduled_call": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_source": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_spaces_by_creator_ids": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_spaces_by_id": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_spaces_by_ids": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_spaces_posts": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_trends_by_woeid": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_usage_credits": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_blocking": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_bookmark_folders": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_bookmarks": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_bookmarks_by_folder_id": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_by_id": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_by_username": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_by_usernames": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_followed_lists": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_liked_posts": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_list_memberships": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_me": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_me_followers": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_me_following": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_mentions": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_owned_lists": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_pinned_lists": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_posts": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_public_key": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_public_keys": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "get_users_timeline": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "list_broadcasts": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "list_scheduled_broadcasts": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "list_scheduled_calls": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "list_sources": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "search_communities": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "search_news": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "search_posts_all": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "search_spaces": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  },
+  "search_users": {
+   "floor": "real",
+   "why": "every read of X returns posts, people and conversations of strangers"
+  }
+ }
+}

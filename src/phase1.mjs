@@ -100,6 +100,17 @@ export const STEPS = [
     },
   },
   {
+    id: "canaries",
+    title: "seed-canaries: the round's canaries, planted in the sandbox containers through the evals profile (idempotent), recorded in canaries.json",
+    needs: "the vendors signed in, $EVALS_STORE/targets.json, canaries/manifest.json (or EVALS_CANARIES_MANIFEST)",
+    async run(ctx) {
+      if (!ctx.deps.seedCanaries) return pass("skipped: no canary seeding in this run")
+      const out = await ctx.deps.seedCanaries(ctx)
+      if (out.skipped) return pass(`skipped: ${out.skipped}`)
+      return pass([...out.created.map((n) => `created ${n}`), ...out.reused.map((n) => `reused  ${n}`)])
+    },
+  },
+  {
     id: "p6c",
     title: "P0-6c, logout: does `auth logout` call a vendor revoke (only when asked: --logout <vendor>)",
     needs: "--logout <vendor> (it signs the evals profile out of that vendor), the egress log watched",
@@ -204,6 +215,14 @@ export async function defaultDeps({ store, caller, companions }) {
     probe: async (id, extra) => {
       const { PROBES } = await import("./p0/probes.mjs")
       return PROBES[id]({ companions, tmp, store, ...extra })
+    },
+    // The canaries (scripts/seed-canaries.mjs): through the evals profile only, in the sandbox containers only; a rerun reuses. No manifest, nothing to seed.
+    seedCanaries: async (ctx) => {
+      const { seedCanaries } = await import("../scripts/seed-canaries.mjs")
+      const { existsSync, readFileSync } = await import("node:fs")
+      const file = ctx.caller.EVALS_CANARIES_MANIFEST ?? join(import.meta.dirname, "..", "canaries", "manifest.json")
+      if (!existsSync(file)) return { skipped: `no canaries manifest at ${file}: every case that names a canary is deferred by --preflight data until there is one` }
+      return seedCanaries({ manifest: JSON.parse(readFileSync(file, "utf8")), store: ctx.store, profile: ctx.profile, opencode: ctx.opencode, env: ctx.caller })
     },
     runBatch: async (options) => (await import("./run/runner.mjs")).runBatch({ ...options, auth: options.auth ?? "claude-agent+profile" }, { caller }),
     labelsOf: (entry) => {

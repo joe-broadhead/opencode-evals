@@ -1,0 +1,29 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "charts",
+ "release": {
+  "version": "0.0.7",
+  "tag": "v0.0.7",
+  "commit": "28444f1f61c2330c81e7005a98b1be238e70fbe4"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "charts_capabilities",
+  "charts_catalogue",
+  "charts_recommend",
+  "charts_themes",
+  "charts_validate"
+ ],
+ "asked": [
+  "charts_board",
+  "charts_diagram",
+  "charts_quick",
+  "charts_render",
+  "charts_table",
+  "charts_theme_save",
+  "charts_update"
+ ],
+ "denied": []
+}

@@ -154,7 +154,7 @@
       "body_lines": 47
     }
   },
-  "digest": "0766ce1712c14fd5abfd713173880f9d3ede9e780bfc9053350b1b53c5848839",
+  "digest": "be9d970ccfe89dc45f94881b93772d26bc2a2410c381c8c054f19649b6ee1ad2",
   "access": {
     "key": "access",
     "default": "all"
@@ -162,5 +162,10 @@
   "egress": [
     "api.wisprflow.ai",
     "mcp-auth.wisprflow.com"
-  ]
+  ],
+  "release": {
+    "version": "0.0.6",
+    "tag": "v0.0.6",
+    "commit": "d75384c13359e86535ff8e96360d96604ae4e8e7"
+  }
 }

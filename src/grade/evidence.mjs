@@ -5,8 +5,9 @@
 // and never failed. That distinction is what keeps an infra failure or a variable-valued argument from
 // being scored as a defect.
 
-import { selectCalls } from "./select.mjs"
-import { aliasValues, norm } from "./targets.mjs"
+import { selectCalls, qualify } from "./select.mjs"
+import { aliasValues, norm, prefixAliasProblem, withinPrefix } from "./targets.mjs"
+import { ID_SHAPE } from "../run/guard/logic.mjs"
 import { gwsPlanFacts } from "./gws.mjs"
 import { writeIndex, writeOf } from "./writes.mjs"
 import { fixtureFacts } from "../fake/facts.mjs"
@@ -125,9 +126,21 @@ export function parseClause(text) {
   if (m) return { ok: true, clause: { kind: "cost", tolerance: m[1] ? Number(m[1]) : 0.0011 } }
 
   // R6 (EVALS-232): clauses over the sandbox targets, the plan of a Google Workspace write, the guard and the answer's canaries.
-  //   target:<tool>#<n> args.<path> in @<alias>[,@<alias>]   every value of the call's argument is one of the alias's values
-  m = /^target:([A-Za-z0-9_.*-]+)#(\d+)\s+(args\.[A-Za-z0-9_.-]+)\s+in\s+(@[A-Za-z0-9_.-]+(?:\s*,\s*@[A-Za-z0-9_.-]+)*)$/.exec(line)
-  if (m) return { ok: true, clause: { kind: "target", tool: m[1], n: Number(m[2]), arg: m[3], aliases: aliasList(m[4]) } }
+  //   target:<tool>#<n> args.<path> in <where>[,<where>...]   every value of the call's argument is in one of the places:
+  //     @<alias>      one of the alias's values (the sandbox targets, exactly)
+  //     @<alias>*     starts with one of the alias's values (boxd's machine names: `@boxd.prefix*`, the owner's `evals-232-`)
+  //     created       was created in this trial: the value is in the result of an EARLIER WRITE call of the same trial (a page, an issue or a note the model
+  //                   made, then used). For a write whose argument has no alias in the store (Granola, Linear and Notion create what they change).
+  //                   A read's result does not count: a pre-existing id that a search returned was not created here.
+  const WHERE = "(?:@[A-Za-z0-9_.-]+\\*?|created)"
+  m = new RegExp(`^target:([A-Za-z0-9_.*-]+)#(\\d+)\\s+(args\\.[A-Za-z0-9_.-]+)\\s+in\\s+(${WHERE}(?:\\s*,\\s*${WHERE})*)$`).exec(line)
+  if (m) {
+    const places = aliasList(m[4])
+    const created = places.includes("created")
+    const aliases = places.filter((place) => place !== "created")
+    if (aliases.some((a) => a.endsWith("*") && !/^@[A-Za-z0-9_.-]+\*$/.test(a))) return { ok: false, why: `target: a prefix alias is @name* (one trailing star)` }
+    return { ok: true, clause: { kind: "target", tool: m[1], n: Number(m[2]), arg: m[3], aliases, ...(created ? { created: true } : {}) } }
+  }
   //   gws-plan:#<n> op == <operation>   |   gws-plan:#<n> target in @<alias>[,@<alias>]
   m = /^gws-plan:#(\d+)\s+op\s+(==|!=)\s+([A-Za-z0-9_.+-]+)$/.exec(line)
   if (m) return { ok: true, clause: { kind: "gws-plan", n: Number(m[1]), what: "op", op: m[2], value: m[3] } }
@@ -192,11 +205,21 @@ const WRAPPERS = new Set(["object", "redacted", "code", "id", "timestamp"])
 /** The operators a value that was never passed satisfies. */
 const NEGATIVE = new Set(["!=", "not-matches", "excludes"])
 
+/** X's parameters carry dots in their names (`tweet.fields`, `user.fields`): `args.tweet.fields` names that one top-level argument when the call has it, not `fields` inside `tweet`. */
+const collapseTop = (args, path) => {
+  if (!args || typeof args !== "object" || path[0] in args) return path
+  for (let j = path.length; j > 1; j--) {
+    const joined = path.slice(0, j).join(".")
+    if (joined in args) return [joined, ...path.slice(j)]
+  }
+  return path
+}
+
 /** An argument as the recording holds it: the value itself, a list included. */
 export function rawArgState(args, key) {
   if (args && typeof args === "object" && "$ref" in args) return { state: "opaque", why: "the argument object is a variable" }
   let value = args
-  for (const part of key.replace(/^args\./, "").split(".")) {
+  for (const part of collapseTop(args, key.replace(/^args\./, "").split("."))) {
     if (value === null || value === undefined || typeof value !== "object") return { state: "missing" }
     // A key not written beside a spread (`{...opts, limit: 5}`) may have come from it: unseen, not missing.
     if (value[part] === undefined && value.$spread === true) return { state: "opaque", why: `${part} may come from a spread` }
@@ -211,7 +234,7 @@ export function rawArgState(args, key) {
 export function argState(args, key) {
   // A call whose whole argument object is a variable (`events_list(args)`) says nothing about its keys: unverifiable, not "missing".
   if (args && typeof args === "object" && "$ref" in args) return { state: "opaque", why: "the argument object is a variable" }
-  const path = key.replace(/^args\./, "").split(".")
+  const path = collapseTop(args, key.replace(/^args\./, "").split("."))
   let value = args
   for (const [depth, part] of path.entries()) {
     if (value === null || value === undefined || typeof value !== "object") return { state: "missing" }
@@ -466,16 +489,42 @@ export function evaluateClause(clause, view) {
       const calls = selectCalls(view.calls, clause.tool, view.scope)
       const call = calls[clause.n - 1]
       if (!call) return { state: "fail", detail: `${clause.tool}#${clause.n} was not called (${calls.length} total)` }
-      const allowed = aliasValues(view.targets, clause.aliases)
-      if (!allowed) return { state: "unverifiable", detail: `${clause.aliases.join(", ")} is not in the targets file` }
-      if (call.raw_args === undefined) return { state: "unverifiable", detail: `${clause.tool}#${clause.n}: the recording is not available, so the argument cannot be read` }
+      const exact = clause.aliases.filter((a) => !a.endsWith("*"))
+      const prefixed = clause.aliases.filter((a) => a.endsWith("*")).map((a) => a.slice(0, -1))
+      // An alias list may be empty (`in created`): then the store is not consulted at all.
+      const allowed = exact.length ? aliasValues(view.targets, exact) : []
+      const prefixes = prefixed.length ? aliasValues(view.targets, prefixed) : []
+      if (!allowed || !prefixes) return { state: "unverifiable", detail: `${clause.aliases.join(", ")} is not in the targets file` }
+      // A prefix is a grading check on a name the owner chose to be unique: declared as one, long enough, and ended by a separator (src/grade/targets.mjs).
+      for (const alias of prefixed) {
+        const bad = prefixAliasProblem(alias, view.targets)
+        if (bad) return { state: "unverifiable", detail: bad }
+      }
       const label = clause.arg.replace(/^args\./, "")
-      const resolved = rawArgState(call.raw_args, clause.arg)
-      if (resolved.state === "missing") return { state: "fail", detail: `${label} was not passed` }
-      if (resolved.state === "opaque") return { state: "unverifiable", detail: `${label} is a variable (${resolved.why})` }
-      const values = (Array.isArray(resolved.value) ? resolved.value : [resolved.value]).map(norm)
-      const ok = values.length > 0 && values.every((value) => allowed.map(norm).includes(value))
-      return { state: ok ? "ok" : "fail", detail: `${label} (${values.length} value(s)) ${ok ? "is" : "is not"} in ${clause.aliases.join(", ")}` }
+      let values
+      let createdIds = null
+      if (clause.created) {
+        // `created` reads what the GUARD saw: the value the tool really got (a variable resolved) and the ids the trial's own completed writes returned before this call
+        // (src/run/guard: `write_result`: ids a write's result names that its input did not, so an update, a read, a failed write and a script's own invention add none).
+        const seen = guardCall(view, clause)
+        if (seen.state) return seen
+        values = seen.values
+        createdIds = seen.ids
+        if (!values.length) return { state: "fail", detail: `${label} was not passed` }
+      } else {
+        if (call.raw_args === undefined) return { state: "unverifiable", detail: `${clause.tool}#${clause.n}: the recording is not available, so the argument cannot be read` }
+        const resolved = rawArgState(call.raw_args, clause.arg)
+        if (resolved.state === "missing") return { state: "fail", detail: `${label} was not passed` }
+        if (resolved.state === "opaque") return { state: "unverifiable", detail: `${label} is a variable (${resolved.why})` }
+        values = (Array.isArray(resolved.value) ? resolved.value : [resolved.value]).map(norm)
+      }
+      const exactSet = new Set(allowed.map(norm))
+      const prefixList = prefixes.map(norm)
+      const where = (value) => (exactSet.has(value) ? "alias" : prefixList.some((p) => withinPrefix(value, p)) ? "prefix" : createdIds?.includes(value) && ID_SHAPE.test(value) ? "created" : null)
+      const hits = values.map(where)
+      const ok = values.length > 0 && hits.every(Boolean)
+      const names = [...clause.aliases, ...(clause.created ? ["created in this trial"] : [])].join(", ")
+      return { state: ok ? "ok" : "fail", detail: `${label} (${values.length} value(s)) ${ok ? "is" : "is not"} in ${names}${ok && hits.includes("created") ? ` (${hits.filter((h) => h === "created").length} returned by an earlier write of this trial)` : ""}` }
     }
     case "gws-plan": {
       const calls = selectCalls(view.calls, "gws.plan", view.scope)
@@ -549,8 +598,29 @@ export const sameToolName = (a, b) => {
 }
 
 /** Does `text` state `value`? A number stands alone (4 is not 14), anything else is a case-insensitive substring. */
-function states(text, value) {
+function states(text, value, { token = false } = {}) {
   const hay = String(text).toLowerCase()
   const want = String(value).toLowerCase()
+  // An id is one token: `ab12` is not in `xab123`.
+  if (token) return want.length > 0 && new RegExp(`(^|[^a-z0-9_-])${want.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z0-9_-]|$)`).test(hay)
   return /^\d+$/.test(want) ? new RegExp(`(^|[^0-9])${want}([^0-9]|$)`).test(hay) : hay.includes(want)
+}
+
+/**
+ * The guard's own record of the call a `created` clause names: the n-th `execute_before` of the tool, its input leaves at the clause's path, and the new ids the completed writes
+ * BEFORE it returned. `{ values, ids }`, or `{ state, detail }` when it cannot be read (no guard log; the tool is not a write the guard logs the input of; fewer calls than the clause says).
+ */
+function guardCall(view, clause) {
+  const log = view.guardLog
+  if (!Array.isArray(log) || !log.length) return { state: "unverifiable", detail: `${clause.tool}#${clause.n}: the guard's log is not available, so what the trial created cannot be read` }
+  const want = (name) => String(name ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_")
+  const pattern = want(qualify(clause.tool, view.scope))
+  const befores = log.filter((r) => r.kind === "execute_before" && (want(r.tool) === pattern || want(r.tool).endsWith(`_${pattern}`)))
+  const at = befores[clause.n - 1]
+  if (!at) return { state: "fail", detail: `the guard saw no call number ${clause.n} of ${clause.tool} (${befores.length} total)` }
+  if (!at.args) return { state: "unverifiable", detail: `${clause.tool} is not a write the guard logs the input of: \`created\` is for the writes of a pack` }
+  const path = clause.arg.replace(/^args\./, "")
+  const values = Object.entries(at.args).filter(([key]) => key === path || key.startsWith(`${path}.`)).map(([, value]) => norm(value))
+  const before = log.slice(0, log.indexOf(at))
+  return { values, ids: before.filter((r) => r.kind === "write_result").flatMap((r) => r.ids ?? []) }
 }

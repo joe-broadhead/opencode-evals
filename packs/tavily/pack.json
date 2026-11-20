@@ -73,10 +73,15 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "981a81f7be0e075151042d8462f80f3f14691d79969b3bbb6673ac981dcaabef",
+  "digest": "aee3c0d487030cf0d52c23de7970ccdfd48005a4ecfbda210205b592d96925e0",
   "t1": [],
   "egress": [
     "mcp.tavily.com",
     "api.tavily.com"
-  ]
+  ],
+  "release": {
+    "version": "0.0.5",
+    "tag": "v0.0.5",
+    "commit": "2c9816376c61d9197e36cc5a59af7a2c27e98b1d"
+  }
 }

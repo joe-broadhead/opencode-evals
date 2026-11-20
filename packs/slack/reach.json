@@ -1,0 +1,72 @@
+{
+ "schema": "oc-reach/1",
+ "plugin": "slack",
+ "note": "Tools that can return content that is not in a sandbox, and the least `Data:` a case that can call one may declare. Built by scripts/reach-marks.mjs; see src/case/reach.mjs for how a case's floor is worked out.",
+ "tools": {
+  "slack_get_reactions": {
+   "floor": "real",
+   "why": "reads a channel, thread, file, canvas or list by id: any the owner can see, other people's words",
+   "scope": "channel_id"
+  },
+  "slack_list_channel_members": {
+   "floor": "real",
+   "why": "the members of a channel: colleagues' names",
+   "scope": "channel_id"
+  },
+  "slack_list_user_channels": {
+   "floor": "real",
+   "why": "lists the workspace's channel names and topics",
+   "unscopable": true
+  },
+  "slack_read_canvas": {
+   "floor": "real",
+   "why": "reads a channel, thread, file, canvas or list by id: any the owner can see, other people's words",
+   "scope": "canvas_id"
+  },
+  "slack_read_channel": {
+   "floor": "real",
+   "why": "reads a channel, thread, file, canvas or list by id: any the owner can see, other people's words",
+   "scope": "channel_id"
+  },
+  "slack_read_file": {
+   "floor": "real",
+   "why": "reads a channel, thread, file, canvas or list by id: any the owner can see, other people's words",
+   "scope": "file_id"
+  },
+  "slack_read_list": {
+   "floor": "real",
+   "why": "reads a channel, thread, file, canvas or list by id: any the owner can see, other people's words",
+   "scope": "list_id"
+  },
+  "slack_read_thread": {
+   "floor": "real",
+   "why": "reads a channel, thread, file, canvas or list by id: any the owner can see, other people's words",
+   "scope": "channel_id"
+  },
+  "slack_read_user_profile": {
+   "floor": "real",
+   "why": "a user directory: names, titles and addresses of colleagues",
+   "unscopable": true
+  },
+  "slack_search_channels": {
+   "floor": "real",
+   "why": "lists the workspace's channel names and topics",
+   "unscopable": true
+  },
+  "slack_search_public": {
+   "floor": "real",
+   "why": "searches every channel of the workspace, other people's messages",
+   "unscopable": true
+  },
+  "slack_search_public_and_private": {
+   "floor": "real",
+   "why": "searches every channel of the workspace, other people's messages",
+   "unscopable": true
+  },
+  "slack_search_users": {
+   "floor": "real",
+   "why": "a user directory: names, titles and addresses of colleagues",
+   "unscopable": true
+  }
+ }
+}

@@ -1,0 +1,30 @@
+{
+ "schema": "oc-live/1",
+ "plugin": "granola",
+ "listedAt": "2026-11-20",
+ "via": "a signed-in OpenCode host's Code Mode listing (read-only: search({ namespace }), no tool call)",
+ "names": [
+  "add_note_to_folder",
+  "create_folder",
+  "create_meeting_note_from_transcript",
+  "events_list",
+  "export_markdown",
+  "generate_summary",
+  "get_account_info",
+  "get_agent_brief",
+  "get_meeting_attachment",
+  "get_meeting_transcript",
+  "get_meetings",
+  "give_feedback",
+  "list_meeting_folders",
+  "list_templates",
+  "query_granola_meetings",
+  "remove_note_from_folder",
+  "search_meetings",
+  "search_transcripts",
+  "update_folder",
+  "update_meeting_title",
+  "update_private_notes",
+  "update_summary"
+ ]
+}

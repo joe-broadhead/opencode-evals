@@ -32,7 +32,8 @@ test("a read skeleton checks the call and a canary, a write the declined call an
   assert.match(read, /evidence: call:slack\.slack_/)
   assert.match(read, /text:any contains @canary\./)
   assert.match(read, /committed-write:none/)
-  assert.match(read, /- Data: seeded/)
+  assert.match(read, /- Data: real/, "the first slack read is a workspace-wide search: its floor is real")
+  assert.match(skeleton(pack("slack"), pack("slack").tools.find((t) => t.name === "slack_search_emojis")), /- Data: seeded/, "a read no reach.json marks starts as before")
   const write = skeleton(pack("slack"), pack("slack").tools.find((t) => t.name === "slack_send_message"))
   assert.match(write, /count:slack\.slack_send_message == 1/)
   assert.match(write, /declined:slack_slack_send_message/)
@@ -46,6 +47,15 @@ test("a read skeleton checks the call and a canary, a write the declined call an
   assert.match(research, /call:tavily\.tavily_search#1/)
 })
 
+// a skeleton's `args.<<TODO argument>>` is any argument of the tool it is about: the first parameter the pack records for it (`id` where it records none)
+import { loadInputs } from "../src/case/consistency.mjs"
+const INPUTS = loadInputs()
+const firstParam = (pack, s) => {
+  const name = /tools-(.+)\.md$/.exec(s.file)?.[1]
+  const tool = pack.tools.find((t) => `tools-${slug(t.name)}` === `tools-${name}`)
+  return Object.keys(INPUTS.get(pack.id)?.tools?.[tool?.name]?.p ?? {})[0] ?? "id"
+}
+
 test("a filled skeleton compiles against the pack, and its tool names are the pack's", () => {
   const tool = pack("slack").tools.find((t) => t.name === "slack_send_message")
   const text = fill(skeleton(pack("slack"), tool), { "args.<<TODO argument>>": "args.channel_id", "@<<TODO alias>>": "@slack.sandbox_channel" })
@@ -58,7 +68,7 @@ test("a filled skeleton compiles against the pack, and its tool names are the pa
   let compiled = 0
   for (const p of packs) {
     for (const s of skeletons(p)) {
-      const filled = fill(s.text, { "args.<<TODO argument>>": "args.id", "@<<TODO alias>>": "@slack.sandbox_channel", "<<TODO operation id>>": "gmail.users.messages.send", "@canary.<<TODO canary name>>": "@canary.example" })
+      const filled = fill(s.text, { "args.<<TODO argument>>": `args.${firstParam(p, s)}`, "@<<TODO alias>>": "@slack.sandbox_channel", "<<TODO operation id>>": "gmail.users.messages.send", "@canary.<<TODO canary name>>": "@canary.example" })
       compileCase(`cases/${p.id}/${s.file}`, filled, { packs })
       compiled++
     }

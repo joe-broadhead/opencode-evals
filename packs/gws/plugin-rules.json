@@ -1,0 +1,29 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "gws",
+ "release": {
+  "version": "0.0.10",
+  "tag": "v0.0.10",
+  "commit": "2a20560fe3f0fccdc1d8776da6ba0287e9b47bfe"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "gws.catalog",
+  "gws.events_list",
+  "gws.plan",
+  "gws.read",
+  "gws.schema",
+  "gws.status"
+ ],
+ "asked": [
+  "gws.admin",
+  "gws.delete",
+  "gws.export",
+  "gws.send",
+  "gws.share",
+  "gws.write"
+ ],
+ "denied": []
+}

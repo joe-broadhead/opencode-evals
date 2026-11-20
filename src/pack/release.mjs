@@ -46,3 +46,15 @@ export function extractRelease({ id, version, repo, into, fetch = false }) {
   if (unpack.status !== 0) throw new Error(`${id}: could not unpack ${tag}: ${String(unpack.stderr).slice(0, 160)}`)
   return dir
 }
+
+/** The release a pack describes, as the pack records it: `{ version, tag, commit }`, the commit the tag points at in the checkout. */
+export function releaseInfo({ repo, version }) {
+  const tag = `v${version}`
+  let commit = null
+  try {
+    commit = execFileSync("git", ["-C", repo, "rev-parse", "--verify", "--quiet", `refs/tags/${tag}^{commit}`], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim()
+  } catch {
+    // no such tag in this checkout: recorded as null, and `evals pack` says so
+  }
+  return { version, tag, commit }
+}

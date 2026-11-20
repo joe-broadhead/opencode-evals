@@ -3,7 +3,7 @@
 
 import { cpSync, mkdirSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
-import { loadPacks } from "../lockdown.mjs"
+import { loadPacks, CAPPED_SPEND_READS } from "../lockdown.mjs"
 
 export const GUARD_SOURCE = resolve(import.meta.dirname)
 
@@ -35,17 +35,30 @@ export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {},
   const actions = new Set()
   for (const pack of packs) {
     for (const tool of pack.tools ?? []) {
-      if (tool.class !== "write") continue
+      // a metered spending tool (lockdown.mjs CAPPED_SPEND_READS) is allowed in a trial whatever class its pack gives it: not a write for the guard
+      if (tool.class !== "write" || CAPPED_SPEND_READS.includes(tool.permission)) continue
       actions.add(tool.permission)
       const declared = commit[tool.permission]
       writes.push({ names: namesOf(pack, tool), action: tool.permission, ...(declared ? { ...(declared.extract ? { extract: declared.extract } : {}), ...(declared.allow ? { allow: declared.allow } : {}), ...(declared.local === true ? { local: true } : {}) } : {}) })
     }
   }
+  // A commit set may name an action no pack lists (a tool the plugin registers that its pack lacks): it is then a write the plan declares, so the guard treats it like one.
+  for (const [action, declared] of Object.entries(commit)) {
+    if (actions.has(action)) continue
+    actions.add(action)
+    const dotted = action.replace("_", ".")
+    writes.push({ names: [...new Set([action, dotted])].sort(), action, ...(declared.extract ? { extract: declared.extract } : {}), ...(declared.allow ? { allow: declared.allow } : {}), ...(declared.local === true ? { local: true } : {}) })
+  }
   // A locked trial calls only `execute`, `skill`, `question`, `todowrite` and the tools of the plugins installed (their ids, namespaces and
   // RPC names, and the eval-only probe's): anything else is refused at execute.before and logged (G0 review 3.1).
   const prefixes = new Set(["evalsprobe"])
   for (const pack of packs) for (const prefix of [pack.id, String(pack.pluginId ?? "").split(".")[0], String(pack.rpc ?? "").split(".")[0]]) if (prefix) prefixes.add(prefix)
-  return { mode, writes, actions: [...actions].sort(), ...(plans ? { plans } : {}), ...(locked ? { tools: { exact: ["execute", "skill", "question", "todowrite"], prefixes: [...prefixes].sort() } } : {}) }
+  // Every tool of every pack, of any class, by every name it can reach the guard under: in a locked trial a call of a plugin's prefix that is not here is a tool no pack lists, and is a write
+  // (fail closed: an unclassified tool is the one that places a call or spends credits; review of #14, round 3).
+  const known = new Set()
+  for (const pack of packs) for (const tool of pack.tools ?? []) for (const name of namesOf(pack, tool)) known.add(name)
+  for (const write of writes) for (const name of write.names) known.add(name)
+  return { mode, writes, actions: [...actions].sort(), ...(plans ? { plans } : {}), ...(locked ? { tools: { exact: ["execute", "skill", "question", "todowrite"], prefixes: [...prefixes].sort() }, known: [...known].sort() } : {}) }
 }
 
 /** Copies the guard into `into/guard` and writes its policy read-only beside it. Returns the guard's directory. */

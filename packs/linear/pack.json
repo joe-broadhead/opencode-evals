@@ -595,12 +595,17 @@
       "body_lines": 50
     }
   },
-  "digest": "aa091b8e75f45bf88932ed820d1934affa409bb6ea6420b7b21575ca18c83c32",
+  "digest": "9bfc2008e0f6fb4f1c521ff1af40cc311381c6e9ea9567e22c0146bd19ddaf1d",
   "access": {
     "key": "access",
     "default": "all"
   },
   "egress": [
     "mcp.linear.app"
-  ]
+  ],
+  "release": {
+    "version": "0.0.6",
+    "tag": "v0.0.6",
+    "commit": "6c4447bdbd2a25f6d7729375f3e60c8a12e08666"
+  }
 }

@@ -21,7 +21,7 @@
 // can run the logic against a stand-in.
 
 import { appendFileSync } from "node:fs"
-import { loadPolicy, matchWrite, isIn, planIdOf, decideBefore, judgePlan, pick } from "./logic.mjs"
+import { loadPolicy, matchWrite, isIn, isUnknownTool, planIdOf, decideBefore, judgePlan, pick, scalarLeaves, newIds } from "./logic.mjs"
 
 const OUT = () => process.env.EVALS_GUARD_OUT ?? (process.env.TMPDIR ? `${process.env.TMPDIR}/guard.jsonl` : "")
 
@@ -48,8 +48,9 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
       const runSessions = new Set<string>()
 
       await ctx.permission.hook("evaluate", (evaluation: any) => {
-        const write = actions.has(evaluation.action)
-        record("permission", { action: evaluation.action, session: evaluation.sessionID, effect: evaluation.effect, write })
+        const unknown = !actions.has(evaluation.action) && isUnknownTool(policy, evaluation.action)
+        const write = actions.has(evaluation.action) || unknown
+        record("permission", { action: evaluation.action, session: evaluation.sessionID, effect: evaluation.effect, write, ...(unknown ? { unknown: true } : {}) })
         if (write && evaluation.effect === "allow" && policy.mode === "refuse") {
           evaluation.effect = "deny"
           evaluation.message = `EVALS-ASSERT access: ${evaluation.action} is a write and was not asked`
@@ -60,7 +61,9 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
       await ctx.tool.hook("execute.before", (event: any) => {
         runSessions.add(event.sessionID)
         const decision = decideBefore(policy, event.tool, event.input, plans)
-        record("execute_before", { tool: event.tool, call: event.id, session: event.sessionID, write: Boolean(decision.write) || decision.committer, pass: decision.pass, why: decision.why })
+        // A write's input leaves, for `target: ... in created`: the value the tool really got, a variable resolved (private, like the rest of this log).
+        const args = matchWrite(policy, event.tool) ? { args: scalarLeaves(event.input) } : {}
+        record("execute_before", { tool: event.tool, call: event.id, session: event.sessionID, write: Boolean(decision.write) || decision.committer, pass: decision.pass, why: decision.why, ...args })
         if (!decision.pass) {
           record("assert", { what: (decision as any).tool ? "tool" : "write", tool: event.tool, why: decision.why })
           throw new Error(`EVALS-ASSERT ${(decision as any).tool ? "tool" : "write"}: ${event.tool} refused (${decision.why})`)
@@ -69,6 +72,7 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
 
       await ctx.tool.hook("execute.after", (event: any) => {
         const write = matchWrite(policy, event.tool)
+        const unknown = !write && isUnknownTool(policy, event.tool)
         const committer = isIn(policy.plans?.committers, event.tool)
         if (policy.plans && isIn(policy.plans.makers, event.tool) && event.status === "completed") {
           const id = planIdOf(event.result, policy.plans.idPath)
@@ -78,9 +82,18 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
             record("plan", { tool: event.tool, plan: id, in_scope: judged.ok })
           }
         }
-        if ((write || committer) && event.status === "completed") {
-          record("committed", { tool: event.tool, call: event.id, session: event.sessionID, mode: policy.mode, ...(write?.extract ? { target: pick(event.input, write.extract) } : {}) })
+        if ((write || committer || unknown) && event.status === "completed") {
+          record("committed", { tool: event.tool, call: event.id, session: event.sessionID, mode: policy.mode, ...(unknown ? { unknown: true } : {}), ...(write?.extract ? { target: pick(event.input, write.extract) } : {}) })
           if (policy.mode === "refuse") record("assert", { what: "committed", tool: event.tool })
+        }
+        // The id a completed write's own result gives to the thing it made (a create's new id; an update adds none). Written AFTER the safety records, and never able to stop them: a result this
+        // cannot read says so and records no id (review of #14, K3).
+        if (write && event.status === "completed") {
+          try {
+            record("write_result", { tool: event.tool, call: event.id, session: event.sessionID, ids: newIds(event.result, event.input, { tool: event.tool }) })
+          } catch (error) {
+            record("write_result", { tool: event.tool, call: event.id, session: event.sessionID, ids: [], error: String((error as any)?.message ?? error).slice(0, 200) })
+          }
         }
       })
 

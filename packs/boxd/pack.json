@@ -115,7 +115,12 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "058a18129d3170886aeb0ccd3883840be5d6fe581fadb673d10aa1ffd68d5e58",
+  "digest": "163b0d56ea7e1f7fcfe4b57aeb8a3a0a167fdf357213f4736b8bf3aaaf7472c9",
   "t1": [],
-  "egress": []
+  "egress": [],
+  "release": {
+    "version": "0.1.2",
+    "tag": "v0.1.2",
+    "commit": "f18f7104bffba785a417cecdec74f51df355d939"
+  }
 }

@@ -25,13 +25,16 @@
 
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { readVersions, extractRelease } from "./pack/release.mjs"
+import { readVersions, extractRelease, releaseInfo } from "./pack/release.mjs"
 import { readHalt, clearHalt } from "./run/halt.mjs"
 import { noAccountPlugins, noCredentialPlugins, pluginsOf, usesOnlyNoAccount } from "./run/accounts.mjs"
 import { loadPacks } from "./run/lockdown.mjs"
 import { join, dirname, resolve, basename } from "node:path"
 import { fileURLToPath } from "node:url"
 import { compileCase, casesDigest, codedShare } from "./case/compile.mjs"
+import { coverage } from "./case/consistency.mjs"
+import { loadReach } from "./case/reach.mjs"
+import { listingProblems, readSidecar, readExtras, ruleProblems } from "./pack/listing.mjs"
 import { digestOf, sha256, short, canonical } from "./util/canonical.mjs"
 import { harnessVersion } from "./version.mjs"
 import { traceFromFiles } from "./trace/normalise.mjs"
@@ -99,12 +102,20 @@ const listCases = (dir) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.e
 function compileAll(plugin = "x", { check = false, dir = path("cases", plugin) } = {}) {
   // The packs a case's tool names are checked against: this repository's, as synced from the releases.
   const packs = loadPacks()
+  // The sandbox aliases the store defines, when it has a targets.json: a floor lifts only for an alias that exists (src/case/reach.mjs). Without a store only the alias's plugin is checked.
+  let aliasNames = null
+  try {
+    const store = loadTargets()
+    aliasNames = store ? new Set(store.keys()) : null
+  } catch {
+    aliasNames = null
+  }
   const files = listCases(dir)
   if (!files.length) throw new Error(`no cases in ${dir}`)
   // Compile every case before writing any: a broken case must not leave a half-written case set.
   const compiled = files.map((file) => {
     const text = read(join(dir, file))
-    const caseObject = compileCase(dir === path("cases", plugin) ? join("cases", plugin, file) : join("holdouts", plugin, file), text, { packs })
+    const caseObject = compileCase(dir === path("cases", plugin) ? join("cases", plugin, file) : join("holdouts", plugin, file), text, { packs, targets: aliasNames, warn: (message) => console.warn(`warning: ${message}`) })
     const previous = join(dir, file.replace(/\.md$/, ".json"))
     const next = `${json(caseObject)}\n`
     const changed = !existsSync(previous) || read(previous) !== next
@@ -167,6 +178,8 @@ function stateFor(iteration, caseName) {
 const RAW_KINDS = new Set(["target", "gws-plan"])
 const needsRawArgs = (caseObject) => (caseObject.items ?? []).some((item) => [...(item.evidence ?? []), ...(item.evidence_any ?? []).flat(), ...(item.na_when ?? [])].some((clause) => RAW_KINDS.has(clause.kind)))
 
+const needsCreated = (caseObject) => (caseObject.items ?? []).some((item) => [...(item.evidence ?? []), ...(item.evidence_any ?? []).flat(), ...(item.na_when ?? [])].some((clause) => clause.kind === "target" && clause.created))
+
 function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir = rawRoot(), plugin = "x") {
   const results = []
   // The private store's targets and canaries, read once; absent files leave every clause that needs them unverifiable.
@@ -193,6 +206,7 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
       const rawBase = join(rawDir, iteration, plugin, trialName(caseObject.id, trial))
       let text = null
       let rawArgs = null
+      let guardLog = null
       if (existsSync(`${rawBase}.jsonl`)) {
         const rawLines = read(`${rawBase}.jsonl`).split("\n").filter(Boolean)
         const last = [...rawLines]
@@ -204,6 +218,8 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
         // R6's `target:` and `gws-plan:` read the call's own arguments too, and so does a case that declares keys checkable.
         if (caseObject.checkable?.length || needsRawArgs(caseObject)) rawArgs = rawCallArgs(rawLines)
       }
+      // The guard's own records, in order, for `target: ... in created` (private, like the recording).
+      if (needsCreated(caseObject) && existsSync(`${rawBase}.guard.jsonl`)) guardLog = read(`${rawBase}.guard.jsonl`).split("\n").filter(Boolean).map((line) => JSON.parse(line))
       // The guard's record of the trial, from the run's own summary.
       const summaryFile = `${rawBase}.summary.json`
       const guard = existsSync(summaryFile) ? JSON.parse(read(summaryFile)).guard ?? null : null
@@ -211,7 +227,7 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
       // The plugins that ran with no account (the pack's `accounts: none`, as the store's round.json overrides it): their cases have no target or canary.
       const none = noAccountPlugins({ packs: loadPacks(), store: storePath() })
       const noAccount = none.size && pluginsOf(caseObject).some((id) => none.has(id)) ? { plugins: none, all: usesOnlyNoAccount(caseObject, none) } : null
-      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) ?? adapterState(plugin, files), scope, rawArgs, checkable: caseObject.checkable ?? [], files, targets, canaries, guard, noAccount })
+      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) ?? adapterState(plugin, files), scope, rawArgs, guardLog, checkable: caseObject.checkable ?? [], files, targets, canaries, guard, noAccount })
       results.push({ ...gradeCase(caseObject, view), ...(trial ? { trial } : {}) })
     }
   }
@@ -862,7 +878,7 @@ export async function main(argv) {
             continue
           }
           const drift = before ? driftReport(live, before) : null
-          const pack = writePack(id, ROOT, process.env, dir)
+          const pack = writePack(id, ROOT, process.env, dir, releaseInfo({ repo: pluginRepo(id), version: releases[id] }))
           if (drift?.drift) console.log(renderDrift(id, drift))
           console.log(`${id.padEnd(10)} v${releases[id]} ${before ? "synced " : "created"}  tools ${pack.counts.tools} (${pack.counts.reads} read, ${pack.counts.writes} write, ${pack.counts.denied} denied${pack.counts.hidden ? `, ${pack.counts.hidden} hidden` : ""})  skills ${pack.counts.skills}  ${pack.digest.slice(0, 12)}${before ? `  was v${before.version}, ${before.counts?.tools} tools` : ""}`)
           continue
@@ -901,6 +917,34 @@ export async function main(argv) {
         if (verified.ok) {
           const pack = JSON.parse(read(join(ROOT, "packs", id, "pack.json")))
           let line = `${id.padEnd(10)} ok  ${String(pack.digest).slice(0, 12)}  tools ${pack.counts?.tools ?? 0}  skills ${pack.counts?.skills ?? 0}  t1 ${(pack.t1 ?? []).length}`
+          // The coverage of the pack's recorded input schemas (packs/<id>/inputs.json): every tool has one, or says why it has none; a tool with neither fails the pack.
+          const covered = coverage(pack)
+          line += `  schemas ${covered.have}/${covered.total}${covered.unlisted.length ? ` (+${covered.unlisted.length} unlisted: ${covered.unlisted.join(", ")})` : ""}`
+          // The reads of the pack that carry a data-floor mark (packs/<id>/reach.json): a plugin with no marks says so, so a gap shows (review of #14, R1).
+          const marks = loadReach().get(id)
+          const reads = (pack.tools ?? []).filter((t) => t.class === "read" && !t.hidden).length
+          line += `  reach ${marks ? Object.keys(marks.tools ?? {}).length : 0} marked of ${reads} reads`
+          // The release the pack describes, and what its release registers and a signed-in host lists, against the pack (src/pack/listing.mjs).
+          const listed = listingProblems(pack, { registered: readSidecar(ROOT, id, "registered.json"), live: readSidecar(ROOT, id, "live.json"), extras: readExtras(ROOT) })
+          const registered = readSidecar(ROOT, id, "registered.json")
+          const host = readSidecar(ROOT, id, "live.json")
+          line += `  release ${pack.release?.tag ?? "none"}${pack.release?.commit ? `@${pack.release.commit.slice(0, 7)}` : ""}  registered ${registered ? registered.names.length : "?"}  listed ${host ? host.names.length : "—"}`
+          const gaps = [
+            ...(!pack.release?.tag || !pack.release?.commit || pack.release.tag !== `v${pack.version}` ? [`records no release for v${pack.version} (tag and commit: node scripts/record-releases.mjs)`] : []),
+            ...(registered ? [] : ["has no registered.json (node scripts/registered-tools.mjs)"]),
+            ...ruleProblems(pack, readSidecar(ROOT, id, "plugin-rules.json")),
+            ...(listed.registered.length ? [`its release registers ${listed.registered.join(", ")}, which the pack does not list`] : []),
+            ...(listed.live.length ? [`a signed-in host lists ${listed.live.join(", ")}, which the pack does not list and scripts/live-extra.json does not explain`] : []),
+            ...(listed.stale.length ? [`scripts/live-extra.json explains ${listed.stale.join(", ")}, which the pack lists or the host no longer does`] : []),
+          ]
+          if (gaps.length) {
+            failures += 1
+            line += `\n  FAILED: ${gaps.join("; ")}`
+          }
+          if (covered.missing.length) {
+            failures += 1
+            line += `\n  FAILED: no recorded input schema for ${covered.missing.join(", ")} (node scripts/capture-inputs.mjs)`
+          }
           if (repoAvailable(id)) {
             const drift = driftReport(derivePack(id), pack)
             if (drift.drift) {

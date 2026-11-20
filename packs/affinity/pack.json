@@ -609,12 +609,17 @@
       "body_lines": 84
     }
   },
-  "digest": "745390ccaae52bb81083c9982da47e66551e031aa229e47d40d5c2d6ad265386",
+  "digest": "bfa391bb54cc77aabcd4b4d7f49222dbe06757e1070d13e6b4e95984451058ae",
   "access": {
     "key": "access",
     "default": "all"
   },
   "egress": [
     "mcp.affinity.co"
-  ]
+  ],
+  "release": {
+    "version": "0.0.6",
+    "tag": "v0.0.6",
+    "commit": "df16c19128091fdf7064beec1df9eb545761a4fe"
+  }
 }

@@ -1,0 +1,48 @@
+{
+ "schema": "oc-plugin-rules/1",
+ "plugin": "openrouter",
+ "release": {
+  "version": "0.0.6",
+  "tag": "v0.0.6",
+  "commit": "a9e85429481d579cf1180a20fa9270120cb5e95a"
+ },
+ "access": "ask-changes",
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
+ "allowed": [
+  "openrouter_get-batch",
+  "openrouter_get-credits",
+  "openrouter_get-current-key",
+  "openrouter_get-endpoint-uptime-history",
+  "openrouter_get-generation",
+  "openrouter_get-model",
+  "openrouter_get-preset",
+  "openrouter_get-session-cost",
+  "openrouter_get-video",
+  "openrouter_install-ori-harness",
+  "openrouter_list-app-rankings",
+  "openrouter_list-batches",
+  "openrouter_list-benchmarks",
+  "openrouter_list-daily-model-rankings",
+  "openrouter_list-model-endpoints",
+  "openrouter_list-models",
+  "openrouter_list-preset-versions",
+  "openrouter_list-presets",
+  "openrouter_list-providers",
+  "openrouter_list-task-classifications",
+  "openrouter_ping",
+  "openrouter_search-docs",
+  "openrouter_spawn-ori-eval"
+ ],
+ "asked": [
+  "openrouter_generate-image",
+  "openrouter_generate-speech",
+  "openrouter_generate-video",
+  "openrouter_send-batch",
+  "openrouter_send-decision",
+  "openrouter_send-feedback",
+  "openrouter_send-message",
+  "openrouter_transcribe-audio"
+ ],
+ "denied": []
+}

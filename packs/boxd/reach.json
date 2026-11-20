@@ -1,0 +1,17 @@
+{
+ "schema": "oc-reach/1",
+ "plugin": "boxd",
+ "note": "Tools that can return content that is not in a sandbox, and the least `Data:` a case that can call one may declare. Built by scripts/reach-marks.mjs; see src/case/reach.mjs for how a case's floor is worked out.",
+ "tools": {
+  "job": {
+   "floor": "own",
+   "why": "a job's output on a machine of the owner's",
+   "scope": "workId"
+  },
+  "read": {
+   "floor": "own",
+   "why": "reads a file on a machine of the owner's: their own infrastructure",
+   "scope": "workId"
+  }
+ }
+}

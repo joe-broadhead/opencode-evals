@@ -353,7 +353,7 @@ function fixture({ extra = "", ids = ["demo-a", "demo-b"] } = {}) {
   const root = scratch()
   const casesDir = join(root, "cases")
   mkdirSync(casesDir)
-  const text = (id, header) => `# ${id}\n- Plugin: demo\n- Skill under test: demo\n- Tier: T3\n- Source: test\n- Decision tested: x\n- Data: synthetic\n${header}\n## Prompt\nhello ${id}\n\n## Items\n- [D-OC01] blocker · It says something.\n  evidence: text:any matches /./\n`
+  const text = (id, header) => `# ${id}\n- Plugin: demo\n- Skill under test: demo\n- Tier: T3\n- Source: test\n- Decision tested: x\n${/Data:/.test(header) ? "" : "- Data: synthetic\n"}${header}\n## Prompt\nhello ${id}\n\n## Items\n- [D-OC01] blocker · It says something.\n  evidence: text:any matches /./\n`
   for (const [id, header] of [[ids[0], extra], [ids[1], ""]]) {
     writeFileSync(join(casesDir, `${id}.md`), text(id, header))
     writeFileSync(join(casesDir, `${id}.json`), JSON.stringify(compileCase(`cases/demo/${id}.md`, text(id, header))))

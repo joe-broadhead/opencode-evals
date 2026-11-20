@@ -1,0 +1,21 @@
+{
+ "schema": "oc-reach/1",
+ "plugin": "gws",
+ "note": "Tools that can return content that is not in a sandbox, and the least `Data:` a case that can call one may declare. Built by scripts/reach-marks.mjs; see src/case/reach.mjs for how a case's floor is worked out.",
+ "tools": {
+  "events_list": {
+   "floor": "own",
+   "why": "the owner's calendar events (a source read: gws.events_list, then gws.read on each operation it follows)",
+   "unscopable": true
+  },
+  "read": {
+   "floor": "real",
+   "why": "gmail.* reads the owner's real mail, drive.* their files, calendar.* their events",
+   "lower": {
+    "arg": "operation",
+    "pattern": "^(drive|calendar)\\.",
+    "floor": "own"
+   }
+  }
+ }
+}

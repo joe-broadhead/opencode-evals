@@ -1,0 +1,18 @@
+{
+ "schema": "oc-registered/1",
+ "plugin": "gws",
+ "release": {
+  "version": "0.0.10",
+  "tag": "v0.0.10",
+  "commit": "2a20560fe3f0fccdc1d8776da6ba0287e9b47bfe"
+ },
+ "host": "opencode v2.3.2",
+ "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",
+ "names": [
+  "catalog",
+  "events_list",
+  "plan",
+  "schema",
+  "status"
+ ]
+}
