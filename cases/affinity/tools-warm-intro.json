@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: warm_intro (Affinity's warm intro playbook text)",
   "decision": "A find-me-a-warm-intro request calls the playbook once, then reads the relationships",
-  "data_check": "a path to {{target:affinity.company}} exists",
-  "prompt": "find me a warm intro to {{target:affinity.company}} and draft the ask.",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "find me a warm intro to a portfolio company we track and draft the ask.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -35,10 +35,62 @@
           "arg": null
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.warm_intro"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.warm_intro"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
       "line": 17
+    },
+    {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer gives the paths the playbook returned and a draft ask, or says there are none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
     },
     {
       "id": "AFF-OC01",
@@ -54,7 +106,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 24
     },
     {
       "id": "AFF-SF01",
@@ -74,7 +126,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 28
     },
     {
       "id": "AFF-SF02",
@@ -90,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 31
     }
   ],
   "oracle": [],
@@ -98,10 +150,10 @@
     {
       "id": null,
       "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
-      "line": 30
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "d7be9db021401502e1dce3f994611787528e58ad048dd9a23f41079cf25c8611"
+    "source_sha256": "a8f549bb76db6c5544cfac157d9597928f56b57ed144358013933f4fbafc8f1a"
   }
 }

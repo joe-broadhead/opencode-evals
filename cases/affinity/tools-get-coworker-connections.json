@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: get_coworker_connections (which colleagues are connected)",
   "decision": "A which-colleagues-know-them question is one connections read, with Affinity's score labelled",
-  "data_check": "{{target:affinity.company}} has at least one coworker connection",
-  "prompt": "which of my colleagues are connected to {{target:affinity.company}}?",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "which of my colleagues are connected to a portfolio company we track?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -41,6 +41,33 @@
       "line": 17
     },
     {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
       "id": "AFF-PR01",
       "severity": "major",
       "ask": "It read the company it resolved.",
@@ -52,36 +79,65 @@
           "tool": "affinity.get_coworker_connections",
           "n": 1,
           "arg": "args.company_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.get_coworker_connections"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.get_coworker_connections"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
     },
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer names the colleagues and says the score is Affinity's.",
+      "ask": "The answer names the colleagues the call returned, or says there are none, and labels any score as Affinity's.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(interaction score|Affinity's score|percentage)",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(interaction score|Affinity's score|percentage)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(none|no (relationships|colleagues|connections))\\b",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 24
     },
     {
       "id": "AFF-OC02",
@@ -97,7 +153,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 26
     },
     {
       "id": "AFF-SF01",
@@ -117,7 +173,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 30
     },
     {
       "id": "AFF-SF02",
@@ -133,12 +189,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "51bc7c9c5abb0a1e7cc35aa43318ddb8b0677e6055fe9f3ec09487d4d3acc68a"
+    "source_sha256": "56ec4c22ec67b48c845f7a61381b58f5efc5761b97eabca9610097e543ae917e"
   }
 }

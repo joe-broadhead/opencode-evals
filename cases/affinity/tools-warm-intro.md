@@ -4,18 +4,23 @@
 - Tier: T3
 - Source: wide sweep: warm_intro (Affinity's warm intro playbook text)
 - Decision tested: A find-me-a-warm-intro request calls the playbook once, then reads the relationships
-- Data check: a path to {{target:affinity.company}} exists
+- Data check: the CRM holds at least one company matching the description
 - Seed: plugins=affinity
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
 ## Prompt
-find me a warm intro to {{target:affinity.company}} and draft the ask.
+find me a warm intro to a portfolio company we track and draft the ask.
 
 ## Items
 - [AFF-TR01] blocker · It used warm_intro once.
   evidence: call:affinity.warm_intro#1
+  evidence_any: before:affinity.search_companies_top_matches,affinity.warm_intro ;; before:affinity.search_all_companies,affinity.warm_intro
+- [AFF-TR02] blocker · It found the company by searching first.
+  evidence_any: call:affinity.search_companies_top_matches#1 ;; call:affinity.search_all_companies#1
+- [AFF-OC09] major · The answer gives the paths the playbook returned and a draft ask, or says there are none.
+  grader: judge
 - [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 

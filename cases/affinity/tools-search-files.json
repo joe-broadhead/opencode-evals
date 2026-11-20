@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: search_files (files by prompt, optionally one company)",
   "decision": "A find-the-deck question is one search_files",
-  "data_check": "a deck about {{target:affinity.company}} exists",
-  "prompt": "find the deck we have about {{target:affinity.company}}'s round.",
+  "data_check": "the CRM may hold a deck; the search reports what it finds",
+  "prompt": "find the deck we have about a portfolio company's round.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -66,6 +66,18 @@
       "line": 19
     },
     {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer lists the files the search returned, or says there are none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
       "id": "AFF-OC01",
       "severity": "minor",
       "ask": "No tool was invented.",
@@ -79,7 +91,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 23
     },
     {
       "id": "AFF-SF01",
@@ -99,7 +111,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 27
     },
     {
       "id": "AFF-SF02",
@@ -115,12 +127,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "eeed4a78f7fa3e0baca88cf467b4017dcdc4e9db4ba065d983004ef4fcf60860"
+    "source_sha256": "1f90e01ac9c693a4f4c50095253a409e4cad4e025e573cf41c1e5d18170d517f"
   }
 }

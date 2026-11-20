@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: search_persons (people by name or email)",
   "decision": "A find-this-person question is one search_persons, and namesakes are shown, not merged",
-  "data_check": "the founder of {{target:affinity.company}} is tracked",
-  "prompt": "find the founder of {{target:affinity.company}} in the CRM.",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "find a founder at a portfolio company we track in the CRM.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -41,6 +41,33 @@
       "line": 17
     },
     {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
       "id": "AFF-PR01",
       "severity": "major",
       "ask": "It searched on the name or email.",
@@ -55,33 +82,58 @@
           "op": "present"
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.search_persons"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.search_persons"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 21
     },
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer names the person and their company, and asks if several match.",
+      "ask": "The answer names the person the search returned, or says there are none, and asks if several match.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(here (is|are)|I found|matches|which one)",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(here (is|are)|I found|matches|which one)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(none|no (person|match|result))\\b",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 24
     },
     {
       "id": "AFF-OC02",
@@ -97,7 +149,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 26
     },
     {
       "id": "AFF-SF01",
@@ -117,7 +169,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 30
     },
     {
       "id": "AFF-SF02",
@@ -133,12 +185,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0e239dc8cb67b68bc236f00af194ce405ab5181768195794d40880732fddc966"
+    "source_sha256": "2dba957020198114543376b8219e8ee1ecf4581fdca16c7ba59ab1e8cf61a30f"
   }
 }

@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: company_signals (Affinity's signals routine)",
   "decision": "A what-signals-are-on-this-company request calls company_signals once",
-  "data_check": "{{target:affinity.company}} exists",
-  "prompt": "what signals are on {{target:affinity.company}} right now? hiring, funding, anything the CRM picked up.",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "what signals are on a portfolio company we track right now? hiring, funding, anything the CRM picked up.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -35,10 +35,62 @@
           "arg": null
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.company_signals"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.company_signals"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
       "line": 17
+    },
+    {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer gives the signals the playbook and the record returned, or says there are none, not a restatement of the question.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
     },
     {
       "id": "AFF-OC01",
@@ -54,7 +106,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 24
     },
     {
       "id": "AFF-SF01",
@@ -74,7 +126,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 28
     },
     {
       "id": "AFF-SF02",
@@ -90,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 31
     }
   ],
   "oracle": [],
@@ -98,10 +150,10 @@
     {
       "id": null,
       "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
-      "line": 30
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "1ddbdbc3e2ee5dd88eda5dec2dace1d0e4a2a4c8def166afc32deb72f88de727"
+    "source_sha256": "1c4f2a212783a37d0e347986816cc6ffe6d9114782b7366ffaf8a2decfc73f29"
   }
 }

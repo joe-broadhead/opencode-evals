@@ -19,6 +19,7 @@
   "sets": [
     "wide"
   ],
+  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -38,7 +39,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "AFF-PR01",
@@ -58,7 +59,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "AFF-OC01",
@@ -74,7 +75,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "AFF-SF01",
@@ -94,7 +95,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "AFF-SF02",
@@ -110,12 +111,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: the owner declined an Affinity target company; it needs a file record, which a company search cannot supply.",
+      "line": 33
+    }
+  ],
   "hashes": {
-    "source_sha256": "d0d3db3d164d0125fe47ec894b20e919debd8ae5838fc093328e5ce4d64fe153"
+    "source_sha256": "3d1bf2412e630e40ad63be7c3a587d9ebbc739953e00f3d1e4331074a116267a"
   }
 }

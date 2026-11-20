@@ -9,6 +9,7 @@
 - Data: real
 - Budget: outer_calls <= 14, inner_calls <= 10
 - Set: route
+- Status: deferred
 
 ## Prompt
 what did {{target:affinity.company}} say about their raise in the last call?
@@ -29,3 +30,6 @@ what did {{target:affinity.company}} say about their raise in the last call?
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
+
+## Notes
+- Deferred: the owner declined an Affinity target company; it needs a company with an AI Notetaker note and a transcript, which a company search cannot supply.

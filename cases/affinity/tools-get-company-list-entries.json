@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: get_company_list_entries (the lists a company is on)",
   "decision": "A which-lists question is one list-entries read for the company",
-  "data_check": "{{target:affinity.company}} is on at least one list",
-  "prompt": "which of our lists is {{target:affinity.company}} on?",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "which of our lists is a portfolio company we track on?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -41,6 +41,33 @@
       "line": 17
     },
     {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
       "id": "AFF-PR01",
       "severity": "major",
       "ask": "It read the company it resolved.",
@@ -52,13 +79,42 @@
           "tool": "affinity.get_company_list_entries",
           "n": 1,
           "arg": "args.company_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
         }
       ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.get_company_list_entries"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.get_company_list_entries"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer lists the lists the call returned, or says there are none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 24
     },
     {
       "id": "AFF-OC01",
@@ -74,7 +130,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 26
     },
     {
       "id": "AFF-SF01",
@@ -94,7 +150,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 30
     },
     {
       "id": "AFF-SF02",
@@ -110,12 +166,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7ec789cc5cd2289f80894456b9b452b681e6c4743ff428328bc9ab43f2a81c29"
+    "source_sha256": "9f5b448a93bf6c05dbeec245c6442732cbc9ec3ba2e9847743a992b858c496c8"
   }
 }

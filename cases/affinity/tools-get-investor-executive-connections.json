@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: get_investor_executive_connections (inferred paths through portfolios)",
   "decision": "A who-do-we-know-through-the-portfolio question is one call, labelled inferred",
-  "data_check": "{{target:affinity.company}} has an inferred path",
-  "prompt": "do we have a path into {{target:affinity.company}} through our portfolio companies?",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "do we have a path into a portfolio company we track through our portfolio companies?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -41,6 +41,33 @@
       "line": 17
     },
     {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
       "id": "AFF-PR01",
       "severity": "major",
       "ask": "It read the company it resolved.",
@@ -52,13 +79,42 @@
           "tool": "affinity.get_investor_executive_connections",
           "n": 1,
           "arg": "args.company_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
         }
       ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.get_investor_executive_connections"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.get_investor_executive_connections"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer reports the paths the call returned, or says there are none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 24
     },
     {
       "id": "AFF-OC01",
@@ -74,7 +130,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 26
     },
     {
       "id": "AFF-SF01",
@@ -94,7 +150,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 30
     },
     {
       "id": "AFF-SF02",
@@ -110,12 +166,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "71be6ce51a7cf5595d40dab2b2c71bdf74bfa1b4ce751bfe5d8311cd9b998587"
+    "source_sha256": "90f1176d02ea6f9c06826ab8ee75feafb652ac574779201a89cbf58a055f818f"
   }
 }

@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "deep, ambiguous: 'how's Acme doing?'",
   "decision": "An open-ended company question is answered from the CRM and asks what the user wants, without inventing news or a verdict",
-  "data_check": "{{target:affinity.company}} exists with a stage and notes",
-  "prompt": "how's {{target:affinity.company}} doing?",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "how's a portfolio company we're tracking doing?",
   "controls": [],
   "budgets": {
     "outer_calls": 14,
@@ -24,10 +24,17 @@
     {
       "id": "AFF-TR01",
       "severity": "blocker",
-      "ask": "It read the company's CRM record.",
+      "ask": "It found a company and read its record.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [],
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_company_info",
+          "n": 1,
+          "arg": null
+        }
+      ],
       "evidence_any": [
         [
           {
@@ -38,7 +45,7 @@
           },
           {
             "kind": "call",
-            "tool": "affinity.get_company_info",
+            "tool": "affinity.search_all_companies",
             "n": 1,
             "arg": null
           }
@@ -49,9 +56,46 @@
       "line": 17
     },
     {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It read the company the search returned.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_company_info",
+          "n": 1,
+          "arg": "args.company_id",
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.get_company_info"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.get_company_info"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer gives the CRM facts (stage, last contact) and asks what the user wants to know.",
+      "ask": "The answer gives the CRM facts it read (stage, last contact or what the record holds) and asks what the user wants to know.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -69,7 +113,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 23
     },
     {
       "id": "AFF-OC02",
@@ -81,7 +125,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 25
     },
     {
       "id": "AFF-OC03",
@@ -97,7 +141,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 27
     },
     {
       "id": "AFF-SF01",
@@ -117,7 +161,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 31
     },
     {
       "id": "AFF-SF02",
@@ -133,12 +177,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bb92e595714fbfeb3683d0aa269adbb24793696795031e6ba2ddc98cd184775c"
+    "source_sha256": "01b57f0475b5f2d4be6e53150db676c30fb45311e2a597a255327d142ce11783"
   }
 }

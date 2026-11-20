@@ -4,20 +4,22 @@
 - Tier: T3
 - Source: wide sweep: search_files (files by prompt, optionally one company)
 - Decision tested: A find-the-deck question is one search_files
-- Data check: a deck about {{target:affinity.company}} exists
+- Data check: the CRM may hold a deck; the search reports what it finds
 - Seed: plugins=affinity
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
 ## Prompt
-find the deck we have about {{target:affinity.company}}'s round.
+find the deck we have about a portfolio company's round.
 
 ## Items
 - [AFF-TR01] blocker · It used search_files once.
   evidence: call:affinity.search_files#1
 - [AFF-PR01] major · It searched for the deck.
   evidence: call:affinity.search_files#1 args.prompt matches /deck|round/i
+- [AFF-OC09] major · The answer lists the files the search returned, or says there are none.
+  grader: judge
 - [AFF-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
 

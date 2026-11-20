@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: affinity_meeting_prep (Affinity's meeting prep text)",
   "decision": "A prep-me-for-the-meeting request calls the meeting prep playbook once, then reads the record",
-  "data_check": "{{target:affinity.company}} exists with notes and people",
-  "prompt": "prep me for my meeting with {{target:affinity.company}} tomorrow.",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "prep me for my meeting with a portfolio company we track tomorrow.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -35,10 +35,62 @@
           "arg": null
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.affinity_meeting_prep"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.affinity_meeting_prep"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
       "line": 17
+    },
+    {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer is a prep from the playbook's steps and the record, not a restatement of the question.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
     },
     {
       "id": "AFF-OC01",
@@ -54,7 +106,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 24
     },
     {
       "id": "AFF-SF01",
@@ -74,7 +126,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 28
     },
     {
       "id": "AFF-SF02",
@@ -90,7 +142,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 31
     }
   ],
   "oracle": [],
@@ -98,10 +150,10 @@
     {
       "id": null,
       "text": "A playbook returns Affinity's workflow text; the case grades that the right routine was called and its steps were followed with reads.",
-      "line": 30
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "ab9bfb89124089d2141067af854acb8bcfc13d7656e8c189b14c2ad43c3a143e"
+    "source_sha256": "debb1defbea3ccf2916069ec03f44f05915bd3ad6a1e4399e70987686621435c"
   }
 }

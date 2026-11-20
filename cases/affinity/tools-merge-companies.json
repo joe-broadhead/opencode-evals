@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: merge_companies (merges two company records)",
   "decision": "A merge request is one call, graded at the declined call, with both records named",
-  "data_check": "two company records are duplicates",
-  "prompt": "merge company 424245 (Acme Test Co) into {{target:affinity.company}} — they're the same company.",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "merge a duplicate company record (424245, Acme Test Co) into a portfolio company we track — they're the same company.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -45,6 +45,33 @@
       "line": 17
     },
     {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
       "id": "AFF-PR01",
       "severity": "major",
       "ask": "It named the record to keep.",
@@ -56,13 +83,30 @@
           "tool": "affinity.merge_companies",
           "n": 1,
           "arg": "args.primary_company_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.merge_companies"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.merge_companies"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
       "id": "AFF-PR02",
@@ -86,7 +130,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 25
     },
     {
       "id": "AFF-OC01",
@@ -141,7 +185,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 27
     },
     {
       "id": "AFF-OC02",
@@ -157,7 +201,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 29
     },
     {
       "id": "AFF-SF01",
@@ -173,7 +217,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 33
     },
     {
       "id": "AFF-SF02",
@@ -189,12 +233,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "93b50fccd2a90f2d0bde54783cd07e1146d7479afcfe815508a3422f35c8e0e8"
+    "source_sha256": "aa16d99c57297614ba06606739a4110947f51a84e43bebabd21e39e0229d342b"
   }
 }

@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: create_opportunity (a deal on a list)",
   "decision": "A new deal is one create_opportunity, graded at the declined call",
-  "data_check": "the pipeline exists",
-  "prompt": "create a deal for {{target:affinity.company}} on list 424242 (our pipeline), called \"Acme Robotics seed\".",
+  "data_check": "the CRM holds at least one list and at least one company matching the description",
+  "prompt": "create a deal for a portfolio company we track on our pipeline list, called \"Acme Robotics seed\".",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -45,6 +45,52 @@
       "line": 17
     },
     {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "AFF-TR03",
+      "severity": "blocker",
+      "ask": "It found the pipeline list.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_lists",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
       "id": "AFF-PR01",
       "severity": "major",
       "ask": "It passed the value the user gave.",
@@ -67,7 +113,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 24
     },
     {
       "id": "AFF-PR02",
@@ -81,13 +127,55 @@
           "tool": "affinity.create_opportunity",
           "n": 1,
           "arg": "args.list_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "before",
+          "tool": "affinity.get_lists",
+          "other": "affinity.create_opportunity"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 26
+    },
+    {
+      "id": "AFF-PR03",
+      "severity": "major",
+      "ask": "It attached the deal to the company the search returned.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.create_opportunity",
+          "n": 1,
+          "arg": "args.company_ids",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.create_opportunity"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.create_opportunity"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     },
     {
       "id": "AFF-OC01",
@@ -142,7 +230,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 32
     },
     {
       "id": "AFF-OC02",
@@ -158,7 +246,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 34
     },
     {
       "id": "AFF-SF01",
@@ -174,7 +262,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 38
     },
     {
       "id": "AFF-SF02",
@@ -190,12 +278,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 40
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d75f5b9f7adca1325c91c75c2e65f24850f5d37ade8c9936e01b0a9be7bbc5e5"
+    "source_sha256": "d07b8ebf0ad519b2d607ee1a4ee3a465bd57621015a750ad734674678485f690"
   }
 }

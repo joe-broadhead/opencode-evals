@@ -9,6 +9,7 @@
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
+- Status: deferred
 
 ## Prompt
 add a line to the note on {{target:affinity.company}}: "also wants an intro to the CTO."
@@ -31,3 +32,6 @@ add a line to the note on {{target:affinity.company}}: "also wants an intro to t
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
+
+## Notes
+- Deferred: the owner declined an Affinity target company; it needs a note record, which a company search cannot supply.

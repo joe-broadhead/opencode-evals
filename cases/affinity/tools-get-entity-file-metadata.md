@@ -9,6 +9,7 @@
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
+- Status: deferred
 
 ## Prompt
 what's the file we have on {{target:affinity.company}} — size, type and when it was uploaded?
@@ -27,3 +28,6 @@ what's the file we have on {{target:affinity.company}} — size, type and when i
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
+
+## Notes
+- Deferred: the owner declined an Affinity target company; it needs a file record, which a company search cannot supply.

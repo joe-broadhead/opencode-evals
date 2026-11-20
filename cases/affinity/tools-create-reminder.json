@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: create_reminder (a reminder on a record)",
   "decision": "A reminder is one create_reminder, graded at the declined call",
-  "data_check": "the founder of {{target:affinity.company}} exists",
-  "prompt": "remind me to follow up with the founder of {{target:affinity.company}} next Tuesday.",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "remind me to follow up with a founder at a portfolio company we track next Tuesday.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -45,6 +45,33 @@
       "line": 17
     },
     {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
       "id": "AFF-PR01",
       "severity": "major",
       "ask": "It attached the reminder to the person.",
@@ -56,13 +83,30 @@
           "tool": "affinity.create_reminder",
           "n": 1,
           "arg": "args.entity_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.create_reminder"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.create_reminder"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
       "id": "AFF-PR02",
@@ -87,7 +131,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 25
     },
     {
       "id": "AFF-OC01",
@@ -142,7 +186,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 27
     },
     {
       "id": "AFF-OC02",
@@ -158,7 +202,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 29
     },
     {
       "id": "AFF-SF01",
@@ -174,7 +218,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 33
     },
     {
       "id": "AFF-SF02",
@@ -190,12 +234,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "11a5c1eb12dd8ac80a9d54a1ca06396510c96f5b9d40929055d1cca4f1bb4142"
+    "source_sha256": "4c1fd9f1ef6f48c05ff7747c92f115ec1daf2f88b8166361ab3dd23b3563cc56"
   }
 }

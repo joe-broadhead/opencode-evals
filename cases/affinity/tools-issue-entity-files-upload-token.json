@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: issue_entity_files_upload_token (a token to upload a file)",
   "decision": "An upload request is one token issue, graded at the declined call",
-  "data_check": "{{target:affinity.company}} exists",
-  "prompt": "upload the deck at ./acme-deck.pdf (204800 bytes, application/pdf) to {{target:affinity.company}}'s record.",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "upload the deck at ./acme-deck.pdf (204800 bytes, application/pdf) to a portfolio company we track's record.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -45,6 +45,33 @@
       "line": 17
     },
     {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
       "id": "AFF-PR01",
       "severity": "major",
       "ask": "It used the company it resolved.",
@@ -56,13 +83,30 @@
           "tool": "affinity.issue_entity_files_upload_token",
           "n": 1,
           "arg": "args.entity_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.issue_entity_files_upload_token"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.issue_entity_files_upload_token"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
       "id": "AFF-PR02",
@@ -109,7 +153,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 25
     },
     {
       "id": "AFF-OC01",
@@ -164,7 +208,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 29
     },
     {
       "id": "AFF-OC02",
@@ -180,7 +224,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 31
     },
     {
       "id": "AFF-SF01",
@@ -196,7 +240,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 35
     },
     {
       "id": "AFF-SF02",
@@ -212,12 +256,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 37
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5b474431b89f925ec4ee1fda6bbf83dfd04fb44ba3299f609db65acc457d39ac"
+    "source_sha256": "ac4eacdef4ce7fa5cbd7b7439409dfabbd9fe6b500711ed6838b4a6ce7e5c30d"
   }
 }

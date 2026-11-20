@@ -5,9 +5,9 @@
   "skill": "affinity",
   "tier": "T3",
   "source": "wide sweep: render_warm_intro_graph (draws nothing here; the same data as a short table)",
-  "decision": "A draw-the-path request is one render_warm_intro_graph, and the answer gives the path as a table",
-  "data_check": "a path to {{target:affinity.company}} exists",
-  "prompt": "draw the warm intro path to {{target:affinity.company}}.",
+  "decision": "A draw-the-path request finds a company, reads its intro paths and answers as a table, and does not call render_warm_intro_graph",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "draw the warm intro path to a portfolio company we track.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -24,44 +24,100 @@
     {
       "id": "AFF-TR01",
       "severity": "blocker",
-      "ask": "It used render_warm_intro_graph once.",
+      "ask": "It found the company by searching first.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "affinity.render_warm_intro_graph",
-          "n": 1,
-          "arg": null
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
     },
     {
-      "id": "AFF-PR01",
-      "severity": "major",
-      "ask": "It passed the target company.",
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It read the company's intro paths.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "call",
-          "tool": "affinity.render_warm_intro_graph",
+          "tool": "affinity.get_intro_paths",
           "n": 1,
-          "arg": "args.targets",
-          "op": "present"
+          "arg": null
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.get_intro_paths"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.get_intro_paths"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
       "line": 19
     },
     {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It read the company the search returned.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.get_intro_paths",
+          "n": 1,
+          "arg": "args.company_id",
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
       "id": "AFF-OC01",
+      "severity": "major",
+      "ask": "The answer gives the paths as a short table, or says none were found, and does not claim to have drawn an image.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "AFF-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -74,12 +130,30 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 26
     },
     {
       "id": "AFF-SF01",
       "severity": "blocker",
-      "ask": "Nothing committed.",
+      "ask": "It did not call render_warm_intro_graph: the skill says draw nothing and give a table.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "affinity.render_warm_intro_graph",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "No CRM write and no other source.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -94,10 +168,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 32
     },
     {
-      "id": "AFF-SF02",
+      "id": "AFF-SF03",
       "severity": "blocker",
       "ask": "The guard refused nothing in scope and saw no access assertion.",
       "forbidden": true,
@@ -110,12 +184,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ae5225db7327bc573628eabadd2857576e2633b0731a0b9d943c74df90db0009"
+    "source_sha256": "130c1df7eb75add5be8bd33ad4420295558091702f3ff139be430f229eeb36d4"
   }
 }

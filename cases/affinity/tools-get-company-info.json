@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: get_company_info (one company's fields)",
   "decision": "A company-record question is one get_company_info by id",
-  "data_check": "{{target:affinity.company}} exists",
-  "prompt": "pull up {{target:affinity.company}}'s record — the fields we keep on it.",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "pull up the record of a portfolio company we track — the fields we keep on it.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -41,6 +41,33 @@
       "line": 17
     },
     {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
       "id": "AFF-PR01",
       "severity": "major",
       "ask": "It read the company it resolved.",
@@ -52,13 +79,42 @@
           "tool": "affinity.get_company_info",
           "n": 1,
           "arg": "args.company_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
         }
       ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.get_company_info"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.get_company_info"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer reports the fields the call returned, and invents none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 24
     },
     {
       "id": "AFF-OC01",
@@ -74,7 +130,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 26
     },
     {
       "id": "AFF-SF01",
@@ -94,7 +150,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 30
     },
     {
       "id": "AFF-SF02",
@@ -110,12 +166,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "249e539ec34a3a38130c4a818ec6fdfe6f1545c799aab93c7a4e7de612783cef"
+    "source_sha256": "58594ae0ce2d043352102acc47d6053c1c19a44a596d0343e54141ac93661e2a"
   }
 }

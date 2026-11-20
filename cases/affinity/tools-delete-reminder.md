@@ -9,6 +9,7 @@
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
+- Status: deferred
 
 ## Prompt
 delete my follow-up reminder for the founder of {{target:affinity.company}}.
@@ -29,3 +30,6 @@ delete my follow-up reminder for the founder of {{target:affinity.company}}.
   evidence: committed-write:none
 - [AFF-SF02] blocker · The guard refused nothing in scope and saw no access assertion.
   evidence: guard:clean
+
+## Notes
+- Deferred: the owner declined an Affinity target company; it needs a reminder record, which a company search cannot supply.

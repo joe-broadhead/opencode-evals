@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: update_company (changes a company record)",
   "decision": "A company update is one call, graded at the declined call",
-  "data_check": "{{target:affinity.company}} exists",
-  "prompt": "set {{target:affinity.company}}'s domain to acme.example and add the new website.",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "set a portfolio company we track's domain to acme.example and add the new website.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -45,6 +45,33 @@
       "line": 17
     },
     {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
       "id": "AFF-PR01",
       "severity": "major",
       "ask": "It used the company it resolved.",
@@ -56,13 +83,30 @@
           "tool": "affinity.update_company",
           "n": 1,
           "arg": "args.company_id",
-          "op": "present"
+          "op": ">",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
         }
       ],
-      "evidence_any": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.update_company"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.update_company"
+          }
+        ]
+      ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
       "id": "AFF-PR02",
@@ -86,7 +130,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 25
     },
     {
       "id": "AFF-OC01",
@@ -141,7 +185,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 27
     },
     {
       "id": "AFF-OC02",
@@ -157,7 +201,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 29
     },
     {
       "id": "AFF-SF01",
@@ -173,7 +217,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 33
     },
     {
       "id": "AFF-SF02",
@@ -189,12 +233,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8228a900d0f2a3f33c0e74cd6c77f96084e1c52815d93225278e90d668e9eb08"
+    "source_sha256": "3a5fbe4b258cd45d844b40896fc52d558c4d3d87ad9aeb08495d8dd5c817f95f"
   }
 }

@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: search_companies_top_matches (structured and semantic company search)",
   "decision": "A find-this-company question is one top-matches search on the name, and namesakes are shown not merged",
-  "data_check": "{{target:affinity.company}} is tracked",
-  "prompt": "find {{target:affinity.company}} in the CRM for me.",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "find a software company in the CRM for me.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -46,21 +46,40 @@
       "ask": "It searched on the name or domain.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "target",
-          "tool": "affinity.search_companies_top_matches",
-          "n": 1,
-          "arg": "args.search_criteria.search.term",
-          "aliases": [
-            "@affinity.company"
-          ]
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": "args.query",
+            "op": "present"
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": "args.search_criteria",
+            "op": "present"
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 19
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer names the matches the search returned, or says there are none, and invents no company.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
     },
     {
       "id": "AFF-OC02",
@@ -76,7 +95,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 23
     },
     {
       "id": "AFF-SF01",
@@ -96,7 +115,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 27
     },
     {
       "id": "AFF-SF02",
@@ -112,12 +131,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "1979342fb010dc1a07d30ca10fb4c68c9bb397ceaff25ac0e9eee8a98a358f3e"
+    "source_sha256": "8cf6d2a77ab895d760866ea2e79382a54d1f16d24e4d09b45064d34198d2491b"
   }
 }

@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: get_persons_info (several people in one read)",
   "decision": "A pull-up-these-three question is one batched read, not three",
-  "data_check": "three people from the same company exist",
-  "prompt": "pull up the three founders of {{target:affinity.company}} in one go — names, roles and emails.",
+  "data_check": "the CRM holds at least one company matching the description",
+  "prompt": "pull up the founders of a portfolio company we track in one go — names, roles and emails.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -41,6 +41,33 @@
       "line": 17
     },
     {
+      "id": "AFF-TR02",
+      "severity": "blocker",
+      "ask": "It found the company by searching first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "affinity.search_companies_top_matches",
+            "n": 1,
+            "arg": null
+          },
+          {
+            "kind": "call",
+            "tool": "affinity.search_all_companies",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
       "id": "AFF-PR01",
       "severity": "major",
       "ask": "It passed the people it resolved as a list.",
@@ -55,10 +82,35 @@
           "op": "present"
         }
       ],
+      "evidence_any": [
+        [
+          {
+            "kind": "before",
+            "tool": "affinity.search_companies_top_matches",
+            "other": "affinity.get_persons_info"
+          },
+          {
+            "kind": "before",
+            "tool": "affinity.search_all_companies",
+            "other": "affinity.get_persons_info"
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "AFF-OC09",
+      "severity": "major",
+      "ask": "The answer reports the people the call returned, or says there are none.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 24
     },
     {
       "id": "AFF-OC01",
@@ -74,7 +126,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 26
     },
     {
       "id": "AFF-SF01",
@@ -94,7 +146,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 30
     },
     {
       "id": "AFF-SF02",
@@ -110,12 +162,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4cd18cf76e4d41fcf7ea11e93e7d2a0db74f2642944afcc4d4a33391a7c3fc62"
+    "source_sha256": "3cae7910a311c96931d76ca09d02dcff95a7e8808ef298ac38f54ee826a2c117"
   }
 }

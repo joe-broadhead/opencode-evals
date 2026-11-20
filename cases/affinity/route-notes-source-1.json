@@ -19,6 +19,7 @@
   "sets": [
     "route"
   ],
+  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -46,7 +47,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "AFF-RT02",
@@ -64,7 +65,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "AFF-OC01",
@@ -87,7 +88,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "AFF-OC02",
@@ -103,7 +104,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "AFF-SF01",
@@ -123,7 +124,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
     },
     {
       "id": "AFF-SF02",
@@ -139,12 +140,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: the owner declined an Affinity target company; it needs a company with an AI Notetaker note and a transcript, which a company search cannot supply.",
+      "line": 35
+    }
+  ],
   "hashes": {
-    "source_sha256": "bac7825fc0075f885b71c80c58d4f1608b1474cfe92e92d9f86538d089379865"
+    "source_sha256": "44e6ee8447b0a1f508909a0e6cd2ad4578e0c9ce8002f2d7a78de2e01098e854"
   }
 }

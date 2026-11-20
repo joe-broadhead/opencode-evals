@@ -4,20 +4,22 @@
 - Tier: T3
 - Source: wide sweep: search_companies_top_matches (structured and semantic company search)
 - Decision tested: A find-this-company question is one top-matches search on the name, and namesakes are shown not merged
-- Data check: {{target:affinity.company}} is tracked
+- Data check: the CRM holds at least one company matching the description
 - Seed: plugins=affinity
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
 ## Prompt
-find {{target:affinity.company}} in the CRM for me.
+find a software company in the CRM for me.
 
 ## Items
 - [AFF-TR01] blocker · It used search_companies_top_matches once.
   evidence: call:affinity.search_companies_top_matches#1
 - [AFF-PR01] major · It searched on the name or domain.
-  evidence: target:affinity.search_companies_top_matches#1 args.search_criteria.search.term in @affinity.company
+  evidence_any: call:affinity.search_companies_top_matches#1 args.query present ;; call:affinity.search_companies_top_matches#1 args.search_criteria present
+- [AFF-OC09] major · The answer names the matches the search returned, or says there are none, and invents no company.
+  grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 
