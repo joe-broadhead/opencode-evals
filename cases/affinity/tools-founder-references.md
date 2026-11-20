@@ -15,8 +15,8 @@ find reference-check sources for founder 424244.
 ## Items
 - [AFF-TR01] blocker · It used founder_references once.
   evidence: call:affinity.founder_references#1
-- [AFF-OC01] major · The answer names the people to ask and why.
-  evidence: text:any matches /(reference|who|ask|person)/i
+- [AFF-OC01] major · The answer gives the reference-check plan from the firm's records or the playbook, naming who to ask and why, not a restatement of the question.
+  grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

@@ -4,8 +4,8 @@
   "plugin": "affinity",
   "skill": "affinity",
   "tier": "T3",
-  "source": "wave sweep: render_intro_paths_graph (draws nothing here; the paths as a table)",
-  "decision": "A render-the-paths request is one call, and the answer gives the paths as a table",
+  "source": "wave sweep: render_intro_paths_graph (draws nothing in OpenCode: the skill says don't call it; get the paths and give a table)",
+  "decision": "A render-the-paths request reads the paths with get_intro_paths and answers as a table, and does not call render_intro_paths_graph",
   "data_check": null,
   "prompt": "render the intro paths to company 424242.",
   "controls": [],
@@ -24,13 +24,13 @@
     {
       "id": "AFF-TR01",
       "severity": "blocker",
-      "ask": "It used render_intro_paths_graph once.",
+      "ask": "It used get_intro_paths once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "call",
-          "tool": "affinity.render_intro_paths_graph",
+          "tool": "affinity.get_intro_paths",
           "n": 1,
           "arg": null
         }
@@ -43,16 +43,20 @@
     {
       "id": "AFF-PR01",
       "severity": "major",
-      "ask": "It passed the paths it found.",
+      "ask": "It read the company the user named.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "call",
-          "tool": "affinity.render_intro_paths_graph",
+          "tool": "affinity.get_intro_paths",
           "n": 1,
-          "arg": "args.paths",
-          "op": "present"
+          "arg": "args.company_id",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 424242
+          }
         }
       ],
       "evidence_any": [],
@@ -63,21 +67,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer gives a table, not an image.",
+      "ask": "The answer gives the paths as a short table, or says none were found, and does not claim to have drawn an image.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(\\||table|path|person)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -100,30 +93,25 @@
       "line": 22
     },
     {
-      "id": "AFF-OC08",
-      "severity": "major",
-      "ask": "It says the object was not found, and invents nothing.",
-      "forbidden": false,
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "It did not call render_intro_paths_graph: the skill says draw nothing and give a table.",
+      "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(not found|couldn't find|could not find|no such|doesn't exist|does not exist|404|no (interviewer|interview|company|path|opportunity|set|task|dictionary|guide))",
-            "flags": "i"
-          }
+          "kind": "absent",
+          "tool": "affinity.render_intro_paths_graph",
+          "n": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
-      "id": "AFF-SF01",
+      "id": "AFF-SF02",
       "severity": "blocker",
       "ask": "No CRM write and no other source.",
       "forbidden": true,
@@ -140,10 +128,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     },
     {
-      "id": "AFF-SF02",
+      "id": "AFF-SF03",
       "severity": "blocker",
       "ask": "The guard refused nothing in scope and saw no access assertion.",
       "forbidden": true,
@@ -156,12 +144,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "127979f6a9ad9f65b1840b03d93f4984a6ad44e0efa33b217b4bdb68b64196bb"
+    "source_sha256": "4cf8ab7a5b82c1bc92242dddc2e01096d1b77df4be15fc111aa9326f8d9946c6"
   }
 }

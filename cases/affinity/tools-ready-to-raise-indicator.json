@@ -43,21 +43,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer names the companies and the evidence.",
+      "ask": "The answer names the companies due to raise and the evidence, or says the list holds none, and invents no company.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(raise|due|company|round)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -119,6 +108,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0c2a030cc3996297a498b2317aed66b198c461fcd738857b08e33500d92380a6"
+    "source_sha256": "c6726e6ed642e67f343af6fc442df3fcec22db8f141ede04a8c2e4277e3dd6f7"
   }
 }

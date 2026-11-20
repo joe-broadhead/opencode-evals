@@ -107,21 +107,10 @@
     {
       "id": "ASH-OC02",
       "severity": "major",
-      "ask": "The answer gives the funnel and the topic metrics.",
+      "ask": "It invents no funnel, duration or topic number for the missing interviewer.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(funnel|duration|topic|outcome)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -206,6 +195,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "359d3f35ee5e22b1efdb63accb7cad6379400c0e13920e2c8cbb348a3e654a52"
+    "source_sha256": "b5546b5e4172a464dda31d8b3bb101757fc0e8122c2ed78ce0bf336c5f22c72a"
   }
 }

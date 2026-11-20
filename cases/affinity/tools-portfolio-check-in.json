@@ -43,21 +43,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer ranks the companies and says why.",
+      "ask": "The answer names the companies that need a check-in and gives a reason for each.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(portfolio|check|contact|company)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -119,6 +108,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "732141172d21de4878e78dbb86a406677fb0576a738c43ae3838460aa7a78fe8"
+    "source_sha256": "065dd8e6b8e27cfea77000162856b58e4a627ac254a5f2264c99bb83a976751e"
   }
 }

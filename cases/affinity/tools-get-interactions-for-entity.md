@@ -19,8 +19,8 @@ show me the calls with company 424242 in October.
   evidence: call:affinity.get_interactions_for_entity#1 args.entity_id == 424242
 - [AFF-OC01] major · It asked for the call type.
   evidence: call:affinity.get_interactions_for_entity#1 args.interaction_type matches /call/i
-- [AFF-OC02] major · The answer lists the calls and names the company.
-  evidence: text:any matches /(call|company|October|2026-)/i
+- [AFF-OC02] major · The answer lists the calls with the company the tool returned, or says there are none, and invents no interaction.
+  grader: judge
 - [AFF-OC03] minor · No tool was invented.
   evidence: unknown-tool:none
 

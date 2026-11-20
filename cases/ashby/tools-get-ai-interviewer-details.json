@@ -87,21 +87,10 @@
     {
       "id": "ASH-OC01",
       "severity": "major",
-      "ask": "The answer gives the outline and the version history.",
+      "ask": "It invents no outline, version or job assignment for the missing interviewer.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(outline|version|section|topic)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -186,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bbe3e36ece40b79df69e890286e4189824014f84107e3fb6da3d7b435a34d768"
+    "source_sha256": "de0badff4f601f8936e199b96bb7715defe27c39e81eee10ecaab874f4273ef1"
   }
 }

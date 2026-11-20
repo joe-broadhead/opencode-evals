@@ -17,8 +17,8 @@ show me the chat messages we logged this week.
   evidence: call:affinity.get_chat_messages#1
 - [AFF-PR01] major · It bounded the window.
   evidence: call:affinity.get_chat_messages#1 args.filter_expr present
-- [AFF-OC01] major · The answer lists the chats and names the window.
-  evidence: text:any matches /(chat|message|2026-|week)/i
+- [AFF-OC01] major · The answer lists the chats the tool returned, or says there are none, and quotes no more of a message than the question needs.
+  grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

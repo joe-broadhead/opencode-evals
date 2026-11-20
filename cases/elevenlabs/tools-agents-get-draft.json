@@ -65,21 +65,10 @@
     {
       "id": "ELV-OC01",
       "severity": "major",
-      "ask": "The answer reports what the draft would change, or that nothing is staged.",
+      "ask": "The answer reports what the draft would change, naming the setting or field, or says nothing is staged.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(draft|change|nothing|no draft|staged)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -141,6 +130,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "60b3de93e963ae98cc4d8f40dd02147f07397887786bd78ff365985b1e798417"
+    "source_sha256": "5e5c39b117ead4965ad6fc83d49a456c4321ffb0b4a7aad2b2d10459a766420b"
   }
 }

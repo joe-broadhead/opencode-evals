@@ -63,21 +63,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer lists the calls and names the window.",
+      "ask": "The answer lists the calls the tool returned, or says there are none, and names the window it read.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(call|2026-|week)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -139,6 +128,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "79a2d2345f0075486412e21d554ae4eacbf906f87c65d18cacfeabca727954b0"
+    "source_sha256": "bcf8fc16f4c2280ce3d31528b322d022ef6d7b2e3e052a621d2b409e08544721"
   }
 }

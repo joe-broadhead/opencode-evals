@@ -63,21 +63,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer lists the chats and names the window.",
+      "ask": "The answer lists the chats the tool returned, or says there are none, and quotes no more of a message than the question needs.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(chat|message|2026-|week)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -139,6 +128,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2e3c3fada2c8ec48d215b819fe009a60d335c3c71d62d95d4d715911bd86a29c"
+    "source_sha256": "6de5be85cffef4f6d66e63028220bb272df5a6a0a9731d4ff79f4ad51324edfd"
   }
 }

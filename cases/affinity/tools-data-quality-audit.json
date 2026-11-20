@@ -43,21 +43,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer gives the audit as findings and steps.",
+      "ask": "The answer gives concrete findings (missing, stale or duplicate fields) and next steps, not a restatement of the question.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(audit|missing|stale|field|duplicate)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -119,6 +108,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "61610c0172a60b21e57b273809440584c5dfac4918e6efc32f0cb4167429fd27"
+    "source_sha256": "35c784cea82287c65e750036beb653aa90bf018f0e725322057af9d4f8204353"
   }
 }

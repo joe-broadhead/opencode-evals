@@ -19,8 +19,8 @@ show me AI interviewer ai_000000000000000000000000 — its outline, version hist
   evidence: call:ashby.get_ai_interviewer_details#1 args.reason present
 - [ASH-PR02] major · It read the interviewer the user named.
   evidence: call:ashby.get_ai_interviewer_details#1 args.aiInterviewerIds contains "ai_000000000000000000000000"
-- [ASH-OC01] major · The answer gives the outline and the version history.
-  evidence: text:any matches /(outline|version|section|topic)/i
+- [ASH-OC01] major · It invents no outline, version or job assignment for the missing interviewer.
+  grader: judge
 - [ASH-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

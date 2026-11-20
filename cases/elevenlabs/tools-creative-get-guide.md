@@ -15,8 +15,8 @@ is there a guide for editing an image or making a video? list the guides you hav
 ## Items
 - [ELV-TR01] blocker · It used creative_get_guide once.
   evidence: call:elevenlabs.creative_get_guide#1
-- [ELV-OC01] major · The answer lists the guides and names the one for the task.
-  evidence: text:any matches /(guide|image|video|voice|flow)/i
+- [ELV-OC01] major · The answer lists the guides the tool returned and names the image or video one.
+  grader: judge
 - [ELV-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

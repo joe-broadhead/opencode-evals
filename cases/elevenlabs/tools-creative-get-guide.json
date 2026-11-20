@@ -43,21 +43,10 @@
     {
       "id": "ELV-OC01",
       "severity": "major",
-      "ask": "The answer lists the guides and names the one for the task.",
+      "ask": "The answer lists the guides the tool returned and names the image or video one.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(guide|image|video|voice|flow)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -119,6 +108,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "0f66943b7b3214e81eea44c60866b9bf22e7f0f5b135691872d73c89d5870796"
+    "source_sha256": "359c39d70beeb1a4fd095c2c3f31c2307b7a91e790a327fba49b23c681b1e0d0"
   }
 }

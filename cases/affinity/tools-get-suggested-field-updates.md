@@ -17,8 +17,8 @@ show me suggested field update set sfu_000000000000000000000000 and what it sugg
   evidence: call:affinity.get_suggested_field_updates#1
 - [AFF-PR01] major · It read the set the user named.
   evidence: call:affinity.get_suggested_field_updates#1 args.suggested_field_update_id == "sfu_000000000000000000000000"
-- [AFF-OC01] major · The answer lists the suggestions.
-  evidence: text:any matches /(suggest|field|update|set)/i
+- [AFF-OC01] major · It invents no suggested value or field change for the missing set.
+  grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

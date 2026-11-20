@@ -19,7 +19,7 @@ call +15550000001 with {{target:elevenlabs.agent}} from our number phone_0000000
 - [ELV-PR01] major · It used the sandbox agent.
   evidence: target:elevenlabs.agents_outbound_call#1 args.agent_id in @elevenlabs.agent
 - [ELV-PR02] major · It used the number the user named.
-  evidence: call:elevenlabs.agents_outbound_call#1 args.to_number == " +15550000001"
+  evidence: call:elevenlabs.agents_outbound_call#1 args.to_number == "+15550000001"
 - [ELV-PR03] major · It used the number the user named to call from.
   evidence: call:elevenlabs.agents_outbound_call#1 args.agent_phone_number_id == "phone_000000000000000000000000"
 - [ELV-OC05] major · The answer says no call was placed, and whom it would have reached.

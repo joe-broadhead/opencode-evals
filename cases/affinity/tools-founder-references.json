@@ -43,21 +43,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer names the people to ask and why.",
+      "ask": "The answer gives the reference-check plan from the firm's records or the playbook, naming who to ask and why, not a restatement of the question.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(reference|who|ask|person)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -119,6 +108,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "18d9e5d616edd98b1439d401fee3b79d57a44dcafca4d11cbc49ba9b61d2485f"
+    "source_sha256": "17808a61470003eaed428750602a72500f435a4518b94a2a33cc6f0d45eaec61"
   }
 }

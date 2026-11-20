@@ -17,8 +17,8 @@ list my pending suggested field updates.
   evidence: call:affinity.list_suggested_field_updates#1
 - [AFF-PR01] major · It filtered to pending.
   evidence: call:affinity.list_suggested_field_updates#1 args.status == "pending"
-- [AFF-OC01] major · The answer lists the sets.
-  evidence: text:any matches /(suggest|set|pending|none)/i
+- [AFF-OC01] major · The answer lists the pending sets the tool returned, or says there are none.
+  grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

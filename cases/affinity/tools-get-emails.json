@@ -63,21 +63,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer lists the emails and says it has no bodies.",
+      "ask": "The answer lists the emails the tool returned, or says there are none, and does not claim to show message bodies.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(email|2026-|week|no (body|bodies|text))",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -139,6 +128,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8b6595d5a50c64510c74a0f8ab14f111b13f6c2c0eb2d8c14d63a11e19b45048"
+    "source_sha256": "2f775b9800e7f610e0b0028209014d4223fe2560572f1ca207332078a26688dc"
   }
 }

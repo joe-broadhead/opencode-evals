@@ -15,8 +15,8 @@ review the deals we passed on that went on to raise.
 ## Items
 - [AFF-TR01] blocker · It used passed_deal_review once.
   evidence: call:affinity.passed_deal_review#1
-- [AFF-OC01] major · The answer reviews the passed deals.
-  evidence: text:any matches /(passed|lost|raise|deal)/i
+- [AFF-OC01] major · The answer gives the review's findings — the passed deals and what they went on to raise — not a restatement of the question.
+  grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

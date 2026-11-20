@@ -15,8 +15,8 @@ which portfolio companies need a check-in?
 ## Items
 - [AFF-TR01] blocker · It used portfolio_check_in once.
   evidence: call:affinity.portfolio_check_in#1
-- [AFF-OC01] major · The answer ranks the companies and says why.
-  evidence: text:any matches /(portfolio|check|contact|company)/i
+- [AFF-OC01] major · The answer names the companies that need a check-in and gives a reason for each.
+  grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

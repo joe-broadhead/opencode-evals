@@ -67,21 +67,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer lists the sets.",
+      "ask": "The answer lists the pending sets the tool returned, or says there are none.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(suggest|set|pending|none)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -143,6 +132,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a9cfc17dccdd3432c2db7e63be47a3fce773580cb07d68792304039fd1b882fe"
+    "source_sha256": "d5d3cb2f55eab6f2e40955558e9615d7aa088bf0783df7ba0692f944c990b4aa"
   }
 }

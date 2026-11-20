@@ -23,9 +23,7 @@ add a section called "Scale" to draft version ver_000000000000000000000000 of th
 - [ASH-PR03] major · It carried the new section.
   evidence: call:ashby.update_ai_interviewer_outline#1 args.operations contains "Scale"
 - [ASH-OC04] major · The answer says nothing changed.
-  evidence_any: text:any matches /\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(created|added|updated|changed|saved|published)\b/i
-  evidence_any: text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i
-  evidence_any: text:any matches /\b(couldn't|could not|can't|cannot|unable to|not able to)\b.{0,40}\b(create|add|move|change|save|update|delete|send|post|archive|submit|edit|write|set|publish)\b/i
+  evidence_any: text:any matches /\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(created|added|updated|changed|saved|published)\b/i ;; text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i ;; text:any matches /\b(couldn't|could not|can't|cannot|unable to|not able to)\b.{0,40}\b(create|add|move|change|save|update|delete|send|post|archive|submit|edit|write|set|publish)\b/i
 - [ASH-OC05] minor · No tool was invented.
   evidence: unknown-tool:none
 

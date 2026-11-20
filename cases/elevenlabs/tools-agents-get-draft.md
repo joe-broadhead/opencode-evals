@@ -17,8 +17,8 @@ show me the unpublished draft of {{target:elevenlabs.agent}} — what would publ
   evidence: call:elevenlabs.agents_get_draft#1
 - [ELV-PR01] major · It read the draft of the sandbox agent.
   evidence: target:elevenlabs.agents_get_draft#1 args.agent_id in @elevenlabs.agent
-- [ELV-OC01] major · The answer reports what the draft would change, or that nothing is staged.
-  evidence: text:any matches /(draft|change|nothing|no draft|staged)/i
+- [ELV-OC01] major · The answer reports what the draft would change, naming the setting or field, or says nothing is staged.
+  grader: judge
 - [ELV-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

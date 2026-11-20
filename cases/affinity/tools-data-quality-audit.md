@@ -15,8 +15,8 @@ audit our CRM data quality — what is missing or stale?
 ## Items
 - [AFF-TR01] blocker · It used data_quality_audit once.
   evidence: call:affinity.data_quality_audit#1
-- [AFF-OC01] major · The answer gives the audit as findings and steps.
-  evidence: text:any matches /(audit|missing|stale|field|duplicate)/i
+- [AFF-OC01] major · The answer gives concrete findings (missing, stale or duplicate fields) and next steps, not a restatement of the question.
+  grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

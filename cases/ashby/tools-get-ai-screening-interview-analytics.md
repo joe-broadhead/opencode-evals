@@ -21,8 +21,8 @@ how did AI interviewer ai_000000000000000000000000 do last month? funnel, durati
   evidence: call:ashby.get_ai_screening_interview_analytics#1 args.aiInterviewerId == "ai_000000000000000000000000"
 - [ASH-OC01] major · It bounded the window by invitation date.
   evidence: call:ashby.get_ai_screening_interview_analytics#1 args.dateRange present
-- [ASH-OC02] major · The answer gives the funnel and the topic metrics.
-  evidence: text:any matches /(funnel|duration|topic|outcome)/i
+- [ASH-OC02] major · It invents no funnel, duration or topic number for the missing interviewer.
+  grader: judge
 - [ASH-OC03] minor · No tool was invented.
   evidence: unknown-tool:none
 

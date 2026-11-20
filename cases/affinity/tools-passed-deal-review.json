@@ -43,21 +43,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer reviews the passed deals.",
+      "ask": "The answer gives the review's findings — the passed deals and what they went on to raise — not a restatement of the question.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(passed|lost|raise|deal)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -119,6 +108,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "dc95e4782574ad575daecb845979a91344bec096b25b2360b683a30de94853bf"
+    "source_sha256": "9a2e3138b6cf98b8deb665fac032bd4670840409b1249721d1cd05dcba8e26d8"
   }
 }

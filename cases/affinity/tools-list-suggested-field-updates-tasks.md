@@ -15,8 +15,8 @@ list my suggested field update tasks.
 ## Items
 - [AFF-TR01] blocker · It used list_suggested_field_updates_tasks once.
   evidence: call:affinity.list_suggested_field_updates_tasks#1
-- [AFF-OC01] major · The answer lists the tasks.
-  evidence: text:any matches /(task|suggest|none)/i
+- [AFF-OC01] major · The answer lists the tasks the tool returned, or says there are none.
+  grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

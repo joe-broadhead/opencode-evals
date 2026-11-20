@@ -92,21 +92,10 @@
     {
       "id": "AFF-OC02",
       "severity": "major",
-      "ask": "The answer lists the calls and names the company.",
+      "ask": "The answer lists the calls with the company the tool returned, or says there are none, and invents no interaction.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(call|company|October|2026-)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -191,6 +180,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "877722ae6f5c318ec21c13d06ba6930313d2265b2f8e37416b959e17816246cd"
+    "source_sha256": "86387e922e8349401241521d27950d47284e9e10e00040aeb04b98bd8a01d72a"
   }
 }

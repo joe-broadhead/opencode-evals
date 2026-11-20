@@ -17,8 +17,8 @@ show me the emails we logged this week.
   evidence: call:affinity.get_emails#1
 - [AFF-PR01] major · It bounded the window.
   evidence: call:affinity.get_emails#1 args.filter_expr present
-- [AFF-OC01] major · The answer lists the emails and says it has no bodies.
-  evidence: text:any matches /(email|2026-|week|no (body|bodies|text))/i
+- [AFF-OC01] major · The answer lists the emails the tool returned, or says there are none, and does not claim to show message bodies.
+  grader: judge
 - [AFF-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

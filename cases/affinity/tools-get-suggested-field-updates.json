@@ -67,21 +67,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer lists the suggestions.",
+      "ask": "It invents no suggested value or field change for the missing set.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(suggest|field|update|set)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -166,6 +155,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "88b16bc542ac721745e5d22e652663a8b82fb4993cce7522cefb7346e0a95f35"
+    "source_sha256": "cb1a33ff6697d58329961a8936b846af999f5f7a52ed87775b034fbe24254bb0"
   }
 }

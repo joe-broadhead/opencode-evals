@@ -43,21 +43,10 @@
     {
       "id": "AFF-OC01",
       "severity": "major",
-      "ask": "The answer lists the tasks.",
+      "ask": "The answer lists the tasks the tool returned, or says there are none.",
       "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(task|suggest|none)",
-            "flags": "i"
-          }
-        }
-      ],
+      "grader": "judge",
+      "evidence": [],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -119,6 +108,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c159f0577e42cdbaae815e5db4b2dde1147ddbf4927904ab80bbe9851a1c2a2d"
+    "source_sha256": "598428e83104699203cc0372aadb112515aec524f44a0c280b9cc6500f7d98c5"
   }
 }

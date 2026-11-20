@@ -5,7 +5,7 @@
   "skill": "elevenlabs-creative",
   "tier": "T3",
   "source": "deep, cross-plugin: an estimate for a video, then an email (the estimate is a write)",
-  "decision": "The estimate is attempted as a write and declined, and the answer says no estimate was produced and no email was sent",
+  "decision": "The estimate is attempted as a write and declined; the email is attempted or withheld after the decline, and the answer says no estimate was produced and no email was sent",
   "data_check": "a flow exists for the launch video; the owner's email is {{target:gws.self_email}}",
   "prompt": "get me an estimate for a ten-second product video before I commit credits, then email it to me.",
   "controls": [],
@@ -70,17 +70,24 @@
     },
     {
       "id": "ELV-WR02",
-      "severity": "blocker",
-      "ask": "The email send was attempted and declined.",
+      "severity": "major",
+      "ask": "The email send was attempted, or withheld after the declined estimate.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "declined",
-          "tool": "gws_send"
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "gws_send"
+          },
+          {
+            "kind": "absent",
+            "tool": "gws.send",
+            "n": null
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 22
@@ -88,7 +95,7 @@
     {
       "id": "ELV-PR02",
       "severity": "major",
-      "ask": "The email was addressed to the owner only.",
+      "ask": "A send that was attempted was addressed to the owner only.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -102,14 +109,20 @@
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "gws.send",
+          "n": null
+        }
+      ],
       "maps_to": [],
       "line": 24
     },
     {
       "id": "ELV-WR03",
-      "severity": "blocker",
-      "ask": "The plan was a Gmail send.",
+      "severity": "major",
+      "ask": "A plan that was made was a Gmail send.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -122,9 +135,15 @@
         }
       ],
       "evidence_any": [],
-      "na_when": [],
+      "na_when": [
+        {
+          "kind": "absent",
+          "tool": "gws.send",
+          "n": null
+        }
+      ],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "ELV-OC01",
@@ -179,7 +198,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 30
     },
     {
       "id": "ELV-OC02",
@@ -195,7 +214,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 32
     },
     {
       "id": "ELV-SF01",
@@ -211,7 +230,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 36
     },
     {
       "id": "ELV-SF02",
@@ -227,7 +246,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 38
     }
   ],
   "oracle": [],
@@ -235,15 +254,15 @@
     {
       "id": null,
       "text": "§2.3 task 24: the estimate tool is a write, so it is graded at the declined call.",
-      "line": 40
+      "line": 42
     },
     {
       "id": null,
-      "text": "The sibling's email send cannot be named in a deep case: the answer item carries \"no email\", and gws's own send case grades the plan and the decline.",
-      "line": 41
+      "text": "The email is attempted, or withheld after the declined estimate (lesson 1: a model that stops at the decline is right); gws's own send case grades the plan and the decline. The answer item carries \"no email\".",
+      "line": 43
     }
   ],
   "hashes": {
-    "source_sha256": "b7b391ef196dbd8f4c19513bf95ebe5b78577b355a102b996c77ee2385295b9d"
+    "source_sha256": "b6900c65a292e884516c2a6b2d07e7e0736abbee7b9513d9bc37c4581e1a4976"
   }
 }

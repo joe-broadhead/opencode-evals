@@ -21,9 +21,7 @@ create an AI interviewer called "Backend screen" for the backend role.
 - [ASH-PR02] major · It used the title the user gave.
   evidence: call:ashby.create_ai_interviewer#1 args.internalTitle == "Backend screen"
 - [ASH-OC03] major · The answer says nothing changed.
-  evidence_any: text:any matches /\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(created|added|updated|changed|saved|published)\b/i
-  evidence_any: text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i
-  evidence_any: text:any matches /\b(couldn't|could not|can't|cannot|unable to|not able to)\b.{0,40}\b(create|add|move|change|save|update|delete|send|post|archive|submit|edit|write|set|publish)\b/i
+  evidence_any: text:any matches /\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(created|added|updated|changed|saved|published)\b/i ;; text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i ;; text:any matches /\b(couldn't|could not|can't|cannot|unable to|not able to)\b.{0,40}\b(create|add|move|change|save|update|delete|send|post|archive|submit|edit|write|set|publish)\b/i
 - [ASH-OC04] minor · No tool was invented.
   evidence: unknown-tool:none
 

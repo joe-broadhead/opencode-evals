@@ -106,9 +106,7 @@
               "source": "\\b(not|nothing|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(created|added|updated|changed|saved|published)\\b",
               "flags": "i"
             }
-          }
-        ],
-        [
+          },
           {
             "kind": "text",
             "span": "any",
@@ -118,9 +116,7 @@
               "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
               "flags": "i"
             }
-          }
-        ],
-        [
+          },
           {
             "kind": "text",
             "span": "any",
@@ -151,7 +147,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 25
     },
     {
       "id": "ASH-SF01",
@@ -167,7 +163,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 29
     },
     {
       "id": "ASH-SF02",
@@ -183,7 +179,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 31
     }
   ],
   "oracle": [],
@@ -191,10 +187,10 @@
     {
       "id": null,
       "text": "The role is in the prompt; the tool takes the title and a reason.",
-      "line": 37
+      "line": 35
     }
   ],
   "hashes": {
-    "source_sha256": "9e6f31c49b9785d4bb27f18faf5673fcae91dde2860a1fe63faf6f431513d7b8"
+    "source_sha256": "5e0b2dfdef41ff4306161d1b2c3d8bbc2029301a6617895c551c464f5263de66"
   }
 }
