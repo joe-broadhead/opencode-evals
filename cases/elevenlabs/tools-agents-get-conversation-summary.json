@@ -41,50 +41,7 @@
       "line": 17
     },
     {
-      "id": "ELV-PR01",
-      "severity": "major",
-      "ask": "It passed the conversation id the question needs.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "elevenlabs.agents_get_conversation_summary",
-          "n": 1,
-          "arg": "args.conversation_id",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
       "id": "ELV-OC01",
-      "severity": "major",
-      "ask": "The answer gives a summary in its own words.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(caller|said|summary|asked)",
-            "flags": "i"
-          }
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 21
-    },
-    {
-      "id": "ELV-OC02",
       "severity": "minor",
       "ask": "No tool was invented.",
       "forbidden": false,
@@ -97,10 +54,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 19
     },
     {
-      "id": "ELV-OC09",
+      "id": "ELV-OC02",
       "severity": "major",
       "ask": "It says the object was not found, and invents nothing.",
       "forbidden": false,
@@ -120,7 +77,31 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 21
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It used the id the prompt gave, not another.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_get_conversation_summary",
+          "n": 1,
+          "arg": "args.conversation_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "conv_000000000000000000000000"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
     },
     {
       "id": "ELV-SF01",
@@ -140,7 +121,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 27
     },
     {
       "id": "ELV-SF02",
@@ -156,12 +137,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d709efd9c2607351ca03078e673f26385d6d14a3643e1e4f56710a0320674e84"
+    "source_sha256": "eb113550887e578861732e3cb5004fe772f4a0c4ac4431b8d4f5a6337ff4e935"
   }
 }

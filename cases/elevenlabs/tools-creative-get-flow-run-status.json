@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_get_flow_run_status (ElevenLabs MCP; creative tools)",
   "decision": "A request for what creative_get_flow_run_status reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "is run run_000000000000000000000000 in flow flow_000000000000000000000000 finished yet?",
+  "prompt": "is sandbox session session_000000000000000000000000 in flow flow_000000000000000000000000 finished yet?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -52,13 +52,41 @@
           "tool": "elevenlabs.creative_get_flow_run_status",
           "n": 1,
           "arg": "args.flow_id",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "flow_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 19
+    },
+    {
+      "id": "ELV-PR02",
+      "severity": "major",
+      "ask": "It used the sandbox session the user named.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_get_flow_run_status",
+          "n": 1,
+          "arg": "args.session_ids",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "session_000000000000000000000000"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
     },
     {
       "id": "ELV-OC01",
@@ -74,10 +102,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 23
     },
     {
-      "id": "ELV-OC09",
+      "id": "ELV-OC02",
       "severity": "major",
       "ask": "It says the object was not found, and invents nothing.",
       "forbidden": false,
@@ -97,7 +125,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 25
     },
     {
       "id": "ELV-SF01",
@@ -117,7 +145,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 29
     },
     {
       "id": "ELV-SF02",
@@ -133,12 +161,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8b01e9fb1833c2bc81047b5a4d7c8dec7d06ec631263170a50d46a574755e53e"
+    "source_sha256": "f6f94dcd906144e9cab74f96084f0e13aaacc3232e7e787bf2e3a4a823057fc5"
   }
 }

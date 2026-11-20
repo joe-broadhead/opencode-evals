@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-what conflicts does merge proposal prop_000000000000000000000000 have?
+what conflicts does the merge have?
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_get_merge_conflicts once.

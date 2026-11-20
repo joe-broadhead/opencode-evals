@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-who should review merge proposal prop_000000000000000000000000?
+who should review the merge?
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_suggest_merge_proposal_reviewers once.

@@ -81,7 +81,11 @@
           "tool": "elevenlabs.creative_generate_speech",
           "n": 1,
           "arg": "args.voice_id",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "voice_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -196,6 +200,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a1da1ac3b878ab84c1386cbe9c79759e56de5d04c20e2eda5a9f4516f51f7ad2"
+    "source_sha256": "1aa7140d5d668ddd43b138833a5eb20fb893019be9bf93c348585bbdcefbb048"
   }
 }

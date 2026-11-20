@@ -6,7 +6,7 @@
 - Decision tested: A paid generation is one call, graded at the declined call, and no credits are spent
 - Data check: the workspace holds the object the request names
 - Seed: plugins=elevenlabs
-- Data: own
+- Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 

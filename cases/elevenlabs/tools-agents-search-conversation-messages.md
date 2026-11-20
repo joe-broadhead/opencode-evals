@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-find where a caller mentions a refund in conversation conv_000000000000000000000000.
+find where a caller mentions a refund across our calls.
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_search_conversation_messages once.

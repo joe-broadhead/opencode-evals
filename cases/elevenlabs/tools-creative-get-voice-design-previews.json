@@ -41,26 +41,6 @@
       "line": 17
     },
     {
-      "id": "ELV-PR01",
-      "severity": "major",
-      "ask": "It passed the generated voice ids the question needs.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "elevenlabs.creative_get_voice_design_previews",
-          "n": 1,
-          "arg": "args.generated_voice_ids",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
       "id": "ELV-OC01",
       "severity": "minor",
       "ask": "No tool was invented.",
@@ -74,10 +54,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 19
     },
     {
-      "id": "ELV-OC09",
+      "id": "ELV-OC02",
       "severity": "major",
       "ask": "It says the object was not found, and invents nothing.",
       "forbidden": false,
@@ -91,6 +71,30 @@
             "kind": "regex",
             "source": "(not found|couldn't find|could not find|no such|doesn't exist|does not exist|404|no (conversation|flow|test|run|ticket|document|procedure|branch|generation|voice|item|folder|merge proposal|batch|caller|tool|connection|alert|result|node|view state))",
             "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It used the id the prompt gave, not another.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_get_voice_design_previews",
+          "n": 1,
+          "arg": "args.generated_voice_ids",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "voice_000000000000000000000000"
           }
         }
       ],
@@ -139,6 +143,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6c4943342627f2cf01a2950e6f5f6d6f29bf2af876abbc037e65b45d5678d7a9"
+    "source_sha256": "264577ff750bded929ae668703150138d535458f44ece6863b28534c23875dc6"
   }
 }

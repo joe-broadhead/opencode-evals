@@ -41,26 +41,6 @@
       "line": 17
     },
     {
-      "id": "ELV-PR01",
-      "severity": "major",
-      "ask": "It passed the documentation id the question needs.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "elevenlabs.agents_get_kb_dependents",
-          "n": 1,
-          "arg": "args.documentation_id",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
       "id": "ELV-OC01",
       "severity": "minor",
       "ask": "No tool was invented.",
@@ -74,10 +54,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 19
     },
     {
-      "id": "ELV-OC09",
+      "id": "ELV-OC02",
       "severity": "major",
       "ask": "It says the object was not found, and invents nothing.",
       "forbidden": false,
@@ -91,6 +71,30 @@
             "kind": "regex",
             "source": "(not found|couldn't find|could not find|no such|doesn't exist|does not exist|404|no (conversation|flow|test|run|ticket|document|procedure|branch|generation|voice|item|folder|merge proposal|batch|caller|tool|connection|alert|result|node|view state))",
             "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It used the id the prompt gave, not another.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_get_kb_dependents",
+          "n": 1,
+          "arg": "args.documentation_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "doc_000000000000000000000000"
           }
         }
       ],
@@ -139,6 +143,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b6cfa8b8ff78ec0be027c70427f5224789381b1bbc309921f491466d11239b6d"
+    "source_sha256": "f18faaa20206f9064b62b012e9137e0338f5f6784ac155ff9877bc95f995ddd3"
   }
 }

@@ -45,26 +45,6 @@
       "line": 17
     },
     {
-      "id": "ELV-PR01",
-      "severity": "major",
-      "ask": "It passed the batch id the request needs.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "elevenlabs.agents_retry_batch_call",
-          "n": 1,
-          "arg": "args.batch_id",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
       "id": "ELV-OC01",
       "severity": "major",
       "ask": "The answer says nothing was generated and no credits were spent.",
@@ -117,7 +97,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 20
     },
     {
       "id": "ELV-OC02",
@@ -128,6 +108,30 @@
       "evidence": [
         {
           "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It used the id the prompt gave, not another.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_retry_batch_call",
+          "n": 1,
+          "arg": "args.batch_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "batch_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "da85a74822029353a21c15fd1d952d6e57544f333ecb7f259e75e3609c620131"
+    "source_sha256": "bc2ba7f6e89b747754f7a54112f88ea8b37ba5d2a003be8c69047797793529b4"
   }
 }

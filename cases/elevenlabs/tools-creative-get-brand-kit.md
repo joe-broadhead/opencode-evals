@@ -16,12 +16,12 @@ show me brand kit kit_000000000000000000000000.
 ## Items
 - [ELV-TR01] blocker · It read it with creative_get_brand_kit once.
   evidence: call:elevenlabs.creative_get_brand_kit#1
-- [ELV-PR01] major · It passed the brand kit id the question needs.
-  evidence: call:elevenlabs.creative_get_brand_kit#1 args.brand_kit_id present
 - [ELV-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
-- [ELV-OC09] major · It says the object was not found, and invents nothing.
+- [ELV-OC02] major · It says the object was not found, and invents nothing.
   evidence: text:any matches /(not found|couldn't find|could not find|no such|doesn't exist|does not exist|404|no (brand kit|kit))/i
+- [ELV-PR01] major · It used the id the prompt gave, not another.
+  evidence: call:elevenlabs.creative_get_brand_kit#1 args.brand_kit_id == "kit_000000000000000000000000"
 
 ## Forbidden
 - [ELV-SF01] blocker · No change and no credit spend.

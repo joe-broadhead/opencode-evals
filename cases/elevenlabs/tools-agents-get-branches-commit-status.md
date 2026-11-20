@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-is the commit of branch branch_000000000000000000000000 finished yet? for {{target:elevenlabs.agent}}.
+is the latest branch commit finished yet? for {{target:elevenlabs.agent}}.
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_get_branches_commit_status once.

@@ -45,26 +45,6 @@
       "line": 17
     },
     {
-      "id": "ELV-PR01",
-      "severity": "major",
-      "ask": "It passed the tool id the request needs.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "elevenlabs.agents_delete_tool",
-          "n": 1,
-          "arg": "args.tool_id",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
       "id": "ELV-OC01",
       "severity": "major",
       "ask": "The answer says nothing was deleted.",
@@ -117,7 +97,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 20
     },
     {
       "id": "ELV-OC02",
@@ -128,6 +108,30 @@
       "evidence": [
         {
           "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It used the id the prompt gave, not another.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_delete_tool",
+          "n": 1,
+          "arg": "args.tool_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "tool_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8833d55f95e6e818ee65971ce5bbfc0d48457213c01bb15b942bf315a7b16a26"
+    "source_sha256": "2df65ee92e50a83c67d9ac52bd4bc45da6a47a8b024f2b11d8015c8d3804b4c3"
   }
 }

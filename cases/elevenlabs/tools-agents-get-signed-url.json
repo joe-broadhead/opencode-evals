@@ -19,7 +19,7 @@
   "sets": [
     "wide"
   ],
-  "data": "own",
+  "data": "real",
   "items": [
     {
       "id": "ELV-WR01",
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c2f75a044111188dc171a4d0c53029822a042ffe8002afd730a2379e362e109f"
+    "source_sha256": "f8d3548d30df725dfdd0f0069a6ec2444c7df01ac2a43252210aff0372a4ec63"
   }
 }

@@ -4,14 +4,14 @@
 - Tier: T3
 - Source: wide sweep: get_entities_attached_to_note (which records a note is on)
 - Decision tested: A which-records-is-this-note-on question is one attached-entities read
-- Data check: a note attached to at least one company
+- Data check: note 424244 is attached to at least one company
 - Seed: plugins=affinity
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
 ## Prompt
-which records is that note attached to — the one about the term sheet?
+which records is note 424244 attached to — the one about the term sheet?
 
 ## Items
 - [AFF-TR01] blocker · It used get_entities_attached_to_note once.

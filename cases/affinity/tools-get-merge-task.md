@@ -4,14 +4,14 @@
 - Tier: T3
 - Source: wide sweep: get_merge_task (the state of a merge)
 - Decision tested: A what-happened-to-the-merge question is one get_merge_task by id
-- Data check: a recent merge task exists, or the answer says it cannot find one
+- Data check: merge task task_000000000000000000000000 exists, or the answer says it cannot find it
 - Seed: plugins=affinity
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
 ## Prompt
-what happened to the company merge I started earlier? did it finish?
+what happened to company merge task task_000000000000000000000000? did it finish?
 
 ## Items
 - [AFF-TR01] blocker · It used get_merge_task once.

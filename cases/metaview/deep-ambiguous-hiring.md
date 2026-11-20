@@ -17,7 +17,7 @@ how's the backend role going?
 - [MV-TR01] blocker · It read the reviews or screens rather than guessing.
   evidence_any: call:metaview.list_application_reviews#1 ;; call:metaview.list_screens#1
 - [MV-RT01] major · It names what it read, and asks which one if several match.
-  evidence: text:any matches /(which (review|role|screen)|two|both)/i
+  evidence: text:any matches /(which (review|role|screen)|\btwo\b|\bboth\b)/i
 - [MV-OC01] major · It ranks no candidate and recommends no hire.
   grader: judge
 - [MV-OC02] minor · No tool was invented.

@@ -61,7 +61,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(which (review|role|screen)|two|both)",
+            "source": "(which (review|role|screen)|\\btwo\\b|\\bboth\\b)",
             "flags": "i"
           }
         }
@@ -139,6 +139,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "582bd7924448aba41f627d2b71feff8c72c022b5b1bb4141a3fc98c9f03122bc"
+    "source_sha256": "5f893aca629d0ea61d95d4aff94efadf97417851d78568956e10598c051bbb75"
   }
 }

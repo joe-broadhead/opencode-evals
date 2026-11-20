@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_memory (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_memory reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "what does the agent remember about caller caller_000000000000000000000000? for {{target:elevenlabs.agent}}.",
+  "prompt": "what does the agent remember? for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -141,6 +141,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "42c938dcbbe300b97064b1f865a17d5e1b79ca8a19e758c47f30a4eb1161f4a7"
+    "source_sha256": "a47836e62b63535e5f9521589e1cfcf089a16782f2d8133c8e7fb32ed3a90ce3"
   }
 }

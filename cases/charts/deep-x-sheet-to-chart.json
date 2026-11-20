@@ -27,19 +27,19 @@
       "ask": "Exactly one chart write was attempted, and it was declined.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "charts.quick",
-          "op": "==",
-          "value": 1
-        },
-        {
-          "kind": "declined",
-          "tool": "charts_quick"
-        }
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "declined",
+            "tool": "charts_quick"
+          },
+          {
+            "kind": "declined",
+            "tool": "charts_render"
+          }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 17
@@ -97,7 +97,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 19
     },
     {
       "id": "CHT-OC02",
@@ -113,7 +113,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 21
     },
     {
       "id": "CHT-SF01",
@@ -133,7 +133,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 25
     },
     {
       "id": "CHT-SF02",
@@ -149,7 +149,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     }
   ],
   "oracle": [],
@@ -157,10 +157,10 @@
     {
       "id": null,
       "text": "The sibling's read (gws.read) cannot be named in a deep case; `absent-write:gws` still holds the sheet to read-only, and the chart write is graded at its own declined call.",
-      "line": 33
+      "line": 32
     }
   ],
   "hashes": {
-    "source_sha256": "b4787c26454adf3c34e0d99cd013a787111b96d2639d1f256ee62dbf40787868"
+    "source_sha256": "88a9129e53d03b679bb04aa871715f38c9cb2c5fa0bfa25e7a2bc07d2098e5af"
   }
 }

@@ -84,7 +84,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(which agent|agents|list)",
+            "source": "\\b(which agent|agents|list)\\b",
             "flags": "i"
           }
         }
@@ -150,6 +150,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "dd9ebd0dd44d9bf1cbb17fa90a77c6fc37feae88708a2f3178cd638d79644faa"
+    "source_sha256": "484e5c2f70cf8014587466b8e173b3370affe6d17fb40e3bb647d09066dc6ddc"
   }
 }

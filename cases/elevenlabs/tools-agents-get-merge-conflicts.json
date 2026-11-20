@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_merge_conflicts (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_merge_conflicts reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "what conflicts does merge proposal prop_000000000000000000000000 have?",
+  "prompt": "what conflicts does the merge have?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -118,6 +118,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "20aa6f499b9a5d48910b4fe9332a3de79df93891c4ce7f36e3cd0c862d1fe353"
+    "source_sha256": "faf285a4fb9a91e2b25534723ccf070eceda529168beebcf7603a4ef1b5aeba7"
   }
 }

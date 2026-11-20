@@ -45,26 +45,6 @@
       "line": 17
     },
     {
-      "id": "ELV-PR01",
-      "severity": "major",
-      "ask": "It passed the tool id the request needs.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "elevenlabs.agents_update_tool",
-          "n": 1,
-          "arg": "args.tool_id",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
       "id": "ELV-OC01",
       "severity": "major",
       "ask": "The answer says nothing was changed, and whom it would have reached.",
@@ -117,7 +97,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 20
     },
     {
       "id": "ELV-OC02",
@@ -128,6 +108,30 @@
       "evidence": [
         {
           "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It used the id the prompt gave, not another.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_update_tool",
+          "n": 1,
+          "arg": "args.tool_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "tool_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "14d6e9d89a2d0a6d8630a37ad2aa5ae05940febf8b1bc3c3dcdf531a119ca03b"
+    "source_sha256": "2d39f177f89d660287603c6db55190f92d2437a7e0326e1bdab5ededb558dc64"
   }
 }

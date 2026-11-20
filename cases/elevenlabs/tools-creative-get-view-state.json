@@ -7,7 +7,7 @@
   "source": "wide sweep: creative_get_view_state (ElevenLabs MCP; creative tools)",
   "decision": "A request for what creative_get_view_state reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "what's the current view state of flow flow_000000000000000000000000?",
+  "prompt": "what's the current view state view_000000000000000000000000?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -52,7 +52,11 @@
           "tool": "elevenlabs.creative_get_view_state",
           "n": 1,
           "arg": "args.view_state_id",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "view_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -77,7 +81,7 @@
       "line": 21
     },
     {
-      "id": "ELV-OC09",
+      "id": "ELV-OC02",
       "severity": "major",
       "ask": "It says the object was not found, and invents nothing.",
       "forbidden": false,
@@ -139,6 +143,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4e164cc4749fb84a599444e1a93874d3f7235f744d4e137f8a4aab4053827a74"
+    "source_sha256": "896de9dadf28277d5aa9a5983a6b01f69edf605700af8b4d3bb89711c28dc453"
   }
 }

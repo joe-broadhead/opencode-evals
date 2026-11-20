@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-add a tag "refund" to conversation conv_000000000000000000000000 for {{target:elevenlabs.agent}}.
+turn on monitoring for our calls.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one agents update conversation call, and it was declined.

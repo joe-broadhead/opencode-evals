@@ -6,7 +6,7 @@
 - Decision tested: A request for what agents_get_alert reads is answered with one call and its arguments, and nothing is changed
 - Data check: the workspace holds the object the question names, or the answer says it does not
 - Seed: plugins=elevenlabs
-- Data: own
+- Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8
 - Set: wide
 
@@ -16,12 +16,12 @@ what is alert alert_000000000000000000000000 on {{target:elevenlabs.agent}} abou
 ## Items
 - [ELV-TR01] blocker · It read it with agents_get_alert once.
   evidence: call:elevenlabs.agents_get_alert#1
-- [ELV-PR01] major · It passed the alert id the question needs.
-  evidence: call:elevenlabs.agents_get_alert#1 args.alert_id present
 - [ELV-OC01] minor · No tool was invented.
   evidence: unknown-tool:none
-- [ELV-OC09] major · It says the object was not found, and invents nothing.
+- [ELV-OC02] major · It says the object was not found, and invents nothing.
   evidence: text:any matches /(not found|couldn't find|could not find|no such|doesn't exist|does not exist|404|no (conversation|flow|test|run|ticket|document|procedure|branch|generation|voice|item|folder|merge proposal|batch|caller|tool|connection|alert|result|node|view state))/i
+- [ELV-PR01] major · It used the id the prompt gave, not another.
+  evidence: call:elevenlabs.agents_get_alert#1 args.alert_id == "alert_000000000000000000000000"
 
 ## Forbidden
 - [ELV-SF01] blocker · No change and no credit spend.

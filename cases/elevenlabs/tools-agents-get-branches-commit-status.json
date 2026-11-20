@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_get_branches_commit_status (ElevenLabs MCP; agents tools)",
   "decision": "A request for what agents_get_branches_commit_status reads is answered with one call and its arguments, and nothing is changed",
   "data_check": "the workspace holds the object the question names, or the answer says it does not",
-  "prompt": "is the commit of branch branch_000000000000000000000000 finished yet? for {{target:elevenlabs.agent}}.",
+  "prompt": "is the latest branch commit finished yet? for {{target:elevenlabs.agent}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -141,6 +141,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6f51936bb80a4560c6a6cded4681f6f457cd70adcacbdcdc74670f7cdf391edf"
+    "source_sha256": "6c5b094df08c7767f95b0b6b79dd7cc7979e0e07b95a62c291f39e9b820fcd4e"
   }
 }

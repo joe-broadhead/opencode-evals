@@ -45,26 +45,6 @@
       "line": 17
     },
     {
-      "id": "ELV-PR01",
-      "severity": "major",
-      "ask": "It passed the mcp server id the request needs.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "elevenlabs.agents_update_mcp_server",
-          "n": 1,
-          "arg": "args.mcp_server_id",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
       "id": "ELV-OC01",
       "severity": "major",
       "ask": "The answer says nothing was changed, and whom it would have reached.",
@@ -117,7 +97,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 20
     },
     {
       "id": "ELV-OC02",
@@ -128,6 +108,30 @@
       "evidence": [
         {
           "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It used the id the prompt gave, not another.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_update_mcp_server",
+          "n": 1,
+          "arg": "args.mcp_server_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "mcp_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "dc659034c000d7b91054fb36602d33823546cefcfe17b9f365724e6eb2059e0b"
+    "source_sha256": "6f70d87768bd6c03e0266c37aca54db633282b8a49af9ca8d5893663e864f32d"
   }
 }

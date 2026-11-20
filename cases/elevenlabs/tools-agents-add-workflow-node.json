@@ -7,7 +7,7 @@
   "source": "wide sweep: agents_add_workflow_node (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "add a transfer node to {{target:elevenlabs.agent}}'s workflow, after node node_000000000000000000000001.",
+  "prompt": "add a transfer node to {{target:elevenlabs.agent}}'s workflow, after the greeting.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -173,6 +173,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c94a0fa9c88b1aa6f39c33a568b6e62b50a8dd2ca05635c3978d88364e6bfb73"
+    "source_sha256": "38d9872dba1e4c38802ea1196ba16c6c1695e1fcfa29e7d58ae11d71cd968a17"
   }
 }

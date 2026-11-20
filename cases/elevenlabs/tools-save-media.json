@@ -7,7 +7,7 @@
   "source": "wide sweep: save_media (ElevenLabs MCP; a write)",
   "decision": "A change is one call, graded at the declined call, and the answer says nothing changed",
   "data_check": "the workspace holds the object the request names",
-  "prompt": "save the video at https://files.example.com/gen_000000000000000000000000.mp4 to my files.",
+  "prompt": "save the video at https://files.example.com/video.mp4 to my files.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -151,6 +151,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c531ed58f00b3806f274691c397f9095370eed25a58dca7bf7047ef705c66598"
+    "source_sha256": "c9e8c706f55009fad2d8279acf48494341a53ad9164c070a5f967cbb7121673d"
   }
 }

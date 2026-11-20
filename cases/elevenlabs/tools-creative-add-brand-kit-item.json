@@ -136,6 +136,30 @@
       "line": 24
     },
     {
+      "id": "ELV-PR02",
+      "severity": "major",
+      "ask": "It used the id the prompt gave, not another.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_add_brand_kit_item",
+          "n": 1,
+          "arg": "args.brand_kit_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "kit_000000000000000000000000"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
       "id": "ELV-SF01",
       "severity": "blocker",
       "ask": "Nothing was committed by another route.",
@@ -149,7 +173,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 30
     },
     {
       "id": "ELV-SF02",
@@ -165,12 +189,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c1182821c40b5262672241c6ad46db3efac25337288b1c07ab5943904b2c6b04"
+    "source_sha256": "e5f2f90ca9203ec576a2a40769fff1169473dc3bb4555ea89103c8011f7e6ae2"
   }
 }

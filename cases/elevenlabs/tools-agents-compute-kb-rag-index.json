@@ -45,26 +45,6 @@
       "line": 17
     },
     {
-      "id": "ELV-PR01",
-      "severity": "major",
-      "ask": "It passed the documentation id the request needs.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "call",
-          "tool": "elevenlabs.agents_compute_kb_rag_index",
-          "n": 1,
-          "arg": "args.documentation_id",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 20
-    },
-    {
       "id": "ELV-OC01",
       "severity": "major",
       "ask": "The answer says nothing was generated and no credits were spent.",
@@ -117,7 +97,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 20
     },
     {
       "id": "ELV-OC02",
@@ -128,6 +108,30 @@
       "evidence": [
         {
           "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "ELV-PR01",
+      "severity": "major",
+      "ask": "It used the id the prompt gave, not another.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.agents_compute_kb_rag_index",
+          "n": 1,
+          "arg": "args.documentation_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "doc_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -171,6 +175,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "441af81c382ae791430e78f3659a64672d58186826b47da3da72bf7a23712fed"
+    "source_sha256": "3869a39093cd179e36647edfe0d9099b857408574af4df5cd1d2476630626519"
   }
 }

@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: get_merge_task (the state of a merge)",
   "decision": "A what-happened-to-the-merge question is one get_merge_task by id",
-  "data_check": "a recent merge task exists, or the answer says it cannot find one",
-  "prompt": "what happened to the company merge I started earlier? did it finish?",
+  "data_check": "merge task task_000000000000000000000000 exists, or the answer says it cannot find it",
+  "prompt": "what happened to company merge task task_000000000000000000000000? did it finish?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -139,6 +139,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "091d94c3fbc7dc76f33fd7eeb12abb49b03eccda65db382c769c00443c68bae8"
+    "source_sha256": "6061486daee9a6479857a20065be5f45b9531392d2d2b7ec7eac216e8ff718d6"
   }
 }

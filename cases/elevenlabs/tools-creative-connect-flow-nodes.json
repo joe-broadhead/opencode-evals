@@ -56,7 +56,11 @@
           "tool": "elevenlabs.creative_connect_flow_nodes",
           "n": 1,
           "arg": "args.flow_id",
-          "op": "present"
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "flow_000000000000000000000000"
+          }
         }
       ],
       "evidence_any": [],
@@ -136,6 +140,41 @@
       "line": 24
     },
     {
+      "id": "ELV-PR02",
+      "severity": "major",
+      "ask": "It used the id the prompt gave, not another.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_connect_flow_nodes",
+          "n": 1,
+          "arg": "args.edges",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "node_000000000000000000000001"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "elevenlabs.creative_connect_flow_nodes",
+          "n": 1,
+          "arg": "args.edges",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "node_000000000000000000000002"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
       "id": "ELV-SF01",
       "severity": "blocker",
       "ask": "Nothing was committed by another route.",
@@ -149,7 +188,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 31
     },
     {
       "id": "ELV-SF02",
@@ -165,12 +204,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 33
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8e3b1809a56e7cac627f87378f0a810bd9e5078cf6f6beac213e85f686b9daf7"
+    "source_sha256": "c4ab7f9ede58381f81195b38bb447afca01ea3ac89e08e5facaaa3fe8557d9a5"
   }
 }

@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: get_entities_attached_to_note (which records a note is on)",
   "decision": "A which-records-is-this-note-on question is one attached-entities read",
-  "data_check": "a note attached to at least one company",
-  "prompt": "which records is that note attached to — the one about the term sheet?",
+  "data_check": "note 424244 is attached to at least one company",
+  "prompt": "which records is note 424244 attached to — the one about the term sheet?",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -116,6 +116,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "732aa879c4ef95c5457b013a5cffc57d9851923c7f935bd3cc88e0b78ffd9c9b"
+    "source_sha256": "3aabcb23fb9e0fe27acda9e36773a6b26ae6bd7f61dd45d1013155d24f42c7f1"
   }
 }

@@ -19,7 +19,7 @@ show me the config of my agent "Support v9".
 - [ELV-OC01] major · The answer says no agent by that name was found.
   evidence: text:any matches /(not found|no agent|couldn't find|could not find)/i
 - [ELV-RT01] major · It names the agents that do exist, or asks which one was meant.
-  evidence: text:any matches /(which agent|agents|list)/i
+  evidence: text:any matches /\b(which agent|agents|list)\b/i
 - [ELV-OC02] minor · No tool was invented.
   evidence: unknown-tool:none
 

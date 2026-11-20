@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-save the video at https://files.example.com/gen_000000000000000000000000.mp4 to my files.
+save the video at https://files.example.com/video.mp4 to my files.
 
 ## Items
 - [ELV-WR01] blocker · Exactly one save media call, and it was declined.

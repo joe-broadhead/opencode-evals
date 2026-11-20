@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "wide sweep: delete_person (deletes a person)",
   "decision": "A delete-this-duplicate-person request is one call, graded at the declined call",
-  "data_check": "a duplicate person exists",
-  "prompt": "delete the duplicate Jordan Lee record — the one with no email.",
+  "data_check": "person 424243 is the duplicate Jordan Lee record",
+  "prompt": "delete person 424243 — the duplicate Jordan Lee record with no email.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
@@ -171,6 +171,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ca9e0922a525f5394b4f1a30df6668d05c4765b3c7998bcbf4a9fd6dc93468d0"
+    "source_sha256": "c44aaafae23248dfc517d945c714e94ebd79ffd5cc75501d28435ddedd963c75"
   }
 }

@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-what does the agent remember about caller caller_000000000000000000000000? for {{target:elevenlabs.agent}}.
+what does the agent remember? for {{target:elevenlabs.agent}}.
 
 ## Items
 - [ELV-TR01] blocker · It read it with agents_get_memory once.

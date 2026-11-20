@@ -93,6 +93,18 @@
               "source": "2024-02-(1[6-9]|2[0-9])",
               "flags": ""
             }
+          },
+          {
+            "kind": "call",
+            "tool": "charts.quick",
+            "n": 1,
+            "arg": "args.data",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "2024-02-(1[6-9]|2[0-9])",
+              "flags": ""
+            }
           }
         ]
       ],
@@ -175,6 +187,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f7991c1a57b5db196dab70b6f99a5456e86f9bb8ae99a2769f3ce5a96ff0ded1"
+    "source_sha256": "c71630aacacba165d72e83f88c4952900b6efcb247cfc84eeed94913e1f3771c"
   }
 }
