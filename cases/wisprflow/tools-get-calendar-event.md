@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
+- Status: deferred
 
 ## Prompt
 pull up the calendar event for {{target:wisprflow.meeting}} and tell me who is invited and where it is.
@@ -31,3 +32,6 @@ pull up the calendar event for {{target:wisprflow.meeting}} and tell me who is i
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: needs a recorded meeting behind the calendar event (owner decision 20 Nov).

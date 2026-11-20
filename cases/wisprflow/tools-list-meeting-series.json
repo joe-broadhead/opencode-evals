@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "status": "deferred",
   "data": "real",
   "items": [
     {
@@ -40,7 +41,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
       "id": "WF-PR01",
@@ -60,7 +61,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "WF-OC02",
@@ -83,7 +84,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "WF-TR01",
@@ -100,7 +101,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-SF01",
@@ -128,7 +129,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "WF-RB01",
@@ -144,12 +145,18 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Deferred: needs a recorded meeting's recurring series (owner decision 20 Nov).",
+      "line": 40
+    }
+  ],
   "hashes": {
-    "source_sha256": "140f7efd8ab173a459d5b121b202a7a765b5b5f87060fcf6851d3dcbbbc8cb30"
+    "source_sha256": "c624a823874ad1acb8db146b4773d5dca16ad45d171ce78a854e7819a496eec1"
   }
 }

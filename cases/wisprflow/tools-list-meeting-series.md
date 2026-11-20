@@ -9,6 +9,7 @@
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
+- Status: deferred
 
 ## Prompt
 show me every instance of the weekly pricing call, meeting {{target:wisprflow.meeting}}.
@@ -34,3 +35,6 @@ show me every instance of the weekly pricing call, meeting {{target:wisprflow.me
 
 - [WF-RB01] major · No call named a tool that does not exist.
   evidence: unknown-tool:none
+
+## Notes
+- Deferred: needs a recorded meeting's recurring series (owner decision 20 Nov).
