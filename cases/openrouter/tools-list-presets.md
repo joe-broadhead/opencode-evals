@@ -18,8 +18,7 @@ list my saved OpenRouter presets
   evidence: count:openrouter.list-presets == 1
 
 - [OR-OC02] major · The answer lists presets or says there are none.
-  evidence_any: text:any matches /no presets|none (saved|stored)/i ;; text:any matches /unavailable/i
-  evidence_any: text:any matches /preset.{0,20}(model|temperature)/i ;; text:any matches /no presets|unavailable/i
+  evidence_any: text:any matches /no presets|none (saved|stored)/i ;; text:any matches /preset.{0,20}(model|temperature)/i ;; text:any matches /unavailable/i
 
 - [OR-OC03] minor · It does not fetch each preset's details.
   evidence: count:openrouter.list-presets <= 1

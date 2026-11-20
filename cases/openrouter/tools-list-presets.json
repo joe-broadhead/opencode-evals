@@ -70,18 +70,6 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "unavailable",
-              "flags": "i"
-            }
-          }
-        ],
-        [
-          {
-            "kind": "text",
-            "span": "any",
-            "op": "matches",
-            "value": {
-              "kind": "regex",
               "source": "preset.{0,20}(model|temperature)",
               "flags": "i"
             }
@@ -92,7 +80,7 @@
             "op": "matches",
             "value": {
               "kind": "regex",
-              "source": "no presets|unavailable",
+              "source": "unavailable",
               "flags": "i"
             }
           }
@@ -119,7 +107,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 23
     },
     {
       "id": "OR-SF01",
@@ -135,12 +123,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f3a9e952e1799f416c08641f3ffc67c6d5be0d895494d1283931dbd1efbf8e25"
+    "source_sha256": "e1159bae5164232c4ca59a3d77267bd8e2a40dd4092dd02de7347a8c6c7ae18f"
   }
 }
