@@ -179,6 +179,10 @@ for v in $ORDER; do
   echo
   echo "[$n/$total] $v: sign it into the evals profile, then it is checked against your normal profile"
   if [ "$yes" != 1 ]; then printf 'Press Enter to start (Ctrl-C to stop): '; read -r _ || true; fi
+  # The baseline belongs to the previous sign-in. Delete it BEFORE the login, as a store-only write (no profile or real read): any failure after
+  # this (Ctrl-C, a crash, a refused guard) then leaves none, and the next check-real takes a fresh one, later and so conservative. The evals
+  # credential's id in the baseline also makes it stale after a sign-in this script did not see (a manual one).
+  node "$B/log-signin.mjs" --forget "$STORE" "$v" || echo "signin: could not clear the baseline for $v" >&2
   "$B/evals-profile.sh" -- "$OC" auth login "$(login_target "$v")"
   code=$?
   if [ "$code" -ne 0 ]; then
@@ -186,8 +190,8 @@ for v in $ORDER; do
     echo "Fix: run $0 --from $v to try $v again; sign no other vendor first."
     exit 1
   fi
-  # The sign-in's time, for check-real: the real token must be minted after it for the refresh chain to count as verified. Not fatal if it fails.
-  node "$B/log-signin.mjs" "$STORE" "$v" || echo "signin: could not record the sign-in time for $v (its check stays provisional)" >&2
+  # The sign-in's time and the new baseline, for check-real. Not fatal if it fails: check-real settles the baseline from the evals credential id.
+  node "$B/log-signin.mjs" "$STORE" "$v" || echo "signin: could not record the sign-in time for $v (check-real settles its baseline from the store)" >&2
   run_check "$v" || exit 1
   echo "$v" >> "$PASSED"
   echo "[$n/$total] $v: PASS"

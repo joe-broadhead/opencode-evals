@@ -21,7 +21,7 @@ signin.sh --yes            no Enter prompts
 `evals-profile.sh -- <command>` runs any command inside the profile (the sign-in is
 `evals-profile.sh -- opencode auth login <vendor>`); `check-real.mjs` is the check on its own; `keeper.mjs` refreshes the evals profile's
 tokens on a timer; `guard-real.mjs` refuses while the real background service is running; `copy-client.mjs` copies an app client;
-`log-signin.mjs` records when a sign-in completed, for the refresh-chain proof below.
+`log-signin.mjs` records (or, with `--forget`, clears) a sign-in's baseline, for the refresh-chain proof below.
 
 ## The refresh-chain proof
 
@@ -30,9 +30,12 @@ known from here (`RECHECK_HOURS` is a recheck interval, not a lifetime; Notion a
 time. Instead the real credential's `expires` is recorded as a **baseline** — a time only, never a token or a digest of one — when the vendor
 is signed in (`log-signin.mjs`, through `--server`), or at the first `check-real` for a vendor signed in before that (later than its sign-in,
 so conservative). A **re-sign-in replaces the vendor's baseline**: it is the new fixed point, so a real refresh between two sign-ins cannot
-count as one after the second. `check-real` only ever records a baseline when none exists. The chain is **verified** only when a later check
-reads a **later** `expires` than the baseline (a refresh happened after it) and the identity read passes: `refresh chain verified: the real
-token was refreshed after <baseline time>`. Until then the check stays **provisional**, with a deadline of the baseline's `expires` **+ 5
+count as one after the second. The baseline is also bound to the **evals credential's id** (`cred_…`, not a secret): `check-real` compares it
+with the current evals credential every time, and a baseline from another credential — a manual sign-in, or one whose `log-signin` did not
+finish — is discarded and re-taken, with the line *a new evals sign-in since the last baseline: re-baselined*. As well, `signin.sh` deletes
+the vendor's baseline **before** `auth login` (a store-only write), so any later failure leaves none. The chain is **verified** only when a
+later check reads a **later** `expires` than the baseline (a refresh happened after it) and the identity read passes: `refresh chain verified:
+the real token was refreshed after <baseline time>`. Until then the check stays **provisional**, with a deadline of the baseline's `expires` **+ 5
 minutes** — fixed, because the baseline does not move, so a second `--recheck` gives the same time. An expiry more than 30 days from now (a
 seconds/ms mistake, a broken export) is not trusted; with no usable expiry the line says *unknown: no expiry on the real credential* and never
 claims verified. Seconds and milliseconds are both accepted and normalised.

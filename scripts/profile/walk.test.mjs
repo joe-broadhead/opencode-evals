@@ -777,14 +777,14 @@ test("check-real: a left-over check session is named on a PASS too", () => {
 // no baseline, so a vendor signed in before the baseline could never resolve. And recheck_at was now + hours, so every run moved the deadline.
 const HOUR = 3_600_000
 const NOW = Date.now()
-const refreshCred = (integrationID, access, refresh, extra = {}) => JSON.stringify([{ id: "cred_x", integrationID, label: "Linear", active: true, value: { type: "oauth", access, refresh, ...extra } }])
+const refreshCred = (integrationID, access, refresh, extra = {}, id = "cred_x") => JSON.stringify([{ id, integrationID, label: "Linear", active: true, value: { type: "oauth", access, refresh, ...extra } }])
 const roundLogOf = (r) => readFileSync(join(r.env.EVALS_STORE, "round-232.log"), "utf8").trim().split("\n").map((l) => JSON.parse(l))
 const lastCheck = (r) => roundLogOf(r).filter((e) => e.event === "check-real").at(-1)
 const baselineOf = (r, integration = "linear") => JSON.parse(readFileSync(join(r.env.EVALS_STORE, "refresh-baseline.json"), "utf8"))[integration]
-const writeBaseline = (r, expires, { integration = "linear", at = new Date(NOW - 2 * HOUR).toISOString(), source = "sign-in" } = {}) => {
+const writeBaseline = (r, expires, { integration = "linear", at = new Date(NOW - 2 * HOUR).toISOString(), source = "sign-in", evalsId = "cred_x" } = {}) => {
   const file = join(r.env.EVALS_STORE, "refresh-baseline.json")
   const all = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {}
-  all[integration] = { expires, at, source }
+  all[integration] = { expires, at, source, ...(evalsId ? { evalsId } : {}) }
   writeFileSync(file, JSON.stringify(all))
 }
 const realLinear = (r, expires) => writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R", expires === undefined ? {} : { expires }))
@@ -848,6 +848,7 @@ test("check-real: a later expiry than the baseline verifies the refresh chain, n
     assert.ok(out.stdout.includes(`refresh chain verified: the real token was refreshed after ${at}`), out.stdout)
     assert.doesNotMatch(out.stdout, /provisional/)
     assert.deepEqual({ provisional: lastCheck(r).provisional, recheck_at: lastCheck(r).recheck_at, chain: lastCheck(r).refresh_chain }, { provisional: false, recheck_at: null, chain: "verified" })
+    assert.equal(baselineOf(r).evalsId, "cred_x", "the same evals credential: the baseline is kept")
     assert.ok(!(out.stdout + JSON.stringify(lastCheck(r))).includes("REAL-A"), "no token is printed or logged")
   } finally {
     r.done()
@@ -937,7 +938,10 @@ test("the real web server is loopback only: a non-loopback URL is refused before
   }
   // (built from parts: the privacy gate reads a userinfo URL as an email address)
   const userinfoUrl = ["http://127.0.0.1", "evil.com"].join("@")
-  for (const input of ["0x7f000001", "2130706433", "127.1", "user:pw@127.0.0.1", userinfoUrl, "http://[::ffff:127.0.0.1]"]) assert.throws(() => realServerUrl({ EVALS_REAL_SERVER: input }), /loopback/, input)
+  // Bare forms are not URLs at all, so they are refused; with a scheme, WHATWG normalises each host to 127.0.0.1 and the origin has no userinfo.
+  for (const input of ["0x7f000001", "2130706433", "127.1", "user:pw@127.0.0.1"]) assert.throws(() => realServerUrl({ EVALS_REAL_SERVER: input }), /loopback/, input)
+  for (const input of ["http://0x7f000001", "http://2130706433", "http://127.1", "http://user:pw@127.0.0.1"]) assert.equal(realServerUrl({ EVALS_REAL_SERVER: input }), "http://127.0.0.1", input)
+  for (const input of [userinfoUrl, "http://[::ffff:127.0.0.1]"]) assert.throws(() => realServerUrl({ EVALS_REAL_SERVER: input }), /loopback/, input)
   const r = rig()
   try {
     const out = checkReal(r, "linear", { EVALS_REAL_SERVER: "http://example.com:4096" })
@@ -954,12 +958,13 @@ test("signin.sh: a completed sign-in logs its time and records the real expiry a
   const expires = NOW + 6 * HOUR
   try {
     writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R", { expires }))
+    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R")) // id cred_x
     const out = failingWalk(r, "linear", { CHECK_EXIT: "0" })
     assert.equal(out.status, 0, out.stdout + out.stderr)
     const entry = readFileSync(join(r.env.EVALS_STORE, "round-232.log"), "utf8").trim().split("\n").map((l) => JSON.parse(l)).find((e) => e.event === "sign-in" && e.integration === "linear")
     assert.ok(entry, "a sign-in line was recorded")
     assert.ok(!Number.isNaN(Date.parse(entry.at)), "with the time it completed")
-    assert.deepEqual({ expires: baselineOf(r).expires, source: baselineOf(r).source }, { expires, source: "sign-in" })
+    assert.deepEqual({ expires: baselineOf(r).expires, source: baselineOf(r).source, evalsId: baselineOf(r).evalsId }, { expires, source: "sign-in", evalsId: "cred_x" })
   } finally {
     r.done()
   }
@@ -997,10 +1002,10 @@ test("baselines: a sign-in replaces, check-real keeps (pinned)", () => {
   const r = rig()
   const first = NOW + 4 * HOUR
   try {
-    const kept = recordBaseline(r.env.EVALS_STORE, "linear", first, { now: NOW, at: new Date(NOW - 2 * HOUR).toISOString() })
+    const kept = recordBaseline(r.env.EVALS_STORE, "linear", first, { now: NOW, at: new Date(NOW - 2 * HOUR).toISOString(), evalsId: "cred_x" })
     assert.equal(kept.expires, first)
-    // check-real's record (replace false) never moves an existing baseline...
-    const same = recordBaseline(r.env.EVALS_STORE, "linear", NOW + 12 * HOUR, { now: NOW })
+    // check-real's record (replace false) never moves an existing baseline for the same evals credential...
+    const same = recordBaseline(r.env.EVALS_STORE, "linear", NOW + 12 * HOUR, { now: NOW, evalsId: "cred_x" })
     assert.equal(same.expires, first)
     assert.equal(baselineOf(r).expires, first)
     // ...and always keeps it when the check itself runs beside a later real expiry.
@@ -1030,6 +1035,102 @@ test("signin.sh --redo clears the baseline file (a full redo)", () => {
     assert.equal(out.status, 0, out.stdout + out.stderr)
     assert.equal(existsSync(baselineFile(r)), false, "every vendor's baseline is gone")
     assert.match(out.stdout, /openrouter\s+not yet/)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a new evals credential id (a manual sign-in) makes the baseline stale and does not verify", () => {
+  const r = rig()
+  try {
+    writeBaseline(r, NOW + 6 * HOUR) // cred_x
+    realLinear(r, NOW + 14 * HOUR)
+    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R", {}, "cred_new"))
+    const out = checkReal(r, "linear")
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stdout, /a new evals sign-in since the last baseline: re-baselined/)
+    assert.doesNotMatch(out.stdout, /refresh chain verified/)
+    assert.deepEqual({ expires: baselineOf(r).expires, id: baselineOf(r).evalsId }, { expires: NOW + 14 * HOUR, id: "cred_new" })
+    assert.deepEqual({ provisional: lastCheck(r).provisional, rebaselined: lastCheck(r).rebaselined }, { provisional: true, rebaselined: true })
+    // the fresh baseline is the new fixed point: the same credential and expiry stay provisional, with the baseline's deadline
+    const again = checkReal(r, "linear")
+    assert.doesNotMatch(again.stdout, /refresh chain verified/)
+    assert.doesNotMatch(again.stdout, /re-baselined/)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: an old baseline with no evals credential id does not verify", () => {
+  const r = rig()
+  try {
+    writeBaseline(r, NOW + 6 * HOUR, { evalsId: null })
+    realLinear(r, NOW + 14 * HOUR)
+    evalsLinear(r) // cred_x
+    const out = checkReal(r, "linear")
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stdout, /a new evals sign-in since the last baseline: re-baselined/)
+    assert.doesNotMatch(out.stdout, /refresh chain verified/)
+    assert.equal(baselineOf(r).evalsId, "cred_x")
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a sign-in whose log-signin was skipped by the guard re-baselines on the new credential id", async () => {
+  const r = rig()
+  const server = spawn(process.execPath, ["-e", "require('node:net').createServer().listen(0,'127.0.0.1',function(){console.log(this.address().port)})"], { stdio: ["ignore", "pipe", "inherit"] })
+  try {
+    const port = await new Promise((res) => server.stdout.once("data", (d) => res(Number(String(d).trim()))))
+    writeBaseline(r, NOW + 6 * HOUR, { evalsId: "cred_old" })
+    realLinear(r, NOW + 14 * HOUR) // a real refresh between the two sign-ins
+    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R", {}, "cred_new"))
+    const gl = spawnSync(process.execPath, [join(HERE, "log-signin.mjs"), r.env.EVALS_STORE, "linear"], { env: { ...r.env, EVALS_REAL_SERVICE_PORT: String(port) }, encoding: "utf8" })
+    assert.equal(gl.status, 0, gl.stdout + gl.stderr)
+    assert.match(gl.stderr, /no baseline was taken here/)
+    assert.deepEqual({ expires: baselineOf(r).expires, id: baselineOf(r).evalsId }, { expires: NOW + 6 * HOUR, id: "cred_old" }, "the guard left the old baseline alone")
+    // ...and it must not verify: the evals credential it belongs to is gone.
+    const out = checkReal(r, "linear")
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stdout, /a new evals sign-in since the last baseline: re-baselined/)
+    assert.doesNotMatch(out.stdout, /refresh chain verified/)
+  } finally {
+    server.kill()
+    r.done()
+  }
+})
+
+test("log-signin --forget removes one vendor's baseline and keeps the others", () => {
+  const r = rig()
+  try {
+    writeBaseline(r, NOW + 6 * HOUR)
+    writeBaseline(r, NOW + 7 * HOUR, { integration: "notion" })
+    const out = spawnSync(process.execPath, [join(HERE, "log-signin.mjs"), "--forget", r.env.EVALS_STORE, "linear"], { env: r.env, encoding: "utf8" })
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    const all = JSON.parse(readFileSync(baselineFile(r), "utf8"))
+    assert.equal(all.linear, undefined)
+    assert.ok(all.notion, "another vendor's baseline is kept")
+  } finally {
+    r.done()
+  }
+})
+
+test("signin.sh deletes the vendor's baseline before the login, so a login that fails leaves none", () => {
+  const r = rig()
+  const bin = join(r.root, "bin")
+  try {
+    mkdirSync(bin)
+    for (const f of ["signin.sh", "guard-real.mjs", "log-signin.mjs", "profile-lib.mjs", "identity-methods.json"]) writeFileSync(join(bin, f), readFileSync(join(HERE, f)), { mode: 0o700 })
+    writeFileSync(join(bin, "evals-profile.sh"), "#!/bin/sh\nexit 3\n", { mode: 0o700 })
+    writeFileSync(join(bin, "check-real.sh"), "#!/bin/sh\nexit 1\n", { mode: 0o700 })
+    writeBaseline(r, NOW + 6 * HOUR)
+    writeBaseline(r, NOW + 7 * HOUR, { integration: "notion" })
+    const out = spawnSync(join(bin, "signin.sh"), ["--only", "linear", "--yes"], { env: { ...r.env, EVALS_BIN: bin }, encoding: "utf8" })
+    assert.equal(out.status, 1, out.stdout + out.stderr)
+    assert.match(out.stdout, /the sign-in did not complete \(exit 3\)/)
+    const all = JSON.parse(readFileSync(baselineFile(r), "utf8"))
+    assert.equal(all.linear, undefined, "the baseline was deleted before the login")
+    assert.ok(all.notion, "another vendor's baseline is untouched")
   } finally {
     r.done()
   }

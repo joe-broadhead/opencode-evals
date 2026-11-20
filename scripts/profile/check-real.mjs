@@ -107,9 +107,14 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
   // 3. The real refresh chain: a baseline, then a later refresh. On the first check for a vendor the real `expires` is recorded as the baseline
   //    (a time only), and the check stays provisional; a later `expires` than that baseline proves a refresh happened after it, which is the proof
   //    (with the identity read) that the evals sign-in did not break the real profile's refresh. No lifetime is inferred, and no token is stored or
-  //    logged: only times.
+  //    logged: only times. The baseline is bound to the evals credential's id: a new evals sign-in (a manual one, or one whose log-signin did not
+  //    finish) makes it stale, and it is discarded and re-taken here.
   const expires = credentialExpires(mine)
-  const baseline = readBaseline(store, integration) ?? recordBaseline(store, integration, expires, { source: "check-real" })
+  const evalsId = typeof theirs.id === "string" && theirs.id ? theirs.id : null
+  const stored = readBaseline(store, integration)
+  const stale = Boolean(stored) && stored.evalsId !== evalsId
+  const baseline = stale ? recordBaseline(store, integration, expires, { source: "check-real", evalsId, replace: true }) : stored ?? recordBaseline(store, integration, expires, { source: "check-real", evalsId })
+  const rebaselined = stale && Boolean(baseline)
   const chain = mine?.value?.refresh || mine?.value?.expires || baseline ? refreshChain({ expires, baseline, identityOk }) : null
   const proof = chain?.verified
     ? `refresh chain verified: the real token was refreshed after ${baseline.at}`
@@ -118,10 +123,11 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
       : chain.known
         ? `provisional: the real refresh chain is checked again by ${chain.recheckAt} (repeat on days 1 and 2)`
         : "provisional: unknown: no expiry on the real credential"
-  if (store) logRound(store, { event: "check-real", integration, result: "PASS", provisional: Boolean(chain?.provisional), recheck_at: chain?.recheckAt ?? null, ...(baseline ? { baseline_expires: baseline.expires, baseline_at: baseline.at } : {}), ...(chain?.verified ? { refresh_chain: "verified" } : {}) })
+  const notes = [rebaselined ? "a new evals sign-in since the last baseline: re-baselined" : null, proof].filter(Boolean)
+  if (store) logRound(store, { event: "check-real", integration, result: "PASS", provisional: Boolean(chain?.provisional), recheck_at: chain?.recheckAt ?? null, ...(baseline ? { baseline_expires: baseline.expires, baseline_at: baseline.at } : {}), ...(rebaselined ? { rebaselined: true } : {}), ...(chain?.verified ? { refresh_chain: "verified" } : {}) })
   // A different token string is not a different grant: a GitHub OAuth app, for one, hands every sign-in the same grant under a new string,
   // so revoking the evals profile's grant would sign the owner out. The end of the round is `auth logout` in the evals profile, never a revoke.
-  return { ok: true, line: `PASS ${integration}: ${identity}; ${compared}${proof ? `; ${proof}` : ""}. A distinct token does not prove a distinct grant: end the round with \`auth logout\` in the evals profile only, never by revoking a grant` }
+  return { ok: true, line: `PASS ${integration}: ${identity}; ${compared}${notes.length ? `; ${notes.join("; ")}` : ""}. A distinct token does not prove a distinct grant: end the round with \`auth logout\` in the evals profile only, never by revoking a grant` }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

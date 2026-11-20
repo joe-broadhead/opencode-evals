@@ -500,7 +500,7 @@ function baselineProblem(entry, now) {
   return null
 }
 
-const normaliseBaseline = (entry) => ({ expires: timeValue(entry.expires), at: entry.at, source: typeof entry.source === "string" ? entry.source : "check-real" })
+const normaliseBaseline = (entry) => ({ expires: timeValue(entry.expires), at: entry.at, source: typeof entry.source === "string" ? entry.source : "check-real", evalsId: typeof entry.evalsId === "string" && entry.evalsId ? entry.evalsId : null })
 
 /** The baseline file's JSON object, or null; `corrupt` when the file exists but is not one. */
 function readBaselineFile(store) {
@@ -574,14 +574,16 @@ function withBaselineLock(store, fn) {
 
 /**
  * Records a vendor's baseline and returns it. `replace: true` is a sign-in: the vendor's baseline becomes the new fixed point (an untrusted
- * or missing expiry clears it rather than keeping an older one). `replace: false` is check-real: it keeps the first baseline. A corrupt
- * file is moved aside as `<file>.corrupt-<UTC date-time>` and a new one started; other vendors' valid entries are kept. Times only.
+ * or missing expiry clears it rather than keeping an older one). `replace: false` is check-real: it keeps the first baseline, for the SAME
+ * evals credential (`evalsId`): a baseline from another credential is stale and is replaced. A corrupt file is moved aside as
+ * `<file>.corrupt-<UTC date-time>` and a new one started; other vendors' valid entries are kept. Times only.
  */
-export function recordBaseline(store, integration, expires, { at = new Date().toISOString(), source = "check-real", now = Date.now(), replace = false, warn = (message) => console.error(message) } = {}) {
+export function recordBaseline(store, integration, expires, { at = new Date().toISOString(), source = "check-real", now = Date.now(), replace = false, evalsId = null, warn = (message) => console.error(message) } = {}) {
   if (!store) return null
   mkdirSync(store, { recursive: true, mode: 0o700 })
+  const id = typeof evalsId === "string" && evalsId ? evalsId : null
   const existing = readBaseline(store, integration, { now, warn: () => {} })
-  if (existing && !replace) return existing
+  if (existing && !replace && existing.evalsId === id) return existing
   return withBaselineLock(store, () => {
     const { file, all, corrupt } = readBaselineFile(store)
     let base = all ?? {}
@@ -594,7 +596,7 @@ export function recordBaseline(store, integration, expires, { at = new Date().to
       base = {}
     }
     const current = base[integration]
-    if (!replace && current && !baselineProblem(current, now)) return normaliseBaseline(current)
+    if (!replace && current && current.evalsId === id && !baselineProblem(current, now)) return normaliseBaseline(current)
     if (!trustedExpiry(expires, now)) {
       // A sign-in whose real expiry cannot be trusted must not leave an older fixed point behind.
       if (replace && current !== undefined) {
@@ -603,10 +605,35 @@ export function recordBaseline(store, integration, expires, { at = new Date().to
       }
       return null
     }
-    base[integration] = { expires: Math.round(expires), at, source }
+    base[integration] = { expires: Math.round(expires), at, source, ...(id ? { evalsId: id } : {}) }
     mkdirSync(store, { recursive: true, mode: 0o700 })
     writeBaselineFile(file, base)
     return base[integration]
+  })
+}
+
+/**
+ * Removes a vendor's baseline (a sign-in is about to replace it), or the whole file when no vendor is given. Store only: no profile and no
+ * real read. Returns whether it removed something.
+ */
+export function forgetBaseline(store, integration = null) {
+  if (!store) return false
+  mkdirSync(store, { recursive: true, mode: 0o700 })
+  const file = join(store, BASELINE_FILE)
+  if (!integration) {
+    try {
+      unlinkSync(file)
+      return true
+    } catch {
+      return false
+    }
+  }
+  return withBaselineLock(store, () => {
+    const { all } = readBaselineFile(store)
+    if (!all || all[integration] === undefined) return false
+    delete all[integration]
+    writeBaselineFile(file, all)
+    return true
   })
 }
 
