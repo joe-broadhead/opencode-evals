@@ -13,7 +13,7 @@
     "outer_calls": 8,
     "inner_calls": 6
   },
-  "seed": "plugins=utilities files=voice-clip",
+  "seed": "plugins=utilities files=utilities-clip",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -114,6 +114,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a06b4996b95a206caced5d49f72bdf0b12e321523ff19be77fd037074820a2d9"
+    "source_sha256": "1e25dcabe1b7c92028c7c1b7bc2e612b291785f7ce1c67044e704d0667b7c5dc"
   }
 }
