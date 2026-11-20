@@ -1,0 +1,73 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-3",
+  "plugin": "github",
+  "skill": "github-code-research",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (should-not-call)",
+  "decision": "A local working copy is read with the local tools, not by asking GitHub for a branch.",
+  "data_check": "data=synthetic; the credential-free local arm has a git working copy with a change",
+  "prompt": "check the uncommitted diff in my working copy and tell me what changed",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 3,
+    "inner_calls": 2,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "local"
+  ],
+  "items": [
+    {
+      "id": "GH-OC01",
+      "severity": "blocker",
+      "ask": "It does not act: no tool of this plugin is called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "github.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "GH-OC02",
+      "severity": "major",
+      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(local|working copy|diff|git|uncommitted)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "118fb62e7f9cac70c0a08b9548b25f4d4140685d1a9da621801b76e9e6193ab0"
+  }
+}

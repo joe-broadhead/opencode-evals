@@ -1,0 +1,98 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-calendar-1",
+  "plugin": "notion",
+  "skill": "notion",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (overlap routing)",
+  "decision": "Notion Calendar is named, so its own calendar tools answer, not Google Calendar's.",
+  "data_check": "data=seeded; the Notion Calendar connection lists this week's events",
+  "prompt": "what's on my Notion calendar this week?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000
+  },
+  "seed": "plugins=gws",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "NOT-TR01",
+      "severity": "blocker",
+      "ask": "The plugin that owns the data answers, not the one that merely sounds close.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "notion.notion-calendar-list-events",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "NOT-TR02",
+      "severity": "major",
+      "ask": "The overlapping plugin is not called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "gws.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "NOT-OC01",
+      "severity": "major",
+      "ask": "The answer reports what it found, from the source it used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(event|week|calendar)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Naming Notion Calendar is what makes this Notion's; the unnamed 'my calendar' case is gws's.",
+      "line": 26
+    }
+  ],
+  "hashes": {
+    "source_sha256": "b169af58ef3be63175e0f059d45342c2d0ca5bb467b31c21af9bb8ccfece780f"
+  }
+}

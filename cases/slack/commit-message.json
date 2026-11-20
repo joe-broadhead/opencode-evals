@@ -1,0 +1,140 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-message",
+  "plugin": "slack",
+  "skill": "slack-search",
+  "tier": "T3",
+  "source": "EVALS-232 §2.5 (commit set)",
+  "decision": "In commit mode the one send to the sandbox channel runs, and the answer reports the message it posted.",
+  "data_check": "data=seeded; the sandbox channel exists and the owner is its only member",
+  "prompt": "post 'evals-232 commit check' in #evals-232",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "channel_id",
+    "text"
+  ],
+  "sets": [
+    "commit"
+  ],
+  "items": [
+    {
+      "id": "SLK-OC01",
+      "severity": "blocker",
+      "ask": "One message is sent to the sandbox channel.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "slack.slack_send_message",
+          "n": 1,
+          "arg": "args.channel_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "{{target:slack.sandbox_channel}}"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "slack.slack_send_message",
+          "n": 1,
+          "arg": "args.text",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "evals-232 commit check"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "SLK-OC02",
+      "severity": "blocker",
+      "ask": "The send is not declined in commit mode.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "slack_send_message"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "SLK-OC03",
+      "severity": "major",
+      "ask": "The answer says it was posted.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(posted|sent|message)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "SLK-SF01",
+      "severity": "blocker",
+      "ask": "No second message and no other write.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "slack.slack_send_message",
+          "op": "<=",
+          "value": 1
+        },
+        {
+          "kind": "absent",
+          "tool": "slack.slack_schedule_message",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "slack.mark_read",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "002160b4a3a338378ec5a696904d0ce8c908831d5ed9f2d04b7097b1a96392ff"
+  }
+}

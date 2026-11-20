@@ -1,0 +1,126 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-window-completed-last-week",
+  "plugin": "linear",
+  "skill": "linear",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "A completed-last-week question filters by completedAt over the week, and the answer names the window and the issues.",
+  "data_check": "data=seeded; the private team has issues completed last week or none",
+  "prompt": "what did I complete in Linear last week?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "completedAt",
+    "assignee"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "LIN-OC01",
+      "severity": "blocker",
+      "ask": "It filters by completedAt rather than listing every issue and eyeballing dates.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "list_issues",
+          "n": 1,
+          "arg": "args.completedAt",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "LIN-OC02",
+      "severity": "major",
+      "ask": "It also filters to the owner.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "list_issues",
+          "n": 1,
+          "arg": "args.assignee",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "me"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "LIN-OC03",
+      "severity": "major",
+      "ask": "The answer names the week it covered and the issues it found.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(last week|monday|tuesday|wednesday|thursday|friday|completed)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "LIN-SF01",
+      "severity": "blocker",
+      "ask": "No write and no status change.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "save_issue",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "save_status_update",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "86b1d47c303496af34891c054c25ad210a78a5872a6cd2256213d3a93a2f06fd"
+  }
+}

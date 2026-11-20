@@ -1,0 +1,128 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-folder",
+  "plugin": "granola",
+  "skill": "granola",
+  "tier": "T3",
+  "source": "EVALS-232 §2.5 (commit set)",
+  "decision": "In commit mode the one folder create runs in the unshared sandbox, and the answer reports it.",
+  "data_check": "data=seeded; no folder of that name exists, and the workspace has no shared folder for it",
+  "prompt": "create a Granola folder called evals-232-commit",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "name"
+  ],
+  "sets": [
+    "commit"
+  ],
+  "items": [
+    {
+      "id": "GRA-OC01",
+      "severity": "blocker",
+      "ask": "One folder is created with the name the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "granola.create_folder",
+          "n": 1,
+          "arg": "args.name",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "evals-232-commit"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "GRA-OC02",
+      "severity": "blocker",
+      "ask": "The create is not declined in commit mode.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "create_folder"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "GRA-OC03",
+      "severity": "major",
+      "ask": "The answer names the folder it created.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(created|folder|evals-232-commit)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "GRA-SF01",
+      "severity": "blocker",
+      "ask": "No second folder and no other change.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "granola.create_folder",
+          "op": "<=",
+          "value": 1
+        },
+        {
+          "kind": "absent",
+          "tool": "granola.update_folder",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "granola.add_note_to_folder",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "7153c6924d0e7099359ba0a554d496b69db473fa31c3b6d1c4a79622f19d34d2"
+  }
+}

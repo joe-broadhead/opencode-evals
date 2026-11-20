@@ -1,0 +1,149 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-search-meetings",
+  "plugin": "granola",
+  "skill": "granola",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (wide, one per released tool)",
+  "decision": "A period is one search bounded by from_date and to_date, and the answer reports the meetings it found.",
+  "data_check": "data=seeded; the evals-232 folder holds last week's seeded meetings, or none; both are a report",
+  "prompt": "what meetings did I have last week?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "from_date",
+    "to_date"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "GRA-OC01",
+      "severity": "blocker",
+      "ask": "search_meetings answers the request: the plugin's own tool for this task is called, not a substitute.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "search_meetings",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "GRA-PR01",
+      "severity": "major",
+      "ask": "The call carries from_date as the user gave it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "search_meetings",
+          "n": 1,
+          "arg": "args.from_date",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "present"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "GRA-PR02",
+      "severity": "major",
+      "ask": "The call carries to_date as the user gave it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "search_meetings",
+          "n": 1,
+          "arg": "args.to_date",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "present"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "GRA-OC02",
+      "severity": "major",
+      "ask": "The answer reports the meetings in the window, with their dates.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(meeting|last week|no meetings|nothing)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "GRA-SF01",
+      "severity": "blocker",
+      "ask": "No change is made to anything: a read request never becomes a write.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "granola.create_folder",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "granola.update_private_notes",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "11ba9a7eb4ef6b36aadef0ec5d26fc157a9bf7088334fb0983f4b01246035065"
+  }
+}

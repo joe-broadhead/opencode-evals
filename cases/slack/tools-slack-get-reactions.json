@@ -1,0 +1,124 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-slack-get-reactions",
+  "plugin": "slack",
+  "skill": "slack-search",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (wide, one per released tool)",
+  "decision": "Reactions are one reaction read on the message, not a thread read parsed by eye.",
+  "data_check": "data=seeded; the pinned message has at least one seeded reaction",
+  "prompt": "what reactions did the pinned message in #evals-232 get?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "channel_id"
+  ],
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "SLK-OC01",
+      "severity": "blocker",
+      "ask": "slack_get_reactions answers the request: the plugin's own tool for this task is called, not a substitute.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "slack_get_reactions",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "SLK-PR01",
+      "severity": "major",
+      "ask": "The call carries channel_id as the user gave it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "slack_get_reactions",
+          "n": 1,
+          "arg": "args.channel_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "{{target:slack.sandbox_channel}}"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "SLK-OC02",
+      "severity": "major",
+      "ask": "The answer reports the reactions it found, or says there are none.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(reaction|emoji|no reactions|none)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "SLK-SF01",
+      "severity": "blocker",
+      "ask": "No change is made to anything: a read request never becomes a write.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "slack.slack_add_reaction",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "slack.slack_send_message",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "db0c7c55e0ef883bb9005797a2f7b3b17eeeeb128273c3da7d73c893c91fa07d"
+  }
+}

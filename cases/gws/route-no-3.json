@@ -1,0 +1,79 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-3",
+  "plugin": "gws",
+  "skill": "opencode-gws",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (should-not-call)",
+  "decision": "A local file is read with the local file tools, not by uploading it to Drive or guessing a Sheet.",
+  "data_check": "data=synthetic; the credential-free local arm has a budget.csv in the working directory",
+  "prompt": "read the budget.csv on my Desktop and tell me the total",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 3,
+    "inner_calls": 2,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "local"
+  ],
+  "items": [
+    {
+      "id": "GWS-OC01",
+      "severity": "blocker",
+      "ask": "It does not act: no tool of this plugin is called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "gws.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "GWS-OC02",
+      "severity": "major",
+      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(local|file|desktop|budget\\.csv|read)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Runs in the credential-free local arm, where the shell and file tools exist.",
+      "line": 22
+    }
+  ],
+  "hashes": {
+    "source_sha256": "82745058dd590115d460ea75af8ed7030e14dd1cf941401d242573b47c198af8"
+  }
+}

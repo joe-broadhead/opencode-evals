@@ -1,0 +1,97 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-window-recent",
+  "plugin": "notion",
+  "skill": "notion",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "Recent edits are one recent-pages read, and the answer names the window and the pages it found.",
+  "data_check": "data=seeded; the workspace has pages edited last week or none",
+  "prompt": "what did I edit in Notion last week?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "NOT-OC01",
+      "severity": "blocker",
+      "ask": "It reads the recent pages rather than searching for a topic.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "notion-list-recent-pages",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "NOT-OC02",
+      "severity": "major",
+      "ask": "The answer names the window and the pages.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(last week|monday|tuesday|wednesday|thursday|friday|[0-9]{1,2} [A-Z][a-z]+)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "NOT-SF01",
+      "severity": "blocker",
+      "ask": "No change.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "notion-update-page",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "notion-create-pages",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "03630b439a4c7c7eab1c038dd8d5ed4b9897685f9f2494553aa21337b23dc254"
+  }
+}

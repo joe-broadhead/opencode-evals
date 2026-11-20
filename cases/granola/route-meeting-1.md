@@ -1,0 +1,24 @@
+# route-meeting-1
+- Plugin: granola
+- Skill under test: granola-meeting-brief
+- Tier: T3
+- Source: EVALS-232 §2.2 (overlap routing)
+- Decision tested: A recorded meeting is Granola's when the user does not name another recorder.
+- Data check: data=seeded; the sandbox folder holds yesterday's seeded design review
+- Seed: plugins=plaud,wisprflow
+- Set: route
+- Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
+
+## Prompt
+summarise yesterday's design review meeting
+
+## Items
+- [GRA-TR01] blocker · The plugin that owns the data answers, not the one that merely sounds close.
+  evidence: call:granola.search_meetings#1
+
+- [GRA-TR02] major · The overlapping plugin is not called.
+  evidence: absent:plaud.*
+  evidence: absent:wisprflow.*
+
+- [GRA-OC01] major · The answer reports what it found, from the source it used.
+  evidence_any: text:any matches /(design review|meeting|summary|no meeting)/i

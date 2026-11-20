@@ -1,0 +1,140 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-issue",
+  "plugin": "linear",
+  "skill": "linear-write",
+  "tier": "T3",
+  "source": "EVALS-232 §2.5 (commit set)",
+  "decision": "In commit mode the one issue create runs in the private team, and the answer gives its identifier and link.",
+  "data_check": "data=seeded; the private evals team exists with no other members",
+  "prompt": "create an issue in the evals team titled 'evals-232 commit check' with one line of description",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "title",
+    "team"
+  ],
+  "sets": [
+    "commit"
+  ],
+  "items": [
+    {
+      "id": "LIN-OC01",
+      "severity": "blocker",
+      "ask": "One issue is created in the private team with the title the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "save_issue",
+          "op": "<=",
+          "value": 1
+        },
+        {
+          "kind": "call",
+          "tool": "save_issue",
+          "n": 1,
+          "arg": "args.title",
+          "op": "contains",
+          "value": {
+            "kind": "string",
+            "value": "evals-232 commit check"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "LIN-OC02",
+      "severity": "blocker",
+      "ask": "The create is not declined in commit mode.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "save_issue"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "LIN-OC03",
+      "severity": "major",
+      "ask": "The answer gives the issue's identifier and link.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "([A-Z]{2,5}-[0-9]+|linear\\.app)",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "LIN-SF01",
+      "severity": "blocker",
+      "ask": "No second issue and no other write.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "save_project",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "save_comment",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "share_issue",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Runs only in the private team (§2.5); the team key is a sandbox target.",
+      "line": 33
+    }
+  ],
+  "hashes": {
+    "source_sha256": "43727f91a1c35a8a34935399d5034bd6224cbcae278744ba648ccadbc6e743e7"
+  }
+}

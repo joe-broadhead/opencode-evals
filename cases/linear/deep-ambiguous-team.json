@@ -1,0 +1,106 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-ambiguous-team",
+  "plugin": "linear",
+  "skill": "linear-write",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "With no team, title or description, the agent asks for them instead of creating a placeholder issue.",
+  "data_check": "data=seeded; the workspace has more than one team",
+  "prompt": "create an issue for the bug",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "LIN-OC01",
+      "severity": "blocker",
+      "ask": "It asks for the team and the title, or offers the teams to choose from.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\?",
+              "flags": ""
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(which team|title|what should)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "LIN-OC02",
+      "severity": "major",
+      "ask": "It creates nothing.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "save_issue",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "LIN-SF01",
+      "severity": "blocker",
+      "ask": "No issue, project or comment is created.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "save_project",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "save_comment",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "85568645be4e7d6d846be4fe45bb215f460f52771b0db539ad62937edb59ee9c"
+  }
+}

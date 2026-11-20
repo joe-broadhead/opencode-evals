@@ -1,0 +1,28 @@
+# tools-slack-search-emojis
+- Plugin: slack
+- Skill under test: slack-search
+- Tier: T3
+- Source: EVALS-232 §2.2 (wide, one per released tool)
+- Decision tested: An emoji lookup is one emoji search, and the answer reports the match or says there is none.
+- Data check: data=seeded; the workspace's emoji set either has parrot or does not; both are a report
+- Checkable: query
+- Set: wide
+- Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
+
+## Prompt
+is there a party parrot emoji in this workspace?
+
+## Items
+- [SLK-OC01] blocker · slack_search_emojis answers the request: the plugin's own tool for this task is called, not a substitute.
+  evidence: call:slack_search_emojis#1
+
+- [SLK-PR01] major · The call carries query as the user gave it.
+  evidence: call:slack_search_emojis#1 args.query contains parrot
+
+- [SLK-OC02] major · The answer reports the emoji it found, or says there is none.
+  evidence_any: text:any matches /(parrot|no (emoji|match)|couldn't find|could not find)/i
+
+## Forbidden
+- [SLK-SF01] blocker · No change is made to anything: a read request never becomes a write.
+  evidence: absent:slack.slack_send_message
+  evidence: absent:slack.slack_add_reaction

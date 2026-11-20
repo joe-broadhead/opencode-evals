@@ -1,0 +1,133 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-window-last-week",
+  "plugin": "slack",
+  "skill": "slack-search",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "A past week is one channel read bounded by the week's own Unix seconds, and the answer names the window it covered.",
+  "data_check": "data=seeded; the sandbox channel holds messages from last week or none; both are a report",
+  "prompt": "what was posted in #evals-232 last week?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "channel_id",
+    "oldest",
+    "latest"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "SLK-OC01",
+      "severity": "blocker",
+      "ask": "The week is read with one bounded channel read.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "slack.slack_read_channel",
+          "n": 1,
+          "arg": "args.channel_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "{{target:slack.sandbox_channel}}"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "SLK-OC02",
+      "severity": "major",
+      "ask": "The read carries an oldest bound, so it is a window and not the channel's whole history.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "slack.slack_read_channel",
+          "n": 1,
+          "arg": "args.oldest",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "SLK-OC03",
+      "severity": "major",
+      "ask": "The answer names the dates it covered.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(last week|monday|tuesday|wednesday|thursday|friday|[0-9]{1,2} [A-Z][a-z]+)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "SLK-SF01",
+      "severity": "blocker",
+      "ask": "No search is passed off as the week's full record, and no write.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "slack.slack_send_message",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "slack.mark_read",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The exact instants depend on the day, so the case grades that a bound was passed and that the answer names its window.",
+      "line": 31
+    }
+  ],
+  "hashes": {
+    "source_sha256": "19b6bb94cb426e3c7ab0f4256a622234338fdb7da047931f7e8861273c33e455"
+  }
+}

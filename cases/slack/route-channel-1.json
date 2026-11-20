@@ -1,0 +1,103 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-channel-1",
+  "plugin": "slack",
+  "skill": "slack-search",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (overlap routing)",
+  "decision": "A channel post is Slack's, not Gmail's or a Notion comment.",
+  "data_check": "data=seeded; the sandbox channel exists",
+  "prompt": "post the standup summary in #evals-232",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000
+  },
+  "seed": "plugins=gws,notion",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "SLK-TR01",
+      "severity": "blocker",
+      "ask": "The plugin that owns the data answers, not the one that merely sounds close.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "slack.slack_send_message",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "SLK-TR02",
+      "severity": "major",
+      "ask": "The overlapping plugin is not called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "gws.*",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "notion.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "SLK-OC01",
+      "severity": "major",
+      "ask": "The answer reports what it found, from the source it used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(not posted|declined|approval|evals-232)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The send is declined at ask-changes; the route is what the case grades.",
+      "line": 27
+    }
+  ],
+  "hashes": {
+    "source_sha256": "b01a10b6820a157c4d3ceb6c44fb8d3c8a904e795c1e681f801caca5e3c6cd64"
+  }
+}
