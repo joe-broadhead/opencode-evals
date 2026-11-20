@@ -1,4 +1,4 @@
-# route-plaud-week-to-slack-1
+# deep-plaud-week-to-slack
 - Plugin: plaud
 - Skill under test: opencode-plaud-digest
 - Tier: T3
@@ -8,7 +8,7 @@
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=plaud,slack utc-hours=9-17
-- Set: route
+- Set: deep
 
 ## Prompt
 recap what I recorded this week and post the highlights to my Slack self-DM {{target:slack.self_dm}}.
@@ -21,6 +21,9 @@ recap what I recorded this week and post the highlights to my Slack self-DM {{ta
   evidence: count:slack_send_message == 1
   evidence: declined:slack_send_message
   evidence: committed-write:none
+
+- [PLD-CT01] major · The post was aimed at the self-DM.
+  evidence: target:slack_send_message#1 args.channel_id in @slack.self_dm
 
 - [PLD-OC02] major · The answer says nothing was posted, and gives the highlights in chat.
   evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(posted|sent)/i

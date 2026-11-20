@@ -11,7 +11,7 @@
 - Set: wide
 
 ## Prompt
-read https://nodejs.org/en/about and tell me what Node.js is built on.
+read https://nodejs.org/en/about and tell me what it says Node.js is designed for, and how it handles connections.
 
 ## Items
 - [TAV-OC01] blocker · The page was read once with extract.
@@ -20,8 +20,8 @@ read https://nodejs.org/en/about and tell me what Node.js is built on.
 - [TAV-PR01] major · The call passed the URL the user gave.
   evidence: call:tavily_extract#1 args.urls present
 
-- [TAV-OC02] major · The answer states what the page says it is built on.
-  evidence: text:any matches /(V8|JavaScript engine|Chrome)/i
+- [TAV-OC02] major · The answer states what the page says: an asynchronous, event-driven runtime.
+  evidence: text:any matches /(event-driven|asynchronous)/i
 
 - [TAV-TR01] minor · The tavily skill was loaded.
   evidence: skill:tavily

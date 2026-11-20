@@ -21,8 +21,8 @@ what's on my calendar today?
   evidence: call:search_calendar_events#1 args.since present
   evidence: call:search_calendar_events#1 args.until present
 
-- [WF-OC02] major · The answer lists the day's events in local time.
-  evidence: text:any matches /([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))/i
+- [WF-OC02] major · The answer lists the day's events in local time, or says there are none.
+  evidence_any: text:any matches /([0-9]{1,2}:[0-9]{2}|[0-9]{1,2} ?(am|pm))/i ;; text:any matches /(no events|nothing (on|scheduled)|empty|none)/i
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

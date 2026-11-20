@@ -15,7 +15,7 @@
     "tokens": 400000,
     "wall_ms": 300000
   },
-  "seed": "plugins=jira,slack",
+  "seed": "plugins=jira",
   "expect": "pass",
   "holdout": false,
   "sets": [
@@ -182,6 +182,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a6c06b48e2d2ccfbc0173ae0d5807246b8dc6141d4fabdbb6f154676ab4bcb1b"
+    "source_sha256": "42f853fb8ffebde1dfa7b38e42923f5300f544a6233ba78abaf2075a15da3eb0"
   }
 }

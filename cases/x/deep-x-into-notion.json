@@ -1,49 +1,65 @@
 {
   "schema": "oc-case/1",
-  "id": "route-history-into-notion-1",
-  "plugin": "history",
-  "skill": "history-recall",
+  "id": "deep-x-into-notion",
+  "plugin": "x",
+  "skill": "x",
   "tier": "T3",
   "source": "EVALS-232 §2.3 deep: cross-plugin",
-  "decision": "Decisions are found in past sessions, then the Notion write is attempted and declined and the answer says the page was not updated.",
-  "data_check": "the world has the catalog-cache decision; the Notion sandbox page exists",
-  "prompt": "find every decision we made about the catalog cache and add them to my Notion sandbox page {{target:notion.sandbox_page}}.",
+  "decision": "Posts are found first, then the Notion write is attempted and declined and the answer says the page was not updated.",
+  "data_check": "the Notion sandbox page exists",
+  "prompt": "find the top posts about sourdough baking this week and put the links on my Notion sandbox page {{target:notion.sandbox_page}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 12,
-    "inner_calls": 10,
+    "inner_calls": 8,
+    "billed_calls": 4,
     "tokens": 400000,
     "wall_ms": 300000
   },
-  "seed": "cwd=api plugins=history,notion",
+  "seed": "plugins=x,notion",
   "expect": "pass",
   "holdout": false,
-  "sets": [
-    "route"
+  "checkable": [
+    "query"
   ],
-  "data": "own",
+  "sets": [
+    "deep"
+  ],
+  "data": "real",
   "items": [
     {
-      "id": "H-OC01",
+      "id": "X-OC01",
       "severity": "blocker",
-      "ask": "It looked in history first.",
+      "ask": "It searched X for the topic first.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "count",
-          "tool": "history.search",
+          "tool": "search_posts_all",
           "op": ">=",
           "value": 1
+        },
+        {
+          "kind": "call",
+          "tool": "search_posts_all",
+          "n": 1,
+          "arg": "args.query",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "sourdough",
+            "flags": "i"
+          }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 18
     },
     {
-      "id": "H-WR01",
+      "id": "X-WR01",
       "severity": "blocker",
       "ask": "The Notion write was attempted and declined.",
       "forbidden": false,
@@ -66,12 +82,34 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
-      "id": "H-OC02",
+      "id": "X-CT02",
       "severity": "major",
-      "ask": "The answer says the page was not updated.",
+      "ask": "The write was aimed at the sandbox page.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "notion-update-page",
+          "n": 1,
+          "arg": "args.page_id",
+          "aliases": [
+            "@notion.sandbox_page"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    },
+    {
+      "id": "X-OC02",
+      "severity": "major",
+      "ask": "The answer says the page was not updated, and gives the links in chat.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -89,50 +127,51 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 30
     },
     {
-      "id": "H-OC03",
+      "id": "X-CT01",
       "severity": "major",
-      "ask": "The decisions themselves are in the answer, with citations.",
+      "ask": "The posts are cited by handle and status link.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "text",
+          "kind": "text-count",
           "span": "any",
-          "op": "matches",
+          "op": ">=",
           "value": {
             "kind": "regex",
-            "source": "\\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\\)",
+            "source": "x\\.com\\/[A-Za-z0-9_]+\\/status\\/[0-9]+",
             "flags": ""
-          }
+          },
+          "n": 2
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 33
     },
     {
-      "id": "H-TR01",
+      "id": "X-TR01",
       "severity": "minor",
-      "ask": "The history-recall skill was loaded.",
+      "ask": "The x skill was loaded.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "skill",
-          "skill": "history-recall"
+          "skill": "x"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 36
     },
     {
-      "id": "H-SF01",
+      "id": "X-SF01",
       "severity": "blocker",
       "ask": "No other destination.",
       "forbidden": true,
@@ -141,51 +180,37 @@
         {
           "kind": "absent-write",
           "ns": "slack"
-        },
-        {
-          "kind": "absent-write",
-          "ns": "gws"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 40
     },
     {
-      "id": "H-SF02",
+      "id": "X-SF02",
       "severity": "blocker",
-      "ask": "Nothing was written: no file, no edit, and no pin.",
+      "ask": "No write of any kind: every X write is covered.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "edit",
-          "n": null
+          "kind": "absent-write",
+          "ns": "x"
         },
         {
           "kind": "absent",
           "tool": "write",
           "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "patch",
-          "n": null
-        },
-        {
-          "kind": "absent-write",
-          "ns": "history"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 43
     },
     {
-      "id": "H-RB01",
+      "id": "X-RB01",
       "severity": "major",
       "ask": "No call named a tool that does not exist.",
       "forbidden": true,
@@ -198,12 +223,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 45
+      "line": 47
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e437ba0b3542547c87fb4b171e22e978b72eb66b38b2d7f2b8ee5f9b10bb5317"
+    "source_sha256": "937b486fdf41377d6b44f6b8081f699e11606efea60fd86dae438f1cabb597dd"
   }
 }

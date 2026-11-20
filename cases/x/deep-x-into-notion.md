@@ -1,4 +1,4 @@
-# route-x-into-notion-1
+# deep-x-into-notion
 - Plugin: x
 - Skill under test: x
 - Tier: T3
@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 12, inner_calls <= 8, billed_calls <= 4, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=x,notion
 - Checkable: query
-- Set: route
+- Set: deep
 
 ## Prompt
 find the top posts about sourdough baking this week and put the links on my Notion sandbox page {{target:notion.sandbox_page}}.
@@ -23,6 +23,9 @@ find the top posts about sourdough baking this week and put the links on my Noti
   evidence: count:notion-update-page == 1
   evidence: declined:notion-update-page
   evidence: committed-write:none
+
+- [X-CT02] major · The write was aimed at the sandbox page.
+  evidence: target:notion-update-page#1 args.page_id in @notion.sandbox_page
 
 - [X-OC02] major · The answer says the page was not updated, and gives the links in chat.
   evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(updated|written|changed|saved)/i

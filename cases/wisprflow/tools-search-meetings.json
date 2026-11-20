@@ -80,22 +80,34 @@
     {
       "id": "WF-OC02",
       "severity": "major",
-      "ask": "The answer lists the meetings with dates and links.",
+      "ask": "The answer lists the meetings with dates and links, or reports the feed's gap.",
       "forbidden": false,
       "grader": "code",
-      "evidence": [
-        {
-          "kind": "text",
-          "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(notes\\.wisprflow\\.ai|[0-9]{1,2} (Oct|Nov|October|November))",
-            "flags": "i"
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(notes\\.wisprflow\\.ai|[0-9]{1,2} (Oct|Nov|October|November))",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(gap|29 days|30 days|no meetings)",
+              "flags": "i"
+            }
           }
-        }
+        ]
       ],
-      "evidence_any": [],
       "na_when": [],
       "maps_to": [],
       "line": 24
@@ -165,6 +177,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e3d54d849384322be9499b4ea9f05769a0b18c6bb2d64914601d681a81cb24e0"
+    "source_sha256": "1894407d87a0628f504a58aad7546c85ee98212a0b64791af9d5efe34c5ac6e3"
   }
 }

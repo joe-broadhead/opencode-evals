@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "This change is one add_conversation_keys call with the value the user named, asked and declined, and the answer says nothing changed.",
   "data_check": "none: the id is invented, so the write is declined before it reaches X",
-  "prompt": "add conversation key version kv-3 to conversation 900000000000000002, with participant keys [{\"user_id\":\"900000000000000009\",\"encrypted_key\":\"ZmFrZS1rZXk=\"}].",
+  "prompt": "add conversation key version kv-3 to conversation 900000000000000002, with participant keys [{\"user_id\":\"900000000000000009\",\"encrypted_conversation_key\":\"ZmFrZS1rZXk=\",\"public_key_version\":\"1\"}].",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -231,6 +231,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "329a496eb4c98bbba38a6dce4de05f904a6fb3338074ab3bb2f4f78e3b0dc13d"
+    "source_sha256": "bb30085b28451cbf128c56fce868cdf5c2900bbef4cc6567a1b5fec610f1777e"
   }
 }

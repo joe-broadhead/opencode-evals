@@ -1,6 +1,6 @@
 {
   "schema": "oc-case/1",
-  "id": "route-wf-summary-to-slack-1",
+  "id": "deep-wf-summary-to-slack",
   "plugin": "wisprflow",
   "skill": "wisprflow",
   "tier": "T3",
@@ -19,7 +19,7 @@
   "expect": "pass",
   "holdout": false,
   "sets": [
-    "route"
+    "deep"
   ],
   "data": "real",
   "items": [
@@ -69,6 +69,28 @@
       "line": 20
     },
     {
+      "id": "WF-CT02",
+      "severity": "major",
+      "ask": "The post was aimed at the self-DM.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "target",
+          "tool": "slack_send_message",
+          "n": 1,
+          "arg": "args.channel_id",
+          "aliases": [
+            "@slack.self_dm"
+          ]
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
       "id": "WF-OC02",
       "severity": "major",
       "ask": "The answer says nothing was posted, and gives the summary in chat.",
@@ -89,7 +111,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 28
     },
     {
       "id": "WF-CT01",
@@ -112,7 +134,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 31
     },
     {
       "id": "WF-TR01",
@@ -129,7 +151,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 34
     },
     {
       "id": "WF-SF01",
@@ -150,7 +172,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 38
     },
     {
       "id": "WF-SF02",
@@ -178,7 +200,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 42
     },
     {
       "id": "WF-RB01",
@@ -194,12 +216,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 44
+      "line": 47
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "528d494641f5980cd2224fdfadedcabe34469cb09b3ab696155f01aea7c8a663"
+    "source_sha256": "0f8e4df90daa8cd832084f257004beb89426f0e6bfea2365b3259123291c267e"
   }
 }

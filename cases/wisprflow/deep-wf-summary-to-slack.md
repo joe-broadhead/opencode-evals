@@ -1,4 +1,4 @@
-# route-wf-summary-to-slack-1
+# deep-wf-summary-to-slack
 - Plugin: wisprflow
 - Skill under test: wisprflow
 - Tier: T3
@@ -8,7 +8,7 @@
 - Data: real
 - Budget: outer_calls <= 10, inner_calls <= 7, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow,slack
-- Set: route
+- Set: deep
 
 ## Prompt
 summarise the last pricing call and post it to my Slack self-DM {{target:slack.self_dm}}.
@@ -21,6 +21,9 @@ summarise the last pricing call and post it to my Slack self-DM {{target:slack.s
   evidence: count:slack_send_message == 1
   evidence: declined:slack_send_message
   evidence: committed-write:none
+
+- [WF-CT02] major · The post was aimed at the self-DM.
+  evidence: target:slack_send_message#1 args.channel_id in @slack.self_dm
 
 - [WF-OC02] major · The answer says nothing was posted, and gives the summary in chat.
   evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(posted|sent)/i

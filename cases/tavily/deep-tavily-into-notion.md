@@ -1,14 +1,14 @@
-# route-tavily-into-notion-1
+# deep-tavily-into-notion
 - Plugin: tavily
 - Skill under test: tavily
 - Tier: T3
 - Source: EVALS-232 §2.3 deep: cross-plugin
 - Decision tested: Research first, then the page write is attempted and declined, and the answer says the page was not updated.
 - Data check: the Notion sandbox page exists
-- Data: own
+- Data: real
 - Budget: outer_calls <= 10, inner_calls <= 8, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=tavily,notion
-- Set: route
+- Set: deep
 
 ## Prompt
 find the current state of open-source feature-flag projects and put the key points on my Notion sandbox page {{target:notion.sandbox_page}}.
@@ -21,6 +21,9 @@ find the current state of open-source feature-flag projects and put the key poin
   evidence: count:notion-update-page == 1
   evidence: declined:notion-update-page
   evidence: committed-write:none
+
+- [TAV-CT01] major · The write was aimed at the sandbox page.
+  evidence: target:notion-update-page#1 args.page_id in @notion.sandbox_page
 
 - [TAV-OC02] major · The answer says the page was not updated.
   evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(updated|written|changed|saved|added to the page)/i

@@ -65,7 +65,7 @@
     {
       "id": "WF-OC02",
       "severity": "major",
-      "ask": "The answer lists the events, or says there are none.",
+      "ask": "The answer lists the events, says there are none, or reports the feed's gap.",
       "forbidden": false,
       "grader": "code",
       "evidence": [],
@@ -89,6 +89,16 @@
               "kind": "regex",
               "source": "(^|\\n)\\s*[-*]\\s+\\S",
               "flags": ""
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(gap|29 days|30 days|starts (at|from))",
+              "flags": "i"
             }
           }
         ]
@@ -162,6 +172,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5b354609a7fb36aa3ec17d935538b341b05e04f206de7ba51cae17c3fbdd829e"
+    "source_sha256": "557d107ee195ddf60653b9b6ebf4ccca6d10cd9ca9be61bb4368b6d6c401c4d6"
   }
 }

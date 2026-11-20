@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A URL the user already has is read with extract, not searched for.",
   "data_check": "the page is public and states its price",
-  "prompt": "read https://nodejs.org/en/about and tell me what Node.js is built on.",
+  "prompt": "read https://nodejs.org/en/about and tell me what it says Node.js is designed for, and how it handles connections.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -65,7 +65,7 @@
     {
       "id": "TAV-OC02",
       "severity": "major",
-      "ask": "The answer states what the page says it is built on.",
+      "ask": "The answer states what the page says: an asynchronous, event-driven runtime.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -75,7 +75,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(V8|JavaScript engine|Chrome)",
+            "source": "(event-driven|asynchronous)",
             "flags": "i"
           }
         }
@@ -196,6 +196,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "26901f02facde6b0bf612999277d230bd9d47f5dd9af0997dc842fe899d7257a"
+    "source_sha256": "4c8295994bdb618817ad178d97520399c62eb736aae67d93888c8c7de20b673c"
   }
 }

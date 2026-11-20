@@ -7,7 +7,7 @@
 - Data check: the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7
 - Data: synthetic
 - Budget: outer_calls <= 12, inner_calls <= 8, tokens <= 400000, wall_ms <= 300000
-- Seed: plugins=jira,slack
+- Seed: plugins=jira
 - Set: route
 
 ## Prompt

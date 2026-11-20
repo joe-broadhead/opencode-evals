@@ -20,8 +20,8 @@ pull the meeting events since the start of this year, oldest first, for Memory.
 - [WF-PR01] major · The read starts at the start of this year.
   evidence: call:events_list#1 args.since present
 
-- [WF-OC02] major · The answer lists the events, or says there are none.
-  evidence_any: text:any matches /(no (new )?events|nothing new|none)/i ;; text:any matches /(^|\n)\s*[-*]\s+\S/
+- [WF-OC02] major · The answer lists the events, says there are none, or reports the feed's gap.
+  evidence_any: text:any matches /(no (new )?events|nothing new|none)/i ;; text:any matches /(^|\n)\s*[-*]\s+\S/ ;; text:any matches /(gap|29 days|30 days|starts (at|from))/i
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

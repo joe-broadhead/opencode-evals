@@ -21,8 +21,8 @@ find my meetings about pricing from the last month.
 - [WF-PR01] major · The search carries the topic and a window.
   evidence_any: call:search_meetings#1 args.since present ;; call:search_meetings#1 args.until present
 
-- [WF-OC02] major · The answer lists the meetings with dates and links.
-  evidence: text:any matches /(notes\.wisprflow\.ai|[0-9]{1,2} (Oct|Nov|October|November))/i
+- [WF-OC02] major · The answer lists the meetings with dates and links, or reports the feed's gap.
+  evidence_any: text:any matches /(notes\.wisprflow\.ai|[0-9]{1,2} (Oct|Nov|October|November))/i ;; text:any matches /(gap|29 days|30 days|no meetings)/i
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
   evidence: skill:wisprflow

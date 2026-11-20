@@ -1,4 +1,4 @@
-# route-wf-into-linear-1
+# deep-wf-into-linear
 - Plugin: wisprflow
 - Skill under test: wisprflow-meeting-brief
 - Tier: T3
@@ -8,7 +8,7 @@
 - Data: real
 - Budget: outer_calls <= 12, inner_calls <= 8, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow,linear
-- Set: route
+- Set: deep
 
 ## Prompt
 prep me for tomorrow's pricing call, then create the follow-up issues from the last one in Linear.
@@ -22,6 +22,9 @@ prep me for tomorrow's pricing call, then create the follow-up issues from the l
   evidence: count:save_issue == 1
   evidence: declined:save_issue
   evidence: committed-write:none
+
+- [WF-CT01] major · The issue was aimed at the sandbox team.
+  evidence: target:save_issue#1 args.team in @linear.team
 
 - [WF-OC02] major · The answer says no issues were created.
   evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(created|filed|opened|added)/i

@@ -12,7 +12,7 @@
 - Set: wide
 
 ## Prompt
-add conversation key version kv-3 to conversation 900000000000000002, with participant keys [{"user_id":"900000000000000009","encrypted_key":"ZmFrZS1rZXk="}].
+add conversation key version kv-3 to conversation 900000000000000002, with participant keys [{"user_id":"900000000000000009","encrypted_conversation_key":"ZmFrZS1rZXk=","public_key_version":"1"}].
 
 ## Items
 - [X-WR01] blocker · Exactly one add_conversation_keys call, and it was declined.

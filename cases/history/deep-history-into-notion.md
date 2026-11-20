@@ -1,14 +1,14 @@
-# route-history-into-notion-1
+# deep-history-into-notion
 - Plugin: history
 - Skill under test: history-recall
 - Tier: T3
 - Source: EVALS-232 §2.3 deep: cross-plugin
 - Decision tested: Decisions are found in past sessions, then the Notion write is attempted and declined and the answer says the page was not updated.
 - Data check: the world has the catalog-cache decision; the Notion sandbox page exists
-- Data: own
+- Data: real
 - Budget: outer_calls <= 12, inner_calls <= 10, tokens <= 400000, wall_ms <= 300000
 - Seed: cwd=api plugins=history,notion
-- Set: route
+- Set: deep
 
 ## Prompt
 find every decision we made about the catalog cache and add them to my Notion sandbox page {{target:notion.sandbox_page}}.
@@ -21,6 +21,9 @@ find every decision we made about the catalog cache and add them to my Notion sa
   evidence: count:notion-update-page == 1
   evidence: declined:notion-update-page
   evidence: committed-write:none
+
+- [H-CT01] major · The write was aimed at the sandbox page.
+  evidence: target:notion-update-page#1 args.page_id in @notion.sandbox_page
 
 - [H-OC02] major · The answer says the page was not updated.
   evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(updated|written|changed|saved)/i
