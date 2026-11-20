@@ -1,0 +1,125 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-page",
+  "plugin": "notion",
+  "skill": "notion-write",
+  "tier": "T3",
+  "source": "EVALS-232 §2.5 (commit set)",
+  "decision": "In commit mode the one page create runs under the sandbox page, and the answer names the page it made.",
+  "data_check": "data=seeded; the private evals-232 page exists and is not shared",
+  "prompt": "create a page under evals-232 called evals-232 commit check with one line of text",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "commit"
+  ],
+  "items": [
+    {
+      "id": "NOT-OC01",
+      "severity": "blocker",
+      "ask": "One page is created under the sandbox page.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "notion-create-pages",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "NOT-OC02",
+      "severity": "blocker",
+      "ask": "The create is not declined in commit mode.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "notion-create-pages"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "NOT-OC03",
+      "severity": "major",
+      "ask": "The answer names the page and gives its link.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(created|page|notion\\.so)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "NOT-SF01",
+      "severity": "blocker",
+      "ask": "No second page and no other change.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "notion-move-pages",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "notion-delete-pages",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "notion-update-page",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The page inherits the sandbox page's permissions; the target is private and unshared.",
+      "line": 31
+    }
+  ],
+  "hashes": {
+    "source_sha256": "94de9403782edd8cc78df514e3dbabf567ca54d3a25cb2cb4e0d390ef87036bd"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-3",
+  "plugin": "slack",
+  "skill": "slack-search",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (should-not-call)",
+  "decision": "A local export is read with the local file tools, not by searching Slack for the same text.",
+  "data_check": "data=synthetic; the credential-free local arm has chat-export.csv in the working directory",
+  "prompt": "summarise the chat-export.csv on my Desktop and list the busiest channels",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 3,
+    "inner_calls": 2,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "local"
+  ],
+  "items": [
+    {
+      "id": "SLK-OC01",
+      "severity": "blocker",
+      "ask": "It does not act: no tool of this plugin is called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "slack.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "SLK-OC02",
+      "severity": "major",
+      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(local|file|desktop|chat-export|read)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c81dbb89acd7744f4d65f48bd8d73f9b1a214b2fbc746b35c626729b7b23ab66"
+  }
+}

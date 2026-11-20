@@ -1,0 +1,9 @@
+{
+  "plugin": "linear",
+  "epoch": 1,
+  "cases": 93,
+  "items": 342,
+  "cases_sha256": "d0bb4738f0f27b6bd38cd861aaa7ae62b0bc2ecaff3db49d605c0bf6e6d78380",
+  "grader_sha256": "b9d87f748169287832f9c65c0c36a742b6647e8d2c979e7c30c7dd0dd5a4fb9e",
+  "frozen_at": "2026-11-18T21:48:12.581Z"
+}

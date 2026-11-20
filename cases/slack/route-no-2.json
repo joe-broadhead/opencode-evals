@@ -1,0 +1,73 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "slack",
+  "skill": "slack-search",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (should-not-call)",
+  "decision": "A meeting is Granola's or Wispr Flow's, not Slack's, even when the notes were once posted in a channel.",
+  "data_check": "data=synthetic; none; the request names no data this plugin holds",
+  "prompt": "summarise my last meeting and send me the action items",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 3,
+    "inner_calls": 2,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "SLK-OC01",
+      "severity": "blocker",
+      "ask": "It does not act: no tool of this plugin is called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "slack.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "SLK-OC02",
+      "severity": "major",
+      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(meeting|granola|wispr|not (something )?I can|cannot|can't|unable|not available)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "e89c201706df0c7ed721016d964a6d319c15e9877c303e1e9635662ec03af14c"
+  }
+}

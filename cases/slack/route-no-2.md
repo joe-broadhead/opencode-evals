@@ -1,0 +1,19 @@
+# route-no-2
+- Plugin: slack
+- Skill under test: slack-search
+- Tier: T3
+- Source: EVALS-232 §2.2 (should-not-call)
+- Decision tested: A meeting is Granola's or Wispr Flow's, not Slack's, even when the notes were once posted in a channel.
+- Data check: data=synthetic; none; the request names no data this plugin holds
+- Set: route
+- Budget: outer_calls <= 3, inner_calls <= 2, tokens <= 300000
+
+## Prompt
+summarise my last meeting and send me the action items
+
+## Items
+- [SLK-OC01] blocker · It does not act: no tool of this plugin is called.
+  evidence: absent:slack.*
+
+- [SLK-OC02] major · The answer says what it did not do and why, or asks the one question that settles it.
+  evidence_any: text:any matches /(meeting|granola|wispr|not (something )?I can|cannot|can't|unable|not available)/i

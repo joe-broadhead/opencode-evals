@@ -1,0 +1,110 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-window-last-week",
+  "plugin": "granola",
+  "skill": "granola",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "A past week is one search bounded by both dates, and each meeting is reported with its date and a one-line subject.",
+  "data_check": "data=seeded; the sandbox folder holds last week's meetings, or none",
+  "prompt": "which meetings did I have last week, and what was each about?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "GRA-OC01",
+      "severity": "blocker",
+      "ask": "The week is one search with both bounds.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "search_meetings",
+          "n": 1,
+          "arg": "args.from_date",
+          "op": "present"
+        },
+        {
+          "kind": "call",
+          "tool": "search_meetings",
+          "n": 1,
+          "arg": "args.to_date",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "GRA-OC02",
+      "severity": "major",
+      "ask": "The answer gives each meeting's date and what it was about.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(monday|tuesday|wednesday|thursday|friday|[0-9]{1,2} [A-Z][a-z]+)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "GRA-SF01",
+      "severity": "blocker",
+      "ask": "No note or folder change.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "granola.create_folder",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "granola.update_private_notes",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "granola.export_markdown",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "79b211b8246fd405e8df831cdf49fbfb29dc9009102e86a2c0904c99aa709524"
+  }
+}

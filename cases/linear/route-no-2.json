@@ -1,0 +1,73 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "linear",
+  "skill": "linear",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (should-not-call)",
+  "decision": "A pull request is GitHub's, not a Linear issue or document.",
+  "data_check": "data=synthetic; none; the request names no data this plugin holds",
+  "prompt": "open a pull request that fixes the flaky test",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 3,
+    "inner_calls": 2,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "LIN-OC01",
+      "severity": "blocker",
+      "ask": "It does not act: no tool of this plugin is called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "linear.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "LIN-OC02",
+      "severity": "major",
+      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(pull request|github|not (something )?I can|cannot|can't|unable|not available)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "7b19a785344a34cc4ecdcfab444090df0e2c29c01b1983339424e97a41a4b14c"
+  }
+}

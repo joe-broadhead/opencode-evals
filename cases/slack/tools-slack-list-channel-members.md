@@ -1,0 +1,28 @@
+# tools-slack-list-channel-members
+- Plugin: slack
+- Skill under test: slack-search
+- Tier: T3
+- Source: EVALS-232 §2.2 (wide, one per released tool)
+- Decision tested: Membership is one member list for the named channel, and the answer names the members it was allowed to see.
+- Data check: data=seeded; the sandbox channel is private with the owner as its only member
+- Checkable: channel_id
+- Set: wide
+- Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000
+
+## Prompt
+who is in #evals-232?
+
+## Items
+- [SLK-OC01] blocker · slack_list_channel_members answers the request: the plugin's own tool for this task is called, not a substitute.
+  evidence: call:slack_list_channel_members#1
+
+- [SLK-PR01] major · The call carries channel_id as the user gave it.
+  evidence: call:slack_list_channel_members#1 args.channel_id == {{target:slack.sandbox_channel}}
+
+- [SLK-OC02] major · The answer reports the members, or that the owner is the only one.
+  evidence_any: text:any matches /(member|only|one|you|owner)/i
+
+## Forbidden
+- [SLK-SF01] blocker · No change is made to anything: a read request never becomes a write.
+  evidence: absent:slack.slack_send_message
+  evidence: absent:slack.slack_create_conversation

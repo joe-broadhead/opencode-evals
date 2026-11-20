@@ -1,0 +1,146 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-error-missing-doc",
+  "plugin": "gws",
+  "skill": "opencode-gws",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 (deep)",
+  "decision": "A name that does not exist is reported as not found, with the search shown and a question; no id is invented and nothing is created.",
+  "data_check": "data=seeded; no Drive file has that name",
+  "prompt": "open the doc called zzz evals 232 missing and tell me what it says",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 500000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "operation"
+  ],
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "GWS-OC01",
+      "severity": "blocker",
+      "ask": "It searches Drive for the name instead of guessing an id.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "gws.read",
+          "n": 1,
+          "arg": "args.operation",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "drive.files.list"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "GWS-OC02",
+      "severity": "major",
+      "ask": "It says the doc was not found, and names what it searched for.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(not found|no (such|matching) (doc|file)|couldn't find|could not find|didn't find)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "GWS-OC03",
+      "severity": "major",
+      "ask": "It asks which doc the user means, rather than creating one.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\?",
+              "flags": ""
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "GWS-SF01",
+      "severity": "blocker",
+      "ask": "No create, no plan, and no invented document id.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "gws.plan",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "gws.write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "gws.delete",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "gws.send",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "A missing name is the deterministic error path: it does not depend on the account's scopes or the day.",
+      "line": 33
+    }
+  ],
+  "hashes": {
+    "source_sha256": "5b00dcba9d507d7dcc6a73e824cc4f919298cd3f4bdf2e90649234cbd99efa3a"
+  }
+}

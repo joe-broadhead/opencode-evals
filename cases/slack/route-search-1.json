@@ -1,0 +1,97 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-search-1",
+  "plugin": "slack",
+  "skill": "slack-search",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (overlap routing)",
+  "decision": "A decision in a Slack channel is a Slack search, not a meeting-note query or a web search.",
+  "data_check": "data=seeded; the sandbox channel holds the seeded decision message",
+  "prompt": "what did we decide in #evals-232 about the launch date?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000
+  },
+  "seed": "plugins=granola,tavily",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "SLK-TR01",
+      "severity": "blocker",
+      "ask": "The plugin that owns the data answers, not the one that merely sounds close.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "slack.slack_search_public",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "SLK-TR02",
+      "severity": "major",
+      "ask": "The overlapping plugin is not called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "granola.*",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "tavily.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "SLK-OC01",
+      "severity": "major",
+      "ask": "The answer reports what it found, from the source it used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(launch|decided|decision|date)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "49827d39694e990924b014ec6aa87fe00f8d8eccae6eeb05411856967e580879"
+  }
+}

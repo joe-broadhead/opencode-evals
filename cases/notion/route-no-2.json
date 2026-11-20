@@ -1,0 +1,73 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "notion",
+  "skill": "notion",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (should-not-call)",
+  "decision": "Mail is Gmail's, not a Notion comment or page edit.",
+  "data_check": "data=synthetic; none; the request names no data this plugin holds",
+  "prompt": "send an email to the team saying the launch moved to Friday",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 3,
+    "inner_calls": 2,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "NOT-OC01",
+      "severity": "blocker",
+      "ask": "It does not act: no tool of this plugin is called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "notion.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "NOT-OC02",
+      "severity": "major",
+      "ask": "The answer says what it did not do and why, or asks the one question that settles it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(email|mail|gmail|not (something )?I can|cannot|can't|unable|not available)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "0f1da9f816fbde5a252b6550d1ad96b506aa4eef713f910ecb3b53d1d091b5cb"
+  }
+}

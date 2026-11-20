@@ -1,0 +1,97 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-search-1",
+  "plugin": "notion",
+  "skill": "notion",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 (overlap routing)",
+  "decision": "A Notion page is found with Notion's search, not a Google Drive search or a web search.",
+  "data_check": "data=seeded; the evals-232 page holds the launch plan",
+  "prompt": "search my Notion for the launch plan",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000
+  },
+  "seed": "plugins=gws,tavily",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "NOT-TR01",
+      "severity": "blocker",
+      "ask": "The plugin that owns the data answers, not the one that merely sounds close.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "notion.notion-search",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "NOT-TR02",
+      "severity": "major",
+      "ask": "The overlapping plugin is not called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "gws.*",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "tavily.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "NOT-OC01",
+      "severity": "major",
+      "ask": "The answer reports what it found, from the source it used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(launch|plan|page)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "9f79455b5314dfe5bc9a0b02d422391aa1c2f1ba601043d24be36320bda85776"
+  }
+}
