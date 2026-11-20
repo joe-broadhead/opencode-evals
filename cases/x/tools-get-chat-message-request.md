@@ -23,7 +23,7 @@ show me the chat message request 900000000000000004.
   evidence: call:get_chat_message_request#1 args.id == "900000000000000004"
 
 - [X-OC01] major · The answer says the call was declined, and nothing changed.
-  evidence: text:any matches /(\bnot\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused|needs? (your )?approval|blocked)[^.\n]{0,60}(sent|posted|created|added|removed|changed|updated|archived|started|scheduled|deleted|muted|pinned|followed|blocked|unblocked|read|shown|fetched|downloaded|uploaded|accepted|cancelled|canceled|renamed|drafted|published|live)/i
+  evidence: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not|nothing|no longer)\b[^.\n]{0,60}\b(sent|send|posted|post|created|create|added|add|removed|remove|changed|change|updated|update|archived|archive|started|start|scheduled|schedule|deleted|delete|muted|mute|pinned|pin|followed|follow|blocked|block|unblocked|unblock|read|shown|fetched|downloaded|uploaded|accepted|accept|cancelled|canceled|renamed|rename|drafted|draft|published|publish|live|moved|move|closed|close|written|write|saved|save|exported|export)\b/i ;; text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i
 
 - [X-TR01] minor · The x-write skill was loaded.
   evidence: skill:x-write

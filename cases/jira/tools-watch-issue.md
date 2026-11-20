@@ -19,7 +19,7 @@ watch QLN-1 for me so I get the updates.
   evidence: declined:watchJiraIssue
 
 - [JRA-OC01] major · The answer says nothing changed.
-  evidence: text:any matches /(\bnot\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused)[^.\n]{0,60}(created|changed|updated|added|moved|logged|linked|attached|released|closed|commented|transitioned|deleted|watched|downloaded|set)/i
+  evidence: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not|nothing|no longer)\b[^.\n]{0,60}\b(sent|send|posted|post|created|create|added|add|removed|remove|changed|change|updated|update|archived|archive|started|start|scheduled|schedule|deleted|delete|muted|mute|pinned|pin|followed|follow|blocked|block|unblocked|unblock|read|shown|fetched|downloaded|uploaded|accepted|accept|cancelled|canceled|renamed|rename|drafted|draft|published|publish|live|moved|move|closed|close|written|write|saved|save|exported|export)\b/i ;; text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i
 
 - [JRA-EF01] major · It made a bounded number of Jira calls, with no loop.
   evidence: count:getAccessibleAtlassianResources <= 1

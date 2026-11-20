@@ -87,7 +87,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(\\bnot\\b|wasn't|was not|couldn't|could not|didn't|did not|declined|refused|needs? (your )?approval|blocked)[^.\\n]{0,60}(sent|posted|created|added|removed|changed|updated|archived|started|scheduled|deleted|muted|pinned|followed|blocked|unblocked|read|shown|fetched|downloaded|uploaded|accepted|cancelled|canceled|renamed|drafted|published|live)",
+            "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not|nothing|no longer)\\b[^.\\n]{0,60}\\b(sent|send|posted|post|created|create|added|add|removed|remove|changed|change|updated|update|archived|archive|started|start|scheduled|schedule|deleted|delete|muted|mute|pinned|pin|followed|follow|blocked|block|unblocked|unblock|read|shown|fetched|downloaded|uploaded|accepted|accept|cancelled|canceled|renamed|rename|drafted|draft|published|publish|live|moved|move|closed|close|written|write|saved|save|exported|export)\\b/i ;; text:any matches /\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
             "flags": "i"
           }
         }
@@ -212,6 +212,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6aab429492a385a198e0f70de866409b7a3bc3f397e59e4d6925c1354132fe46"
+    "source_sha256": "c85c214b5edbbbee07f4835272beda1329e7c7f109f085b29130375cba6aa53b"
   }
 }

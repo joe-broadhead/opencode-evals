@@ -24,7 +24,7 @@ pin the part of the auth-timeline session where we chose the token format, messa
   evidence: call:history.pin#1 args.to == 48
 
 - [H-OC01] major · The answer says nothing was pinned.
-  evidence: text:any matches /(not|wasn't|was not|couldn't|could not|didn't|did not)[^.\n]{0,40}(pinned|added)/i
+  evidence_any: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not|nothing|no longer)\b[^.\n]{0,60}\b(sent|send|posted|post|created|create|added|add|removed|remove|changed|change|updated|update|archived|archive|started|start|scheduled|schedule|deleted|delete|muted|mute|pinned|pin|followed|follow|blocked|block|unblocked|unblock|read|shown|fetched|downloaded|uploaded|accepted|accept|cancelled|canceled|renamed|rename|drafted|draft|published|publish|live|moved|move|closed|close|written|write|saved|save|exported|export)\b/i ;; text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i
 
 - [H-TR01] minor · The history-recall skill was loaded.
   evidence: skill:history-recall
