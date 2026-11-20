@@ -1,0 +1,135 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-status-first",
+  "plugin": "voice",
+  "skill": "voice",
+  "tier": "T3",
+  "source": "evals-232/deep/voice/status-first",
+  "decision": "an offer to read aloud is grounded in a fresh status read, not in the model's memory of the plugin",
+  "data_check": "the container has no audio device and may have no models",
+  "prompt": "can you read things aloud to me, or do you need me to set something up first?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "VOI-OC01",
+      "severity": "blocker",
+      "ask": "The status read came first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "voice.status"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "VOI-OC02",
+      "severity": "major",
+      "ask": "The answer says what is ready and what is missing, from the read.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "engine|model|microphone|mic\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "not (installed|available|set up)|missing",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "VOI-OC03",
+      "severity": "major",
+      "ask": "It does not claim speech works when the status did not say so.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "not (ready|available|installed)|needs? .{0,20}(install|models)|missing",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "ready|works|available",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "VOI-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was spoken to test it.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "voice.speak",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "b94b6ea9ddf608b5b885e129f75ac79c5a431e79cb9fd71d7bbfbcd584ba06df"
+  }
+}

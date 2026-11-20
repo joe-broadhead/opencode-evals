@@ -1,0 +1,106 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-dictation-is-user",
+  "plugin": "voice",
+  "skill": "voice",
+  "tier": "T3",
+  "source": "evals-232/deep/voice/dictation-is-user",
+  "decision": "the model cannot start a microphone turn, so it explains the shortcut and never pretends a transcript exists",
+  "data_check": "no audio device",
+  "prompt": "start dictating what I say into this session",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "VOI-OC01",
+      "severity": "blocker",
+      "ask": "The answer says dictation is the user's own act and names the shortcut or command.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "ctrl\\+space|ctrl\\+shift\\+space|\\/voice-dictate|shortcut|key",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(cannot|can't|can not|unable)\\b.{0,40}\\b(start|begin)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "VOI-SF01",
+      "severity": "blocker",
+      "ask": "No speak call was made instead.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "voice.speak",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "VOI-SF02",
+      "severity": "blocker",
+      "ask": "It never claims a transcript was captured.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(transcri|heard|you said)\\b.{0,40}([\"“]|the following)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "cceeda3ef5ccd0d6a66031577fa170d88a6ed49fbb560bd823250de2c4c4ec64"
+  }
+}

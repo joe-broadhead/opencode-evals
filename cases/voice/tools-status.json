@@ -1,0 +1,125 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-status",
+  "plugin": "voice",
+  "skill": "voice",
+  "tier": "T3",
+  "source": "evals-232/wide/voice/status",
+  "decision": "readiness is read from the status tool once, and the answer reports the engine, models and microphone as they are",
+  "data_check": "the container has no audio device and may have no speech models",
+  "prompt": "is dictation ready to use on this machine?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "VOI-OC01",
+      "severity": "blocker",
+      "ask": "The status read ran exactly once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "voice.status",
+          "n": 1,
+          "arg": null
+        },
+        {
+          "kind": "count",
+          "tool": "voice.*",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "VOI-OC02",
+      "severity": "major",
+      "ask": "The answer reports the engine, the models or the microphone, or says speech is not set up here.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "engine|model|microphone|mic\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "not (installed|available|set up)|missing",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "VOI-TR01",
+      "severity": "minor",
+      "ask": "The voice skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "voice"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "VOI-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was spoken to answer a question about readiness.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "voice.speak",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "3200d19b89f309115216de0e32957f2896fc1b5a3e69c9800c6515ccd899b1b1"
+  }
+}

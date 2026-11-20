@@ -1,0 +1,90 @@
+{
+  "schema": "oc-case/1",
+  "id": "snc-transcribe",
+  "plugin": "voice",
+  "skill": "voice",
+  "tier": "T3",
+  "source": "evals-232/wide/voice/should-not-call",
+  "decision": "transcribing an audio file belongs to Utilities' speech tools, not to voice",
+  "data_check": "the Utilities plugin is installed",
+  "prompt": "transcribe recordings/clip.wav for me",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "VOI-SF01",
+      "severity": "blocker",
+      "ask": "No voice tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "voice.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "VOI-TR01",
+      "severity": "major",
+      "ask": "A Utilities speech tool was used instead.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "VOI-OC01",
+      "severity": "minor",
+      "ask": "The answer does not claim a live dictation turn happened.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(dictat|microphone)\\w*",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "a62ed79674c415e0696c86a131a60a23202987636ae14f94b686a06dc7bab686"
+  }
+}

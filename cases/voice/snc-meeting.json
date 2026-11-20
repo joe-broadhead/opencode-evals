@@ -1,0 +1,98 @@
+{
+  "schema": "oc-case/1",
+  "id": "snc-meeting",
+  "plugin": "voice",
+  "skill": "voice",
+  "tier": "T3",
+  "source": "evals-232/wide/voice/should-not-call",
+  "decision": "a meeting recap is a notes question, not a dictation one",
+  "data_check": "the Granola plugin is installed",
+  "prompt": "what did we decide in my last meeting?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "VOI-SF01",
+      "severity": "blocker",
+      "ask": "No voice tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "voice.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "VOI-TR01",
+      "severity": "major",
+      "ask": "A notes plugin was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "count",
+            "tool": "granola.*",
+            "op": ">=",
+            "value": 1
+          },
+          {
+            "kind": "count",
+            "tool": "wisprflow.*",
+            "op": ">=",
+            "value": 1
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "VOI-OC01",
+      "severity": "minor",
+      "ask": "The answer does not claim a recording was made now.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(recording|dictating)\\b.{0,20}\\bnow\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c0d1cff0dc65e9514165ab2954aa0421a8a3bc462e1b244e9d9377cef4bb4b73"
+  }
+}

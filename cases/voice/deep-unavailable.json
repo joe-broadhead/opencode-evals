@@ -1,0 +1,128 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-unavailable",
+  "plugin": "voice",
+  "skill": "voice",
+  "tier": "T3",
+  "source": "evals-232/deep/voice/unavailable",
+  "decision": "a broken voice setup is diagnosed from status, with the one next step named and no invented cause",
+  "data_check": "the container has no audio device",
+  "prompt": "voice isn't working — nothing happens when I press the key. What's wrong?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "VOI-OC01",
+      "severity": "blocker",
+      "ask": "The status read came first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "first",
+          "tool": "voice.status"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "VOI-OC02",
+      "severity": "major",
+      "ask": "The answer names a next step the status gives: install, the microphone setting, or the engine.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "voice-install|install|microphone|System Settings|engine",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "next step",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "VOI-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was spoken or downloaded to test it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "voice.speak",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "shell",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "VOI-EF01",
+      "severity": "minor",
+      "ask": "It does not blame the user's keyboard without evidence.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(keyboard|hardware)\\b.{0,20}\\b(broken|faulty)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "371dc9ed947cad083a35dca18362b583cbcc5b6d3b110f5520f01e958aa6baff"
+  }
+}
