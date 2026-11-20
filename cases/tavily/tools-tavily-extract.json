@@ -1,0 +1,184 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-tavily-extract",
+  "plugin": "tavily",
+  "skill": "tavily",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "A URL the user already has is read with extract, not searched for.",
+  "data_check": "the page is public and states its price",
+  "prompt": "read <a public pricing page URL that states a per-seat price> and tell me what a seat costs.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=tavily",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "TAV-OC01",
+      "severity": "blocker",
+      "ask": "The page was read once with extract.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "tavily_extract",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "TAV-OC02",
+      "severity": "major",
+      "ask": "The call passed the URL the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "tavily_extract",
+          "n": 1,
+          "arg": "args.urls",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "TAV-OC03",
+      "severity": "major",
+      "ask": "The answer states the price it read.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(per seat|\\/seat|seat\\/mo|a month|per month|\\$|€|£)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "TAV-TR01",
+      "severity": "minor",
+      "ask": "The tavily skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "tavily"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "TAV-SF01",
+      "severity": "blocker",
+      "ask": "No search for a URL it was given.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "tavily_search",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "TAV-SF02",
+      "severity": "blocker",
+      "ask": "No crawl, map or research.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "tavily_crawl",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "tavily_map",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "tavily_research",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "TAV-SF03",
+      "severity": "blocker",
+      "ask": "Nothing was written or edited: every tool here only reads the web.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "006924c0e1e353cf487f51ee439e07647eae541d9945a044be05144be22713fc"
+  }
+}

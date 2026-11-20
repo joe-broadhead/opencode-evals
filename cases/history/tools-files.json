@@ -1,0 +1,202 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-files",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool (replaces the retired tools-files-ops)",
+  "decision": "Which sessions changed a file, and why, is history_files with ops limited to changes, not a search.",
+  "data_check": "the world's settings.ts was edited in eight sessions and read in more",
+  "prompt": "which past sessions edited src/config/settings.ts? I only care about sessions that changed it, not ones that just read it.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 12,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api plugins=history",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "The file's history was read with the files tool.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.files",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "The read was limited to sessions that changed the file.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "history.files",
+          "n": 1,
+          "arg": "args.ops",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "H-OC03",
+      "severity": "blocker",
+      "ask": "It reports eight sessions.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b(8|eight)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "H-OC04",
+      "severity": "minor",
+      "ask": "It names what some of the changes were.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "timeout|upload size|locale|retry|CORS|log level|feature flag|cache prefix",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "H-PR01",
+      "severity": "major",
+      "ask": "Each session it reports is cited in the full form (ses_… #seq).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\\)",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "H-TR01",
+      "severity": "minor",
+      "ask": "The history-recall skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited: a lookup changes nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
+    },
+    {
+      "id": "H-SF05",
+      "severity": "blocker",
+      "ask": "It pinned nothing: the user asked a question.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history.pin",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 40
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "94473b7c4258cc9d368078d0c6078f856779be2325989ada3a48034d16ffa888"
+  }
+}

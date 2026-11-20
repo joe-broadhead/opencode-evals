@@ -1,0 +1,180 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-tavily-map",
+  "plugin": "tavily",
+  "skill": "tavily",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "Which pages a site has is a map, answered as URLs without reading the pages.",
+  "data_check": "the site publishes an index of its pages",
+  "prompt": "list the pages on <a documentation site URL> that cover webhooks. I only want the URLs.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 5,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=tavily",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "TAV-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one map ran.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "tavily_map",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "TAV-OC02",
+      "severity": "major",
+      "ask": "The call named the site the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "tavily_map",
+          "n": 1,
+          "arg": "args.url",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "TAV-OC03",
+      "severity": "major",
+      "ask": "The answer lists several page URLs.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text-count",
+          "span": "any",
+          "op": ">=",
+          "value": {
+            "kind": "regex",
+            "source": "https?:\\/\\/[^\\s)<>]+",
+            "flags": ""
+          },
+          "n": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "TAV-TR01",
+      "severity": "minor",
+      "ask": "The tavily skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "tavily"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "TAV-SF01",
+      "severity": "blocker",
+      "ask": "No crawl: the user asked which pages exist, not for their content.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "tavily_crawl",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
+    },
+    {
+      "id": "TAV-SF02",
+      "severity": "blocker",
+      "ask": "No extract and no research.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "tavily_extract",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "tavily_research",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "TAV-SF03",
+      "severity": "blocker",
+      "ask": "Nothing was written or edited: every tool here only reads the web.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "00c0d72aa4d8e6aae5d30b3c598ad4880a953a485175931adbfa8ef77f5ce055"
+  }
+}

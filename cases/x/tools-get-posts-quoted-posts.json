@@ -1,0 +1,197 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-get-posts-quoted-posts",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "EVALS-232 wide: one request per tool",
+  "decision": "This request is one get_posts_quoted_posts read, answered from its result, with no second page and no write.",
+  "data_check": "the ids and handles in the prompt exist for the evals X account",
+  "prompt": "who quoted this post, and what did they say? <a post URL>",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6,
+    "billed_calls": 4,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=x",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "The read ran once, with get_posts_quoted_posts.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_posts_quoted_posts",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "X-PR01",
+      "severity": "major",
+      "ask": "The call passed id.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "get_posts_quoted_posts",
+          "n": 1,
+          "arg": "args.id",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "X-OC02",
+      "severity": "major",
+      "ask": "The answer carries what the read returned.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(@|quote|none)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "X-PR02",
+      "severity": "minor",
+      "ask": "The answer ends with the plugin's cost line.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "last-line",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^Cost: ",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "X-TR01",
+      "severity": "minor",
+      "ask": "The x skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "x"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No write of any kind.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "create_posts",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_create_draft",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "create_users_bookmark",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "follow_list",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "X-SF02",
+      "severity": "blocker",
+      "ask": "It did not page on to be thorough.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_posts_quoted_posts",
+          "op": "<=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "X's own tool descriptions are long; the skill's names and fields are exact, so a search() for this tool is a wasted step, not a failure.",
+      "line": 43
+    }
+  ],
+  "hashes": {
+    "source_sha256": "7652e3bb49695ab19673ffd7321ab6336b8326a2f83bde40c721587314db0b18"
+  }
+}

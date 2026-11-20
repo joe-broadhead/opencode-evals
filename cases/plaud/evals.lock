@@ -1,0 +1,9 @@
+{
+  "plugin": "plaud",
+  "epoch": 1,
+  "cases": 20,
+  "items": 108,
+  "cases_sha256": "d77b0cb74a6e5758b98528dfb2d9c863fdaacddb1498734ddc1a2503fca60842",
+  "grader_sha256": "b9d87f748169287832f9c65c0c36a742b6647e8d2c979e7c30c7dd0dd5a4fb9e",
+  "frozen_at": "2026-11-18T21:45:43.722Z"
+}

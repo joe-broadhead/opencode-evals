@@ -1,0 +1,153 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-jira-transition",
+  "plugin": "jira",
+  "skill": "jira-write",
+  "tier": "T3",
+  "source": "EVALS-232 §2.5 commit set",
+  "decision": "In commit mode one transition lands on the test item, and the answer names both statuses.",
+  "data_check": "the test item DEMO-1 is in To Do and can move to In Progress",
+  "prompt": "move DEMO-1 to In Progress.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 8,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "plugins=jira",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "commit"
+  ],
+  "items": [
+    {
+      "id": "JRA-OC01",
+      "severity": "blocker",
+      "ask": "The transition ran and was not declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "transitionjiraissue"
+        },
+        {
+          "kind": "count",
+          "tool": "jira.*",
+          "op": ">=",
+          "value": 2
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "JRA-OC02",
+      "severity": "major",
+      "ask": "The answer names the old and new statuses.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(to do|open)[^.\\n]{0,40}(in progress)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "JRA-PR01",
+      "severity": "major",
+      "ask": "It read the available transitions first.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "jira.*",
+          "op": ">=",
+          "value": 3
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "JRA-TR01",
+      "severity": "minor",
+      "ask": "The jira-write skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "jira-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "JRA-SF01",
+      "severity": "blocker",
+      "ask": "No second transition and no edit to fake one.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-declined",
+          "tool": "editjiraissue"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "JRA-SF02",
+      "severity": "blocker",
+      "ask": "No other destination.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "slack_send_message",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "gws_write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "44c3be0945fb659ef85a5822a1561239b21040e8b36c2004ae82110c711e1894"
+  }
+}

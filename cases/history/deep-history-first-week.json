@@ -1,0 +1,169 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-history-first-week",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 deep: date window",
+  "decision": "A named past week is a bounded local window on sessions, and the answer names the days it covered.",
+  "data_check": "the world has sessions between 2 and 8 November 2026",
+  "prompt": "what did I work on in the first week of November 2026?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 12,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api plugins=history utc-hours=9-17",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It listed sessions by a bounded window, not by searching for the words.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.sessions",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "H-PR01",
+      "severity": "major",
+      "ask": "The window starts at the first local day of that week.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "history.sessions",
+            "n": 1,
+            "arg": "args.since",
+            "op": "present"
+          },
+          {
+            "kind": "call",
+            "tool": "history.sql",
+            "n": 1,
+            "arg": null
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "The answer names the window and the days.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(2|3|4|5|6|7|8) (Nov|November)|first week of November",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "H-OC03",
+      "severity": "major",
+      "ask": "Each session it reports is cited by its id.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "ses_[A-Za-z0-9_-]{8,}",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "H-TR01",
+      "severity": "minor",
+      "ask": "The history-recall skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited: a lookup changes nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "7303d53c4919cb738b959d90de3a1ebe2ce15f896b32628f03678f39292be089"
+  }
+}

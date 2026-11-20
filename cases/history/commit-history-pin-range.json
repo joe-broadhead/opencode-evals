@@ -1,0 +1,156 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-history-pin-range",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "EVALS-232 §2.5 commit set",
+  "decision": "In commit mode the pin runs: one call, not declined, and the answer says the range is pinned.",
+  "data_check": "the auth-timeline session exists and has messages 40 to 48",
+  "prompt": "pin messages 40 to 48 of the auth-timeline session so they stay in view while I work on this.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 12,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api plugins=history",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "commit"
+  ],
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one pin ran, and it was not declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "history.pin",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "absent-declined",
+          "tool": "history.pin"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "H-PR01",
+      "severity": "major",
+      "ask": "The pin names that session and that range.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "history.pin",
+          "n": 1,
+          "arg": "args.sessionID",
+          "op": "present"
+        },
+        {
+          "kind": "call",
+          "tool": "history.pin",
+          "n": 1,
+          "arg": "args.from",
+          "op": "present"
+        },
+        {
+          "kind": "call",
+          "tool": "history.pin",
+          "n": 1,
+          "arg": "args.to",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "The answer says the range is pinned.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(pinned|in view|kept in (the )?context)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "H-TR01",
+      "severity": "minor",
+      "ask": "The history-recall skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No second pin and no file written.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "history.pin",
+          "n": 2
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "0ee7635fad468fdf80136084ffa53bd8ae9db805e449e49e197147fcb1566625"
+  }
+}

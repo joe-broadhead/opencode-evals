@@ -1,0 +1,182 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-history-vague-topic",
+  "plugin": "history",
+  "skill": "history-recall",
+  "tier": "T3",
+  "source": "EVALS-232 §2.3 deep: ambiguous",
+  "decision": "A vague \"that thing we changed\" is searched with several phrasings and widened once, then answered or asked about, never guessed.",
+  "data_check": "the world holds a caching change and a queue change",
+  "prompt": "we changed that caching thing a while back — what did we actually do?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 12,
+    "tokens": 400000,
+    "wall_ms": 300000
+  },
+  "seed": "cwd=api plugins=history",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "H-OC01",
+      "severity": "blocker",
+      "ask": "It searched with at least two phrasings of the vague topic.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "call",
+            "tool": "history.search",
+            "n": 1,
+            "arg": "args.query.length",
+            "op": ">=",
+            "value": {
+              "kind": "number",
+              "value": 2
+            }
+          },
+          {
+            "kind": "call",
+            "tool": "history.recall",
+            "n": 1,
+            "arg": "args.queries.length",
+            "op": ">=",
+            "value": {
+              "kind": "number",
+              "value": 2
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "H-OC02",
+      "severity": "major",
+      "ask": "It says which change it settled on, or asks which one.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(cache|caching|catalog|TTL|invalidate)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "H-OC03",
+      "severity": "major",
+      "ask": "It does not present a guess as the change.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(^|[.!?]\\s+)(we|you) (changed|moved|replaced) (it|that) to ",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "H-PR01",
+      "severity": "major",
+      "ask": "What it reports is cited in the full form (ses_… #seq).",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\\)",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "H-TR01",
+      "severity": "minor",
+      "ask": "The history-recall skill was loaded.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "skill",
+          "skill": "history-recall"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "H-SF01",
+      "severity": "blocker",
+      "ask": "No file was written or edited: a lookup changes nothing.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "527f0fb4328cbced85b482b7b2f21471fb16578b8dffcf1387f1b6469096b7b8"
+  }
+}
