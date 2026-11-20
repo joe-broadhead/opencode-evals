@@ -2,9 +2,9 @@
  "schema": "oc-registered/1",
  "plugin": "ashby",
  "release": {
-  "version": "0.0.6",
-  "tag": "v0.0.6",
-  "commit": "fb5cfada79e56feaf71080666687d493807b09c3"
+  "version": "0.0.7",
+  "tag": "v0.0.7",
+  "commit": "b7440615a74d7a67097c5e6043530237816dc251"
  },
  "host": "opencode v2.3.2",
  "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",

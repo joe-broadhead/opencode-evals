@@ -75,7 +75,7 @@ test("every tool of every pack has a recorded schema or says why it has none; a 
   // the 11 the vendors do not list to the pinned sign-in, each with its reason
   assert.deepEqual(Object.keys(inputs.get("jira").unlisted).sort(), ["createJiraProject", "deleteJiraComment", "deleteJiraIssue", "deleteJiraIssueAttachment", "getJiraScreen", "getJiraWorkflowEditorLink", "getJiraWorkflows", "updateJiraProject", "updateJiraScreen"])
   assert.deepEqual(Object.keys(inputs.get("notion").unlisted).sort(), ["notion-ai-search", "notion-connector-search"])
-  assert.equal(coverage(packs.find((p) => p.id === "elevenlabs"), inputs).have, 239)
+  assert.equal(coverage(packs.find((p) => p.id === "elevenlabs"), inputs).have, packs.find((p) => p.id === "elevenlabs").tools.length, "every elevenlabs tool")
   assert.equal(coverage(packs.find((p) => p.id === "x"), inputs).have, 102)
   assert.equal(coverage(packs.find((p) => p.id === "openrouter"), inputs).have, 31)
   assert.equal(coverage(packs.find((p) => p.id === "voice"), inputs).have, 2)
@@ -194,7 +194,7 @@ test("`evals pack` reports each plugin's schema coverage, and a tool with neithe
   const { spawnSync } = await import("node:child_process")
   const run = spawnSync(process.execPath, [new URL("../bin/evals", import.meta.url).pathname, "pack"], { encoding: "utf8", env: process.env })
   assert.equal(run.status, 0, run.stdout + run.stderr)
-  assert.match(run.stdout, /^elevenlabs\s+ok .* schemas 239\/239  reach 41 marked of \d+ reads/m)
+  assert.match(run.stdout, /^elevenlabs\s+ok .* schemas (\d+)\/\1  reach 41 marked of \d+ reads/m)
   assert.match(run.stdout, /^x\s+ok .* schemas 102\/102  reach 57 marked of \d+ reads/m)
   assert.match(run.stdout, /^jira\s+ok .* schemas 47\/56 \(\+9 unlisted: getJiraScreen/m)
   assert.match(run.stdout, /^notion\s+ok .* schemas 77\/79 \(\+2 unlisted: notion-ai-search, notion-connector-search\)  reach 33 marked of \d+ reads/m)

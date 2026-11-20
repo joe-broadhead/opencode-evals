@@ -2,9 +2,9 @@
  "schema": "oc-registered/1",
  "plugin": "granola",
  "release": {
-  "version": "0.0.6",
-  "tag": "v0.0.6",
-  "commit": "1bce3289fba00fbbd40b44ff20ea79d264c48c00"
+  "version": "0.0.7",
+  "tag": "v0.0.7",
+  "commit": "2cc0483ff35136267dcd94fa1073f0e3d1915cd1"
  },
  "host": "opencode v2.3.2",
  "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",

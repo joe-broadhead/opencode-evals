@@ -2,9 +2,9 @@
  "schema": "oc-registered/1",
  "plugin": "plaud",
  "release": {
-  "version": "0.0.7",
-  "tag": "v0.0.7",
-  "commit": "f89f95a94bde45cba6a62a70f8dcc262d8cbb15c"
+  "version": "0.0.8",
+  "tag": "v0.0.8",
+  "commit": "40877c16730c2d15094c684a30a0df5cc7833e87"
  },
  "host": "opencode v2.3.2",
  "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",

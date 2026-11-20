@@ -3,7 +3,7 @@
   "id": "elevenlabs",
   "name": "ElevenLabs",
   "package": "@joe-broadhead/opencode-elevenlabs",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "private": true,
   "pluginId": "elevenlabs",
   "rpc": "elevenlabs.tools",
@@ -17,13 +17,13 @@
       "name": "elevenlabs",
       "description_sha256": "1d5f297f0cbb157ad06c6fd13a4c6c6e637bf59b30bdb827814df1d9c85a82bf",
       "description_chars": 506,
-      "body_lines": 75
+      "body_lines": 93
     },
     "elevenlabs-creative": {
       "name": "elevenlabs-creative",
       "description_sha256": "9ea5f5b8467a0f9d3a58c095686f848e92d6fb4926460135d7e0fb6ebdbd325d",
       "description_chars": 587,
-      "body_lines": 94
+      "body_lines": 90
     },
     "elevenlabs-calls": {
       "name": "elevenlabs-calls",
@@ -120,6 +120,13 @@
     {
       "name": "agents_get_conversation_summary",
       "permission": "elevenlabs_agents_get_conversation_summary",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "agents_get_draft",
+      "permission": "elevenlabs_agents_get_draft",
       "effect": "allow",
       "readOnly": true,
       "class": "read"
@@ -225,6 +232,13 @@
     {
       "name": "agents_get_procedure_draft",
       "permission": "elevenlabs_agents_get_procedure_draft",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "agents_get_pronunciation_dictionary",
+      "permission": "elevenlabs_agents_get_pronunciation_dictionary",
       "effect": "allow",
       "readOnly": true,
       "class": "read"
@@ -678,6 +692,13 @@
       "class": "read"
     },
     {
+      "name": "creative_get_guide",
+      "permission": "elevenlabs_creative_get_guide",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
       "name": "creative_get_model_guide",
       "permission": "elevenlabs_creative_get_model_guide",
       "effect": "allow",
@@ -743,6 +764,13 @@
     {
       "name": "agents_get_signed_url",
       "permission": "elevenlabs_agents_get_signed_url",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "agents_add_pronunciation_dictionary_rules",
+      "permission": "elevenlabs_agents_add_pronunciation_dictionary_rules",
       "effect": "allow",
       "readOnly": false,
       "class": "write"
@@ -923,6 +951,13 @@
       "class": "write"
     },
     {
+      "name": "agents_create_pronunciation_dictionary",
+      "permission": "elevenlabs_agents_create_pronunciation_dictionary",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
       "name": "agents_create_secret",
       "permission": "elevenlabs_agents_create_secret",
       "effect": "allow",
@@ -1056,6 +1091,13 @@
       "class": "write"
     },
     {
+      "name": "agents_remove_pronunciation_dictionary_rules",
+      "permission": "elevenlabs_agents_remove_pronunciation_dictionary_rules",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
       "name": "agents_request_merge_proposal_review",
       "permission": "elevenlabs_agents_request_merge_proposal_review",
       "effect": "allow",
@@ -1114,6 +1156,13 @@
     {
       "name": "agents_update_conversation",
       "permission": "elevenlabs_agents_update_conversation",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "agents_update_draft",
+      "permission": "elevenlabs_agents_update_draft",
       "effect": "allow",
       "readOnly": false,
       "class": "write"
@@ -1497,6 +1546,13 @@
       "class": "write"
     },
     {
+      "name": "agents_outbound_call",
+      "permission": "elevenlabs_agents_outbound_call",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
       "name": "agents_query_knowledge_base_rag",
       "permission": "elevenlabs_agents_query_knowledge_base_rag",
       "effect": "allow",
@@ -1712,20 +1768,20 @@
     "default": "all"
   },
   "counts": {
-    "tools": 239,
-    "reads": 101,
-    "writes": 138,
+    "tools": 247,
+    "reads": 104,
+    "writes": 143,
     "denied": 0,
     "skills": 3
   },
-  "digest": "dbf26c7e14caaf8b250dd7309e928b3d51a0ef31239d047c8e6095bff9361905",
+  "digest": "7d8cabebb778961429ad1464cd6e02564f0499d9c37ca78bcf0138749ed8aee1",
   "t1": [],
   "egress": [
     "api.us.elevenlabs.io"
   ],
   "release": {
-    "version": "0.0.9",
-    "tag": "v0.0.9",
-    "commit": "2ac97965d8a6d7a7dca30d036416699984597119"
+    "version": "0.0.10",
+    "tag": "v0.0.10",
+    "commit": "bcdb10b3f003d931aeea0f6659b9e9a89199928d"
   }
 }

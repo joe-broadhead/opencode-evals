@@ -2,20 +2,20 @@
  "schema": "oc-plugin-rules/1",
  "plugin": "tavily",
  "release": {
-  "version": "0.0.5",
-  "tag": "v0.0.5",
-  "commit": "2c9816376c61d9197e36cc5a59af7a2c27e98b1d"
+  "version": "0.0.6",
+  "tag": "v0.0.6",
+  "commit": "2fd4bb20bf8e6c12a06f78d8b5fc2a5859d3060f"
  },
  "access": "ask-changes",
  "host": "opencode v2.3.2",
  "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
- "allowed": [
+ "allowed": [],
+ "asked": [
   "tavily_tavily_crawl",
   "tavily_tavily_extract",
   "tavily_tavily_map",
   "tavily_tavily_research",
   "tavily_tavily_search"
  ],
- "asked": [],
  "denied": []
 }

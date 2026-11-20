@@ -4,7 +4,7 @@
   "id": "jira",
   "name": "Jira",
   "package": "@joe-broadhead/opencode-jira",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "private": true,
   "pluginId": "jira.issues",
   "skills": [
@@ -427,7 +427,7 @@
       "body_lines": 95
     }
   },
-  "digest": "06b525f58a7dfec20c5e5024776752eef361a13d283fe5870a3f2331fa1808bc",
+  "digest": "4da9abf2504c034fc90b3cdbbb7e02b8a43ed32ef08bb80a039b905e894c31c9",
   "access": {
     "key": "access",
     "default": "all"
@@ -440,8 +440,8 @@
   ],
   "accounts": "fake",
   "release": {
-    "version": "0.0.5",
-    "tag": "v0.0.5",
-    "commit": "0dbfe632cb4374e7e2d20362722493178ad73bb3"
+    "version": "0.0.6",
+    "tag": "v0.0.6",
+    "commit": "a4a3cfca59d1f238cc2ceafe30db766fc612fec8"
   }
 }

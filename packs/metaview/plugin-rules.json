@@ -2,15 +2,14 @@
  "schema": "oc-plugin-rules/1",
  "plugin": "metaview",
  "release": {
-  "version": "0.0.6",
-  "tag": "v0.0.6",
-  "commit": "53a180b48e1cd360e9336804604cb93dcd673f9a"
+  "version": "0.0.7",
+  "tag": "v0.0.7",
+  "commit": "2f0678d0cc651b39c9fb6d9bebc1b717d2873bd0"
  },
  "access": "ask-changes",
  "host": "opencode v2.3.2",
  "via": "the built release loaded in the host at access ask-changes with none of the harness's rules; the probe plugin asks the host about every action of the pack",
  "allowed": [
-  "metaview_events_list",
   "metaview_fetch_candidates",
   "metaview_find_candidate_in_sequences",
   "metaview_get_application_review_details",

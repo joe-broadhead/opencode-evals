@@ -55,10 +55,26 @@ export function listingProblems(pack, { registered = null, live = null, extras =
  */
 export function ruleProblems(pack, rules) {
   if (!rules) return ["has no plugin-rules.json (EVALS_COMPANIONS=<file> node scripts/plugin-rules.mjs)"]
-  const out = []
-  if (rules.release?.version !== pack.version) out.push(`plugin-rules.json is of v${rules.release?.version ?? "?"}, the pack is v${pack.version}`)
+  const out = [...releaseProblems(pack, rules, "plugin-rules.json")]
+  const listed = new Set((pack.tools ?? []).map((t) => t.permission).filter(Boolean))
   const decided = new Set([...(rules.allowed ?? []), ...(rules.asked ?? []), ...(rules.denied ?? [])])
-  const missing = (pack.tools ?? []).map((t) => t.permission).filter((action) => action && !decided.has(action))
+  const missing = [...listed].filter((action) => !decided.has(action))
   if (missing.length) out.push(`plugin-rules.json does not decide ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? ` and ${missing.length - 4} more` : ""}`)
+  // the other direction, under the SAME version: an action the rules decide that the pack no longer lists is a rules file of another build of this release (a tool the release dropped)
+  const extra = [...decided].filter((action) => !listed.has(action))
+  if (extra.length) out.push(`plugin-rules.json decides ${extra.slice(0, 4).join(", ")}${extra.length > 4 ? ` and ${extra.length - 4} more` : ""}, which the pack does not list: it was recorded from another build (node scripts/plugin-rules.mjs)`)
+  return out
+}
+
+/**
+ * A sidecar (registered.json, plugin-rules.json) must have been recorded from THE release the pack records: its version and, under the same version, its commit. A rebuilt or re-tagged
+ * release with the same version number differs here, which the version alone would not show (review of #14: not only on an older version).
+ */
+export function releaseProblems(pack, sidecar, name) {
+  const out = []
+  const have = sidecar?.release ?? {}
+  if (have.version !== pack.version) out.push(`${name} is of v${have.version ?? "?"}, the pack is v${pack.version}`)
+  else if (pack.release?.commit && have.commit && have.commit !== pack.release.commit) out.push(`${name} was recorded from ${String(have.commit).slice(0, 7)}, the pack's release ${pack.release.tag ?? `v${pack.version}`} is ${String(pack.release.commit).slice(0, 7)}: another build of the same version`)
+  else if (pack.release?.commit && !have.commit) out.push(`${name} records no release commit (rebuild it: it cannot be tied to ${String(pack.release.commit).slice(0, 7)})`)
   return out
 }

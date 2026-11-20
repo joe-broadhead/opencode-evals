@@ -4,7 +4,7 @@
   "id": "ashby",
   "name": "Ashby",
   "package": "@joe-broadhead/opencode-ashby",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "private": true,
   "pluginId": "ashby.recruiting",
   "skills": [
@@ -123,12 +123,54 @@
       "effect": "allow",
       "readOnly": false,
       "class": "write"
+    },
+    {
+      "name": "get_ai_interviewer_details",
+      "permission": "ashby_get_ai_interviewer_details",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_ai_screening_interview_analytics",
+      "permission": "ashby_get_ai_screening_interview_analytics",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_ai_screening_interview_results",
+      "permission": "ashby_get_ai_screening_interview_results",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "create_ai_interviewer",
+      "permission": "ashby_create_ai_interviewer",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "create_ai_interviewer_version",
+      "permission": "ashby_create_ai_interviewer_version",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_ai_interviewer_outline",
+      "permission": "ashby_update_ai_interviewer_outline",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
     }
   ],
   "counts": {
-    "tools": 16,
-    "reads": 11,
-    "writes": 5,
+    "tools": 22,
+    "reads": 14,
+    "writes": 8,
     "denied": 0,
     "skills": 2
   },
@@ -136,18 +178,18 @@
   "skill_meta": {
     "ashby": {
       "name": "ashby",
-      "description_sha256": "cf3e0ec483baf366078016bd2d4d2a0db36755d92977585e7dccd0eb392553e9",
-      "description_chars": 838,
-      "body_lines": 95
+      "description_sha256": "a2f592e8924b41a53c3f0445b5737acd9bdda2bf5d808c8dd4803f4420041b5d",
+      "description_chars": 889,
+      "body_lines": 98
     },
     "ashby-write": {
       "name": "ashby-write",
-      "description_sha256": "4a5318970abafe8c3db02061778629b79526416aa112e7a29b0e87e4093ced27",
-      "description_chars": 390,
-      "body_lines": 66
+      "description_sha256": "670ba65fcc8140638a8285ee06e20c1d280ea1512339a9a8d426addf79d15a4e",
+      "description_chars": 458,
+      "body_lines": 84
     }
   },
-  "digest": "7d0843cc7cf4364900a5524e15a884c46dfdfce91efe1124ce710ff634919f37",
+  "digest": "ffc76804ede59e07b620292744387bece8177cdceac4922b905be5ae5d8dedd6",
   "access": {
     "key": "access",
     "default": "all"
@@ -157,8 +199,8 @@
     "mcp-auth.ashbyhq.com"
   ],
   "release": {
-    "version": "0.0.6",
-    "tag": "v0.0.6",
-    "commit": "fb5cfada79e56feaf71080666687d493807b09c3"
+    "version": "0.0.7",
+    "tag": "v0.0.7",
+    "commit": "b7440615a74d7a67097c5e6043530237816dc251"
   }
 }
