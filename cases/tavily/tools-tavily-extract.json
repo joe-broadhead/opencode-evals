@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A URL the user already has is read with extract, not searched for.",
   "data_check": "the page is public and states its price",
-  "prompt": "read <a public pricing page URL that states a per-seat price> and tell me what a seat costs.",
+  "prompt": "read https://example.org/pricing and tell me what a seat costs.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "TAV-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "TAV-OC02",
+      "id": "TAV-PR01",
       "severity": "major",
       "ask": "The call passed the URL the user gave.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "TAV-OC03",
+      "id": "TAV-OC02",
       "severity": "major",
       "ask": "The answer states the price it read.",
       "forbidden": false,
@@ -82,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "TAV-TR01",
@@ -99,7 +100,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "TAV-SF01",
@@ -117,7 +118,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "TAV-SF02",
@@ -145,12 +146,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "TAV-SF03",
       "severity": "blocker",
-      "ask": "Nothing was written or edited: every tool here only reads the web.",
+      "ask": "Nothing was written or edited: every Tavily tool only reads the web.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -173,12 +174,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 38
+    },
+    {
+      "id": "TAV-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 43
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "006924c0e1e353cf487f51ee439e07647eae541d9945a044be05144be22713fc"
+    "source_sha256": "b3605a0ba454998eb701b5cc783072feedabfa6a02aac29b35ff0d598a47f0c5"
   }
 }

@@ -21,9 +21,10 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "TAV-OC01",
+      "id": "TAV-WR01",
       "severity": "blocker",
       "ask": "Exactly one Research call was proposed, and it was declined.",
       "forbidden": false,
@@ -43,10 +44,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "TAV-OC02",
+      "id": "TAV-OC01",
       "severity": "major",
       "ask": "The answer asks for confirmation before the task runs.",
       "forbidden": false,
@@ -66,7 +67,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
       "id": "TAV-PR01",
@@ -89,7 +90,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "TAV-TR01",
@@ -106,7 +107,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "TAV-SF01",
@@ -124,7 +125,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "TAV-SF02",
@@ -148,7 +149,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
     },
     {
       "id": "TAV-SF03",
@@ -171,12 +172,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 37
+      "line": 38
+    },
+    {
+      "id": "TAV-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "77f2e89c8ee5f510a8e415d6a472728976411bc3052ebaacabe0b92d1dfb158a"
+    "source_sha256": "6342f42cd9afa57987eae2976cca8c66d02fce2e9facb73537685678389c2e94"
   }
 }

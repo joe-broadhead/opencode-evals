@@ -1,0 +1,153 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-drive-doc-1",
+  "plugin": "tavily",
+  "skill": "tavily",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 overlap routing",
+  "decision": "A file in the user's Drive is Google Workspace's, not a web search: no Tavily call.",
+  "data_check": "none",
+  "prompt": "find the Q3 planning doc in my Drive and summarise the risks section",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "seed": "plugins=tavily,gws",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "TAV-RT01",
+      "severity": "blocker",
+      "ask": "No Tavily skill loaded for a Drive document.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "tavily"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "TAV-RT02",
+      "severity": "blocker",
+      "ask": "No Tavily tool call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "tavily_search",
+          "op": "==",
+          "value": 0
+        },
+        {
+          "kind": "count",
+          "tool": "tavily_extract",
+          "op": "==",
+          "value": 0
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "TAV-OC01",
+      "severity": "major",
+      "ask": "It names Drive or Google Workspace, or says it cannot reach the file.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(drive|google workspace|gws)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(can't|cannot|couldn't|could not|don't have|do not have)[^.\\n]{0,30}(access|reach|open|read)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "TAV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written or edited: every Tavily tool only reads the web.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "TAV-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "465542607e62673cf97ee5065768fb3e283f014d5d4b55d813a89c490546b26c"
+  }
+}

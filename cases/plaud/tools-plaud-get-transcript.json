@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "What was said comes from one transcript page of the right block, cited to the recording and its date.",
   "data_check": "the test recording has a transcript",
-  "prompt": "in my Plaud recording <the Plaud test recording id>, what was said about the budget? quote it.",
+  "prompt": "in my Plaud recording {{target:plaud.recording}}, what was said about the budget? quote it.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "PLD-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "PLD-OC02",
+      "id": "PLD-PR01",
       "severity": "major",
       "ask": "The call names the recording and a block.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "PLD-OC03",
+      "id": "PLD-OC02",
       "severity": "major",
       "ask": "The answer quotes or closely reports the passage.",
       "forbidden": false,
@@ -82,10 +83,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
-      "id": "PLD-PR01",
+      "id": "PLD-CT01",
       "severity": "minor",
       "ask": "It cites the recording by name or date.",
       "forbidden": false,
@@ -105,7 +106,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "PLD-TR01",
@@ -122,7 +123,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "PLD-SF01",
@@ -140,7 +141,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "PLD-SF02",
@@ -168,12 +169,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "85e8aeb1cf075ba71c6433979bb7d8a8972206b50ed09e441666af72ee0430fc"
+    "source_sha256": "763b0340c18e0fa4229b14c80a02dde46ebfee7cb659f673ce05445929fcc9e7"
   }
 }

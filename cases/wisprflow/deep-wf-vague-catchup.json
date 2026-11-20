@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 deep: ambiguous",
   "decision": "An unscoped \"catch me up\" is a question about the period, or one bounded list with the period stated, never a walk of everything.",
-  "data_check": "synthetic: the round's Wispr Flow meeting (owner row 25) exists, with a transcript and a summary",
+  "data_check": "the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary",
   "prompt": "catch me up on my meetings",
   "controls": [],
   "budgets": {
@@ -21,6 +21,7 @@
   "sets": [
     "deep"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -43,10 +44,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-EF01",
       "severity": "blocker",
       "ask": "It did not read every transcript.",
       "forbidden": false,
@@ -62,10 +63,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-EF02",
       "severity": "major",
       "ask": "At most two list calls.",
       "forbidden": false,
@@ -87,7 +88,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "WF-TR01",
@@ -104,7 +105,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-SF01",
@@ -132,12 +133,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c07f42217dfe560eb735367d81c60903b761770051ca984c16157e14261f67f0"
+    "source_sha256": "a4a2c372d08768d92863d860a189a3bd4303d714de56d37e215450c828e6aee5"
   }
 }

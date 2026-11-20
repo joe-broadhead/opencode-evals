@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 deep: error",
   "decision": "A mention that never happened is answered with what was searched and read, not with an invented mention.",
-  "data_check": "synthetic: the round's meetings do not mention the topic",
+  "data_check": "the round's meetings do not mention the topic",
   "prompt": "did anyone mention the rebrand in last week's meetings?",
   "controls": [],
   "budgets": {
@@ -21,9 +21,10 @@
   "sets": [
     "deep"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "WF-OC01",
+      "id": "WF-ER01",
       "severity": "blocker",
       "ask": "It searched last week's meetings and read the candidates' transcripts.",
       "forbidden": false,
@@ -45,10 +46,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-ER02",
       "severity": "blocker",
       "ask": "It says no one mentioned it, naming what it searched and read.",
       "forbidden": false,
@@ -68,10 +69,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-ER03",
       "severity": "major",
       "ask": "It says which meetings it read and which it did not.",
       "forbidden": false,
@@ -91,10 +92,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
-      "id": "WF-OC04",
+      "id": "WF-ER04",
       "severity": "major",
       "ask": "It did not widen beyond last week.",
       "forbidden": false,
@@ -114,7 +115,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-TR01",
@@ -131,7 +132,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "WF-SF01",
@@ -159,12 +160,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "15a14562a93dc7da64923bbbf4d34de4aff7ae1986ad7da1dd3a834c9b9044be"
+    "source_sha256": "2c89d80ba51a8925c0975819e17489e6aa13121b9f6f4a05c733e600e29769fe"
   }
 }

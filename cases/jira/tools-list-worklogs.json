@@ -4,10 +4,10 @@
   "plugin": "jira",
   "skill": "jira",
   "tier": "T3",
-  "source": "EVALS-232 wide: one request per tool",
-  "decision": "Worklogs are summarised as a total and who logged them, not as every entry.",
-  "data_check": "the test project and its board, sprint and version exist on the evals Jira site",
-  "prompt": "how much time is logged on DEMO-1, and by whom?",
+  "source": "EVALS-232 wide: one request per tool (fake mode)",
+  "decision": "Worklogs are summarised as a total and who logged them, and the fixture holds none.",
+  "data_check": "the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7",
+  "prompt": "how much time is logged on QLN-1, and by whom?",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -21,30 +21,31 @@
   "sets": [
     "wide"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "JRA-OC01",
       "severity": "blocker",
-      "ask": "Jira was read through the plugin.",
+      "ask": "The read ran once, with listJiraIssueWorklogs.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "count",
-          "tool": "jira.*",
-          "op": ">=",
+          "tool": "listJiraIssueWorklogs",
+          "op": "==",
           "value": 1
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "JRA-OC02",
-      "severity": "major",
-      "ask": "The answer carries what this read returned.",
+      "severity": "blocker",
+      "ask": "The answer states what the fixture holds.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -54,7 +55,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "([0-9]+ ?(h|hours|m|minutes)|no time|nothing logged)",
+            "source": "(no time|nothing logged|none|0 ?(h|hours|m|minutes))",
             "flags": "i"
           }
         }
@@ -62,7 +63,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "JRA-TR01",
@@ -79,12 +80,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "JRA-SF01",
       "severity": "blocker",
-      "ask": "Nothing was written: this is a read, and no other tool changes anything.",
+      "ask": "Nothing was written: this is a read.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -107,18 +108,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
-    }
-  ],
-  "oracle": [],
-  "notes": [
+      "line": 27
+    },
     {
-      "id": null,
-      "text": "Jira's tool names are camelCase, which the evidence grammar's tool clauses do not accept yet (see the lane report): this case grades the namespace and the answer, not the exact tool.",
+      "id": "JRA-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
       "line": 32
     }
   ],
+  "oracle": [],
+  "notes": [],
   "hashes": {
-    "source_sha256": "8303612847447802ae432bcb5f271a02dfb209873c953e1e9cb35b7b57f2472a"
+    "source_sha256": "b1a574c375acecd3405d4cda92a81e550c6f8780088362a2b344d87ee5e83ece"
   }
 }

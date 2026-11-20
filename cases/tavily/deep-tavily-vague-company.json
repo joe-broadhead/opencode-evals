@@ -21,6 +21,7 @@
   "sets": [
     "deep"
   ],
+  "data": "real",
   "items": [
     {
       "id": "TAV-OC01",
@@ -55,7 +56,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "TAV-OC02",
@@ -78,10 +79,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "TAV-OC03",
+      "id": "TAV-EF01",
       "severity": "major",
       "ask": "At most two searches.",
       "forbidden": false,
@@ -97,7 +98,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "TAV-PR01",
@@ -109,12 +110,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "TAV-SF01",
       "severity": "blocker",
-      "ask": "Nothing was written or edited: every tool here only reads the web.",
+      "ask": "Nothing was written or edited: every Tavily tool only reads the web.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -137,12 +138,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
+    },
+    {
+      "id": "TAV-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6bf073c9c84e88aa71114a5851adf0605bdb2d213e11b2ddd4bb5ee5a8f8c440"
+    "source_sha256": "79ac930320eb92e313ca8abf83f3426b0a2d6893af8e4b089222d93d40ca0858"
   }
 }

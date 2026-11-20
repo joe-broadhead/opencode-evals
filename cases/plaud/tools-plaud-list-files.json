@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "PLD-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "PLD-OC02",
+      "id": "PLD-PR01",
       "severity": "major",
       "ask": "The dates are the user's, unshifted.",
       "forbidden": false,
@@ -74,10 +75,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "PLD-OC03",
+      "id": "PLD-OC02",
       "severity": "major",
       "ask": "The answer states a count.",
       "forbidden": false,
@@ -97,7 +98,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "PLD-TR01",
@@ -114,7 +115,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "PLD-SF01",
@@ -142,12 +143,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4b0cae1a62a221bb28a344ed84c0a55d972a2849160f41761a189e5d6ad15b17"
+    "source_sha256": "02466871245d48e65203a1f816db9cde95d01a0cbce7d288849627fb248abd48"
   }
 }

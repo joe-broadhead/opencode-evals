@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A pasted invite or Meet link is resolved as a calendar link, never fetched as a page.",
-  "data_check": "synthetic: a calendar event matches the link",
-  "prompt": "what's this meeting? <a Google Calendar or Meet link>",
+  "data_check": "a calendar event matches the link",
+  "prompt": "what's this meeting? <a Google Calendar or Meet link for the round's meeting>",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -21,11 +21,12 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
       "severity": "blocker",
-      "ask": "Exactly one resolve_calendar_link call with the URL.",
+      "ask": "Exactly one resolve_calendar_link call.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -34,7 +35,20 @@
           "tool": "resolve_calendar_link",
           "op": "==",
           "value": 1
-        },
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "WF-PR01",
+      "severity": "major",
+      "ask": "The call carried the URL.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
         {
           "kind": "call",
           "tool": "resolve_calendar_link",
@@ -46,7 +60,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 20
     },
     {
       "id": "WF-OC02",
@@ -69,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 23
     },
     {
       "id": "WF-TR01",
@@ -86,7 +100,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 26
     },
     {
       "id": "WF-SF01",
@@ -104,7 +118,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 30
     },
     {
       "id": "WF-SF02",
@@ -132,12 +146,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 33
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "57420023b00285eb0da8810813961432f0759abf21f70f7ba385cf53c8e0d41a"
+    "source_sha256": "1054955f3ec0c06b4088788b8febf8967e71b27b09e7fb4a9aa6642bfd7c3261"
   }
 }

@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "The next three days are one list_upcoming_meetings call with a window, not a day-by-day loop.",
-  "data_check": "synthetic: upcoming events exist in the window",
+  "data_check": "upcoming events exist in the window",
   "prompt": "what's coming up in the next three days?",
   "controls": [],
   "budgets": {
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-PR01",
       "severity": "major",
       "ask": "The window is three days, not the default day.",
       "forbidden": false,
@@ -63,10 +64,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-OC02",
       "severity": "major",
       "ask": "The answer lists the events with local times.",
       "forbidden": false,
@@ -86,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "WF-TR01",
@@ -103,10 +104,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
-      "id": "WF-SF01",
+      "id": "WF-EF01",
       "severity": "blocker",
       "ask": "No second window call.",
       "forbidden": true,
@@ -121,7 +122,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "WF-SF02",
@@ -149,12 +150,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d6237417e70530befb9b9ec67398ba957360febfe219d64985e1ff6c5bb51c36"
+    "source_sha256": "1c8bde87d36c47446068b9b60b0c70e3db4f1bb4dd96f0ab30b0ba021fec3f9e"
   }
 }

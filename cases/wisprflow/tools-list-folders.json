@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "The folder list is one list_folders call, answered with names and ids.",
-  "data_check": "synthetic: the round's folder exists",
+  "data_check": "the round's folder exists",
   "prompt": "what folders do I have in Wispr Flow?",
   "controls": [],
   "budgets": {
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -39,7 +40,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "WF-OC02",
@@ -62,7 +63,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "WF-TR01",
@@ -79,10 +80,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
-      "id": "WF-SF01",
+      "id": "WF-EF01",
       "severity": "blocker",
       "ask": "No meetings were listed for a folder question.",
       "forbidden": true,
@@ -102,7 +103,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-SF02",
@@ -130,12 +131,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d053f5f196a653ed52d0af65c4f0c253a8ac1bfe6e8dbbc5165a297f2f818c46"
+    "source_sha256": "dd78d78bb47f2db5c1a5ebd217e549da4fbef1b65c5dfb682d305e96e9d4f210"
   }
 }

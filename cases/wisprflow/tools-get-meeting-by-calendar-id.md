@@ -4,22 +4,20 @@
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: A calendar event's recording is found by its calendar id, and "not recorded" is reported as such.
-- Data check: synthetic: the round's Wispr Flow meeting (owner row 25) exists, with a transcript and a summary
+- Data check: the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary
+- Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
 
 ## Prompt
-we had a call booked as calendar event <the calendar event id> — was it recorded, and what came out of it?
+we had a call booked as the calendar event for {{target:wisprflow.meeting}} — was it recorded, and what came out of it?
 
 ## Items
 - [WF-OC01] blocker · Exactly one get_meeting_by_calendar_id call.
   evidence: count:get_meeting_by_calendar_id == 1
 
-- [WF-OC02] major · It looked the recording up by the calendar event.
-  evidence: count:get_meeting_by_calendar_id == 1
-
-- [WF-OC03] major · The answer says whether it was recorded.
+- [WF-OC02] major · The answer says whether it was recorded.
   evidence: text:any matches /(recorded|not recorded|recording)/i
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
@@ -30,3 +28,6 @@ we had a call booked as calendar event <the calendar event id> — was it record
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+
+- [WF-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

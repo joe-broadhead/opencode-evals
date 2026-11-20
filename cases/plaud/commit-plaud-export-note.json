@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.5 commit set",
   "decision": "In commit mode the export runs: one call, not declined, and the answer names the file it wrote.",
   "data_check": "the test recording has a note and the export folder is writable",
-  "prompt": "save the notes of <the Plaud test recording id> as a markdown file.",
+  "prompt": "save the notes of {{target:plaud.recording}} as a markdown file.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -21,9 +21,13 @@
   "sets": [
     "commit"
   ],
+  "data": "real",
+  "home_files": [
+    "Plaud"
+  ],
   "items": [
     {
-      "id": "PLD-OC01",
+      "id": "PLD-WR01",
       "severity": "blocker",
       "ask": "Exactly one export ran, and it was not declined.",
       "forbidden": false,
@@ -43,7 +47,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 18
     },
     {
       "id": "PLD-PR01",
@@ -74,10 +78,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 22
     },
     {
-      "id": "PLD-OC02",
+      "id": "PLD-CT01",
+      "severity": "major",
+      "ask": "The note landed as a markdown file in the export folder.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "Plaud/**/note/*.md",
+          "op": "exists"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "PLD-OC01",
       "severity": "major",
       "ask": "The answer names the file it wrote.",
       "forbidden": false,
@@ -97,7 +119,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 29
     },
     {
       "id": "PLD-TR01",
@@ -114,7 +136,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 32
     },
     {
       "id": "PLD-SF01",
@@ -132,7 +154,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 36
     },
     {
       "id": "PLD-SF02",
@@ -150,18 +172,50 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 39
+    },
+    {
+      "id": "PLD-SF03",
+      "severity": "major",
+      "ask": "The guard ran and refused no in-scope write.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 42
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 45
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "The export folder is ~/Plaud, outside the working directory the files record walks, so this case grades the call and the answer, not the file.",
-      "line": 38
+      "text": "The export folder is ~/Plaud, so the case declares `Home files: Plaud` and the files record grades the note it wrote.",
+      "line": 49
     }
   ],
   "hashes": {
-    "source_sha256": "67f24928f6710d5c02e817bc4a1f8fb9a18bcd7e72df6c86d1169aa4de4e29dd"
+    "source_sha256": "81c14c6e73c4694f6fa1d51da6d7a2226a57232eecae86349ff7d53139446eb4"
   }
 }

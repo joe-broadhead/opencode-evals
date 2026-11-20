@@ -6,12 +6,12 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 deep: error (live checklist issue-that-does-not-exist)",
   "decision": "A key that does not resolve on the site is reported as not found, after one attempt, and the site is checked before any other theory.",
-  "data_check": "the key DEMO-9999 does not exist on the evals Jira site",
-  "prompt": "what's the status of DEMO-9999?",
+  "data_check": "the fixture holds QLN-1 to QLN-7, so QLN-99 does not exist",
+  "prompt": "what's the status of QLN-99?",
   "controls": [],
   "budgets": {
-    "outer_calls": 10,
-    "inner_calls": 8,
+    "outer_calls": 8,
+    "inner_calls": 6,
     "tokens": 400000,
     "wall_ms": 300000
   },
@@ -21,9 +21,10 @@
   "sets": [
     "deep"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "JRA-OC01",
+      "id": "JRA-ER01",
       "severity": "blocker",
       "ask": "It says the key does not resolve on this site.",
       "forbidden": false,
@@ -35,7 +36,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(not found|doesn't exist|does not exist|no such (issue|work item)|couldn't|could not)[^.\\n]{0,40}(DEMO-9999|issue|work item)",
+            "source": "(not found|doesn't exist|does not exist|no such (issue|work item)|couldn't|could not)[^.\\n]{0,40}(QLN-99|issue|work item)",
             "flags": "i"
           }
         }
@@ -43,10 +44,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "JRA-OC02",
+      "id": "JRA-ER02",
       "severity": "blocker",
       "ask": "It does not invent a status for that key.",
       "forbidden": false,
@@ -58,7 +59,7 @@
           "op": "not-matches",
           "value": {
             "kind": "regex",
-            "source": "DEMO-9999[^.\\n]{0,40}(is|in) (to do|in progress|done|open|closed)",
+            "source": "QLN-99[^.\\n]{0,40}(is|in) (to do|in progress|done|open|closed)",
             "flags": "i"
           }
         }
@@ -66,10 +67,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "JRA-OC03",
+      "id": "JRA-ER03",
       "severity": "major",
       "ask": "It checked the site before blaming anything else.",
       "forbidden": false,
@@ -81,7 +82,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(site|atlassian\\.net|cloudId|DEMO project)",
+            "source": "(quill-labs\\.invalid|site|QLN project)",
             "flags": "i"
           }
         }
@@ -89,10 +90,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
-      "id": "JRA-OC04",
+      "id": "JRA-ER04",
       "severity": "major",
       "ask": "It offers the next step: the key, the project or the site.",
       "forbidden": false,
@@ -112,7 +113,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "JRA-TR01",
@@ -129,7 +130,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "JRA-SF01",
@@ -140,20 +141,20 @@
       "evidence": [
         {
           "kind": "count",
-          "tool": "jira.*",
+          "tool": "getJiraIssue",
           "op": "<=",
-          "value": 4
+          "value": 2
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "JRA-SF02",
       "severity": "blocker",
-      "ask": "Nothing was written: no Jira change, and no other plugin as a route.",
+      "ask": "Nothing was written.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -161,27 +162,33 @@
           "kind": "absent",
           "tool": "write",
           "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "edit",
-          "n": null
-        },
-        {
-          "kind": "absent",
-          "tool": "patch",
-          "n": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
+    },
+    {
+      "id": "JRA-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d1d03db94c2df3c22f2de8946cc9ff128a5db6229d1004f5aa16c2ba928d87ea"
+    "source_sha256": "1a7492cbb7d8f6307aee903c587fa950b11386ba0a89f871b83bb69b3baaccee"
   }
 }

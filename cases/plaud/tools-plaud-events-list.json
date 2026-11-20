@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "PLD-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "PLD-OC02",
+      "id": "PLD-PR01",
       "severity": "major",
       "ask": "The cursor the user gave was passed.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "PLD-OC03",
+      "id": "PLD-OC02",
       "severity": "major",
       "ask": "The answer reports the events in order, or says there are none.",
       "forbidden": false,
@@ -94,7 +95,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "PLD-TR01",
@@ -111,7 +112,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "PLD-SF01",
@@ -139,12 +140,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7ae7c1680f6fd11781a1587fd7957b003c216128efa2c66a971b8b61fe590082"
+    "source_sha256": "5f5e907b04d68faa419fb699c5931701a434a1c12963640199861831f1a5b75b"
   }
 }

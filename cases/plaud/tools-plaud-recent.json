@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "PLD-OC01",
@@ -39,7 +40,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "PLD-OC02",
@@ -62,10 +63,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "PLD-PR01",
+      "id": "PLD-EF01",
       "severity": "major",
       "ask": "It did not read a transcript or the full file for a list.",
       "forbidden": false,
@@ -85,7 +86,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "PLD-TR01",
@@ -102,7 +103,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "PLD-SF01",
@@ -130,12 +131,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d299b09aa52a5d75ce1488e3c3d947c50efbed33d6010c865abba68ac32eb101"
+    "source_sha256": "6d6c0f863f500a54685acd79103ef5b4c96b483228a740c05fc116558a8fc108"
   }
 }

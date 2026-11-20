@@ -5,6 +5,7 @@
 - Source: EVALS-232 §2.3 deep: date window
 - Decision tested: "This week" is the user's local Monday to now, passed as two RFC 3339 UTC instants, and the answer names the window.
 - Data check: the topic has public posts this week
+- Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, billed_calls <= 4, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=x utc-hours=9-17
 - Set: deep
@@ -13,7 +14,7 @@
 what are people posting about <a harmless public topic> this week?
 
 ## Items
-- [X-OC01] blocker · Exactly one bounded search.
+- [X-DT01] blocker · Exactly one bounded search.
   evidence: count:search_posts_all == 1
   evidence: call:search_posts_all#1 args.start_time present
   evidence: call:search_posts_all#1 args.end_time present
@@ -22,10 +23,10 @@ what are people posting about <a harmless public topic> this week?
   evidence: call:search_posts_all#1 args.start_time matches /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/
   evidence: call:search_posts_all#1 args.end_time matches /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/
 
-- [X-OC02] major · The answer names the window it covered.
+- [X-DT02] major · The answer names the window it covered.
   evidence: text:any matches /(this week|since Monday|the last seven days|past week)/i
 
-- [X-OC03] major · It cites posts by handle and link, and says it is a sample.
+- [X-OC01] major · It cites posts by handle and link, and says it is a sample.
   evidence: text:any matches /(sample|not everything|what X returned)/i
 
 - [X-TR01] minor · The x skill was loaded.
@@ -44,3 +45,6 @@ what are people posting about <a harmless public topic> this week?
   evidence: absent:article_create_draft
   evidence: absent:create_users_bookmark
   evidence: absent:write
+
+- [X-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

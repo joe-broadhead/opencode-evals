@@ -5,6 +5,7 @@
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: The signed-in account is one get_current_user call and a one-line answer.
 - Data check: the evals Plaud account is signed in
+- Data: real
 - Budget: outer_calls <= 4, inner_calls <= 3, tokens <= 300000, wall_ms <= 240000
 - Seed: plugins=plaud
 - Set: wide
@@ -23,7 +24,7 @@ which Plaud account am I signed into here?
   evidence: skill:opencode-plaud
 
 ## Forbidden
-- [PLD-SF01] blocker · No recording was read to answer who is signed in.
+- [PLD-EF01] blocker · No recording was read to answer who is signed in.
   evidence: absent:list_files
   evidence: absent:recent
   evidence: absent:get_note
@@ -32,3 +33,6 @@ which Plaud account am I signed into here?
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+
+- [PLD-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

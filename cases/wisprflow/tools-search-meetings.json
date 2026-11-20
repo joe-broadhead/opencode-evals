@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "Meetings by topic are one search_meetings call with a window, not a walk of every meeting.",
-  "data_check": "synthetic: the round's Wispr Flow meeting (owner row 25) exists, with a transcript and a summary",
+  "data_check": "the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary",
   "prompt": "find my meetings about pricing from the last month.",
   "controls": [],
   "budgets": {
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -45,10 +46,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-PR01",
       "severity": "major",
       "ask": "The search carries the topic and a window.",
       "forbidden": false,
@@ -65,10 +66,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-OC02",
       "severity": "major",
       "ask": "The answer lists the meetings with dates and links.",
       "forbidden": false,
@@ -88,7 +89,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "WF-TR01",
@@ -105,7 +106,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-SF01",
@@ -133,12 +134,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "bd9b675d1078928256cd7c935bd905f09d7b1a09976899b8db6fd764bafd00d7"
+    "source_sha256": "6eb2452f3f30415e05da5e7c2e8b10ccab5b7504efd5ae4f8ac9404204b54b90"
   }
 }

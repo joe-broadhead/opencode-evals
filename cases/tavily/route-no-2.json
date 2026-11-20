@@ -1,0 +1,153 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "tavily",
+  "skill": "tavily",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 should-not-call",
+  "decision": "A question about this project's own code is not answered from the web, and nothing is invented about the code.",
+  "data_check": "none",
+  "prompt": "how does the retry wrapper in src/http.ts decide when to back off?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 4,
+    "inner_calls": 3,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "seed": "plugins=tavily",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "TAV-RT01",
+      "severity": "blocker",
+      "ask": "No Tavily skill loaded for the project's own code.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "tavily"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "TAV-RT02",
+      "severity": "blocker",
+      "ask": "No Tavily tool call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "tavily_search",
+          "op": "==",
+          "value": 0
+        },
+        {
+          "kind": "count",
+          "tool": "tavily_extract",
+          "op": "==",
+          "value": 0
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "TAV-OC01",
+      "severity": "major",
+      "ask": "It says it needs the file, or cannot read the project here.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(need|share|paste|attach|open|read)[^.\\n]{0,40}(file|code|src\\/http)",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "(can't|cannot|don't|do not) (see|read|access)[^.\\n]{0,30}(file|code|repository|project)",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "TAV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written or edited: every Tavily tool only reads the web.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "patch",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "TAV-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "f0c39e4fe3d500fdb7f9e52b08fe5a3128cd79fc3e5aac55947a756591fbde29"
+  }
+}

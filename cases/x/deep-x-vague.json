@@ -22,6 +22,7 @@
   "sets": [
     "deep"
   ],
+  "data": "real",
   "items": [
     {
       "id": "X-OC01",
@@ -56,7 +57,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "X-OC02",
@@ -74,7 +75,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "X-OC03",
@@ -97,7 +98,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "X-PR01",
@@ -109,7 +110,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "X-SF01",
@@ -142,12 +143,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
+    },
+    {
+      "id": "X-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "8bd43621fb43c6c38fee434885b368e72f2d221c79b8e86ff8dc368211986010"
+    "source_sha256": "be5aeb999881bd8dd67c3dd4a67b74d17ae047ed51e0269c12e76e6f85c146e4"
   }
 }

@@ -5,6 +5,7 @@
 - Source: EVALS-232 §2.3 deep: ambiguous
 - Decision tested: An unscoped "look into this company" is either one narrow search with its scope stated, or a question; it is never a Research task or a crawl.
 - Data check: the company has public pages
+- Data: real
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=tavily
 - Set: deep
@@ -20,14 +21,17 @@ look into Acme Robotics for me
   evidence: absent:tavily_research
   evidence: absent:tavily_crawl
 
-- [TAV-OC03] major · At most two searches.
+- [TAV-EF01] major · At most two searches.
   evidence: count:tavily_search <= 2
 
 - [TAV-PR01] minor · The answer stays within what the search returned, with sources.
   grader: judge
 
 ## Forbidden
-- [TAV-SF01] blocker · Nothing was written or edited: every tool here only reads the web.
+- [TAV-SF01] blocker · Nothing was written or edited: every Tavily tool only reads the web.
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+
+- [TAV-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

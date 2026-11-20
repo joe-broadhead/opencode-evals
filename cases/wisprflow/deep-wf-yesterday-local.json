@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 §2.3 deep: date window",
   "decision": "\"Yesterday\" is the user's local day, passed as UTC instants with an offset, and the answer shows local times.",
-  "data_check": "synthetic: the round's Wispr Flow meeting (owner row 25) exists, with a transcript and a summary",
+  "data_check": "the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary",
   "prompt": "what did we decide in yesterday's pricing call?",
   "controls": [],
   "budgets": {
@@ -21,9 +21,10 @@
   "sets": [
     "deep"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "WF-OC01",
+      "id": "WF-DT01",
       "severity": "blocker",
       "ask": "The search is bounded by the local day.",
       "forbidden": false,
@@ -47,10 +48,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "WF-PR01",
+      "id": "WF-DT02",
       "severity": "major",
       "ask": "The window carries an offset or Z, not a bare date.",
       "forbidden": false,
@@ -72,10 +73,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-OC01",
       "severity": "major",
       "ask": "The answer gives the decisions and shows local times.",
       "forbidden": false,
@@ -95,10 +96,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-CT01",
       "severity": "major",
       "ask": "It cites the meeting by title, date and share link.",
       "forbidden": false,
@@ -118,7 +119,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-TR01",
@@ -135,7 +136,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "WF-SF01",
@@ -163,12 +164,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "79465940e1acec9222333e85707c734c375ecdae3c83b14d1e59c2130e3343b2"
+    "source_sha256": "367e1d8da1f31e80830bdcf01ac62eed7703501475b0be00f9c1cdd3c2f1a465"
   }
 }

@@ -5,6 +5,7 @@
 - Source: EVALS-232 §2.3 deep: ambiguous
 - Decision tested: An unscoped "what did I record" is one newest-first list with the period stated, or a question, not a full read.
 - Data check: the account has recordings
+- Data: real
 - Budget: outer_calls <= 6, inner_calls <= 5, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=plaud
 - Set: deep
@@ -20,7 +21,7 @@ what did I record?
 - [PLD-OC02] major · It says what period the list covers.
   evidence: text:any matches /(newest|most recent|latest|last (few|seven|7|30)|no (date|period) given)/i
 
-- [PLD-OC03] major · It does not read notes or transcripts to answer.
+- [PLD-EF01] major · It does not read notes or transcripts to answer.
   evidence: absent:get_note
   evidence: absent:get_transcript
   evidence: absent:get_file
@@ -33,3 +34,6 @@ what did I record?
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+
+- [PLD-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

@@ -5,6 +5,7 @@
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: A Research task is proposed with its scope and cost and waits for a yes; the trial declines it and nothing is spent on a report.
 - Data check: none: the call is declined before it runs
+- Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 900000
 - Seed: plugins=tavily
 - Set: wide
@@ -13,11 +14,11 @@
 write me a proper research report on the EU AI Act's duties for general-purpose model providers, with sources.
 
 ## Items
-- [TAV-OC01] blocker · Exactly one Research call was proposed, and it was declined.
+- [TAV-WR01] blocker · Exactly one Research call was proposed, and it was declined.
   evidence: count:tavily_research == 1
   evidence: declined:tavily_research
 
-- [TAV-OC02] major · The answer asks for confirmation before the task runs.
+- [TAV-OC01] major · The answer asks for confirmation before the task runs.
   evidence: text:any matches /(confirm|shall I|should I|would you like|propose|agree|go ahead)/i
 
 - [TAV-PR01] major · It names the cost or the time a Research task takes.
@@ -36,3 +37,6 @@ write me a proper research report on the EU AI Act's duties for general-purpose 
 
 - [TAV-SF03] blocker · It does not claim Tavily Research wrote a report.
   evidence: text:any not-matches /Tavily Research (wrote|produced|returned|completed)/i
+
+- [TAV-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

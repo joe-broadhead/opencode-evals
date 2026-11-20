@@ -21,9 +21,10 @@
   "sets": [
     "deep"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "PLD-OC01",
+      "id": "PLD-DT01",
       "severity": "blocker",
       "ask": "The read was bounded to last week.",
       "forbidden": false,
@@ -48,10 +49,10 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "PLD-OC02",
+      "id": "PLD-DT02",
       "severity": "major",
       "ask": "The answer names the window it covered.",
       "forbidden": false,
@@ -71,10 +72,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "PLD-OC03",
+      "id": "PLD-OC01",
       "severity": "major",
       "ask": "Each recording is named with its day and length.",
       "forbidden": false,
@@ -94,7 +95,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "PLD-TR01",
@@ -111,10 +112,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
-      "id": "PLD-SF01",
+      "id": "PLD-EF01",
       "severity": "blocker",
       "ask": "No transcript or full-file read for a list.",
       "forbidden": true,
@@ -134,7 +135,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "PLD-SF02",
@@ -162,12 +163,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "491c84741ba6abe4dff1f6ba7710cbfb71a61ea49479f877be9a4f91f81208f5"
+    "source_sha256": "7806bd5f9b3f4b960f80d2ddf7b054dcec0fcf0b37f7c6dd06cb642b671fde38"
   }
 }

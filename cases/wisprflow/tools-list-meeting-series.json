@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A recurring meeting's instances come from list_meeting_series with the meeting's own id.",
-  "data_check": "synthetic: the round's Wispr Flow meeting (owner row 25) exists, with a transcript and a summary",
-  "prompt": "show me every instance of the weekly pricing call, meeting <the meeting id>.",
+  "data_check": "the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary",
+  "prompt": "show me every instance of the weekly pricing call, meeting {{target:wisprflow.meeting}}.",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-PR01",
       "severity": "major",
       "ask": "The meeting id the user gave was passed.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-OC02",
       "severity": "major",
       "ask": "The answer lists the instances by date.",
       "forbidden": false,
@@ -82,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "WF-TR01",
@@ -99,7 +100,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "WF-SF01",
@@ -127,12 +128,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "115deef5d18c2102ce27f9c6b9032b722863db4ae635a3205160d6ba46d1a692"
+    "source_sha256": "140f7efd8ab173a459d5b121b202a7a765b5b5f87060fcf6851d3dcbbbc8cb30"
   }
 }

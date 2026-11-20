@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A notes.wisprflow.ai share link is resolved with resolve_share_link, never fetched.",
-  "data_check": "synthetic: a shared note link exists for the round",
-  "prompt": "summarise this shared note: <a notes.wisprflow.ai share link>",
+  "data_check": "a shared note link exists for the round",
+  "prompt": "summarise this shared note: <a notes.wisprflow.ai share link for the round>",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -21,11 +21,12 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
       "severity": "blocker",
-      "ask": "Exactly one resolve_share_link call with the URL.",
+      "ask": "Exactly one resolve_share_link call.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -34,7 +35,20 @@
           "tool": "resolve_share_link",
           "op": "==",
           "value": 1
-        },
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "WF-PR01",
+      "severity": "major",
+      "ask": "The call carried the URL.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
         {
           "kind": "call",
           "tool": "resolve_share_link",
@@ -46,7 +60,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 20
     },
     {
       "id": "WF-OC02",
@@ -69,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 23
     },
     {
       "id": "WF-TR01",
@@ -86,7 +100,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 26
     },
     {
       "id": "WF-SF01",
@@ -104,7 +118,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 30
     },
     {
       "id": "WF-SF02",
@@ -132,12 +146,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 33
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "23c746bf0843e729d1afbf468ca0c5b8806b764a5518ecf8eebf07ec6c59277e"
+    "source_sha256": "981fd4ea7f4768520bb5f7529a39453aac868edf718628098ba5b5130ea513cc"
   }
 }

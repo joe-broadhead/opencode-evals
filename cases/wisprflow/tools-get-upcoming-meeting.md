@@ -4,7 +4,8 @@
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: "My next meeting" is one get_upcoming_meeting call with its pre-read, not a list paged by hand.
-- Data check: synthetic: an upcoming calendar event exists within 168 hours
+- Data check: an upcoming calendar event exists within 168 hours
+- Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
@@ -26,7 +27,7 @@ what's my next meeting? include anything I should read before it.
   evidence: skill:wisprflow
 
 ## Forbidden
-- [WF-SF01] blocker · It did not list the whole calendar for one meeting.
+- [WF-EF01] blocker · It did not list the whole calendar for one meeting.
   evidence: absent:list_upcoming_meetings
   evidence: absent:search_calendar_events
 
@@ -34,3 +35,6 @@ what's my next meeting? include anything I should read before it.
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+
+- [WF-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

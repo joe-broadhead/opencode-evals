@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A note by topic is one search_scratchpad_notes call, then a read of the best hit.",
-  "data_check": "synthetic: a Scratchpad note about the hiring plan exists",
+  "data_check": "a Scratchpad note about the hiring plan exists",
   "prompt": "find my Scratchpad note about the hiring plan.",
   "controls": [],
   "budgets": {
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-PR01",
       "severity": "major",
       "ask": "The query is the user's topic.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-OC02",
       "severity": "major",
       "ask": "The answer names the note it found.",
       "forbidden": false,
@@ -82,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "WF-TR01",
@@ -99,7 +100,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "WF-SF01",
@@ -127,12 +128,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "2d5865dbcaa32ad55ff521c847899c043e0c3aff180565969930227bb0fe0b7c"
+    "source_sha256": "dc9a60524dd0ab09516e7bee65f61f59bbbf50eba7427ec18b4c8a094f3da80d"
   }
 }

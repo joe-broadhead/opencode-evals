@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A cursor feed of meeting events is one events_list call, oldest first.",
-  "data_check": "synthetic: meetings exist after the cursor",
+  "data_check": "meetings exist after the cursor",
   "prompt": "pull the meeting events since <the cursor the last sync returned>, oldest first, for Memory.",
   "controls": [],
   "budgets": {
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-PR01",
       "severity": "major",
       "ask": "The cursor the user gave was passed.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-OC02",
       "severity": "major",
       "ask": "The answer reports the events in order, or says there are none.",
       "forbidden": false,
@@ -94,7 +95,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "WF-TR01",
@@ -111,7 +112,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "WF-SF01",
@@ -139,12 +140,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "43392d89234ee2c40c9dea11474db55e8a47f88e8d522c259ee1564b84223b59"
+    "source_sha256": "6cf91692f4e9de9ec52aae17d9df48e4a21d3511c0212c0ef568c1e0adee0f7b"
   }
 }

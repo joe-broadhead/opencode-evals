@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "The full attendee list comes from get_meeting_participants_enriched, not from a five-attendee search result.",
-  "data_check": "synthetic: the round's Wispr Flow meeting (owner row 25) exists, with a transcript and a summary",
-  "prompt": "who was in the Wispr Flow meeting <the meeting id>? I need the full list, not just the first few.",
+  "data_check": "the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary",
+  "prompt": "who was in the Wispr Flow meeting {{target:wisprflow.meeting}}? I need the full list, not just the first few.",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-PR01",
       "severity": "major",
       "ask": "The meeting id the user gave was passed.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-OC02",
       "severity": "major",
       "ask": "The answer lists attendees and says which one is the user.",
       "forbidden": false,
@@ -82,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "WF-TR01",
@@ -99,10 +100,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
-      "id": "WF-SF01",
+      "id": "WF-EF01",
       "severity": "blocker",
       "ask": "No profile enrichment for a plain attendee list.",
       "forbidden": true,
@@ -117,7 +118,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "WF-SF02",
@@ -145,12 +146,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ec98b95ee8b2a982709ef4c8ead4830999e5968f2e16d8a72bcc31fdb14f238c"
+    "source_sha256": "28904b18adc7d530d4a230774028361242f0f269aa4d431fc162cda589d64202"
   }
 }

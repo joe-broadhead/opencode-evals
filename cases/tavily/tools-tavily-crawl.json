@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "Several pages of one section are crawled with a page limit, and the answer comes from what was read.",
   "data_check": "the guides section is public and mentions retries",
-  "prompt": "read through the guides under <a documentation section URL> and pull out what they say about retries. a handful of pages is plenty.",
+  "prompt": "read through the guides under https://docs.example.org/guides and pull out what they say about retries. a handful of pages is plenty.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "TAV-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "TAV-OC02",
+      "id": "TAV-PR01",
       "severity": "major",
       "ask": "The crawl was bounded by a page limit.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "TAV-OC03",
+      "id": "TAV-OC02",
       "severity": "major",
       "ask": "The answer is about retries, from the pages read.",
       "forbidden": false,
@@ -82,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "TAV-TR01",
@@ -99,7 +100,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "TAV-SF01",
@@ -122,12 +123,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "TAV-SF02",
       "severity": "blocker",
-      "ask": "Nothing was written or edited: every tool here only reads the web.",
+      "ask": "Nothing was written or edited: every Tavily tool only reads the web.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -150,12 +151,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
+    },
+    {
+      "id": "TAV-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "e0fb8d4bc5500a5dc9becfe2465915cf08ce6eb7275d0d07d274bba8dd17d500"
+    "source_sha256": "bf690a171472453e6048ca5e6351b331e8b3a2561c70b9ce38641343f74353cf"
   }
 }

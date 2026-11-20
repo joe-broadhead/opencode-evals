@@ -4,7 +4,8 @@
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: The folder list is one list_folders call, answered with names and ids.
-- Data check: synthetic: the round's folder exists
+- Data check: the round's folder exists
+- Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
@@ -23,7 +24,7 @@ what folders do I have in Wispr Flow?
   evidence: skill:wisprflow
 
 ## Forbidden
-- [WF-SF01] blocker · No meetings were listed for a folder question.
+- [WF-EF01] blocker · No meetings were listed for a folder question.
   evidence: absent:list_folder_meetings
   evidence: absent:search_meetings
 
@@ -31,3 +32,6 @@ what folders do I have in Wispr Flow?
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+
+- [WF-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

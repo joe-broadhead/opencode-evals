@@ -21,6 +21,7 @@
   "sets": [
     "deep"
   ],
+  "data": "own",
   "items": [
     {
       "id": "H-OC01",
@@ -57,7 +58,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "H-OC02",
@@ -80,7 +81,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "H-OC03",
@@ -103,10 +104,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
-      "id": "H-PR01",
+      "id": "H-CT01",
       "severity": "major",
       "ask": "What it reports is cited in the full form (ses_… #seq).",
       "forbidden": false,
@@ -126,7 +127,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "H-TR01",
@@ -143,7 +144,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "H-SF01",
@@ -171,12 +172,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
+    },
+    {
+      "id": "H-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "527f0fb4328cbced85b482b7b2f21471fb16578b8dffcf1387f1b6469096b7b8"
+    "source_sha256": "fd8fc91fcffad416564e6bdb55714bbef9c58b386a1902a4b3f135ff414b6c38"
   }
 }

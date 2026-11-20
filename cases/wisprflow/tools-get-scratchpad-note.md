@@ -4,22 +4,23 @@
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: One Scratchpad note's text comes from get_scratchpad_note by its id.
-- Data check: synthetic: a Scratchpad note named for the round exists
+- Data check: a Scratchpad note named for the round exists
+- Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
 
 ## Prompt
-read my Wispr Flow Scratchpad note <the scratchpad note id> and give me its main points.
+find my Wispr Flow Scratchpad note about the evals round and give me its main points.
 
 ## Items
-- [WF-OC01] blocker · Exactly one get_scratchpad_note call.
+- [WF-OC01] blocker · The note was found and read once.
   evidence: count:get_scratchpad_note == 1
 
-- [WF-OC02] major · The note id the user gave was passed.
+- [WF-PR01] major · The note id the user gave was passed.
   evidence: call:get_scratchpad_note#1 args.note_id present
 
-- [WF-OC03] major · The answer gives the note's points.
+- [WF-OC02] major · The answer gives the note's points.
   evidence: text:any matches /(^|\n)\s*[-*]\s+\S/
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
@@ -30,3 +31,6 @@ read my Wispr Flow Scratchpad note <the scratchpad note id> and give me its main
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+
+- [WF-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

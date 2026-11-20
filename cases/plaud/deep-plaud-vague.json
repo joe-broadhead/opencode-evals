@@ -21,6 +21,7 @@
   "sets": [
     "deep"
   ],
+  "data": "real",
   "items": [
     {
       "id": "PLD-OC01",
@@ -45,7 +46,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "PLD-OC02",
@@ -68,10 +69,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "PLD-OC03",
+      "id": "PLD-EF01",
       "severity": "major",
       "ask": "It does not read notes or transcripts to answer.",
       "forbidden": false,
@@ -96,7 +97,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "PLD-TR01",
@@ -113,7 +114,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "PLD-SF01",
@@ -141,12 +142,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b43a4fd872f6a59c7c7d1d5c2ae547cb2a678ad8a8e63670e25ed90c8c118956"
+    "source_sha256": "84b3d8f7203e09597847d62b9d037ff774340bb487c9af00ec507856fbdc4e7a"
   }
 }

@@ -21,9 +21,10 @@
   "sets": [
     "deep"
   ],
+  "data": "own",
   "items": [
     {
-      "id": "H-OC01",
+      "id": "H-ER01",
       "severity": "blocker",
       "ask": "It says that session was not found.",
       "forbidden": false,
@@ -43,10 +44,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "H-OC02",
+      "id": "H-ER02",
       "severity": "blocker",
       "ask": "It does not invent a decision from that session.",
       "forbidden": false,
@@ -66,10 +67,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "H-OC03",
+      "id": "H-ER03",
       "severity": "major",
       "ask": "It tried at most twice, and offered a search instead.",
       "forbidden": false,
@@ -85,10 +86,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
-      "id": "H-OC04",
+      "id": "H-ER04",
       "severity": "major",
       "ask": "It offers to search by topic instead.",
       "forbidden": false,
@@ -116,7 +117,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "H-TR01",
@@ -133,7 +134,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "H-SF01",
@@ -161,12 +162,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
+    },
+    {
+      "id": "H-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f2eaac5baa4d7a14d3f8f09a980f1e74644bfff50d909413bf15a8fad2a50a66"
+    "source_sha256": "0f016dbd7bd7d45518d50d93dafca66d78faf6584a525bc54732e855d09edad4"
   }
 }

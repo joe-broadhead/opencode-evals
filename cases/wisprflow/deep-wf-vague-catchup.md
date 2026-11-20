@@ -4,7 +4,8 @@
 - Tier: T3
 - Source: EVALS-232 §2.3 deep: ambiguous
 - Decision tested: An unscoped "catch me up" is a question about the period, or one bounded list with the period stated, never a walk of everything.
-- Data check: synthetic: the round's Wispr Flow meeting (owner row 25) exists, with a transcript and a summary
+- Data check: the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary
+- Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: deep
@@ -16,10 +17,10 @@ catch me up on my meetings
 - [WF-OC01] blocker · It asks which period, or states the window it used.
   evidence: text:any matches /(which (period|week|days)|last (week|seven|7|30)|recent|upcoming|\?)/i
 
-- [WF-OC02] blocker · It did not read every transcript.
+- [WF-EF01] blocker · It did not read every transcript.
   evidence: count:get_meeting <= 2
 
-- [WF-OC03] major · At most two list calls.
+- [WF-EF02] major · At most two list calls.
   evidence: count:search_meetings <= 2
   evidence: count:list_upcoming_meetings <= 1
 
@@ -31,3 +32,6 @@ catch me up on my meetings
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+
+- [WF-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

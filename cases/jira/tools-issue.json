@@ -4,10 +4,10 @@
   "plugin": "jira",
   "skill": "jira",
   "tier": "T3",
-  "source": "EVALS-232 wide: one request per tool",
+  "source": "EVALS-232 wide: one request per tool (fake mode)",
   "decision": "One item is read with getJiraIssue, named by key and summary.",
-  "data_check": "the test project and its board, sprint and version exist on the evals Jira site",
-  "prompt": "what's the status of DEMO-1, and who is on it?",
+  "data_check": "the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7",
+  "prompt": "what's the status of QLN-1, and what is it about?",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -21,48 +21,64 @@
   "sets": [
     "wide"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "JRA-OC01",
       "severity": "blocker",
-      "ask": "Jira was read through the plugin.",
+      "ask": "The read ran once, with getJiraIssue.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "count",
-          "tool": "jira.*",
-          "op": ">=",
+          "tool": "getJiraIssue",
+          "op": "==",
           "value": 1
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "JRA-OC02",
-      "severity": "major",
-      "ask": "The answer carries what this read returned.",
+      "severity": "blocker",
+      "ask": "The answer states what the fixture holds.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "text",
+          "kind": "fixture",
           "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(DEMO-1|status|assignee)",
-            "flags": "i"
-          }
+          "plugin": "jira",
+          "name": "highest_priority_summary"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
+    },
+    {
+      "id": "JRA-CT01",
+      "severity": "major",
+      "ask": "The answer names the item by its key.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "fixture",
+          "span": "any",
+          "plugin": "jira",
+          "name": "highest_priority_key"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
     },
     {
       "id": "JRA-TR01",
@@ -79,12 +95,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 26
     },
     {
       "id": "JRA-SF01",
       "severity": "blocker",
-      "ask": "Nothing was written: this is a read, and no other tool changes anything.",
+      "ask": "Nothing was written: this is a read.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -107,18 +123,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 30
+    },
+    {
+      "id": "JRA-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
     }
   ],
   "oracle": [],
-  "notes": [
-    {
-      "id": null,
-      "text": "Jira's tool names are camelCase, which the evidence grammar's tool clauses do not accept yet (see the lane report): this case grades the namespace and the answer, not the exact tool.",
-      "line": 32
-    }
-  ],
+  "notes": [],
   "hashes": {
-    "source_sha256": "51a0d95a958abde17bb4330dee0fb3a318971e2c1bf72d7d4379371967854ba7"
+    "source_sha256": "8958af90d7de52e34864ee3cabf0ded4f1c4eb3080936d321b355b98ef25f0d8"
   }
 }

@@ -1,0 +1,173 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-1",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 should-not-call",
+  "decision": "A meeting question is the notes plugins': no X call, and no invented agreement.",
+  "data_check": "none",
+  "prompt": "what did we decide in yesterday's pricing meeting?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "seed": "plugins=x",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "X-RT01",
+      "severity": "blocker",
+      "ask": "No x skill loaded for a meeting question.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "x"
+        },
+        {
+          "kind": "absent-skill",
+          "skill": "x-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "X-RT02",
+      "severity": "blocker",
+      "ask": "No X tool call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "search_posts_all",
+          "op": "==",
+          "value": 0
+        },
+        {
+          "kind": "count",
+          "tool": "get_posts_by_id",
+          "op": "==",
+          "value": 0
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "X-OC01",
+      "severity": "blocker",
+      "ask": "It does not state a decision as fact.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "(^|[.!?]\\s+|\\n\\s*[-*]?\\s*)(we|you|the team) (agreed|decided|settled on)\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "X-OC02",
+      "severity": "major",
+      "ask": "It points at the meeting notes, or asks which notes app holds them.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(granola|wispr ?flow|meeting notes|notes app)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No write of any kind.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "create_posts",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_create_draft",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "create_users_bookmark",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
+    },
+    {
+      "id": "X-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "0afbc4f80ca6bc7822c5137cab1f1b796db19b0505f56ecfab66a1edced59b9a"
+  }
+}

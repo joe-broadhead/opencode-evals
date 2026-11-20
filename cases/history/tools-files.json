@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "own",
   "items": [
     {
       "id": "H-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "H-OC02",
+      "id": "H-PR01",
       "severity": "major",
       "ask": "The read was limited to sessions that changed the file.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "H-OC03",
+      "id": "H-OC02",
       "severity": "blocker",
       "ask": "It reports eight sessions.",
       "forbidden": false,
@@ -82,10 +83,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
-      "id": "H-OC04",
+      "id": "H-OC03",
       "severity": "minor",
       "ask": "It names what some of the changes were.",
       "forbidden": false,
@@ -105,10 +106,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
-      "id": "H-PR01",
+      "id": "H-CT01",
       "severity": "major",
       "ask": "Each session it reports is cited in the full form (ses_… #seq).",
       "forbidden": false,
@@ -128,7 +129,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "H-TR01",
@@ -145,7 +146,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 31
+      "line": 32
     },
     {
       "id": "H-SF01",
@@ -173,10 +174,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 36
     },
     {
-      "id": "H-SF05",
+      "id": "H-SF02",
       "severity": "blocker",
       "ask": "It pinned nothing: the user asked a question.",
       "forbidden": true,
@@ -191,12 +192,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 40
+      "line": 41
+    },
+    {
+      "id": "H-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 44
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "94473b7c4258cc9d368078d0c6078f856779be2325989ada3a48034d16ffa888"
+    "source_sha256": "400019678c9ea017b4ec1f1c6fc29eab1d470409aeb2261a19e14d1ddab39407"
   }
 }

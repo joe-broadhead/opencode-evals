@@ -4,22 +4,20 @@
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: One calendar event's details come from get_calendar_event, with its attendees and location.
-- Data check: synthetic: the round's Wispr Flow meeting (owner row 25) exists, with a transcript and a summary
+- Data check: the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary
+- Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
 
 ## Prompt
-pull up the calendar event <the calendar event id> and tell me who is invited and where it is.
+pull up the calendar event for {{target:wisprflow.meeting}} and tell me who is invited and where it is.
 
 ## Items
 - [WF-OC01] blocker · Exactly one get_calendar_event call.
   evidence: count:get_calendar_event == 1
 
-- [WF-OC02] major · It read one event, for the id the user gave.
-  evidence: count:get_calendar_event == 1
-
-- [WF-OC03] major · The answer names attendees and a location.
+- [WF-OC02] major · The answer names attendees and a location.
   evidence: text:any matches /(@|attendee|invited|location|room|meet\.google|zoom)/i
 
 - [WF-TR01] minor · The wisprflow skill was loaded.
@@ -30,3 +28,6 @@ pull up the calendar event <the calendar event id> and tell me who is invited an
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+
+- [WF-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

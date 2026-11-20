@@ -21,9 +21,10 @@
   "sets": [
     "commit"
   ],
+  "data": "own",
   "items": [
     {
-      "id": "H-OC01",
+      "id": "H-WR01",
       "severity": "blocker",
       "ask": "Exactly one pin ran, and it was not declined.",
       "forbidden": false,
@@ -43,7 +44,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "H-PR01",
@@ -77,10 +78,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "H-OC02",
+      "id": "H-OC01",
       "severity": "major",
       "ask": "The answer says the range is pinned.",
       "forbidden": false,
@@ -100,7 +101,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "H-TR01",
@@ -117,7 +118,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "H-SF01",
@@ -145,12 +146,50 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
+    },
+    {
+      "id": "H-SF02",
+      "severity": "major",
+      "ask": "The guard ran and refused no in-scope write.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
+    },
+    {
+      "id": "H-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 41
     }
   ],
   "oracle": [],
-  "notes": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "The pin touches only the trial's own session, so the commit plan marks it local: no target alias.",
+      "line": 45
+    }
+  ],
   "hashes": {
-    "source_sha256": "0ee7635fad468fdf80136084ffa53bd8ae9db805e449e49e197147fcb1566625"
+    "source_sha256": "3d880c88c44bbcc806783a8e2f35a94e158392b0acb74f278d593943660a664f"
   }
 }

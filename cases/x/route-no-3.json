@@ -1,0 +1,146 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-3",
+  "plugin": "x",
+  "skill": "x",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 should-not-call",
+  "decision": "Mail is Google Workspace's: no X lookup for an email question.",
+  "data_check": "none",
+  "prompt": "find the invoice email from Acme and tell me the amount",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000,
+    "wall_ms": 240000
+  },
+  "seed": "plugins=x,gws",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "X-RT01",
+      "severity": "blocker",
+      "ask": "No x skill loaded for a mail question.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-skill",
+          "skill": "x"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "X-RT02",
+      "severity": "blocker",
+      "ask": "No X tool call.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "get_posts_by_id",
+          "op": "==",
+          "value": 0
+        },
+        {
+          "kind": "count",
+          "tool": "search_posts_all",
+          "op": "==",
+          "value": 0
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "X-OC01",
+      "severity": "major",
+      "ask": "It uses Gmail, or says it cannot reach the mailbox.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(gmail|google workspace|mailbox|inbox)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "X-SF01",
+      "severity": "blocker",
+      "ask": "No write of any kind.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "create_posts",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_create_draft",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "create_users_bookmark",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "X-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "137bbe284ae08a153cdb5982a2b59a6ec37e352c464c7a09711959a4afa7681a"
+  }
+}

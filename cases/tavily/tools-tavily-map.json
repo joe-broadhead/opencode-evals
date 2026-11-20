@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "Which pages a site has is a map, answered as URLs without reading the pages.",
   "data_check": "the site publishes an index of its pages",
-  "prompt": "list the pages on <a documentation site URL> that cover webhooks. I only want the URLs.",
+  "prompt": "list the pages on https://docs.example.org that cover webhooks. I only want the URLs.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "TAV-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "TAV-OC02",
+      "id": "TAV-PR01",
       "severity": "major",
       "ask": "The call named the site the user gave.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "TAV-OC03",
+      "id": "TAV-OC02",
       "severity": "major",
       "ask": "The answer lists several page URLs.",
       "forbidden": false,
@@ -83,7 +84,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "TAV-TR01",
@@ -100,7 +101,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "TAV-SF01",
@@ -118,7 +119,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "TAV-SF02",
@@ -141,12 +142,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
       "id": "TAV-SF03",
       "severity": "blocker",
-      "ask": "Nothing was written or edited: every tool here only reads the web.",
+      "ask": "Nothing was written or edited: every Tavily tool only reads the web.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -169,12 +170,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 37
+    },
+    {
+      "id": "TAV-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 42
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "00c0d72aa4d8e6aae5d30b3c598ad4880a953a485175931adbfa8ef77f5ce055"
+    "source_sha256": "73468f42d6cb738cb2d6e8ec3e289ba3f6c8dc75726eda8b5bf45362d4577efe"
   }
 }

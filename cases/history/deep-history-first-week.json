@@ -21,9 +21,10 @@
   "sets": [
     "deep"
   ],
+  "data": "own",
   "items": [
     {
-      "id": "H-OC01",
+      "id": "H-DT01",
       "severity": "blocker",
       "ask": "It listed sessions by a bounded window, not by searching for the words.",
       "forbidden": false,
@@ -39,7 +40,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "H-PR01",
@@ -67,10 +68,10 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "H-OC02",
+      "id": "H-DT02",
       "severity": "major",
       "ask": "The answer names the window and the days.",
       "forbidden": false,
@@ -90,10 +91,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
-      "id": "H-OC03",
+      "id": "H-CT01",
       "severity": "major",
       "ask": "Each session it reports is cited by its id.",
       "forbidden": false,
@@ -113,7 +114,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "H-TR01",
@@ -130,7 +131,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "H-SF01",
@@ -158,12 +159,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
+    },
+    {
+      "id": "H-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7303d53c4919cb738b959d90de3a1ebe2ce15f896b32628f03678f39292be089"
+    "source_sha256": "6d67ee3740c6fb4c3f624fccbca93ab1d32c1c8022a11b15a526f5391deea546"
   }
 }

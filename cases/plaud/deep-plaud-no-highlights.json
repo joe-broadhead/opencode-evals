@@ -7,7 +7,7 @@
   "source": "EVALS-232 §2.3 deep: error",
   "decision": "A block the recording does not have is reported as absent, not filled in and not retried in a loop.",
   "data_check": "the test recording has no mark_memo block",
-  "prompt": "what were the flagged moments in <the Plaud test recording id>? I pressed the highlight button a few times.",
+  "prompt": "what were the flagged moments in {{target:plaud.recording}}? I pressed the highlight button a few times.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -21,9 +21,10 @@
   "sets": [
     "deep"
   ],
+  "data": "real",
   "items": [
     {
-      "id": "PLD-OC01",
+      "id": "PLD-ER01",
       "severity": "blocker",
       "ask": "It asked for the mark_memo block.",
       "forbidden": false,
@@ -44,10 +45,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "PLD-OC02",
+      "id": "PLD-ER02",
       "severity": "blocker",
       "ask": "It says there are no flagged moments, rather than inventing some.",
       "forbidden": false,
@@ -67,10 +68,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "PLD-OC03",
+      "id": "PLD-ER03",
       "severity": "major",
       "ask": "It read the block at most twice.",
       "forbidden": false,
@@ -86,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "PLD-TR01",
@@ -103,7 +104,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "PLD-SF01",
@@ -126,7 +127,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "PLD-SF02",
@@ -154,12 +155,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "fd35a6fa2e724f1466e562f12f236c46dc081f50efda4870e1b03f16c1081c25"
+    "source_sha256": "9fb291092bad76f7b210292921131dba87d3e5908493a2868ad58c8da1e1708d"
   }
 }

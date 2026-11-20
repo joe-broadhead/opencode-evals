@@ -4,10 +4,10 @@
   "plugin": "jira",
   "skill": "jira",
   "tier": "T3",
-  "source": "EVALS-232 wide: one request per tool",
-  "decision": "A set question is one bounded JQL search, and the answer gives the JQL and the count.",
-  "data_check": "the test project and its board, sprint and version exist on the evals Jira site",
-  "prompt": "how many open bugs are in DEMO? give me the JQL you used.",
+  "source": "EVALS-232 wide: one request per tool (fake mode)",
+  "decision": "A set question is one bounded JQL search, and the answer gives the JQL and the fixture's count.",
+  "data_check": "the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7",
+  "prompt": "how many items are in progress in QLN? give me the JQL you used.",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -21,48 +21,45 @@
   "sets": [
     "wide"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "JRA-OC01",
       "severity": "blocker",
-      "ask": "Jira was read through the plugin.",
+      "ask": "The read ran once, with searchJiraIssuesUsingJql.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "count",
-          "tool": "jira.*",
-          "op": ">=",
+          "tool": "searchJiraIssuesUsingJql",
+          "op": "==",
           "value": 1
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "JRA-OC02",
-      "severity": "major",
-      "ask": "The answer carries what this read returned.",
+      "severity": "blocker",
+      "ask": "The answer states what the fixture holds.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "text",
+          "kind": "fixture",
           "span": "any",
-          "op": "matches",
-          "value": {
-            "kind": "regex",
-            "source": "(project ?= ?\"?DEMO|JQL|\\b[0-9]+\\b)",
-            "flags": "i"
-          }
+          "plugin": "jira",
+          "name": "in_progress_count"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "JRA-PR01",
@@ -77,7 +74,7 @@
           "op": "matches",
           "value": {
             "kind": "regex",
-            "source": "(project\\s*=\\s*\"?DEMO|issuetype\\s*=\\s*\"?Bug|statusCategory)",
+            "source": "(project\\s*=\\s*\"?QLN|status\\s*=\\s*\"?In Progress|JQL)",
             "flags": "i"
           }
         }
@@ -85,7 +82,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "JRA-TR01",
@@ -102,12 +99,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "JRA-SF01",
       "severity": "blocker",
-      "ask": "Nothing was written: this is a read, and no other tool changes anything.",
+      "ask": "Nothing was written: this is a read.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -130,18 +127,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
-    }
-  ],
-  "oracle": [],
-  "notes": [
+      "line": 30
+    },
     {
-      "id": null,
-      "text": "Jira's tool names are camelCase, which the evidence grammar's tool clauses do not accept yet (see the lane report): this case grades the namespace and the answer, not the exact tool.",
+      "id": "JRA-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
       "line": 35
     }
   ],
+  "oracle": [],
+  "notes": [],
   "hashes": {
-    "source_sha256": "b71ec06d66cdddc35fd97e8dc92202ef58512305ed0c7ea2b5fefaba2d84edc8"
+    "source_sha256": "62db291ef5f2477eed0de28a73dc51569bb30f6ed228504b6701d04abb66584b"
   }
 }

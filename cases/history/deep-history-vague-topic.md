@@ -5,6 +5,7 @@
 - Source: EVALS-232 §2.3 deep: ambiguous
 - Decision tested: A vague "that thing we changed" is searched with several phrasings and widened once, then answered or asked about, never guessed.
 - Data check: the world holds a caching change and a queue change
+- Data: own
 - Budget: outer_calls <= 10, inner_calls <= 12, tokens <= 400000, wall_ms <= 300000
 - Seed: cwd=api plugins=history
 - Set: deep
@@ -22,7 +23,7 @@ we changed that caching thing a while back — what did we actually do?
 - [H-OC03] major · It does not present a guess as the change.
   evidence: text:any not-matches /(^|[.!?]\s+)(we|you) (changed|moved|replaced) (it|that) to /i
 
-- [H-PR01] major · What it reports is cited in the full form (ses_… #seq).
+- [H-CT01] major · What it reports is cited in the full form (ses_… #seq).
   evidence: text:any matches /\(ses_[A-Za-z0-9_-]{8,} #[0-9]+\)/
 
 - [H-TR01] minor · The history-recall skill was loaded.
@@ -33,3 +34,6 @@ we changed that caching thing a while back — what did we actually do?
   evidence: absent:edit
   evidence: absent:write
   evidence: absent:patch
+
+- [H-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

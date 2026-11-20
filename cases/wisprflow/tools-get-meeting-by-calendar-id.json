@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A calendar event's recording is found by its calendar id, and \"not recorded\" is reported as such.",
-  "data_check": "synthetic: the round's Wispr Flow meeting (owner row 25) exists, with a transcript and a summary",
-  "prompt": "we had a call booked as calendar event <the calendar event id> — was it recorded, and what came out of it?",
+  "data_check": "the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary",
+  "prompt": "we had a call booked as the calendar event for {{target:wisprflow.meeting}} — was it recorded, and what came out of it?",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -39,29 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "WF-OC02",
-      "severity": "major",
-      "ask": "It looked the recording up by the calendar event.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "get_meeting_by_calendar_id",
-          "op": "==",
-          "value": 1
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
-      "id": "WF-OC03",
       "severity": "major",
       "ask": "The answer says whether it was recorded.",
       "forbidden": false,
@@ -81,7 +63,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 20
     },
     {
       "id": "WF-TR01",
@@ -98,7 +80,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "WF-SF01",
@@ -126,12 +108,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 27
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "72614a493d72260e653fbd635f915633663a7cadfff8c2df131592678335097a"
+    "source_sha256": "ae3296c6db42f68389e951d89ba83e18958e5eff44f179e13c4c4f7b37684036"
   }
 }

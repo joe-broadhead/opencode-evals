@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A folder's meetings come from list_folders then list_folder_meetings with that folder's id.",
-  "data_check": "synthetic: a Wispr Flow folder named for the round exists with one meeting",
-  "prompt": "list the meetings in my <the evals-232 Wispr Flow folder> folder.",
+  "data_check": "a Wispr Flow folder named for the round exists with one meeting",
+  "prompt": "list the meetings in my evals-232 folder.",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -45,10 +46,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-PR01",
       "severity": "major",
       "ask": "The listing passed that folder's id.",
       "forbidden": false,
@@ -65,10 +66,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-OC02",
       "severity": "major",
       "ask": "The answer names the folder and its meetings.",
       "forbidden": false,
@@ -88,7 +89,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "WF-TR01",
@@ -105,7 +106,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "WF-SF01",
@@ -133,12 +134,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7e17bc7d48f0b3d13a444a09f2ba9f126229f315cd21417cac81429a3d81f821"
+    "source_sha256": "e7ad12f2654f8b01b4c087718efd1aab90fa7f91389a921f2d2bb578743626be"
   }
 }

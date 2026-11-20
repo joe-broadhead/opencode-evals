@@ -22,6 +22,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "X-OC01",
@@ -40,7 +41,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "X-PR01",
@@ -60,7 +61,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "X-OC02",
@@ -83,10 +84,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
-      "id": "X-PR02",
+      "id": "X-CT01",
       "severity": "minor",
       "ask": "The answer ends with the plugin's cost line.",
       "forbidden": false,
@@ -106,7 +107,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "X-TR01",
@@ -123,7 +124,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
     },
     {
       "id": "X-SF01",
@@ -161,10 +162,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 33
     },
     {
-      "id": "X-SF02",
+      "id": "X-EF01",
       "severity": "blocker",
       "ask": "It did not page on to be thorough.",
       "forbidden": true,
@@ -180,7 +181,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 39
+      "line": 40
+    },
+    {
+      "id": "X-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 43
     }
   ],
   "oracle": [],
@@ -188,10 +205,10 @@
     {
       "id": null,
       "text": "X's own tool descriptions are long; the skill's names and fields are exact, so a search() for this tool is a wasted step, not a failure.",
-      "line": 43
+      "line": 47
     }
   ],
   "hashes": {
-    "source_sha256": "7652e3bb49695ab19673ffd7321ab6336b8326a2f83bde40c721587314db0b18"
+    "source_sha256": "e226093b0e2ebf5cd1d10d25357137b656f8e1c3332d1136619c9d112d4ea14c"
   }
 }

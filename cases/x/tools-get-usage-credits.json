@@ -22,6 +22,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "X-OC01",
@@ -40,7 +41,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "X-OC02",
@@ -63,7 +64,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "X-TR01",
@@ -80,7 +81,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "X-SF01",
@@ -118,10 +119,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
-      "id": "X-SF02",
+      "id": "X-EF01",
       "severity": "blocker",
       "ask": "It did not page on to be thorough.",
       "forbidden": true,
@@ -137,7 +138,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
+    },
+    {
+      "id": "X-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 37
     }
   ],
   "oracle": [],
@@ -145,10 +162,10 @@
     {
       "id": null,
       "text": "X's own tool descriptions are long; the skill's names and fields are exact, so a search() for this tool is a wasted step, not a failure.",
-      "line": 37
+      "line": 41
     }
   ],
   "hashes": {
-    "source_sha256": "266d109c94c1f4d96334f5d7035665122c8202d5d3f696b55c73e67825f22c18"
+    "source_sha256": "9fff401488c56faf5c79b3d45a40e5c3ffe3eb556c5109779aef84c2392ab72f"
   }
 }

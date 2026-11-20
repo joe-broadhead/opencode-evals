@@ -22,6 +22,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "X-OC01",
@@ -40,7 +41,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "X-OC02",
@@ -63,10 +64,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "X-PR02",
+      "id": "X-CT01",
       "severity": "minor",
       "ask": "The answer ends with the plugin's cost line.",
       "forbidden": false,
@@ -86,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "X-TR01",
@@ -103,7 +104,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "X-SF01",
@@ -141,10 +142,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
-      "id": "X-SF02",
+      "id": "X-EF01",
       "severity": "blocker",
       "ask": "It did not page on to be thorough.",
       "forbidden": true,
@@ -160,7 +161,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 36
+      "line": 37
+    },
+    {
+      "id": "X-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 40
     }
   ],
   "oracle": [],
@@ -168,10 +185,10 @@
     {
       "id": null,
       "text": "X's own tool descriptions are long; the skill's names and fields are exact, so a search() for this tool is a wasted step, not a failure.",
-      "line": 40
+      "line": 44
     }
   ],
   "hashes": {
-    "source_sha256": "9ae8ff49a09dfd6537bb694e3c148d1d6583e7395b2c0f9f6e0c1d24260c9252"
+    "source_sha256": "e11277e4510748d3e77710d57d607d924f2300583a3eea0e0d9a3fb8d9b9054a"
   }
 }

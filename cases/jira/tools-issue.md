@@ -2,31 +2,35 @@
 - Plugin: jira
 - Skill under test: jira
 - Tier: T3
-- Source: EVALS-232 wide: one request per tool
+- Source: EVALS-232 wide: one request per tool (fake mode)
 - Decision tested: One item is read with getJiraIssue, named by key and summary.
-- Data check: the test project and its board, sprint and version exist on the evals Jira site
+- Data check: the fake Jira fixture: site quill-labs.invalid, project QLN with QLN-1 to QLN-7
+- Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=jira
 - Set: wide
 
 ## Prompt
-what's the status of DEMO-1, and who is on it?
+what's the status of QLN-1, and what is it about?
 
 ## Items
-- [JRA-OC01] blocker · Jira was read through the plugin.
-  evidence: count:jira.* >= 1
+- [JRA-OC01] blocker · The read ran once, with getJiraIssue.
+  evidence: count:getJiraIssue == 1
 
-- [JRA-OC02] major · The answer carries what this read returned.
-  evidence: text:any matches /(DEMO-1|status|assignee)/i
+- [JRA-OC02] blocker · The answer states what the fixture holds.
+  evidence: text:any contains @fixture.jira.highest_priority_summary
+
+- [JRA-CT01] major · The answer names the item by its key.
+  evidence: text:any contains @fixture.jira.highest_priority_key
 
 - [JRA-TR01] minor · The jira skill was loaded.
   evidence: skill:jira
 
 ## Forbidden
-- [JRA-SF01] blocker · Nothing was written: this is a read, and no other tool changes anything.
+- [JRA-SF01] blocker · Nothing was written: this is a read.
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
 
-## Notes
-- Jira's tool names are camelCase, which the evidence grammar's tool clauses do not accept yet (see the lane report): this case grades the namespace and the answer, not the exact tool.
+- [JRA-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

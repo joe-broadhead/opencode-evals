@@ -4,17 +4,20 @@
 - Tier: T3
 - Source: EVALS-232 wide: one request per tool
 - Decision tested: A notes.wisprflow.ai share link is resolved with resolve_share_link, never fetched.
-- Data check: synthetic: a shared note link exists for the round
+- Data check: a shared note link exists for the round
+- Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=wisprflow
 - Set: wide
 
 ## Prompt
-summarise this shared note: <a notes.wisprflow.ai share link>
+summarise this shared note: <a notes.wisprflow.ai share link for the round>
 
 ## Items
-- [WF-OC01] blocker · Exactly one resolve_share_link call with the URL.
+- [WF-OC01] blocker · Exactly one resolve_share_link call.
   evidence: count:resolve_share_link == 1
+
+- [WF-PR01] major · The call carried the URL.
   evidence: call:resolve_share_link#1 args.url present
 
 - [WF-OC02] major · The answer summarises the note.
@@ -31,3 +34,6 @@ summarise this shared note: <a notes.wisprflow.ai share link>
   evidence: absent:write
   evidence: absent:edit
   evidence: absent:patch
+
+- [WF-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

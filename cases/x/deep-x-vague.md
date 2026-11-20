@@ -5,6 +5,7 @@
 - Source: EVALS-232 §2.3 deep: ambiguous
 - Decision tested: An unscoped "what's happening on X" asks for a topic, or gives trends labelled as X's, without a broad paid search.
 - Data check: none
+- Data: real
 - Budget: outer_calls <= 8, inner_calls <= 6, billed_calls <= 4, tokens <= 400000, wall_ms <= 300000
 - Seed: plugins=x
 - Set: deep
@@ -31,3 +32,6 @@ what's happening on X today?
   evidence: absent:article_create_draft
   evidence: absent:create_users_bookmark
   evidence: absent:write
+
+- [X-RB01] major · No call named a tool that does not exist.
+  evidence: unknown-tool:none

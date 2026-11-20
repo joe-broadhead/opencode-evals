@@ -7,7 +7,7 @@
   "source": "EVALS-232 wide: one request per tool",
   "decision": "A summary and its action items come from the note, not from the transcript.",
   "data_check": "the test recording has a note with action items",
-  "prompt": "summarise my Plaud recording <the Plaud test recording id> and list its action items.",
+  "prompt": "summarise my Plaud recording {{target:plaud.recording}} and list its action items.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "PLD-OC01",
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "PLD-OC02",
+      "id": "PLD-PR01",
       "severity": "major",
       "ask": "The call names the recording the user gave.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "PLD-OC03",
+      "id": "PLD-OC02",
       "severity": "major",
       "ask": "The answer gives a summary and action items.",
       "forbidden": false,
@@ -82,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "PLD-TR01",
@@ -99,7 +100,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "PLD-SF01",
@@ -122,7 +123,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "PLD-SF02",
@@ -150,12 +151,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
+    },
+    {
+      "id": "PLD-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ffe073e3f10acd3b911fa3deba41d64ec44a57fcb8637953897c4f68f492db87"
+    "source_sha256": "437f83e8e82bc06ac77774e14f983d1d32234f1a5d0d5249e9e911e727d8330a"
   }
 }

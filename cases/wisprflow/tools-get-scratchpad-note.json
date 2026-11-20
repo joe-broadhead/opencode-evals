@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "One Scratchpad note's text comes from get_scratchpad_note by its id.",
-  "data_check": "synthetic: a Scratchpad note named for the round exists",
-  "prompt": "read my Wispr Flow Scratchpad note <the scratchpad note id> and give me its main points.",
+  "data_check": "a Scratchpad note named for the round exists",
+  "prompt": "find my Wispr Flow Scratchpad note about the evals round and give me its main points.",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -21,11 +21,12 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
       "severity": "blocker",
-      "ask": "Exactly one get_scratchpad_note call.",
+      "ask": "The note was found and read once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -39,10 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "WF-OC02",
+      "id": "WF-PR01",
       "severity": "major",
       "ask": "The note id the user gave was passed.",
       "forbidden": false,
@@ -59,10 +60,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "WF-OC03",
+      "id": "WF-OC02",
       "severity": "major",
       "ask": "The answer gives the note's points.",
       "forbidden": false,
@@ -82,7 +83,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "WF-TR01",
@@ -99,7 +100,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
       "id": "WF-SF01",
@@ -127,12 +128,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 35
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5e350916361edd4db661a52c85884f02dd3eb86072aaba4fe644349465fbaffe"
+    "source_sha256": "17b5ec9e06a0ea6d0c859ceabbfbd7a62844b6626fea090cd0275081ad7327e1"
   }
 }

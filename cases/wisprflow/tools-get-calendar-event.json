@@ -6,8 +6,8 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "One calendar event's details come from get_calendar_event, with its attendees and location.",
-  "data_check": "synthetic: the round's Wispr Flow meeting (owner row 25) exists, with a transcript and a summary",
-  "prompt": "pull up the calendar event <the calendar event id> and tell me who is invited and where it is.",
+  "data_check": "the round's Wispr Flow meeting exists (owner row 25), with a transcript and a summary",
+  "prompt": "pull up the calendar event for {{target:wisprflow.meeting}} and tell me who is invited and where it is.",
   "controls": [],
   "budgets": {
     "outer_calls": 8,
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -39,29 +40,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "WF-OC02",
-      "severity": "major",
-      "ask": "It read one event, for the id the user gave.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "count",
-          "tool": "get_calendar_event",
-          "op": "==",
-          "value": 1
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 19
-    },
-    {
-      "id": "WF-OC03",
       "severity": "major",
       "ask": "The answer names attendees and a location.",
       "forbidden": false,
@@ -81,7 +63,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 20
     },
     {
       "id": "WF-TR01",
@@ -98,7 +80,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 23
     },
     {
       "id": "WF-SF01",
@@ -126,12 +108,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 27
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "6999f4fbd6f141d18b2a0447b99657afd5f1805b179734e8886122381052bad0"
+    "source_sha256": "782aa50c20796a8c69e39f892fc5599d71790f4f4a42871103146b818b1ec1be"
   }
 }

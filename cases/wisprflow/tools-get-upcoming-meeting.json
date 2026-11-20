@@ -6,7 +6,7 @@
   "tier": "T3",
   "source": "EVALS-232 wide: one request per tool",
   "decision": "\"My next meeting\" is one get_upcoming_meeting call with its pre-read, not a list paged by hand.",
-  "data_check": "synthetic: an upcoming calendar event exists within 168 hours",
+  "data_check": "an upcoming calendar event exists within 168 hours",
   "prompt": "what's my next meeting? include anything I should read before it.",
   "controls": [],
   "budgets": {
@@ -21,6 +21,7 @@
   "sets": [
     "wide"
   ],
+  "data": "real",
   "items": [
     {
       "id": "WF-OC01",
@@ -39,7 +40,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "WF-OC02",
@@ -62,7 +63,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "WF-OC03",
@@ -85,7 +86,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "WF-TR01",
@@ -102,10 +103,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
     },
     {
-      "id": "WF-SF01",
+      "id": "WF-EF01",
       "severity": "blocker",
       "ask": "It did not list the whole calendar for one meeting.",
       "forbidden": true,
@@ -125,7 +126,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 30
     },
     {
       "id": "WF-SF02",
@@ -153,12 +154,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 33
+      "line": 34
+    },
+    {
+      "id": "WF-RB01",
+      "severity": "major",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5f63945edcde08d3aa20648f81064101443505136ecb2b24bfe91d849f561f79"
+    "source_sha256": "ac9ab798b843e9bdb0d58fd1f9c48c24b6c3af252dd487091ae4b04531873550"
   }
 }
