@@ -8,7 +8,7 @@
 //             and the one connection to an allow-listed host is a CONNECT handshake with no request in it.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs"
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { homedir, networkInterfaces, tmpdir } from "node:os"
 import { connect } from "node:net"
@@ -18,7 +18,7 @@ import { clean, clientHelloSni, createProxy, parseAllow, privateAddress } from "
 import { containerBackend, containerConfig, trialEnv, imageTag, findBinary, CONTAINER_PATH, DEFAULT_ALLOW, EGRESS_URL } from "../src/run/container.mjs"
 import { selectIsolation } from "../src/run/isolation.mjs"
 import { makeSandbox, removeSandbox, removeInside, repairPermissions, runToEnd } from "../src/run/sandbox.mjs"
-import { runBatch } from "../src/run/runner.mjs"
+import { runBatch, trialBinaries } from "../src/run/runner.mjs"
 import { readLedger } from "../src/cost/ledger.mjs"
 import { compileCase } from "../src/case/compile.mjs"
 
@@ -411,6 +411,37 @@ test("offline: a trial is confined by its flags, and no secret reaches an argv",
   assert.deepEqual(f.backend.egress().refused, { "example.com": { count: 2, why: ["not-allowed"] } })
   assert.deepEqual(f.backend.egress().allowed, { "api.anthropic.com": 1 })
   f.cleanup()
+})
+
+test("offline: a browse trial mounts Node at /opt/evals/bin/node with its sha; a trial without browse mounts none", async () => {
+  // Browse's MCP server is bin/mcp.mjs, a #!/usr/bin/env node script: the trial needs a node on PATH.
+  const browse = offlineFixture()
+  try {
+    const node = realpathSync(process.execPath)
+    const caller = { ...browse.caller, EVALS_NODE_BIN: process.execPath }
+    await browse.backend.prepare({ batchRoot: browse.batchRoot, caller, binaries: trialBinaries({ binary: browse.opencode, needsBrowse: true, caller }) })
+    assert.match(browse.backend.describe().binaries.node, /^[0-9a-f]{64}$/, "the node binary's sha is recorded")
+    const trial = await browse.backend.enter({ name: "case.t1", sandbox: browse.sandbox, mounts: [{ host: browse.arm, ro: true }], cwd: browse.sandbox.project })
+    const run = browse.docker.calls().find((c) => c.args[0] === "run" && c.args.includes(trial.ref)).args
+    assert.ok(run.includes(`type=bind,src=${node},dst=/opt/evals/bin/node,readonly`), "node is mounted read-only at /opt/evals/bin/node")
+    await trial.leave()
+    await browse.backend.teardown()
+  } finally {
+    browse.cleanup()
+  }
+
+  const plain = offlineFixture()
+  try {
+    await plain.backend.prepare({ batchRoot: plain.batchRoot, caller: plain.caller, binaries: trialBinaries({ binary: plain.opencode }) })
+    assert.equal(plain.backend.describe().binaries.node, undefined, "no node sha without browse")
+    const trial = await plain.backend.enter({ name: "case.t1", sandbox: plain.sandbox, mounts: [{ host: plain.arm, ro: true }], cwd: plain.sandbox.project })
+    const run = plain.docker.calls().find((c) => c.args[0] === "run" && c.args.includes(trial.ref)).args
+    assert.equal(run.some((arg) => arg.endsWith(",dst=/opt/evals/bin/node,readonly")), false, "no node mount without browse")
+    await trial.leave()
+    await plain.backend.teardown()
+  } finally {
+    plain.cleanup()
+  }
 })
 
 test("offline: a trial network that collides with another batch's (overlapping IPv4) is created again; any other error, or eight collisions, still fails", async () => {

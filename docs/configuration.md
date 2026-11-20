@@ -58,6 +58,7 @@ committed, and nothing in the repository may reference a machine path: `evals pr
 | `EVALS_CONTAINER_IMAGE` | `opencode-evals-sandbox:<digest of docker/>` | the sandbox image, when not the one `evals isolation build` makes |
 | `EVALS_DOCKER` | `docker` on `PATH` | the docker client |
 | `EVALS_CLAUDE_BIN` | `claude` on `PATH` | the `claude` mounted into a trial for the Claude Agent provider |
+| `EVALS_NODE_BIN` | `node` on `PATH` | the Node mounted at `/opt/evals/bin/node` in a trial that uses browse (its MCP server, `bin/mcp.mjs`, runs on Node; the image has none) |
 | `EVALS_ROUTE_TIMEOUT_S` | `60` | how long the preflight and each run wait for their model to route on the trial's server ([running.md](running.md#credentials)) |
 | `EVALS_RUN_OVERHEAD_S` | `120` | what one run costs beyond its timeout, for the credential's horizon ([running.md](running.md#credentials)) |
 | `EVALS_OPENCODE_CORE` | unset | a pinned `@opencode/core` whose tool registry a test compares the built-in tool list with |

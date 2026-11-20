@@ -788,6 +788,25 @@ async function runJob(job, ctx) {
 /**
  * The whole batch. `options` mirrors the CLI flags; `caller` is the environment the runner was started with.
  */
+/**
+ * The binaries a trial needs, mounted read-only into a container: the host, a provider's own CLI, the mock's bun, and
+ * Node when browse is in the trial (its MCP server is a `bin/mcp.mjs` script the host runs by its `#!/usr/bin/env node`
+ * shebang; the image has no Node). `EVALS_NODE_BIN` names the host Node to mount, as `EVALS_CLAUDE_BIN` does for
+ * `claude`.
+ */
+export const trialBinaries = ({ binary, needsClaude = false, needsBrowse = false, scripted = false, captureServer = false, fakeIds = [], caller = process.env }) => ({
+  opencode: binary,
+  ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}),
+  ...(needsBrowse ? { node: caller.EVALS_NODE_BIN ?? "node" } : {}),
+  ...(scripted || captureServer || fakeIds.length ? { bun: caller.EVALS_BUN ?? "bun" } : {}),
+})
+
+/**
+ * Is browse in this trial: the plugin under test, or any selected case whose `Seed: plugins=` names it (a companion).
+ * `pluginsOf` is the one reader of a case's plugin and seed, so a seed that names browse counts exactly as its own case does.
+ */
+export const browseInTrial = (plugin, cases = []) => plugin === "browse" || cases.some((c) => pluginsOf(c).includes("browse"))
+
 export async function runBatch(options, { caller = process.env, log = (line) => console.log(line) } = {}) {
   const plugin = options.plugin
   const iteration = options.iteration
@@ -1035,11 +1054,13 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // The host's version, asked in a sandbox of its own: even `--version` reads nothing of the caller's install.
     const probe = makeSandbox(join(batchRoot, "probe"))
     const probeEnv = sandboxEnv({ sandbox: probe, config: sealedConfig({ armDir: null, model: options.model }), password: newPassword(), caller })
-    // The binaries a trial needs, mounted read-only into a container: the host, a provider's own CLI, the mock's bun.
+    // The binaries a trial needs, mounted read-only into a container: the host, a provider's own CLI, the mock's bun,
+    // and Node when browse is in the trial (its MCP wrapper is a Node script).
     const needsClaude = profile.kind === "claude-agent" || options.model.startsWith("claude-agent/")
+    const needsBrowse = browseInTrial(plugin, selected)
     // The fake-mode plugins any selected case uses.
     const fakeIds = [...new Set(selected.flatMap((c) => fakeFor(pluginsOf(c), fakeSet)))].sort()
-    const binaries = { opencode: binary, ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}), ...(scripted || options.captureServer || fakeIds.length ? { bun: caller.EVALS_BUN ?? "bun" } : {}) }
+    const binaries = trialBinaries({ binary, needsClaude, needsBrowse, scripted, captureServer: options.captureServer, fakeIds, caller })
     await isolation.prepare({ batchRoot, caller, binaries, log })
     if (isolation.confines) facts.isolation_detail = isolation.describe()
     // The harness's scripted model, when asked for: T1's mock server, for the whole batch on loopback, or, in a confined
