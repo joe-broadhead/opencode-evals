@@ -246,6 +246,9 @@ test("lockdownProblems names an allow the plugin does not make; a pack with no r
   assert.equal(effectOf(lockdownPermissions({ packs: spend, pluginRules: new Map() }), "tavily_tavily_search"), "allow", "the exception needs no recording")
 })
 
+/** A pack version as a literal in a RegExp (the committed packs move with each release sync; the messages name them). */
+const esc = (v) => String(v).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
 test("every committed plugin-rules.json decides every action of its pack and names its release; ruleProblems says what is wrong", () => {
   const own = loadPluginRules()
   for (const pack of packs) assert.deepEqual(ruleProblems(pack, readSidecar(ROOT, pack.id, "plugin-rules.json")), [], pack.id)
@@ -254,7 +257,7 @@ test("every committed plugin-rules.json decides every action of its pack and nam
   const slack = packs.find((p) => p.id === "slack")
   const rules = readSidecar(ROOT, "slack", "plugin-rules.json")
   assert.match(ruleProblems(slack, { ...rules, allowed: rules.allowed.slice(1) }).join(), /does not decide slack_/)
-  assert.match(ruleProblems(slack, { ...rules, release: { version: "0.0.1" } }).join(), /is of v0\.0\.1, the pack is v0\.0\.6/)
+  assert.match(ruleProblems(slack, { ...rules, release: { version: "0.0.1" } }).join(), new RegExp(`is of v0\\.0\\.1, the pack is v${esc(slack.version)}`))
 })
 
 test("a sidecar must come from the release the pack records, under the same version too: another commit, no commit, a decided action the pack dropped (the metaview case) all fail `evals pack`'s check", async () => {
@@ -266,10 +269,10 @@ test("a sidecar must come from the release the pack records, under the same vers
   assert.deepEqual(releaseProblems(slack, registered, "registered.json"), [])
   // the same version, another commit
   const other = { ...rules, release: { ...rules.release, commit: "0".repeat(40) } }
-  assert.match(ruleProblems(slack, other).join(), /plugin-rules\.json was recorded from 0000000, the pack's release v0\.0\.6 is [0-9a-f]{7}: another build of the same version/)
-  assert.match(releaseProblems(slack, { ...registered, release: { version: "0.0.6" } }, "registered.json").join(), /records no release commit/)
+  assert.match(ruleProblems(slack, other).join(), new RegExp(`plugin-rules\\.json was recorded from 0000000, the pack's release v${esc(slack.version)} is [0-9a-f]{7}: another build of the same version`))
+  assert.match(releaseProblems(slack, { ...registered, release: { version: slack.version } }, "registered.json").join(), /records no release commit/)
   assert.match(releaseProblems(slack, { ...registered, release: { ...registered.release, commit: "1".repeat(40) } }, "registered.json").join(), /another build of the same version/)
-  assert.match(releaseProblems(slack, { release: { version: "0.0.5" } }, "registered.json").join(), /registered\.json is of v0\.0\.5, the pack is v0\.0\.6/)
+  assert.match(releaseProblems(slack, { release: { version: "0.0.5" } }, "registered.json").join(), new RegExp(`registered\\.json is of v0\\.0\\.5, the pack is v${esc(slack.version)}`))
   // a pack that dropped a tool its rules still decide (metaview's events_list, under the same version)
   const dropped = { ...slack, tools: slack.tools.filter((t) => t.name !== "slack_search_users") }
   assert.match(ruleProblems(dropped, rules).join(), /plugin-rules\.json decides slack_slack_search_users, which the pack does not list: it was recorded from another build/)

@@ -2,9 +2,9 @@
  "schema": "oc-registered/1",
  "plugin": "jobs",
  "release": {
-  "version": "0.0.3",
-  "tag": "v0.0.3",
-  "commit": "bbc52c66fd15eaacf5b8a4596ca89effe6912a4f"
+  "version": "0.0.4",
+  "tag": "v0.0.4",
+  "commit": "87453e668e0300146b1f9f7e43d3f1dff8701fa7"
  },
  "host": "opencode v2.3.2",
  "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",
