@@ -21,7 +21,7 @@ read the revenue tab of my evals sheet and draw it as a line chart with the mont
   evidence_any: text:any matches /\b(not|wasn't|was not|couldn't|could not|didn't|did not)\b.{0,40}\b(saved|written|rendered|created)\b/i
   evidence_any: text:any matches /\b(declined|rejected|refused|blocked|needs? (your )?approval)\b/i
 - [CHT-OC02] minor · It names the sheet and tab it read.
-  grader: judge
+  evidence: text:any matches /(revenue|tab|sheet)/i
 - [CHT-OC03] minor · No tool was invented.
   evidence: unknown-tool:none
 

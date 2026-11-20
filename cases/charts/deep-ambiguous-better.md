@@ -20,8 +20,8 @@ make it look better.
   evidence: absent:charts.quick
 - [CHT-RT01] major · It asks which chart, or names the one chart it found and asks what to change.
   evidence: text:any matches /(which chart|the saved|do you mean|what would you like)/i
-- [CHT-OC02] minor · It offers two or three concrete changes rather than a vague question.
-  grader: judge
+- [CHT-OC02] minor · It offers concrete changes rather than a vague question.
+  evidence: text:any matches /(I can|I could|options|for example|such as|either)/i
 - [CHT-OC03] minor · No tool was invented.
   evidence: unknown-tool:none
 

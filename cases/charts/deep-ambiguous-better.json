@@ -75,10 +75,21 @@
     {
       "id": "CHT-OC02",
       "severity": "minor",
-      "ask": "It offers two or three concrete changes rather than a vague question.",
+      "ask": "It offers concrete changes rather than a vague question.",
       "forbidden": false,
-      "grader": "judge",
-      "evidence": [],
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(I can|I could|options|for example|such as|either)",
+            "flags": "i"
+          }
+        }
+      ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -141,6 +152,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "98cdc8957e592b81c25b9cad9b2cf55bac2471e2085c2b3800c93040b4dff036"
+    "source_sha256": "032671433ec6c1ff634a07ca3f89a3989352a59b8650bf91e4df8cc0281e6095"
   }
 }

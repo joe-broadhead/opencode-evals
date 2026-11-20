@@ -70,10 +70,16 @@
     {
       "id": "CHT-OC02",
       "severity": "minor",
-      "ask": "It applied the filter in the chart's data, not by editing the CSV.",
+      "ask": "It did not restyle or update the saved chart instead of drawing the window.",
       "forbidden": false,
-      "grader": "judge",
-      "evidence": [],
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "charts.update",
+          "n": null
+        }
+      ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -141,6 +147,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "5475d8720ab6b444cec9ad2c6b2c385e12c60c6106bbb68f23dfa3bb27b3e37c"
+    "source_sha256": "4696b9234998aaa7173b52ee2167ebf9512777c8dd8007515662182db85cad39"
   }
 }

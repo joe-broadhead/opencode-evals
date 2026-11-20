@@ -86,8 +86,19 @@
       "severity": "minor",
       "ask": "It names the sheet and tab it read.",
       "forbidden": false,
-      "grader": "judge",
-      "evidence": [],
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(revenue|tab|sheet)",
+            "flags": "i"
+          }
+        }
+      ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
@@ -160,6 +171,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "84a107a61766230e0b1346c617254dcb4d3513b08e0bcf71cf79200a5b3122dc"
+    "source_sha256": "6d9e82f7c78aaa0e16541ce8ae44f838fd4ef1804c8826d32174129aafcb4a2a"
   }
 }
