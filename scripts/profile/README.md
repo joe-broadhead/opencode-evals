@@ -50,6 +50,15 @@ next `check-real` does.
 `--redo` is a **full redo**: it forgets what passed and clears `refresh-baseline.json`, so every vendor's baseline is taken again at its next
 sign-in or check-real.
 
+## Transient failures are not sign-outs
+
+A real-profile read killed by its own timeout (exit 124, 137 or 143, or a timeout error) is retried **once**; if it times out again the check
+says *could not read the real profile in time* and exits 5 — the web server is the side to look at, never a real-profile sign-out. On the
+evals side a timed-out read is an evals failure (exit 4). A real auth error (401/403, `authentication rejected`), an error signal or a wrong
+answer is still a real-profile failure (exit 1): only timeouts are read as transient. A `rpc.unavailable` on the evals side while the service
+is still loading its plugins means *not ready*: before the check, the walk waits for that vendor's route to answer (up to 60 s; `EVALS_RPC_WAIT_MS`
+overrides, for tests), then fails the evals side only, never the real one.
+
 ## Safety rules
 
 These are the rules the tests enforce; a change that drops one fails `npm run test:profile`.

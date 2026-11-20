@@ -13,7 +13,7 @@
 // On FAIL: stop signing in further vendors; the owner signs the real profile back in for that vendor.
 
 import { join } from "node:path"
-import { IDENTITY, NOT_IN_REAL, exportTarget, identityCheck, IDENTITY_CALLS, realEnv, profileEnv, run, runReal, realServerUrl, realServiceProblem, activeCredential, digestsOf, logRound, credentialExpires, readBaseline, recordBaseline, refreshChain, defaultProfileDir, defaultStoreDir } from "./profile-lib.mjs"
+import { IDENTITY, NOT_IN_REAL, exportTarget, identityCheck, IDENTITY_CALLS, realEnv, profileEnv, run, runReal, realServerUrl, realServiceProblem, activeCredential, digestsOf, logRound, credentialExpires, readBaseline, recordBaseline, refreshChain, timedOut, waitForEvalsRoute, rpcWaitMs, defaultProfileDir, defaultStoreDir } from "./profile-lib.mjs"
 import { assertDistinctPort } from "./service-port.mjs"
 
 export function checkReal({ integration, opencode = "opencode", profile, store, env = process.env, exec = run, guard = {} }) {
@@ -25,6 +25,15 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
   const failRead = (reason) => ({ ok: false, side: "read", line: `FAIL ${integration}: ${reason}; check the web server, then run signin.sh --recheck ${integration}` })
   const realDirectory = real.HOME
   const callEvals = (args) => exec(opencode, args, { env: evals })
+  // A read killed by its own timeout is retried once, then reported as a timeout (never as a sign-out). Auth errors and wrong answers are not retried.
+  const readReal = (args) => {
+    const first = callReal(args)
+    return first.code !== 0 && timedOut(first) ? callReal(args) : first
+  }
+  const readEvals = (args) => {
+    const first = exec(opencode, args, { env: evals })
+    return first.code !== 0 && timedOut(first) ? exec(opencode, args, { env: evals }) : first
+  }
   const leftoverNote = (r) => (r?.leftover ? ` (the check session ${r.leftover} could not be deleted: delete the session titled "evals walk check" yourself)` : "")
   const fail = (reason) => ({ ok: false, line: `FAIL ${integration}: ${reason}. Stop signing in further vendors: sign the real profile back in for ${integration}; its evals runs then use no credential.` })
   // Real-profile calls go to the owner's web server only (`--server`), and never while a real background service exists or runs.
@@ -49,21 +58,32 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
     return fail(error.message)
   }
 
+  // 0b. The evals service may still be starting (a recheck right after it starts): wait until this vendor's route answers. `rpc.unavailable`
+  //     there means "not ready", not a broken sign-in; if it never answers, the evals side is named (exit 4), never the real one.
+  const ready = waitForEvalsRoute(callEvals, integration, profile, { waitMs: rpcWaitMs(env) })
+  if (!ready.ok) return failEvals(`the evals profile's service was not ready: ${ready.why}`)
+
   // A vendor the real profile may not hold (Affinity; OpenRouter only as an MCP tools entry): nothing of the owner's can be signed out. The evals sign-in must be there and,
   // where the vendor has an identity tool, must read through the evals profile's own service.
   if (NOT_IN_REAL.includes(integration)) {
-    const held = callReal(["auth", "export", target])
+    const held = readReal(["auth", "export", target])
     // A failed real export is NOT "absent": only a successful export with no credential takes the not-in-real path.
-    if (held.code !== 0) return failRead(`could not read the real profile through the web server (the export exited ${held.code})`)
+    if (held.code !== 0) {
+      if (timedOut(held)) return failRead("could not read the real profile in time")
+      return failRead(`could not read the real profile through the web server (the export exited ${held.code})`)
+    }
     if (!activeCredential(held.stdout, target)) {
-      const mine = exec(opencode, ["auth", "export", target], { env: evals })
+      const mine = readEvals(["auth", "export", target])
+      if (mine.code !== 0 && timedOut(mine)) return failEvals("the evals profile could not be read in time")
       const credential = mine.code === 0 ? activeCredential(mine.stdout, target) : null
       if (!credential) return failEvals("the evals profile holds no credential for it (sign it in first)")
       const route = IDENTITY[integration]
       let called = ""
       let note = ""
       if (route) {
-        const read = identityCheck(callEvals, { vendor: integration, directory: profile })
+        let read = identityCheck(callEvals, { vendor: integration, directory: profile })
+        if (!read.ok && read.timeout) read = identityCheck(callEvals, { vendor: integration, directory: profile })
+        if (!read.ok && read.timeout) return failEvals(`the evals profile's identity read (${route.split("/")[1]}) timed out`)
         if (!read.ok) return failEvals(`the evals profile's identity read (${route.split("/")[1]}) failed: ${read.why}${leftoverNote(read)}`)
         called = `${route.split("/")[1]} (${IDENTITY_CALLS[integration]})`
         note = read.leftover ? ` WARNING:${leftoverNote(read)}` : ""
@@ -80,23 +100,29 @@ export function checkReal({ integration, opencode = "opencode", profile, store, 
   let identity = "no identity tool for this integration (an API key): its presence is checked, not a call"
   if (route) {
     identityOk = false
-    const read = identityCheck(callReal, { vendor: integration, directory: realDirectory })
+    let read = identityCheck(callReal, { vendor: integration, directory: realDirectory })
+    // A read killed by its own timeout is retried once; if it times out again the web server is the side to look at, not the sign-in.
+    if (!read.ok && read.timeout) read = identityCheck(callReal, { vendor: integration, directory: realDirectory })
     // The plugin's binary is downloaded on first use, which is a change the check session may not make (it allows one read and nothing else): not a failure of the real profile.
     if (!read.ok && read.notInstalled) return { ok: false, side: "install", line: `FAIL ${integration}: the ${integration} plugin's program is not installed in your normal profile yet (the first use downloads it, and the check never downloads anything). Run /gws-install in your normal OpenCode (the web app at http://127.0.0.1:4096), or make one gws call there, then run signin.sh --recheck ${integration}${leftoverNote(read)}` }
+    if (!read.ok && read.timeout) return failRead("could not read the real profile in time")
     if (!read.ok) return fail(`the real profile's identity read (${route.split("/")[1]}) failed: ${read.why}${leftoverNote(read)}`)
     identityOk = true
     identity = `identity read ${route.split("/")[1]} (${IDENTITY_CALLS[integration]}) succeeded with the expected answer${read.leftover ? ` WARNING:${leftoverNote(read)}` : ""}`
   }
 
   // 2. The tokens differ.
-  // A failed real export is not "no credential": the web server may only be unreachable.
-  const exported = callReal(["auth", "export", target])
-  if (exported.code !== 0) return failRead(`could not read the real profile through the web server (exit ${exported.code})`)
+  // A failed real export is not "no credential": the web server may only be unreachable. A timeout is not a sign-out either.
+  const exported = readReal(["auth", "export", target])
+  if (exported.code !== 0) {
+    if (timedOut(exported)) return failRead("could not read the real profile in time")
+    return failRead(`could not read the real profile through the web server (exit ${exported.code})`)
+  }
   const mine = activeCredential(exported.stdout, target)
-  const heldHere = exec(opencode, ["auth", "export", target], { env: evals })
+  const heldHere = readEvals(["auth", "export", target])
   const theirs = heldHere.code === 0 ? activeCredential(heldHere.stdout, target) : null
   if (!mine) return fail("the real profile holds no active credential for it")
-  if (!theirs) return failEvals("the evals profile holds no credential for it")
+  if (!theirs) return failEvals(heldHere.code !== 0 && timedOut(heldHere) ? "the evals profile could not be read in time" : "the evals profile holds no credential for it")
   const a = digestsOf(mine)
   const b = digestsOf(theirs)
   if (a.access && a.access === b.access) return fail("the evals profile holds the SAME access token as the real profile (one grant, not two)")

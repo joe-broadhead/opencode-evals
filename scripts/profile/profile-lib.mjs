@@ -62,6 +62,42 @@ export function rpcFailure(out) {
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v)
 const ERROR_WORD = /UNAVAILABLE|UNREADABLE|UPSTREAM|AUTH_REQUIRED|AUTH_SCOPE_MISSING|UNAUTHORI[SZ]ED|FORBIDDEN|FAILED|ERROR/i
 
+/** Exit codes a read killed by its own timeout is reported with (124 is GNU timeout, 137/143 SIGKILL/SIGTERM). */
+export const TIMEOUT_EXIT_CODES = Object.freeze([124, 137, 143])
+/** Was this call killed by its own timeout (its exit code, or spawnSync's timeout error)? Auth and answer failures are not timeouts. */
+export function timedOut(result) {
+  if (TIMEOUT_EXIT_CODES.includes(Number(result?.code))) return true
+  return Boolean(result?.error && /ETIMEDOUT|timed?\s*out|timeout/i.test(String(result.error)))
+}
+
+/** How long the check waits for the evals service's route to answer when it is still starting (EVALS_RPC_WAIT_MS overrides, for tests). */
+export const RPC_WAIT_MS = 60_000
+export const rpcWaitMs = (env = process.env) => {
+  const n = Number(env.EVALS_RPC_WAIT_MS)
+  return Number.isFinite(n) && n >= 0 ? n : RPC_WAIT_MS
+}
+
+/**
+ * Waits until the evals service answers this vendor's `describe`. A service that has just started answers `rpc.unavailable` for a while (its
+ * plugins are still loading); that is "not ready", not a failure of the evals sign-in. Polls up to `waitMs`. Any other answer — including a
+ * describe that fails for another reason — counts as answered, and the read itself reports it.
+ */
+export function waitForEvalsRoute(call, vendor, directory, { waitMs = RPC_WAIT_MS, sleep = sleepBriefly } = {}) {
+  const route = IDENTITY[vendor]
+  if (!route) return { ok: true, skipped: true }
+  const ns = route.split("/")[0]
+  const deadline = Date.now() + waitMs
+  let last = "no answer"
+  while (true) {
+    const out = call(["api", "post", `/api/rpc/${ns}/describe`, "-H", `x-opencode-directory:${directory}`, "-d", JSON.stringify({ input: {} })])
+    const why = rpcFailure(out)
+    if (!why) return { ok: true }
+    last = why
+    if (!/^rpc\.unavailable\b/i.test(why) || Date.now() >= deadline) return /^rpc\.unavailable\b/i.test(why) ? { ok: false, why } : { ok: true }
+    sleep(50)
+  }
+}
+
 /** An error signal in the answer's top levels (root, `output`, `output.output`): an RpcError (also under `data`), an error/isError/failed/refused key, an error-like code or status. Data deeper down is not scanned: it is other people's content. */
 export function errorSignal(answer) {
   if (answer?._tag === "RpcError" || answer?.data?._tag === "RpcError") return "an RpcError"
@@ -145,7 +181,7 @@ export function identityRead(call, { vendor, directory, sessionID }) {
   let raw = ""
   try { raw = String(JSON.parse(out.stdout).message ?? "") } catch {}
   const notInstalled = /GWS_UNAVAILABLE: gws is not installed/.test(raw)
-  return why ? { ok: false, why, notInstalled, method: route.split("/")[1], needs: /PERMISSION_DENIED|deny rule/.test(raw) ? neededAction(raw) : null } : { ok: true, method: route.split("/")[1] }
+  return why ? { ok: false, why, notInstalled, timeout: timedOut(out), code: out.code, method: route.split("/")[1], needs: /PERMISSION_DENIED|deny rule/.test(raw) ? neededAction(raw) : null } : { ok: true, method: route.split("/")[1] }
 }
 
 /** The `read`-class actions one plugin lists (describe is free and calls no vendor). */

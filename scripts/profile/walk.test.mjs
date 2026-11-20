@@ -63,8 +63,19 @@ if (a[0] === "api") {
     const err = (type, message) => { console.log(JSON.stringify({ _tag: "RpcError", type, message })); process.exit(1) }
     const ns = parts[3], method = parts[4]
     const methods = (JSON.parse(fs.readFileSync(${JSON.stringify(join(HERE, "rpc-methods.fixture.json"))}, "utf8")).methods[ns]) || []
+    // A service that has just started: its plugins are still loading, and every evals route answers rpc.unavailable for a while.
+    if (process.env.STUB_RPC_UNAVAILABLE && !real) {
+      const seen = ${JSON.stringify(root)} + "/rpc-unavailable-seen"
+      if (process.env.STUB_RPC_UNAVAILABLE !== "once" || !fs.existsSync(seen)) { fs.writeFileSync(seen, "1"); err("rpc.unavailable", "RPC is unavailable: " + ns) }
+    }
     if (method !== "describe" && !methods.includes(method)) err("rpc.method_not_found", "Unknown RPC method: " + ns + "." + method)
     if (method === "describe") { console.log(JSON.stringify({ output: { methods: methods.map((name) => ({ name, action: ns.split(".")[0] + "_" + name, class: /^(create|delete|update|send|merge)/.test(name) ? "write" : "read" })) } })); process.exit(0) }
+    // A read killed by its own timeout: the real side always, once, or the evals side always.
+    const slow = () => { console.log(JSON.stringify({ _tag: "RpcError", type: "rpc.timeout", message: "the read timed out" })); process.exit(143) }
+    if (real && process.env.STUB_RPC_TIMEOUT) slow()
+    if (real && process.env.STUB_TIMEOUT_ONCE) { const seen = ${JSON.stringify(root)} + "/rpc-timeout-seen"; if (!fs.existsSync(seen)) { fs.writeFileSync(seen, "1"); slow() } }
+    if (!real && process.env.STUB_TIMEOUT_EVALS) slow()
+    if (real && process.env.STUB_RPC_401) err("rpc.tool_failed", "401 Unauthorized")
     let body = null
     try { body = JSON.parse(flag("-d") || flag("--data")) } catch {}
     if (!body || typeof body !== "object" || !body.input || typeof body.input.sessionID !== "string" || !body.input.sessionID.startsWith("ses_") || typeof body.input.input !== "object" || body.input.input === null) err("rpc.invalid_input", "the envelope must be an object, such as sessionID and input")
@@ -1447,6 +1458,96 @@ test("walk: a check-real exit 6 prints the /gws-install fix, not a sign-in fix",
     assert.equal(out.status, 1, out.stdout)
     assert.match(out.stdout, /program is not installed in your normal profile yet[\s\S]*\/gws-install[\s\S]*--recheck gws/)
     assert.doesNotMatch(out.stdout, /sign gws back in/)
+  } finally {
+    r.done()
+  }
+})
+
+// ---- round 10: transient failures (a read's own timeout, a service that has just started) ----------------------------------------------
+// A read killed by its own timeout (exit 124, 137 or 143, or a timeout error) is not a sign-out: on the real side it is a read failure (exit 5)
+// and is retried once; on the evals side it is an evals failure (exit 4). `rpc.unavailable` on the evals side while the service loads its
+// plugins is "not ready": wait, then fail the evals side only. Auth errors and wrong answers stay real-profile failures (exit 1).
+test("check-real: a real read killed by its own timeout is a read failure (exit 5), not a sign-out", () => {
+  const r = rig()
+  try {
+    const out = checkReal(r, "linear", { STUB_RPC_TIMEOUT: "1" })
+    assert.equal(out.status, 5, out.stdout + out.stderr)
+    assert.match(out.stdout, /^FAIL linear: could not read the real profile in time; check the web server, then run signin\.sh --recheck linear/)
+    assert.doesNotMatch(out.stdout, /sign the real profile back in/)
+    // retried once: two sessions, both deleted
+    assert.equal(readFileSync(join(r.root, "created.log"), "utf8").trim().split("\n").length, 2, "one retry")
+    assert.equal(readFileSync(join(r.root, "deleted.log"), "utf8").trim().split("\n").length, 2, "both sessions deleted")
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a 401 on the real side is still a real-profile failure (exit 1)", () => {
+  const r = rig()
+  try {
+    const out = checkReal(r, "linear", { STUB_RPC_401: "1" })
+    assert.equal(out.status, 1, out.stdout + out.stderr)
+    assert.match(out.stdout, /^FAIL linear: the real profile's identity read \(probe\) failed: rpc\.tool_failed: 401 Unauthorized/)
+    assert.match(out.stdout, /sign the real profile back in/)
+    assert.doesNotMatch(out.stdout, /in time/)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a timed-out read is retried once, then passes", () => {
+  const r = rig()
+  try {
+    const out = checkReal(r, "linear", { STUB_TIMEOUT_ONCE: "1" })
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stdout, /^PASS linear/)
+    assert.equal(readFileSync(join(r.root, "created.log"), "utf8").trim().split("\n").length, 2, "the first session was replaced by the retry")
+    assert.equal(readFileSync(join(r.root, "deleted.log"), "utf8").trim().split("\n").length, 2, "both sessions deleted")
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: rpc.unavailable while the evals service starts is waited out, then the check passes", () => {
+  const r = rig()
+  try {
+    writeFileSync(join(r.root, "real-affinity.json"), "[]") // not in the real profile
+    writeFileSync(join(r.root, "evals-affinity.json"), cred("affinity", "Affinity", "E-A", "E-R"))
+    const out = checkReal(r, "affinity", { STUB_RPC_UNAVAILABLE: "once", EVALS_RPC_WAIT_MS: "2000" })
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stdout, /^PASS affinity/)
+    assert.doesNotMatch(out.stdout, /not ready|unavailable/)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: an evals service that never answers rpc.unavailable is an evals failure (exit 4), never the real side", () => {
+  const r = rig()
+  try {
+    writeFileSync(join(r.root, "real-affinity.json"), "[]")
+    writeFileSync(join(r.root, "evals-affinity.json"), cred("affinity", "Affinity", "E-A", "E-R"))
+    const out = checkReal(r, "affinity", { STUB_RPC_UNAVAILABLE: "1", EVALS_RPC_WAIT_MS: "200" })
+    assert.equal(out.status, 4, out.stdout + out.stderr)
+    assert.match(out.stdout, /^FAIL affinity: the evals profile's service was not ready: rpc\.unavailable/)
+    assert.match(out.stdout, /Your normal profile is not involved/)
+    assert.doesNotMatch(out.stdout, /sign the real profile back in/)
+    assert.equal(r.calls().filter((c) => c.real).length, 0, "no real call was made")
+    assert.equal(existsSync(join(r.root, "created.log")), false, "not even a session")
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a timed-out evals read is an evals failure (exit 4), never the real side", () => {
+  const r = rig()
+  try {
+    writeFileSync(join(r.root, "real-affinity.json"), "[]") // not in the real profile
+    writeFileSync(join(r.root, "evals-affinity.json"), cred("affinity", "Affinity", "E-A", "E-R"))
+    const out = checkReal(r, "affinity", { STUB_TIMEOUT_EVALS: "1" })
+    assert.equal(out.status, 4, out.stdout + out.stderr)
+    assert.match(out.stdout, /^FAIL affinity: the evals profile's identity read \(probe\) timed out/)
+    assert.doesNotMatch(out.stdout, /sign the real profile back in/)
   } finally {
     r.done()
   }
