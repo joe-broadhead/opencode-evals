@@ -147,12 +147,16 @@ tool, whose prompt is `<<TODO>>` (compile refuses it) so it is written without s
     them are n/a, and the honest-answer item `<prefix>-NA01` (a heuristic over the answer's words) is **minor**. Such a case is not deferred for a credential, a target or a canary.
 - **Slack, X and Google use the apps already configured**: no second Slack app, no second X app, no separate Google client. They are not owner prerequisites; `check-real`
   still runs right after each of their sign-ins, and it is the check that says whether the shared app broke the normal profile.
-- **The owner's sign-in walk: `~/evals-232/bin/signin.sh`** (installed by `scripts/profile/install.sh`). It signs the evals profile into the vendors, one at a time, in the plan's
-  section 1.2.3 order less GitHub and Jira: OpenRouter, Affinity, Ashby, Plaud, Google (`gws`), Slack, X, ElevenLabs, Wispr Flow, Metaview, Granola, Notion, Linear. Each is the
-  normal `opencode auth login <vendor>` flow in the evals profile (`evals-profile.sh`), followed at once by `check-real.sh <vendor>` against the **normal** profile. On any
-  failure it stops, names the vendor, and prints one line: `Fix: sign <vendor> back in on your NORMAL profile (opencode auth login <vendor>), then run signin.sh --from <vendor>.`
-  OpenRouter and Affinity are new (not in the normal profile): `check-real` proves their evals sign-in alone. It prints no token (a token-shaped run in a tool's output is masked).
-  `--list` shows the order and what has passed (state in `$EVALS_STORE/signin-passed`), `--from <vendor>` resumes, `--only <vendor>` does one, `--redo` forgets. When it ends, run `evals phase1`.
+- **The owner's sign-in walk: `~/evals-232/bin/signin.sh`** (installed by `scripts/profile/install.sh`; the scripts and their safety rules are in
+  [`scripts/profile/README.md`](../scripts/profile/README.md)). It signs the evals profile into the vendors, one at a time, in the plan's
+  section 1.2.3 order less GitHub and Jira: OpenRouter, Affinity, Ashby, Plaud, Google (`gws`), Slack, X, ElevenLabs, Wispr Flow, Metaview, Granola, Notion, Linear, with
+  the app-client steps (`gws-app`, `slack-app`, `x-app`) just before the vendor that needs them. Each is the normal `opencode auth login <vendor>` flow **in the evals profile**
+  (`evals-profile.sh`), followed at once by `check-real.sh <vendor>` against the **normal** profile. On any failure it stops, names the vendor, and prints one line:
+  `Fix: sign <vendor> back in from your normal OpenCode (the web app at http://127.0.0.1:4096), then run signin.sh --from <vendor>.` It never prints a plain
+  `opencode auth login`: with no `--server` that command starts the real background service. OpenRouter and Affinity are new (not in the normal profile): `check-real`
+  proves their evals sign-in alone. It prints no token (a token-shaped run in a tool's output is masked). `--list` shows the order and what has passed (state in
+  `$EVALS_STORE/signin-passed`), `--from <vendor>` resumes, `--only <vendor>` does one, `--recheck <vendor>|all` re-runs the checks with no sign-in, `--redo` forgets.
+  When it ends, run `evals phase1`.
 
 ## Phase 1: the credentialed phase's first steps, gated
 

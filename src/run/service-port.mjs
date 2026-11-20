@@ -6,6 +6,9 @@
 // service's port. Standalone on purpose (node builtins only): the profile scripts are copied out of the repository.
 
 import { spawnSync } from "node:child_process"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+import { homedir } from "node:os"
 
 /** The plan's port for the evals profile's service. */
 export const EVALS_PORT = 47950
@@ -48,12 +51,19 @@ export function serviceRunning({ opencode, env, port = null, exec = runCommand }
   return /running|started|active|listening/i.test(text)
 }
 
-/** The real service's port: its configuration, else EVALS_REAL_SERVICE_PORT, else the default the host reports. */
-export function realServicePort({ opencode, realEnv, exec = runCommand, env = process.env }) {
-  const fromConfig = getServicePort({ opencode, env: realEnv, exec })
-  if (fromConfig) return fromConfig
+/**
+ * The real service's port: EVALS_REAL_SERVICE_PORT, else `port` in the owner's own record, else the default the host reports. Read from the
+ * file, NEVER with `opencode service get port` in the real env: with no `--server` that command talks to, and can start, the real
+ * background service — the 20 Nov incident.
+ */
+export function realServicePort({ env = process.env } = {}) {
   const given = Number(env.EVALS_REAL_SERVICE_PORT)
-  return Number.isInteger(given) && given > 0 ? given : REAL_DEFAULT_PORT
+  if (Number.isInteger(given) && given > 0) return given
+  try {
+    const n = Number(JSON.parse(readFileSync(join(env.EVALS_REAL_HOME ?? homedir(), ".config", "opencode", "service.json"), "utf8")).port)
+    if (Number.isInteger(n) && n > 0 && n < 65536) return n
+  } catch {}
+  return REAL_DEFAULT_PORT
 }
 
 /**

@@ -199,9 +199,9 @@ test("it never runs against the normal profile: no profile, the real home, the r
   mkdirSync(realHome)
   assert.throws(() => seed(s, { profile: realHome, exec: svc.exec }), /is the real home/)
   assert.throws(() => seed(s, { profile: join(s.root, "missing"), exec: svc.exec }), /does not exist: run evals-profile\.sh/)
-  // its service is the real service's: refused before any plugin is read
+  // its service is the real service's: refused before any plugin is read (the real port comes from the environment, never a real-env command)
   const samePort = fake({ profile: s.profile, realPort: "47950", profilePort: "47950" })
-  assert.throws(() => seed(s, { exec: samePort.exec }), /service port \(47950\) is the real service's/)
+  assert.throws(() => seed(s, { exec: samePort.exec, env: { ...s.env, EVALS_REAL_SERVICE_PORT: "47950" } }), /service port \(47950\) is the real service's/)
   assert.equal(samePort.rpcCalls().length, 0)
   // a plugin the evals profile is not signed in to
   const unsigned = fake({ profile: s.profile, signedIn: ["linear"] })

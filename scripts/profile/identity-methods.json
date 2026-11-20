@@ -1,0 +1,252 @@
+{
+ "_note": "Each vendor's identity read for check-real and the keeper: a tools-RPC method from the plugin's own `describe` at the pinned release (evals-plugins.json), 20 Nov 2026, that REALLY CALLS THE VENDOR (calls_vendor). `expect` is a list of groups, ALL must hold, each group any-of: a path from the RPC answer, `:type` (string = non-empty, array, number, object, true, email = an address on a line of its own or an `email: <address>` line, profile = a non-empty text that does not open with an error word). `~json` after a key parses that string as JSON first. ashby/elevenlabs/wisprflow/gws probes only read whether a credential is held and call nothing, so they are NOT used. Edit here, never in the scripts. `inner` lists the tool actions a probe reads through the host (X: `x_probe needs x_get_users_me`); the check session allows `action` plus these and nothing else. A read a probe turns out to need that is not listed is learned once from the PERMISSION_DENIED message, only when describe lists it as a read of the same plugin, and added to a NEW session, never a wildcard.",
+ "vendors": {
+  "affinity": {
+   "method": "probe",
+   "input": {},
+   "expect": [
+    [
+     "output.source:string"
+    ],
+    [
+     "output.owner.id:string"
+    ]
+   ],
+   "calls": "Affinity get_current_user (one call on the firm's shared quota)",
+   "route": "affinity.crm.tools/probe",
+   "action": "affinity_probe",
+   "inner": [
+    "affinity_get_current_user"
+   ]
+  },
+  "ashby": {
+   "method": "get_pending_tasks",
+   "input": {
+    "reason": "evals walk check: confirm the sign-in reads"
+   },
+   "expect": [
+    [
+     "output.output.data.totalCount:number"
+    ],
+    [
+     "output.output.data.scorecardTasks:array"
+    ]
+   ],
+   "calls": "Ashby's pending homepage tasks (read-only); shape verified live 20 Nov",
+   "route": "ashby.recruiting.tools/get_pending_tasks",
+   "action": "ashby_get_pending_tasks"
+  },
+  "plaud": {
+   "method": "probe",
+   "input": {},
+   "expect": [
+    [
+     "output.source:string"
+    ],
+    [
+     "output.owner.id:string"
+    ]
+   ],
+   "calls": "Plaud get_current_user",
+   "route": "plaud.recordings.tools/probe",
+   "action": "plaud_probe",
+   "inner": [
+    "plaud_get_current_user"
+   ]
+  },
+  "gws": {
+   "method": "read",
+   "input": {
+    "operation": "gmail.users.getProfile",
+    "params": {
+     "userId": "me"
+    },
+    "fields": "emailAddress"
+   },
+   "expect": [
+    [
+     "output.ok:true"
+    ],
+    [
+     "output.data.emailAddress:string"
+    ]
+   ],
+   "calls": "Gmail users.getProfile (the signed-in address only; free)",
+   "route": "google-workspace.gws.tools/read",
+   "action": "gws.read"
+  },
+  "slack": {
+   "method": "slack_read_user_profile",
+   "input": {
+    "response_format": "concise"
+   },
+   "expect": [
+    [
+     "output.output.result:profile",
+     "output.text~json.result:profile"
+    ],
+    [
+     "output.output.result:email",
+     "output.text~json.result:email"
+    ]
+   ],
+   "calls": "Slack slack_read_user_profile for the signed-in user (read-only, free); shape seen live 20 Nov: output.output.result is the profile text, with the email. slack v0.0.6's own probe answers UPSTREAM_UNREADABLE (a plugin bug), so it is not used",
+   "route": "slack.workspace.tools/slack_read_user_profile",
+   "action": "slack_slack_read_user_profile"
+  },
+  "x": {
+   "method": "probe",
+   "input": {},
+   "expect": [
+    [
+     "output.source:string"
+    ],
+    [
+     "output.owner.id:string"
+    ]
+   ],
+   "calls": "X get_users_me (one billed read)",
+   "route": "x.posts.tools/probe",
+   "action": "x_probe",
+   "inner": [
+    "x_get_users_me"
+   ]
+  },
+  "elevenlabs": {
+   "method": "creative_list_voices",
+   "input": {},
+   "expect": [
+    [
+     "output.output.voices:array",
+     "output.text~json.voices:array"
+    ]
+   ],
+   "calls": "ElevenLabs voice list (read-only, spends no credits)",
+   "route": "elevenlabs.tools/creative_list_voices",
+   "action": "elevenlabs_creative_list_voices"
+  },
+  "wisprflow": {
+   "method": "list_folders",
+   "input": {},
+   "expect": [
+    [
+     "output.output.folders:array",
+     "output.text~json.folders:array",
+     "output.output:array",
+     "output.text~json:array"
+    ]
+   ],
+   "calls": "Wispr Flow folder list (read-only)",
+   "route": "wisprflow.meetings.tools/list_folders",
+   "action": "wisprflow_list_folders"
+  },
+  "metaview": {
+   "method": "probe",
+   "input": {},
+   "expect": [
+    [
+     "output.source:string"
+    ],
+    [
+     "output.owner.id:string"
+    ]
+   ],
+   "calls": "Metaview get_user_context",
+   "route": "metaview.workspace.tools/probe",
+   "action": "metaview_probe",
+   "inner": [
+    "metaview_get_user_context"
+   ]
+  },
+  "granola": {
+   "method": "probe",
+   "input": {},
+   "expect": [
+    [
+     "output.source:string"
+    ],
+    [
+     "output.owner.id:string"
+    ]
+   ],
+   "calls": "Granola get_account_info",
+   "route": "granola.meetings.tools/probe",
+   "action": "granola_probe",
+   "inner": [
+    "granola_get_account_info"
+   ]
+  },
+  "notion": {
+   "method": "probe",
+   "input": {},
+   "expect": [
+    [
+     "output.source:string"
+    ],
+    [
+     "output.owner.id:string"
+    ]
+   ],
+   "calls": "Notion notion-get-self",
+   "route": "notion.workspace.tools/probe",
+   "action": "notion_probe",
+   "inner": [
+    "notion_notion-get-self"
+   ]
+  },
+  "linear": {
+   "method": "probe",
+   "input": {},
+   "expect": [
+    [
+     "output.source:string"
+    ],
+    [
+     "output.owner.id:string"
+    ]
+   ],
+   "calls": "Linear get_user me",
+   "route": "linear.workspace.tools/probe",
+   "action": "linear_probe",
+   "inner": [
+    "linear_get_user"
+   ]
+  },
+  "jira": {
+   "method": "probe",
+   "input": {},
+   "expect": [
+    [
+     "output.source:string"
+    ],
+    [
+     "output.owner.id:string"
+    ]
+   ],
+   "calls": "Jira atlassianUserInfo",
+   "route": "jira.issues.tools/probe",
+   "action": "jira_probe",
+   "inner": [
+    "jira_atlassianUserInfo"
+   ]
+  },
+  "github": {
+   "method": "probe",
+   "input": {},
+   "expect": [
+    [
+     "output.source:string"
+    ],
+    [
+     "output.owner.id:string"
+    ]
+   ],
+   "calls": "GitHub GET /user",
+   "route": "github.platform.tools/probe",
+   "action": "github_probe",
+   "inner": [
+    "github_get_me"
+   ]
+  }
+ }
+}

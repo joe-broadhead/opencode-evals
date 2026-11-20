@@ -9,9 +9,8 @@
 //   keeper.mjs [--once] [--profile DIR] [--opencode BIN] [--store DIR] [--every MINUTES] [--only a,b]
 
 import { join } from "node:path"
-import { homedir } from "node:os"
-import { IDENTITY, profileEnv, realEnv, run, activeCredential, logRound } from "./profile-lib.mjs"
-import { assertDistinctPort } from "../../src/run/service-port.mjs"
+import { IDENTITY, IDENTITY_ACTION, IDENTITY_INNER, withCheckSession, identityRead, exportTarget, profileEnv, realEnv, run, activeCredential, logRound, defaultProfileDir, defaultStoreDir } from "./profile-lib.mjs"
+import { assertDistinctPort } from "./service-port.mjs"
 
 /** A token this close to its expiry (or past it) is due: the identity read must make the service refresh it. */
 export const REFRESH_WINDOW_MS = 15 * 60_000
@@ -23,23 +22,26 @@ export function keepOnce({ opencode = "opencode", profile, store, env = process.
   assertDistinctPort({ opencode, profileEnv: penv, realEnv: realEnv(env), exec, env })
   const results = []
   const expiryOf = (integration) => {
-    const out = exec(opencode, ["auth", "export", integration], { env: penv })
-    const credential = out.code === 0 ? activeCredential(out.stdout, integration) : null
+    const out = exec(opencode, ["auth", "export", exportTarget(integration)], { env: penv })
+    const credential = out.code === 0 ? activeCredential(out.stdout, exportTarget(integration)) : null
     return credential ? { present: true, expires: typeof credential.value?.expires === "number" ? credential.value.expires : null } : { present: false, expires: null }
   }
-  for (const [integration, route] of Object.entries(IDENTITY)) {
+  // One check session per vendor, in the profile's own service, deleted when that read ends, on every path: the session allows the vendor's identity
+  // action plus the reads its probe makes through the host (IDENTITY_INNER), as check-real does, so a probe's inner read is never denied.
+  const call = (args) => exec(opencode, args, { env: penv })
+  for (const [integration] of Object.entries(IDENTITY)) {
     if (only && !only.includes(integration)) continue
     // A plugin that runs with no account (GitHub, Jira) is not signed in, and is not read.
     if (except?.has(integration)) continue
     const before = expiryOf(integration)
     if (!before.present) continue
-    const read = exec(opencode, ["api", "post", `/api/rpc/${route}`, "--data", "{}"], { env: penv })
-    const ok = read.code === 0 && !/"error"\s*:/.test(read.stdout.slice(0, 400))
+    const read = withCheckSession(call, profile, (sessionID) => identityRead(call, { vendor: integration, directory: profile, sessionID }), undefined, [IDENTITY_ACTION[integration], ...IDENTITY_INNER[integration]])
+    const ok = read.ok
     const after = expiryOf(integration)
     const due = before.expires !== null && before.expires - now < REFRESH_WINDOW_MS
     const moved = before.expires !== null && after.expires !== null && after.expires > before.expires
     const stuck = ok && due && !moved
-    results.push({ integration, ok: ok && !stuck, ...(due ? { due: true, refreshed: moved } : {}), ...(ok ? {} : { why: `exit ${read.code}` }), ...(stuck ? { why: "its token was due and its expiry did not move: the service did not refresh it" } : {}) })
+    results.push({ integration, ok: ok && !stuck, ...(due ? { due: true, refreshed: moved } : {}), ...(ok ? {} : { why: read.why }), ...(stuck ? { why: "its token was due and its expiry did not move: the service did not refresh it" } : {}) })
   }
   if (store) logRound(store, { event: "keeper", reads: results.length, failed: results.filter((r) => !r.ok).map((r) => r.integration), refreshed: results.filter((r) => r.refreshed).map((r) => r.integration) })
   return results
@@ -51,8 +53,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const at = args.indexOf(`--${name}`)
     return at >= 0 ? args[at + 1] : fallback
   }
-  const store = flag("store", process.env.EVALS_STORE ?? join(homedir(), "evals-232", "store"))
-  const options = { opencode: flag("opencode", process.env.OPENCODE_BIN ?? "opencode"), profile: flag("profile", process.env.EVALS_PROFILE ?? join(store, "..", "profile")), store, only: flag("only", null)?.split(",") ?? null }
+  const storeFlag = flag("store", null)
+  const store = storeFlag ?? defaultStoreDir()
+  const options = { opencode: flag("opencode", process.env.OPENCODE_BIN ?? "opencode"), profile: flag("profile", process.env.EVALS_PROFILE ?? (storeFlag ? join(storeFlag, "..", "profile") : defaultProfileDir())), store, only: flag("only", null)?.split(",") ?? null }
   const pass = () => {
     const results = keepOnce(options)
     console.log(`${new Date().toISOString()} keeper: ${results.length} read(s), ${results.filter((r) => !r.ok).length} failed${results.some((r) => !r.ok) ? `: ${results.filter((r) => !r.ok).map((r) => r.integration).join(", ")}` : ""}`)
