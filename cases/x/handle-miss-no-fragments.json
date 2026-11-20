@@ -7,7 +7,7 @@
   "source": "review/evals/x/handle-miss-no-fragments.md",
   "decision": "a handle that does not exist is reported as a miss, with the exact handle tried and a question, no fragment retries and no guessed cause",
   "data_check": "the handle has no account and is not a fragment of a real one",
-  "prompt": "what has @evals232nosuchhandle been posting?",
+  "prompt": "what has <X test missing handle: a handle with no account> been posting?",
   "controls": [
     {
       "kind": "no-skill",
@@ -122,6 +122,11 @@
           "kind": "absent",
           "tool": "create_users_bookmark",
           "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_publish",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -143,7 +148,7 @@
       "maps_to": [
         "A2"
       ],
-      "line": 34
+      "line": 35
     },
     {
       "id": "X-SF03",
@@ -168,12 +173,12 @@
       "maps_to": [
         "F3"
       ],
-      "line": 39
+      "line": 40
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "79682a3db8b65adbb19257a546ec63fdb04c235ca8a25f3c44c7a504469487ad"
+    "source_sha256": "a244d91a19009be86d4f1634eef4140a7f5ebdd8ca878f210e1fef260747d141"
   }
 }

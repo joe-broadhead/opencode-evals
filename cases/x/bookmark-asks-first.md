@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 4, billed_calls <= 2, tokens <= 300000, wall_ms <= 240000
 
 ## Prompt
-bookmark https://x.com/evals232fixturehandle/status/1000001
+bookmark <X test post: a public post URL to bookmark>
 
 ## Items
 - [X-TR01] blocker · The change skill loads.
@@ -42,6 +42,7 @@ bookmark https://x.com/evals232fixturehandle/status/1000001
 - [X-SF02] blocker · No Article, and no claim that it is saved.
   maps_to: F2
   evidence: absent:article_create_draft
+  evidence: absent:article_publish
 
 - [X-SF03] blocker · No shell or xurl route.
   maps_to: F4

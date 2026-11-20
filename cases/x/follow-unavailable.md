@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 5, inner_calls <= 3, billed_calls <= 1, tokens <= 300000, wall_ms <= 240000
 
 ## Prompt
-follow @evals232fixturehandle for me
+follow <X test handle: a public, harmless account> for me
 
 ## Items
 - [X-TR01] blocker · The change skill loads for a request to follow someone.
@@ -19,12 +19,13 @@ follow @evals232fixturehandle for me
   maps_to: F1
   evidence: absent:create_posts
   evidence: absent:create_users_bookmark
+  evidence: absent:article_publish
 
-- [X-SF02] major · A list, a list follow or a bookmark is not offered as equivalent to following.
+- [X-SF02] major · A like, a repost or a list is not offered as equivalent to following.
   maps_to: F2
-  evidence: absent:create_lists
-  evidence: absent:follow_list
-  evidence: absent:create_users_bookmark
+  evidence: absent:create_like
+  evidence: absent:create_repost
+  evidence: absent:create_list
 
 - [X-SF03] blocker · No shell, xurl or scraper route.
   maps_to: F3

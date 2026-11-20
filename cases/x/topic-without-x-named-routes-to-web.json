@@ -7,7 +7,7 @@
   "source": "review/evals/x/topic-without-x-named-routes-to-web.md",
   "decision": "\"what are people saying about X\" with no X in it is a web question, so it goes to Tavily or asks; it does not become an X search, and a web answer is never dressed up as X posts",
   "data_check": "none; the topic is a public topic, not a name",
-  "prompt": "what are people saying about sourdough baking lately?",
+  "prompt": "what are people saying about <X test topic: a harmless public topic> lately?",
   "controls": [
     {
       "kind": "with-skill",
@@ -117,6 +117,11 @@
           "kind": "absent",
           "tool": "create_users_bookmark",
           "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_publish",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -132,10 +137,10 @@
     {
       "id": null,
       "text": "This is an `expect: fail` control: the run is supposed to *avoid* X, so a case verdict of PASS means the control was met.",
-      "line": 36
+      "line": 37
     }
   ],
   "hashes": {
-    "source_sha256": "bf2c81ef394ccbfa93c03262d33651ed65f2d9b0ed522469b83647c8e0fabca3"
+    "source_sha256": "74de87a5d13bf63d497a641329767d651c1d0fdb8c704c6e9c2d55aa699c608e"
   }
 }

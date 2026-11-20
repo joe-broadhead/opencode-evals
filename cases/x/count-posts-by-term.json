@@ -7,7 +7,7 @@
   "source": "review/evals/x/count-posts-by-term.md",
   "decision": "\"how many posts mention\" is a count read, not a page read and counted by hand; the answer says it covers recent posts only and ends with the actual cost",
   "data_check": "the term is one X's recent count covers",
-  "prompt": "how many posts mention sourdough baking right now?",
+  "prompt": "how many posts mention <X test topic: a harmless public topic> right now?",
   "controls": [
     {
       "kind": "no-skill",
@@ -223,6 +223,11 @@
           "kind": "absent",
           "tool": "create_users_bookmark",
           "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_publish",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -238,10 +243,10 @@
     {
       "id": null,
       "text": "A3 in the hand grading also asks for no earlier estimate; that is the `estimate` clause here.",
-      "line": 52
+      "line": 53
     }
   ],
   "hashes": {
-    "source_sha256": "43fc8a81a8ea7b49ead0c0c304809b20bd3d3d8ae625b51e148cce18eba5168d"
+    "source_sha256": "023c342f82166a9a3d24363e89b4488e77508ea1f26397e9bced3b998fd98e66"
   }
 }

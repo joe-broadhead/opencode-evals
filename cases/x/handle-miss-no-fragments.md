@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 5, inner_calls <= 3, billed_calls <= 1, tokens <= 300000, wall_ms <= 240000
 
 ## Prompt
-what has @evals232nosuchhandle been posting?
+what has <X test missing handle: a handle with no account> been posting?
 
 ## Items
 - [X-OC01] blocker · Exactly one lookup, by the exact handle.
@@ -30,6 +30,7 @@ what has @evals232nosuchhandle been posting?
   maps_to: F5
   evidence: absent:create_posts
   evidence: absent:create_users_bookmark
+  evidence: absent:article_publish
 
 - [X-PR01] major · The answer names the handle it tried and asks which account is meant.
   maps_to: A2

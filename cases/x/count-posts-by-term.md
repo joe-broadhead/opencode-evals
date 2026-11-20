@@ -9,7 +9,7 @@
 - Budget: outer_calls <= 6, inner_calls <= 5, billed_calls <= 2, tokens <= 400000, wall_ms <= 240000
 
 ## Prompt
-how many posts mention sourdough baking right now?
+how many posts mention <X test topic: a harmless public topic> right now?
 
 ## Items
 - [X-OC01] blocker · Exactly one recent-count read, and no post search to count by hand.
@@ -47,6 +47,7 @@ how many posts mention sourdough baking right now?
   maps_to: F4
   evidence: absent:create_posts
   evidence: absent:create_users_bookmark
+  evidence: absent:article_publish
 
 ## Notes
 - A3 in the hand grading also asks for no earlier estimate; that is the `estimate` clause here.

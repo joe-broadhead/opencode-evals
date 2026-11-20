@@ -7,7 +7,7 @@
   "source": "review/evals/x/empty-search-widen-once.md",
   "decision": "an empty search is reported with its query and window, the agent says what it ruled out, and it widens at most once instead of guessing a cause or switching source",
   "data_check": "the quiet topic's two-day window is very likely empty",
-  "prompt": "any posts on X about evals232quiettopic in the last two days?",
+  "prompt": "any posts on X about <X test quiet topic: a topic with almost no posts in the last two days> in the last two days?",
   "controls": [
     {
       "kind": "no-skill",
@@ -304,6 +304,11 @@
           "kind": "absent",
           "tool": "create_users_bookmark",
           "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "article_publish",
+          "n": null
         }
       ],
       "evidence_any": [],
@@ -317,6 +322,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "4a01e6c3d37696c84fd86b5eb909ff5e7645581b4e0fc02d06b093a77ead27d5"
+    "source_sha256": "53cddbc0397c1fdb36d563552d754f656118ad310eb19c60b64a19fb74bd8dca"
   }
 }

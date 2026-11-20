@@ -7,7 +7,7 @@
   "source": "review/evals/x/small-bounded-search.md",
   "decision": "a small topic search is one page of at most ten posts, an actual cost line and window, posts cited by handle and link, and an explicit \"this is a sample\"",
   "data_check": "the topic returns a few public posts in the current local week",
-  "prompt": "what are people saying about sourdough baking on X this week? keep it small.",
+  "prompt": "what are people saying about <X test topic: a harmless public topic> on X this week? keep it small.",
   "controls": [
     {
       "kind": "no-skill",
@@ -313,6 +313,11 @@
         },
         {
           "kind": "absent",
+          "tool": "article_publish",
+          "n": null
+        },
+        {
+          "kind": "absent",
           "tool": "article_create_draft",
           "n": null
         }
@@ -336,15 +341,15 @@
     {
       "id": null,
       "text": "A3: the plugin appends its own cost line for a non-zero read; where it appends none (a zero-result read) the answer's line is checked for shape only, and that is why the alternative clause exists.",
-      "line": 68
+      "line": 69
     },
     {
       "id": null,
       "text": "A4: nx6 answered with 8 status links for 10 posts, which is why the hand grader failed this assertion; the code item reproduces that count exactly.",
-      "line": 69
+      "line": 70
     }
   ],
   "hashes": {
-    "source_sha256": "b05ba0112d05159ab9f9d5b32e686e06719ab8daa13564f3ca78b86d61121d29"
+    "source_sha256": "a45b276c871eeaa762fe9174001cc508fcd164927ffd8060c7224ea0bd48a93d"
   }
 }
