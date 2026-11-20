@@ -1,0 +1,71 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-themes",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "wide sweep: charts_themes (built-in and saved themes, or one theme's tokens)",
+  "decision": "A which-themes question uses charts_themes once and lists them",
+  "data_check": "none",
+  "prompt": "what themes can I use for charts, and what does the dark one look like in tokens?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "CHT-OC01",
+      "severity": "blocker",
+      "ask": "It used themes once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.themes",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "major",
+      "ask": "The answer names the themes and shows the tokens for the one asked about.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(light|dark|theme|colour|color)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "0122bc674d461b88ab5ab7ed2ca8598f8c5f458f81a11f511d48f14e949c309d"
+  }
+}

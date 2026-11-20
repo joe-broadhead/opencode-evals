@@ -1,0 +1,116 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-render-treemap",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "commit set: a real render to outputs/charts, inside the trial",
+  "decision": "The treemap is really rendered: one render call, an SVG on disk, and no decline",
+  "data_check": "the charts world's data working directory holds data/sales.csv",
+  "prompt": "draw a treemap of revenue by region from data/sales.csv and save the SVG.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "commit"
+  ],
+  "items": [
+    {
+      "id": "CHT-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one render call, and it was not declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.render",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "absent-declined",
+          "tool": "charts_render"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "blocker",
+      "ask": "An SVG was written under outputs/charts.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "outputs/charts/**/*.svg",
+          "op": "exists"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "CHT-OC03",
+      "severity": "major",
+      "ask": "The answer shows the chart inline.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "!\\[|\\.svg",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "CHT-SF01",
+      "severity": "blocker",
+      "ask": "No source file was edited.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "478cb6d33302e3b740814027944ca1960c4d33032a8cb64cbc521cc71fea225e"
+  }
+}

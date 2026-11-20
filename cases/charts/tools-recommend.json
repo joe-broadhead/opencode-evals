@@ -1,0 +1,91 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-recommend",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "wide sweep: charts_recommend (a ranked shortlist for a question and data shape)",
+  "decision": "A which-chart question uses charts_recommend once and answers with a recommendation and its reason",
+  "data_check": "none: the question and the six channels are the user's own",
+  "prompt": "which chart should I use for share of total across six channels? I want something a non-analyst reads at a glance.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "CHT-OC01",
+      "severity": "blocker",
+      "ask": "It used recommend once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.recommend",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "CHT-PR01",
+      "severity": "major",
+      "ask": "It passed the user's question, not a generic prompt.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.recommend",
+          "n": 1,
+          "arg": "args.request",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "CHT-OC03",
+      "severity": "major",
+      "ask": "The answer recommends a chart type and says why.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(pie|donut|bar|treemap|share)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "f712e5120f87f81b43c71aabe739e9bee9d3bcf625fbf690e4e9312a2f8411ad"
+  }
+}

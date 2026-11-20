@@ -1,0 +1,109 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-table",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "wide sweep: charts_table (a publication data-graphic table)",
+  "decision": "A publication table goes to charts_table, and at ask-changes it is graded at the declined call",
+  "data_check": "the charts world's data working directory holds data/sales.csv",
+  "prompt": "make a publication table of the regions: revenue, share of total, and a small bar in the revenue column.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "CHT-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one table call, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.table",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "charts_table"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "CHT-PR01",
+      "severity": "major",
+      "ask": "It declared the table's columns.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.table",
+          "n": 1,
+          "arg": "args.columns",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "CHT-OC03",
+      "severity": "major",
+      "ask": "The answer says nothing was written, and offers what it would have drawn.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(written|made|created|saved|rendered)\\b",
+              "flags": "i"
+            }
+          }
+        ],
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "d12a4f0e87f54d6e8d5864f34129d9e82b033ceca278ac0ae959bfb6ea1d454b"
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-catalogue",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "wide sweep: charts_catalogue (every chart type, or one full example)",
+  "decision": "A show-me-an-example request uses charts_catalogue for one type and returns its example",
+  "data_check": "none",
+  "prompt": "show me your Sankey example — the full spec and the data, so I can adapt it.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "CHT-OC01",
+      "severity": "blocker",
+      "ask": "It used catalogue once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.catalogue",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "CHT-PR01",
+      "severity": "major",
+      "ask": "It asked for the Sankey type.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.catalogue",
+          "n": 1,
+          "arg": "args.id",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "sankey",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "CHT-OC03",
+      "severity": "major",
+      "ask": "The answer carries an example spec, not just a description.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(spec|data|nodes|links)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "3d2c246d25b1862ffee6c418cf6b2eb3d10cd989a6a56cf54f8f847f2db0ac50"
+  }
+}

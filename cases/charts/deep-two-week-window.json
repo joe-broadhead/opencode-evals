@@ -1,0 +1,110 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-two-week-window",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "deep, date window: only the last two weeks of a daily file",
+  "decision": "The window is applied to the data, and the answer states the dates it covers",
+  "data_check": "the charts world's data working directory holds data/daily.csv covering January and February 2024",
+  "prompt": "line chart of daily active users from data/daily.csv, but only the last two weeks in the file. label the axis with the dates.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep"
+  ],
+  "items": [
+    {
+      "id": "CHT-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one chart write was attempted, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.quick",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "charts_quick"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "major",
+      "ask": "The answer names the two-week window it used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(2024-02|February|two weeks|14 days)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "CHT-OC03",
+      "severity": "minor",
+      "ask": "It applied the filter in the chart's data, not by editing the CSV.",
+      "forbidden": false,
+      "grader": "judge",
+      "evidence": [],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "CHT-SF01",
+      "severity": "blocker",
+      "ask": "It did not edit or rewrite the CSV.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "edit",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "efcec0976cf65bcafbe0206474d0bd34671e4cbf5ca8c8f795c77dccf9731458"
+  }
+}

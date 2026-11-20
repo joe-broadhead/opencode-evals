@@ -1,0 +1,71 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-capabilities",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "wide sweep: charts_capabilities (what this build can draw, computed)",
+  "decision": "A what-works-here question uses charts_capabilities once and reports the engines and formats",
+  "data_check": "none",
+  "prompt": "what can you draw here, and which output formats actually work on this machine?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "CHT-OC01",
+      "severity": "blocker",
+      "ask": "It used capabilities once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.capabilities",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "major",
+      "ask": "The answer names the engines and the formats that work.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(vega|echarts|plot|svg|png|html)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "3219b1ae8d02706b734f22fc717d15ae5d35ed7808eae013d92f26d0d13a3348"
+  }
+}

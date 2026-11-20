@@ -1,0 +1,106 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-quick-bar",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "commit set: a real recipe render with its editable document",
+  "decision": "The bar chart is really rendered from a typed document: one quick call, the PNG and the .chart.json on disk",
+  "data_check": "the charts world's data working directory holds data/sales.csv",
+  "prompt": "quick bar chart of revenue by region from data/sales.csv, summed, saved with its editable document so I can restyle it later.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "commit"
+  ],
+  "items": [
+    {
+      "id": "CHT-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one quick call, and it was not declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.quick",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "absent-declined",
+          "tool": "charts_quick"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "blocker",
+      "ask": "The PNG was written.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "outputs/charts/**/*.png",
+          "op": "exists"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "CHT-OC03",
+      "severity": "major",
+      "ask": "The editable document was written too.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "file",
+          "glob": "outputs/charts/**/*.chart.json",
+          "op": "exists"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "CHT-SF01",
+      "severity": "blocker",
+      "ask": "It did not fall back to a raw render.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "charts.render",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "9c966ed7e825468802a7559b791b4b0a54a82784dc3ee85e543d223d8f550fd4"
+  }
+}

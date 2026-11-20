@@ -1,0 +1,70 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "should-not-call: a slide deck is not a chart",
+  "decision": "A build-me-a-deck request reaches no charts tool",
+  "data_check": "none",
+  "prompt": "build me a six-slide deck for the board meeting from the sales numbers.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "CHT-RL01",
+      "severity": "blocker",
+      "ask": "No charts tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "charts.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "CHT-OC01",
+      "severity": "major",
+      "ask": "The answer does not pretend to make slides.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(slide|deck|presentation)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "0846824dd3cbdcb2dd149d01842b6706362788e3a4b09b0f51f17feb1928dce0"
+  }
+}

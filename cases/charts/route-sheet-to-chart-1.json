@@ -1,0 +1,127 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-sheet-to-chart-1",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "overlap routing: charts vs gws, the numbers live in a Google Sheet",
+  "decision": "A chart-from-my-sheet request reads the sheet with gws first, then draws with charts, and both writes are graded at the declined call",
+  "data_check": "{{target:gws.sheet}} holds a small numeric table the user owns",
+  "prompt": "chart the numbers in my evals sheet — revenue by month as a line — and save it next to the sheet.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "CHT-RL01",
+      "severity": "blocker",
+      "ask": "It read the sheet with the Google Workspace tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "gws.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "CHT-RL02",
+      "severity": "major",
+      "ask": "It drew with a charts tool.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "CHT-OC01",
+      "severity": "major",
+      "ask": "The answer says the chart was not saved.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(saved|written|created|rendered)\\b",
+              "flags": "i"
+            }
+          }
+        ],
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "CHT-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was written to the sheet or to a file.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "gws.gws_write",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "write",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "9c55fe12a861f5db1e28a9a907078d0bba9eff29fb9f01af6f165b6f28e7b8d1"
+  }
+}

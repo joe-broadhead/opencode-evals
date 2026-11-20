@@ -1,0 +1,132 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-render",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "wide sweep: charts_render (a raw engine spec; a treemap is Vega, not one of the 14 recipes)",
+  "decision": "A treemap request goes to charts_render with a raw spec, and at ask-changes it is graded at the declined call",
+  "data_check": "the charts world's data working directory holds data/sales.csv with region and revenue_eur",
+  "prompt": "draw a treemap of revenue by region from data/sales.csv. bigger boxes for bigger regions.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "cwd=data",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide"
+  ],
+  "items": [
+    {
+      "id": "CHT-OC01",
+      "severity": "blocker",
+      "ask": "Exactly one render call, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "charts.render",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "charts_render"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "CHT-PR01",
+      "severity": "major",
+      "ask": "It passed a raw spec, not a recipe document.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "charts.render",
+          "n": 1,
+          "arg": "args.spec",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "CHT-OC02",
+      "severity": "minor",
+      "ask": "It read the CSV it was given, not another file.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "sales\\.csv|region|revenue",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "CHT-OC04",
+      "severity": "major",
+      "ask": "The answer says nothing was written, and offers what it would have drawn.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(not|wasn't|was not|couldn't|could not|didn't|did not)\\b.{0,40}\\b(written|drawn|rendered|created|saved)\\b",
+              "flags": "i"
+            }
+          }
+        ],
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(declined|rejected|refused|blocked|needs? (your )?approval)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "bf7351c59d7a62597d8afd5a598ca4c1c6945f3510f81555b9e91486c609b34d"
+  }
+}

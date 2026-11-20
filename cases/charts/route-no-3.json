@@ -1,0 +1,70 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-3",
+  "plugin": "charts",
+  "skill": "charts",
+  "tier": "T3",
+  "source": "should-not-call: a 3-D scientific surface belongs to code, not charts",
+  "decision": "A 3-D surface request reaches no charts tool, and the answer points at code",
+  "data_check": "none",
+  "prompt": "plot z = sin(x) * cos(y) as a 3-D surface, 60 by 60, with a colour map.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "items": [
+    {
+      "id": "CHT-RL01",
+      "severity": "blocker",
+      "ask": "No charts tool was called.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "charts.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "CHT-OC01",
+      "severity": "major",
+      "ask": "The answer says this needs code on the machine, not the charts tools.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "(python|matplotlib|code|3-d|three-dimensional)",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "66788024f7ddf68438708056e07a5b22813b71314ccdf57c482c9d8d51cc3ab0"
+  }
+}
