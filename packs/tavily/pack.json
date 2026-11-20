@@ -3,7 +3,7 @@
   "id": "tavily",
   "name": "Tavily",
   "package": "@joe-broadhead/opencode-tavily",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "private": true,
   "pluginId": "tavily.web",
   "rpc": "tavily.web.tools",
@@ -30,36 +30,36 @@
       "name": "tavily_search",
       "permission": "tavily_tavily_search",
       "effect": "allow",
-      "readOnly": true,
-      "class": "read"
+      "readOnly": false,
+      "class": "write"
     },
     {
       "name": "tavily_extract",
       "permission": "tavily_tavily_extract",
       "effect": "allow",
-      "readOnly": true,
-      "class": "read"
+      "readOnly": false,
+      "class": "write"
     },
     {
       "name": "tavily_map",
       "permission": "tavily_tavily_map",
       "effect": "allow",
-      "readOnly": true,
-      "class": "read"
+      "readOnly": false,
+      "class": "write"
     },
     {
       "name": "tavily_crawl",
       "permission": "tavily_tavily_crawl",
       "effect": "allow",
-      "readOnly": true,
-      "class": "read"
+      "readOnly": false,
+      "class": "write"
     },
     {
       "name": "tavily_research",
       "permission": "tavily_tavily_research",
       "effect": "allow",
-      "readOnly": true,
-      "class": "read"
+      "readOnly": false,
+      "class": "write"
     }
   ],
   "access": {
@@ -68,20 +68,20 @@
   },
   "counts": {
     "tools": 5,
-    "reads": 5,
-    "writes": 0,
+    "reads": 0,
+    "writes": 5,
     "denied": 0,
     "skills": 2
   },
-  "digest": "aee3c0d487030cf0d52c23de7970ccdfd48005a4ecfbda210205b592d96925e0",
+  "digest": "ec555141ace628a3392fb4d44955668c4772d0b0bb84b0315dabcd2fd5ee953f",
   "t1": [],
   "egress": [
     "mcp.tavily.com",
     "api.tavily.com"
   ],
   "release": {
-    "version": "0.0.5",
-    "tag": "v0.0.5",
-    "commit": "2c9816376c61d9197e36cc5a59af7a2c27e98b1d"
+    "version": "0.0.6",
+    "tag": "v0.0.6",
+    "commit": "2fd4bb20bf8e6c12a06f78d8b5fc2a5859d3060f"
   }
 }

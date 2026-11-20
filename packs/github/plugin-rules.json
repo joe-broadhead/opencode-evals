@@ -2,9 +2,9 @@
  "schema": "oc-plugin-rules/1",
  "plugin": "github",
  "release": {
-  "version": "0.0.6",
-  "tag": "v0.0.6",
-  "commit": "96c2076efc9aeb512b51a3b6626702a14d4d7bee"
+  "version": "0.0.9",
+  "tag": "v0.0.9",
+  "commit": "b452f1f6d04b63d24dc25ffd205c1aff9f3a2232"
  },
  "access": "ask-changes",
  "host": "opencode v2.3.2",

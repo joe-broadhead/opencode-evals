@@ -2,9 +2,9 @@
  "schema": "oc-registered/1",
  "plugin": "wisprflow",
  "release": {
-  "version": "0.0.6",
-  "tag": "v0.0.6",
-  "commit": "d75384c13359e86535ff8e96360d96604ae4e8e7"
+  "version": "0.0.7",
+  "tag": "v0.0.7",
+  "commit": "131e226ae21e2f431baa986ff627a7f51b500dae"
  },
  "host": "opencode v2.3.2",
  "via": "the built release loaded in the host with no sign-in, listed by Code Mode's search({ namespace })",

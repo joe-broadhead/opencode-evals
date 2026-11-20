@@ -2,9 +2,9 @@
  "schema": "oc-plugin-rules/1",
  "plugin": "jira",
  "release": {
-  "version": "0.0.5",
-  "tag": "v0.0.5",
-  "commit": "0dbfe632cb4374e7e2d20362722493178ad73bb3"
+  "version": "0.0.6",
+  "tag": "v0.0.6",
+  "commit": "a4a3cfca59d1f238cc2ceafe30db766fc612fec8"
  },
  "access": "ask-changes",
  "host": "opencode v2.3.2",

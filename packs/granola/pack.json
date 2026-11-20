@@ -5,7 +5,7 @@
   "id": "granola",
   "name": "Granola",
   "package": "@joe-broadhead/opencode-granola",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "private": true,
   "skills": [
     "granola",
@@ -104,6 +104,13 @@
       "class": "write"
     },
     {
+      "name": "update_meeting_title",
+      "permission": "granola_update_meeting_title",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
       "name": "add_note_to_folder",
       "permission": "granola_add_note_to_folder",
       "effect": "allow",
@@ -120,6 +127,13 @@
     {
       "name": "update_private_notes",
       "permission": "granola_update_private_notes",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "update_summary",
+      "permission": "granola_update_summary",
       "effect": "allow",
       "readOnly": false,
       "class": "write"
@@ -162,9 +176,9 @@
     }
   ],
   "counts": {
-    "tools": 21,
+    "tools": 23,
     "reads": 11,
-    "writes": 10,
+    "writes": 12,
     "denied": 0,
     "hidden": 1,
     "skills": 2
@@ -184,7 +198,7 @@
       "body_lines": 41
     }
   },
-  "digest": "53fda4c98c1ee94441571637fb22d876e5d8bb4897c54c9091e738083ad8e3ad",
+  "digest": "bda901e6b62e9560e131ac119e7ca7c3e4ef4a74b00e6baf6440df8e42e1915a",
   "access": {
     "key": "access",
     "default": "all"
@@ -194,8 +208,8 @@
     "mcp-auth.granola.ai"
   ],
   "release": {
-    "version": "0.0.6",
-    "tag": "v0.0.6",
-    "commit": "1bce3289fba00fbbd40b44ff20ea79d264c48c00"
+    "version": "0.0.7",
+    "tag": "v0.0.7",
+    "commit": "2cc0483ff35136267dcd94fa1073f0e3d1915cd1"
   }
 }

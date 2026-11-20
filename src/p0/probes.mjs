@@ -666,7 +666,7 @@ export async function consent(env = {}) {
     const actions = [...new Set(pack.tools.map((t) => t.permission).filter(Boolean))]
     for (let i = 0; i < actions.length; i += 80) cases.push({ id: `tools-consent-${pack.id}-${i / 80}`, pack: pack.id, actions: actions.slice(i, i + 80) })
   }
-  cases.push({ id: "tools-consent-unlisted", pack: "(unlisted)", actions: ["elevenlabs_agents_outbound_call", "slack_slack_brand_new", "gws.brand_new", "tavily_tavily_added_later"] })
+  cases.push({ id: "tools-consent-unlisted", pack: "(unlisted)", actions: ["elevenlabs_agents_brand_new_dial", "slack_slack_brand_new", "gws.brand_new", "tavily_tavily_added_later"] })
   const run = await scriptedRun({ plugin: "slack", cases: cases.map((c) => ({ id: c.id, prompt: execute(askAll(c.actions)) })), arm: fullArm(env.companions, { arm: "slack", options: {} }), options: { probe: true, guardMode: "log", iteration: "p0-consent", auth: "none" }, caller: env.caller, tmp: env.tmp })
   try {
     const sealed = {}
@@ -691,7 +691,7 @@ export async function consent(env = {}) {
     for (const action of ["slack_slack_search_public_and_private", "slack_slack_read_file", "x_get_chat_conversation", "x_get_chat_conversation_events", "x_get_chat_conversations", "x_get_chat_message_requests", "x_get_users_public_key", "x_get_users_public_keys"]) checks.push(ok(`${action} (private content, the plugin asks consent) stays asked`, sealed[action] === "asked", `${sealed[action]}; the plugin's own rules: ${own[action.startsWith("x_") ? "x" : "slack"].asked.includes(action) ? "ask" : "NOT recorded as an ask"}`))
     for (const action of confirm) checks.push(ok(`${action} stays confirm-only (asked)`, sealed[action] === "asked", sealed[action]))
     for (const action of exceptions) checks.push(ok(`the listed exception ${action} is allowed`, sealed[action] === "allowed", sealed[action]))
-    checks.push(ok("a tool no pack lists is asked, in four plugins (the fail-closed default holds)", ["elevenlabs_agents_outbound_call", "slack_slack_brand_new", "gws.brand_new", "tavily_tavily_added_later"].every((a) => sealed[a] === "asked"), JSON.stringify(["elevenlabs_agents_outbound_call", "slack_slack_brand_new", "gws.brand_new", "tavily_tavily_added_later"].map((a) => sealed[a]))))
+    checks.push(ok("a tool no pack lists is asked, in four plugins (the fail-closed default holds)", ["elevenlabs_agents_brand_new_dial", "slack_slack_brand_new", "gws.brand_new", "tavily_tavily_added_later"].every((a) => sealed[a] === "asked"), JSON.stringify(["elevenlabs_agents_brand_new_dial", "slack_slack_brand_new", "gws.brand_new", "tavily_tavily_added_later"].map((a) => sealed[a]))))
     // the harness's derived allows come from the recorded rules, and the recording is what the host resolves
     const recorded = loadPluginRules()
     const stale = packs.filter((pack) => JSON.stringify([...recorded.get(pack.id)?.allowed ?? []].sort()) !== JSON.stringify(own[pack.id].allowed)).map((p) => p.id)
@@ -726,14 +726,23 @@ export async function tavily(env = {}) {
     let build = process.env.EVALS_TAVILY_SPEND_BUILD
     let kind = `the build at EVALS_TAVILY_SPEND_BUILD`
     if (!build) {
-      build = join(dir, "tavily-spend")
-      cpSync(installed, build, { recursive: true, filter: (src) => !/(^|\/)(\.git|node_modules)(\/|$)/.test(src) })
-      const file = join(build, "dist", "index.js")
-      const source = rf(file, "utf8")
-      const old = 'return [rule("tavily_*", other), ...KNOWN_ACTIONS.map((action) => rule(action, "allow"))];'
-      if (!source.includes(old)) throw new Error("the installed Tavily build has a default-rules block this probe cannot restate as the spend-class one: set EVALS_TAVILY_SPEND_BUILD to a build that has it")
-      wf(file, source.replace(old, 'return [rule("tavily_*", other), ...KNOWN_ACTIONS.map((action) => rule(action, other))];'))
-      kind = "a stand-in: the installed build with the spend-class default rules (#26)"
+      const source = rf(join(installed, "dist", "index.js"), "utf8")
+      const spendClass = /return \[rule\("tavily_\*", spend\), \.\.\.KNOWN_ACTIONS\.map\(\(action\) => rule\(action, spend\)\)\];/.test(source)
+      if (spendClass) {
+        // Tavily v0.0.6 and later: the released build's own block is the spend-class one
+        build = installed
+        kind = `the released build at ${installed.split("/").slice(-2).join("/")}: its own rule block is spend-class`
+      } else {
+        // v0.0.5: a stand-in made from it with the spend-class default rules (#26), and the pack reclassified to match
+        build = join(dir, "tavily-spend")
+        cpSync(installed, build, { recursive: true, filter: (src) => !/(^|\/)(\.git|node_modules)(\/|$)/.test(src) })
+        const file = join(build, "dist", "index.js")
+        const text = rf(file, "utf8")
+        const old = 'return [rule("tavily_*", other), ...KNOWN_ACTIONS.map((action) => rule(action, "allow"))];'
+        if (!text.includes(old)) throw new Error("the installed Tavily build has a default-rules block this probe cannot restate as the spend-class one: set EVALS_TAVILY_SPEND_BUILD to a build that has it")
+        wf(file, text.replace(old, 'return [rule("tavily_*", other), ...KNOWN_ACTIONS.map((action) => rule(action, other))];'))
+        kind = "a stand-in: the installed v0.0.5 build with the spend-class default rules (#26)"
+      }
     }
     const spend = loadPacks().map((pack) => (pack.id === "tavily" ? { ...pack, tools: pack.tools.map((tool) => ({ ...tool, class: "write", readOnly: false })) } : pack))
     const actions = { search: "tavily_tavily_search", extract: "tavily_tavily_extract", map: "tavily_tavily_map", crawl: "tavily_tavily_crawl", research: "tavily_tavily_research", added: "tavily_tavily_added_later" }

@@ -3,7 +3,7 @@
   "id": "plaud",
   "name": "Plaud",
   "package": "@joe-broadhead/opencode-plaud",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "private": true,
   "pluginId": "plaud.recordings",
   "rpc": "plaud.recordings.tools",
@@ -101,7 +101,7 @@
     "denied": 0,
     "skills": 3
   },
-  "digest": "fe8afcc74849b4ecfb3a5c532ca923cb984a55a848afb266943e88777c6473a1",
+  "digest": "4a7317618a96081951619fd511895cf932d1626fbd5d0fa771a6f7bd10425576",
   "t1": [],
   "account_templates": [
     "plaud-*.list_files",
@@ -114,8 +114,8 @@
     "mcp.plaud.ai"
   ],
   "release": {
-    "version": "0.0.7",
-    "tag": "v0.0.7",
-    "commit": "f89f95a94bde45cba6a62a70f8dcc262d8cbb15c"
+    "version": "0.0.8",
+    "tag": "v0.0.8",
+    "commit": "40877c16730c2d15094c684a30a0df5cc7833e87"
   }
 }

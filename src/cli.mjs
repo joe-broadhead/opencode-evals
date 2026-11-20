@@ -34,7 +34,7 @@ import { fileURLToPath } from "node:url"
 import { compileCase, casesDigest, codedShare } from "./case/compile.mjs"
 import { coverage } from "./case/consistency.mjs"
 import { loadReach } from "./case/reach.mjs"
-import { listingProblems, readSidecar, readExtras, ruleProblems } from "./pack/listing.mjs"
+import { listingProblems, readSidecar, readExtras, ruleProblems, releaseProblems } from "./pack/listing.mjs"
 import { digestOf, sha256, short, canonical } from "./util/canonical.mjs"
 import { harnessVersion } from "./version.mjs"
 import { traceFromFiles } from "./trace/normalise.mjs"
@@ -931,7 +931,7 @@ export async function main(argv) {
           line += `  release ${pack.release?.tag ?? "none"}${pack.release?.commit ? `@${pack.release.commit.slice(0, 7)}` : ""}  registered ${registered ? registered.names.length : "?"}  listed ${host ? host.names.length : "—"}`
           const gaps = [
             ...(!pack.release?.tag || !pack.release?.commit || pack.release.tag !== `v${pack.version}` ? [`records no release for v${pack.version} (tag and commit: node scripts/record-releases.mjs)`] : []),
-            ...(registered ? [] : ["has no registered.json (node scripts/registered-tools.mjs)"]),
+            ...(registered ? releaseProblems(pack, registered, "registered.json") : ["has no registered.json (node scripts/registered-tools.mjs)"]),
             ...ruleProblems(pack, readSidecar(ROOT, id, "plugin-rules.json")),
             ...(listed.registered.length ? [`its release registers ${listed.registered.join(", ")}, which the pack does not list`] : []),
             ...(listed.live.length ? [`a signed-in host lists ${listed.live.join(", ")}, which the pack does not list and scripts/live-extra.json does not explain`] : []),

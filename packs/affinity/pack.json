@@ -4,7 +4,7 @@
   "id": "affinity",
   "name": "Affinity",
   "package": "@joe-broadhead/opencode-affinity",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "private": true,
   "pluginId": "affinity.crm",
   "skills": [
@@ -286,6 +286,118 @@
       "class": "read"
     },
     {
+      "name": "get_calls",
+      "permission": "affinity_get_calls",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_chat_messages",
+      "permission": "affinity_get_chat_messages",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_emails",
+      "permission": "affinity_get_emails",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_interactions_for_entity",
+      "permission": "affinity_get_interactions_for_entity",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_intro_paths",
+      "permission": "affinity_get_intro_paths",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "render_intro_paths_graph",
+      "permission": "affinity_render_intro_paths_graph",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_opportunities_info",
+      "permission": "affinity_get_opportunities_info",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_suggested_field_updates",
+      "permission": "affinity_get_suggested_field_updates",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "get_suggested_field_updates_task",
+      "permission": "affinity_get_suggested_field_updates_task",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_suggested_field_updates",
+      "permission": "affinity_list_suggested_field_updates",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "list_suggested_field_updates_tasks",
+      "permission": "affinity_list_suggested_field_updates_tasks",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "data_quality_audit",
+      "permission": "affinity_data_quality_audit",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "founder_references",
+      "permission": "affinity_founder_references",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "passed_deal_review",
+      "permission": "affinity_passed_deal_review",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "portfolio_check_in",
+      "permission": "affinity_portfolio_check_in",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "ready_to_raise_indicator",
+      "permission": "affinity_ready_to_raise_indicator",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
       "name": "render_warm_intro_graph",
       "permission": "affinity_render_warm_intro_graph",
       "effect": "allow",
@@ -517,6 +629,34 @@
       "class": "write"
     },
     {
+      "name": "update_field",
+      "permission": "affinity_update_field",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "apply_suggested_field_updates",
+      "permission": "affinity_apply_suggested_field_updates",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "dismiss_suggested_field_updates",
+      "permission": "affinity_dismiss_suggested_field_updates",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "suggest_field_updates",
+      "permission": "affinity_suggest_field_updates",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
       "name": "delete_company",
       "permission": "affinity_delete_company",
       "effect": "allow",
@@ -566,6 +706,13 @@
       "class": "write"
     },
     {
+      "name": "delete_field",
+      "permission": "affinity_delete_field",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
       "name": "merge_companies",
       "permission": "affinity_merge_companies",
       "effect": "allow",
@@ -588,9 +735,9 @@
     }
   ],
   "counts": {
-    "tools": 82,
-    "reads": 52,
-    "writes": 30,
+    "tools": 103,
+    "reads": 68,
+    "writes": 35,
     "denied": 0,
     "skills": 2
   },
@@ -600,16 +747,16 @@
       "name": "affinity",
       "description_sha256": "3600ee7fb1e0be6e22ee573c74c6a2afacc739fc8c205c75534594e2d394328d",
       "description_chars": 708,
-      "body_lines": 81
+      "body_lines": 84
     },
     "affinity-write": {
       "name": "affinity-write",
       "description_sha256": "8aaf0da663a38875e4135d24c6765818a8b79399f7d7cf6fdd780c1b339a57e8",
       "description_chars": 431,
-      "body_lines": 84
+      "body_lines": 92
     }
   },
-  "digest": "bfa391bb54cc77aabcd4b4d7f49222dbe06757e1070d13e6b4e95984451058ae",
+  "digest": "20faac88cf4c50bbd7a1add736ae1126bb38637d43d666f83913b0d9c76d163d",
   "access": {
     "key": "access",
     "default": "all"
@@ -618,8 +765,8 @@
     "mcp.affinity.co"
   ],
   "release": {
-    "version": "0.0.6",
-    "tag": "v0.0.6",
-    "commit": "df16c19128091fdf7064beec1df9eb545761a4fe"
+    "version": "0.0.7",
+    "tag": "v0.0.7",
+    "commit": "ec33bbc02bb6a79ca1ffd7bdb4a48cc8e3ea84c4"
   }
 }

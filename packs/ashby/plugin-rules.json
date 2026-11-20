@@ -2,9 +2,9 @@
  "schema": "oc-plugin-rules/1",
  "plugin": "ashby",
  "release": {
-  "version": "0.0.6",
-  "tag": "v0.0.6",
-  "commit": "fb5cfada79e56feaf71080666687d493807b09c3"
+  "version": "0.0.7",
+  "tag": "v0.0.7",
+  "commit": "b7440615a74d7a67097c5e6043530237816dc251"
  },
  "access": "ask-changes",
  "host": "opencode v2.3.2",
@@ -12,6 +12,9 @@
  "allowed": [
   "ashby_describe_object_fields",
   "ashby_filter_records",
+  "ashby_get_ai_interviewer_details",
+  "ashby_get_ai_screening_interview_analytics",
+  "ashby_get_ai_screening_interview_results",
   "ashby_get_candidate",
   "ashby_get_interview_details",
   "ashby_get_interview_plan",
@@ -26,8 +29,11 @@
   "ashby_add_note_to_candidate",
   "ashby_change_application_stage",
   "ashby_consider_candidate_for_job",
+  "ashby_create_ai_interviewer",
+  "ashby_create_ai_interviewer_version",
   "ashby_create_candidate",
-  "ashby_submit_mcp_feedback"
+  "ashby_submit_mcp_feedback",
+  "ashby_update_ai_interviewer_outline"
  ],
  "denied": []
 }

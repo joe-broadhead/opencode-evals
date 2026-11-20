@@ -28,7 +28,7 @@ test("the sealed config asks for a plugin's whole namespace, then allows the pac
   assert.equal(effectOf(rules, "tavily_tavily_research"), "ask")
   assert.equal(effectOf(rules, "tavily_tavily_search"), "allow")
   // the eight ElevenLabs tools its live server lists and v0.0.9's pack lacks, one of which places phone calls
-  for (const name of ["agents_outbound_call", "agents_add_pronunciation_dictionary_rules", "agents_get_draft", "agents_update_draft", "creative_get_guide"]) assert.equal(effectOf(rules, `elevenlabs_${name}`), "ask", name)
+  for (const name of ["agents_brand_new_dial", "agents_brand_new_rules", "agents_brand_new_read", "agents_brand_new_update", "creative_brand_new_guide"]) assert.equal(effectOf(rules, `elevenlabs_${name}`), "ask", name)
   // another plugin's, with a dotted prefix (gws), and an underscore spelling of it
   assert.equal(effectOf(rules, "gws.brand_new_tool"), "ask")
   assert.equal(effectOf(rules, "gws_brand_new_tool"), "ask")
@@ -58,20 +58,20 @@ test("the order matters: a namespace ask after a known read would ask it, and lo
 })
 
 test("a commit set may name an action no pack lists: it becomes an allow after the namespace ask, and the guard treats it as the plan's declared write", () => {
-  const rules = lockdownPermissions({ packs, commit: ["elevenlabs_agents_outbound_call"] })
-  assert.equal(effectOf(rules, "elevenlabs_agents_outbound_call"), "allow")
-  assert.equal(effectOf(rules, "elevenlabs_agents_get_draft"), "ask", "another unlisted tool still asks")
-  const policy = buildPolicy({ mode: "commit", packs, locked: true, commit: { elevenlabs_agents_outbound_call: { extract: "args.agent_id", allow: ["agent_sandbox"] } } })
-  assert.equal(decideBefore(policy, "elevenlabs_agents_outbound_call", { agent_id: "agent_sandbox" }).pass, true, "named, in scope")
-  assert.equal(decideBefore(policy, "elevenlabs_agents_outbound_call", { agent_id: "agent_real" }).pass, false, "named, out of scope")
-  assert.equal(decideBefore(policy, "elevenlabs_agents_outbound_call", { agent_id: "agent_real" }).why, "a target outside the sandbox")
-  assert.equal(decideBefore(policy, "elevenlabs_agents_get_draft", {}).pass, false, "another unlisted tool: refused")
+  const rules = lockdownPermissions({ packs, commit: ["elevenlabs_agents_brand_new_dial"] })
+  assert.equal(effectOf(rules, "elevenlabs_agents_brand_new_dial"), "allow")
+  assert.equal(effectOf(rules, "elevenlabs_agents_brand_new_read"), "ask", "another unlisted tool still asks")
+  const policy = buildPolicy({ mode: "commit", packs, locked: true, commit: { elevenlabs_agents_brand_new_dial: { extract: "args.agent_id", allow: ["agent_sandbox"] } } })
+  assert.equal(decideBefore(policy, "elevenlabs_agents_brand_new_dial", { agent_id: "agent_sandbox" }).pass, true, "named, in scope")
+  assert.equal(decideBefore(policy, "elevenlabs_agents_brand_new_dial", { agent_id: "agent_real" }).pass, false, "named, out of scope")
+  assert.equal(decideBefore(policy, "elevenlabs_agents_brand_new_dial", { agent_id: "agent_real" }).why, "a target outside the sandbox")
+  assert.equal(decideBefore(policy, "elevenlabs_agents_brand_new_read", {}).pass, false, "another unlisted tool: refused")
 })
 
 test("the guard: a plugin's tool no pack lists is a write by default in a locked trial: left to the ask in refuse and log mode, refused in commit mode, never in an unlocked trial; known tools and the harness's own are not it", () => {
   const unlocked = buildPolicy({ mode: "refuse", packs })
   const locked = (mode, commit = {}) => buildPolicy({ mode, packs, locked: true, commit })
-  const outbound = "elevenlabs_agents_outbound_call"
+  const outbound = "elevenlabs_agents_brand_new_dial"
   assert.equal(isUnknownTool(unlocked, outbound), false, "no `known` list outside a locked trial")
   for (const mode of ["refuse", "log"]) {
     const decision = decideBefore(locked(mode), outbound, {})
@@ -83,7 +83,7 @@ test("the guard: a plugin's tool no pack lists is a write by default in a locked
   assert.equal(refused.tool, true, "the guard's `tool` marker: EVALS-ASSERT tool: <name> refused (...)")
   assert.match(refused.why, /a tool no pack lists, and the commit set does not name it/)
   // spellings: dotted, mcp-prefixed
-  for (const name of ["elevenlabs.agents_outbound_call", "mcp_elevenlabs_agents_outbound_call", "gws.brand_new", "slack_slack_brand_new", "x_brand_new_tool"]) assert.equal(isUnknownTool(locked("refuse"), name), true, name)
+  for (const name of ["elevenlabs.agents_brand_new_dial", "mcp_elevenlabs_agents_brand_new_dial", "gws.brand_new", "slack_slack_brand_new", "x_brand_new_tool"]) assert.equal(isUnknownTool(locked("refuse"), name), true, name)
   // not it: every tool of every pack, the allow-list's own tools, the probe's tools, core tools (refused elsewhere), and other prefixes
   const policy = locked("refuse")
   for (const pack of packs) for (const tool of pack.tools) assert.equal(isUnknownTool(policy, tool.permission), false, `${pack.id}.${tool.name}`)
@@ -116,15 +116,15 @@ test("listing: a name is in the pack under its own name, its permission, or pref
 test("listing problems: a tool the release registers that the pack lacks fails; a tool a host lists fails unless a reason explains it; a reason for a tool that is no longer unexplained is stale", () => {
   const pack = { id: "elevenlabs", tools: [{ name: "agents_list", permission: "elevenlabs_agents_list" }] }
   const registered = { names: ["agents_list", "events_list"] }
-  const live = { names: ["agents_list", "agents_outbound_call"] }
+  const live = { names: ["agents_list", "agents_brand_new_dial"] }
   const none = listingProblems(pack, { registered, live, extras: {} })
   assert.deepEqual(none.registered, ["events_list"])
-  assert.deepEqual(none.live, ["agents_outbound_call"])
-  const excused = listingProblems(pack, { registered: { names: ["agents_list"] }, live, extras: { elevenlabs: { agents_outbound_call: "places a phone call" } } })
+  assert.deepEqual(none.live, ["agents_brand_new_dial"])
+  const excused = listingProblems(pack, { registered: { names: ["agents_list"] }, live, extras: { elevenlabs: { agents_brand_new_dial: "places a phone call" } } })
   assert.deepEqual([excused.registered, excused.live, excused.stale], [[], [], []])
   // an explanation for a tool the pack now lists, or the host no longer lists
-  assert.deepEqual(listingProblems(pack, { live: { names: ["agents_list"] }, extras: { elevenlabs: { agents_outbound_call: "x" } } }).stale, ["agents_outbound_call"])
-  assert.deepEqual(listingProblems({ ...pack, tools: [...pack.tools, { name: "agents_outbound_call", permission: "elevenlabs_agents_outbound_call" }] }, { live, extras: { elevenlabs: { agents_outbound_call: "x" } } }).stale, ["agents_outbound_call"])
+  assert.deepEqual(listingProblems(pack, { live: { names: ["agents_list"] }, extras: { elevenlabs: { agents_brand_new_dial: "x" } } }).stale, ["agents_brand_new_dial"])
+  assert.deepEqual(listingProblems({ ...pack, tools: [...pack.tools, { name: "agents_brand_new_dial", permission: "elevenlabs_agents_brand_new_dial" }] }, { live, extras: { elevenlabs: { agents_brand_new_dial: "x" } } }).stale, ["agents_brand_new_dial"])
   assert.deepEqual(listingProblems(pack, {}), { registered: [], live: [], stale: [] }, "no sidecars: nothing to compare (evals pack says so)")
 })
 
@@ -138,10 +138,13 @@ test("every committed pack agrees with its registered.json, its live.json and th
     reasons += Object.keys(extras[pack.id] ?? {}).length
     assert.ok(pack.release?.tag === `v${pack.version}` && /^[0-9a-f]{40}$/.test(pack.release.commit), `${pack.id} records its release`)
   }
-  // the eight ElevenLabs tools the review named, each with its reason, the call-placing one first in its words
-  assert.deepEqual(Object.keys(extras.elevenlabs).sort(), ["agents_add_pronunciation_dictionary_rules", "agents_create_pronunciation_dictionary", "agents_get_draft", "agents_get_pronunciation_dictionary", "agents_outbound_call", "agents_remove_pronunciation_dictionary_rules", "agents_update_draft", "creative_get_guide"])
-  assert.match(extras.elevenlabs.agents_outbound_call, /PLACES A REAL PHONE CALL/)
-  assert.ok(reasons >= 37)
+  // what the host lists beyond the pinned packs carries a reason; a reason for a tool the pack lists is stale (listingProblems above). ElevenLabs' eight, Granola's two and Affinity's 21 were classified
+  // by v0.0.10, v0.0.7 and v0.0.7: their reasons are gone, and the tools are in their packs.
+  for (const id of Object.keys(extras)) for (const [name, why] of Object.entries(extras[id])) assert.ok(typeof why === "string" && why.length > 20, `${id}.${name} has a reason`)
+  for (const id of ["elevenlabs", "granola", "affinity"]) assert.equal(extras[id], undefined, `${id}: classified by its release`)
+  for (const name of ["agents_outbound_call", "agents_get_draft", "agents_update_draft", "creative_get_guide", "agents_create_pronunciation_dictionary"]) assert.equal(inPack(packs.find((p) => p.id === "elevenlabs"), name), true, `${name} is in the v0.0.10 pack`)
+  for (const name of ["update_meeting_title", "update_summary"]) assert.equal(inPack(packs.find((p) => p.id === "granola"), name), true, name)
+  for (const name of ["delete_field", "get_calls", "update_field"]) assert.equal(inPack(packs.find((p) => p.id === "affinity"), name), true, name)
 })
 
 test("`evals pack` fails a pack that differs from what its release registers or a host lists, and one with no release recorded: mutations on a copy of the sidecars", () => {
@@ -157,8 +160,10 @@ test("`evals pack` fails a pack that differs from what its release registers or 
     const removed = packs.map((p) => (p.id === "slack" ? { ...p, tools: p.tools.filter((t) => t.name !== "mark_read") } : p)).find((p) => p.id === "slack")
     assert.deepEqual(listingProblems(removed, { registered: readSidecar(ROOT, "slack", "registered.json") }).registered, ["mark_read"], "a tool the release registers that the pack dropped")
     const extra = readExtras(ROOT)
-    const reasons = { ...extra, elevenlabs: Object.fromEntries(Object.entries(extra.elevenlabs).filter(([name]) => name !== "agents_outbound_call")) }
-    assert.deepEqual(listingProblems(eleven, { live: readSidecar(ROOT, "elevenlabs", "live.json"), extras: reasons }).live, ["agents_outbound_call"], "the call-placing tool with no reason")
+    const withReason = { elevenlabs: { agents_brand_new_dial: "places a phone call" } }
+    const names = { names: [...readSidecar(ROOT, "elevenlabs", "live.json").names, "agents_brand_new_dial"] }
+    assert.deepEqual(listingProblems(eleven, { live: names, extras: withReason }).live, [], "with its reason")
+    assert.deepEqual(listingProblems(eleven, { live: names, extras: {} }).live, ["agents_brand_new_dial"], "a tool the host lists, with no reason")
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -250,4 +255,27 @@ test("every committed plugin-rules.json decides every action of its pack and nam
   const rules = readSidecar(ROOT, "slack", "plugin-rules.json")
   assert.match(ruleProblems(slack, { ...rules, allowed: rules.allowed.slice(1) }).join(), /does not decide slack_/)
   assert.match(ruleProblems(slack, { ...rules, release: { version: "0.0.1" } }).join(), /is of v0\.0\.1, the pack is v0\.0\.6/)
+})
+
+test("a sidecar must come from the release the pack records, under the same version too: another commit, no commit, a decided action the pack dropped (the metaview case) all fail `evals pack`'s check", async () => {
+  const { releaseProblems } = await import("../src/pack/listing.mjs")
+  const slack = packs.find((p) => p.id === "slack")
+  const rules = readSidecar(ROOT, "slack", "plugin-rules.json")
+  const registered = readSidecar(ROOT, "slack", "registered.json")
+  assert.deepEqual(ruleProblems(slack, rules), [])
+  assert.deepEqual(releaseProblems(slack, registered, "registered.json"), [])
+  // the same version, another commit
+  const other = { ...rules, release: { ...rules.release, commit: "0".repeat(40) } }
+  assert.match(ruleProblems(slack, other).join(), /plugin-rules\.json was recorded from 0000000, the pack's release v0\.0\.6 is [0-9a-f]{7}: another build of the same version/)
+  assert.match(releaseProblems(slack, { ...registered, release: { version: "0.0.6" } }, "registered.json").join(), /records no release commit/)
+  assert.match(releaseProblems(slack, { ...registered, release: { ...registered.release, commit: "1".repeat(40) } }, "registered.json").join(), /another build of the same version/)
+  assert.match(releaseProblems(slack, { release: { version: "0.0.5" } }, "registered.json").join(), /registered\.json is of v0\.0\.5, the pack is v0\.0\.6/)
+  // a pack that dropped a tool its rules still decide (metaview's events_list, under the same version)
+  const dropped = { ...slack, tools: slack.tools.filter((t) => t.name !== "slack_search_users") }
+  assert.match(ruleProblems(dropped, rules).join(), /plugin-rules\.json decides slack_slack_search_users, which the pack does not list: it was recorded from another build/)
+  // every committed sidecar agrees with its pack's release commit
+  for (const pack of packs) {
+    assert.deepEqual(releaseProblems(pack, readSidecar(ROOT, pack.id, "registered.json"), "registered.json"), [], pack.id)
+    assert.deepEqual(ruleProblems(pack, readSidecar(ROOT, pack.id, "plugin-rules.json")), [], pack.id)
+  }
 })

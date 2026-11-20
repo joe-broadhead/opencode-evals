@@ -271,6 +271,19 @@ through the model map: a subscription bills $0 and is counted anyway), plus the 
 flight and this run, must stay under it. A run with no estimate (`estimate_run_usd[model][tier]` in `caps.json`, replaced by the
 measured mean after five runs) cannot be held to the cap and is refused while one is set.
 
+## Syncing the packs from the plugins' releases
+
+A pack is the plugin's RELEASE, not its checkout's master. For each plugin released: check its tag exists and its GitHub release is published (`gh release view v<version>`), then, with a private `TMPDIR` and `EVALS_STORE`:
+
+1. download the release's `.tgz` (it carries `SHA256SUMS`; verify it), extract it to a build directory, and put the tag's `src/` beside it (`git archive v<version>`: the namespace-text probe reads the TypeScript source); point the plugin's entry in the `EVALS_COMPANIONS` file at it;
+2. `evals pack --sync --release <versions.json> <id>` (a JSON map `{ "slack": "0.0.7" }`; `EVALS_REPO_<ID>` is the checkout the tag is read from): the pack's tools, skills and `release: { version, tag, commit }`;
+3. `node scripts/registered-tools.mjs`: what the built release registers with no sign-in (`registered.json`). Delete the plugin's old `registered.json` before step 2 or the sync re-adds a tool the release dropped as an unclassified write; run step 2 again afterwards;
+4. `node scripts/plugin-rules.mjs`: what each plugin's own rules do at the trial's access (`plugin-rules.json`), which the sealed config derives its read allows from;
+5. `node scripts/capture-inputs.mjs <dir of git archives at each pack's tag>`: the tool schemas; `node scripts/reach-marks.mjs` if a new read reaches beyond a sandbox;
+6. `node scripts/capture-live.mjs <dir>` from a signed-in host's listing, and prune `scripts/live-extra.json` of every tool the new release classifies (a reason for a listed tool fails `evals pack`).
+
+`evals pack` fails a pack that lacks a tool its release registers or a host lists, a sidecar of another version or of another build of the same version, and a tool with neither a schema nor a reason. None of this runs an `opencode` command against the owner's server: the host loads the builds in the harness's own containers.
+
 ## Isolation
 
 A backend (`src/run/isolation.mjs`) prepares once per batch and enters once per trial: the trial's `wrap` turns each

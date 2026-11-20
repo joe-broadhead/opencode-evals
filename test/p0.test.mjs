@@ -10,7 +10,7 @@ import { PROBES } from "../src/p0/probes.mjs"
 import { findBinary, imageTag } from "../src/run/container.mjs"
 import { buildPolicy } from "../src/run/guard/policy.mjs"
 import { decideBefore, planIdOf, judgePlan, matchWrite, pick, loadPolicy } from "../src/run/guard/logic.mjs"
-import { lockdownPolicies, lockdownPermissions, lockdownProblems, writeActions, loadPacks, LOCKED_TOOLS, COMPANION_CAPS, companionOptions, CONFIRM_ONLY_READS } from "../src/run/lockdown.mjs"
+import { lockdownPolicies, lockdownPermissions, lockdownProblems, writeActions, loadPacks, LOCKED_TOOLS, COMPANION_CAPS, companionOptions, CONFIRM_ONLY_READS, CAPPED_SPEND_READS } from "../src/run/lockdown.mjs"
 
 const reason = (() => {
   const docker = spawnSync("docker", ["version", "--format", "{{.Server.Version}}"], { encoding: "utf8" })
@@ -66,9 +66,11 @@ test("every companion is at ask-changes with its caps; ElevenLabs takes the lowe
   assert.equal(COMPANION_CAPS.elevenlabs.sessionCreditCap >= 1, true)
 })
 
-test("the guard's policy lists all 457 write tools under names that cannot match a host tool or another plugin's read", () => {
+test("the guard's policy lists every write tool of the packs under names that cannot match a host tool or another plugin's read", () => {
   const policy = buildPolicy()
-  assert.equal(policy.writes.length, writeActions().length - CONFIRM_ONLY_READS.length)
+  // every write-class tool of the packs bar the metered spending reads (the one exception, allowed in a trial whatever class a pack gives them)
+  const expected = new Set(loadPacks().flatMap((p) => p.tools).filter((t) => t.class === "write" && !CAPPED_SPEND_READS.includes(t.permission)).map((t) => t.permission))
+  assert.equal(policy.writes.length, expected.size)
   assert.equal(policy.actions.length, policy.writes.length)
   for (const bare of ["write", "execute", "send", "delete", "read", "shell"]) assert.equal(matchWrite(policy, bare), null, `bare ${bare}`)
   assert.ok(matchWrite(policy, "gws_write"))

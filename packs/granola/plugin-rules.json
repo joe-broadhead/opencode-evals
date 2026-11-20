@@ -2,9 +2,9 @@
  "schema": "oc-plugin-rules/1",
  "plugin": "granola",
  "release": {
-  "version": "0.0.6",
-  "tag": "v0.0.6",
-  "commit": "1bce3289fba00fbbd40b44ff20ea79d264c48c00"
+  "version": "0.0.7",
+  "tag": "v0.0.7",
+  "commit": "2cc0483ff35136267dcd94fa1073f0e3d1915cd1"
  },
  "access": "ask-changes",
  "host": "opencode v2.3.2",
@@ -32,7 +32,9 @@
   "granola_remove_note_from_folder",
   "granola_sign_out",
   "granola_update_folder",
-  "granola_update_private_notes"
+  "granola_update_meeting_title",
+  "granola_update_private_notes",
+  "granola_update_summary"
  ],
  "denied": []
 }

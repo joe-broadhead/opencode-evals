@@ -6,6 +6,18 @@ Keep a Changelog. This project adheres to Semantic Versioning.
 
 EVALS-232: the harness for a round that runs every plugin against live accounts (lane L1).
 
+### Changed
+
+- **Packs re-synced from the plugins' releases** (the sync of #14: `evals pack --sync --release`, then `scripts/registered-tools.mjs` and `scripts/plugin-rules.mjs` against the release's own built tarball, checksum-verified, then `scripts/capture-inputs.mjs`):
+  gws v0.0.10 to v0.0.11, wisprflow v0.0.6 to v0.0.7, tavily v0.0.5 to v0.0.6 (all five tools are spend-class: they ask at `ask-changes`; the harness still allows search, extract and map inside the credit cap, and research and crawl
+  stay confirm-only; `P0-tavily` now runs against the released build and not a stand-in), metaview v0.0.6 to v0.0.7 (`events_list` leaves the model tools: 69 to 68), github v0.0.6 to v0.0.9, granola v0.0.6 to v0.0.7 (two new writes,
+  `update_meeting_title` and `update_summary`: 21 to 23), elevenlabs v0.0.9 to v0.0.10 (eight new tools: 239 to 247), plaud v0.0.7 to v0.0.8, jira v0.0.5 to v0.0.6, affinity v0.0.6 to v0.0.7 (21 new tools: 82 to 103), ashby v0.0.6 to v0.0.7 (six new tools: 16 to 22). Each pack records its
+  release `{ version, tag, commit }`. `scripts/live-extra.json` lost the reasons for the tools these releases now classify (ElevenLabs' eight, Granola's two, Affinity's 21, Ashby's six); it keeps only metaview's `events_list`
+  (the signed-in host still runs v0.0.6).
+- **`evals pack` also fails a sidecar recorded from another build of the same version.** `registered.json` and `plugin-rules.json` must carry the release commit the pack records (a rebuilt or re-tagged release with the same version
+  number differs there), and `plugin-rules.json` may not decide an action the pack does not list (a tool the release dropped). What a fresh build registers is compared by `scripts/registered-tools.mjs --check` and
+  `scripts/plugin-rules.mjs --check`, which need the builds and Docker, so CI runs the committed-sidecar check only.
+
 ### Fixed
 
 - **The harness is never more permissive than the plugin** (review of #14, round 4: the allow written for the pack's reads overrode eight asks the plugins make on purpose for private content, Slack's private search and file read
