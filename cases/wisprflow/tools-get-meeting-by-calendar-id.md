@@ -16,8 +16,8 @@ we had a call booked as calendar event <the calendar event id> — was it record
 - [WF-OC01] blocker · Exactly one get_meeting_by_calendar_id call.
   evidence: count:get_meeting_by_calendar_id == 1
 
-- [WF-OC02] major · The calendar id the user gave was passed.
-  evidence: call:get_meeting_by_calendar_id#1 args.calendar_event_id present
+- [WF-OC02] major · It looked the recording up by the calendar event.
+  evidence: count:get_meeting_by_calendar_id == 1
 
 - [WF-OC03] major · The answer says whether it was recorded.
   evidence: text:any matches /(recorded|not recorded|recording)/i

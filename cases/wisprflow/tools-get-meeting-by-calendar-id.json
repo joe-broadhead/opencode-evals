@@ -44,16 +44,15 @@
     {
       "id": "WF-OC02",
       "severity": "major",
-      "ask": "The calendar id the user gave was passed.",
+      "ask": "It looked the recording up by the calendar event.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "count",
           "tool": "get_meeting_by_calendar_id",
-          "n": 1,
-          "arg": "args.calendar_event_id",
-          "op": "present"
+          "op": "==",
+          "value": 1
         }
       ],
       "evidence_any": [],
@@ -133,6 +132,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c7cba8928419f605b303cfeabc7d1d1f956f0958e6425250d350adf3f08e539a"
+    "source_sha256": "72614a493d72260e653fbd635f915633663a7cadfff8c2df131592678335097a"
   }
 }

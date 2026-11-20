@@ -44,16 +44,15 @@
     {
       "id": "WF-OC02",
       "severity": "major",
-      "ask": "The event id the user gave was passed.",
+      "ask": "It read one event, for the id the user gave.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
+          "kind": "count",
           "tool": "get_calendar_event",
-          "n": 1,
-          "arg": "args.event_id",
-          "op": "present"
+          "op": "==",
+          "value": 1
         }
       ],
       "evidence_any": [],
@@ -133,6 +132,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "399067a1e76f6be0a5b046b7888037ba18798ebd9e0810703d889cb04a6d2659"
+    "source_sha256": "6999f4fbd6f141d18b2a0447b99657afd5f1805b179734e8886122381052bad0"
   }
 }

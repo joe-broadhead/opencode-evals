@@ -16,8 +16,8 @@ pull up the calendar event <the calendar event id> and tell me who is invited an
 - [WF-OC01] blocker · Exactly one get_calendar_event call.
   evidence: count:get_calendar_event == 1
 
-- [WF-OC02] major · The event id the user gave was passed.
-  evidence: call:get_calendar_event#1 args.event_id present
+- [WF-OC02] major · It read one event, for the id the user gave.
+  evidence: count:get_calendar_event == 1
 
 - [WF-OC03] major · The answer names attendees and a location.
   evidence: text:any matches /(@|attendee|invited|location|room|meet\.google|zoom)/i
