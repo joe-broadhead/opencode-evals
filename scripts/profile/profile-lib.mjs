@@ -54,18 +54,36 @@ export function rpcFailure(out) {
   let parsed = null
   try { parsed = JSON.parse(text) } catch {}
   if (parsed?._tag === "RpcError") return `${parsed.type ?? "rpc error"}: ${clip(parsed.message)}`
+  // The body is judged on its content, whatever the exit code: a valid answer with a non-zero exit is the answer (its shape decides), and an
+  // auth error belongs to its normal class. Only a call with no body at all is judged by its exit code.
+  if (parsed && typeof parsed === "object") return null
   if (out?.code !== 0) return `exit ${out?.code}${clip(out?.stderr) ? `: ${clip(out.stderr)}` : ""}`
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "no JSON object answer"
-  return null
+  return "no JSON object answer"
 }
 
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v)
 const ERROR_WORD = /UNAVAILABLE|UNREADABLE|UPSTREAM|AUTH_REQUIRED|AUTH_SCOPE_MISSING|UNAUTHORI[SZ]ED|FORBIDDEN|FAILED|ERROR/i
 
-/** Exit codes a read killed by its own timeout is reported with (124 is GNU timeout, 137/143 SIGKILL/SIGTERM). */
+/** Exit codes a CLI may report when it is killed by its own timeout (124 is GNU timeout, 137/143 SIGKILL/SIGTERM). `run()`'s own spawnSync
+ *  timeout is NOT one of these: it reports `status: null` with an ETIMEDOUT error. A non-null code is the CLI's own, so only a body-less one
+ *  is treated as a timeout. */
 export const TIMEOUT_EXIT_CODES = Object.freeze([124, 137, 143])
-/** Was this call killed by its own timeout (its exit code, or spawnSync's timeout error)? Auth and answer failures are not timeouts. */
+
+/** Does stdout carry a parseable JSON body (an answer of some kind)? An empty, truncated or non-JSON stdout does not. */
+export function hasBody(result) {
+  const text = String(result?.stdout ?? "").trim()
+  if (!text) return false
+  try {
+    JSON.parse(text)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Was this call killed by its own timeout? Only when it carries NO parseable body: a body is judged on its content, whatever the code. */
 export function timedOut(result) {
+  if (hasBody(result)) return false
   if (TIMEOUT_EXIT_CODES.includes(Number(result?.code))) return true
   return Boolean(result?.error && /ETIMEDOUT|timed?\s*out|timeout/i.test(String(result.error)))
 }
@@ -421,7 +439,10 @@ export function linksIn(dir) {
   return found
 }
 
-/** Runs a command and returns { code, stdout, stderr }; never throws, never echoes. */
+/**
+ * Runs a command and returns { code, stdout, stderr }; never throws, never echoes. spawnSync reports ITS OWN timeout as `code: null` with an
+ * ETIMEDOUT error (the kill signal is SIGTERM), never as 137 or 143: a non-null 124/137/143 below is the CLI's own exit code.
+ */
 export function run(command, args, { env, input, timeoutMs = 60_000 } = {}) {
   const out = spawnSync(command, args, { env, input, encoding: "utf8", timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024 })
   return { code: out.status, stdout: out.stdout ?? "", stderr: out.stderr ?? "", error: out.error ? String(out.error.message) : null }
@@ -691,6 +712,31 @@ export function refreshChain({ expires, baseline, identityOk = true, now = Date.
 export function logRound(store, entry) {
   mkdirSync(store, { recursive: true, mode: 0o700 })
   appendFileSync(join(store, "round-232.log"), `${JSON.stringify({ at: new Date().toISOString(), ...entry })}\n`, { mode: 0o600 })
+}
+
+/** How many check timeouts for this integration are consecutive at the end of its round-log entries (a finished check ends the streak). */
+export function checkTimeoutStreak(store, integration) {
+  if (!store) return 0
+  let text
+  try {
+    text = readFileSync(join(store, "round-232.log"), "utf8")
+  } catch {
+    return 0
+  }
+  let streak = 0
+  for (const line of text.split("\n").reverse()) {
+    if (!line.trim()) continue
+    let entry
+    try {
+      entry = JSON.parse(line)
+    } catch {
+      continue
+    }
+    if (entry?.integration !== integration) continue
+    if (entry.event === "check-timeout") streak++
+    else if (entry.event === "check-real") break
+  }
+  return streak
 }
 
 export { readFileSync }

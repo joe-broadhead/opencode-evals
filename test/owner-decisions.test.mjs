@@ -214,6 +214,20 @@ test("2: phase1 expects no sign-in for github or jira: check-real, the keeper an
   }
 })
 
+test("2: the phase1 check-real step words its failure by the side that failed", async () => {
+  const step = STEPS.find((s) => s.id === "check-real")
+  assert.ok(step, "the check-real step")
+  const run = (side) => step.run({ vendors: ["linear"], noAccount: new Set(), deps: { checkReal: () => ({ ok: false, side, line: "FAIL linear: x" }) } })
+  assert.match((await run(undefined)).message, /check-real failed for linear: sign the real profile back in for linear/)
+  const read = await run("read")
+  assert.match(read.message, /the check could not finish, so the real sign-in is unproven/)
+  assert.match(read.message, /sign in no further vendor/)
+  assert.match(read.message, /--recheck linear/)
+  const evals = await run("evals")
+  assert.match(evals.message, /the evals profile, your normal profile is not involved/)
+  assert.doesNotMatch(evals.message, /sign the real profile back in/)
+})
+
 // ---------------------------------------------------------------------------------------------- 3: existing apps, check-real after each
 
 test("3: check-real stays right after each sign-in; OpenRouter and Affinity, new to the profile, are proved by their evals sign-in alone", () => {

@@ -49,6 +49,9 @@ if (real && server !== ${JSON.stringify(WEB)}) { console.error("STUB: a real-env
 if (a[0] === "service" && a[1] === "get") { console.log("47950"); process.exit(0) }
 const fx = (side, id) => ${JSON.stringify(root)} + "/" + side + "-" + id + ".json"
 if (a[0] === "auth" && a[1] === "export" && real && process.env.STUB_FAIL_REAL_EXPORT) { console.error("STUB: the web server is not reachable"); process.exit(5) }
+// A real export that times out (empty stdout, every time) or that answers its body with exit 143 (the body is judged, the code is not).
+if (a[0] === "auth" && a[1] === "export" && real && process.env.STUB_EXPORT_TIMEOUT) process.exit(143)
+if (a[0] === "auth" && a[1] === "export" && real && process.env.STUB_EXPORT_ANSWER_143) { const f = fx("real", a[2]); console.log(fs.existsSync(f) ? fs.readFileSync(f, "utf8") : "[]"); process.exit(143) }
 if (a[0] === "auth" && a[1] === "export" && a[2] && fs.existsSync(fx(real ? "real" : "evals", a[2]))) { console.log(fs.readFileSync(fx(real ? "real" : "evals", a[2]), "utf8")); process.exit(0) }
 if (a[0] === "auth" && a[1] === "export" && /-app$|^gws-default$/.test(a[2])) { const f = fx(real ? "real" : "evals", a[2]); console.log(fs.existsSync(f) ? fs.readFileSync(f, "utf8") : "[]"); process.exit(0) }
 if (a[0] === "auth" && a[1] === "import") { const input = fs.readFileSync(0, "utf8"); fs.writeFileSync(${JSON.stringify(root)} + "/import-stdin.json", input); for (const c of JSON.parse(input)) fs.writeFileSync(fx("evals", c.integrationID), input); process.exit(0) }
@@ -70,8 +73,9 @@ if (a[0] === "api") {
     }
     if (method !== "describe" && !methods.includes(method)) err("rpc.method_not_found", "Unknown RPC method: " + ns + "." + method)
     if (method === "describe") { console.log(JSON.stringify({ output: { methods: methods.map((name) => ({ name, action: ns.split(".")[0] + "_" + name, class: /^(create|delete|update|send|merge)/.test(name) ? "write" : "read" })) } })); process.exit(0) }
-    // A read killed by its own timeout: the real side always, once, or the evals side always.
-    const slow = () => { console.log(JSON.stringify({ _tag: "RpcError", type: "rpc.timeout", message: "the read timed out" })); process.exit(143) }
+    // A read killed by its own timeout: an EMPTY stdout, so the body cannot be judged. (A body, even with exit 143, is judged on its content.)
+    const slow = () => { process.exit(143) }
+    if (real && process.env.STUB_AUTH_EXIT) { console.log(JSON.stringify({ _tag: "RpcError", type: "rpc.unauthorized", message: "authentication rejected (401)" })); process.exit(Number(process.env.STUB_AUTH_EXIT)) }
     if (real && process.env.STUB_RPC_TIMEOUT) slow()
     if (real && process.env.STUB_TIMEOUT_ONCE) { const seen = ${JSON.stringify(root)} + "/rpc-timeout-seen"; if (!fs.existsSync(seen)) { fs.writeFileSync(seen, "1"); slow() } }
     if (!real && process.env.STUB_TIMEOUT_EVALS) slow()
@@ -89,7 +93,7 @@ if (a[0] === "api") {
     if (process.env.STUB_GWS_MISSING && method === "read" && ns.startsWith("google-workspace") && !allowedBy("gws.native_install")) err("failed", "GWS_UNAVAILABLE: gws is not installed, and this call may not download it under this session's access. Next step: Run /gws-install, which downloads and verifies it.")
     if (process.env.STUB_INNER && !allowedBy(process.env.STUB_INNER)) err("failed", "PERMISSION_DENIED: " + (own || method) + " needs " + process.env.STUB_INNER + ", which a deny rule refuses for this session's agent: deny rule")
     const answers = ${JSON.stringify(ANSWERS)}
-    console.log(process.env.STUB_ANSWER || JSON.stringify(answers[ns + "/" + method] || ${JSON.stringify(PROBE_ANSWER)})); process.exit(0)
+    console.log(process.env.STUB_ANSWER || JSON.stringify(answers[ns + "/" + method] || ${JSON.stringify(PROBE_ANSWER)})); process.exit(Number(process.env.STUB_ANSWER_EXIT) || 0)
   }
   console.log("{}"); process.exit(0)
 }
@@ -411,7 +415,7 @@ function failingWalk(r, vendor, extraEnv = {}) {
   mkdirSync(bin, { recursive: true })
   for (const f of ["signin.sh", "guard-real.mjs", "log-signin.mjs", "profile-lib.mjs", "copy-client.mjs", "identity-methods.json"]) writeFileSync(join(bin, f), readFileSync(join(HERE, f)), { mode: 0o700 })
   writeFileSync(join(bin, "evals-profile.sh"), "#!/bin/sh\ntouch " + join(r.root, "login-ran") + "\nexit 0\n", { mode: 0o700 })
-  writeFileSync(join(bin, "check-real.sh"), "#!/bin/sh\necho \"FAIL $1: the check failed\"\nexit ${CHECK_EXIT:-1}\n", { mode: 0o700 })
+  writeFileSync(join(bin, "check-real.sh"), `#!/bin/sh\necho "FAIL $1: \${CHECK_SAY:-the check failed}"\nexit \${CHECK_EXIT:-1}\n`, { mode: 0o700 })
   return spawnSync(join(bin, "signin.sh"), ["--only", vendor, "--yes"], { env: { ...r.env, EVALS_BIN: bin, ...extraEnv }, encoding: "utf8" })
 }
 
@@ -1472,7 +1476,7 @@ test("check-real: a real read killed by its own timeout is a read failure (exit 
   try {
     const out = checkReal(r, "linear", { STUB_RPC_TIMEOUT: "1" })
     assert.equal(out.status, 5, out.stdout + out.stderr)
-    assert.match(out.stdout, /^FAIL linear: could not read the real profile in time; check the web server, then run signin\.sh --recheck linear/)
+    assert.match(out.stdout, /^FAIL linear: could not read the real profile in time\. The check could not finish, so the real sign-in is unproven:/)
     assert.doesNotMatch(out.stdout, /sign the real profile back in/)
     // retried once: two sessions, both deleted
     assert.equal(readFileSync(join(r.root, "created.log"), "utf8").trim().split("\n").length, 2, "one retry")
@@ -1550,6 +1554,98 @@ test("check-real: a timed-out evals read is an evals failure (exit 4), never the
     assert.doesNotMatch(out.stdout, /sign the real profile back in/)
   } finally {
     r.done()
+  }
+})
+
+test("check-real: an auth error BODY wins over a timeout exit code (exit 1, no retry)", () => {
+  // The body says what failed; only a body-less call is a timeout. Cases A, A2 and the same body with 124.
+  for (const code of ["143", "137", "124"]) {
+    const r = rig()
+    try {
+      const out = checkReal(r, "linear", { STUB_AUTH_EXIT: code })
+      assert.equal(out.status, 1, `${code}: ${out.stdout}${out.stderr}`)
+      assert.match(out.stdout, /authentication rejected \(401\)/, code)
+      assert.match(out.stdout, /sign the real profile back in/, code)
+      assert.doesNotMatch(out.stdout, /in time|unproven/, code)
+      assert.equal(r.calls().filter((c) => c.real && c.a[2]?.startsWith("/api/rpc/")).length, 1, `${code}: no retry`)
+      assert.equal(readFileSync(join(r.root, "created.log"), "utf8").trim().split("\n").length, 1, `${code}: one session`)
+    } finally {
+      r.done()
+    }
+  }
+})
+
+test("check-real: a valid answer with exit 143 is judged on its answer (the code is ignored)", () => {
+  const r = rig()
+  try {
+    const out = checkReal(r, "linear", { STUB_ANSWER_EXIT: "143" })
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stdout, /^PASS linear/)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a real export with an empty body and exit 143 is a timeout (exit 5), retried once", () => {
+  const r = rig()
+  try {
+    const out = checkReal(r, "linear", { STUB_EXPORT_TIMEOUT: "1" })
+    assert.equal(out.status, 5, out.stdout + out.stderr)
+    assert.match(out.stdout, /the real sign-in is unproven/)
+    assert.match(out.stdout, /open linear in your normal OpenCode/)
+    assert.equal(r.calls().filter((c) => c.real && c.a[0] === "auth" && c.a[1] === "export").length, 2, "one retry")
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a real export that answers with exit 143 is judged on its body", () => {
+  const r = rig()
+  try {
+    writeFileSync(join(r.root, "real-linear.json"), refreshCred("linear", "REAL-A", "REAL-R"))
+    writeFileSync(join(r.root, "evals-linear.json"), refreshCred("linear", "EVALS-A", "EVALS-R"))
+    const out = checkReal(r, "linear", { STUB_EXPORT_ANSWER_143: "1" })
+    assert.equal(out.status, 0, out.stdout + out.stderr)
+    assert.match(out.stdout, /^PASS linear/)
+  } finally {
+    r.done()
+  }
+})
+
+test("check-real: a second consecutive timeout for the same vendor says so", () => {
+  const r = rig()
+  try {
+    const first = checkReal(r, "linear", { STUB_RPC_TIMEOUT: "1" })
+    assert.equal(first.status, 5, first.stdout)
+    assert.doesNotMatch(first.stdout, /consecutive timeout/)
+    const second = checkReal(r, "linear", { STUB_RPC_TIMEOUT: "1" })
+    assert.equal(second.status, 5, second.stdout)
+    assert.match(second.stdout, /This is the second consecutive timeout for linear\./)
+  } finally {
+    r.done()
+  }
+})
+
+test("walk: a check-real timeout keeps the unproven wording; an unreachable server keeps 'nothing was changed'", () => {
+  const timeout = "could not read the real profile in time. The check could not finish, so the real sign-in is unproven: sign in no further vendor; run signin.sh --recheck linear; if it times out again, open linear in your normal OpenCode (the web app) and see whether it asks you to sign in."
+  const a = rig()
+  try {
+    const out = failingWalk(a, "linear", { CHECK_EXIT: "5", CHECK_SAY: timeout })
+    assert.equal(out.status, 1, out.stdout + out.stderr)
+    assert.match(out.stdout, /STOP at linear: the check could not finish, so the real sign-in is unproven\./)
+    assert.match(out.stdout, /sign in no further vendor; run .*--recheck linear\./)
+    assert.match(out.stdout, /If it times out again, open linear in your normal OpenCode/)
+    assert.doesNotMatch(out.stdout, /nothing was changed or signed out/)
+  } finally {
+    a.done()
+  }
+  const b = rig()
+  try {
+    const out = failingWalk(b, "linear", { CHECK_EXIT: "5" })
+    assert.match(out.stdout, /the normal profile could not be read .*nothing was changed or signed out/)
+    assert.doesNotMatch(out.stdout, /unproven/)
+  } finally {
+    b.done()
   }
 })
 

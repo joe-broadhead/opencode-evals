@@ -86,8 +86,14 @@ run_check() {
        echo "Fix: run $0 --recheck $v (the check again, no new sign-in); if it fails again, sign $v into the evals profile again with $0 --from $v." ;;
     6) echo "STOP at $v: its program is not installed in your normal profile yet; nothing is wrong with your sign-in."
        echo "Fix: run /gws-install in your normal OpenCode (the web app at http://127.0.0.1:4096), then run $0 --recheck $v." ;;
-    5) echo "STOP at $v: the normal profile could not be read (the web server is unreachable, or a real background service is running); nothing was changed or signed out."
-       echo "Fix: check the web server (http://127.0.0.1:4096), then run $0 --recheck $v." ;;
+    5) if printf '%s\n' "$out" | grep -q "the real sign-in is unproven"; then
+         echo "STOP at $v: the check could not finish, so the real sign-in is unproven."
+         echo "Fix: sign in no further vendor; run $0 --recheck $v."
+         echo "If it times out again, open $v in your normal OpenCode (the web app at http://127.0.0.1:4096) and see whether it asks you to sign in."
+       else
+         echo "STOP at $v: the normal profile could not be read (the web server is unreachable, or a real background service is running); nothing was changed or signed out."
+         echo "Fix: check the web server (http://127.0.0.1:4096), then run $0 --recheck $v."
+       fi ;;
     *) echo "STOP at $v: check-real FAILED; no further vendor was signed in."
        echo "Fix: sign $v back in from your normal OpenCode (the web app at http://127.0.0.1:4096), then run $0 --from $v."
        echo "(Or, in a shell: OPENCODE_SERVER_PASSWORD=\"\$(sed -n 's/^OPENCODE_PASSWORD=//p' \"$REAL_SERVER_ENV\")\" opencode auth login \"$(login_target "$v")\" --server $REAL_SERVER . Always with --server: without it the command starts the real background service.)" ;;
