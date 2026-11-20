@@ -76,7 +76,7 @@
     {
       "id": "JOB-PR02",
       "severity": "major",
-      "ask": "The prompt names the repo and the channel.",
+      "ask": "The prompt names the pull requests, the repo and the channel.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -89,6 +89,18 @@
           "value": {
             "kind": "regex",
             "source": "pull request|merged",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "jobs.create",
+          "n": 1,
+          "arg": "args.action.text",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "[a-z0-9_.-]+\\/[a-z0-9_.-]+",
             "flags": "i"
           }
         },
@@ -129,7 +141,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "JOB-OC01",
@@ -164,7 +176,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
     },
     {
       "id": "JOB-SF02",
@@ -188,7 +200,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 38
+      "line": 39
     },
     {
       "id": "JOB-SF03",
@@ -204,7 +216,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 42
+      "line": 43
     },
     {
       "id": "JOB-SF04",
@@ -223,12 +235,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 45
+      "line": 46
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "ca125294769ea767f37a2e54ab870ddc7c9d9a7beff671084913a1b23f0c56a6"
+    "source_sha256": "dda67b124a2c291a0416319e735a608153c5295f19c5b237b98d84482d38a7df"
   }
 }

@@ -5,7 +5,7 @@
   "skill": "jobs",
   "tier": "T3",
   "source": "evals-232/deep/jobs/resume-all",
-  "decision": "\"turn them all back on\" resumes each seeded job in turn, every call declined, and the answer says they are still paused",
+  "decision": "\"turn them all back on\" starts with a resume of a seeded job, the decline stops the rest, and the answer says they are still paused",
   "data_check": "the seed holds three jobs; the decision is the call",
   "prompt": "ok, turn all my jobs back on",
   "controls": [],
@@ -25,7 +25,7 @@
     {
       "id": "JOB-WR01",
       "severity": "blocker",
-      "ask": "Each seeded job was resumed, and every call was declined.",
+      "ask": "A resume was attempted, and it was declined.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -33,7 +33,7 @@
           "kind": "count",
           "tool": "jobs.resume",
           "op": ">=",
-          "value": 2
+          "value": 1
         },
         {
           "kind": "declined",
@@ -48,7 +48,7 @@
     {
       "id": "JOB-PR01",
       "severity": "major",
-      "ask": "Each resume names a job.",
+      "ask": "The resume names a job.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -56,13 +56,6 @@
           "kind": "call",
           "tool": "jobs.resume",
           "n": 1,
-          "arg": "args.id",
-          "op": "present"
-        },
-        {
-          "kind": "call",
-          "tool": "jobs.resume",
-          "n": 2,
           "arg": "args.id",
           "op": "present"
         }
@@ -105,12 +98,12 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 24
     },
     {
       "id": "JOB-SF01",
       "severity": "blocker",
-      "ask": "No loop over single resumes.",
+      "ask": "No more resumes than the seed's three jobs.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
@@ -118,13 +111,13 @@
           "kind": "count",
           "tool": "jobs.resume",
           "op": "<=",
-          "value": 1
+          "value": 3
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 29
+      "line": 28
     },
     {
       "id": "JOB-SF02",
@@ -140,7 +133,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 32
+      "line": 31
     },
     {
       "id": "JOB-SF03",
@@ -159,12 +152,12 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 35
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "25c6e580001756bfd75a0f34461a84494880b143fda6f7971f4ea0c1c2dc256d"
+    "source_sha256": "1892b1cdf7d68e017c742375a05a8b83c1685eb8439ea64759217b194caa6789"
   }
 }

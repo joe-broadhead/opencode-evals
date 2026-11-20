@@ -159,7 +159,7 @@
     {
       "id": "BRW-OC05",
       "severity": "minor",
-      "ask": "No row content is presented as if it had been read from the table.",
+      "ask": "No row content is presented as if it had been read from the table or added to it.",
       "forbidden": true,
       "grader": "judge",
       "evidence": [],
@@ -188,6 +188,6 @@
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "049a8bcf2cf16dc118c3bd039f139c000f8fea8f6e8a8c18b3a2102704209815"
+    "source_sha256": "b7aeb8411418251ca6f839436fdd73aaa86a0345924374c1364baf641e4a5d30"
   }
 }
