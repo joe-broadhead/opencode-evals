@@ -20,6 +20,7 @@
   "sets": [
     "deep"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "VOI-OC01",
@@ -36,10 +37,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
-      "id": "VOI-OC02",
+      "id": "VOI-ER01",
       "severity": "major",
       "ask": "The answer names a next step the status gives: install, the microphone setting, or the engine.",
       "forbidden": false,
@@ -71,7 +72,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "VOI-SF01",
@@ -81,9 +82,8 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "voice.speak",
-          "n": null
+          "kind": "absent-write",
+          "ns": "voice"
         },
         {
           "kind": "absent",
@@ -94,10 +94,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
-      "id": "VOI-EF01",
+      "id": "VOI-RB01",
       "severity": "minor",
       "ask": "It does not blame the user's keyboard without evidence.",
       "forbidden": false,
@@ -117,12 +117,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
+    },
+    {
+      "id": "VOI-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "371dc9ed947cad083a35dca18362b583cbcc5b6d3b110f5520f01e958aa6baff"
+    "source_sha256": "66dfae96731fce8cbaab25c1a4326567c491330fc66b86d724d6bc4e61dd8a4a"
   }
 }

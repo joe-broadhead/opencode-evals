@@ -5,6 +5,7 @@
 - Source: evals-232/deep/voice/status-first
 - Decision tested: an offer to read aloud is grounded in a fresh status read, not in the model's memory of the plugin
 - Data check: the container has no audio device and may have no models
+- Data: synthetic
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: deep
 
@@ -23,4 +24,8 @@ can you read things aloud to me, or do you need me to set something up first?
 
 ## Forbidden
 - [VOI-SF01] blocker · Nothing was spoken to test it.
-  evidence: absent:voice.speak
+  evidence: absent-write:voice
+
+- [VOI-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

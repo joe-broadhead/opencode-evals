@@ -5,6 +5,7 @@
 - Source: evals-232/wide/browse/status
 - Decision tested: a "is my browser connected" question reads the browse status once and reports the real state, never a guess
 - Data check: the browse server may be unregistered in this trial; the answer must still come from the status read
+- Data: synthetic
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
@@ -26,3 +27,7 @@ is my browser actually connected to OpenCode right now?
 - [BRW-SF01] blocker · No session was created and no page action was attempted to answer the question.
   evidence: absent:browse.session_new
   evidence: absent:browse.execute
+
+- [BRW-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

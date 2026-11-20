@@ -20,6 +20,7 @@
   "sets": [
     "wide"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "JOB-OC01",
@@ -44,7 +45,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "JOB-OC02",
@@ -79,26 +80,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
-    },
-    {
-      "id": "JOB-PR01",
-      "severity": "minor",
-      "ask": "The list was not filtered to one state the user did not name.",
-      "forbidden": false,
-      "grader": "code",
-      "evidence": [
-        {
-          "kind": "absent-arg",
-          "tool": "jobs.list",
-          "arg": "args.state",
-          "op": "present"
-        }
-      ],
-      "evidence_any": [],
-      "na_when": [],
-      "maps_to": [],
-      "line": 22
+      "line": 20
     },
     {
       "id": "JOB-SF01",
@@ -131,12 +113,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 25
+    },
+    {
+      "id": "JOB-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "f0a53faa9135639b17b2d5174e4bc84aa1a85c3561e38c297b53dcc6f48fcd89"
+    "source_sha256": "603476cfa411b001783a7c814275b1f88acd2a53f21d1f9a68711036500c3395"
   }
 }

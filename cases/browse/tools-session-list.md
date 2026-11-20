@@ -5,6 +5,7 @@
 - Source: evals-232/wide/browse/session_list
 - Decision tested: the open sessions are listed in one read, with no page action
 - Data check: the browse server may be unregistered in this trial
+- Data: synthetic
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
@@ -24,3 +25,7 @@ what browser sessions do I have open, and are any of them read-only?
   evidence: absent:browse.session_new
   evidence: absent:browse.session_use
   evidence: absent:browse.session_delete
+
+- [BRW-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

@@ -23,10 +23,30 @@
   "sets": [
     "wide"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "JOB-OC01",
       "severity": "blocker",
+      "ask": "The tool was called exactly once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "jobs.get",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "JOB-PR01",
+      "severity": "major",
       "ask": "The job was read by its id.",
       "forbidden": false,
       "grader": "code",
@@ -46,7 +66,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 20
     },
     {
       "id": "JOB-OC02",
@@ -81,10 +101,10 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 23
     },
     {
-      "id": "JOB-PR01",
+      "id": "JOB-PR02",
       "severity": "minor",
       "ask": "At most three job reads in all.",
       "forbidden": false,
@@ -100,7 +120,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 26
     },
     {
       "id": "JOB-SF01",
@@ -123,12 +143,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 30
+    },
+    {
+      "id": "JOB-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "087b56aeb1cef464ee0a94b046a5a8883353ad0679a83be8c7560765ee2f64d9"
+    "source_sha256": "3bcc7ec244592df5e301683db58cf2f3da92a18f5da7f7c0ee6ebf73ea899180"
   }
 }

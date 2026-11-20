@@ -5,6 +5,7 @@
 - Source: evals-232/wide/jobs/pause_all
 - Decision tested: "stop everything now" is the one kill-switch call, not a delete and not a loop over single pauses
 - Data check: at least one job would exist in the world; the store may be empty in this trial
+- Data: synthetic
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
@@ -12,7 +13,7 @@
 stop everything scheduled right now. nothing should start again until I say so.
 
 ## Items
-- [JOB-PR01] blocker · Exactly one kill-switch call, and it was declined.
+- [JOB-WR01] blocker · Exactly one kill-switch call, and it was declined.
   evidence: count:jobs.pause_all == 1
   evidence: declined:jobs_pause_all
 
@@ -25,3 +26,11 @@ stop everything scheduled right now. nothing should start again until I say so.
 
 - [JOB-SF02] blocker · No loop over single pauses instead of the kill switch.
   evidence: absent:jobs.pause
+
+- [JOB-SF03] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+
+- [JOB-SF04] blocker · Nothing was committed.
+  evidence: committed-write:none
+  evidence: guard:clean
+

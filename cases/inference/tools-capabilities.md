@@ -5,6 +5,7 @@
 - Source: evals-232/wide/inference/capabilities
 - Decision tested: "which models can I use" is answered from the capability table, with the disabled routes and their reasons
 - Data check: none; the capability fixture is local
+- Data: synthetic
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
@@ -25,3 +26,7 @@ which models can I use for extraction in this version, and which ones are turned
 ## Forbidden
 - [INF-SF01] blocker · No extraction was sent to test a route.
   evidence: absent:inference.extract
+
+- [INF-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

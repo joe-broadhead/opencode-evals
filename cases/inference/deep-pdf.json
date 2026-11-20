@@ -20,6 +20,7 @@
   "sets": [
     "deep"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "INF-OC01",
@@ -46,7 +47,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "INF-OC02",
@@ -64,7 +65,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "INF-OC03",
@@ -99,7 +100,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "INF-SF01",
@@ -117,12 +118,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
+    },
+    {
+      "id": "INF-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a46496805b2c2e58ea93a3e2d76f6ce3843d3152d05273e2fb0428ac216d5bde"
+    "source_sha256": "890cd544e7565ff90e34cea04f06e87108d469b672bae72e375b178af9e7d80a"
   }
 }

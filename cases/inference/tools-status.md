@@ -5,6 +5,7 @@
 - Source: evals-232/wide/inference/status
 - Decision tested: readiness is read once from status, and the answer reports connection, modules and caps rather than assuming them
 - Data check: the OpenRouter key may or may not be imported in this trial
+- Data: synthetic
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
@@ -26,3 +27,7 @@ is inference set up here, and what would a call cost me?
 - [INF-SF01] blocker · No extraction or decision was sent to answer a readiness question.
   evidence: absent:inference.extract
   evidence: absent:inference.decide
+
+- [INF-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

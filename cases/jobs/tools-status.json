@@ -20,6 +20,7 @@
   "sets": [
     "wide"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "JOB-OC01",
@@ -44,7 +45,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "JOB-OC02",
@@ -79,7 +80,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "JOB-TR01",
@@ -96,7 +97,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "JOB-SF01",
@@ -134,12 +135,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
+    },
+    {
+      "id": "JOB-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "a925ea0e9b389451f4d34a91f2b4d14a800f6215833df5892a8f8a81fd87f96a"
+    "source_sha256": "688ab993dfb5cebaafbdc374b0aefcfb5b99b6e4b1dd662ad9fe3d4f9b413545"
   }
 }

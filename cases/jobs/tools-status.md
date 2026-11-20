@@ -5,6 +5,7 @@
 - Source: evals-232/wide/jobs/status
 - Decision tested: a general "how are my jobs" question reads the compact status once, and the answer comes from it rather than from memory
 - Data check: the job store is empty and no job file is committed
+- Data: synthetic
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
@@ -29,3 +30,7 @@ how are my scheduled jobs doing? anything broken or waiting on me?
   evidence: absent:jobs.pause_all
   evidence: absent:jobs.delete
   evidence: absent:jobs.resume
+
+- [JOB-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

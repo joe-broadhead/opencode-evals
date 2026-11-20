@@ -23,11 +23,31 @@
   "sets": [
     "wide"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "INF-OC01",
       "severity": "blocker",
       "ask": "The plan was asked for the extract task, exactly once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "inference.plan",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 18
+    },
+    {
+      "id": "INF-PR01",
+      "severity": "major",
+      "ask": "The plan is for the task the user asked for.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -41,18 +61,12 @@
             "kind": "string",
             "value": "extract"
           }
-        },
-        {
-          "kind": "count",
-          "tool": "inference.plan",
-          "op": "==",
-          "value": 1
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 21
     },
     {
       "id": "INF-OC02",
@@ -87,7 +101,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 24
     },
     {
       "id": "INF-SF01",
@@ -115,12 +129,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 27
+    },
+    {
+      "id": "INF-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "95a46634f95fcf5eaf723f120fc4538d9b547d8b0d4e65d626c4cb0e8add01d9"
+    "source_sha256": "da40ec8b3547c4d3fec2fcab9594364c56348e82b7cf8c5a857953c85a56df16"
   }
 }

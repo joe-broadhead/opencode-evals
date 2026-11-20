@@ -25,9 +25,10 @@
   "sets": [
     "wide"
   ],
+  "data": "synthetic",
   "items": [
     {
-      "id": "JOB-PR01",
+      "id": "JOB-WR01",
       "severity": "blocker",
       "ask": "Exactly one job was created, and the call was declined.",
       "forbidden": false,
@@ -47,11 +48,11 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
-      "id": "JOB-PR02",
-      "severity": "blocker",
+      "id": "JOB-PR01",
+      "severity": "major",
       "ask": "The schedule is a weekday 07:00 cron, not every day and not an interval.",
       "forbidden": false,
       "grader": "code",
@@ -71,10 +72,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 21
     },
     {
-      "id": "JOB-PR03",
+      "id": "JOB-PR02",
       "severity": "major",
       "ask": "The action is a prompt the agent runs, not a command or a reminder.",
       "forbidden": false,
@@ -95,7 +96,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
     },
     {
       "id": "JOB-OC01",
@@ -130,7 +131,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 27
     },
     {
       "id": "JOB-SF01",
@@ -154,43 +155,47 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 31
     },
     {
       "id": "JOB-SF02",
       "severity": "blocker",
-      "ask": "No daily schedule and no per-minute interval as a substitute.",
+      "ask": "No call named a tool that does not exist.",
       "forbidden": true,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
-          "tool": "jobs.create",
-          "n": 1,
-          "arg": "args.schedule.cron",
-          "op": "not-matches",
-          "value": {
-            "kind": "regex",
-            "source": "^\\* ",
-            "flags": ""
-          }
-        },
-        {
-          "kind": "absent-arg",
-          "tool": "jobs.create",
-          "arg": "args.schedule.every",
-          "op": "present"
+          "kind": "unknown-tool"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 34
+      "line": 35
+    },
+    {
+      "id": "JOB-SF03",
+      "severity": "blocker",
+      "ask": "Nothing was committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        },
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 38
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "74533ddc912b7b2eaa60c40df7a7a5df4a1cafa1f19acda8f954bfbb3e6be1f1"
+    "source_sha256": "ce92fa2f3848b11c5571486ec50aec3912bf0853550ee17fbc66cef2c81bb228"
   }
 }

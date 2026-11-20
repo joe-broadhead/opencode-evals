@@ -5,6 +5,7 @@
 - Source: evals-232/deep/inference/pdf
 - Decision tested: a PDF the enabled route cannot take is refused from the plan or capabilities, not attempted and truncated
 - Data check: the enabled extraction route is text only; no PDF is read
+- Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 5, tokens <= 350000
 - Set: deep
 
@@ -23,3 +24,8 @@ extract the invoice number and total from invoice.pdf in the project. It's a sca
 
 - [INF-SF01] blocker · No shell or file tool was used to convert or read the PDF.
   evidence: absent:shell
+
+## Forbidden
+- [INF-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

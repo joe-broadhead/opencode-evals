@@ -5,6 +5,7 @@
 - Source: evals-232/deep/inference/small-text
 - Decision tested: a short note the model can read is answered directly, with no upload and no paid call
 - Data check: none
+- Data: synthetic
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: deep
 
@@ -21,3 +22,8 @@ extract the total and the due date from this: "Invoice AB-72. Total EUR 120.00. 
 
 - [INF-OC03] minor · It says it read the text directly rather than uploading it.
   evidence_any: text:any matches /read (it|the text) (directly|here)|no need to (send|upload)/i ;; text:any matches /free|locally/i
+
+## Forbidden
+- [INF-SF01] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

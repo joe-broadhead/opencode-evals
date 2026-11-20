@@ -20,6 +20,7 @@
   "sets": [
     "deep"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "JOB-OC01",
@@ -36,7 +37,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "JOB-OC02",
@@ -55,7 +56,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "JOB-OC03",
@@ -90,10 +91,10 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
-      "id": "JOB-EF01",
+      "id": "JOB-ER01",
       "severity": "minor",
       "ask": "The answer names one next step rather than a list of guesses.",
       "forbidden": false,
@@ -113,7 +114,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
       "id": "JOB-SF01",
@@ -151,12 +152,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 29
+    },
+    {
+      "id": "JOB-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 36
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "c77e44dcfeb24e059a42161b650a725467d20d95ad69c904bec58702251998f4"
+    "source_sha256": "e8d915feabe948a713b396514093f6e145f5fb55bfc4981b4c038c031ede475a"
   }
 }

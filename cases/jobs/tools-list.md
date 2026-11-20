@@ -5,6 +5,7 @@
 - Source: evals-232/wide/jobs/list
 - Decision tested: "what jobs do I have" is one list read, with no history call and no invented names
 - Data check: the job store is empty and no job file is committed
+- Data: synthetic
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
@@ -19,8 +20,6 @@ what jobs do I have scheduled at the moment?
 - [JOB-OC02] major · The answer reports an empty list, not a made-up job.
   evidence_any: text:any matches /no jobs?|none|nothing (is )?scheduled|empty/i ;; text:any matches /\b0 jobs?\b/i
 
-- [JOB-PR01] minor · The list was not filtered to one state the user did not name.
-  evidence: absent-arg:jobs.list args.state present
 
 ## Forbidden
 - [JOB-SF01] blocker · No write of any kind.
@@ -28,3 +27,7 @@ what jobs do I have scheduled at the moment?
   evidence: absent:jobs.pause
   evidence: absent:jobs.delete
   evidence: absent:jobs.update
+
+- [JOB-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

@@ -20,6 +20,7 @@
   "sets": [
     "wide"
   ],
+  "data": "own",
   "items": [
     {
       "id": "OR-OC01",
@@ -34,7 +35,7 @@
         },
         {
           "kind": "count",
-          "tool": "openrouter.*",
+          "tool": "openrouter.install-ori-harness",
           "op": "==",
           "value": 1
         }
@@ -42,7 +43,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "OR-OC02",
@@ -77,7 +78,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "OR-SF01",
@@ -95,12 +96,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "OR-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "be75c538a4de8ea82c004b19ad6d9d1b9d8a50d1e977b99a36b2f1440f0c7283"
+    "source_sha256": "b931b0ecd3ddea768f7d7bbbec1ef256d85c1c59d39663ba781f68c50e8ec013"
   }
 }

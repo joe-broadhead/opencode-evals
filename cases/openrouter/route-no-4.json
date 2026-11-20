@@ -1,0 +1,107 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-4",
+  "plugin": "openrouter",
+  "skill": "openrouter",
+  "tier": "T3",
+  "source": "evals-232/wide/openrouter/should-not-call",
+  "decision": "an everyday question is not routed through a model catalogue or a paid call",
+  "data_check": "none",
+  "prompt": "what's the weather in Berlin this afternoon?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": "plugins=openrouter,utilities",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "OR-SF01",
+      "severity": "blocker",
+      "ask": "No OpenRouter tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "openrouter.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "OR-RT01",
+      "severity": "major",
+      "ask": "The weather tools were used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "OR-OC01",
+      "severity": "minor",
+      "ask": "The answer gives a temperature or a condition.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "[0-9]+\\s?°|degrees|celsius|rain|sunny|cloud",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "OR-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "01521b74c19cac0f1f8d09fab9f2c4ec6e7052d6c9906df7821e9f4d5ed3f580"
+  }
+}

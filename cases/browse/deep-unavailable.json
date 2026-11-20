@@ -20,6 +20,7 @@
   "sets": [
     "deep"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "BRW-OC01",
@@ -36,7 +37,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "BRW-OC02",
@@ -55,10 +56,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
-      "id": "BRW-OC03",
+      "id": "BRW-ER01",
       "severity": "major",
       "ask": "The answer names one next step from the status: install, pair or connect.",
       "forbidden": false,
@@ -90,7 +91,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "BRW-SF01",
@@ -108,10 +109,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
     },
     {
-      "id": "BRW-EF01",
+      "id": "BRW-RB01",
       "severity": "minor",
       "ask": "It did not tell the user to reinstall OpenCode or the plugin blindly.",
       "forbidden": false,
@@ -131,12 +132,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 28
+    },
+    {
+      "id": "BRW-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "103ec1d047c1fde2f56fea10d29a7be1aadaede2f354694e216cc45ea45bb8c4"
+    "source_sha256": "6aaba8c7d5c7a71cc999e12d2347a62ef66ebf217f5368306d916fa28dfedb9f"
   }
 }

@@ -20,6 +20,7 @@
   "sets": [
     "wide"
   ],
+  "data": "own",
   "items": [
     {
       "id": "OR-OC01",
@@ -34,7 +35,7 @@
         },
         {
           "kind": "count",
-          "tool": "openrouter.*",
+          "tool": "openrouter.list-model-endpoints",
           "op": "==",
           "value": 1
         }
@@ -42,7 +43,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "OR-OC02",
@@ -75,7 +76,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "OR-OC03",
@@ -98,12 +99,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 23
+      "line": 24
+    },
+    {
+      "id": "OR-SF01",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "992e9b105819abcd1f86ed09eafa021c0bdba6eb1c3b109b7aa5c5883777992d"
+    "source_sha256": "d0c52d52da93e269aeae10f1af8e5c543855616c58942ed453524da161f36392"
   }
 }

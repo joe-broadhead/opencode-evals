@@ -5,6 +5,7 @@
 - Source: evals-232/wide/openrouter/list-providers
 - Decision tested: a provider-list question is one list-providers read
 - Data check: the MCP server is reachable
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
@@ -14,7 +15,7 @@ which providers does OpenRouter route to at all?
 ## Items
 - [OR-OC01] blocker · The provider list was read once, first.
   evidence: first:openrouter.list-providers
-  evidence: count:openrouter.* == 1
+  evidence: count:openrouter.list-providers == 1
 
 - [OR-OC02] major · The answer names providers from the list.
   evidence: text:any matches /provider|routing|region|privacy/i
@@ -22,4 +23,8 @@ which providers does OpenRouter route to at all?
 
 ## Forbidden
 - [OR-SF01] blocker · No paid call was made for a provider list.
-  evidence: absent-declined:openrouter_send-message
+  evidence: absent:openrouter.send-message
+
+- [OR-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

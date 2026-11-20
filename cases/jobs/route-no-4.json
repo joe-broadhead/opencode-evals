@@ -1,0 +1,107 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-4",
+  "plugin": "jobs",
+  "skill": "jobs",
+  "tier": "T3",
+  "source": "evals-232/wide/jobs/should-not-call",
+  "decision": "a date arithmetic question is not a job, and no scheduled task is invented to answer it",
+  "data_check": "none",
+  "prompt": "how many working days are left in November, England holidays?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": "plugins=jobs,utilities",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "JOB-SF01",
+      "severity": "blocker",
+      "ask": "No jobs tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "jobs.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "JOB-RT01",
+      "severity": "major",
+      "ask": "A time or date tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "JOB-OC01",
+      "severity": "minor",
+      "ask": "The answer gives a number of days.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\b[0-9]+\\b",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "JOB-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c718e84414ba9dde76f43761de4a2627313bd6dcf05e1ac9b6d3447edcfbffe5"
+  }
+}

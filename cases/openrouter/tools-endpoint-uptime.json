@@ -20,6 +20,7 @@
   "sets": [
     "wide"
   ],
+  "data": "own",
   "items": [
     {
       "id": "OR-OC01",
@@ -34,7 +35,7 @@
         },
         {
           "kind": "count",
-          "tool": "openrouter.*",
+          "tool": "openrouter.get-endpoint-uptime-history",
           "op": "==",
           "value": 1
         }
@@ -42,10 +43,10 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
-      "id": "OR-OC02",
+      "id": "OR-DT01",
       "severity": "major",
       "ask": "The answer reports a degradation or says there was none in that window.",
       "forbidden": false,
@@ -77,10 +78,10 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "OR-OC03",
+      "id": "OR-DT02",
       "severity": "minor",
       "ask": "It names the window it used.",
       "forbidden": false,
@@ -100,12 +101,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "OR-SF01",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "27d2699ed06ee34e2d285b2a3f30fa713ba7d95b9737bcc4e3e82bdd2e3cdd0d"
+    "source_sha256": "513707bc1382f46b30d67658888eb1f14ad1da1f17ca740ef67cf28bad50c554"
   }
 }

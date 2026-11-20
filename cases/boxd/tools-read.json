@@ -7,7 +7,7 @@
   "source": "evals-232/wide/boxd/read",
   "decision": "one file is read from a work's tree without a harvest, and an unreachable boxd is reported plainly",
   "data_check": "no boxd CLI in the trial",
-  "prompt": "read SUMMARY.md from the evals-232-demo work. don't harvest it, I just want to see the file.",
+  "prompt": "read SUMMARY.md from the {{target:boxd.prefix}}demo work. don't harvest it, I just want to see the file.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -24,10 +24,30 @@
   "sets": [
     "wide"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "BOX-OC01",
       "severity": "blocker",
+      "ask": "The tool was called exactly once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "boxd.read",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "BOX-PR01",
+      "severity": "major",
       "ask": "The file was read once, from that work.",
       "forbidden": false,
       "grader": "code",
@@ -37,10 +57,11 @@
           "tool": "boxd.read",
           "n": 1,
           "arg": "args.workId",
-          "op": "==",
+          "op": "matches",
           "value": {
-            "kind": "string",
-            "value": "evals-232-demo"
+            "kind": "regex",
+            "source": "-demo$",
+            "flags": ""
           }
         },
         {
@@ -59,7 +80,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 20
     },
     {
       "id": "BOX-OC02",
@@ -94,7 +115,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 24
     },
     {
       "id": "BOX-SF01",
@@ -112,12 +133,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 28
+    },
+    {
+      "id": "BOX-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 31
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "d3024461aea628219ed41b17e841a3b7c0e997a44cc73c37a8f0433f8941c8e4"
+    "source_sha256": "aadf80f1d6125d65da035392deed75e0195614e4e39b56375f67ac8271f8f1e8"
   }
 }

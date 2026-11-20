@@ -20,11 +20,12 @@
   "sets": [
     "deep"
   ],
+  "data": "own",
   "items": [
     {
       "id": "OR-OC01",
       "severity": "blocker",
-      "ask": "The catalogue was the first read, and at most four OpenRouter calls were made.",
+      "ask": "The catalogue was the first read, and it was read once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -34,15 +35,40 @@
         },
         {
           "kind": "count",
-          "tool": "openrouter.*",
-          "op": "<=",
-          "value": 4
+          "tool": "openrouter.list-models",
+          "op": "==",
+          "value": 1
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
+    },
+    {
+      "id": "OR-OC05",
+      "severity": "major",
+      "ask": "No more than one detail read per shortlisted model.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "openrouter.get-model",
+          "op": "<=",
+          "value": 2
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.list-benchmarks",
+          "op": "<=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
     },
     {
       "id": "OR-OC02",
@@ -76,7 +102,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 20
+      "line": 25
     },
     {
       "id": "OR-OC03",
@@ -99,7 +125,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 29
     },
     {
       "id": "OR-OC04",
@@ -122,7 +148,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 27
+      "line": 32
     },
     {
       "id": "OR-SF01",
@@ -132,19 +158,36 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent-declined",
-          "tool": "openrouter_send-message"
+          "kind": "absent",
+          "tool": "openrouter.send-message",
+          "n": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 30
+      "line": 35
+    },
+    {
+      "id": "OR-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 39
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "674df94c63570b4917e80aac11736f07711124668e0df1fc0960414107586359"
+    "source_sha256": "bcfd952fe5e4c41092533a6fb5c43ec9005f83cfd127aa479391aaea030386c6"
   }
 }

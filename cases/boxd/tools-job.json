@@ -7,7 +7,7 @@
   "source": "evals-232/wide/boxd/job",
   "decision": "one work is read live by its id with a short tail, and an unreachable boxd is reported as such",
   "data_check": "no boxd CLI in the trial",
-  "prompt": "what's happening in the evals-232-demo work? show me its last few messages too.",
+  "prompt": "what's happening in the {{target:boxd.prefix}}demo work? show me its last few messages too.",
   "controls": [],
   "budgets": {
     "outer_calls": 6,
@@ -23,10 +23,30 @@
   "sets": [
     "wide"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "BOX-OC01",
       "severity": "blocker",
+      "ask": "The tool was called exactly once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "boxd.job",
+          "op": "==",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "BOX-PR01",
+      "severity": "major",
       "ask": "The one work was read once, by its id.",
       "forbidden": false,
       "grader": "code",
@@ -36,20 +56,21 @@
           "tool": "boxd.job",
           "n": 1,
           "arg": "args.workId",
-          "op": "==",
+          "op": "matches",
           "value": {
-            "kind": "string",
-            "value": "evals-232-demo"
+            "kind": "regex",
+            "source": "-demo$",
+            "flags": ""
           }
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 20
     },
     {
-      "id": "BOX-PR01",
+      "id": "BOX-PR02",
       "severity": "major",
       "ask": "A tail was asked for, as the user asked for messages.",
       "forbidden": false,
@@ -66,7 +87,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 23
     },
     {
       "id": "BOX-OC02",
@@ -101,7 +122,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 26
     },
     {
       "id": "BOX-SF01",
@@ -124,12 +145,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 30
+    },
+    {
+      "id": "BOX-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 34
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "88a54a87a69c54f6047abf880b6bfae0a3777ea09df6b4b546f447d81589aee2"
+    "source_sha256": "404db9935ce5f26ec430dd70736011be211ebaad6b648e3771aef9cda61da08a"
   }
 }

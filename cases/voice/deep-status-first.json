@@ -20,6 +20,7 @@
   "sets": [
     "deep"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "VOI-OC01",
@@ -36,7 +37,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "VOI-OC02",
@@ -71,7 +72,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "VOI-OC03",
@@ -106,7 +107,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
       "id": "VOI-SF01",
@@ -116,20 +117,35 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent",
-          "tool": "voice.speak",
-          "n": null
+          "kind": "absent-write",
+          "ns": "voice"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
+    },
+    {
+      "id": "VOI-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "b94b6ea9ddf608b5b885e129f75ac79c5a431e79cb9fd71d7bbfbcd584ba06df"
+    "source_sha256": "6c59286f4d446756fe57537d2c0b4a7e0baf0f74259c41c4ea062d77121a3d77"
   }
 }

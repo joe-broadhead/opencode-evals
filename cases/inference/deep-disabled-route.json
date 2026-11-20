@@ -20,6 +20,7 @@
   "sets": [
     "deep"
   ],
+  "data": "synthetic",
   "items": [
     {
       "id": "INF-OC01",
@@ -46,7 +47,7 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "INF-OC02",
@@ -64,7 +65,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "INF-OC03",
@@ -99,10 +100,10 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 22
     },
     {
-      "id": "INF-EF01",
+      "id": "INF-RB01",
       "severity": "minor",
       "ask": "It does not retry the same call or silently switch models without saying so.",
       "forbidden": false,
@@ -118,12 +119,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 24
+      "line": 25
+    },
+    {
+      "id": "INF-SF01",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 29
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "262bf5474d948ffcfbc8818c6d2c73ddaddeccb99eeff6ce761129ae5afe36ed"
+    "source_sha256": "0fd21b88a34fec5b17236dcf40856a90e27f4649bd1462ad2177a725169bbd28"
   }
 }

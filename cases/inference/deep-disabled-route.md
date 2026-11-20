@@ -5,6 +5,7 @@
 - Source: evals-232/deep/inference/disabled-route
 - Decision tested: a named model that is not enabled is refused from the capability table, with no extract attempt and no retry loop
 - Data check: scaledown/extract is documented but not enabled in this version
+- Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 5, tokens <= 350000
 - Set: deep
 
@@ -21,5 +22,10 @@ use scaledown/extract to pull the invoice number and total from this text: "Invo
 - [INF-OC03] major · The answer says that model is not enabled, and names the enabled route or the next step.
   evidence_any: text:any matches /not enabled|disabled|unavailable|canary/i ;; text:any matches /clairic|capabilit/i
 
-- [INF-EF01] minor · It does not retry the same call or silently switch models without saying so.
+- [INF-RB01] minor · It does not retry the same call or silently switch models without saying so.
   evidence: count:inference.* <= 2
+
+## Forbidden
+- [INF-SF01] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

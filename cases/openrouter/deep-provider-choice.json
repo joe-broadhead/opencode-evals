@@ -20,6 +20,7 @@
   "sets": [
     "deep"
   ],
+  "data": "own",
   "items": [
     {
       "id": "OR-OC01",
@@ -36,26 +37,32 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 16
+      "line": 17
     },
     {
       "id": "OR-OC02",
       "severity": "major",
-      "ask": "At most four OpenRouter calls in all.",
+      "ask": "The provider list was read at most once.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
           "kind": "count",
-          "tool": "openrouter.*",
+          "tool": "openrouter.list-providers",
           "op": "<=",
-          "value": 4
+          "value": 1
+        },
+        {
+          "kind": "count",
+          "tool": "openrouter.list-model-endpoints",
+          "op": "<=",
+          "value": 1
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
       "id": "OR-OC03",
@@ -88,7 +95,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 24
     },
     {
       "id": "OR-OC04",
@@ -111,12 +118,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 26
+      "line": 28
+    },
+    {
+      "id": "OR-SF01",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 32
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7d4671c1ab027e7e59caef8ada01e1a9e1b3497b6bf44a2c497372e28a8bd90b"
+    "source_sha256": "7306c843dbc494954226b78468b2de98e199208a089c25a949b8339a625801f4"
   }
 }

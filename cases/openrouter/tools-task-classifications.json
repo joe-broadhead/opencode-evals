@@ -20,6 +20,7 @@
   "sets": [
     "wide"
   ],
+  "data": "own",
   "items": [
     {
       "id": "OR-OC01",
@@ -34,7 +35,7 @@
         },
         {
           "kind": "count",
-          "tool": "openrouter.*",
+          "tool": "openrouter.list-task-classifications",
           "op": "==",
           "value": 1
         }
@@ -42,7 +43,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "OR-OC02",
@@ -77,10 +78,10 @@
       ],
       "na_when": [],
       "maps_to": [],
-      "line": 19
+      "line": 20
     },
     {
-      "id": "OR-OC03",
+      "id": "OR-DT01",
       "severity": "minor",
       "ask": "It says the window is the trailing week.",
       "forbidden": false,
@@ -100,12 +101,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
+    },
+    {
+      "id": "OR-SF01",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "66d39e6efb1e99f25625f6f72d405adb9cb5cb6f913595c7e2dc7219a4f74aad"
+    "source_sha256": "d3d0c38acd905a17c4b49d187897b5212cf52110e34abbe8d45eba7f5b8f912d"
   }
 }

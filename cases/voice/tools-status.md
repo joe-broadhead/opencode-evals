@@ -5,6 +5,7 @@
 - Source: evals-232/wide/voice/status
 - Decision tested: readiness is read from the status tool once, and the answer reports the engine, models and microphone as they are
 - Data check: the container has no audio device and may have no speech models
+- Data: synthetic
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
@@ -24,4 +25,8 @@ is dictation ready to use on this machine?
 
 ## Forbidden
 - [VOI-SF01] blocker · Nothing was spoken to answer a question about readiness.
-  evidence: absent:voice.speak
+  evidence: absent-write:voice
+
+- [VOI-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

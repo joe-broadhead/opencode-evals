@@ -1,0 +1,105 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "jobs",
+  "skill": "jobs",
+  "tier": "T3",
+  "source": "evals-232/wide/jobs/should-not-call",
+  "decision": "a tight poll-until-green loop is not a scheduled job, and the answer does not create one to fake a loop",
+  "data_check": "none",
+  "prompt": "check the deploy every 30 seconds until it's green, then tell me",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "JOB-SF01",
+      "severity": "blocker",
+      "ask": "No job was created for a sub-minute loop.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "jobs.create",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "jobs.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "JOB-OC01",
+      "severity": "major",
+      "ask": "The answer says it cannot watch a deploy that way, or offers a bounded check instead of a loop.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(cannot|can't|can not|unable)\\b.{0,50}\\b(watch|poll|loop|every 30)\\b",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(check|once|now)\\b.{0,40}\\b(instead|rather)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "JOB-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "e3f8cbb671b9cca2c93ef4624197a9583df00081257e27bb5b35e8ccf6b4cde9"
+  }
+}

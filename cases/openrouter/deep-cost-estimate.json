@@ -20,6 +20,7 @@
   "sets": [
     "deep"
   ],
+  "data": "own",
   "items": [
     {
       "id": "OR-OC01",
@@ -36,7 +37,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 16
     },
     {
       "id": "OR-OC02",
@@ -69,7 +70,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 18
+      "line": 19
     },
     {
       "id": "OR-OC03",
@@ -92,7 +93,7 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 22
+      "line": 23
     },
     {
       "id": "OR-SF01",
@@ -102,19 +103,36 @@
       "grader": "code",
       "evidence": [
         {
-          "kind": "absent-declined",
-          "tool": "openrouter_send-message"
+          "kind": "absent",
+          "tool": "openrouter.send-message",
+          "n": null
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 25
+      "line": 26
+    },
+    {
+      "id": "OR-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
     }
   ],
   "oracle": [],
   "notes": [],
   "hashes": {
-    "source_sha256": "7e77b56f7ee333ef7a5fd337a93d02b38f2c900c36ecd77c01da0b6d29ff88bf"
+    "source_sha256": "7d92340dd29922f931fd6133c731af436a5b88a6a560702e0163f5f86185576e"
   }
 }

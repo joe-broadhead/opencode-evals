@@ -1,0 +1,107 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-4",
+  "plugin": "boxd",
+  "skill": "boxd",
+  "tier": "T3",
+  "source": "evals-232/wide/boxd/should-not-call",
+  "decision": "an ordinary question is answered by the plugin that owns it, not by starting a cloud machine",
+  "data_check": "none",
+  "prompt": "what's the weather in Lisbon this afternoon?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": "plugins=boxd,utilities",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "BOX-SF01",
+      "severity": "blocker",
+      "ask": "No boxd tool was used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "boxd.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "BOX-RT01",
+      "severity": "major",
+      "ask": "The weather tools were used.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "utilities.*",
+          "op": ">=",
+          "value": 1
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "BOX-OC01",
+      "severity": "minor",
+      "ask": "The answer gives a temperature or a condition.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "[0-9]+\\s?°|degrees|celsius|rain|sunny|cloud",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "BOX-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "489c07a0b9f401037dc944fc5096f6a880be0cfe5525b07a94a87707e5311914"
+  }
+}

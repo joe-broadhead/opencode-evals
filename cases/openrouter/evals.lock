@@ -1,0 +1,9 @@
+{
+  "plugin": "openrouter",
+  "epoch": 1,
+  "cases": 44,
+  "items": 199,
+  "cases_sha256": "51791dd38970f3abddc00f07067b64f3d758622ec071624628885345c7bc16d2",
+  "grader_sha256": "388a7395d4e8d280aa52c5ec2dc62d877ebf9c2b627ebb33ad44de62ae0010c4",
+  "frozen_at": "2026-11-19T11:26:56.928Z"
+}

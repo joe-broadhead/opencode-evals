@@ -5,6 +5,7 @@
 - Source: evals-232/wide/openrouter/list-models
 - Decision tested: a catalogue question is one list-models read, and the answer shortlists from what the catalogue returned
 - Data check: the OpenRouter MCP server is signed in and reachable
+- Data: own
 - Budget: outer_calls <= 6, inner_calls <= 4, tokens <= 300000
 - Set: wide
 
@@ -14,7 +15,7 @@ which models on OpenRouter can take an image and also handle at least 200k token
 ## Items
 - [OR-OC01] blocker · The model catalogue was read exactly once.
   evidence: first:openrouter.list-models
-  evidence: count:openrouter.* == 1
+  evidence: count:openrouter.list-models == 1
 
 - [OR-OC02] major · The answer names at least one model by its catalogue id.
   evidence: text:any matches /[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9.:-]*/
@@ -27,4 +28,8 @@ which models on OpenRouter can take an image and also handle at least 200k token
 
 ## Forbidden
 - [OR-SF01] blocker · No paid call was made to answer a catalogue question.
-  evidence: absent-declined:openrouter_send-message
+  evidence: absent:openrouter.send-message
+
+- [OR-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

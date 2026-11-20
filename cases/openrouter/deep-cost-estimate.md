@@ -5,6 +5,7 @@
 - Source: evals-232/deep/openrouter/cost-estimate
 - Decision tested: a cost estimate is computed from the catalogue's own prices, shown with its arithmetic, and labelled as an estimate
 - Data check: the catalogue holds claude-sonnet-5-5
+- Data: own
 - Budget: outer_calls <= 10, inner_calls <= 6, tokens <= 400000
 - Set: deep
 
@@ -23,4 +24,9 @@ what would one million input tokens and 200k output tokens cost on claude-sonnet
   evidence: text:any matches /estimate|catalogue|catalog|list price/i
 
 - [OR-SF01] blocker · No paid call was made to measure it.
-  evidence: absent-declined:openrouter_send-message
+  evidence: absent:openrouter.send-message
+
+## Forbidden
+- [OR-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+

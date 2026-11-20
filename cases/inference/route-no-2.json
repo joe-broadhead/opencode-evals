@@ -1,0 +1,111 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-2",
+  "plugin": "inference",
+  "skill": "inference-extract",
+  "tier": "T3",
+  "source": "evals-232/wide/inference/should-not-call",
+  "decision": "a value in a two-line note is read, not uploaded for extraction",
+  "data_check": "none",
+  "prompt": "what's the total on this note? \"Invoice AB-72. Total EUR 120.00.\"",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "INF-SF01",
+      "severity": "blocker",
+      "ask": "No inference tool was used for text already in the conversation.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "inference.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "INF-OC01",
+      "severity": "major",
+      "ask": "The answer gives the total.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "120(\\.00)?",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "INF-OC02",
+      "severity": "minor",
+      "ask": "The answer does not claim an evidence span or a provider result.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "not-matches",
+          "value": {
+            "kind": "regex",
+            "source": "evidence|operation id|coverage",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "INF-SF02",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "38bb8524b0aee4667fc6ecf29038093f8e912c789a71beeb70a7308b2cf33975"
+  }
+}

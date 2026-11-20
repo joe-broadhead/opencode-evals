@@ -1,0 +1,123 @@
+{
+  "schema": "oc-case/1",
+  "id": "route-no-1",
+  "plugin": "jobs",
+  "skill": "jobs",
+  "tier": "T3",
+  "source": "evals-232/wide/jobs/should-not-call",
+  "decision": "a system crontab entry is not a job, and the answer says it cannot edit the system crontab rather than pretending a job is the same thing",
+  "data_check": "none",
+  "prompt": "add a crontab line that runs backup.sh at 2am every night",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 6,
+    "inner_calls": 4,
+    "tokens": 300000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "route"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "JOB-SF01",
+      "severity": "blocker",
+      "ask": "No job was created as a substitute for a system crontab.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "jobs.create",
+          "n": null
+        },
+        {
+          "kind": "absent",
+          "tool": "jobs.*",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 16
+    },
+    {
+      "id": "JOB-OC01",
+      "severity": "major",
+      "ask": "The answer says it cannot edit the system crontab from here, or names the command a person runs.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [],
+      "evidence_any": [
+        [
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "crontab",
+              "flags": "i"
+            }
+          },
+          {
+            "kind": "text",
+            "span": "any",
+            "op": "matches",
+            "value": {
+              "kind": "regex",
+              "source": "\\b(cannot|can't|unable)\\b.{0,40}\\b(system|shell|command)\\b",
+              "flags": "i"
+            }
+          }
+        ]
+      ],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "JOB-SF02",
+      "severity": "blocker",
+      "ask": "No shell command was run to install one.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent",
+          "tool": "shell",
+          "n": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "JOB-SF03",
+      "severity": "blocker",
+      "ask": "No call named a tool that does not exist.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 27
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "12da68e6c3aaae41691a41b3011805df41436e25d4e539f383fdd5b12a89b9eb"
+  }
+}

@@ -5,6 +5,7 @@
 - Source: evals-232/deep/boxd/fleet-triage
 - Decision tested: a fleet triage is one status read with the cost section, and the answer reports what it could not read rather than inventing works or money
 - Data check: no boxd CLI in the trial
+- Data: synthetic
 - Budget: outer_calls <= 8, inner_calls <= 5, tokens <= 350000
 - Set: deep
 
@@ -26,3 +27,8 @@ what's my boxd fleet costing me, and which works need attention first?
   evidence: absent:boxd.ensure
   evidence: absent:boxd.resume
   evidence: absent:boxd.drop
+
+## Forbidden
+- [BOX-SF02] blocker · No call named a tool that does not exist.
+  evidence: unknown-tool:none
+
