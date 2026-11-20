@@ -1,0 +1,184 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-time-holidays-p",
+  "plugin": "utilities",
+  "skill": "utilities-time",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 paraphrase twin of tools-time-holidays (lane L6b)",
+  "decision": "An is-it-a-holiday question is one time_holidays check for the date and country",
+  "data_check": "none",
+  "prompt": "check if 25 December 2026 is a bank holiday in England.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 6
+  },
+  "seed": "plugins=utilities",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide",
+    "twin"
+  ],
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "UTL-TR01",
+      "severity": "blocker",
+      "ask": "It used time_holidays once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.time_holidays",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "UTL-PR01",
+      "severity": "major",
+      "ask": "It checked one date.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.time_holidays",
+          "n": 1,
+          "arg": "args.mode",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "check"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "UTL-PR02",
+      "severity": "major",
+      "ask": "It passed the country and region the user meant.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "utilities.time_holidays",
+          "n": 1,
+          "arg": "args.country",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "gb|uk",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "UTL-OC01",
+      "severity": "major",
+      "ask": "The answer says yes, it is a holiday, and names it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\bChristmas Day\\b",
+            "flags": "i"
+          }
+        },
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "\\byes\\b",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 23
+    },
+    {
+      "id": "UTL-OC02",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    },
+    {
+      "id": "UTL-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "utilities"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    },
+    {
+      "id": "UTL-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 33
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "b76c20bbcb5c9ae2c9f010498cdac788a825ab455a38d23f86a86acbd44a2a74"
+  }
+}

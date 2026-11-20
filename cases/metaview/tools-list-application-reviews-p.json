@@ -1,0 +1,122 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-list-application-reviews-p",
+  "plugin": "metaview",
+  "skill": "metaview",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 paraphrase twin of tools-list-application-reviews (lane L6b)",
+  "decision": "A list-reviews question is one list_application_reviews, newest first",
+  "data_check": "at least one application review",
+  "prompt": "show every application review we have, marking those that haven't been closed.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 10,
+    "inner_calls": 6
+  },
+  "seed": "plugins=metaview",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide",
+    "twin"
+  ],
+  "data": "candidate",
+  "items": [
+    {
+      "id": "MV-TR01",
+      "severity": "blocker",
+      "ask": "It used list_application_reviews once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.list_application_reviews",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "MV-PR01",
+      "severity": "major",
+      "ask": "The call carries a generic rationale, with no candidate detail in it.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "metaview.list_application_reviews",
+          "n": 1,
+          "arg": "args.rationale",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "MV-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "MV-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "metaview"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "MV-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "c619a81b18e62b68da09d914d6688983ad6fd60fd2a7328ffcffacbcc5350b6b"
+  }
+}

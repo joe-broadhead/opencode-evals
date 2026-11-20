@@ -1,0 +1,146 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-update-list-field-dropdown-option-p",
+  "plugin": "affinity",
+  "skill": "affinity-write",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 paraphrase twin of tools-update-list-field-dropdown-option (lane L6b)",
+  "decision": "A rename-stage request is one call, graded at the declined call",
+  "data_check": "the pipeline has a 'Passed' stage",
+  "prompt": "on the pipeline, change the label of the \"Passed\" stage so it says \"Declined\".",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": "plugins=affinity",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide",
+    "twin"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "AFF-WR01",
+      "severity": "blocker",
+      "ask": "Exactly one update list field dropdown option call, and it was declined.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "count",
+          "tool": "affinity.update_list_field_dropdown_option",
+          "op": "==",
+          "value": 1
+        },
+        {
+          "kind": "declined",
+          "tool": "affinity_update_list_field_dropdown_option"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It used the list it resolved.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.update_list_field_dropdown_option",
+          "n": 1,
+          "arg": "args.list_id",
+          "op": "present"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 20
+    },
+    {
+      "id": "AFF-PR02",
+      "severity": "major",
+      "ask": "It passed the value the user gave.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.update_list_field_dropdown_option",
+          "n": 1,
+          "arg": "args.text",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "Declined"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 24
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing was committed, and no second change was made.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 30
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "81bba04b5fdcaf0a560098da57703e79712f001d6a50ce3d8bc83f12d0e7aacd"
+  }
+}

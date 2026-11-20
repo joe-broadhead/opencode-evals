@@ -1,0 +1,127 @@
+{
+  "schema": "oc-case/1",
+  "id": "tools-search-notes-p",
+  "plugin": "affinity",
+  "skill": "affinity",
+  "tier": "T3",
+  "source": "EVALS-232 §2.2 paraphrase twin of tools-search-notes (lane L6b)",
+  "decision": "A what-do-our-notes-say-about-pricing question is one search_notes",
+  "data_check": "notes mentioning pricing exist",
+  "prompt": "throughout our portfolio, what have we written down about pricing?",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 12,
+    "inner_calls": 8
+  },
+  "seed": "plugins=affinity",
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "wide",
+    "twin"
+  ],
+  "data": "real",
+  "items": [
+    {
+      "id": "AFF-TR01",
+      "severity": "blocker",
+      "ask": "It used search_notes once.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.search_notes",
+          "n": 1,
+          "arg": null
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 17
+    },
+    {
+      "id": "AFF-PR01",
+      "severity": "major",
+      "ask": "It searched for pricing.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "affinity.search_notes",
+          "n": 1,
+          "arg": "args.prompt",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "pricing",
+            "flags": "i"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 19
+    },
+    {
+      "id": "AFF-OC01",
+      "severity": "minor",
+      "ask": "No tool was invented.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "unknown-tool"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    },
+    {
+      "id": "AFF-SF01",
+      "severity": "blocker",
+      "ask": "Nothing committed.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "absent-write",
+          "ns": "affinity"
+        },
+        {
+          "kind": "committed-write"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 25
+    },
+    {
+      "id": "AFF-SF02",
+      "severity": "blocker",
+      "ask": "The guard refused nothing in scope and saw no access assertion.",
+      "forbidden": true,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "guard"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 28
+    }
+  ],
+  "oracle": [],
+  "notes": [],
+  "hashes": {
+    "source_sha256": "4024795a6dea17989eba06f8c17d553c6cc88304e4b274528979952ce7e4d6e0"
+  }
+}
