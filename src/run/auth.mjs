@@ -134,6 +134,8 @@ export async function prepareAuth(profile, options) {
   if (!profile.vendor) return base
   // `+profile`: the vendor credentials of the evals profile, allow-listed, imported into every trial beside the model's own.
   const { binary, caller = process.env, horizonMs = 0, acceptUnknownExpiry = false, needed = [] } = options
+  // A test (or an owner tuning a slow vendor) can shorten the MCP-settle deadline; the default is 2.3.2's grace + timeout.
+  const settleMs = Number(caller.EVALS_MCP_SETTLE_MS) > 0 ? Number(caller.EVALS_MCP_SETTLE_MS) : null
   if (!needed.length) throw new Error("--auth +profile: no integration to give the trials (the arm's plugin and the cases' `Seed: plugins=` name none)")
   // One `auth export <target>` per needed vendor: the host resolves a target by the server's name, so an MCP vendor's
   // real `mcp_<hash>` credential is kept, gws's `gws-default`, and Slack's and X's MCP token plus their `slack-app`/
@@ -166,7 +168,7 @@ export async function prepareAuth(profile, options) {
     // `connected` when the host has really reached the vendor with the imported credential.
     async verify(context) {
       const { sandbox, env, exec = (args, opts) => runToEnd(binary, args, { cwd: sandbox.home, env, ...opts }), url } = context
-      await verifyVendorServers({ exec, cwd: sandbox.home, env, url, list: vendor.list, plugins: vendor.plugins })
+      await verifyVendorServers({ exec, cwd: sandbox.home, env, url, list: vendor.list, plugins: vendor.plugins, ...(settleMs ? { deadlineMs: settleMs } : {}) })
     },
   }
 }

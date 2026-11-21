@@ -43,6 +43,7 @@ test("a vendor credential is cut to the allow-list: no refresh token, no client 
 const SLACK_ID = "mcp_c89391481a328edc" // sha1("slack\0https://mcp.slack.com/mcp"), 16 hex
 const X_ID = "mcp_d95d978dbb4b3509" // sha1("x\0https://api.x.com/mcp"), 16 hex
 const user = (id, label, access) => JSON.stringify([{ id: "cred_orig", integrationID: id, label, active: true, value: { type: "oauth", methodID: "mcp-oauth", access, refresh: "REFRESH-SECRET-0123456789", expires: Date.now() + 8 * 3_600_000 } }])
+const demoMcp = () => ({ id: "cred_e2edemo00000000000000", integrationID: "mcp_0123456789abcdef", label: "demo", active: true, value: { type: "oauth", methodID: "mcp-oauth", access: "access-token-demo-0123456789", refresh: "refresh-demo-0123456789", expires: Date.now() + 8 * 3_600_000 } })
 const client = (id, key, label, secret) => JSON.stringify([{ id: "cred_orig", integrationID: id, label, active: true, value: { type: "key", key, metadata: { client_secret: secret } } }])
 
 test("each needed plugin gets its own vendor's credential by its auth export target, with its real integration id", () => {
@@ -168,6 +169,48 @@ test("the trial's own server is polled until each imported MCP server is connect
 test("mcp list output parses into server names and statuses", () => {
   assert.deepEqual(mcpRows("✓ affinity  connected\n⚠ slack  needs authentication\n✗ jira  failed: boom\n○ x  pending"), [{ name: "affinity", status: "connected" }, { name: "slack", status: "needs authentication" }, { name: "jira", status: "failed: boom" }, { name: "x", status: "pending" }])
   assert.deepEqual(mcpRows("No MCP servers configured"), [])
+})
+
+test("the runner polls the trial's own server for the MCP settle, and a connected server lets the prompt run", async () => {
+  const f = fixture({ fake: { mcp: "connected" } })
+  const profile = join(f.root, "profile")
+  mkdirSync(profile, { recursive: true })
+  writeFileSync(join(profile, "fake-exports.json"), JSON.stringify({ demo: [demoMcp()] }))
+  const caller = { ...f.caller, EVALS_PROFILE: profile, EVALS_AUTH_STANDALONE: "1", EVALS_REAL_SERVICE_PORT: "2" }
+  try {
+    const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "mcp-connected", model: "mock/m1", auth: "none+profile", scripted: true, cases: "demo-a", arm: f.armFile, casesDir: f.casesDir, keep: true }, { caller, ...quiet })
+    assert.equal(result.results[0]?.infra, undefined, JSON.stringify(result.results[0]))
+    const home = join(result.keptAt, "runs", "demo-a.t1", "home")
+    assert.equal(existsSync(join(home, "run.json")), true, "the prompt ran after the server connected")
+    const polls = JSON.parse(readFileSync(join(home, "mcp-polls.json"), "utf8"))
+    assert.ok(polls.length >= 1)
+    assert.equal(new Set(polls.map((poll) => poll.server)).size, 1, "every poll hits the same server")
+    assert.match(polls[0].server, /^http:\/\/127\.0\.0\.1:\d+$/)
+  } finally {
+    f.cleanup()
+  }
+})
+
+test("a pending MCP server past the deadline fails the trial as infra auth, before any prompt", async () => {
+  const f = fixture({ fake: { mcp: "pending" } })
+  const profile = join(f.root, "profile")
+  mkdirSync(profile, { recursive: true })
+  writeFileSync(join(profile, "fake-exports.json"), JSON.stringify({ demo: [demoMcp()] }))
+  const caller = { ...f.caller, EVALS_PROFILE: profile, EVALS_AUTH_STANDALONE: "1", EVALS_REAL_SERVICE_PORT: "2", EVALS_MCP_SETTLE_MS: "1" }
+  try {
+    const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "mcp-pending", model: "mock/m1", auth: "none+profile", scripted: true, cases: "demo-a", arm: f.armFile, casesDir: f.casesDir, keep: true }, { caller, ...quiet })
+    assert.equal(result.results[0]?.infra, "auth", JSON.stringify(result.results[0]))
+    const home = join(result.keptAt, "runs", "demo-a.t1", "home")
+    assert.equal(existsSync(join(home, "run.json")), false, "the prompt was never sent")
+    const polls = JSON.parse(readFileSync(join(home, "mcp-polls.json"), "utf8"))
+    assert.ok(polls.length >= 1)
+    assert.equal(new Set(polls.map((poll) => poll.server)).size, 1, "every poll hits the same server")
+    const summary = JSON.parse(readFileSync(join(f.root, "store", "raw", "mcp-pending", "demo", "demo-a.t1.summary.json"), "utf8"))
+    assert.equal(summary.infra, "auth")
+    assert.match(summary.infra_why, /demo/)
+  } finally {
+    f.cleanup()
+  }
 })
 
 test("an auth-verification failure is infra in the summary, and grading never counts it as the model's", () => {
@@ -483,7 +526,7 @@ test("what the guard saw and what the host logged about plugins are summarised, 
 const UNCONFINED = { isolation: "none", unsafeNoIsolation: true }
 const quiet = { log: () => {} }
 
-function fixture({ extra = "", ids = ["demo-a", "demo-b"] } = {}) {
+function fixture({ extra = "", ids = ["demo-a", "demo-b"], fake = {} } = {}) {
   const root = scratch()
   const casesDir = join(root, "cases")
   mkdirSync(casesDir)
@@ -506,7 +549,7 @@ function fixture({ extra = "", ids = ["demo-a", "demo-b"] } = {}) {
   mkdirSync(bin)
   const tmp = join(root, "tmp")
   mkdirSync(tmp)
-  const caller = { PATH: process.env.PATH, HOME: home, EVALS_STORE: join(root, "store"), EVALS_OPENCODE_BIN: installFakeOpencode(bin), EVALS_BUN: installFakeBun(bin), EVALS_TMP: tmp }
+  const caller = { PATH: process.env.PATH, HOME: home, EVALS_STORE: join(root, "store"), EVALS_OPENCODE_BIN: installFakeOpencode(bin, fake), EVALS_BUN: installFakeBun(bin), EVALS_TMP: tmp }
   const armFile = join(root, "arm.json")
   writeFileSync(armFile, JSON.stringify({ package: arm, options: { access: "ask-changes" }, companions: { other: companion } }))
   return { root, casesDir, arm, armFile, caller, companion, cleanup: () => rmSync(root, { recursive: true, force: true }) }

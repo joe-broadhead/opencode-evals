@@ -11,6 +11,7 @@ const { join } = require("node:path")
 const http = require("node:http")
 const args = process.argv.slice(2)
 const home = process.env.HOME
+const MCP = "__FAKE_MCP__"
 const note = (name, data) => writeFileSync(join(home, name), JSON.stringify(data, null, 1))
 const seen = () => ({ argv: args, env: process.env, cwd: process.cwd(), pid: process.pid })
 // A child in the same process group, the way a provider's CLI runs under a server: it must not outlive the run.
@@ -20,9 +21,44 @@ const linger = (name) => {
   return child
 }
 if (args[0] === "--version") { note("version.json", seen()); console.log("opencode v2.2.6"); process.exit(0) }
+if (args[0] === "service") {
+  if (args[1] === "get" && args[2] === "port") { console.log("47951"); process.exit(0) }
+  if (args[1] === "status") { console.log("stopped"); process.exit(0) }
+  process.exit(0)
+}
+const importedRows = () => {
+  try { return JSON.parse(JSON.parse(readFileSync(join(home, "imported.json"), "utf8")).input) } catch { return null }
+}
 if (args[0] === "auth" && args[1] === "export") {
+  // A profile's exports (the evals profile's HOME), or the trial's imported credentials.
+  try {
+    const map = JSON.parse(readFileSync(join(home, "fake-exports.json"), "utf8"))
+    console.log(JSON.stringify(map[args[2]] ?? []))
+    process.exit(0)
+  } catch {}
+  const rows = importedRows()
+  if (rows) {
+    console.log(JSON.stringify(rows.filter((c) => c.integrationID === args[2])))
+    process.exit(0)
+  }
   if (process.env.FAKE_NO_CREDENTIAL) process.exit(1)
   console.log(JSON.stringify({ integration: args[2], kind: "external" }))
+  process.exit(0)
+}
+if (args[0] === "auth" && args[1] === "list") {
+  const rows = importedRows() ?? []
+  console.log(JSON.stringify(rows.map((c) => ({ id: c.integrationID, name: c.integrationID, connections: [{ type: "credential", id: c.id, label: c.label, method: c.value.type }] }))))
+  process.exit(0)
+}
+if (args[0] === "mcp" && args[1] === "list") {
+  const server = args[args.indexOf("--server") + 1]
+  let polls = []
+  try { polls = JSON.parse(readFileSync(join(home, "mcp-polls.json"), "utf8")) } catch {}
+  polls.push({ server })
+  writeFileSync(join(home, "mcp-polls.json"), JSON.stringify(polls, null, 1))
+  // FAKE_MCP: connected everywhere; pending in a trial's own run home (the preflight must still pass).
+  const pending = MCP === "pending" && home.includes("/runs/")
+  console.log(pending ? "○ demo  pending" : "✓ demo  connected")
   process.exit(0)
 }
 if (args[0] === "auth" && args[1] === "import") {
@@ -127,9 +163,9 @@ if (args[0] === "run") {
 process.exit(2)
 `
 
-export function installFakeOpencode(dir) {
+export function installFakeOpencode(dir, options = {}) {
   const file = join(dir, "opencode")
-  writeFileSync(file, SOURCE)
+  writeFileSync(file, SOURCE.replace('"__FAKE_MCP__"', JSON.stringify(options.mcp ?? "connected")))
   chmodSync(file, 0o755)
   return file
 }
