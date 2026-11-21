@@ -180,8 +180,8 @@ test("the first failure stops everything after it, with the sentence that says w
     [{ "check-real": "slack" }, "check-real", /check-real failed for slack: sign the real profile back in for slack and sign in NO further vendor/],
     [{ keeper: "linear" }, "keeper", /the keeper failed for linear/],
     [{ canaries: true }, "canaries", /the canaries manifest is refused, nothing was created: container linear\.production is not an alias/],
-    [{ p7: "linear" }, "p7", /P0-7 failed for linear/],
-    [{ live: "slack" }, "live", /the live write probe failed for slack: .*A completed write is a HALT/],
+    [{ p7: "linear" }, "p7", /P0-7 failed for 1 plugin\(s\): linear:/],
+    [{ live: "slack" }, "live", /the live write probe failed for 1 plugin\(s\): slack: .*A completed write is a HALT/],
     [{ gws: true }, "gws", /the gws plan-and-commit failed/],
   ]
   for (const [fail, id, message] of cases) {
@@ -201,7 +201,7 @@ test("the first failure stops everything after it, with the sentence that says w
       w.cleanup()
     }
   }
-  // inside a step, the first failing vendor or plugin stops the rest of that step
+  // inside a step, check-real still stops at its first failing vendor; the vendor probes record and continue
   const w = world()
   const s = stand({ fail: { "check-real": "linear" } })
   try {
@@ -214,7 +214,7 @@ test("the first failure stops everything after it, with the sentence that says w
   const s2 = stand({ fail: { live: "slack" } })
   try {
     await run(w2, s2)
-    assert.equal(s2.calls.includes("live linear"), false, "linear's write was never tried after slack's failed")
+    assert.equal(s2.calls.includes("live linear"), true, "linear's write is still tried after slack's failure")
   } finally {
     w2.cleanup()
   }
@@ -369,4 +369,29 @@ test("the walk and the harness ask auth export for the same vendor names", () =>
   assert.equal(exportTarget("gws"), "gws-default")
   assert.equal(exportTarget("wisprflow"), "Wispr Flow")
   assert.equal(exportTarget("affinity"), "affinity", "an MCP vendor is asked for by its server name")
+})
+
+test("p7 and live run every plugin after one throws, and report all the failures", async () => {
+  const w = world({ reads: ["affinity", "charts", "ashby"], writes: ["affinity", "charts", "ashby"] })
+  const s = stand()
+  s.deps.probe = async (id, { only } = {}) => {
+    s.calls.push(`${id} ${only}`)
+    if (only === "charts") throw new Error("--auth +profile: the evals profile holds no usable credential for charts")
+    return { ok: true, checks: [] }
+  }
+  try {
+    const p7 = await STEPS.find((step) => step.id === "p7").run({ store: w.store, profile: w.profile, caller: {}, deps: s.deps })
+    assert.equal(p7.ok, false)
+    assert.match(p7.message, /P0-7 failed for 1 plugin\(s\): charts:/)
+    assert.ok(p7.lines.includes("affinity: ok") && p7.lines.includes("ashby: ok"), p7.lines.join(" | "))
+    assert.equal(s.calls.filter((call) => call.startsWith("p7 ")).length, 3, "every plugin was attempted")
+    s.calls.length = 0
+    const live = await STEPS.find((step) => step.id === "live").run({ store: w.store, profile: w.profile, caller: {}, deps: s.deps })
+    assert.equal(live.ok, false)
+    assert.match(live.message, /the live write probe failed for 1 plugin\(s\): charts:/)
+    assert.ok(live.lines.includes("affinity: declined, nothing written") && live.lines.includes("ashby: declined, nothing written"), live.lines.join(" | "))
+    assert.equal(s.calls.filter((call) => call.startsWith("live ")).length, 3, "every plugin was attempted")
+  } finally {
+    w.cleanup()
+  }
 })

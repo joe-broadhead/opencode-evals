@@ -213,12 +213,13 @@
     "denied": 0,
     "skills": 3
   },
-  "digest": "ae277d9e6016748d8827d6b5ff83a26e4473737312b15a1902070f0d7644a349",
+  "digest": "be36232749dbcc1906f52a94aaa1f338049acc44b6f845ac35aa079f4bb63005",
   "t1": [],
   "egress": [
     "api.open-meteo.com",
     "geocoding-api.open-meteo.com"
   ],
+  "accounts": "none",
   "release": {
     "version": "0.0.6",
     "tag": "v0.0.6",

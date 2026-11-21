@@ -146,7 +146,7 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "b483a7ace6ddc697f2ba21b2ef2e787e0c18f77a8f4e55a434adace2d271011a",
+  "digest": "fa70d472914cd54cf466da5eb462bd59367a17a9615c5b153a9c7c7090f74721",
   "vocab": [
     "project",
     "directory",
@@ -186,6 +186,7 @@
     "default": "all"
   },
   "egress": [],
+  "accounts": "none",
   "release": {
     "version": "0.0.8",
     "tag": "v0.0.8",

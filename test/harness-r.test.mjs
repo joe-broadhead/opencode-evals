@@ -8,6 +8,7 @@ import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { Buffer } from "node:buffer"
 import { allowListed, vendorCredentials, exportTargets, exportTargetsFor, verifyVendorImport, verifyVendorServers, mcpRows, secretsOf, REFRESH_PLACEHOLDER, profileEnv } from "../src/run/vendor-auth.mjs"
+import { noCredentialPlugins } from "../src/run/accounts.mjs"
 import { redactor, expand, registerSecrets, scrub } from "../src/run/secrets.mjs"
 import { fillPrompt, gateCases, seedFiles, seedDir, placeholdersIn, loadDataMatrix, seedRefusal } from "../src/run/gate.mjs"
 import { dataOf } from "../src/case/schema.mjs"
@@ -15,7 +16,7 @@ import { batchEgress, fillHost, modelHosts } from "../src/run/egress.mjs"
 import { readCompanions, materialiseArm, materialiseCompanions, runtimePaths, companionsDigest } from "../src/run/arm.mjs"
 import { roundLimits, estimateRunUsd, assertLaunchWithinRound, RoundCapError, tierOf, listSpent, MIN_MEASURED_RUNS } from "../src/cost/budget.mjs"
 import { outstandingList } from "../src/cost/ledger.mjs"
-import { parseAuth } from "../src/run/auth.mjs"
+import { parseAuth, prepareAuth } from "../src/run/auth.mjs"
 import { runBatch, listUsdOf, modelPrice, guardSummary, hostLogFacts, rateLimitOutcome, failureInfra } from "../src/run/runner.mjs"
 import { compileCase } from "../src/case/compile.mjs"
 import { flatten } from "../src/grade/targets.mjs"
@@ -211,6 +212,21 @@ test("a pending MCP server past the deadline fails the trial as infra auth, befo
   } finally {
     f.cleanup()
   }
+})
+
+test("an accountless batch reduces +profile to the base auth; a seeded signed-in plugin is the only export", async () => {
+  const packs = loadPacks()
+  const noCredential = noCredentialPlugins({ packs })
+  const parse = (seed) => String(seed ?? "").split(",").filter(Boolean)
+  for (const id of ["charts", "history", "jobs", "inference", "utilities", "voice", "boxd", "browse", "github", "jira"]) assert.deepEqual(integrationsFor(id, [{}], packs, parse, noCredential), [], `${id} has no account`)
+  assert.deepEqual(integrationsFor("charts", [{ seed: "linear" }], packs, parse, noCredential), ["linear"], "a signed-in seed is still asked for")
+  assert.deepEqual(integrationsFor("affinity", [{}], packs, parse, noCredential), ["affinity"], "a plugin with an account is still asked for")
+  // No EVALS_PROFILE and a binary that cannot run: an empty `needed` must not call exportProfile.
+  const auth = await prepareAuth({ kind: "none", vendor: true }, { needed: [], binary: "/nonexistent", caller: {} })
+  assert.equal(auth.profile, "none+profile")
+  assert.equal(auth.vendor, undefined, "no vendor object: nothing is exported, imported or settled")
+  // A plugin with an account and no credential still throws, as before.
+  assert.throws(() => vendorCredentials({ affinity: "[]" }, { needed: ["affinity"] }), /holds no usable credential for affinity/)
 })
 
 test("an auth-verification failure is infra in the summary, and grading never counts it as the model's", () => {

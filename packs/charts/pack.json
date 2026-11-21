@@ -122,9 +122,10 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "4f1e95cc64f034e4db1612e7d9ac5a3efb9b681432bb989bb9bf4361af9f41ed",
+  "digest": "48242370129912d2bc3d6d70e1024feeac7001bd94f7c16450f488db35711225",
   "t1": [],
   "egress": [],
+  "accounts": "none",
   "release": {
     "version": "0.0.7",
     "tag": "v0.0.7",

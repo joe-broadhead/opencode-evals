@@ -183,14 +183,22 @@ export const STEPS = [
       const plugins = entriesOf(ctx.store, "live-reads.json").filter((id) => !ctx.noAccount?.has(id))
       if (!plugins.length) return fail(`${join(ctx.store, "live-reads.json")} names no plugin: write one read per signed-in plugin (X and OpenRouter reads cost money: one each)`)
       const lines = []
+      const failures = []
       for (const only of plugins) {
         const halt = readHalt(ctx.store)
         if (halt) return fail(haltMessage(halt), lines)
-        const result = await ctx.deps.probe("p7", { only })
-        lines.push(`${only}: ${result.ok ? "ok" : "FAIL"}`, ...checksOf(result).filter((l) => l.startsWith("FAIL")))
-        if (!result.ok) return fail(`P0-7 failed for ${only}: ${result.checks.find((c) => !c.ok)?.name}`, lines)
+        try {
+          const result = await ctx.deps.probe("p7", { only })
+          lines.push(`${only}: ${result.ok ? "ok" : "FAIL"}`, ...checksOf(result).filter((l) => l.startsWith("FAIL")))
+          if (!result.ok) failures.push(`${only}: ${result.checks.find((c) => !c.ok)?.name ?? "failed"}`)
+        } catch (error) {
+          // One vendor's failure (a missing credential, a dead host) is recorded and the next plugin still runs: the
+          // step reports every failure at the end, instead of losing the ones that already passed.
+          failures.push(`${only}: ${error.message}`)
+          lines.push(`${only}: FAIL`, `FAIL ${error.message}`)
+        }
       }
-      return pass(lines)
+      return failures.length ? fail(`P0-7 failed for ${failures.length} plugin(s): ${failures.join("; ")}`, lines) : pass(lines)
     },
   },
   {
@@ -201,14 +209,20 @@ export const STEPS = [
       const plugins = entriesOf(ctx.store, "live-writes.json").filter((id) => !ctx.noAccount?.has(id))
       if (!plugins.length) return fail(`${join(ctx.store, "live-writes.json")} names no plugin`)
       const lines = []
+      const failures = []
       for (const only of plugins) {
         const halt = readHalt(ctx.store)
         if (halt) return fail(haltMessage(halt), lines)
-        const result = await ctx.deps.probe("live", { only })
-        lines.push(`${only}: ${result.ok ? "declined, nothing written" : "FAIL"}`, ...checksOf(result).filter((l) => l.startsWith("FAIL")))
-        if (!result.ok) return fail(`the live write probe failed for ${only}: ${result.checks.find((c) => !c.ok)?.name}. A completed write is a HALT: read it with \`evals halt\``, lines)
+        try {
+          const result = await ctx.deps.probe("live", { only })
+          lines.push(`${only}: ${result.ok ? "declined, nothing written" : "FAIL"}`, ...checksOf(result).filter((l) => l.startsWith("FAIL")))
+          if (!result.ok) failures.push(`${only}: ${result.checks.find((c) => !c.ok)?.name ?? "failed"}`)
+        } catch (error) {
+          failures.push(`${only}: ${error.message}`)
+          lines.push(`${only}: FAIL`, `FAIL ${error.message}`)
+        }
       }
-      return pass(lines)
+      return failures.length ? fail(`the live write probe failed for ${failures.length} plugin(s): ${failures.join("; ")}. A completed write is a HALT: read it with \`evals halt\``, lines) : pass(lines)
     },
   },
   {
