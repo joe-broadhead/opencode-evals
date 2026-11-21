@@ -7,7 +7,7 @@
 //               profile back in for that vendor and sign in no more)
 //   keeper      P0-6: one identity read per signed-in vendor, a due token's expiry must move
 //   p6c         P0-6c: `auth logout` of one vendor of the evals profile, only when asked (`--logout <vendor>`)
-//   p7          P0-7: one scripted READ per plugin; the real egress hosts, recorded; no host refused
+//   p7          P0-7: disabled; stops before the probe
 //   live        `p0 live`: one real write per plugin, guard on, one plugin at a time; declined is the pass, a completed write a HALT
 //   gws         one real gws plan-and-commit in commit mode against the owner's sandbox
 //   pilot       P0-8, the paid pilot, last: only with `--pilot --confirm-labels` (the lead has read the cases' Data: labels and
@@ -177,28 +177,10 @@ export const STEPS = [
   },
   {
     id: "p7",
-    title: "P0-7: one scripted read per plugin, the real egress hosts recorded, none refused",
-    needs: "$EVALS_STORE/live-reads.json (read calls, @alias placeholders), the vendor caps in caps.json",
-    async run(ctx) {
-      const plugins = entriesOf(ctx.store, "live-reads.json").filter((id) => !ctx.noAccount?.has(id))
-      if (!plugins.length) return fail(`${join(ctx.store, "live-reads.json")} names no plugin: write one read per signed-in plugin (X and OpenRouter reads cost money: one each)`)
-      const lines = []
-      const failures = []
-      for (const only of plugins) {
-        const halt = readHalt(ctx.store)
-        if (halt) return fail(haltMessage(halt), lines)
-        try {
-          const result = await ctx.deps.probe("p7", { only })
-          lines.push(`${only}: ${result.ok ? "ok" : "FAIL"}`, ...checksOf(result).filter((l) => l.startsWith("FAIL")))
-          if (!result.ok) failures.push(`${only}: ${result.checks.find((c) => !c.ok)?.name ?? "failed"}`)
-        } catch (error) {
-          // One vendor's failure (a missing credential, a dead host) is recorded and the next plugin still runs: the
-          // step reports every failure at the end, instead of losing the ones that already passed.
-          failures.push(`${only}: ${error.message}`)
-          lines.push(`${only}: FAIL`, `FAIL ${error.message}`)
-        }
-      }
-      return failures.length ? fail(`P0-7 failed for ${failures.length} plugin(s): ${failures.join("; ")}`, lines) : pass(lines)
+    title: "P0-7: disabled pending a safe egress verdict",
+    needs: "P0-7 containment to be resolved",
+    async run() {
+      return fail("P0-7 is disabled: its egress verdict is not safe for live use")
     },
   },
   {
@@ -323,6 +305,11 @@ export async function runPhase1({ store, ctx, steps = STEPS, from = null, only =
     log("phase 1, the gated order (each step runs only if the one before it passed):")
     steps.forEach((s, i) => log(`  ${i + 1}. ${s.id.padEnd(10)} ${s.title}\n       needs: ${s.needs}`))
     return { ok: true, stopped: null, ran: [], dry: true }
+  }
+  if (["live", "gws", "pilot"].includes(only ?? from)) {
+    const message = "P0-7 is disabled; downstream phase1 steps cannot start, even with a previously saved pass"
+    log(`STOP: ${message}`)
+    return { ok: false, stopped: { id: "p7", message }, ran: [] }
   }
   const state = reset ? { steps: {} } : readState(store)
   const start = ids.indexOf(only ?? from ?? ids[0])

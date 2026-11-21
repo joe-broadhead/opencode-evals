@@ -150,25 +150,19 @@ test("the order is section D's: sign-in checks, keeper, the canaries, logout, eg
   for (const step of STEPS) assert.ok(step.title && step.needs, step.id)
 })
 
-test("every step runs, in order, when each passes; a step needing a person stops the sequence at the pilot with what to do", async () => {
+test("the sequence stops at disabled P7 after the earlier steps", async () => {
   const w = world()
   const s = stand()
   try {
     const r = await run(w, s)
     assert.equal(r.ok, false)
-    assert.equal(r.stopped.id, "pilot")
-    assert.equal(r.stopped.manual, true)
-    assert.match(r.stopped.message, /THE LEAD'S STEP: the pilot spends money/)
-    assert.deepEqual(s.calls, ["check-real linear", "check-real slack", "keeper", "canaries", "p7 slack", "p7 linear", "live slack", "live linear", "gws"], "the canaries are planted after the sign-ins and before any probe or case; p6c skips (no --logout); the one-plugin-at-a-time probes run in the file's order")
-    assert.deepEqual(r.ran.map((x) => x.id), ids)
-    assert.ok(r.lines.some((l) => /nothing after pilot ran/.test(l)))
+    assert.equal(r.stopped.id, "p7")
+    assert.match(r.stopped.message, /P0-7 is disabled/)
+    assert.deepEqual(s.calls, ["check-real linear", "check-real slack", "keeper", "canaries"])
+    assert.deepEqual(r.ran.map((x) => x.id), ids.slice(0, 6))
+    assert.ok(r.lines.some((l) => /nothing after p7 ran/.test(l)))
     const state = readState(w.store)
-    assert.deepEqual(Object.keys(state.steps).filter((k) => state.steps[k].ok), ids.slice(0, -1))
-    // with the lead's confirmation, a ceiling and a plan, the pilot runs
-    const done = await run(w, s, { pilot: true, confirmLabels: true }, { from: "pilot" })
-    assert.equal(done.ok, true, JSON.stringify(done.stopped))
-    assert.ok(s.calls.includes("pilot pilot-a"))
-    assert.match(done.lines.at(-1), /every step passed/)
+    assert.deepEqual(Object.keys(state.steps).filter((k) => state.steps[k].ok), ids.slice(0, 5))
   } finally {
     w.cleanup()
   }
@@ -180,9 +174,7 @@ test("the first failure stops everything after it, with the sentence that says w
     [{ "check-real": "slack" }, "check-real", /check-real failed for slack: sign the real profile back in for slack and sign in NO further vendor/],
     [{ keeper: "linear" }, "keeper", /the keeper failed for linear/],
     [{ canaries: true }, "canaries", /the canaries manifest is refused, nothing was created: container linear\.production is not an alias/],
-    [{ p7: "linear" }, "p7", /P0-7 failed for 1 plugin\(s\): linear:/],
-    [{ live: "slack" }, "live", /the live write probe failed for 1 plugin\(s\): slack: .*A completed write is a HALT/],
-    [{ gws: true }, "gws", /the gws plan-and-commit failed/],
+    [{}, "p7", /P0-7 is disabled/],
   ]
   for (const [fail, id, message] of cases) {
     const w = world()
@@ -213,7 +205,7 @@ test("the first failure stops everything after it, with the sentence that says w
   const w2 = world()
   const s2 = stand({ fail: { live: "slack" } })
   try {
-    await run(w2, s2)
+    await STEPS.find((step) => step.id === "live").run({ store: w2.store, deps: s2.deps })
     assert.equal(s2.calls.includes("live linear"), true, "linear's write is still tried after slack's failure")
   } finally {
     w2.cleanup()
@@ -228,19 +220,19 @@ test("a step cannot run before the ones ahead of it have passed, and a stopped r
     assert.equal(skip.ok, false)
     assert.match(skip.stopped.message, /step p7 needs preflight to have passed first \(it has not\)/)
     assert.deepEqual(s.calls, [], "nothing ran")
-    assert.deepEqual((await run(w, s, {}, { only: "live" })).stopped.id, "preflight")
+    assert.deepEqual((await run(w, s, {}, { only: "live" })).stopped.id, "p7")
     const first = await run(w, s)
     assert.equal(first.stopped.id, "keeper")
     // fixed: resume from the failed step, not from the start
     const fixed = stand()
     const callsBefore = s.calls.length
     const resumed = await run(w, fixed, {}, { from: "keeper" })
-    assert.equal(resumed.stopped.id, "pilot")
+    assert.equal(resumed.stopped.id, "p7")
     assert.equal(fixed.calls.includes("check-real linear"), false, "the steps before keeper were not repeated")
     assert.ok(callsBefore > 0)
     // --reset forgets what passed
     const reset = await run(w, stand(), {}, { from: "gws", reset: true })
-    assert.match(reset.stopped.message, /needs preflight to have passed first/)
+    assert.match(reset.stopped.message, /P0-7 is disabled/)
   } finally {
     w.cleanup()
   }
@@ -264,9 +256,9 @@ test("a HALT in the store stops the sequence before the next step, and in the mi
       if (id === "live" && extra.only === "slack") writeHalt(w.store, { reason: "slack_send_message completed", writes: [{ tool: "slack_send_message" }] })
       return out
     }
-    const r2 = await run(w, s2)
-    assert.equal(r2.stopped.id, "live")
-    assert.match(r2.stopped.message, /the wave is halted/)
+    const r2 = await STEPS.find((step) => step.id === "live").run({ store: w.store, deps: s2.deps })
+    assert.equal(r2.ok, false)
+    assert.match(r2.message, /the wave is halted/)
     assert.equal(s2.calls.includes("live linear"), false)
   } finally {
     w.cleanup()
@@ -287,7 +279,7 @@ test("preflight refuses a missing profile, a link, a missing targets file; check
     const none = stand({ signedIn: [] })
     assert.match((await run(w, none, {}, { reset: true })).stopped.message, /holds no signed-in vendor/)
     rmSync(join(w.store, "live-reads.json"))
-    assert.match((await run(w, stand(), {}, { reset: true })).stopped.message, /live-reads\.json names no plugin/)
+    assert.match((await run(w, stand(), {}, { reset: true })).stopped.message, /P0-7 is disabled/)
   } finally {
     w.cleanup()
   }
@@ -304,7 +296,7 @@ test("the logout runs only when asked, and the pilot needs a ceiling", async () 
     assert.equal(asked.ok, true)
     assert.ok(s.calls.includes("logout ashby"))
     const noCeiling = await run(w, s, { pilot: true, confirmLabels: true, caller: {} }, { only: "pilot" })
-    assert.match(noCeiling.stopped.message, /no EVALS_ROUND_CEILING_USD/)
+    assert.match(noCeiling.stopped.message, /P0-7 is disabled/)
   } finally {
     w.cleanup()
   }
@@ -371,7 +363,7 @@ test("the walk and the harness ask auth export for the same vendor names", () =>
   assert.equal(exportTarget("affinity"), "affinity", "an MCP vendor is asked for by its server name")
 })
 
-test("p7 and live run every plugin after one throws, and report all the failures", async () => {
+test("p7 refuses and live reports all synthetic plugin failures", async () => {
   const w = world({ reads: ["affinity", "charts", "ashby"], writes: ["affinity", "charts", "ashby"] })
   const s = stand()
   s.deps.probe = async (id, { only } = {}) => {
@@ -382,9 +374,8 @@ test("p7 and live run every plugin after one throws, and report all the failures
   try {
     const p7 = await STEPS.find((step) => step.id === "p7").run({ store: w.store, profile: w.profile, caller: {}, deps: s.deps })
     assert.equal(p7.ok, false)
-    assert.match(p7.message, /P0-7 failed for 1 plugin\(s\): charts:/)
-    assert.ok(p7.lines.includes("affinity: ok") && p7.lines.includes("ashby: ok"), p7.lines.join(" | "))
-    assert.equal(s.calls.filter((call) => call.startsWith("p7 ")).length, 3, "every plugin was attempted")
+    assert.match(p7.message, /P0-7 is disabled/)
+    assert.equal(s.calls.length, 0)
     s.calls.length = 0
     const live = await STEPS.find((step) => step.id === "live").run({ store: w.store, profile: w.profile, caller: {}, deps: s.deps })
     assert.equal(live.ok, false)

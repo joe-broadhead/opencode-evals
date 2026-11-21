@@ -632,6 +632,10 @@ export async function main(argv) {
     }
     case "p0": {
       // The safety probes G0 rests on (docs/running.md#g0): scripted model, no credential, every trial in a container.
+      if (opt._.length > 1) throw new Error("p0 accepts one probe list only")
+      if (!opt._[0] || opt._[0] === "all" || opt._[0].split(",").includes("p7")) {
+        throw new Error("P0-7 is disabled: its egress verdict is not safe for live use")
+      }
       const { PROBES } = await import("./p0/probes.mjs")
       // `all` leaves g8 out when the owner has mounted no assets (container.assets in caps.json): it has nothing to prove then.
       const hasAssets = containerConfig({ store: storeRoot(), env: process.env }).assets.length > 0
