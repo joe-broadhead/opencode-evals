@@ -7,6 +7,8 @@
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { runBatch } from "../run/runner.mjs"
+import { capsFile } from "../cost/ledger.mjs"
+import { rawRoot } from "../store.mjs"
 import { compileCase } from "../case/compile.mjs"
 import { DATA_MINIMUM, fakeModePlugins } from "../case/schema.mjs"
 import { summarize, DECLINED_MARKER } from "../trace/analyse.mjs"
@@ -63,8 +65,10 @@ const readLines = (file) => (existsSync(file) ? readFileSync(file, "utf8").split
  *   arm        { package: dir | "none", options?, companions?, guard? }, written to an arm file as `evals run` reads it
  *   caller     extra environment for the runner (EVALS_ROUND_CEILING_USD, EVALS_MOCK_USAGE, …)
  *   options    extra runBatch options (tools, guardMode, noWriteAsks, probe, auth, trials, parallel, …)
+ *   ownerStore a vendor probe's real store: caps.json, targets.json, data-matrix.json, canaries.json and the ledger are
+ *              the owner's (the vendor spend counts in the round's caps); only the recordings stay in the probe's raw
  */
-export async function scriptedRun({ cases, arm = { package: "none" }, caller = {}, options = {}, tmp, env = process.env, keep = false, prepare = null, plugin = "p0", expectStop = false } = {}) {
+export async function scriptedRun({ cases, arm = { package: "none" }, caller = {}, options = {}, tmp, env = process.env, keep = false, prepare = null, plugin = "p0", expectStop = false, ownerStore = null, run = runBatch } = {}) {
   const root = mkdtempSync(join(tmp ?? env.TMPDIR ?? "/tmp", "evals-p0-"))
   const casesDir = join(root, "cases")
   mkdirSync(casesDir)
@@ -79,14 +83,25 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
   writeFileSync(armFile, `${JSON.stringify(arm)}\n`)
   const store = options.store ?? join(root, "store")
   const sandboxes = join(root, "tmp")
+  const rawBase = join(root, "raw")
   mkdirSync(sandboxes, { recursive: true })
-  const callerEnv = { PATH: env.PATH, HOME: root, EVALS_STORE: store, EVALS_OPENCODE_BIN: env.EVALS_OPENCODE_BIN ?? env.OPENCODE_BIN_2_3_2 ?? "opencode", EVALS_TMP: sandboxes, ...(env.EVALS_BUN ? { EVALS_BUN: env.EVALS_BUN } : {}), ...(env.EVALS_CONTAINER_IMAGE ? { EVALS_CONTAINER_IMAGE: env.EVALS_CONTAINER_IMAGE } : {}), ...caller }
+  const callerEnv = { PATH: env.PATH, HOME: root, EVALS_STORE: store, EVALS_OPENCODE_BIN: env.EVALS_OPENCODE_BIN ?? env.OPENCODE_BIN_2_3_2 ?? "opencode", EVALS_TMP: sandboxes, ...(env.EVALS_BUN ? { EVALS_BUN: env.EVALS_BUN } : {}), ...(env.EVALS_CONTAINER_IMAGE ? { EVALS_CONTAINER_IMAGE: env.EVALS_CONTAINER_IMAGE } : {}), ...caller, EVALS_RAW: rawBase }
+  // A vendor probe (p7, live, gws) runs against the owner's store: caps.json (the vendor caps, the container assets and
+  // limits), targets.json, data-matrix.json and canaries.json are the owner's, and the real ledger records the spend so
+  // the round's caps count it. Only the recordings stay here, under EVALS_RAW, and are removed with the probe.
+  if (ownerStore) {
+    callerEnv.EVALS_STORE = ownerStore
+    callerEnv.EVALS_CAPS = callerEnv.EVALS_CAPS ?? capsFile(ownerStore, callerEnv)
+  } else {
+    // No owner store: every input and the ledger are the scratch store's (the scratch store's own caps.json if any).
+    callerEnv.EVALS_STORE = store
+  }
   // A probe that needs something in the caller's home (a dummy sign-in) makes it here, before the batch starts.
   if (prepare) await prepare(root, callerEnv)
   const log = []
   const iteration = options.iteration ?? "p0"
-  const result = await runBatch({ plugin, iteration, model: "mock/m1", auth: "none", scripted: true, isolation: "container", casesDir, set: "all", arm: armFile, ...options, store: undefined }, { caller: callerEnv, log: (line) => log.push(line) })
-  const raw = join(store, "raw", iteration, plugin)
+  const result = await run({ plugin, iteration, model: "mock/m1", auth: "none", scripted: true, isolation: "container", casesDir, set: "all", arm: armFile, ...options, store: undefined }, { caller: callerEnv, log: (line) => log.push(line) })
+  const raw = join(rawRoot(callerEnv), iteration, plugin)
   const trials = {}
   for (const c of cases) {
     const base = join(raw, `${c.id}.t1`)
@@ -109,7 +124,9 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
     if (restarts.length) NOTES.push({ id: c.id, iteration, why: `its client made no model request within ${Math.round(restarts[0].after_ms / 1000)} s and was restarted ${restarts.length === 1 ? "once" : `${restarts.length} times`}${diagnosisText(restarts[0].diagnosis)}` })
   }
   for (const c of cases) trials[c.id].capture = readLines(join(raw, `${c.id}.t1.capture.jsonl`)).map((l) => JSON.parse(l))
-  return { root, store, raw, result, log, trials, everything, egress: result.egress ?? null, ledger: readLedgerFile(store), cleanup: () => rmSync(root, { recursive: true, force: true }), keep }
+  // `store` is the effective store (the owner's in a vendor probe), so a probe that checks run.store/run.ledger sees the
+  // ledger its spend went to; `raw` stays the probe's scratch recordings.
+  return { root, store: callerEnv.EVALS_STORE, raw, result, log, trials, everything, egress: result.egress ?? null, ledger: readLedgerFile(callerEnv.EVALS_STORE), cleanup: () => rmSync(root, { recursive: true, force: true }), keep }
 }
 
 function readLedgerFile(store) {

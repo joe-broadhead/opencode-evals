@@ -244,7 +244,7 @@ export const STEPS = [
 ]
 
 /** The default dependencies: the real modules, imported when a step needs them (the profile scripts live in the repository's scripts/). */
-export async function defaultDeps({ store, caller, companions }) {
+export async function defaultDeps({ store, caller, companions, probes = null }) {
   const lib = await import("../scripts/profile/profile-lib.mjs")
   const { checkReal } = await import("../scripts/profile/check-real.mjs")
   const { keepOnce } = await import("../scripts/profile/keeper.mjs")
@@ -278,8 +278,10 @@ export async function defaultDeps({ store, caller, companions }) {
       return { ok: out.code === 0, code: out.code }
     },
     probe: async (id, extra) => {
-      const { PROBES } = await import("./p0/probes.mjs")
-      return PROBES[id]({ companions, tmp, store, ...extra })
+      const { PROBES } = probes ? { PROBES: probes } : await import("./p0/probes.mjs")
+      // The owner's store and environment: the probes' batches read caps.json (the vendor caps, the container assets and
+      // limits), targets.json, data-matrix.json and canaries.json there, and their vendor spend is recorded in its ledger.
+      return PROBES[id]({ companions, tmp, store, caller, ...extra })
     },
     // The canaries (scripts/seed-canaries.mjs): through the evals profile only, in the sandbox containers only; a rerun reuses. No manifest, nothing to seed.
     seedCanaries: async (ctx) => {

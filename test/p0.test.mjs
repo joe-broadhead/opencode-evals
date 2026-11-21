@@ -5,8 +5,14 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
-import { existsSync } from "node:fs"
-import { PROBES } from "../src/p0/probes.mjs"
+import { existsSync, mkdtempSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
+import { PROBES, probeCaller } from "../src/p0/probes.mjs"
+import { scriptedRun } from "../src/p0/run.mjs"
+import { defaultDeps, STEPS } from "../src/phase1.mjs"
+import { ledgerFile } from "../src/cost/ledger.mjs"
+import { readHalt, writeHalt } from "../src/run/halt.mjs"
 import { findBinary, imageTag } from "../src/run/container.mjs"
 import { buildPolicy } from "../src/run/guard/policy.mjs"
 import { decideBefore, planIdOf, judgePlan, matchWrite, pick, loadPolicy } from "../src/run/guard/logic.mjs"
@@ -28,6 +34,135 @@ const companions = process.env.EVALS_COMPANIONS && existsSync(process.env.EVALS_
 // run in the same pass they would see each other's. So they are opt-in (EVALS_P0_LIVE=1, or `evals p0`), and a pass that runs
 // them should run this file alone: `EVALS_P0_LIVE=1 node --test --test-concurrency=1 test/p0.test.mjs`.
 const optIn = process.env.EVALS_P0_LIVE ? null : "the live probes are opt-in (EVALS_P0_LIVE=1, or `node bin/evals p0`): they share the Docker host with the isolation tests"
+
+test("live, p7 and gws hand their batch the owner's store and caps", async () => {
+  const root = mkdtempSync(join(tmpdir(), "evals-p0-probes-"))
+  const store = join(root, "store")
+  mkdirSync(store, { recursive: true })
+  writeFileSync(join(store, "caps.json"), JSON.stringify({ vendors: { demo_calls: 5 } }))
+  writeFileSync(join(store, "targets.json"), "{}")
+  writeFileSync(join(store, "live-reads.json"), JSON.stringify({ demo: { code: "return 1" } }))
+  writeFileSync(join(store, "live-writes.json"), JSON.stringify({ demo: { code: "return 1" } }))
+  writeFileSync(join(store, "live-gws.json"), JSON.stringify({ code: "return 1", plan: {} }))
+  const build = join(root, "build")
+  mkdirSync(join(build, "dist"), { recursive: true })
+  writeFileSync(join(build, "package.json"), JSON.stringify({ name: "@demo/p", version: "0.0.1" }))
+  writeFileSync(join(build, "dist", "index.js"), "export default {}\n")
+  const companions = join(root, "companions.json")
+  writeFileSync(companions, JSON.stringify({ demo: build, gws: build }))
+  const caller = { EVALS_PROFILE: "/profile" }
+  try {
+    for (const [id, only] of [["p7", "demo"], ["live", "demo"], ["gws", null]]) {
+      const seen = []
+      const stub = (options) => {
+        seen.push({ ownerStore: options.ownerStore })
+        return scriptedRun({
+          ...options,
+          run: async (batch, ctx) => {
+            seen[seen.length - 1].caller = ctx.caller
+            throw new Error("stop here")
+          },
+        })
+      }
+      await assert.rejects(PROBES[id]({ store, companions, caller, tmp: root, ...(only ? { only } : {}), scriptedRun: stub }), /stop here/)
+      assert.equal(seen.length, 1, `${id}: one batch`)
+      assert.equal(seen[0].ownerStore, store, `${id}: the owner's store, not a scratch one`)
+      assert.equal(seen[0].caller.EVALS_STORE, store, `${id}: EVALS_STORE is the owner's`)
+      assert.equal(seen[0].caller.EVALS_CAPS, join(store, "caps.json"), `${id}: the owner's caps file`)
+      assert.equal(seen[0].caller.EVALS_RAW.startsWith(root), true, `${id}: recordings stay scratch`)
+    }
+    // H2: the effective store and its ledger are returned, not the scratch ones.
+    const out = await scriptedRun({ cases: [], arm: { package: "none" }, ownerStore: store, caller: { EVALS_STORE: store }, tmp: root, run: async () => ({ results: [] }) })
+    assert.equal(out.store, store)
+    assert.deepEqual(out.ledger, [])
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("a HALT written in an owner-store batch survives cleanup and stops phase 1's live step", async () => {
+  const root = mkdtempSync(join(tmpdir(), "evals-p0-halt-"))
+  const store = join(root, "store")
+  mkdirSync(store, { recursive: true })
+  writeFileSync(join(store, "caps.json"), "{}")
+  writeFileSync(join(store, "live-writes.json"), JSON.stringify({ demo: { code: "return 1" } }))
+  const caller = { EVALS_STORE: store, EVALS_CAPS: join(store, "caps.json"), EVALS_PROFILE: "/profile" }
+  try {
+    await assert.rejects(
+      scriptedRun({
+        cases: [],
+        arm: { package: "none" },
+        ownerStore: store,
+        caller,
+        tmp: root,
+        run: async (batch, ctx) => {
+          writeHalt(ctx.caller.EVALS_STORE, { reason: "a write completed", batch: "test", trial: "demo.t1" })
+          throw new Error("halted")
+        },
+      }),
+      /halted/,
+    )
+    // The probe's own cleanup removes its scratch root; the HALT is in the owner's store and survives it.
+    for (const entry of readdirSync(root)) if (entry !== "store") rmSync(join(root, entry), { recursive: true, force: true })
+    assert.equal(readHalt(store)?.reason, "a write completed", "the HALT is in the real store, not the scratch one")
+    let called = 0
+    const step = STEPS.find((s) => s.id === "live")
+    const out = await step.run({ store, profile: "/profile", caller, noAccount: new Set(), deps: { probe: async () => { called++; return { ok: true, checks: [] } } } })
+    assert.equal(out.ok, false, "phase 1's next live step stops")
+    assert.match(out.message, /the wave is halted: a write completed/)
+    assert.equal(called, 0, "the probe is not asked again")
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("a vendor probe's batch uses the owner's store for caps and the ledger, with its recordings in the probe's own raw", async () => {
+  const root = mkdtempSync(join(tmpdir(), "evals-p0-owner-"))
+  const owner = join(root, "store")
+  mkdirSync(owner, { recursive: true })
+  writeFileSync(join(owner, "caps.json"), JSON.stringify({ vendors: { affinity_calls: 300 } }))
+  let seen = null
+  try {
+    await assert.rejects(
+      scriptedRun({
+        cases: [{ id: "one", prompt: "hello" }],
+        arm: { package: "none" },
+        ownerStore: owner,
+        caller: { EVALS_PROFILE: "/profile" },
+        tmp: root,
+        run: async (options, ctx) => {
+          seen = { options, caller: ctx.caller }
+          throw new Error("stop here")
+        },
+      }),
+      /stop here/,
+    )
+    assert.equal(seen.caller.EVALS_STORE, owner, "the real store: caps, targets, data-matrix, canaries and the ledger")
+    assert.equal(seen.caller.EVALS_CAPS, join(owner, "caps.json"), "the owner's caps file")
+    assert.equal(ledgerFile(seen.caller.EVALS_STORE), join(owner, "ledger", "runs.jsonl"), "the vendor spend is recorded in the round's ledger")
+    assert.equal(seen.caller.EVALS_RAW.startsWith(root), true, "the recordings stay in the probe's scratch tree")
+    assert.notEqual(seen.caller.EVALS_RAW, join(owner, "raw"), "never the owner's raw directory")
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("a direct p0 run gives the vendor probes the process environment, and phase 1 gives them its caller", async () => {
+  const direct = probeCaller({ store: "/store" }, "plugin")
+  assert.equal(direct.EVALS_PROFILE, "plugin")
+  assert.equal(direct.PATH, process.env.PATH, "a direct `evals p0 p7` has only the process environment")
+  const explicit = probeCaller({ caller: { EVALS_CAPS: "/caps", EVALS_STORE: "/owner" } }, "plugin")
+  assert.deepEqual(explicit, { EVALS_PROFILE: "plugin", EVALS_CAPS: "/caps", EVALS_STORE: "/owner" }, "phase 1's caller wins")
+  const store = "/owner"
+  const caller = { EVALS_CAPS: "/caps", EVALS_STORE: store }
+  let seen = null
+  const deps = await defaultDeps({ store, caller, companions: null, probes: { p7: (env) => { seen = env; return { ok: true, checks: [] } } } })
+  assert.deepEqual(await deps.probe("p7", { only: "affinity" }), { ok: true, checks: [] })
+  assert.equal(seen.store, store)
+  assert.equal(seen.caller, caller)
+  assert.equal(seen.only, "affinity")
+})
+
 const live = reason ? { skip: reason } : optIn ? { skip: optIn } : {}
 const needsBuilds = reason ? { skip: reason } : optIn ? { skip: optIn } : companions ? {} : { skip: "no plugin builds (EVALS_COMPANIONS)" }
 const env = { companions, tmp: process.env.TMPDIR }

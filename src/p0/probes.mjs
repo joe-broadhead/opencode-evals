@@ -901,10 +901,14 @@ function liveEntry(entry, targets) {
  * part of `p0 all` until the profile is there. The review's guard-off pass conflicts with refusing `"guard": false` with a credential, so that
  * half is the credential-free P0-g gold run.
  */
+/** The owner's environment a vendor probe's batch runs with: the profile, plus the caller's own settings (EVALS_CAPS, the
+ * store). Phase 1 passes `caller`; a direct `evals p0 p7` has only the process environment. */
+export const probeCaller = (env = {}, profile = process.env.EVALS_PROFILE) => ({ EVALS_PROFILE: profile, ...(env.caller ?? process.env) })
+
 export async function live(env = {}) {
   const { existsSync: exists, readFileSync: read } = await import("node:fs")
   const { loadTargets } = await import("../grade/targets.mjs")
-  const profile = process.env.EVALS_PROFILE
+  const profile = env.caller?.EVALS_PROFILE ?? process.env.EVALS_PROFILE
   const file = join(env.store ?? ".", "live-writes.json")
   if (!profile || !exists(file)) return done("live", [ok("a signed-in evals profile (EVALS_PROFILE) and live-writes.json in the store", false, `${profile ? "" : "EVALS_PROFILE is not set; "}${exists(file) ? "" : `${file} does not exist`}`)])
   const spec = JSON.parse(read(file, "utf8"))
@@ -918,7 +922,8 @@ export async function live(env = {}) {
       continue
     }
     const name = `tools-live-${slug(id)}`
-    const run = await scriptedRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-live-${slug(id)}`, auth: "none+profile" }, caller: { EVALS_PROFILE: profile, ...env.caller }, tmp: env.tmp })
+    const batchRun = env.scriptedRun ?? scriptedRun
+    const run = await batchRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-live-${slug(id)}`, auth: "none+profile" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
     try {
       const trial = run.trials[name]
       const call = trial.calls[0]
@@ -940,7 +945,7 @@ export async function live(env = {}) {
 export async function p7(env = {}) {
   const { existsSync: exists, readFileSync: read, writeFileSync: write } = await import("node:fs")
   const { loadTargets } = await import("../grade/targets.mjs")
-  const profile = process.env.EVALS_PROFILE
+  const profile = env.caller?.EVALS_PROFILE ?? process.env.EVALS_PROFILE
   const file = join(env.store ?? ".", "live-reads.json")
   if (!profile || !exists(file)) return done("p7", [ok("a signed-in evals profile (EVALS_PROFILE) and live-reads.json in the store", false, `${profile ? "" : "EVALS_PROFILE is not set; "}${exists(file) ? "" : `${file} does not exist`}`)])
   const spec = JSON.parse(read(file, "utf8"))
@@ -955,7 +960,8 @@ export async function p7(env = {}) {
       continue
     }
     const name = `tools-live-read-${slug(id)}`
-    const run = await scriptedRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-p7-${slug(id)}`, auth: "none+profile" }, caller: { EVALS_PROFILE: profile, ...env.caller }, tmp: env.tmp })
+    const batchRun = env.scriptedRun ?? scriptedRun
+    const run = await batchRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-p7-${slug(id)}`, auth: "none+profile" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
     try {
       const call = run.trials[name].calls[0]
       const egress = run.egress ?? {}
@@ -979,7 +985,7 @@ export async function p7(env = {}) {
 export async function gws(env = {}) {
   const { existsSync: exists, readFileSync: read, writeFileSync: write, mkdtempSync: mkd } = await import("node:fs")
   const { loadTargets } = await import("../grade/targets.mjs")
-  const profile = process.env.EVALS_PROFILE
+  const profile = env.caller?.EVALS_PROFILE ?? process.env.EVALS_PROFILE
   const file = join(env.store ?? ".", "live-gws.json")
   if (!profile || !exists(file)) return done("gws", [ok("a signed-in evals profile and live-gws.json in the store", false, `${profile ? "" : "EVALS_PROFILE is not set; "}${exists(file) ? "" : `${file} does not exist`}`)])
   const spec = JSON.parse(read(file, "utf8"))
@@ -989,13 +995,10 @@ export async function gws(env = {}) {
   const dir = mkd(join(env.tmp ?? "/tmp", "evals-p0-gws-"))
   const planFile = join(dir, "commit-plan.json")
   write(planFile, JSON.stringify(spec.plan))
-  // The batch resolves the plan's @aliases from its own store: a scratch one holding the owner's targets.json (and nothing else of the store).
-  const { cpSync: copy, mkdirSync: mk } = await import("node:fs")
-  const scratchStore = join(dir, "store")
-  mk(scratchStore, { recursive: true })
-  copy(join(env.store, "targets.json"), join(scratchStore, "targets.json"))
+  // The batch resolves the plan's @aliases from the owner's store (the same targets.json the probe read).
   const name = "commit-live-gws"
-  const run = await scriptedRun({ plugin: "gws", cases: [{ id: name, prompt: execute(resolved.code), extra: "- Set: commit" }], arm: fullArm(env.companions, { arm: "gws", options: {} }), options: { iteration: "p0-gws", auth: "none+profile", commitPlan: planFile, set: "commit", store: scratchStore }, caller: { EVALS_PROFILE: profile, ...env.caller }, tmp: env.tmp })
+  const batchRun = env.scriptedRun ?? scriptedRun
+  const run = await batchRun({ plugin: "gws", cases: [{ id: name, prompt: execute(resolved.code), extra: "- Set: commit" }], arm: fullArm(env.companions, { arm: "gws", options: {} }), options: { iteration: "p0-gws", auth: "none+profile", commitPlan: planFile, set: "commit" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
   try {
     const trial = run.trials[name]
     const guard = trial.summary?.guard ?? {}
