@@ -378,25 +378,29 @@ test("only the no-profile set is dropped from +profile; grading keeps the master
   const packs = loadPacks()
   const noProfile = noProfilePlugins({ packs })
   const local = ["boxd", "browse", "charts", "history", "jobs", "utilities", "voice"]
-  assert.deepEqual([...noProfile].sort(), [...local, "github", "jira"].sort(), "the seven truly local plugins and the two fake ones")
-  const accounted = ["affinity", "ashby", "elevenlabs", "granola", "gws", "inference", "linear", "metaview", "notion", "openrouter", "plaud", "slack", "tavily", "wisprflow", "x"]
+  assert.deepEqual([...noProfile].sort(), [...local, "inference", "github", "jira"].sort(), "the seven truly local plugins, Inference (deliberately keyless) and the two fake ones")
+  const accounted = ["affinity", "ashby", "elevenlabs", "granola", "gws", "linear", "metaview", "notion", "openrouter", "plaud", "slack", "tavily", "wisprflow", "x"]
   for (const id of accounted) assert.equal(noProfile.has(id), false, `${id} is accounted and must still be asked for`)
   assert.equal(noProfile.has("tavily"), false)
-  assert.equal(noProfile.has("inference"), false)
+  // Inference is deliberately keyless: opencode-inference 0.0.7 sends decide/extract with no ask, so no key may reach a trial.
+  assert.equal(noProfile.has("inference"), true)
+  assert.equal(packs.find((p) => p.id === "inference").profile, false)
   assert.deepEqual([...noAccountPlugins({ packs })], [], "accounts keeps its master meaning: no plugin is `accounts: none`")
   const parse = (seed) => String(seed ?? "").split(",").filter(Boolean)
   for (const id of [...local, "github", "jira"]) assert.deepEqual(integrationsFor(id, [{}], packs, parse, noProfile), [], `${id} has no profile credential`)
   assert.deepEqual(integrationsFor("charts", [{ seed: "linear" }], packs, parse, noProfile), ["linear"], "a signed-in seed is still asked for")
   assert.deepEqual(integrationsFor("affinity", [{}], packs, parse, noProfile), ["affinity"], "a plugin with an account is still asked for")
   assert.deepEqual(integrationsFor("tavily", [{}], packs, parse, noProfile), ["tavily"], "tavily is accounted: its key is asked of the profile, not skipped")
-  assert.deepEqual(integrationsFor("inference", [{}], packs, parse, noProfile), ["inference-openrouter"], "inference needs its own inference-openrouter key")
+  assert.deepEqual(integrationsFor("inference", [{}], packs, parse, noProfile), [], "inference is keyless: no inference-openrouter key is asked of the profile")
+  assert.deepEqual(integrationsFor("slack", [{ seed: "inference" }], packs, parse, noProfile), ["slack"], "a seed that names inference does not bring its key either")
   // When round.json sets openrouter to accounts: "none", noProfilePlugins drops openrouter from mixed seeds too.
   const store = mkdtempSync(join(tmpdir(), "evals-round-none-"))
   try {
     writeFileSync(join(store, "round.json"), JSON.stringify({ accounts: { openrouter: "none" } }))
     const withRound = noProfilePlugins({ packs, store })
     assert.equal(withRound.has("openrouter"), true)
-    assert.deepEqual(integrationsFor("inference", [{ seed: "openrouter" }], packs, parse, withRound), ["inference-openrouter"])
+    assert.deepEqual(integrationsFor("slack", [{ seed: "openrouter" }], packs, parse, withRound), ["slack"])
+    assert.deepEqual(integrationsFor("slack", [{ seed: "openrouter" }], packs, parse, noProfilePlugins({ packs })), ["openrouter", "slack"], "without the round's override it is asked for")
   } finally {
     rmSync(store, { recursive: true, force: true })
   }
