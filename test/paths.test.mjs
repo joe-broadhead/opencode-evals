@@ -1,11 +1,12 @@
 // A case id, an iteration or a plugin id never escapes the store or the sandbox.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from "node:fs"
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync, symlinkSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { spawnSync } from "node:child_process"
-import { segment, inside, within, isSegment } from "../src/run/paths.mjs"
+import { segment, inside, within, isSegment, real, LINK_BUDGET } from "../src/run/paths.mjs"
+import { stripForeignLinks, makeSandbox, writeConfig, removeInside } from "../src/run/sandbox.mjs"
 import { casesIn, pluginCases } from "../src/case/load.mjs"
 import { runBatch } from "../src/run/runner.mjs"
 
@@ -95,4 +96,124 @@ test("a dangling link counts as inside only when where it points is inside; a lo
   assert.equal(inside(box, join(box, "relative-loop-a")), false, "a link loop resolves nowhere")
   assert.equal(inside(box, join(box, "plain", "new.txt")), true)
   rmSync(root, { recursive: true, force: true })
+})
+
+test("stripForeignLinks removes a link chain that only looks inside the sandbox lexically", () => {
+  const base = temp()
+  const root = join(base, "runs", "case.t1")
+  const cache = join(root, "home", ".cache")
+  mkdirSync(cache, { recursive: true })
+  const outside = join(base, "outside")
+  mkdirSync(outside)
+  writeFileSync(join(outside, "marker"), "untouched")
+  // Lexically `../..` from .cache is the sandbox root. The kernel knows `hop` is the root, so `opencode-x` resolves
+  // three levels above it, outside; JS realpathSync collapsed the `..` and said inside.
+  symlinkSync("../..", join(cache, "hop"))
+  symlinkSync("hop/../../..", join(cache, "opencode-x"))
+  symlinkSync(join(cache, "hop"), join(root, "home", ".inside"))
+  const removed = stripForeignLinks({ root })
+  assert.deepEqual(removed, ["home/.cache/opencode-x"])
+  assert.equal(existsSync(join(cache, "opencode-x")), false, "the chain is removed")
+  assert.equal(existsSync(join(cache, "hop")), true, "a link to the root itself is inside")
+  assert.equal(existsSync(join(root, "home", ".inside")), true, "a link that resolves inside through another is kept")
+  assert.equal(readFileSync(join(outside, "marker"), "utf8"), "untouched")
+  rmSync(base, { recursive: true, force: true })
+})
+
+test("a dangling link chain cannot aim a harness write outside the sandbox", () => {
+  const base = temp()
+  const sandbox = makeSandbox(join(base, "runs", "case.t1"))
+  const dir = join(sandbox.home, ".config", "opencode")
+  // `hop` is the home; the target then climbs three levels above it. `PLANTED` does not exist, which the old lexical
+  // resolution mistook for an inside path.
+  symlinkSync("../..", join(dir, "hop"))
+  symlinkSync("hop/../../../PLANTED", join(dir, "opencode.json"))
+  assert.equal(inside(sandbox.root, join(dir, "opencode.json")), false, "the chain resolves outside, a missing target included")
+  assert.deepEqual(stripForeignLinks(sandbox), ["home/.config/opencode/opencode.json"])
+  writeConfig(sandbox, { plugin: ["x"] })
+  assert.equal(existsSync(join(base, "PLANTED")), false, "nothing outside the root is created")
+  assert.equal(JSON.parse(readFileSync(join(dir, "opencode.json"), "utf8")).plugin[0], "x")
+
+  // A link at the destination itself is replaced by the write, never followed.
+  const outside = join(base, "outside")
+  mkdirSync(outside)
+  rmSync(join(dir, "opencode.json"))
+  symlinkSync(join(outside, "PLANTED"), join(dir, "opencode.json"))
+  writeConfig(sandbox, { plugin: ["y"] })
+  assert.equal(existsSync(join(outside, "PLANTED")), false, "the link's target is not created")
+  assert.equal(JSON.parse(readFileSync(join(dir, "opencode.json"), "utf8")).plugin[0], "y")
+  rmSync(base, { recursive: true, force: true })
+})
+
+/** `y0 -> .`, `yi -> y(i-1)/y(i-1)`: resolving yN takes about 2^N link follows; the kernel stops at 40. */
+function expensiveChain(root, n) {
+  const dir = join(root, "chaos")
+  mkdirSync(dir)
+  symlinkSync(".", join(dir, "y0"))
+  for (let i = 1; i <= n; i++) symlinkSync(`y${i - 1}/y${i - 1}`, join(dir, `y${i}`))
+  symlinkSync(join(dir, `y${n}`), join(root, "home"))
+  return dir
+}
+
+test("an expensive link chain is outside, and fast, at the kernel's limit", () => {
+  for (const n of [20, 40]) {
+    const root = temp()
+    try {
+      expensiveChain(root, n)
+      const target = join(root, "home", ".claude")
+      const started = Date.now()
+      assert.equal(inside(root, target), false, `N=${n} is outside`)
+      const elapsed = Date.now() - started
+      assert.ok(elapsed < 100, `N=${n} resolves in under 100 ms (${elapsed} ms)`)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  }
+})
+
+test("one shared budget bounds a resolution the kernel cannot do whole", () => {
+  const root = temp()
+  try {
+    expensiveChain(root, 6)
+    // The missing `nope` stops the kernel before `home`, so the walk resolves the chain itself: a spent budget is
+    // outside, and stopping at 40 follows is what keeps it cheap (without the budget this path would take ~2^6 follows
+    // — the test observes the counter, not the wall clock).
+    const path = `${root}/nope/../home/.claude`
+    const budget = { left: LINK_BUDGET, followed: 0 }
+    const resolved = real(path, budget)
+    assert.equal(budget.followed, LINK_BUDGET, "the walk stops at the shared budget")
+    assert.equal(resolved.startsWith(root), false, "a spent budget is outside the root")
+    assert.equal(inside(root, path), false)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("a legitimate link chain inside the root still resolves", () => {
+  const root = temp()
+  try {
+    const dir = join(root, "home", "chain")
+    mkdirSync(dir, { recursive: true })
+    symlinkSync(".", join(dir, "l0"))
+    for (let i = 1; i <= 10; i++) symlinkSync(`l${i - 1}`, join(dir, `l${i}`))
+    assert.equal(inside(root, join(dir, "l10", "file")), true, "ten links are well inside the budget")
+    assert.equal(real(join(dir, "l10", "file")), join(dir, "file"))
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("the credential cleanup removes .claude in a home holding an expensive chain", () => {
+  const base = temp()
+  try {
+    const sandbox = makeSandbox(join(base, "runs", "case.t1"))
+    expensiveChain(sandbox.home, 8)
+    mkdirSync(join(sandbox.home, ".claude"))
+    const file = join(sandbox.home, ".claude", ".credentials.json")
+    writeFileSync(file, "{}")
+    assert.equal(removeInside(sandbox.root, file, { gone: true }), true)
+    assert.equal(existsSync(file), false, "a chain elsewhere in the home does not stop the credential removal")
+  } finally {
+    rmSync(base, { recursive: true, force: true })
+  }
 })

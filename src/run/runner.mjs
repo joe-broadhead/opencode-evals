@@ -188,6 +188,18 @@ export const usingOverage = (result = {}) => /"isUsingOverage"\s*:\s*true/.test(
 export const BACKOFF_S = [60, 120, 240]
 export const PAUSE_S = 30 * 60
 
+/**
+ * What follows a rate-limited attempt: a retry only with attempts left and the previous trial confirmed gone. A container
+ * still there fails the trial as infra `container` instead of retrying beside it on the same host; an exhausted run is
+ * `rate-limit`, as before.
+ */
+export function rateLimitOutcome(attempt, gone) {
+  if (attempt < BACKOFF_S.length) {
+    return gone ? { retry: true } : { retry: false, infra: "container", why: "the trial's container was still there after the rate-limited run, so the trial is not retried" }
+  }
+  return { retry: false, infra: "rate-limit" }
+}
+
 /** "auth", "provider", or null: a failure before the model did any work, which is never the model's to be graded on. */
 // A rate limit is neither: it is retried after a backoff (rateLimited above), and the host may name it a provider error.
 export const preModelFailure = (result) => (authFailed(result) ? "auth" : rateLimited(result) ? null : providerFailed(result) ? "provider" : null)
@@ -471,8 +483,9 @@ export const stallOf = (ctx, sawRequest) => (ctx.scripted && ctx.mockInTrial && 
 async function runJobBody(job, ctx, track) {
   const id = segment("case id", job.case.id)
   const name = `${id}.t${job.trial}`
-  // Every path this run writes or removes is checked against the root it belongs to.
-  const root = within(join(ctx.batchRoot, "runs"), join(ctx.batchRoot, "runs", name), "the sandbox")
+  // A retry gets a fresh sandbox root (`<case>.t<n>.a<k>`): the previous attempt's home is never reused, even under
+  // --keep. The recordings keep the trial's name, so grading and reporting find them as before.
+  const root = within(join(ctx.batchRoot, "runs"), join(ctx.batchRoot, "runs", job.attempt ? `${name}.a${job.attempt}` : name), "the sandbox")
   const sandbox = makeSandbox(root)
   track.phase = "preparing the world"
   const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
@@ -685,10 +698,13 @@ async function runJobBody(job, ctx, track) {
       // a recording that does not parse spent nothing we can count
     }
     // Rate-limited with retries left: nothing is recorded, nothing is released (the reservation stays for the retry), and the
-    // caller backs off. After the last retry it is an infrastructure failure like a refused credential, and is released.
+    // caller backs off. A retry needs the previous container confirmed gone; otherwise the trial fails as infra and is
+    // released. After the last retry it is an infrastructure failure like a refused credential, and is released.
     if (!summary.infra && rateLimited(result)) {
-      if ((job.attempt ?? 0) < BACKOFF_S.length) return { case: id, trial: job.trial, rateLimited: true, exit: summary.exit, durationMs, ...(halt ? { halt } : {}) }
-      summary.infra = "rate-limit"
+      const next = rateLimitOutcome(job.attempt ?? 0, gone)
+      if (next.retry) return { case: id, trial: job.trial, rateLimited: true, exit: summary.exit, durationMs, ...(halt ? { halt } : {}) }
+      summary.infra = next.infra
+      if (next.why) summary.infra_why = next.why
       writeAtomic(out(".summary.json"), redact(`${JSON.stringify({ ...summary, attempts: (job.attempt ?? 0) + 1 }, null, 1)}\n`))
     }
     // Priced at list as well as billed: a subscription run bills $0, and the round's ceiling counts list price (R9).
@@ -788,6 +804,25 @@ async function runJob(job, ctx) {
 /**
  * The whole batch. `options` mirrors the CLI flags; `caller` is the environment the runner was started with.
  */
+/**
+ * The binaries a trial needs, mounted read-only into a container: the host, a provider's own CLI, the mock's bun, and
+ * Node when browse is in the trial (its MCP server is a `bin/mcp.mjs` script the host runs by its `#!/usr/bin/env node`
+ * shebang; the image has no Node). `EVALS_NODE_BIN` names the host Node to mount, as `EVALS_CLAUDE_BIN` does for
+ * `claude`.
+ */
+export const trialBinaries = ({ binary, needsClaude = false, needsBrowse = false, scripted = false, captureServer = false, fakeIds = [], caller = process.env }) => ({
+  opencode: binary,
+  ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}),
+  ...(needsBrowse ? { node: caller.EVALS_NODE_BIN ?? "node" } : {}),
+  ...(scripted || captureServer || fakeIds.length ? { bun: caller.EVALS_BUN ?? "bun" } : {}),
+})
+
+/**
+ * Is browse in this trial: the plugin under test, or any selected case whose `Seed: plugins=` names it (a companion).
+ * `pluginsOf` is the one reader of a case's plugin and seed, so a seed that names browse counts exactly as its own case does.
+ */
+export const browseInTrial = (plugin, cases = []) => plugin === "browse" || cases.some((c) => pluginsOf(c).includes("browse"))
+
 export async function runBatch(options, { caller = process.env, log = (line) => console.log(line) } = {}) {
   const plugin = options.plugin
   const iteration = options.iteration
@@ -1035,11 +1070,13 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // The host's version, asked in a sandbox of its own: even `--version` reads nothing of the caller's install.
     const probe = makeSandbox(join(batchRoot, "probe"))
     const probeEnv = sandboxEnv({ sandbox: probe, config: sealedConfig({ armDir: null, model: options.model }), password: newPassword(), caller })
-    // The binaries a trial needs, mounted read-only into a container: the host, a provider's own CLI, the mock's bun.
+    // The binaries a trial needs, mounted read-only into a container: the host, a provider's own CLI, the mock's bun,
+    // and Node when browse is in the trial (its MCP wrapper is a Node script).
     const needsClaude = profile.kind === "claude-agent" || options.model.startsWith("claude-agent/")
+    const needsBrowse = browseInTrial(plugin, selected)
     // The fake-mode plugins any selected case uses.
     const fakeIds = [...new Set(selected.flatMap((c) => fakeFor(pluginsOf(c), fakeSet)))].sort()
-    const binaries = { opencode: binary, ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}), ...(scripted || options.captureServer || fakeIds.length ? { bun: caller.EVALS_BUN ?? "bun" } : {}) }
+    const binaries = trialBinaries({ binary, needsClaude, needsBrowse, scripted, captureServer: options.captureServer, fakeIds, caller })
     await isolation.prepare({ batchRoot, caller, binaries, log })
     if (isolation.confines) facts.isolation_detail = isolation.describe()
     // The harness's scripted model, when asked for: T1's mock server, for the whole batch on loopback, or, in a confined

@@ -3,8 +3,8 @@
 // servers, agents or provider keys reaches a run unless a credential profile passes it on purpose.
 
 import { spawn } from "node:child_process"
-import { mkdirSync, writeFileSync, existsSync, rmSync, readdirSync, lstatSync, readlinkSync, unlinkSync, chmodSync, openSync, closeSync, fstatSync, constants } from "node:fs"
-import { join, resolve, dirname, basename, sep } from "node:path"
+import { mkdirSync, writeFileSync, existsSync, rmSync, readdirSync, lstatSync, unlinkSync, chmodSync, openSync, closeSync, fstatSync, constants, renameSync } from "node:fs"
+import { join, resolve, dirname, basename } from "node:path"
 import { randomBytes } from "node:crypto"
 import { inside, real } from "./paths.mjs"
 
@@ -116,8 +116,27 @@ export function sandboxEnv({ sandbox, config, password, caller = process.env, wo
 export const newPassword = () => `eval-${randomBytes(12).toString("hex")}`
 
 /** Writes the sealed config where a host would look too, so the file and the variable cannot disagree. */
+/**
+ * Writes one of the harness's own files in the sandbox without ever following a link: the content goes to a fresh file
+ * beside the destination (O_EXCL and O_NOFOLLOW, so a planted name cannot be opened through) and is renamed onto it,
+ * which replaces a link without following it.
+ */
+function writeNoFollow(file, text, mode = 0o600) {
+  const tmp = join(dirname(file), `.${basename(file)}.tmp-${process.pid}-${randomBytes(6).toString("hex")}`)
+  const fd = openSync(tmp, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, mode)
+  let wrote = false
+  try {
+    writeFileSync(fd, text)
+    wrote = true
+  } finally {
+    closeSync(fd)
+    if (!wrote) rmSync(tmp, { force: true })
+  }
+  renameSync(tmp, file)
+}
+
 export function writeConfig(sandbox, config) {
-  writeFileSync(join(sandbox.home, ".config", "opencode", "opencode.json"), `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 })
+  writeNoFollow(join(sandbox.home, ".config", "opencode", "opencode.json"), `${JSON.stringify(config, null, 2)}\n`, 0o600)
 }
 
 /**
@@ -223,7 +242,9 @@ export async function stop(proc, { graceMs = 2000 } = {}) {
 
 /**
  * Removes every symlink anywhere in the sandbox that points outside it: a world's home copied from a lab sandbox carries
- * links to the caller's ~/.claude or ~/.local/bin, and a run must not reach through them. Links are not followed.
+ * links to the caller's ~/.claude or ~/.local/bin, and a run must not reach through them. Links are not followed; where a
+ * link really goes is resolved by the OS (`inside`), so a chain that looks inside lexically (`hop -> ../..`, then
+ * `x -> hop/../../..`) is removed too.
  */
 export function stripForeignLinks(sandbox, { depth = Infinity } = {}) {
   const removed = []
@@ -238,8 +259,7 @@ export function stripForeignLinks(sandbox, { depth = Infinity } = {}) {
     for (const entry of entries) {
       const path = join(dir, entry.name)
       if (entry.isSymbolicLink()) {
-        const target = resolve(dirname(path), readlinkSync(path))
-        if (target !== root && !target.startsWith(`${root}${sep}`)) {
+        if (!inside(root, path)) {
           unlinkSync(path)
           removed.push(path.slice(root.length + 1))
         }

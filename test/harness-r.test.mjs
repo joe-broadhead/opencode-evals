@@ -3,7 +3,7 @@
 // Synthetic credentials and a stand-in host only.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync, existsSync, statSync } from "node:fs"
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync, existsSync, statSync, chmodSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { Buffer } from "node:buffer"
@@ -16,7 +16,7 @@ import { readCompanions, materialiseArm, materialiseCompanions, runtimePaths, co
 import { roundLimits, estimateRunUsd, assertLaunchWithinRound, RoundCapError, tierOf, listSpent, MIN_MEASURED_RUNS } from "../src/cost/budget.mjs"
 import { outstandingList } from "../src/cost/ledger.mjs"
 import { parseAuth } from "../src/run/auth.mjs"
-import { runBatch, listUsdOf, modelPrice, guardSummary, hostLogFacts } from "../src/run/runner.mjs"
+import { runBatch, listUsdOf, modelPrice, guardSummary, hostLogFacts, rateLimitOutcome } from "../src/run/runner.mjs"
 import { compileCase } from "../src/case/compile.mjs"
 import { flatten } from "../src/grade/targets.mjs"
 import { installFakeOpencode, installFakeBun } from "./helpers/fake-opencode.mjs"
@@ -510,6 +510,12 @@ test("a 429 with no model work is a rate limit, not an auth failure, a provider 
   assert.equal(rateLimited({ stdout: "", stderr: 'Error: 401 {"error":{"type":"authentication_error","message":"OAuth token has expired"}}' }), false)
   assert.equal(rateLimited({ stdout: "", stderr: "" }), false)
   assert.deepEqual(BACKOFF_S, [60, 120, 240])
+  // A retry only with attempts left and the previous container confirmed gone.
+  assert.deepEqual(rateLimitOutcome(0, true), { retry: true })
+  assert.equal(rateLimitOutcome(0, false).retry, false)
+  assert.equal(rateLimitOutcome(0, false).infra, "container")
+  assert.deepEqual(rateLimitOutcome(3, true), { retry: false, infra: "rate-limit" })
+  assert.deepEqual(rateLimitOutcome(3, false), { retry: false, infra: "rate-limit" })
 })
 
 const marker = (prompt) => `/tmp/evals-fake-429-${createHash("sha256").update(prompt).digest("hex").slice(0, 16)}`
@@ -529,12 +535,14 @@ test("a rate-limited run is tried again after a backoff and recorded once; after
     for (const p of prompts) rmFile(marker(p), { force: true })
     const caller = { ...once.caller, EVALS_BACKOFF_SCALE: "0.001" }
     const logs = []
-    const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "rl", model: "mock/m1", auth: "none", scripted: true, cases: "demo-a,demo-b", arm: once.arm, casesDir: once.casesDir, tools: "locked", parallel: 1 }, { caller, log: (l) => logs.push(l) })
+    const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "rl", model: "mock/m1", auth: "none", scripted: true, cases: "demo-a,demo-b", arm: once.arm, casesDir: once.casesDir, tools: "locked", parallel: 1, keep: true }, { caller, log: (l) => logs.push(l) })
     const a = result.results.find((r) => r.case === "demo-a")
     const b = result.results.find((r) => r.case === "demo-b")
     assert.equal(a.rateLimited, undefined, "demo-a succeeded on its second attempt")
     assert.equal(a.exit, 0, JSON.stringify(result.results))
     assert.equal(b.infra, "rate-limit", "demo-b never stopped being refused")
+    assert.ok(existsSync(join(result.keptAt, "runs", "demo-a.t1", "home")), "the first attempt's root is kept")
+    assert.ok(existsSync(join(result.keptAt, "runs", "demo-a.t1.a1", "home")), "the retry got a fresh root, not the first attempt's")
     assert.ok(result.rate_limited >= 4, `${result.rate_limited} rate-limited attempts counted`)
     assert.ok(logs.some((l) => /was rate-limited \(attempt 1\): trying again after 60 s/.test(l)))
     assert.ok(logs.some((l) => /three rate-limited runs in a row: paused 30 min/.test(l)))
@@ -631,6 +639,61 @@ test("assets the owner mounts into every trial are validated, found on the host,
     assert.throws(() => parseAssets([{ name: "a", host: "/x,y" }]), /comma/)
     assert.throws(() => parseAssets([{ name: "a", host: "/x", env: { V: "../up" } }]), /relative path inside the asset/)
     assert.throws(() => parseAssets([{ name: "a", host: "/x", env: { "bad name": "" } }]), /relative path inside the asset/)
+    // copyTo: a path relative to the sandbox home only: letters, digits, dot, dash and underscore segments (safe in a
+    // shell), no "..", no absolute path, no backslash, and nothing the harness owns (the sealed config, the OpenCode
+    // trees, claude's directory).
+    assert.equal(parseAssets([{ name: "cache", host: join(dir, "speech"), copyTo: ".cache" }])[0].copyTo, ".cache")
+    assert.equal(parseAssets([{ name: "cache", host: join(dir, "speech"), copyTo: "a/b-c_d" }])[0].copyTo, "a/b-c_d")
+    const refused = ["..", "../x", "a/../b", "/abs", "a\\b", "", ".", "a//b", "a b", "a$b", "a`b", ".config/opencode", ".config/opencode/x", ".config", ".local/share/opencode", ".claude", ".claude/settings.json"]
+    for (const copyTo of refused) assert.throws(() => parseAssets([{ name: "a", host: "/x", copyTo }]), /copyTo/, JSON.stringify(copyTo))
+    // Two assets may not share a destination, or nest one inside the other; siblings are fine.
+    assert.throws(() => parseAssets([{ name: "a", host: "/x", copyTo: ".cache" }, { name: "b", host: "/y", copyTo: ".cache" }]), /overlaps another asset/)
+    assert.throws(() => parseAssets([{ name: "a", host: "/x", copyTo: ".cache" }, { name: "b", host: "/y", copyTo: ".cache/x" }]), /overlaps another asset/)
+    assert.throws(() => parseAssets([{ name: "a", host: "/x", copyTo: ".cache/x" }, { name: "b", host: "/y", copyTo: ".cache" }]), /overlaps another asset/)
+    assert.deepEqual(parseAssets([{ name: "a", host: "/x", copyTo: ".cache" }, { name: "b", host: "/y", copyTo: ".cache2" }, { name: "c", host: "/z", copyTo: "a/b" }]).map((a) => a.copyTo), [".cache", ".cache2", "a/b"])
+    assert.equal("copyTo" in parseAssets([{ name: "a", host: "/x" }])[0], false)
+    // The copyTo source must be readable (the trial copies it, where a mounted asset is checked in the trial by g8).
+    const unreadable = join(dir, "speech", "model.bin")
+    chmodSync(unreadable, 0o000)
+    try {
+      const checked = checkAssets(parseAssets([{ name: "speech", host: join(dir, "speech"), copyTo: ".speech" }]))[0]
+      assert.equal(checked.ok, false, "a file the owner cannot read is not a copyable asset")
+      assert.equal(checked.copyTo, ".speech")
+      assert.match(checked.why, /cannot be read/)
+    } finally {
+      chmodSync(unreadable, 0o644)
+    }
+    assert.equal(checkAssets(parseAssets([{ name: "speech", host: join(dir, "speech"), copyTo: ".speech" }]))[0].ok, true)
+    // The check applies the copy's own rules: a link (inside or at the top), a FIFO and an unreadable directory each fail
+    // clearly, rather than passing here and failing every trial.
+    const linked = join(dir, "linked")
+    mkdirSync(linked)
+    symlinkSync(join(dir, "speech", "model.bin"), join(linked, "link"))
+    const linkedCheck = checkAssets(parseAssets([{ name: "linked", host: linked, copyTo: ".linked" }]))[0]
+    assert.equal(linkedCheck.ok, false, "an inner symlink cannot be copied")
+    assert.match(linkedCheck.why, /symbolic link/)
+    const alias = join(dir, "alias")
+    symlinkSync(join(dir, "speech"), alias)
+    const aliasCheck = checkAssets(parseAssets([{ name: "alias", host: alias, copyTo: ".alias" }]))[0]
+    assert.equal(aliasCheck.ok, false, "a top-level symlink is not followed")
+    assert.match(aliasCheck.why, /symbolic link/)
+    const fifoDir = join(dir, "fifo")
+    mkdirSync(fifoDir)
+    assert.equal(spawnSync("mkfifo", [join(fifoDir, "pipe")]).status, 0)
+    const fifoCheck = checkAssets(parseAssets([{ name: "fifo", host: fifoDir, copyTo: ".fifo" }]))[0]
+    assert.equal(fifoCheck.ok, false, "a FIFO cannot be copied")
+    assert.match(fifoCheck.why, /not a regular file/)
+    const locked = join(dir, "locked")
+    mkdirSync(join(locked, "sub"), { recursive: true })
+    writeFileSync(join(locked, "sub", "x"), "x")
+    chmodSync(join(locked, "sub"), 0o000)
+    try {
+      const lockedCheck = checkAssets(parseAssets([{ name: "locked", host: locked, copyTo: ".locked" }]))[0]
+      assert.equal(lockedCheck.ok, false, "an unreadable directory is a clear failure, not a throw")
+      assert.match(lockedCheck.why, /cannot be read/)
+    } finally {
+      chmodSync(join(locked, "sub"), 0o755)
+    }
     // the configuration reads them from the owner's caps.json, never from a case or an arm
     const store = join(dir, "store")
     mkdirSync(store)

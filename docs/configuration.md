@@ -58,6 +58,7 @@ committed, and nothing in the repository may reference a machine path: `evals pr
 | `EVALS_CONTAINER_IMAGE` | `opencode-evals-sandbox:<digest of docker/>` | the sandbox image, when not the one `evals isolation build` makes |
 | `EVALS_DOCKER` | `docker` on `PATH` | the docker client |
 | `EVALS_CLAUDE_BIN` | `claude` on `PATH` | the `claude` mounted into a trial for the Claude Agent provider |
+| `EVALS_NODE_BIN` | `node` on `PATH` | the Node mounted at `/opt/evals/bin/node` in a trial that uses browse (its MCP server, `bin/mcp.mjs`, runs on Node; the image has none) |
 | `EVALS_ROUTE_TIMEOUT_S` | `60` | how long the preflight and each run wait for their model to route on the trial's server ([running.md](running.md#credentials)) |
 | `EVALS_RUN_OVERHEAD_S` | `120` | what one run costs beyond its timeout, for the credential's horizon ([running.md](running.md#credentials)) |
 | `EVALS_OPENCODE_CORE` | unset | a pinned `@opencode/core` whose tool registry a test compares the built-in tool list with |
@@ -76,7 +77,11 @@ committed, and nothing in the repository may reference a machine path: `evals pr
     "memory_mb": 4096, "cpus": 2, "pids": 512, "tmpfs_mb": 256,
     "disk_mb": 2048, "disk_floor_mb": 2048, "inodes": 200000, "inode_floor": 100000, "measure_s": 10,
     "max_parallel": 8, "tunnels_per_trial": 16, "tunnels_total": 64,
-    "image": "opencode-evals-sandbox:<tag>"
+    "image": "opencode-evals-sandbox:<tag>",
+    "assets": [
+      { "name": "browse-bin", "host": "/abs/path/browse-bin" },
+      { "name": "native-cache", "host": "/abs/path/native-cache", "copyTo": ".cache" }
+    ]
   },
   "run_overhead_s": 120
 }
@@ -88,6 +93,20 @@ nothing else. `max_parallel` bounds `--parallel`, since each trial takes one of 
 below which a trial is stopped, and `measure_s` the longest a measurement may take before the trial is stopped as
 unmeasurable; all are enforced by a watchdog, not a quota. `tunnels_per_trial` and `tunnels_total` cap the egress
 proxy's open tunnels. The image is built from `docker/` with `evals isolation build`.
+
+`assets` are host files or directories every trial gets, because the egress allow-list lets a trial download nothing. By
+default an asset is mounted read-only at `/opt/evals/assets/<name>`, and `env` maps a variable name to a path inside it
+(`""` for the asset itself). An asset with `copyTo` (a path relative to the sandbox home: letters, digits, dot, dash and
+underscore segments, no `..`, not absolute) is instead **copied** into `<sandbox home>/<copyTo>` before the container
+starts: file modes are kept (masked to `0o777`), symlinks anywhere in the source are refused, every existing component
+of the destination must be a real directory, and the copy is made in a temporary directory inside the home and each of
+its top-level entries is renamed into the destination. An entry already there with the same name is replaced (a link is
+unlinked, never followed); everything else already in the destination is kept. A missing or unreadable source fails the
+trial. `copyTo` may not target `.config/opencode`, `.local/share/opencode` or `.claude`, will not overwrite an existing
+file where the destination goes, and no two assets may share a `copyTo` or have one inside another. That is for caches
+a plugin makes private with `chmod` (gws's `discovery`, utilities' weather cache, voice's engine cache), which a
+read-only mount would break. `evals isolation assets` checks each source by the copy's own rules (readable, no symlink,
+FIFO or device); `p0 g8` checks mounted assets are read-only in the trial and copied ones are writable and not mounted.
 
 ## Packs
 
