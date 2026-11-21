@@ -136,7 +136,11 @@ export async function prepareAuth(profile, options) {
   const { binary, caller = process.env, horizonMs = 0, acceptUnknownExpiry = false, needed = [] } = options
   // A test (or an owner tuning a slow vendor) can shorten the MCP-settle deadline; the default is 2.3.2's grace + timeout.
   const settleMs = Number(caller.EVALS_MCP_SETTLE_MS) > 0 ? Number(caller.EVALS_MCP_SETTLE_MS) : null
-  if (!needed.length) throw new Error("--auth +profile: no integration to give the trials (the arm's plugin and the cases' `Seed: plugins=` name none)")
+  if (!needed.length) {
+    // Every plugin the batch names runs with no account (charts, history, github, jira, …): `+profile` is the base model
+    // auth alone. Nothing is exported or imported, and there is no vendor server to settle; it is not an error.
+    return { ...base, profile: `${base.profile}+profile` }
+  }
   // One `auth export <target>` per needed vendor: the host resolves a target by the server's name, so an MCP vendor's
   // real `mcp_<hash>` credential is kept, gws's `gws-default`, and Slack's and X's MCP token plus their `slack-app`/
   // `x-app` client id (their plugins register the server only with one). Nothing else leaves the profile.

@@ -8,6 +8,7 @@ import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { Buffer } from "node:buffer"
 import { allowListed, vendorCredentials, exportTargets, exportTargetsFor, verifyVendorImport, verifyVendorServers, mcpRows, secretsOf, REFRESH_PLACEHOLDER, profileEnv } from "../src/run/vendor-auth.mjs"
+import { noAccountPlugins, noProfilePlugins } from "../src/run/accounts.mjs"
 import { redactor, expand, registerSecrets, scrub } from "../src/run/secrets.mjs"
 import { fillPrompt, gateCases, seedFiles, seedDir, placeholdersIn, loadDataMatrix, seedRefusal } from "../src/run/gate.mjs"
 import { dataOf } from "../src/case/schema.mjs"
@@ -15,7 +16,7 @@ import { batchEgress, fillHost, modelHosts } from "../src/run/egress.mjs"
 import { readCompanions, materialiseArm, materialiseCompanions, runtimePaths, companionsDigest } from "../src/run/arm.mjs"
 import { roundLimits, estimateRunUsd, assertLaunchWithinRound, RoundCapError, tierOf, listSpent, MIN_MEASURED_RUNS } from "../src/cost/budget.mjs"
 import { outstandingList } from "../src/cost/ledger.mjs"
-import { parseAuth } from "../src/run/auth.mjs"
+import { parseAuth, prepareAuth } from "../src/run/auth.mjs"
 import { runBatch, listUsdOf, modelPrice, guardSummary, hostLogFacts, rateLimitOutcome, failureInfra } from "../src/run/runner.mjs"
 import { compileCase } from "../src/case/compile.mjs"
 import { flatten } from "../src/grade/targets.mjs"
@@ -211,6 +212,45 @@ test("a pending MCP server past the deadline fails the trial as infra auth, befo
   } finally {
     f.cleanup()
   }
+})
+
+test("only the no-profile set is dropped from +profile; grading keeps the master no-account meaning", async () => {
+  const packs = loadPacks()
+  const noProfile = noProfilePlugins({ packs })
+  const local = ["boxd", "browse", "charts", "history", "inference", "jobs", "utilities", "voice"]
+  assert.deepEqual([...noProfile].sort(), [...local, "github", "jira"].sort(), "the eight local plugins and the two fake ones")
+  const accounted = ["affinity", "ashby", "elevenlabs", "granola", "gws", "linear", "metaview", "notion", "openrouter", "plaud", "slack", "tavily", "wisprflow", "x"]
+  for (const id of accounted) assert.equal(noProfile.has(id), false, `${id} is accounted and must still be asked for`)
+  assert.equal(noProfile.has("tavily"), false)
+  assert.deepEqual([...noAccountPlugins({ packs })], [], "accounts keeps its master meaning: no plugin is `accounts: none`")
+  const parse = (seed) => String(seed ?? "").split(",").filter(Boolean)
+  for (const id of [...local, "github", "jira"]) assert.deepEqual(integrationsFor(id, [{}], packs, parse, noProfile), [], `${id} has no profile credential`)
+  assert.deepEqual(integrationsFor("charts", [{ seed: "linear" }], packs, parse, noProfile), ["linear"], "a signed-in seed is still asked for")
+  assert.deepEqual(integrationsFor("affinity", [{}], packs, parse, noProfile), ["affinity"], "a plugin with an account is still asked for")
+  assert.deepEqual(integrationsFor("tavily", [{}], packs, parse, noProfile), ["tavily"], "tavily is accounted: its key is asked of the profile, not skipped")
+  // No EVALS_PROFILE and a binary that cannot run: an empty `needed` must not call exportProfile.
+  const auth = await prepareAuth({ kind: "none", vendor: true }, { needed: [], binary: "/nonexistent", caller: {} })
+  assert.equal(auth.profile, "none+profile")
+  assert.equal(auth.vendor, undefined, "no vendor object: nothing is exported, imported or settled")
+  // A plugin with an account and no credential still throws, as before.
+  assert.throws(() => vendorCredentials({ affinity: "[]" }, { needed: ["affinity"] }), /holds no usable credential for affinity/)
+})
+
+test("a fabricated answer for a local plugin still fails, as on master", () => {
+  const packs = loadPacks()
+  const none = noAccountPlugins({ packs })
+  const head = { schema: "oc-trace/1", run_id: "t/1", case: "t", exit: 0, summary: { outer_calls: 0, failed_outer: 0, inner_calls: 0, steps: 0, skills_loaded: [], tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, cost: { amount_usd: null, source: "missing" }, text: { sha256: "0".repeat(64) } } }
+  for (const [file, text] of [["cases/utilities/tools-weather-current.json", "It is 21 °C in Lisbon, from Open-Meteo."], ["cases/charts/tools-render.json", "Saved to outputs/charts/revenue.png."]]) {
+    const kase = JSON.parse(readFileSync(join(import.meta.dirname, "..", file), "utf8"))
+    const view = runView([JSON.stringify(head)], { text, noAccount: none.size ? { plugins: none, all: true } : null })
+    assert.equal(gradeCase(kase, view).verdict, "FAIL", file)
+  }
+})
+
+test("utilities' egress hosts stay open under +profile", () => {
+  const packs = loadPacks()
+  const allow = batchEgress({ model: "claude-agent/haiku", vendor: true, cases: [{ seed: "plugins=utilities" }], packs }).allow
+  assert.ok(allow.includes("api.open-meteo.com") && allow.includes("geocoding-api.open-meteo.com"), JSON.stringify(allow))
 })
 
 test("an auth-verification failure is infra in the summary, and grading never counts it as the model's", () => {

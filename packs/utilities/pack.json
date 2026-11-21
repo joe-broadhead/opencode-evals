@@ -213,7 +213,7 @@
     "denied": 0,
     "skills": 3
   },
-  "digest": "ae277d9e6016748d8827d6b5ff83a26e4473737312b15a1902070f0d7644a349",
+  "digest": "ee943b0384a45f3ce94f00b14fdb64c0e052be3a73304aa42f727fd6c74592ee",
   "t1": [],
   "egress": [
     "api.open-meteo.com",
@@ -223,5 +223,6 @@
     "version": "0.0.6",
     "tag": "v0.0.6",
     "commit": "38bfb9f6a2c693972428d66e06f316b1d5d89a71"
-  }
+  },
+  "profile": false
 }

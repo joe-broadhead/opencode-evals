@@ -146,7 +146,7 @@
     "denied": 0,
     "skills": 1
   },
-  "digest": "b483a7ace6ddc697f2ba21b2ef2e787e0c18f77a8f4e55a434adace2d271011a",
+  "digest": "70711c4e6016ce7f4dbdbbb5d78100bb1e5ade345b47fb382c686ad31aa50850",
   "vocab": [
     "project",
     "directory",
@@ -190,5 +190,6 @@
     "version": "0.0.8",
     "tag": "v0.0.8",
     "commit": "adf3c8e62db08138fdb28cf3e6d59032faafffff"
-  }
+  },
+  "profile": false
 }
