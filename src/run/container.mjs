@@ -663,11 +663,13 @@ export function containerBackend(config = containerConfig()) {
         trials.delete(trial)
       }
       trial.leave = leave
+      let effectiveCa = null
       try {
         // A `copyTo` asset is copied into the sandbox home (writable), never mounted; a missing source fails the trial here,
-        // before anything is created.
+        // before anything is created. Any combined fake + asset CA bundle is also built here, before network/container creation.
         trial.asset_copies = (config.assets ?? []).filter((a) => a.copyTo).map((a) => copyAsset(a, sandbox))
         for (const copy of trial.asset_copies) state.copies.push({ trial: name, ...copy })
+        if (ca) effectiveCa = mergeExtraCa({ ca, assets: config.assets ?? [], sandbox })
         trial.network = ref
         await mustNetwork(["network", "create", "--internal", "-o", "com.docker.network.bridge.gateway_mode_ipv4=isolated", "-o", "com.docker.network.bridge.gateway_mode_ipv6=isolated", ...labelArgs({ "evals.role": "trial", "evals.trial": name }), ref], "creating the trial network")
         await must(["network", "connect", "--alias", "egress", ref, proxyName], "joining the proxy to the trial network")
@@ -735,7 +737,7 @@ export function containerBackend(config = containerConfig()) {
         const noProxy = ["127.0.0.1", "localhost", ...hosts.map((h) => h.host)].join(",")
         extraEnv.NO_PROXY = extraEnv.no_proxy = noProxy
       }
-      if (ca) extraEnv.NODE_EXTRA_CA_CERTS = mergeExtraCa({ ca, assets: config.assets ?? [], sandbox })
+      if (effectiveCa) extraEnv.NODE_EXTRA_CA_CERTS = effectiveCa
       /**
        * The command to run a trial's command through `docker exec`. `-i` (the exec client's standard input attached) only when the caller has input to send (`stdin: true`): `docker exec -i`
        * whose input is closed at once (a /dev/null, an empty pipe) can lose the end-of-file under load, and the command inside then waits for it for ever (`opencode run` reads standard input
@@ -744,14 +746,7 @@ export function containerBackend(config = containerConfig()) {
       trial.wrap = ({ command, args = [], cwd: dir, env = {}, stdin = false }) => {
         const mapped = [...state.binaries.values()].find((b) => b.command === command || b.host === command || (isAbsolute(command) && existsSync(command) && realpathSync(command) === b.host))
         const inside = mapped ? mapped.inside : command
-        const containerEnv = { ...trialEnv(env), ...extraEnv }
-        // The assets' own variables: where, inside the trial, each one lives. A `copyTo` asset lives in the sandbox home
-        // (the copy made before the container started), not at /opt/evals/assets.
-        for (const a of config.assets ?? []) for (const [key, inner] of Object.entries(a.env ?? {})) {
-          if (key === "NODE_EXTRA_CA_CERTS" && extraEnv.NODE_EXTRA_CA_CERTS) continue
-          const base = a.copyTo ? join(sandbox.home, a.copyTo) : `${ASSETS_DIR}/${a.name}`
-          containerEnv[key] = inner ? `${base}/${inner}` : base
-        }
+        const containerEnv = composeTrialEnv({ env, extraEnv, assets: config.assets ?? [], sandbox })
         const names = Object.keys(containerEnv)
         const bad = names.filter((key) => !NAME.test(key))
         if (bad.length) throw new Error(`refusing to pass ${bad.map((k) => JSON.stringify(k)).join(", ")} into a trial: not a variable name`)
@@ -902,7 +897,22 @@ export function mergeExtraCa({ ca, assets = [], sandbox }) {
   const pems = [readFileSync(ca, "utf8").trimEnd(), ...extraFiles.map((file) => readFileSync(file, "utf8").trimEnd())]
   const out = within(sandbox.root, join(sandbox.root, ".evals-ca.pem"), "the combined CA bundle")
   writeFileSync(out, `${pems.join("\n")}\n`, { flag: "wx", mode: 0o444 })
+  chmodSync(out, 0o444)
   return out
+}
+
+/**
+ * Builds the in-container environment for one `docker exec`: `trialEnv(env)` + `extraEnv` + each asset's `env` paths,
+ * preserving `extraEnv.NODE_EXTRA_CA_CERTS` (already merged by `mergeExtraCa` in fake mode) over an asset's raw CA path.
+ */
+export function composeTrialEnv({ env = {}, extraEnv = {}, assets = [], sandbox }) {
+  const containerEnv = { ...trialEnv(env), ...extraEnv }
+  for (const a of assets) for (const [key, inner] of Object.entries(a.env ?? {})) {
+    if (key === "NODE_EXTRA_CA_CERTS" && extraEnv.NODE_EXTRA_CA_CERTS) continue
+    const base = a.copyTo ? join(sandbox.home, a.copyTo) : `${ASSETS_DIR}/${a.name}`
+    containerEnv[key] = inner ? `${base}/${inner}` : base
+  }
+  return containerEnv
 }
 
 export function trialEnv(env) {

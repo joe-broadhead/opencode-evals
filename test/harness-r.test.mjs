@@ -20,7 +20,7 @@ import { parseAuth, prepareAuth } from "../src/run/auth.mjs"
 import { runBatch, listUsdOf, modelPrice, guardSummary, hostLogFacts, rateLimitOutcome, failureInfra } from "../src/run/runner.mjs"
 import { compileCase } from "../src/case/compile.mjs"
 import { flatten } from "../src/grade/targets.mjs"
-import { mergeExtraCa } from "../src/run/container.mjs"
+import { composeTrialEnv, mergeExtraCa } from "../src/run/container.mjs"
 import { installFakeOpencode, installFakeBun } from "./helpers/fake-opencode.mjs"
 
 const scratch = () => mkdtempSync(join(tmpdir(), "evals-r-test-"))
@@ -36,7 +36,9 @@ test("a vendor credential is cut to the allow-list: no refresh token, no client 
   assert.deepEqual(cut.value, { type: "oauth", methodID: "mcp-oauth", access: "access-token-linear-0123456789", refresh: REFRESH_PLACEHOLDER, expires: cut.value.expires, metadata: { serverUrl: "https://mcp.example.org/mcp", tokenType: "Bearer", scope: "read write", issuer: "https://auth.example.org", client: { client_id: "https://opencode.ai/oauth/opencode/client.json" } } })
   const text = JSON.stringify(cut)
   for (const dropped of ["REFRESH-SECRET", "CLIENT-SECRET", "someone", "me@example.org"]) assert.ok(!text.includes(dropped), dropped)
-  // gws's `readSignIn` scope record survives, while clientSecret, email, domain and refresh are dropped.
+  // gws's `readSignIn` scope record survives (read and write, fresh array copies), while clientSecret, email, domain and refresh are dropped.
+  const origReq = ["https://www.googleapis.com/auth/drive"]
+  const origGrant = ["https://www.googleapis.com/auth/drive"]
   const gwsCut = allowListed({
     id: "cred_gws",
     integrationID: "gws-default",
@@ -53,18 +55,24 @@ test("a vendor credential is cut to the allow-list: no refresh token, no client 
         clientSecret: "GOCSPX-SECRET-DROP-ME",
         clientSource: "plugin",
         access: "write",
-        requestedScopes: ["https://www.googleapis.com/auth/drive"],
-        grantedScopes: ["https://www.googleapis.com/auth/drive"],
+        requestedScopes: origReq,
+        grantedScopes: origGrant,
         email: "owner@example.org",
         domain: "example.org",
       },
     },
   })
+  origReq.push("mutated")
+  origGrant.push("mutated")
   assert.deepEqual(gwsCut.value.metadata, {
     access: "write",
     requestedScopes: ["https://www.googleapis.com/auth/drive"],
     grantedScopes: ["https://www.googleapis.com/auth/drive"],
   })
+  assert.equal(
+    allowListed({ id: "cred_ro", integrationID: "gws-default", active: true, value: { type: "oauth", access: "tok", metadata: { access: "read" } } }).value.metadata?.access,
+    "read",
+  )
   const gwsText = JSON.stringify(gwsCut)
   for (const secret of ["GOCSPX-SECRET-DROP-ME", "1//synthetic_refresh_secret", "owner@example.org", "example.org"]) assert.ok(!gwsText.includes(secret), secret)
   // Invalid access or non-string scope entries are rejected, never copied.
@@ -77,28 +85,65 @@ test("a vendor credential is cut to the allow-list: no refresh token, no client 
     }).value.metadata,
     undefined,
   )
-  // Fake-mode CA + asset NODE_EXTRA_CA_CERTS merge cleanly and refuse pre-existing links.
+  // Fake-mode CA + asset NODE_EXTRA_CA_CERTS merge cleanly, enforce mode 0444, support copyTo, ignore non-CA assets, and refuse links outside.
   const caDir = scratch()
   try {
     const fakeCa = join(caDir, "fake-ca.pem")
     const assetDir = join(caDir, "asset")
+    const copySrc = join(caDir, "unused-host")
     const sandboxRoot = join(caDir, "sandbox")
+    const sandboxHome = join(sandboxRoot, "home")
     mkdirSync(assetDir, { recursive: true })
-    mkdirSync(sandboxRoot, { recursive: true })
+    mkdirSync(copySrc, { recursive: true })
+    mkdirSync(join(sandboxHome, ".certs"), { recursive: true })
     writeFileSync(fakeCa, "-----BEGIN CERTIFICATE-----\nFAKE\n-----END CERTIFICATE-----\n")
     writeFileSync(join(assetDir, "egress.crt"), "-----BEGIN CERTIFICATE-----\nEGRESS\n-----END CERTIFICATE-----\n")
-    assert.equal(mergeExtraCa({ ca: fakeCa, assets: [], sandbox: { root: sandboxRoot, home: sandboxRoot } }), fakeCa)
+    writeFileSync(join(sandboxHome, ".certs", "copy.crt"), "-----BEGIN CERTIFICATE-----\nCOPY\n-----END CERTIFICATE-----\n")
+    const nonCaAsset = { name: "voice-engine", host: assetDir, env: { VOICE_AURUM_PATH: "aurum" } }
+    const caAsset = { name: "egress-ca", host: assetDir, env: { NODE_EXTRA_CA_CERTS: "egress.crt" } }
+    const copyCaAsset = { name: "copy-ca", host: copySrc, copyTo: ".certs", env: { NODE_EXTRA_CA_CERTS: "copy.crt" } }
+    assert.equal(mergeExtraCa({ ca: fakeCa, assets: [nonCaAsset], sandbox: { root: sandboxRoot, home: sandboxHome } }), fakeCa)
     const merged = mergeExtraCa({
       ca: fakeCa,
-      assets: [{ name: "egress-ca", host: assetDir, env: { NODE_EXTRA_CA_CERTS: "egress.crt" } }],
-      sandbox: { root: sandboxRoot, home: sandboxRoot },
+      assets: [nonCaAsset, caAsset, copyCaAsset],
+      sandbox: { root: sandboxRoot, home: sandboxHome },
     })
     assert.equal(merged, join(sandboxRoot, ".evals-ca.pem"))
-    assert.equal(readFileSync(merged, "utf8"), "-----BEGIN CERTIFICATE-----\nFAKE\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nEGRESS\n-----END CERTIFICATE-----\n")
+    assert.equal(statSync(merged).mode & 0o777, 0o444)
+    assert.equal(
+      readFileSync(merged, "utf8"),
+      "-----BEGIN CERTIFICATE-----\nFAKE\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nEGRESS\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nCOPY\n-----END CERTIFICATE-----\n",
+    )
+    // Existing regular file refuses with EEXIST.
     assert.throws(
-      () => mergeExtraCa({ ca: fakeCa, assets: [{ name: "egress-ca", host: assetDir, env: { NODE_EXTRA_CA_CERTS: "egress.crt" } }], sandbox: { root: sandboxRoot, home: sandboxRoot } }),
+      () => mergeExtraCa({ ca: fakeCa, assets: [caAsset], sandbox: { root: sandboxRoot, home: sandboxHome } }),
       /EEXIST/,
     )
+    // Symlink pointing outside sandboxRoot is caught by within().
+    const linkSandbox = join(caDir, "sandbox-link")
+    mkdirSync(linkSandbox, { recursive: true })
+    symlinkSync(join(caDir, "outside-victim.pem"), join(linkSandbox, ".evals-ca.pem"))
+    assert.throws(
+      () => mergeExtraCa({ ca: fakeCa, assets: [caAsset], sandbox: { root: linkSandbox, home: linkSandbox } }),
+      /outside/,
+    )
+    assert.equal(existsSync(join(caDir, "outside-victim.pem")), false)
+    // composeTrialEnv preserves extraEnv.NODE_EXTRA_CA_CERTS in fake mode, and sets the asset's CA in normal trials.
+    const fakeWrapped = composeTrialEnv({
+      env: { NODE_EXTRA_CA_CERTS: "/caller/ignored.pem" },
+      extraEnv: { NODE_EXTRA_CA_CERTS: merged },
+      assets: [nonCaAsset, caAsset],
+      sandbox: { root: sandboxRoot, home: sandboxHome },
+    })
+    assert.equal(fakeWrapped.NODE_EXTRA_CA_CERTS, merged)
+    assert.equal(fakeWrapped.VOICE_AURUM_PATH, "/opt/evals/assets/voice-engine/aurum")
+    const normalWrapped = composeTrialEnv({
+      env: { NODE_EXTRA_CA_CERTS: "/caller/ignored.pem" },
+      extraEnv: {},
+      assets: [nonCaAsset, caAsset],
+      sandbox: { root: sandboxRoot, home: sandboxHome },
+    })
+    assert.equal(normalWrapped.NODE_EXTRA_CA_CERTS, "/opt/evals/assets/egress-ca/egress.crt")
   } finally {
     rmSync(caDir, { recursive: true, force: true })
   }
