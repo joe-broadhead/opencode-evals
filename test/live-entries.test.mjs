@@ -59,11 +59,14 @@ test("an unresolved alias, an empty step and an entry with no shape are errors, 
 test("p7 judges URLs named in a direct-tool entry, and live requires the final write step itself to be declined", async () => {
   const store = mkdtempSync(join(tmpdir(), "evals-live-probe-"))
   try {
+    const companions = join(store, "companions.json")
+    writeFileSync(companions, JSON.stringify({ gws: store }))
     writeFileSync(join(store, "targets.json"), JSON.stringify({ gws: { folder: "1Folder_evals-sandbox" } }))
     writeFileSync(join(store, "live-reads.json"), JSON.stringify({ gws: { tool: "gws_read", args: { url: "https://extra.gws.example/v1" } } }))
     // M4: if p7 passed code: "" instead of resolved.text, extra.gws.example would land in `unknown` rather than `refused`.
     const readRes = await p7({
       store,
+      companions,
       caller: { EVALS_PROFILE: store },
       scriptedRun: async () => ({
         trials: { "tools-live-read-gws": { calls: [{ tool: "gws_read", status: "completed", output: "ok" }], summary: { guard: { committed: 0, write_calls: 0 } } } },
@@ -78,6 +81,7 @@ test("p7 judges URLs named in a direct-tool entry, and live requires the final w
     writeFileSync(join(store, "live-writes.json"), JSON.stringify({ gws: { tool: "gws_write", args: { planId: "plan_1" } } }))
     const notDeclined = await live({
       store,
+      companions,
       caller: { EVALS_PROFILE: store },
       scriptedRun: async () => ({
         trials: { "tools-live-gws": { calls: [{ tool: "gws_write", status: "completed", output: "PLAN_NOT_FOUND" }], analysed: { inner: { declined: 0 } }, summary: { guard: { committed: 0, assert_committed: 0 }, host_log: { plugin_load_failures: [] } } } },
@@ -90,6 +94,7 @@ test("p7 judges URLs named in a direct-tool entry, and live requires the final w
     // M5(b): a two-step entry where step 1 is declined and step 2 is NOT declined fails `live`.
     const step1Only = await live({
       store,
+      companions,
       caller: { EVALS_PROFILE: store },
       scriptedRun: async () => ({
         trials: {
@@ -110,6 +115,7 @@ test("p7 judges URLs named in a direct-tool entry, and live requires the final w
     // M5(c): a two-step entry where step 1 (`plan`) succeeds and step 2 (`gws_write`) IS declined passes `live`.
     const step2Declined = await live({
       store,
+      companions,
       caller: { EVALS_PROFILE: store },
       scriptedRun: async () => ({
         trials: {
