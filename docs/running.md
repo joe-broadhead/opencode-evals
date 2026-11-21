@@ -220,9 +220,8 @@ run time), never an id. A plugin's entry is one of three shapes:
   Mode (`gws_read`, `gws_write`, `gws_export`, `gws_send`, `gws_share`, `gws_delete`, `gws_admin`: `packs/gws/registered.json` lists the five
   Code Mode names), with `@alias` replaced by the alias's raw value in every argument (a nested object or list included);
 - **a sequence**: `{ "steps": [ { "code": "…" }, { "tool": "gws_write", "args": { "planId": "{{previous.planId}}" } } ] }` — one call per turn,
-  in order; `{{previous.<path>}}` in an argument (or in a `code` string) is filled from the previous tool's result, read through whatever the
-  host or the vendor wrapped it in (a JSON string, a string of a JSON string, an MCP `{ "content": [ { "type": "text", "text": … } ] }` part, or
-  Code Mode's output) and found by its dotted path or by its last segment.
+  in order; `{{previous.<path>}}` in a direct tool step's `args` is filled from the previous tool's result (`code` steps reject `{{previous.*}}`),
+  read through whatever the host wrapped it in (`output`, `result`, `data`, or MCP `content` parts) by its dotted path.
 
 `@alias` resolves in all three. The directive that carries them no longer treats `]` as its end and no longer unescapes a payload that is
 already valid JSON, so a script may index an array and a call may carry `\"` (a JSON string inside a string).

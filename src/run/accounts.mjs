@@ -48,14 +48,14 @@ export const fakePlugins = (options) => pluginsWith("fake", options)
 export const noCredentialPlugins = (options) => new Set([...noAccountPlugins(options), ...fakePlugins(options)])
 
 /**
- * The plugins whose credential the evals profile cannot hold: the fake-mode plugins (github, jira) and the local plugins
- * whose pack says `"profile": false` (charts, history, jobs, utilities, voice, boxd, browse). This is ONLY the
- * `+profile` filter — `integrationsFor`/`needed` — because their tools work locally; it must not touch grading, gating,
- * egress or reach, which keep the master meaning of `accounts` (`noAccountPlugins`/`noCredentialPlugins`). The marker is
- * a pack field no other code reads; `round.json` overrides `accounts`, not this. Inference is NOT marked: its
+ * The plugins whose credential the evals profile does not hold for the batch: `noCredentialPlugins` (`accounts: "fake"`,
+ * such as github and jira, plus `accounts: "none"` in packs or `$EVALS_STORE/round.json`) and the local plugins whose pack
+ * says `"profile": false` (charts, history, jobs, utilities, voice, boxd, browse). This is ONLY the `+profile` filter —
+ * `integrationsFor`/`needed` — because local plugins' tools work locally; grading, gating, egress and reach keep the
+ * master meaning of `accounts` (`noAccountPlugins`/`noCredentialPlugins`). Inference is NOT marked `profile: false`: its
  * `decide`/`extract` spend on its own `inference-openrouter` key (`src/providers/openrouter/http.ts` of
- * opencode-inference 0.0.7 resolves it at dispatch), so a batch that names inference fails closed when the profile lacks
- * it instead of silently running the spending tools keyless.
+ * opencode-inference 0.0.7 resolves it before asking), so a batch that names inference fails closed when the profile lacks
+ * it instead of running keyless.
  */
 export const noProfilePlugins = (options = {}) => new Set([...noCredentialPlugins(options), ...pluginsMarked(options)])
 

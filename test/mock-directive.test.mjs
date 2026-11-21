@@ -36,8 +36,10 @@ test("a directive's payload survives `]`, and a JSON argument that holds `\"` is
   assert.deepEqual(splitDirective("[[mock:dump]]"), { kind: "dump", arg: "" })
   assert.equal(parseToolDirective("tool", "execute:not json"), null)
   // Unbalanced `]]` inside a JSON string (kills M1: scan must respect quotes) and unmatched quote in `mock:text` (F6).
-  const unbalanced = mock("execute", { code: "return s.split(']]').join(',')" })
-  assert.deepEqual(parseToolDirective("tool", directiveOf(unbalanced).arg), { name: "execute", args: { code: "return s.split(']]').join(',')" } })
+  const unbalanced = mock("execute", { code: "return 'x]]]'" })
+  assert.deepEqual(parseToolDirective("tool", directiveOf(unbalanced).arg), { name: "execute", args: { code: "return 'x]]]'" } })
+  const openBrace = mock("execute", { code: "return '{'" })
+  assert.deepEqual(parseToolDirective("tool", directiveOf(openBrace).arg), { name: "execute", args: { code: "return '{'" } })
   assert.deepEqual(directiveOf('[[mock:text:he said "hi]] trailing'), { kind: "text", arg: 'he said "hi' })
 })
 
@@ -47,7 +49,7 @@ test("a step's {{previous.path}} reads the last result through the host's and th
   assert.equal(atPath(previousValue(JSON.stringify(plan)), "planId"), "plan_123")
   assert.equal(atPath(previousValue(JSON.stringify(JSON.stringify(plan))), "planId"), "plan_123")
   assert.equal(atPath(previousValue({ output: JSON.stringify(plan), title: "execute" }), "planId"), "plan_123")
-  assert.equal(atPath(previousValue([{ type: "text", text: JSON.stringify(plan) }]), "planId"), "plan_123")
+  assert.equal(atPath(previousValue([{ type: "text", text: JSON.stringify(plan) }]), "planId", { fromMcpParts: true }), "plan_123")
   assert.equal(atPath(previousValue({ result: { content: [{ type: "text", text: JSON.stringify(plan) }] } }), "planId"), "plan_123")
   assert.equal(atPath(previousValue(JSON.stringify(plan)), "operation"), "drive.files.create", "a dotted first segment resolves from the root")
   // Arguments are filled at any depth, and a missing value is empty rather than the literal placeholder.
@@ -57,13 +59,12 @@ test("a step's {{previous.path}} reads the last result through the host's and th
   // F1: a path that meets a primitive early returns undefined, never the intermediate primitive.
   assert.equal(atPath({ result: "oops: denied" }, "result.planId"), undefined)
   assert.equal(atPath({ planId: "p" }, "planId.x"), undefined)
-  // F3: vendor subtrees (`docs[0].planId`) and inherited properties (`constructor`) are never matched.
+  // F3/R1: vendor subtrees (`docs[0].planId`), vendor lists under envelopes (`result: [{planId}]`), and inherited properties (`constructor`) are never matched.
   assert.equal(atPath({ docs: [{ planId: "vendor-decoy" }] }, "result.planId"), undefined)
   assert.equal(atPath({ docs: [{ planId: "vendor-decoy" }] }, "planId"), undefined)
+  assert.equal(atPath({ result: [{ planId: "decoy" }] }, "planId"), undefined)
+  assert.equal(atPath([{ planId: "decoy" }], "planId"), undefined)
   assert.equal(atPath({}, "constructor"), undefined)
-  // F2: code steps escape single quotes and backslashes, and missing paths are recorded when requested.
-  const injected = "a'); evil(); ('"
-  assert.equal(fillPrevious("return f('{{previous.id}}')", { id: injected }, { escapeCode: true }), "return f('a\\'); evil(); (\\'')")
   const missed = []
   fillPrevious({ planId: "{{previous.planId}}" }, { other: 1 }, { missing: missed })
   assert.deepEqual(missed, ["planId"])
@@ -129,6 +130,22 @@ test("the mock server executes a multi-step sequence and fills {{previous.planId
     ])
     assert.equal(turn3.name, null)
     assert.equal(turn3.content, "steps done")
+    // R3: server returns `bad step: missing planId` when the previous output lacks `planId`, and refuses `{{previous.*}}` in a `code` step.
+    const missingTurn = await post([
+      { role: "user", content: prompt },
+      { role: "assistant", content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "execute", arguments: "{}" } }] },
+      { role: "tool", tool_call_id: "c1", content: JSON.stringify({ error: "no plan" }) },
+    ])
+    assert.equal(missingTurn.name, null)
+    assert.equal(missingTurn.content, "bad step: missing planId")
+    const codePrompt = steps([{ code: "return 1" }, { code: "return '{{previous.planId}}'" }])
+    const codeTurn = await post([
+      { role: "user", content: codePrompt },
+      { role: "assistant", content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "execute", arguments: "{}" } }] },
+      { role: "tool", tool_call_id: "c1", content: JSON.stringify({ planId: "p1" }) },
+    ])
+    assert.equal(codeTurn.name, null)
+    assert.match(codeTurn.content, /bad step:.*only allowed in tool args/)
     assert.ok(readFileSync(logFile, "utf8").includes("listening"))
   } finally {
     child.kill("SIGTERM")

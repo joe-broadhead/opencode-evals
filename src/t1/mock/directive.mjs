@@ -142,7 +142,7 @@ export function previousValue(content) {
   return walk(content, 0)
 }
 
-const ENVELOPE_KEYS = ["output", "result", "data", "content"]
+const ENVELOPE_KEYS = ["output", "result", "data"]
 
 function walkKeys(root, keys) {
   if (!keys.length) return undefined
@@ -161,48 +161,49 @@ function walkKeys(root, keys) {
 }
 
 /**
- * The value at a dotted path on `value`, or at the same dotted path inside a host/RPC wrapper envelope
- * (`output`, `result`, `data`, `content`, depth ≤ 4). Never walks arbitrary vendor subtrees or inherited properties.
+ * The value at a dotted path on `value`, or at the same dotted path inside a host/RPC/MCP wrapper envelope
+ * (`output`, `result`, `data`, or MCP `content` parts, depth ≤ 4). Never walks vendor list elements or inherited properties.
  */
-export function atPath(value, path) {
+export function atPath(value, path, { fromMcpParts = false } = {}) {
   const keys = String(path).split(".").filter(Boolean)
   if (!keys.length) return undefined
-  const direct = walkKeys(value, keys)
-  if (direct !== undefined) return direct
+  if (!Array.isArray(value) || /^\d+$/.test(keys[0])) {
+    const direct = walkKeys(value, keys)
+    if (direct !== undefined) return direct
+  }
   const seen = new Set()
-  const queue = [[value, 0]]
+  const queue = [[value, 0, fromMcpParts]]
   while (queue.length) {
-    const [item, depth] = queue.shift()
+    const [item, depth, allowArray] = queue.shift()
     if (!item || typeof item !== "object" || depth > 4 || seen.has(item)) continue
     seen.add(item)
-    const found = walkKeys(item, keys)
-    if (found !== undefined) return found
+    if (!Array.isArray(item) || /^\d+$/.test(keys[0])) {
+      const found = walkKeys(item, keys)
+      if (found !== undefined) return found
+    }
     if (Array.isArray(item)) {
-      for (const inner of item) queue.push([inner, depth + 1])
+      if (allowArray) for (const inner of item) queue.push([inner, depth + 1, false])
     } else {
-      for (const key of ENVELOPE_KEYS) if (Object.hasOwn(item, key)) queue.push([item[key], depth + 1])
+      for (const key of ENVELOPE_KEYS) if (Object.hasOwn(item, key)) queue.push([item[key], depth + 1, false])
+      if (Object.hasOwn(item, "content")) queue.push([item.content, depth + 1, Array.isArray(item.content)])
     }
   }
   return undefined
 }
 
-const escapeCodeLiteral = (str) => String(str).replace(/\\/g, "\\\\").replace(/'/g, "\\'")
-
-/** `{{previous.<path>}}` in a step's arguments or code, filled from the previous result; a missing value is filled with "".
- * Pass `{ escapeCode: true }` when filling a Code Mode `code` string so quotes and backslashes cannot break out of a literal. */
-export function fillPrevious(value, previous, { escapeCode = false, missing = null } = {}) {
+/** `{{previous.<path>}}` in a direct tool step's arguments, filled from the previous result; missing paths are recorded. */
+export function fillPrevious(value, previous, { missing = null, fromMcpParts = false } = {}) {
   if (typeof value === "string") {
     return value.replace(/\{\{previous\.([A-Za-z0-9_.-]+)\}\}/g, (_, path) => {
-      const found = atPath(previous, path)
+      const found = atPath(previous, path, { fromMcpParts })
       if (found === undefined || found === null) {
         if (Array.isArray(missing)) missing.push(path)
         return ""
       }
-      const rendered = typeof found === "string" ? found : JSON.stringify(found)
-      return escapeCode ? escapeCodeLiteral(rendered) : rendered
+      return typeof found === "string" ? found : JSON.stringify(found)
     })
   }
-  if (Array.isArray(value)) return value.map((item) => fillPrevious(item, previous, { escapeCode, missing }))
-  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, fillPrevious(inner, previous, { escapeCode, missing })]))
+  if (Array.isArray(value)) return value.map((item) => fillPrevious(item, previous, { missing, fromMcpParts }))
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, fillPrevious(inner, previous, { missing, fromMcpParts })]))
   return value
 }

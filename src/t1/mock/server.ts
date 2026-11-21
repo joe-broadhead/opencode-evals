@@ -105,15 +105,15 @@ const server = Bun.serve({
       const results = messages.filter(m => m.role === "tool")
       const step = script[results.length]
       if (!step) return textAnswer("steps done", signal)
-      const previous = previousValue(text(results[results.length - 1]?.content))
+      const rawPrev = results[results.length - 1]?.content
+      const previous = previousValue(text(rawPrev))
       const missing: string[] = []
       if (typeof step.code === "string") {
-        const code = fillPrevious(step.code, previous, { escapeCode: true, missing })
-        if (missing.length) return textAnswer(`bad step: missing ${missing.join(", ")}`, signal)
-        return toolCall("execute", JSON.stringify({ code }), signal)
+        if (/\{\{previous\./.test(step.code)) return textAnswer("bad step: {{previous.*}} only allowed in tool args", signal)
+        return toolCall("execute", JSON.stringify({ code: step.code }), signal)
       }
       if (typeof step.tool === "string") {
-        const args = fillPrevious(step.args ?? {}, previous, { missing })
+        const args = fillPrevious(step.args ?? {}, previous, { missing, fromMcpParts: Array.isArray(rawPrev) })
         if (missing.length) return textAnswer(`bad step: missing ${missing.join(", ")}`, signal)
         return toolCall(step.tool, JSON.stringify(args), signal)
       }
