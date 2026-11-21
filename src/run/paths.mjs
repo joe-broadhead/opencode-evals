@@ -2,12 +2,8 @@
 // plugin id or a world key is a single segment: letters, digits, dot, dash and underscore, starting with a letter or
 // digit, never `..`. Every path the runner writes or removes is checked to resolve inside the root it belongs to.
 
-import { lstatSync, readlinkSync, realpathSync } from "node:fs"
-import { dirname, basename, join, resolve, sep } from "node:path"
-
-/** The OS's own resolution. JS `realpathSync` collapses `..` after a link lexically, so a chain that looks inside a root
- * (`hop -> ../..`, then `x -> hop/../../..`) can be mistaken for one; the kernel, and `realpathSync.native`, follow it. */
-const realpath = (path) => realpathSync.native(path)
+import { lstatSync, readlinkSync } from "node:fs"
+import { dirname, join, resolve, sep, isAbsolute } from "node:path"
 
 const SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 
@@ -21,64 +17,48 @@ export function segment(kind, value) {
   return value
 }
 
-/** Does anything exist at `path`, a dangling link included? (`existsSync` follows links, so it says no to one.) */
-const present = (path) => {
-  try {
-    lstatSync(path)
-    return true
-  } catch {
-    return false
-  }
-}
-
 /** Never inside any root: what a link loop, or a chain too long to follow, resolves to. */
 const NOWHERE = "/\u0000unresolvable"
 
 /**
- * A path with every symlink in its longest existing prefix resolved: a link inside a root that points out of it, or a
- * root reached through a link, is compared by where it really is. A dangling link is followed to where it points, so
- * it counts as inside only when its target would be. The part that does not exist yet is appended as is.
+ * A path with every symlink resolved the way the kernel resolves it, component by component: a link's target is followed
+ * before the next component is applied, so a `..` after a link is evaluated where the link points, not lexically. This
+ * holds for a target that does not exist yet too: `hop -> ../..` then `x -> hop/../../../PLANTED` resolves outside the
+ * root even though `PLANTED` is missing. A link loop, or a chain too long to follow, resolves to NOWHERE.
  */
 export function real(path, depth = 0) {
   if (depth > 40) return NOWHERE
-  let head = resolve(path)
-  const tail = []
-  while (!present(head)) {
-    const parent = dirname(head)
-    if (parent === head) break
-    tail.unshift(basename(head))
-    head = parent
-  }
-  let resolved
-  try {
-    resolved = realpath(head)
-  } catch {
-    // It exists but does not resolve: a dangling link (or a loop). Follow the link itself, from where it sits.
-    let stat = null
-    try {
-      stat = lstatSync(head)
-    } catch {
-      // gone meanwhile
+  let current = sep
+  for (const part of (isAbsolute(path) ? String(path) : resolve(path)).split(sep)) {
+    if (part === "" || part === ".") continue
+    if (part === "..") {
+      current = dirname(current)
+      continue
     }
-    if (stat?.isSymbolicLink()) {
-      let target
-      try {
-        target = readlinkSync(head)
-      } catch {
-        return NOWHERE
-      }
-      const parent = (() => {
-        try {
-          return realpath(dirname(head))
-        } catch {
-          return dirname(head)
-        }
-      })()
-      resolved = real(resolve(parent, target), depth + 1)
-      if (resolved === NOWHERE) return NOWHERE
-    } else resolved = head
+    const next = join(current, part)
+    let stat
+    try {
+      stat = lstatSync(next)
+    } catch {
+      // Missing: nothing below it can exist, and no link can be crossed after this point.
+      current = next
+      continue
+    }
+    if (!stat.isSymbolicLink()) {
+      current = next
+      continue
+    }
+    let target
+    try {
+      target = readlinkSync(next)
+    } catch {
+      return NOWHERE
+    }
+    const resolved = real(target.startsWith(sep) ? target : `${current}${sep}${target}`, depth + 1)
+    if (resolved === NOWHERE) return NOWHERE
+    current = resolved
   }
-  return tail.length ? join(resolved, ...tail) : resolved
+  return current
 }
 
 /** Is `path` the root itself or under it, once both are resolved, symlinks included? */

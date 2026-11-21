@@ -6,7 +6,7 @@ import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { spawnSync } from "node:child_process"
 import { segment, inside, within, isSegment } from "../src/run/paths.mjs"
-import { stripForeignLinks } from "../src/run/sandbox.mjs"
+import { stripForeignLinks, makeSandbox, writeConfig } from "../src/run/sandbox.mjs"
 import { casesIn, pluginCases } from "../src/case/load.mjs"
 import { runBatch } from "../src/run/runner.mjs"
 
@@ -117,5 +117,30 @@ test("stripForeignLinks removes a link chain that only looks inside the sandbox 
   assert.equal(existsSync(join(cache, "hop")), true, "a link to the root itself is inside")
   assert.equal(existsSync(join(root, "home", ".inside")), true, "a link that resolves inside through another is kept")
   assert.equal(readFileSync(join(outside, "marker"), "utf8"), "untouched")
+  rmSync(base, { recursive: true, force: true })
+})
+
+test("a dangling link chain cannot aim a harness write outside the sandbox", () => {
+  const base = temp()
+  const sandbox = makeSandbox(join(base, "runs", "case.t1"))
+  const dir = join(sandbox.home, ".config", "opencode")
+  // `hop` is the home; the target then climbs three levels above it. `PLANTED` does not exist, which the old lexical
+  // resolution mistook for an inside path.
+  symlinkSync("../..", join(dir, "hop"))
+  symlinkSync("hop/../../../PLANTED", join(dir, "opencode.json"))
+  assert.equal(inside(sandbox.root, join(dir, "opencode.json")), false, "the chain resolves outside, a missing target included")
+  assert.deepEqual(stripForeignLinks(sandbox), ["home/.config/opencode/opencode.json"])
+  writeConfig(sandbox, { plugin: ["x"] })
+  assert.equal(existsSync(join(base, "PLANTED")), false, "nothing outside the root is created")
+  assert.equal(JSON.parse(readFileSync(join(dir, "opencode.json"), "utf8")).plugin[0], "x")
+
+  // A link at the destination itself is replaced by the write, never followed.
+  const outside = join(base, "outside")
+  mkdirSync(outside)
+  rmSync(join(dir, "opencode.json"))
+  symlinkSync(join(outside, "PLANTED"), join(dir, "opencode.json"))
+  writeConfig(sandbox, { plugin: ["y"] })
+  assert.equal(existsSync(join(outside, "PLANTED")), false, "the link's target is not created")
+  assert.equal(JSON.parse(readFileSync(join(dir, "opencode.json"), "utf8")).plugin[0], "y")
   rmSync(base, { recursive: true, force: true })
 })
