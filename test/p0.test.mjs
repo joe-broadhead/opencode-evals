@@ -8,7 +8,9 @@ import { spawnSync } from "node:child_process"
 import { existsSync, mkdtempSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
-import { PROBES, probeCaller } from "../src/p0/probes.mjs"
+import { PROBES, probeCaller, fullArm, soloArm, egressVerdict } from "../src/p0/probes.mjs"
+import { sealedConfig } from "../src/run/sandbox.mjs"
+import { readCompanions } from "../src/run/arm.mjs"
 import { scriptedRun } from "../src/p0/run.mjs"
 import { defaultDeps, STEPS } from "../src/phase1.mjs"
 import { ledgerFile } from "../src/cost/ledger.mjs"
@@ -34,6 +36,77 @@ const companions = process.env.EVALS_COMPANIONS && existsSync(process.env.EVALS_
 // run in the same pass they would see each other's. So they are opt-in (EVALS_P0_LIVE=1, or `evals p0`), and a pass that runs
 // them should run this file alone: `EVALS_P0_LIVE=1 node --test --test-concurrency=1 test/p0.test.mjs`.
 const optIn = process.env.EVALS_P0_LIVE ? null : "the live probes are opt-in (EVALS_P0_LIVE=1, or `node bin/evals p0`): they share the Docker host with the isolation tests"
+
+test("the arm's companions-map options reach its sealed config; explicit options win and companions keep theirs", () => {
+  const root = mkdtempSync(join(tmpdir(), "evals-p0-arm-"))
+  const build = join(root, "affinity")
+  mkdirSync(join(build, "dist"), { recursive: true })
+  writeFileSync(join(build, "package.json"), JSON.stringify({ name: "@demo/affinity", version: "0.0.1" }))
+  writeFileSync(join(build, "dist", "index.js"), "export default {}\n")
+  const companions = join(root, "companions.json")
+  writeFileSync(companions, JSON.stringify({ affinity: { package: build, options: { clientId: "dedicated-client-id", access: "all" } }, slack: { package: build, options: { access: "ask-changes" } } }))
+  try {
+    assert.deepEqual(fullArm(companions, { arm: "affinity" }).options, { clientId: "dedicated-client-id", access: "all" }, "the map's options are the arm's")
+    assert.deepEqual(fullArm(companions, { arm: "affinity", options: { access: "ask-changes" } }).options, { clientId: "dedicated-client-id", access: "ask-changes" }, "the probe's explicit option wins")
+    assert.deepEqual(soloArm(companions, "affinity", { access: "all" }).options, { clientId: "dedicated-client-id", access: "all" })
+    assert.deepEqual(sealedConfig({ armDir: build, options: fullArm(companions, { arm: "affinity" }).options, model: "mock/m1" }).plugins[0].options, { clientId: "dedicated-client-id", access: "all" }, "the sealed config carries them")
+    assert.deepEqual(readCompanions({ slack: { package: build, options: { access: "ask-changes" } } }, {}).map((entry) => entry.extra), [{ access: "ask-changes" }], "a companion's own options are kept")
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("p7 judges only the plugin's own pack hosts: companions and no-client-hello are info", () => {
+  const egress = {
+    refused: {
+      "mcp.slack.com": { count: 1, why: ["not-allowed"] },
+      "slack.com": { count: 2, why: ["no-client-hello"] },
+      "mcp.atlassian.com": { count: 1, why: ["not-allowed"] },
+      "api.githubcopilot.com": { count: 1, why: ["not-allowed"] },
+      "quiet.example": { count: 1, why: ["no-client-hello"] },
+    },
+  }
+  const verdict = egressVerdict({ id: "slack", egress })
+  assert.deepEqual(verdict.refused.map((entry) => entry.host), ["mcp.slack.com"], "only its own pack host, with its why")
+  assert.deepEqual(verdict.refused[0].why, ["not-allowed"])
+  assert.deepEqual(verdict.quiet.sort(), ["quiet.example", "slack.com"], "a silent tunnel is not a refusal, in or out of the pack")
+  assert.deepEqual(verdict.outside.map((entry) => entry.host).sort(), ["api.githubcopilot.com", "mcp.atlassian.com"], "a companion's hosts are recorded, not judged")
+  // A URL in the plugin's own read is an explicit host to judge.
+  const explicit = egressVerdict({ id: "slack", code: "return await tools.slack.x({ url: 'https://auth.slack.com/oauth' })", egress: { refused: { "auth.slack.com": { why: ["not-allowed"] } } } })
+  assert.deepEqual(explicit.refused.map((entry) => entry.host), ["auth.slack.com"])
+  assert.equal(explicit.outside.length, 0)
+})
+
+test("p7's check passes on a companion's refused host and a silent tunnel, and fails on its own pack's host", async () => {
+  const root = mkdtempSync(join(tmpdir(), "evals-p0-p7-egress-"))
+  const store = join(root, "store")
+  mkdirSync(store, { recursive: true })
+  writeFileSync(join(store, "targets.json"), "{}")
+  writeFileSync(join(store, "live-reads.json"), JSON.stringify({ slack: { code: "return 1" } }))
+  const build = join(root, "slack")
+  mkdirSync(join(build, "dist"), { recursive: true })
+  writeFileSync(join(build, "package.json"), JSON.stringify({ name: "@demo/slack", version: "0.0.1" }))
+  writeFileSync(join(build, "dist", "index.js"), "export default {}\n")
+  const companions = join(root, "companions.json")
+  writeFileSync(companions, JSON.stringify({ slack: build }))
+  const caller = { EVALS_PROFILE: "/profile" }
+  const result = (refused) => async () => ({
+    trials: { "tools-live-read-slack": { calls: [{ status: "completed", output: "ok" }], summary: { guard: { committed: 0, write_calls: 0, assert_committed: 0 } } } },
+    egress: { allowed: {}, refused },
+    cleanup: () => {},
+  })
+  try {
+    const info = await PROBES.p7({ store, companions, caller, tmp: root, scriptedRun: result({ "mcp.atlassian.com": { count: 1, why: ["not-allowed"] }, "slack.com": { count: 1, why: ["no-client-hello"] } }) })
+    assert.equal(info.ok, true, JSON.stringify(info.checks.filter((check) => !check.ok)))
+    assert.ok(info.checks.some((check) => /companion's host outside its pack/.test(check.name)), "a companion's host is info")
+    assert.ok(info.checks.some((check) => /closed before its ClientHello/.test(check.name)), "a silent tunnel is info")
+    const own = await PROBES.p7({ store, companions, caller, tmp: root, scriptedRun: result({ "mcp.slack.com": { count: 1, why: ["not-allowed"] } }) })
+    assert.equal(own.ok, false, "its own pack's refused host fails")
+    assert.ok(own.checks.some((check) => check.ok === false && /own pack/.test(check.name)))
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
 
 test("live, p7 and gws hand their batch the owner's store and caps", async () => {
   const root = mkdtempSync(join(tmpdir(), "evals-p0-probes-"))

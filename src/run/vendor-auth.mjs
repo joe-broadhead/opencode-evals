@@ -180,7 +180,7 @@ const infraAuth = (message) => Object.assign(new Error(message), { infra: "auth"
  * server name or URL, or registered nothing) leaves the trial unsigned while looking signed, and its failures would be
  * graded as the model's. The error carries `infra: "auth"`, which the runner records as an infrastructure failure.
  */
-export async function verifyVendorImport({ exec, cwd, env, list, plugins = {}, standalone = false, timeoutMs = 60_000 }) {
+export async function verifyVendorImport({ exec, cwd, env, list, plugins = {}, standalone = false, timeoutMs = 60_000, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
   const flags = standalone ? ["--standalone"] : []
   const listed = await exec(["auth", "list", "--format", "json", ...flags], { cwd, env, timeoutMs })
   if (listed?.error) throw infraAuth(`--auth +profile: \`opencode auth list\` in the trial failed: ${listed.error}`)
@@ -208,6 +208,39 @@ export async function verifyVendorImport({ exec, cwd, env, list, plugins = {}, s
     const active = rows.find((row) => row?.id === credential.id && row.active === true)
     if (answer?.code !== 0 || !active) throw infraAuth(`--auth +profile: the trial's host does not hold ${plugin}'s imported credential (${credential.integrationID}) as active`)
   }
+  // An integration row is not a server: the host lists an MCP integration even when the plugin never registered its
+  // server (or registered it without the credential's OAuth client), and then the trial's tools are missing. Require
+  // the server for every imported mcp_ credential to be listed as connected.
+  const mcp = list.filter((credential) => credential.integrationID.startsWith("mcp_"))
+  if (!mcp.length) return
+  const names = [...new Set(mcp.map((credential) => plugins[credential.integrationID] ?? credential.integrationID))]
+  let rows = []
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const answer = await exec(["mcp", "list", ...flags], { cwd, env, timeoutMs })
+    if (answer?.error) throw infraAuth(`--auth +profile: \`opencode mcp list\` in the trial failed: ${answer.error}`)
+    if (answer?.code !== 0) throw infraAuth(`--auth +profile: \`opencode mcp list\` in the trial failed (exit ${answer?.code ?? "?"})`)
+    rows = mcpRows(answer.stdout)
+    const statuses = names.map((name) => rows.find((row) => row.name === name)?.status ?? "")
+    if (statuses.every((status) => /^connected$/i.test(status))) return
+    if (statuses.some((status) => /failed|needs authentication|disabled/i.test(status))) break
+    if (attempt < 5) await wait(500)
+  }
+  for (const name of names) {
+    const row = rows.find((entry) => entry.name === name)
+    if (!row) throw infraAuth(`--auth +profile: the trial's host registers no MCP server "${name}" for its imported credential; the plugin's server name or URL differs from the evals profile's build, or it registered no server`)
+    if (!/^connected$/i.test(row.status)) throw infraAuth(`--auth +profile: the trial's host has MCP server "${name}" ${row.status}, not connected: the imported credential is not usable`)
+  }
+}
+
+/** `opencode mcp list` lines: an icon, the server name, two spaces, the status (`connected`, `needs authentication`,
+ *  `failed: …`, `pending`, `disabled`). */
+export function mcpRows(stdout) {
+  return String(stdout ?? "")
+    .replace(/\x1b\[[0-9;]*m/g, "")
+    .split("\n")
+    .map((line) => /^\S\s+(\S+)\s{2,}(.+)$/.exec(line.trim()))
+    .filter(Boolean)
+    .map((match) => ({ name: match[1], status: match[2].trim() }))
 }
 
 /** Exports the evals profile with its own environment, per target: one `auth export <target>` each, so a batch never

@@ -7,7 +7,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSyn
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { Buffer } from "node:buffer"
-import { allowListed, vendorCredentials, exportTargets, exportTargetsFor, verifyVendorImport, secretsOf, REFRESH_PLACEHOLDER, profileEnv } from "../src/run/vendor-auth.mjs"
+import { allowListed, vendorCredentials, exportTargets, exportTargetsFor, verifyVendorImport, mcpRows, secretsOf, REFRESH_PLACEHOLDER, profileEnv } from "../src/run/vendor-auth.mjs"
 import { redactor, expand, registerSecrets, scrub } from "../src/run/secrets.mjs"
 import { fillPrompt, gateCases, seedFiles, seedDir, placeholdersIn, loadDataMatrix, seedRefusal } from "../src/run/gate.mjs"
 import { dataOf } from "../src/case/schema.mjs"
@@ -113,10 +113,11 @@ test("the profile is exported per needed vendor, through auth export <target> on
   assert.deepEqual(slack.list.find((c) => c.integrationID === "slack-app").value, { type: "key", key: "synthetic-slack-client-id" })
 })
 
-test("after the import, the trial's host must register each integration and hold the credential active", async () => {
+test("after the import, the trial's host must register each integration, hold it active, and have its MCP server connected", async () => {
   const imported = { id: "cred_imported000000000000", integrationID: SLACK_ID, label: "evals", active: true, value: { type: "oauth" } }
   const listed = JSON.stringify([{ id: SLACK_ID, name: "Slack", connections: [{ type: "credential", id: imported.id, label: "evals", method: "oauth" }] }])
-  const exec = (list, rows) => async (args) => {
+  const exec = (list, rows, mcp = "✓ slack  connected") => async (args) => {
+    if (args[0] === "mcp" && args[1] === "list") return { code: 0, stdout: mcp, stderr: "" }
     assert.equal(args[0], "auth")
     if (args[1] === "list") return { code: 0, stdout: list, stderr: "" }
     if (args[1] === "export") return { code: 0, stdout: rows, stderr: "" }
@@ -134,6 +135,29 @@ test("after the import, the trial's host must register each integration and hold
   }
   await assert.rejects(verifyVendorImport({ exec: exec(listed, JSON.stringify([{ ...imported, active: false }])), cwd: "/home", env: {}, list: [imported], plugins: { [SLACK_ID]: "slack" } }), /does not hold slack's imported credential .* as active/)
   await assert.rejects(verifyVendorImport({ exec: async () => ({ code: 1, stdout: "", stderr: "Integration not found: slack" }), cwd: "/home", env: {}, list: [imported] }), /auth list.*failed \(exit 1\)/)
+  // An integration row is not a server: a registered integration whose MCP server is missing, or not connected, fails.
+  await assert.rejects(verifyVendorImport({ exec: exec(listed, JSON.stringify([imported]), "No MCP servers configured"), cwd: "/home", env: {}, list: [imported], plugins: { [SLACK_ID]: "slack" }, wait: async () => {} }), /registers no MCP server "slack"/)
+  await assert.rejects(verifyVendorImport({ exec: exec(listed, JSON.stringify([imported]), "⚠ slack  needs authentication"), cwd: "/home", env: {}, list: [imported], plugins: { [SLACK_ID]: "slack" } }), /MCP server "slack" needs authentication, not connected/)
+  // A pending server is retried; once connected, it passes.
+  let polls = 0
+  const pending = async (args) => {
+    if (args[0] === "mcp") {
+      polls++
+      return { code: 0, stdout: polls === 1 ? "○ slack  pending" : "✓ slack  connected", stderr: "" }
+    }
+    return exec(listed, JSON.stringify([imported]))(args)
+  }
+  await verifyVendorImport({ exec: pending, cwd: "/home", env: {}, list: [imported], plugins: { [SLACK_ID]: "slack" }, wait: async () => {} })
+  assert.equal(polls, 2)
+  // A key credential (gws-default) is not an MCP server, so mcp list is not asked for it.
+  const gws = { id: "cred_gws00000000000000000", integrationID: "gws-default", label: "evals", active: true, value: { type: "key", key: "gws" } }
+  const gwsList = JSON.stringify([{ id: "gws-default", name: "default", connections: [{ type: "credential", id: gws.id, label: "evals", method: "key" }] }])
+  await verifyVendorImport({ exec: async (args) => { if (args[0] === "mcp") throw new Error("mcp list asked for a key credential"); return exec(gwsList, JSON.stringify([gws]))(args) }, cwd: "/home", env: {}, list: [gws], plugins: { "gws-default": "gws" } })
+})
+
+test("mcp list output parses into server names and statuses", () => {
+  assert.deepEqual(mcpRows("✓ affinity  connected\n⚠ slack  needs authentication\n✗ jira  failed: boom\n○ x  pending"), [{ name: "affinity", status: "connected" }, { name: "slack", status: "needs authentication" }, { name: "jira", status: "failed: boom" }, { name: "x", status: "pending" }])
+  assert.deepEqual(mcpRows("No MCP servers configured"), [])
 })
 
 test("an auth-verification failure is infra in the summary, and grading never counts it as the model's", () => {
