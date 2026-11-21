@@ -151,6 +151,11 @@ tool, whose prompt is `<<TODO>>` (compile refuses it) so it is written without s
     `--auth +profile` batch does not ask the profile for their credential. It changes nothing about grading (`accounts`, the `-NA01` item), gating, egress or the reach floor,
     which keep their master meaning. Tavily is **not** marked: it is an accounted plugin whose key is the profile's `tavily` credential (or `TAVILY_API_KEY` in the plugin's
     environment), so a `+profile` batch still asks the profile for it and fails closed if it is absent rather than silently skipping it.
+  - **Inference is `profile: false` on purpose, and must stay so until a release asks before it sends.** Its `decide` and `extract` use a key of their own (`inference-openrouter`),
+    but `opencode-inference` 0.0.7 asserts no permission for them: its dispatcher never asks for the tool's own action, and a `kind: text` source needs no file read, so at
+    `ask-changes` a call that holds a key is not asked and goes out (`packs/inference/plugin-rules.json` still lists both under `asked`: that sidecar records what the host's rules answer when the probe plugin asks for each action, and the tool's own dispatch never asks; do not "fix" either file to match the other) (the live write probe found it on 21 Nov 2026: one real Decisions call, a HALT). The evals profile therefore holds
+    no `inference-openrouter` key. Without one, `decide` and `extract` fail at sign-in before anything is sent, `status`, `capabilities` and `plan` (local) are graded as usual, and a
+    case that needs the call to be declined cannot pass yet. `live-writes.json` leaves Inference out for the same reason.
 - **Slack, X and Google use the apps already configured**: no second Slack app, no second X app, no separate Google client. They are not owner prerequisites; `check-real`
   still runs right after each of their sign-ins, and it is the check that says whether the shared app broke the normal profile.
 - **The owner's sign-in walk: `~/evals-232/bin/signin.sh`** (installed by `scripts/profile/install.sh`; the scripts and their safety rules are in
