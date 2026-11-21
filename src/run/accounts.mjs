@@ -56,7 +56,7 @@ export const noCredentialPlugins = (options) => new Set([...noAccountPlugins(opt
  * its `decide`/`extract` use their own `inference-openrouter` key: opencode-inference 0.0.7 asserts no permission for them (the
  * dispatcher never asks for the tool's own action, and a `kind: text` source needs no file read), so at `ask-changes` a call that
  * holds a key is not asked and spends (the live write probe, 21 Nov 2026: one real Decisions call, a HALT). Keyless, the call fails at
- * sign-in before anything is sent. Take the marker off only for a release that asks first.
+ * sign-in before anything is sent. (`plugin-rules.json` lists both tools as `asked` because its probe plugin asks the host for each action; the tool's own dispatch never does.) Take the marker off only for a release that asks first.
  */
 export const noProfilePlugins = (options = {}) => new Set([...noCredentialPlugins(options), ...pluginsMarked(options)])
 
