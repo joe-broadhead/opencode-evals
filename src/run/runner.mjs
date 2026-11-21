@@ -247,6 +247,7 @@ async function preflightRoute(p) {
     }
     await p.auth.apply({ sandbox, env, exec })
     server = await startServer({ binary: p.binary, cwd: sandbox.project, env, password, trial })
+    await p.auth.verify?.({ sandbox, env, exec, url: server.url })
     return await modelRoutes({ trial, binary: p.binary, url: server.url, env, cwd: sandbox.project, model: p.model, timeoutMs: p.routeTimeoutMs })
   } finally {
     await stop(server?.proc)
@@ -546,6 +547,10 @@ async function runJobBody(job, ctx, track) {
     track.phase = "starting the host's server and running the model"
     try {
       server = await startServer({ binary: ctx.binary, cwd, env, password, trial })
+      track.phase = "verifying the vendor sign-in"
+      // On this server, not a fresh standalone one: MCP connections start asynchronously, and only a persistent
+      // server settles them (a bad token is `needs authentication`, not a tool-less trial).
+      await ctx.auth.verify?.({ sandbox, env, exec, url: server.url })
       // A provider can fill its model list after the server answers (the Claude Agent provider probes `claude` first):
       // the run is sent only once its model routes on this server, and a model that never does is the provider's
       // failure, not the model's.
@@ -588,6 +593,9 @@ async function runJobBody(job, ctx, track) {
         }
       }
     } catch (error) {
+      // A sign-in that cannot be verified is an infrastructure auth failure, not a trial result: rethrow it so the
+      // trial's summary names `infra: "auth"` (the finally block still stops the server).
+      if (error?.infra === "auth") throw error
       result = { code: null, stdout: "", stderr: String(error.message ?? error), timedOut: false, error: String(error.message ?? error) }
     } finally {
       // What the host printed while it ran (a plugin that failed to load says so here), kept for the summary, scrubbed there.

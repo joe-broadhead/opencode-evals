@@ -180,7 +180,7 @@ const infraAuth = (message) => Object.assign(new Error(message), { infra: "auth"
  * server name or URL, or registered nothing) leaves the trial unsigned while looking signed, and its failures would be
  * graded as the model's. The error carries `infra: "auth"`, which the runner records as an infrastructure failure.
  */
-export async function verifyVendorImport({ exec, cwd, env, list, plugins = {}, standalone = false, timeoutMs = 60_000 }) {
+export async function verifyVendorImport({ exec, cwd, env, list, plugins = {}, standalone = false, timeoutMs = 60_000, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
   const flags = standalone ? ["--standalone"] : []
   const listed = await exec(["auth", "list", "--format", "json", ...flags], { cwd, env, timeoutMs })
   if (listed?.error) throw infraAuth(`--auth +profile: \`opencode auth list\` in the trial failed: ${listed.error}`)
@@ -208,6 +208,49 @@ export async function verifyVendorImport({ exec, cwd, env, list, plugins = {}, s
     const active = rows.find((row) => row?.id === credential.id && row.active === true)
     if (answer?.code !== 0 || !active) throw infraAuth(`--auth +profile: the trial's host does not hold ${plugin}'s imported credential (${credential.integrationID}) as active`)
   }
+}
+
+/**
+ * On the trial's own server, after it starts and before the first prompt: every imported `mcp_` credential's server must
+ * settle as connected. A fresh `--standalone` server per call cannot answer this (2.3.2 starts MCP connections
+ * asynchronously as `pending`; `mcp.list` returns the current statuses without waiting), so this polls ONE server,
+ * `--server <url>`, as the client does. `pending` is retried until `deadlineMs` (2.3.2's 2 s startup grace plus its
+ * 30 s MCP startup timeout, with margin); `needs authentication`, `failed` and `disabled` fail at once. Every failure is
+ * an infrastructure auth failure, naming the plugin.
+ */
+export async function verifyVendorServers({ exec, cwd, env, url, list, plugins = {}, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = Date.now, deadlineMs = 32_000, timeoutMs = 60_000 }) {
+  const mcp = list.filter((credential) => credential.integrationID.startsWith("mcp_"))
+  if (!mcp.length) return
+  const names = [...new Set(mcp.map((credential) => plugins[credential.integrationID] ?? credential.integrationID))]
+  const deadline = now() + deadlineMs
+  let rows = []
+  for (;;) {
+    const answer = await exec(["mcp", "list", "--server", url], { cwd, env, timeoutMs })
+    if (answer?.error) throw infraAuth(`--auth +profile: \`opencode mcp list --server\` in the trial failed: ${answer.error}`)
+    if (answer?.code !== 0) throw infraAuth(`--auth +profile: \`opencode mcp list --server\` in the trial failed (exit ${answer?.code ?? "?"})`)
+    rows = mcpRows(answer.stdout)
+    const statuses = names.map((name) => rows.find((row) => row.name === name)?.status ?? "")
+    if (statuses.every((status) => /^connected$/i.test(status))) return
+    const hard = statuses.find((status) => /failed|needs authentication|disabled/i.test(status))
+    if (hard) throw infraAuth(`--auth +profile: the trial's host has MCP server "${names[statuses.indexOf(hard)]}" ${hard}, not connected: the imported credential is not usable`)
+    if (now() >= deadline) {
+      const pending = names.filter((name, index) => !/^connected$/i.test(statuses[index]))
+      const why = names.map((name, index) => `${name} ${statuses[index] || "not listed"}`).join(", ")
+      throw infraAuth(`--auth +profile: the trial's host did not connect its MCP server(s) within ${Math.round(deadlineMs / 1000)} s (${why}): the imported credential is not usable`)
+    }
+    await wait(500)
+  }
+}
+
+/** `opencode mcp list` lines: an icon, the server name, two spaces, the status (`connected`, `needs authentication`,
+ *  `failed: …`, `pending`, `disabled`). */
+export function mcpRows(stdout) {
+  return String(stdout ?? "")
+    .replace(/\x1b\[[0-9;]*m/g, "")
+    .split("\n")
+    .map((line) => /^\S\s+(\S+)\s{2,}(.+)$/.exec(line.trim()))
+    .filter(Boolean)
+    .map((match) => ({ name: match[1], status: match[2].trim() }))
 }
 
 /** Exports the evals profile with its own environment, per target: one `auth export <target>` each, so a batch never

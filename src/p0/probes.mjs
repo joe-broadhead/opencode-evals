@@ -14,6 +14,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
 import { scriptedRun, mock, execute, textOf, executeValue, refused, refusedInCode, completedCalls, hungReason, infraReason, takeHung, takeNotes, declinedIn } from "./run.mjs"
 import { writeActions, loadPacks, namespacePatterns } from "../run/lockdown.mjs"
+import { fillHost } from "../run/egress.mjs"
 import { decideBefore, planIdOf } from "../run/guard/logic.mjs"
 
 /** A case id: lower-case words joined by dashes. */
@@ -34,7 +35,10 @@ export function fullArm(companions, { arm = "slack", options = {}, guard = true 
   const entry = map[arm]
   const dir = typeof entry === "string" ? entry : entry?.package
   if (!dir) throw new Error(`${companions} has no build for ${arm}`)
-  return { package: dir, options, companions, guard }
+  // The map entry's own options (the walk's dedicated OAuth client for affinity, a sign-in's client id) are the arm's;
+  // the probe's explicit options (an access mode) win over them.
+  const fromMap = typeof entry === "object" && entry ? entry.options ?? {} : {}
+  return { package: dir, options: { ...fromMap, ...options }, companions, guard }
 }
 
 // ------------------------------------------------------------------------------------------------------------------ a1
@@ -937,10 +941,49 @@ export async function live(env = {}) {
   return done("live", checks.length ? checks : [ok("live-writes.json names the plugin asked for", false, `${file}${env.only ? `: no entry ${env.only}` : ""}`)])
 }
 
+/** The hosts judged for a plugin's own read: its pack's `egress` entries (aliases filled from targets.json), plus any
+ * explicit URL host in the code it runs. */
+function judgedHosts(packs, id, targets, code = "") {
+  const pack = packs.find((entry) => entry.id === id)
+  const hosts = new Set((pack?.egress ?? []).map((entry) => fillHost(entry, targets)).filter(Boolean))
+  for (const match of String(code).matchAll(/https?:\/\/([^/"'\s`]+)/g)) {
+    const host = match[1].replace(/^[^@]*@/, "").split(/[/:]/)[0].toLowerCase()
+    if (host) hosts.add(host)
+  }
+  return hosts
+}
+
+/**
+ * p7's rule: a `not-allowed` on the plugin-under-test's own pack (or a URL its read names) is the missing-egress
+ * failure. A refused host that belongs to a companion's pack is recorded, not judged; one that belongs to no pack at
+ * all is exactly p7's discovery case ("not in any pack: the plugin's missing egress?"). `no-client-hello` alone is not
+ * a refusal: the proxy allowed the CONNECT, and the client closed before saying anything. A host-less refusal
+ * (`too-many-tunnels`, `slow-request`) is recorded as info.
+ */
+export function egressVerdict({ id, packs = loadPacks(), companionIds = [], targets = null, egress = {}, code = "" }) {
+  const judged = judgedHosts(packs, id, targets, code)
+  const companion = new Set(companionIds.flatMap((companionId) => [...judgedHosts(packs, companionId, targets)]))
+  const refused = []
+  const quiet = []
+  const outside = []
+  const unknown = []
+  const hostless = []
+  for (const [host, info] of Object.entries(egress.refused ?? {})) {
+    const why = Array.isArray(info?.why) ? info.why : info?.why ? [info.why] : []
+    if (!host) hostless.push({ why })
+    else if (why.length && why.every((entry) => entry === "no-client-hello")) quiet.push(host)
+    else if (judged.has(host)) refused.push({ host, why })
+    else if (companion.has(host)) outside.push({ host, why })
+    else unknown.push({ host, why })
+  }
+  return { judged: [...judged].sort(), refused, quiet: quiet.sort(), outside, unknown, hostless }
+}
+
 /**
  * P0-7, the real host list: one scripted READ per plugin with the evals profile's credentials (`live-reads.json`, the same shape as
- * live-writes.json, read tools only), the batch's egress log recorded. Hosts the proxy refused are the plugin's missing `egress`; hosts it
- * allowed are the list. Writes `$EVALS_STORE/egress-hosts.json`. X and OpenRouter reads cost money at the worst-case constants: one read each.
+ * live-writes.json, read tools only), the batch's egress log recorded. Only the plugin's own pack hosts (and any URL its read names) are
+ * judged: a `not-allowed` there is the plugin's missing `egress`. A companion's hosts, and a tunnel closed before its ClientHello, are
+ * recorded as info. Writes `$EVALS_STORE/egress-hosts.json`. X and OpenRouter reads cost money at the worst-case constants: one read each.
  */
 export async function p7(env = {}) {
   const { existsSync: exists, readFileSync: read, writeFileSync: write } = await import("node:fs")
@@ -950,6 +993,7 @@ export async function p7(env = {}) {
   if (!profile || !exists(file)) return done("p7", [ok("a signed-in evals profile (EVALS_PROFILE) and live-reads.json in the store", false, `${profile ? "" : "EVALS_PROFILE is not set; "}${exists(file) ? "" : `${file} does not exist`}`)])
   const spec = JSON.parse(read(file, "utf8"))
   const targets = loadTargets({ EVALS_STORE: env.store })
+  const companions = env.companions ? JSON.parse(read(env.companions, "utf8")) : {}
   const checks = []
   const hosts = {}
   for (const [id, entry] of Object.entries(spec)) {
@@ -964,10 +1008,14 @@ export async function p7(env = {}) {
     const run = await batchRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-p7-${slug(id)}`, auth: "none+profile" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
     try {
       const call = run.trials[name].calls[0]
-      const egress = run.egress ?? {}
-      hosts[id] = { allowed: Object.keys(egress.allowed ?? {}).sort(), refused: Object.keys(egress.refused ?? {}).sort() }
+      const verdict = egressVerdict({ id, packs: loadPacks(), companionIds: Object.keys(companions).filter((key) => key !== id), targets, egress: run.egress ?? {}, code: resolved.code })
+      hosts[id] = { allowed: Object.keys(run.egress?.allowed ?? {}).sort(), refused: verdict.refused.map((entry) => entry.host), unknown: verdict.unknown.map((entry) => entry.host), quiet: verdict.quiet, outside: verdict.outside.map((entry) => entry.host), hostless: verdict.hostless }
       checks.push(ok(`${id}: the read completed`, call && call.status !== "error" && !/Permission denied|declined|cannot ask|Unknown tool|No tool named|Error/i.test(textOf(call)), textOf(call).slice(0, 120).replace(/\s+/g, " ")))
-      checks.push(ok(`${id}: no host was refused (its pack's egress list is complete)`, hosts[id].refused.length === 0, `allowed ${hosts[id].allowed.join(", ") || "none"}; refused ${hosts[id].refused.join(", ") || "none"}`))
+      checks.push(ok(`${id}: no host of its own pack was refused (its egress list is complete)`, verdict.refused.length === 0, `pack ${verdict.judged.join(", ") || "none"}; refused ${verdict.refused.map((entry) => `${entry.host} (${entry.why.join(", ")})`).join(", ") || "none"}`))
+      checks.push(ok(`${id}: no refused host is missing from every pack (a companion's is excused)`, verdict.unknown.length === 0, verdict.unknown.length ? `not in any pack: the plugin's missing egress? ${verdict.unknown.map((entry) => `${entry.host}${entry.why.length ? ` (${entry.why.join(", ")})` : ""}`).join(", ")}` : "none"))
+      if (verdict.quiet.length) checks.push(ok(`${id}: a tunnel closed before its ClientHello is not a refusal`, true, verdict.quiet.join(", ")))
+      if (verdict.outside.length) checks.push(ok(`${id}: a companion's pack host is recorded, not judged`, true, verdict.outside.map((entry) => `${entry.host}${entry.why.length ? ` (${entry.why.join(", ")})` : ""}`).join(", ")))
+      if (verdict.hostless.length) checks.push(ok(`${id}: a host-less refusal is recorded`, true, verdict.hostless.map((entry) => entry.why.join(", ") || "unknown").join("; ")))
       checks.push(ok(`${id}: the guard saw no write`, (run.trials[name].summary?.guard?.committed ?? 0) === 0 && (run.trials[name].summary?.guard?.write_calls ?? 0) === 0, JSON.stringify(run.trials[name].summary?.guard)))
     } finally {
       run.cleanup()
