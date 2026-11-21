@@ -453,10 +453,15 @@ test("offline: a copyTo asset is copied into the sandbox home writable with its 
     chmodSync(join(cache, "opencode-x", "bin"), 0o755)
     writeFileSync(join(cache, "opencode-x", "data"), "x")
     chmodSync(join(cache, "opencode-x", "data"), 0o644)
+    const second = join(f.root, "second-cache")
+    mkdirSync(second)
+    writeFileSync(join(second, "other.bin"), "yy")
     const mounted = join(f.root, "models")
     mkdirSync(mounted)
     writeFileSync(join(mounted, "m.bin"), "x")
-    const assets = parseAssets([{ name: "native-cache", host: cache, copyTo: ".cache", env: { CACHE_DIR: "" } }, { name: "models", host: mounted }])
+    // Content already in the home's .cache is kept: the copy replaces the asset's own entries only.
+    writeFileSync(join(f.sandbox.home, ".cache", "keep.txt"), "kept")
+    const assets = parseAssets([{ name: "native-cache", host: cache, copyTo: ".cache", env: { CACHE_DIR: "" } }, { name: "second-cache", host: second, copyTo: ".state" }, { name: "models", host: mounted }])
     const backend = containerBackend({ ...containerConfig({ env: {} }), docker: f.docker.file, watchMs: 3_600_000, assets })
     await backend.prepare({ batchRoot: f.batchRoot, caller: f.caller, binaries: { opencode: f.opencode } })
     const trial = await backend.enter({ name: "case.t1", sandbox: f.sandbox, mounts: [{ host: f.arm, ro: true }], cwd: f.sandbox.project })
@@ -466,6 +471,8 @@ test("offline: a copyTo asset is copied into the sandbox home writable with its 
     assert.equal(statSync(join(f.sandbox.home, ".cache", "opencode-x", "data")).mode & 0o777, 0o644, "a plain file keeps its mode")
     writeFileSync(join(f.sandbox.home, ".cache", "opencode-x", "written"), "ok")
     assert.equal(readFileSync(join(f.sandbox.home, ".cache", "opencode-x", "written"), "utf8"), "ok", "the copy is writable")
+    assert.equal(readFileSync(join(f.sandbox.home, ".cache", "keep.txt"), "utf8"), "kept", "content already in .cache is kept")
+    assert.equal(readFileSync(join(f.sandbox.home, ".state", "other.bin"), "utf8"), "yy", "a second copyTo asset lands at its own path")
     assert.equal(trial.wrap({ command: "true" }).env.CACHE_DIR, join(f.sandbox.home, ".cache"), "a copyTo asset's env names its copied path")
     const copy = backend.describe().asset_copies.find((c) => c.name === "native-cache")
     assert.equal(copy.trial, "case.t1")
@@ -473,8 +480,9 @@ test("offline: a copyTo asset is copied into the sandbox home writable with its 
     assert.equal(copy.bytes, 11, "both files counted")
     assert.match(copy.digest, /^[0-9a-f]{64}$/)
     assert.deepEqual(copy.files, [".cache/opencode-x/bin", ".cache/opencode-x/data"])
+    assert.deepEqual(backend.describe().asset_copies.map((c) => [c.name, c.copyTo]).sort(), [["native-cache", ".cache"], ["second-cache", ".state"]])
     const run = f.docker.calls().find((c) => c.args[0] === "run" && c.args.includes(trial.ref)).args
-    assert.equal(run.some((arg) => arg.includes(`src=${cache}`)), false, "a copyTo asset is not mounted")
+    assert.equal(run.some((arg) => arg.includes(`src=${cache}`) || arg.includes(`src=${second}`)), false, "a copyTo asset is not mounted")
     assert.ok(run.includes(`type=bind,src=${mounted},dst=/opt/evals/assets/models,readonly`), "an asset without copyTo is still a read-only mount")
     await trial.leave()
     await backend.teardown()
@@ -527,12 +535,15 @@ test("offline: a copyTo asset replaces links in the sandbox home and never write
       assert.equal(readFileSync(join(outside, "marker"), "utf8"), "untouched")
     }
 
-    // A: a directory link planted where the asset's own directory goes is replaced by the copy, never followed.
+    // A: a directory link planted where the asset's own directory goes is replaced by the copy, never followed, and
+    // the rest of the destination is kept.
     const a = newHome("home-a")
+    writeFileSync(join(a, ".cache", "keep.txt"), "kept")
     symlinkSync(outside, join(a, ".cache", "opencode-x"))
     copyAsset(asset, { home: a })
     assert.equal(lstatSync(join(a, ".cache", "opencode-x")).isSymbolicLink(), false, "the planted link is gone")
     assert.equal(readFileSync(join(a, ".cache", "opencode-x", "bin"), "utf8"), "#!/bin/sh\n", "the copy is a real directory")
+    assert.equal(readFileSync(join(a, ".cache", "keep.txt"), "utf8"), "kept", "the destination's other entries are kept")
     nothingOutside()
 
     // A chain that looks inside lexically (`hop -> ../..`, `opencode-x -> hop/../../..`) is replaced with the whole

@@ -99,13 +99,14 @@ default an asset is mounted read-only at `/opt/evals/assets/<name>`, and `env` m
 (`""` for the asset itself). An asset with `copyTo` (a path relative to the sandbox home: letters, digits, dot, dash and
 underscore segments, no `..`, not absolute) is instead **copied** into `<sandbox home>/<copyTo>` before the container
 starts: file modes are kept (masked to `0o777`), symlinks anywhere in the source are refused, every existing component
-of the destination must be a real directory, and the copy is made in a temporary directory inside the home and renamed
-onto the destination, so a link planted in the home is replaced rather than followed and the copy cannot leave the
-sandbox. A missing or unreadable source fails the trial. `copyTo` may not target `.config/opencode`,
-`.local/share/opencode` or `.claude`, and will not overwrite an existing file. That is for caches a plugin makes private
-with `chmod` (gws's `discovery`, utilities' weather cache, voice's engine cache), which a read-only mount would break.
-`evals isolation assets` checks each source by the copy's own rules (readable, no symlink, FIFO or device); `p0 g8`
-checks mounted assets are read-only in the trial and copied ones are writable and not mounted.
+of the destination must be a real directory, and the copy is made in a temporary directory inside the home and each of
+its top-level entries is renamed into the destination. An entry already there with the same name is replaced (a link is
+unlinked, never followed); everything else already in the destination is kept. A missing or unreadable source fails the
+trial. `copyTo` may not target `.config/opencode`, `.local/share/opencode` or `.claude`, will not overwrite an existing
+file where the destination goes, and no two assets may share a `copyTo` or have one inside another. That is for caches
+a plugin makes private with `chmod` (gws's `discovery`, utilities' weather cache, voice's engine cache), which a
+read-only mount would break. `evals isolation assets` checks each source by the copy's own rules (readable, no symlink,
+FIFO or device); `p0 g8` checks mounted assets are read-only in the trial and copied ones are writable and not mounted.
 
 ## Packs
 

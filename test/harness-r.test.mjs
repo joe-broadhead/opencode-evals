@@ -638,6 +638,11 @@ test("assets the owner mounts into every trial are validated, found on the host,
     assert.equal(parseAssets([{ name: "cache", host: join(dir, "speech"), copyTo: "a/b-c_d" }])[0].copyTo, "a/b-c_d")
     const refused = ["..", "../x", "a/../b", "/abs", "a\\b", "", ".", "a//b", "a b", "a$b", "a`b", ".config/opencode", ".config/opencode/x", ".config", ".local/share/opencode", ".claude", ".claude/settings.json"]
     for (const copyTo of refused) assert.throws(() => parseAssets([{ name: "a", host: "/x", copyTo }]), /copyTo/, JSON.stringify(copyTo))
+    // Two assets may not share a destination, or nest one inside the other; siblings are fine.
+    assert.throws(() => parseAssets([{ name: "a", host: "/x", copyTo: ".cache" }, { name: "b", host: "/y", copyTo: ".cache" }]), /overlaps another asset/)
+    assert.throws(() => parseAssets([{ name: "a", host: "/x", copyTo: ".cache" }, { name: "b", host: "/y", copyTo: ".cache/x" }]), /overlaps another asset/)
+    assert.throws(() => parseAssets([{ name: "a", host: "/x", copyTo: ".cache/x" }, { name: "b", host: "/y", copyTo: ".cache" }]), /overlaps another asset/)
+    assert.deepEqual(parseAssets([{ name: "a", host: "/x", copyTo: ".cache" }, { name: "b", host: "/y", copyTo: ".cache2" }, { name: "c", host: "/z", copyTo: "a/b" }]).map((a) => a.copyTo), [".cache", ".cache2", "a/b"])
     assert.equal("copyTo" in parseAssets([{ name: "a", host: "/x" }])[0], false)
     // The copyTo source must be readable (the trial copies it, where a mounted asset is checked in the trial by g8).
     const unreadable = join(dir, "speech", "model.bin")

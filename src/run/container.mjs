@@ -99,6 +99,7 @@ export const ASSETS_DIR = "/opt/evals/assets"
 export function parseAssets(list) {
   if (list === undefined || list === null) return []
   if (!Array.isArray(list)) throw new Error("caps.json container.assets must be a list of { name, host, env?, copyTo? }")
+  const copyPaths = []
   return list.map((a, i) => {
     if (!a || typeof a.name !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(a.name)) throw new Error(`caps.json container.assets[${i}].name must be lower-case words joined by dashes`)
     if (typeof a.host !== "string" || !isAbsolute(a.host)) throw new Error(`caps.json container.assets[${i}].host must be an absolute path`)
@@ -111,6 +112,10 @@ export function parseAssets(list) {
       if (!safe) throw new Error(`caps.json container.assets[${i}].copyTo must be a path relative to the sandbox home: letters, digits, dot, dash and underscore segments, no "..", no absolute path and no backslash`)
       const reserved = [".config/opencode", ".local/share/opencode", ".claude"].find((r) => r === copyTo || r.startsWith(`${copyTo}/`) || copyTo.startsWith(`${r}/`))
       if (reserved) throw new Error(`caps.json container.assets[${i}].copyTo ${JSON.stringify(copyTo)} would write inside ${reserved}, which the harness owns`)
+      // Two assets into the same place (or one inside the other) would overwrite each other's entries.
+      const overlap = copyPaths.find((p) => p === copyTo || p.startsWith(`${copyTo}/`) || copyTo.startsWith(`${p}/`))
+      if (overlap) throw new Error(`caps.json container.assets[${i}].copyTo ${JSON.stringify(copyTo)} overlaps another asset's ${JSON.stringify(overlap)}: two assets may not copy to the same place or one inside the other`)
+      copyPaths.push(copyTo)
     }
     return { name: a.name, host: a.host, env: a.env ?? {}, ...(copyTo === undefined ? {} : { copyTo }) }
   })
@@ -213,11 +218,12 @@ const discard = (path) => {
 /**
  * Copies a `copyTo` asset from the host into the sandbox home (`<home>/<copyTo>`), writable, keeping every mode (masked to
  * 0o777). A symlink anywhere in the source is refused, never followed. The copy is made in a fresh temporary directory
- * inside the home and then renamed onto the destination: `rename` never follows a link, so anything planted in the home
- * (a link at the destination, a link inside it, a link chain through `..`) is replaced, not written through. Every existing
- * component of `copyTo` must be a real directory, and the result is checked with the OS's realpath, so the copy cannot
- * leave the sandbox. An existing file at the destination is refused. Returns { name, copyTo, bytes, digest, files } for
- * the batch record; a missing source throws, failing the trial.
+ * inside the home and each of its top-level entries is renamed into the destination: `rename` never follows a link, so an
+ * entry planted in the home (a link, a file or a directory of the same name, or a link chain through `..`) is replaced,
+ * not written through, and the destination's other entries are kept. Every existing component of `copyTo` must be a real
+ * directory (a link is unlinked at the destination itself, never followed), and the result is checked with the OS's
+ * realpath, so the copy cannot leave the sandbox. An existing file where the destination should be is refused. Returns
+ * { name, copyTo, bytes, digest, files } for the batch record; a missing source throws, failing the trial.
  */
 export function copyAsset(asset, sandbox) {
   const home = realNative(resolve(sandbox.home))
@@ -246,13 +252,16 @@ export function copyAsset(asset, sandbox) {
 
   const temp = mkdtempSync(join(home, ".evals-copy-"))
   const copied = []
-  const copy = (from, to) => {
+  const dirs = []
+  const copy = (from, to, rel = "") => {
     const stat = lstatSync(from)
     if (stat.isSymbolicLink()) throw new Error(`caps.json container.assets ${asset.name}: ${from} is a symbolic link, and a copyTo asset is copied, never followed`)
     if (stat.isDirectory()) {
+      // Writable while it is staged: Linux refuses to rename a directory without write permission, so its mode is
+      // restored once it is in place.
       mkdirSync(to, { recursive: true, mode: 0o700 })
-      for (const entry of readdirSync(from, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) copy(join(from, entry.name), join(to, entry.name))
-      chmodSync(to, stat.mode & 0o777)
+      if (rel) dirs.push({ rel, mode: stat.mode & 0o777 })
+      for (const entry of readdirSync(from, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) copy(join(from, entry.name), join(to, entry.name), rel ? `${rel}/${entry.name}` : entry.name)
       return
     }
     if (!stat.isFile()) throw new Error(`caps.json container.assets ${asset.name}: ${from} is not a regular file`)
@@ -267,11 +276,30 @@ export function copyAsset(asset, sandbox) {
     try {
       existing = lstatSync(dest)
     } catch {
-      // nothing there: the rename creates it
+      // nothing there: the destination is created below
     }
-    if (existing && !existing.isDirectory() && !existing.isSymbolicLink()) throw new Error(`caps.json container.assets ${asset.name}: ${dest} already exists and is not a directory, and a copyTo asset refuses to overwrite a file`)
-    if (existing) removeTree(dest)
-    renameSync(temp, dest)
+    if (existing?.isSymbolicLink()) {
+      // A link where the destination itself goes is unlinked, never followed; its target is not touched.
+      rmSync(dest, { force: true })
+      existing = null
+    }
+    if (existing && !existing.isDirectory()) throw new Error(`caps.json container.assets ${asset.name}: ${dest} already exists and is not a directory, and a copyTo asset refuses to overwrite a file`)
+    if (!existing) mkdirSync(dest, { mode: 0o700 })
+    // Replace the asset's own top-level entries only: everything else already in the destination is kept.
+    for (const entry of readdirSync(temp)) {
+      const target = join(dest, entry)
+      let stat = null
+      try {
+        stat = lstatSync(target)
+      } catch {
+        // nothing of that name: the rename creates it
+      }
+      if (stat) removeTree(target)
+      renameSync(join(temp, entry), target)
+    }
+    // Now in place, each directory takes the source's mode (a read-only cache folder stays read-only).
+    for (const { rel, mode } of dirs) chmodSync(join(dest, rel), mode)
+    rmdirSync(temp)
   } catch (error) {
     discard(temp)
     throw error
