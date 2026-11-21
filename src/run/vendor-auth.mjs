@@ -1,8 +1,9 @@
 // `--auth <source>+profile` (R2, EVALS-232 §1.2.5): the vendor credentials of the evals profile, given to a trial as an
 // ALLOW-LIST of fields and nothing else.
 //
-// The profile is exported once per batch with the evals profile's own environment (never the owner's real profile), each
-// credential cut down to the fields below, and imported into every trial's own private server. The minimum was found by probe
+// The profile is exported per vendor per batch, one `auth export <target>` for each needed plugin (the target is the name
+// the host knows the credential by: gws-default, an MCP server's name), each credential cut down to the fields below, and
+// imported into every trial's own private server. The minimum was found by probe
 // P0-5 on OpenCode 2.3.2: an oauth credential needs `type`, `methodID`, `access`, `expires` AND a `refresh` (the import refuses
 // one without), so the refresh token is replaced by a constant placeholder: a trial can use its access token, and cannot
 // refresh the real chain. An API key is `{ type: "key", key }`. Import merges: it adds to what the trial already holds.
@@ -13,6 +14,8 @@
 import { randomBytes } from "node:crypto"
 import { join } from "node:path"
 import { runToEnd } from "./sandbox.mjs"
+import { APP_CLIENT, exportTarget } from "../../scripts/profile/auth-targets.mjs"
+import { activeCredential } from "../../scripts/profile/credential-select.mjs"
 import { ensureServicePort, assertDistinctPort } from "./service-port.mjs"
 
 /** What a trial gets in place of a refresh token: import insists on one, and no vendor accepts this. */
@@ -67,39 +70,78 @@ export function allowListed(credential) {
 /** The secrets of an allow-listed credential: its access token or key. */
 export const secretsOf = (credential) => [credential?.value?.access, credential?.value?.key].filter((v) => typeof v === "string" && v.length >= 8)
 
-/**
- * The credentials a batch may hold: the evals profile's export, allow-listed, for the integrations `needed` names (the arm's and the
- * seeded plugins'). Throws for a needed integration the profile lacks, and for one whose access token expires inside the batch.
- * Returns { list, secrets, expiries: { <integration>: ms|null }, dropped: [integration] }.
- */
-export function vendorCredentials(exportedJson, { needed, now = Date.now(), horizonMs = 0, acceptUnknownExpiry = false }) {
-  let all
-  try {
-    all = JSON.parse(exportedJson)
-  } catch {
-    throw new Error("the evals profile's export is not JSON")
+/** The names the evals profile is asked for: one per needed integration, plus the app client for slack and x, deduped. */
+export const exportTargetsFor = (needed) => {
+  const targets = []
+  for (const integration of needed ?? []) {
+    targets.push(exportTarget(integration))
+    const app = APP_CLIENT[integration]
+    if (app) targets.push(app)
   }
-  if (!Array.isArray(all)) all = all?.credentials ?? []
-  const want = new Set(needed)
+  return [...new Set(targets)]
+}
+
+/**
+ * The credentials a batch may hold, from `exportProfile`'s per-target answers `{ <target>: <auth export stdout> }`. Each
+ * needed integration's own `auth export <exportTarget>` answer is read with the walk's `activeCredential` (the integration
+ * id first, then its name), so an MCP vendor keeps its real `mcp_<hash>` id (Slack's and X's user token), gws's is
+ * `gws-default` — never the plugin id. Slack and X also get their app client (`slack-app`/`x-app`, a `key` holding the
+ * client id; the allow-list drops the secret in its metadata), because their plugins register their MCP server only with
+ * one. Only what was exported for the batch is considered. Throws for a needed integration or app client whose answer
+ * holds no active, usable credential (naming the integration and the targets asked for); the expiry check is unchanged.
+ * Returns { list, secrets, expiries: { <integrationID>: ms|null }, dropped: [integrationID], plugins: { <integrationID>:
+ * <integration> } }.
+ */
+export function vendorCredentials(exported, { needed, now = Date.now(), horizonMs = 0, acceptUnknownExpiry = false }) {
+  if (!exported || typeof exported !== "object" || Array.isArray(exported)) throw new Error("--auth +profile: the evals profile's exports are not a map of `auth export <target>` answers")
   const list = []
   const expiries = {}
   const dropped = []
-  for (const credential of all) {
-    if (!want.has(credential?.integrationID)) {
-      if (credential?.integrationID) dropped.push(credential.integrationID)
-      continue
+  const plugins = {}
+  const failed = new Map() // integration -> the targets that held nothing usable
+  const seen = new Set()
+  for (const integration of needed ?? []) {
+    const targets = [exportTarget(integration), ...(APP_CLIENT[integration] ? [APP_CLIENT[integration]] : [])]
+    for (const target of targets) {
+      if (seen.has(target)) continue
+      seen.add(target)
+      const fail = () => failed.set(integration, [...(failed.get(integration) ?? []), target])
+      const text = typeof exported[target] === "string" ? exported[target] : ""
+      if (!text.trim()) {
+        fail()
+        continue
+      }
+      let all
+      try {
+        all = JSON.parse(text)
+      } catch {
+        throw new Error(`--auth +profile: the evals profile's \`auth export ${target}\` is not JSON`)
+      }
+      if (!Array.isArray(all)) all = all?.credentials ?? []
+      const chosen = activeCredential(text, target)
+      if (!chosen) {
+        for (const c of all) if (c?.integrationID) dropped.push(c.integrationID)
+        fail()
+        continue
+      }
+      const cut = allowListed(chosen)
+      if (!cut) {
+        dropped.push(chosen.integrationID)
+        fail()
+        continue
+      }
+      // Two integrations may resolve to one credential (OpenRouter's two entries): one row, one import.
+      if (list.some((entry) => entry.integrationID === cut.integrationID)) continue
+      list.push(cut)
+      plugins[cut.integrationID] = integration
+      // Only an oauth token expires: an API key (the app client included) has no expiry to check the batch against.
+      if (cut.value.type === "oauth") expiries[cut.integrationID] = cut.value.expires ?? null
     }
-    const cut = allowListed(credential)
-    if (!cut) {
-      dropped.push(credential.integrationID)
-      continue
-    }
-    list.push(cut)
-    // Only an oauth token expires: an API key has no expiry to check the batch against.
-    if (cut.value.type === "oauth") expiries[cut.integrationID] = cut.value.expires ?? null
   }
-  const missing = [...want].filter((id) => !list.some((c) => c.integrationID === id))
-  if (missing.length) throw new Error(`--auth +profile: the evals profile holds no usable credential for ${missing.join(", ")} (it holds ${[...new Set(all.map((c) => c?.integrationID).filter(Boolean))].join(", ") || "none"}); sign it in, or leave the plugin out of the batch`)
+  if (failed.size) {
+    const parts = [...failed].map(([integration, targets]) => `${integration} (its ${targets.map((target) => `\`auth export ${target}\``).join(" or ")} held no active credential)`)
+    throw new Error(`--auth +profile: the evals profile holds no usable credential for ${parts.join("; ")}; sign it in, or leave the plugin out of the batch`)
+  }
   const margin = 10 * 60_000
   for (const [integration, expires] of Object.entries(expiries)) {
     if (expires === null) {
@@ -108,11 +150,70 @@ export function vendorCredentials(exportedJson, { needed, now = Date.now(), hori
       throw new Error(`--auth +profile: the ${integration} token expires at ${new Date(expires).toISOString()}, within the ${Math.ceil((horizonMs + margin) / 60_000)} minutes this batch may need: run the keeper (keeper.mjs --once) first, or slice the batch`)
     }
   }
-  return { list, secrets: list.flatMap(secretsOf), expiries, dropped: [...new Set(dropped)] }
+  return { list, secrets: list.flatMap(secretsOf), expiries, dropped: [...new Set(dropped)], plugins }
 }
 
-/** Exports the evals profile with its own environment (every integration: the allow-list cuts it down). */
-export async function exportProfile({ binary, profileDir, caller = process.env }) {
+/**
+ * Runs `auth export <target>` for each target in the profile's environment, one at a time: the host resolves a target by
+ * the server's name (an MCP vendor's name, gws-default for gws, slack and x by their own), so only the batch's vendors
+ * leave the profile. Returns { <target>: stdout }, or "" for a target the host did not answer for. `exec` replaces the
+ * host in a unit test.
+ */
+export async function exportTargets({ binary, penv, caller = process.env, targets = [], exec = runToEnd }) {
+  const standalone = caller.EVALS_AUTH_STANDALONE ? ["--standalone"] : []
+  const out = {}
+  for (const target of [...new Set(targets)]) {
+    const answer = await exec(binary, ["auth", "export", target, ...standalone], { env: penv, timeoutMs: 60_000 })
+    if (answer?.error) throw new Error(`--auth +profile: \`opencode auth export ${target}\` of the evals profile failed: ${answer.error}`)
+    out[target] = answer?.code === 0 ? String(answer.stdout ?? "") : ""
+  }
+  return out
+}
+
+/** An apply error the runner must report as an infrastructure auth failure, never as the model's. */
+const infraAuth = (message) => Object.assign(new Error(message), { infra: "auth" })
+
+/**
+ * After `auth import --standalone` in a trial, prove the trial's host registered every imported integration and holds
+ * the imported credential active: `auth list --format json` (registration) and `auth export <integrationID>` (the
+ * active row). Import accepts any id, so without this an id the trial's host never derives (a plugin that changed its
+ * server name or URL, or registered nothing) leaves the trial unsigned while looking signed, and its failures would be
+ * graded as the model's. The error carries `infra: "auth"`, which the runner records as an infrastructure failure.
+ */
+export async function verifyVendorImport({ exec, cwd, env, list, plugins = {}, standalone = false, timeoutMs = 60_000 }) {
+  const flags = standalone ? ["--standalone"] : []
+  const listed = await exec(["auth", "list", "--format", "json", ...flags], { cwd, env, timeoutMs })
+  if (listed?.error) throw infraAuth(`--auth +profile: \`opencode auth list\` in the trial failed: ${listed.error}`)
+  if (listed?.code !== 0) throw infraAuth(`--auth +profile: \`opencode auth list\` in the trial failed (exit ${listed?.code ?? "?"})`)
+  let integrations
+  try {
+    integrations = JSON.parse(String(listed.stdout ?? ""))
+  } catch {
+    throw infraAuth("--auth +profile: `opencode auth list --format json` in the trial is not JSON")
+  }
+  if (!Array.isArray(integrations)) throw infraAuth("--auth +profile: `opencode auth list --format json` in the trial is not a list")
+  for (const credential of list) {
+    const plugin = plugins[credential.integrationID] ?? credential.integrationID
+    if (!integrations.some((entry) => entry?.id === credential.integrationID)) {
+      throw infraAuth(`--auth +profile: the trial's host registers no ${plugin} integration (${credential.integrationID}), so its imported credential is orphaned; the plugin's server name or URL differs from the evals profile's build`)
+    }
+    const answer = await exec(["auth", "export", credential.integrationID, ...flags], { cwd, env, timeoutMs })
+    let rows
+    try {
+      rows = JSON.parse(String(answer?.stdout ?? ""))
+    } catch {
+      rows = []
+    }
+    if (!Array.isArray(rows)) rows = rows?.credentials ?? []
+    const active = rows.find((row) => row?.id === credential.id && row.active === true)
+    if (answer?.code !== 0 || !active) throw infraAuth(`--auth +profile: the trial's host does not hold ${plugin}'s imported credential (${credential.integrationID}) as active`)
+  }
+}
+
+/** Exports the evals profile with its own environment, per target: one `auth export <target>` each, so a batch never
+ * pulls a vendor it does not need out of the profile. Returns { <target>: stdout }, or "" for a target the host did not
+ * answer for. */
+export async function exportProfile({ binary, profileDir, caller = process.env, targets = [], exec = runToEnd }) {
   if (!profileDir) throw new Error("--auth +profile: set EVALS_PROFILE to the evals profile's directory")
   const penv = profileEnv(profileDir, caller)
   // The profile runs its own service, on its own port, never the real service's (G0 review 4.1).
@@ -120,10 +221,7 @@ export async function exportProfile({ binary, profileDir, caller = process.env }
   for (const key of Object.keys(realHomeEnv)) if (/^(OPENCODE_|XDG_)/.test(key)) delete realHomeEnv[key]
   ensureServicePort({ opencode: binary, profileEnv: penv, realEnv: realHomeEnv, env: caller })
   assertDistinctPort({ opencode: binary, profileEnv: penv, realEnv: realHomeEnv, env: caller })
-  // EVALS_AUTH_STANDALONE=1 reads the profile from a private server instead of its background service (a probe's scratch profile).
-  const out = await runToEnd(binary, ["auth", "export", ...(caller.EVALS_AUTH_STANDALONE ? ["--standalone"] : [])], { env: penv, timeoutMs: 60_000 })
-  if (out.code !== 0 || !out.stdout.trim()) throw new Error(`--auth +profile: \`opencode auth export\` of the evals profile failed (exit ${out.code}); is ${profileDir} signed in?`)
-  return out.stdout
+  return exportTargets({ binary, penv, caller, targets, exec })
 }
 
 /**
@@ -132,7 +230,8 @@ export async function exportProfile({ binary, profileDir, caller = process.env }
  * and `inference-openrouter`, so both of its packs name both).
  */
 export function integrationsFor(plugin, cases, packs, parse, noAccount = null) {
-  // A plugin that runs with no account is never signed in, so nothing is asked of the profile for it.
-  const named = [...new Set([plugin, ...cases.flatMap((c) => parse(c.seed))])].filter((id) => !noAccount?.has(id))
+  // A plugin that runs with no account is never signed in, so nothing is asked of the profile for it. `p0` is the P0
+  // probes' own permission plugin: it reads no data and asks no vendor, and a probe's real vendor is named by its seed.
+  const named = [...new Set([plugin, ...cases.flatMap((c) => parse(c.seed))])].filter((id) => id !== "p0" && !noAccount?.has(id))
   return [...new Set(named.flatMap((id) => [].concat(packs.find((p) => p.id === id)?.integration ?? id)))].sort()
 }

@@ -8,7 +8,8 @@ import { randomBytes } from "node:crypto"
 import { spawnSync } from "node:child_process"
 import { STEPS, runPhase1, readState, entriesOf, STATE_FILE, pulseLinkVerdict, defaultDeps } from "../src/phase1.mjs"
 import { writeHalt } from "../src/run/halt.mjs"
-import { SIGNIN_ORDER, exportTarget } from "../scripts/profile/profile-lib.mjs"
+import { SIGNIN_ORDER, exportTarget, LOGIN_TARGET as WALK_TARGETS } from "../scripts/profile/profile-lib.mjs"
+import { exportTarget as HARNESS_TARGET, LOGIN_TARGET as HARNESS_TARGETS } from "../scripts/profile/auth-targets.mjs"
 
 const scratch = () => mkdtempSync(join(tmpdir(), "evals-phase1-"))
 const ids = STEPS.map((s) => s.id)
@@ -360,4 +361,12 @@ test("the canaries step: lines say what was created and reused; no seeding confi
   } finally {
     w2.cleanup()
   }
+})
+
+test("the walk and the harness ask auth export for the same vendor names", () => {
+  assert.equal(exportTarget, HARNESS_TARGET, "one function, re-exported by the walk")
+  assert.deepEqual(WALK_TARGETS, HARNESS_TARGETS)
+  assert.equal(exportTarget("gws"), "gws-default")
+  assert.equal(exportTarget("wisprflow"), "Wispr Flow")
+  assert.equal(exportTarget("affinity"), "affinity", "an MCP vendor is asked for by its server name")
 })

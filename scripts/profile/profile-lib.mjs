@@ -6,6 +6,8 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, lstat
 import { join, dirname } from "node:path"
 import { homedir, userInfo } from "node:os"
 import { fileURLToPath } from "node:url"
+import { activeCredential, credentialShaped, normName } from "./credential-select.mjs"
+import { APP_CLIENT } from "./auth-targets.mjs"
 
 export const sha256 = (text) => createHash("sha256").update(String(text)).digest("hex")
 
@@ -273,12 +275,10 @@ export const SIGNIN_ORDER = Object.freeze(["openrouter", "affinity", "ashby", "p
  */
 export const NOT_IN_REAL = Object.freeze(["openrouter", "affinity"])
 
-/** The name `auth export` and `auth login` know a walk vendor by, where it is not the vendor's own (real shapes: gws is `gws-default` labelled "default"; Wispr Flow is `mcp_<hash>` labelled "Wispr Flow"). */
-export const LOGIN_TARGET = Object.freeze({ gws: "gws-default", wisprflow: "Wispr Flow" })
-export const exportTarget = (integration) => LOGIN_TARGET[integration] ?? integration
+/** The name `auth export` and `auth login` know a walk vendor by, where it is not the vendor's own (real shapes: gws is `gws-default` labelled "default"; Wispr Flow is `mcp_<hash>` labelled "Wispr Flow"). One definition, shared with the harness. */
+export { LOGIN_TARGET, exportTarget } from "./auth-targets.mjs"
 
-/** A name compared by its letters: lowercase, whitespace removed. */
-export const normName = (text) => String(text ?? "").toLowerCase().replace(/\s+/g, "")
+export { activeCredential, credentialShaped, normName }
 
 /** How soon after a sign-in the real profile's own refresh must be seen to work again, by vendor (§1.2.3 rule 3), in hours. */
 export const RECHECK_HOURS = Object.freeze({ gws: 1, jira: 1, notion: 1, slack: 12, linear: 24 })
@@ -479,18 +479,6 @@ export function run(command, args, { env, input, timeoutMs = 60_000 } = {}) {
   return { code: out.status, stdout: out.stdout ?? "", stderr: out.stderr ?? "", error: out.error ? String(out.error.message) : null }
 }
 
-/** Is this element credential-shaped (OpenCode's Credential.Entry): a string id and integrationID, a boolean active, an object value with
- *  a string type, and no RpcError/_tag or error key? An export is only an answer when every element is. */
-export const credentialShaped = (c) =>
-  isObject(c) &&
-  typeof c.id === "string" &&
-  typeof c.integrationID === "string" &&
-  typeof c.active === "boolean" &&
-  isObject(c.value) &&
-  typeof c.value.type === "string" &&
-  !("_tag" in c) &&
-  !("error" in c)
-
 /**
  * Is this stdout a real `auth export` ANSWER: a JSON credential array (or `{credentials:[…]}`, no top-level `_tag`/`error`) in which EVERY element
  * is credential-shaped? Only such a body counts as an export (a failed export's error object, or a mixed body, is a read failure — never
@@ -512,33 +500,13 @@ export function exportAnswer(out) {
   return list.every(credentialShaped) ? list : null
 }
 
-/** The active credential of an integration from `opencode auth export` output, or null. Returns the parsed object (secrets inside: keep it in memory). */
-export function activeCredential(exported, integration) {
-  let list
-  try {
-    list = JSON.parse(exported)
-  } catch {
-    return null
-  }
-  if (!Array.isArray(list)) list = list?.credentials ?? []
-  const want = normName(integration)
-  // The integration id first, then the label; then EVERY entry of that integration (a re-sign-in leaves an inactive `Linear` beside the active
-  // `Linear 2`, both with the same id), and only the ACTIVE one is returned: never a stale inactive credential.
-  const named = list.filter((c) => credentialShaped(c) && normName(c?.integrationID) === want)
-  // (a re-sign-in's label gets a number: `Linear 2`, `X app 2`)
-  const byLabel = (c) => normName(c?.label) === want || normName(c?.label).replace(/\d+$/, "") === want
-  const hits = named.length ? named : list.filter((c) => credentialShaped(c) && byLabel(c))
-  const ids = new Set(hits.map((c) => c.integrationID))
-  return list.find((c) => credentialShaped(c) && ids.has(c?.integrationID) && c?.active) ?? null
-}
-
 /**
  * The app-client steps of the walk, before the vendors that need them. Each is the owner's own already-configured app, copied from the real
  * profile (client configuration only, never a user token): slack-app and x-app are credentials of integrations of those names; gws-app is the
  * Desktop OAuth client the gws sign-in reads, kept in the real profile inside gws-default's credential metadata, and put in the evals profile as
  * the gws plugin's `oauthClient` option ($EVALS_STORE/evals-gws-client.json, mode 600).
  */
-export const CLIENT_STEPS = Object.freeze({ "gws-app": "gws", "slack-app": "slack", "x-app": "x" })
+export const CLIENT_STEPS = Object.freeze({ "gws-app": "gws", ...Object.fromEntries(Object.entries(APP_CLIENT).map(([vendor, app]) => [app, vendor])) })
 
 /** The step order of the walk: each app-client step precedes its vendor. */
 export const WALK_ORDER = Object.freeze(SIGNIN_ORDER.flatMap((v) => Object.entries(CLIENT_STEPS).filter(([, vendor]) => vendor === v).map(([step]) => step).concat(v)))

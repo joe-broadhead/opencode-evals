@@ -7,7 +7,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSyn
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { Buffer } from "node:buffer"
-import { allowListed, vendorCredentials, secretsOf, REFRESH_PLACEHOLDER, profileEnv } from "../src/run/vendor-auth.mjs"
+import { allowListed, vendorCredentials, exportTargets, exportTargetsFor, verifyVendorImport, secretsOf, REFRESH_PLACEHOLDER, profileEnv } from "../src/run/vendor-auth.mjs"
 import { redactor, expand, registerSecrets, scrub } from "../src/run/secrets.mjs"
 import { fillPrompt, gateCases, seedFiles, seedDir, placeholdersIn, loadDataMatrix, seedRefusal } from "../src/run/gate.mjs"
 import { dataOf } from "../src/case/schema.mjs"
@@ -16,7 +16,7 @@ import { readCompanions, materialiseArm, materialiseCompanions, runtimePaths, co
 import { roundLimits, estimateRunUsd, assertLaunchWithinRound, RoundCapError, tierOf, listSpent, MIN_MEASURED_RUNS } from "../src/cost/budget.mjs"
 import { outstandingList } from "../src/cost/ledger.mjs"
 import { parseAuth } from "../src/run/auth.mjs"
-import { runBatch, listUsdOf, modelPrice, guardSummary, hostLogFacts, rateLimitOutcome } from "../src/run/runner.mjs"
+import { runBatch, listUsdOf, modelPrice, guardSummary, hostLogFacts, rateLimitOutcome, failureInfra } from "../src/run/runner.mjs"
 import { compileCase } from "../src/case/compile.mjs"
 import { flatten } from "../src/grade/targets.mjs"
 import { installFakeOpencode, installFakeBun } from "./helpers/fake-opencode.mjs"
@@ -40,18 +40,118 @@ test("a vendor credential is cut to the allow-list: no refresh token, no client 
   assert.equal(allowListed({ integrationID: "x", value: { type: "oauth" } }), null, "an oauth credential with no access token is nothing")
 })
 
-test("only the integrations the batch names are given, expiry is checked against the batch, and a missing one is refused", () => {
-  const exported = JSON.stringify([oauth("linear"), oauth("jira"), oauth("slack"), { integrationID: "tavily", active: true, value: { type: "key", key: "tvly-0123456789abcdef" } }])
-  const out = vendorCredentials(exported, { needed: ["linear", "tavily"] })
-  assert.deepEqual(out.list.map((c) => c.integrationID).sort(), ["linear", "tavily"])
-  assert.deepEqual(out.dropped.sort(), ["jira", "slack"], "what the profile holds and the batch does not name is dropped, and named")
-  assert.deepEqual(out.secrets.sort(), ["access-token-linear-0123456789", "tvly-0123456789abcdef"], "the access token and the key, never the refresh token")
-  assert.throws(() => vendorCredentials(exported, { needed: ["notion"] }), /holds no usable credential for notion \(it holds linear, jira, slack, tavily\)/)
-  assert.throws(() => vendorCredentials(exported, { needed: ["linear"], horizonMs: 9 * 3_600_000 }), /the linear token expires at .* within the \d+ minutes/)
-  const none = JSON.stringify([oauth("linear", { expires: undefined })])
+const SLACK_ID = "mcp_c89391481a328edc" // sha1("slack\0https://mcp.slack.com/mcp"), 16 hex
+const X_ID = "mcp_d95d978dbb4b3509" // sha1("x\0https://api.x.com/mcp"), 16 hex
+const user = (id, label, access) => JSON.stringify([{ id: "cred_orig", integrationID: id, label, active: true, value: { type: "oauth", methodID: "mcp-oauth", access, refresh: "REFRESH-SECRET-0123456789", expires: Date.now() + 8 * 3_600_000 } }])
+const client = (id, key, label, secret) => JSON.stringify([{ id: "cred_orig", integrationID: id, label, active: true, value: { type: "key", key, metadata: { client_secret: secret } } }])
+
+test("each needed plugin gets its own vendor's credential by its auth export target, with its real integration id", () => {
+  const exports = {
+    affinity: user("mcp_0123456789abcdef", "Affinity", "access-token-affinity-0123456789"),
+    "gws-default": user("gws-default", "default", "access-token-gws-0123456789"),
+    slack: user(SLACK_ID, "Slack", "access-token-slack-0123456789"),
+    "slack-app": client("slack-app", "synthetic-slack-client-id", "Slack app", "SLACK-CLIENT-SECRET-0123456789"),
+    x: user(X_ID, "X", "access-token-x-0123456789"),
+    "x-app": client("x-app", "synthetic-x-client-id", "X app", "X-CLIENT-SECRET-0123456789"),
+    linear: user("linear", "linear", "access-token-linear-0123456789"),
+  }
+  const out = vendorCredentials(exports, { needed: ["affinity", "gws", "slack", "x"] })
+  assert.deepEqual(out.list.map((c) => c.integrationID).sort(), ["gws-default", "mcp_0123456789abcdef", SLACK_ID, "slack-app", X_ID, "x-app"].sort(), "real ids: the MCP user token and the app client for slack and x")
+  assert.deepEqual(out.plugins, { "mcp_0123456789abcdef": "affinity", "gws-default": "gws", [SLACK_ID]: "slack", "slack-app": "slack", [X_ID]: "x", "x-app": "x" })
+  assert.deepEqual(out.dropped, [])
+  assert.equal(JSON.stringify(out.list).includes("access-token-linear"), false, "an integration the batch does not need is never in the payload, even when its export is in the map")
+  const text = JSON.stringify(out.list)
+  assert.equal(text.includes("REFRESH-SECRET"), false, "no refresh token")
+  assert.equal(text.includes("CLIENT-SECRET"), false, "the app client's secret never reaches the trial")
+  assert.ok(text.includes(REFRESH_PLACEHOLDER))
+  // The app client is a key holding the client id and nothing else (PKCE: no secret is needed to register the server).
+  assert.deepEqual(out.list.find((c) => c.integrationID === "slack-app").value, { type: "key", key: "synthetic-slack-client-id" })
+  assert.deepEqual(out.list.find((c) => c.integrationID === "x-app").value, { type: "key", key: "synthetic-x-client-id" })
+  assert.deepEqual(out.secrets.sort(), ["access-token-affinity-0123456789", "access-token-gws-0123456789", "access-token-slack-0123456789", "access-token-x-0123456789", "synthetic-slack-client-id", "synthetic-x-client-id"].sort())
+})
+
+test("a vendor whose export is empty, or whose app client is, throws the no-usable-credential error naming the plugin", () => {
+  assert.throws(() => vendorCredentials({ affinity: "[]" }, { needed: ["affinity"] }), /holds no usable credential for affinity \(its `auth export affinity` held no active credential\)/)
+  assert.throws(() => vendorCredentials({}, { needed: ["gws"] }), /holds no usable credential for gws \(its `auth export gws-default` held no active credential\)/)
+  // Slack's user token is not enough: without an app client its plugin registers no server, so the trial fails closed.
+  assert.throws(() => vendorCredentials({ slack: user(SLACK_ID, "Slack", "access-token-slack-0123456789") }, { needed: ["slack"] }), /holds no usable credential for slack \(its `auth export slack-app` held no active credential\)/)
+  // The selection is the walk's: id first, then name. A lone active credential that is the target of neither is refused.
+  const mismatched = { affinity: JSON.stringify([{ id: "cred_x", integrationID: "mcp_other", label: "Something else", active: true, value: { type: "oauth", access: "a".repeat(24), expires: Date.now() + 3_600_000 } }]) }
+  assert.throws(() => vendorCredentials(mismatched, { needed: ["affinity"] }), /holds no usable credential for affinity/)
+  const unusable = { affinity: JSON.stringify([{ integrationID: "mcp_0123456789abcdef", label: "Affinity", active: true, value: { type: "oauth" } }]) }
+  assert.throws(() => vendorCredentials(unusable, { needed: ["affinity"] }), /holds no usable credential for affinity/)
+  assert.deepEqual(vendorCredentials(unusable, { needed: [] }).list, [])
+})
+
+test("the profile is exported per needed vendor, through auth export <target> only", async () => {
+  const calls = []
+  // The target is the plugin's server name; the host answers with the credential's real id (the MCP token, or an app key).
+  const answers = {
+    slack: JSON.parse(user(SLACK_ID, "Slack", "access-token-slack-0123456789")),
+    "slack-app": JSON.parse(client("slack-app", "synthetic-slack-client-id", "Slack app", "SLACK-CLIENT-SECRET-0123456789")),
+    x: JSON.parse(user(X_ID, "X", "access-token-x-0123456789")),
+    "x-app": JSON.parse(client("x-app", "synthetic-x-client-id", "X app", "X-CLIENT-SECRET-0123456789")),
+  }
+  const exec = async (command, args, options) => {
+    calls.push({ command, args, env: options.env })
+    assert.equal(args[0], "auth")
+    assert.equal(args[1], "export")
+    return { code: 0, stdout: JSON.stringify(answers[args[2]] ?? []), stderr: "" }
+  }
+  const penv = profileEnv("/profile", { PATH: "/bin", HOME: "/real" })
+  const out = await exportTargets({ binary: "/stub/opencode", penv, caller: { EVALS_AUTH_STANDALONE: "1" }, targets: exportTargetsFor(["slack", "gws", "slack"]), exec })
+  assert.deepEqual(calls.map((c) => c.args), [["auth", "export", "slack", "--standalone"], ["auth", "export", "slack-app", "--standalone"], ["auth", "export", "gws-default", "--standalone"]], "one export per vendor and its app client, deduped")
+  assert.equal(calls[0].command, "/stub/opencode")
+  assert.equal(calls[0].env.HOME, "/profile", "the evals profile's own environment")
+  assert.deepEqual(Object.keys(out), ["slack", "slack-app", "gws-default"])
+  // A batch for slack exports slack's user token and its app client, and nothing else.
+  calls.length = 0
+  const slackOnly = await exportTargets({ binary: "/stub/opencode", penv, targets: exportTargetsFor(["slack"]), exec })
+  assert.deepEqual(calls.map((c) => c.args), [["auth", "export", "slack"], ["auth", "export", "slack-app"]])
+  const slack = vendorCredentials(slackOnly, { needed: ["slack"] })
+  assert.deepEqual(slack.list.map((c) => c.integrationID).sort(), [SLACK_ID, "slack-app"].sort())
+  assert.deepEqual(slack.list.find((c) => c.integrationID === "slack-app").value, { type: "key", key: "synthetic-slack-client-id" })
+})
+
+test("after the import, the trial's host must register each integration and hold the credential active", async () => {
+  const imported = { id: "cred_imported000000000000", integrationID: SLACK_ID, label: "evals", active: true, value: { type: "oauth" } }
+  const listed = JSON.stringify([{ id: SLACK_ID, name: "Slack", connections: [{ type: "credential", id: imported.id, label: "evals", method: "oauth" }] }])
+  const exec = (list, rows) => async (args) => {
+    assert.equal(args[0], "auth")
+    if (args[1] === "list") return { code: 0, stdout: list, stderr: "" }
+    if (args[1] === "export") return { code: 0, stdout: rows, stderr: "" }
+    return { code: 1, stdout: "", stderr: "unexpected" }
+  }
+  await verifyVendorImport({ exec: exec(listed, JSON.stringify([imported])), cwd: "/home", env: {}, list: [imported], plugins: { [SLACK_ID]: "slack" } })
+  const orphaned = assert.rejects(verifyVendorImport({ exec: exec("[]", "[]"), cwd: "/home", env: {}, list: [imported], plugins: { [SLACK_ID]: "slack" } }), /registers no slack integration/)
+  await orphaned
+  try {
+    await verifyVendorImport({ exec: exec("[]", "[]"), cwd: "/home", env: {}, list: [imported], plugins: { [SLACK_ID]: "slack" } })
+    assert.fail("an orphaned import must fail")
+  } catch (error) {
+    assert.equal(error.infra, "auth", "an orphaned import is an infrastructure auth failure")
+    assert.match(error.message, /registers no slack integration \(mcp_c89391481a328edc\)/)
+  }
+  await assert.rejects(verifyVendorImport({ exec: exec(listed, JSON.stringify([{ ...imported, active: false }])), cwd: "/home", env: {}, list: [imported], plugins: { [SLACK_ID]: "slack" } }), /does not hold slack's imported credential .* as active/)
+  await assert.rejects(verifyVendorImport({ exec: async () => ({ code: 1, stdout: "", stderr: "Integration not found: slack" }), cwd: "/home", env: {}, list: [imported] }), /auth list.*failed \(exit 1\)/)
+})
+
+test("an auth-verification failure is infra in the summary, and grading never counts it as the model's", () => {
+  assert.equal(failureInfra(Object.assign(new Error("x"), { infra: "auth" }), false), "auth")
+  assert.equal(failureInfra(new Error("x"), false), "trial_error")
+  const graded = gradeCase({ id: "demo-a", plugin: "demo", expect: "pass", items: [] }, { head: { infra: "auth", run_id: "it/demo#t1" }, answer: { text: "anything" } })
+  assert.equal(graded.verdict, "NOT_RUN")
+  assert.equal(graded.infra, "auth")
+  assert.equal(graded.provenance.failure_class, "infra")
+})
+
+test("a batch's credentials are checked for expiry and refused when missing or stale", () => {
+  const linear = { linear: JSON.stringify([oauth("linear")]) }
+  assert.throws(() => vendorCredentials(linear, { needed: ["linear"], horizonMs: 9 * 3_600_000 }), /the linear token expires at .* within the \d+ minutes/)
+  const none = { linear: JSON.stringify([oauth("linear", { expires: undefined })]) }
   assert.throws(() => vendorCredentials(none, { needed: ["linear"] }), /has no expiry/)
   assert.equal(vendorCredentials(none, { needed: ["linear"], acceptUnknownExpiry: true }).list.length, 1)
-  assert.throws(() => vendorCredentials("not json", { needed: ["linear"] }), /not JSON/)
+  assert.throws(() => vendorCredentials({ linear: "not json" }, { needed: ["linear"] }), /`auth export linear` is not JSON/)
   assert.deepEqual(secretsOf({ value: { access: "short" } }), [], "a value under 8 characters is not a secret to scrub")
 })
 

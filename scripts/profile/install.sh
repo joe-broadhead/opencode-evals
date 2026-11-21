@@ -16,7 +16,7 @@ done
 export EVALS_STORE="${EVALS_STORE:-$HOME/evals-232/store}"
 dest="${EVALS_BIN:-$(dirname "$EVALS_STORE")/bin}"
 here="$(dirname "$(readlink -f "$0")")"
-files=(profile-lib.mjs service-port.mjs check-real.mjs check-real.sh keeper.mjs evals-profile.sh ensure-port.mjs write-config.mjs signin.sh guard-real.mjs log-signin.mjs copy-client.mjs identity-methods.json rpc-methods.fixture.json)
+files=(profile-lib.mjs auth-targets.mjs credential-select.mjs service-port.mjs check-real.mjs check-real.sh keeper.mjs evals-profile.sh ensure-port.mjs write-config.mjs signin.sh guard-real.mjs log-signin.mjs copy-client.mjs identity-methods.json rpc-methods.fixture.json)
 
 # Never overwrite a tree that differs from this repository's copies, unless asked: a hand edit or an older round may be there.
 if [ -d "$dest" ]; then
