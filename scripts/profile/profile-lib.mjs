@@ -273,9 +273,8 @@ export const SIGNIN_ORDER = Object.freeze(["openrouter", "affinity", "ashby", "p
  */
 export const NOT_IN_REAL = Object.freeze(["openrouter", "affinity"])
 
-/** The name `auth export` and `auth login` know a walk vendor by, where it is not the vendor's own (real shapes: gws is `gws-default` labelled "default"; Wispr Flow is `mcp_<hash>` labelled "Wispr Flow"). */
-export const LOGIN_TARGET = Object.freeze({ gws: "gws-default", wisprflow: "Wispr Flow" })
-export const exportTarget = (integration) => LOGIN_TARGET[integration] ?? integration
+/** The name `auth export` and `auth login` know a walk vendor by, where it is not the vendor's own (real shapes: gws is `gws-default` labelled "default"; Wispr Flow is `mcp_<hash>` labelled "Wispr Flow"). One definition, shared with the harness. */
+export { LOGIN_TARGET, exportTarget } from "./auth-targets.mjs"
 
 /** A name compared by its letters: lowercase, whitespace removed. */
 export const normName = (text) => String(text ?? "").toLowerCase().replace(/\s+/g, "")

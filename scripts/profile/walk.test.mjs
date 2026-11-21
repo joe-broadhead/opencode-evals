@@ -416,7 +416,7 @@ test("check-real affinity: a successful real export with no credential takes the
 function failingWalk(r, vendor, extraEnv = {}) {
   const bin = join(r.root, "bin")
   mkdirSync(bin, { recursive: true })
-  for (const f of ["signin.sh", "guard-real.mjs", "log-signin.mjs", "profile-lib.mjs", "copy-client.mjs", "identity-methods.json"]) writeFileSync(join(bin, f), readFileSync(join(HERE, f)), { mode: 0o700 })
+  for (const f of ["signin.sh", "guard-real.mjs", "log-signin.mjs", "profile-lib.mjs", "auth-targets.mjs", "copy-client.mjs", "identity-methods.json"]) writeFileSync(join(bin, f), readFileSync(join(HERE, f)), { mode: 0o700 })
   writeFileSync(join(bin, "evals-profile.sh"), "#!/bin/sh\ntouch " + join(r.root, "login-ran") + "\nexit 0\n", { mode: 0o700 })
   writeFileSync(join(bin, "check-real.sh"), `#!/bin/sh\necho "FAIL $1: \${CHECK_SAY:-the check failed}"\nexit \${CHECK_EXIT:-1}\n`, { mode: 0o700 })
   return spawnSync(join(bin, "signin.sh"), ["--only", vendor, "--yes"], { env: { ...r.env, EVALS_BIN: bin, ...extraEnv }, encoding: "utf8" })
@@ -1138,7 +1138,7 @@ test("signin.sh deletes the vendor's baseline before the login, so a login that 
   const bin = join(r.root, "bin")
   try {
     mkdirSync(bin)
-    for (const f of ["signin.sh", "guard-real.mjs", "log-signin.mjs", "profile-lib.mjs", "identity-methods.json"]) writeFileSync(join(bin, f), readFileSync(join(HERE, f)), { mode: 0o700 })
+    for (const f of ["signin.sh", "guard-real.mjs", "log-signin.mjs", "profile-lib.mjs", "auth-targets.mjs", "identity-methods.json"]) writeFileSync(join(bin, f), readFileSync(join(HERE, f)), { mode: 0o700 })
     writeFileSync(join(bin, "evals-profile.sh"), "#!/bin/sh\nexit 3\n", { mode: 0o700 })
     writeFileSync(join(bin, "check-real.sh"), "#!/bin/sh\nexit 1\n", { mode: 0o700 })
     writeBaseline(r, NOW + 6 * HOUR)

@@ -132,7 +132,10 @@ export async function a2(env = {}) {
     const profile = join(root, "profile")
     mk(profile, { recursive: true })
     const bin = process.env.EVALS_OPENCODE_BIN ?? process.env.OPENCODE_BIN_2_3_2 ?? "opencode"
-    const credential = JSON.stringify([{ id: "cred_p0dummyp0dummyp0dummy00", integrationID: "p0", label: "dummy", active: true, value: { type: "key", key: "p0-dummy-not-a-real-key-0000" } }])
+    // A real-shaped credential: an MCP integration's id is mcp_<16 hex>, and `auth export` selects it by the server's
+    // name, which the host stores as the label (`p0` here, the probe's own plugin id). A plugin-id integrationID would
+    // pass a harness that wrongly filters the profile by plugin id, and fail the real host.
+    const credential = JSON.stringify([{ id: "cred_p0dummyp0dummyp0dummy00", integrationID: "mcp_0123456789abcdef", label: "p0", active: true, value: { type: "key", key: "p0-dummy-not-a-real-key-0000" } }])
     execFileSync(bin, ["auth", "import", "--standalone"], { input: credential, env: profileEnv(profile, callerEnv), stdio: ["pipe", "pipe", "pipe"] })
     Object.assign(callerEnv, { EVALS_PROFILE: profile, EVALS_AUTH_STANDALONE: "1", EVALS_REAL_HOME: root })
   }
