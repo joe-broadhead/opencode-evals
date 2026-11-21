@@ -663,11 +663,13 @@ export function containerBackend(config = containerConfig()) {
         trials.delete(trial)
       }
       trial.leave = leave
+      let effectiveCa = null
       try {
         // A `copyTo` asset is copied into the sandbox home (writable), never mounted; a missing source fails the trial here,
-        // before anything is created.
+        // before anything is created. Any combined fake + asset CA bundle is also built here, before network/container creation.
         trial.asset_copies = (config.assets ?? []).filter((a) => a.copyTo).map((a) => copyAsset(a, sandbox))
         for (const copy of trial.asset_copies) state.copies.push({ trial: name, ...copy })
+        if (ca) effectiveCa = mergeExtraCa({ ca, assets: config.assets ?? [], sandbox })
         trial.network = ref
         await mustNetwork(["network", "create", "--internal", "-o", "com.docker.network.bridge.gateway_mode_ipv4=isolated", "-o", "com.docker.network.bridge.gateway_mode_ipv6=isolated", ...labelArgs({ "evals.role": "trial", "evals.trial": name }), ref], "creating the trial network")
         await must(["network", "connect", "--alias", "egress", ref, proxyName], "joining the proxy to the trial network")
@@ -728,13 +730,14 @@ export function containerBackend(config = containerConfig()) {
 
       /** The command that runs `spec` inside the container; secrets and everything else by name only. */
       // What fake mode adds to the trial's environment: the per-batch CA (the runtime's own NODE_EXTRA_CA_CERTS: this trial trusts it, nothing else does) and
-      // the mapped host names kept off the egress proxy, so the request goes to the fake on loopback and nowhere else.
+      // the mapped host names kept off the egress proxy, so the request goes to the fake on loopback and nowhere else. When a mounted asset also supplies a
+      // host egress CA via NODE_EXTRA_CA_CERTS (e.g. boxd's secret-bound egress CA for api.anthropic.com), concatenate both PEMs so fake-mode trials trust both.
       const extraEnv = {}
       if (hosts.length) {
         const noProxy = ["127.0.0.1", "localhost", ...hosts.map((h) => h.host)].join(",")
         extraEnv.NO_PROXY = extraEnv.no_proxy = noProxy
       }
-      if (ca) extraEnv.NODE_EXTRA_CA_CERTS = ca
+      if (effectiveCa) extraEnv.NODE_EXTRA_CA_CERTS = effectiveCa
       /**
        * The command to run a trial's command through `docker exec`. `-i` (the exec client's standard input attached) only when the caller has input to send (`stdin: true`): `docker exec -i`
        * whose input is closed at once (a /dev/null, an empty pipe) can lose the end-of-file under load, and the command inside then waits for it for ever (`opencode run` reads standard input
@@ -743,13 +746,7 @@ export function containerBackend(config = containerConfig()) {
       trial.wrap = ({ command, args = [], cwd: dir, env = {}, stdin = false }) => {
         const mapped = [...state.binaries.values()].find((b) => b.command === command || b.host === command || (isAbsolute(command) && existsSync(command) && realpathSync(command) === b.host))
         const inside = mapped ? mapped.inside : command
-        const containerEnv = { ...trialEnv(env), ...extraEnv }
-        // The assets' own variables: where, inside the trial, each one lives. A `copyTo` asset lives in the sandbox home
-        // (the copy made before the container started), not at /opt/evals/assets.
-        for (const a of config.assets ?? []) for (const [key, inner] of Object.entries(a.env ?? {})) {
-          const base = a.copyTo ? join(sandbox.home, a.copyTo) : `${ASSETS_DIR}/${a.name}`
-          containerEnv[key] = inner ? `${base}/${inner}` : base
-        }
+        const containerEnv = composeTrialEnv({ env, extraEnv, assets: config.assets ?? [], sandbox })
         const names = Object.keys(containerEnv)
         const bad = names.filter((key) => !NAME.test(key))
         if (bad.length) throw new Error(`refusing to pass ${bad.map((k) => JSON.stringify(k)).join(", ")} into a trial: not a variable name`)
@@ -882,6 +879,42 @@ export function containerBackend(config = containerConfig()) {
  * A trial's environment from the sandbox's: the container's PATH, the proxy, loopback never proxied, no host path that
  * does not exist inside (CA files), no docker client setting, and no models.dev fetch (the proxy would refuse it).
  */
+/**
+ * When a fake-mode trial (`ca`) runs alongside a mounted asset that also sets `NODE_EXTRA_CA_CERTS` (a host egress CA for
+ * secret-bound model/vendor hosts), concatenate both PEM files into a fresh, exclusive file inside `sandbox.root` so the
+ * trial trusts both CAs. With no asset CA, returns `ca` unchanged.
+ */
+export function mergeExtraCa({ ca, assets = [], sandbox }) {
+  if (!ca) return null
+  const extraFiles = []
+  for (const a of assets) {
+    const inner = a.env?.NODE_EXTRA_CA_CERTS
+    if (inner === undefined) continue
+    const base = a.copyTo ? join(sandbox.home, a.copyTo) : a.host
+    extraFiles.push(inner ? join(base, inner) : base)
+  }
+  if (!extraFiles.length) return ca
+  const pems = [readFileSync(ca, "utf8").trimEnd(), ...extraFiles.map((file) => readFileSync(file, "utf8").trimEnd())]
+  const out = within(sandbox.root, join(sandbox.root, ".evals-ca.pem"), "the combined CA bundle")
+  writeFileSync(out, `${pems.join("\n")}\n`, { flag: "wx", mode: 0o444 })
+  chmodSync(out, 0o444)
+  return out
+}
+
+/**
+ * Builds the in-container environment for one `docker exec`: `trialEnv(env)` + `extraEnv` + each asset's `env` paths,
+ * preserving `extraEnv.NODE_EXTRA_CA_CERTS` (already merged by `mergeExtraCa` in fake mode) over an asset's raw CA path.
+ */
+export function composeTrialEnv({ env = {}, extraEnv = {}, assets = [], sandbox }) {
+  const containerEnv = { ...trialEnv(env), ...extraEnv }
+  for (const a of assets) for (const [key, inner] of Object.entries(a.env ?? {})) {
+    if (key === "NODE_EXTRA_CA_CERTS" && extraEnv.NODE_EXTRA_CA_CERTS) continue
+    const base = a.copyTo ? join(sandbox.home, a.copyTo) : `${ASSETS_DIR}/${a.name}`
+    containerEnv[key] = inner ? `${base}/${inner}` : base
+  }
+  return containerEnv
+}
+
 export function trialEnv(env) {
   const out = {}
   for (const [key, value] of Object.entries(env)) if (!CLIENT_ONLY.test(key) && value !== undefined && value !== null) out[key] = String(value)

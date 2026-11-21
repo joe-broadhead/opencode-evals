@@ -60,6 +60,18 @@ try {
   mkdirSync(join(host.project, "data"), { recursive: true })
   for (const file of SHARED) cpSync(join(data, file), join(host.project, "data", file))
   const session = await createSession(host)
+  // Plugins finish loading asynchronously after the HTTP listener opens on 2.3.2; wait until `charts.tools` is registered.
+  const readyDeadline = Date.now() + 15_000
+  for (;;) {
+    const probe = await call(`${host.url}/api/rpc/charts.tools/describe`, {
+      method: "POST",
+      body: { input: {} },
+      headers: { "x-opencode-directory": host.project },
+      timeoutMs: 5_000,
+    })
+    if (probe.json?.type !== "rpc.unavailable" || Date.now() >= readyDeadline) break
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
   for (const saved of SAVED) {
     const response = await call(`${host.url}/api/rpc/charts.tools/quick`, {
       method: "POST",
