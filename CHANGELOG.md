@@ -22,6 +22,7 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
 
 ### Fixed
 
+- **The elevenlabs pack's egress lists `api.elevenlabs.io`.** ElevenLabs' default (`global`) region serves its MCP server there (`src/constants.ts` REGIONS at v0.0.10), with authorization at `api.us.elevenlabs.io`; the pack listed only the latter, so phase 1's P0-7 saw the MCP host refused. The digest is recomputed with `writeSnapshot`.
 - **Canary seeding reads the tools-RPC envelope, so a rerun reuses its canaries** (`scripts/seed-canaries.mjs`). A tools-RPC answer is
   `{ output: { output: <the tool's value>, text } }`; `unwrap` now descends it through `toolValue` in `scripts/profile/profile-lib.mjs`, the one
   definition the identity reads use too (`errorSignal` shares `rpcEnvelope`). Before, `find` read the envelope instead of the list, never matched,

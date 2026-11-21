@@ -1774,9 +1774,10 @@
     "denied": 0,
     "skills": 3
   },
-  "digest": "7d8cabebb778961429ad1464cd6e02564f0499d9c37ca78bcf0138749ed8aee1",
+  "digest": "3e3abe57d807b5bc39e136964012e4dfbcceca4164b776061bc383b1847fe6a0",
   "t1": [],
   "egress": [
+    "api.elevenlabs.io",
     "api.us.elevenlabs.io"
   ],
   "release": {
