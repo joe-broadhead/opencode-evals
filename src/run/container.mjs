@@ -728,13 +728,14 @@ export function containerBackend(config = containerConfig()) {
 
       /** The command that runs `spec` inside the container; secrets and everything else by name only. */
       // What fake mode adds to the trial's environment: the per-batch CA (the runtime's own NODE_EXTRA_CA_CERTS: this trial trusts it, nothing else does) and
-      // the mapped host names kept off the egress proxy, so the request goes to the fake on loopback and nowhere else.
+      // the mapped host names kept off the egress proxy, so the request goes to the fake on loopback and nowhere else. When a mounted asset also supplies a
+      // host egress CA via NODE_EXTRA_CA_CERTS (e.g. boxd's secret-bound egress CA for api.anthropic.com), concatenate both PEMs so fake-mode trials trust both.
       const extraEnv = {}
       if (hosts.length) {
         const noProxy = ["127.0.0.1", "localhost", ...hosts.map((h) => h.host)].join(",")
         extraEnv.NO_PROXY = extraEnv.no_proxy = noProxy
       }
-      if (ca) extraEnv.NODE_EXTRA_CA_CERTS = ca
+      if (ca) extraEnv.NODE_EXTRA_CA_CERTS = mergeExtraCa({ ca, assets: config.assets ?? [], sandbox })
       /**
        * The command to run a trial's command through `docker exec`. `-i` (the exec client's standard input attached) only when the caller has input to send (`stdin: true`): `docker exec -i`
        * whose input is closed at once (a /dev/null, an empty pipe) can lose the end-of-file under load, and the command inside then waits for it for ever (`opencode run` reads standard input
@@ -747,6 +748,7 @@ export function containerBackend(config = containerConfig()) {
         // The assets' own variables: where, inside the trial, each one lives. A `copyTo` asset lives in the sandbox home
         // (the copy made before the container started), not at /opt/evals/assets.
         for (const a of config.assets ?? []) for (const [key, inner] of Object.entries(a.env ?? {})) {
+          if (key === "NODE_EXTRA_CA_CERTS" && extraEnv.NODE_EXTRA_CA_CERTS) continue
           const base = a.copyTo ? join(sandbox.home, a.copyTo) : `${ASSETS_DIR}/${a.name}`
           containerEnv[key] = inner ? `${base}/${inner}` : base
         }
@@ -882,6 +884,27 @@ export function containerBackend(config = containerConfig()) {
  * A trial's environment from the sandbox's: the container's PATH, the proxy, loopback never proxied, no host path that
  * does not exist inside (CA files), no docker client setting, and no models.dev fetch (the proxy would refuse it).
  */
+/**
+ * When a fake-mode trial (`ca`) runs alongside a mounted asset that also sets `NODE_EXTRA_CA_CERTS` (a host egress CA for
+ * secret-bound model/vendor hosts), concatenate both PEM files into a fresh, exclusive file inside `sandbox.root` so the
+ * trial trusts both CAs. With no asset CA, returns `ca` unchanged.
+ */
+export function mergeExtraCa({ ca, assets = [], sandbox }) {
+  if (!ca) return null
+  const extraFiles = []
+  for (const a of assets) {
+    const inner = a.env?.NODE_EXTRA_CA_CERTS
+    if (inner === undefined) continue
+    const base = a.copyTo ? join(sandbox.home, a.copyTo) : a.host
+    extraFiles.push(inner ? join(base, inner) : base)
+  }
+  if (!extraFiles.length) return ca
+  const pems = [readFileSync(ca, "utf8").trimEnd(), ...extraFiles.map((file) => readFileSync(file, "utf8").trimEnd())]
+  const out = within(sandbox.root, join(sandbox.root, ".evals-ca.pem"), "the combined CA bundle")
+  writeFileSync(out, `${pems.join("\n")}\n`, { flag: "wx", mode: 0o444 })
+  return out
+}
+
 export function trialEnv(env) {
   const out = {}
   for (const [key, value] of Object.entries(env)) if (!CLIENT_ONLY.test(key) && value !== undefined && value !== null) out[key] = String(value)

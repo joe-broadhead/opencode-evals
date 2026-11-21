@@ -51,6 +51,13 @@ export function allowListed(credential) {
     const metadata = {}
     for (const key of METADATA_KEYS) if (typeof value.metadata?.[key] === "string") metadata[key] = value.metadata[key]
     if (typeof value.metadata?.client?.client_id === "string") metadata.client = { client_id: value.metadata.client.client_id }
+    // gws's `readSignIn` (`opencode-gws` 0.0.11 `src/auth/credential.ts`) checks `access`, `requestedScopes` and
+    // `grantedScopes` on every call; `clientSecret`, `email` and `domain` stay dropped so the trial cannot renew or see PII.
+    if (value.metadata?.access === "read" || value.metadata?.access === "write") metadata.access = value.metadata.access
+    for (const key of ["requestedScopes", "grantedScopes"]) {
+      const scopes = value.metadata?.[key]
+      if (Array.isArray(scopes) && scopes.every((s) => typeof s === "string")) metadata[key] = [...scopes]
+    }
     out.value = { type: "oauth", methodID: String(value.methodID ?? "mcp-oauth"), access: value.access, refresh: REFRESH_PLACEHOLDER, expires: typeof value.expires === "number" ? value.expires : null, ...(Object.keys(metadata).length ? { metadata } : {}) }
     if (out.value.expires === null) delete out.value.expires
     return out

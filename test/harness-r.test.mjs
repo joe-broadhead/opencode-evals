@@ -20,6 +20,7 @@ import { parseAuth, prepareAuth } from "../src/run/auth.mjs"
 import { runBatch, listUsdOf, modelPrice, guardSummary, hostLogFacts, rateLimitOutcome, failureInfra } from "../src/run/runner.mjs"
 import { compileCase } from "../src/case/compile.mjs"
 import { flatten } from "../src/grade/targets.mjs"
+import { mergeExtraCa } from "../src/run/container.mjs"
 import { installFakeOpencode, installFakeBun } from "./helpers/fake-opencode.mjs"
 
 const scratch = () => mkdtempSync(join(tmpdir(), "evals-r-test-"))
@@ -35,6 +36,72 @@ test("a vendor credential is cut to the allow-list: no refresh token, no client 
   assert.deepEqual(cut.value, { type: "oauth", methodID: "mcp-oauth", access: "access-token-linear-0123456789", refresh: REFRESH_PLACEHOLDER, expires: cut.value.expires, metadata: { serverUrl: "https://mcp.example.org/mcp", tokenType: "Bearer", scope: "read write", issuer: "https://auth.example.org", client: { client_id: "https://opencode.ai/oauth/opencode/client.json" } } })
   const text = JSON.stringify(cut)
   for (const dropped of ["REFRESH-SECRET", "CLIENT-SECRET", "someone", "me@example.org"]) assert.ok(!text.includes(dropped), dropped)
+  // gws's `readSignIn` scope record survives, while clientSecret, email, domain and refresh are dropped.
+  const gwsCut = allowListed({
+    id: "cred_gws",
+    integrationID: "gws-default",
+    label: "owner@example.org",
+    active: true,
+    value: {
+      type: "oauth",
+      methodID: "google",
+      access: "ya29.synthetic_access_0123456789",
+      refresh: "1//synthetic_refresh_secret",
+      expires: 1795271000000,
+      metadata: {
+        clientId: "710-client.apps.googleusercontent.com",
+        clientSecret: "GOCSPX-SECRET-DROP-ME",
+        clientSource: "plugin",
+        access: "write",
+        requestedScopes: ["https://www.googleapis.com/auth/drive"],
+        grantedScopes: ["https://www.googleapis.com/auth/drive"],
+        email: "owner@example.org",
+        domain: "example.org",
+      },
+    },
+  })
+  assert.deepEqual(gwsCut.value.metadata, {
+    access: "write",
+    requestedScopes: ["https://www.googleapis.com/auth/drive"],
+    grantedScopes: ["https://www.googleapis.com/auth/drive"],
+  })
+  const gwsText = JSON.stringify(gwsCut)
+  for (const secret of ["GOCSPX-SECRET-DROP-ME", "1//synthetic_refresh_secret", "owner@example.org", "example.org"]) assert.ok(!gwsText.includes(secret), secret)
+  // Invalid access or non-string scope entries are rejected, never copied.
+  assert.deepEqual(
+    allowListed({
+      id: "cred_bad",
+      integrationID: "gws-default",
+      active: true,
+      value: { type: "oauth", access: "tok", metadata: { access: "admin", requestedScopes: [123], grantedScopes: "not-array" } },
+    }).value.metadata,
+    undefined,
+  )
+  // Fake-mode CA + asset NODE_EXTRA_CA_CERTS merge cleanly and refuse pre-existing links.
+  const caDir = scratch()
+  try {
+    const fakeCa = join(caDir, "fake-ca.pem")
+    const assetDir = join(caDir, "asset")
+    const sandboxRoot = join(caDir, "sandbox")
+    mkdirSync(assetDir, { recursive: true })
+    mkdirSync(sandboxRoot, { recursive: true })
+    writeFileSync(fakeCa, "-----BEGIN CERTIFICATE-----\nFAKE\n-----END CERTIFICATE-----\n")
+    writeFileSync(join(assetDir, "egress.crt"), "-----BEGIN CERTIFICATE-----\nEGRESS\n-----END CERTIFICATE-----\n")
+    assert.equal(mergeExtraCa({ ca: fakeCa, assets: [], sandbox: { root: sandboxRoot, home: sandboxRoot } }), fakeCa)
+    const merged = mergeExtraCa({
+      ca: fakeCa,
+      assets: [{ name: "egress-ca", host: assetDir, env: { NODE_EXTRA_CA_CERTS: "egress.crt" } }],
+      sandbox: { root: sandboxRoot, home: sandboxRoot },
+    })
+    assert.equal(merged, join(sandboxRoot, ".evals-ca.pem"))
+    assert.equal(readFileSync(merged, "utf8"), "-----BEGIN CERTIFICATE-----\nFAKE\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nEGRESS\n-----END CERTIFICATE-----\n")
+    assert.throws(
+      () => mergeExtraCa({ ca: fakeCa, assets: [{ name: "egress-ca", host: assetDir, env: { NODE_EXTRA_CA_CERTS: "egress.crt" } }], sandbox: { root: sandboxRoot, home: sandboxRoot } }),
+      /EEXIST/,
+    )
+  } finally {
+    rmSync(caDir, { recursive: true, force: true })
+  }
   assert.deepEqual(allowListed({ integrationID: "tavily", active: true, value: { type: "key", key: "tvly-0123456789abcdef", extra: "x" } }).value, { type: "key", key: "tvly-0123456789abcdef" })
   assert.deepEqual(allowListed({ integrationID: "claude-agent", value: { type: "external", methodID: "claude-login", secret: "x" } }).value, { type: "external", methodID: "claude-login" })
   assert.equal(allowListed({ integrationID: "x", value: { type: "weird", token: "t" } }), null)
