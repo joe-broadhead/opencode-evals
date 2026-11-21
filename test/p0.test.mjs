@@ -5,8 +5,13 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
-import { existsSync } from "node:fs"
-import { PROBES } from "../src/p0/probes.mjs"
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
+import { PROBES, probeCaller } from "../src/p0/probes.mjs"
+import { scriptedRun } from "../src/p0/run.mjs"
+import { defaultDeps } from "../src/phase1.mjs"
+import { ledgerFile } from "../src/cost/ledger.mjs"
 import { findBinary, imageTag } from "../src/run/container.mjs"
 import { buildPolicy } from "../src/run/guard/policy.mjs"
 import { decideBefore, planIdOf, judgePlan, matchWrite, pick, loadPolicy } from "../src/run/guard/logic.mjs"
@@ -28,6 +33,54 @@ const companions = process.env.EVALS_COMPANIONS && existsSync(process.env.EVALS_
 // run in the same pass they would see each other's. So they are opt-in (EVALS_P0_LIVE=1, or `evals p0`), and a pass that runs
 // them should run this file alone: `EVALS_P0_LIVE=1 node --test --test-concurrency=1 test/p0.test.mjs`.
 const optIn = process.env.EVALS_P0_LIVE ? null : "the live probes are opt-in (EVALS_P0_LIVE=1, or `node bin/evals p0`): they share the Docker host with the isolation tests"
+
+test("a vendor probe's batch uses the owner's store for caps and the ledger, with its recordings in the probe's own raw", async () => {
+  const root = mkdtempSync(join(tmpdir(), "evals-p0-owner-"))
+  const owner = join(root, "store")
+  mkdirSync(owner, { recursive: true })
+  writeFileSync(join(owner, "caps.json"), JSON.stringify({ vendors: { affinity_calls: 300 } }))
+  let seen = null
+  try {
+    await assert.rejects(
+      scriptedRun({
+        cases: [{ id: "one", prompt: "hello" }],
+        arm: { package: "none" },
+        ownerStore: owner,
+        caller: { EVALS_PROFILE: "/profile" },
+        tmp: root,
+        run: async (options, ctx) => {
+          seen = { options, caller: ctx.caller }
+          throw new Error("stop here")
+        },
+      }),
+      /stop here/,
+    )
+    assert.equal(seen.caller.EVALS_STORE, owner, "the real store: caps, targets, data-matrix, canaries and the ledger")
+    assert.equal(seen.caller.EVALS_CAPS, join(owner, "caps.json"), "the owner's caps file")
+    assert.equal(ledgerFile(seen.caller.EVALS_STORE), join(owner, "ledger", "runs.jsonl"), "the vendor spend is recorded in the round's ledger")
+    assert.equal(seen.caller.EVALS_RAW.startsWith(root), true, "the recordings stay in the probe's scratch tree")
+    assert.notEqual(seen.caller.EVALS_RAW, join(owner, "raw"), "never the owner's raw directory")
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test("a direct p0 run gives the vendor probes the process environment, and phase 1 gives them its caller", async () => {
+  const direct = probeCaller({ store: "/store" }, "plugin")
+  assert.equal(direct.EVALS_PROFILE, "plugin")
+  assert.equal(direct.PATH, process.env.PATH, "a direct `evals p0 p7` has only the process environment")
+  const explicit = probeCaller({ caller: { EVALS_CAPS: "/caps", EVALS_STORE: "/owner" } }, "plugin")
+  assert.deepEqual(explicit, { EVALS_PROFILE: "plugin", EVALS_CAPS: "/caps", EVALS_STORE: "/owner" }, "phase 1's caller wins")
+  const store = "/owner"
+  const caller = { EVALS_CAPS: "/caps", EVALS_STORE: store }
+  let seen = null
+  const deps = await defaultDeps({ store, caller, companions: null, probes: { p7: (env) => { seen = env; return { ok: true, checks: [] } } } })
+  assert.deepEqual(await deps.probe("p7", { only: "affinity" }), { ok: true, checks: [] })
+  assert.equal(seen.store, store)
+  assert.equal(seen.caller, caller)
+  assert.equal(seen.only, "affinity")
+})
+
 const live = reason ? { skip: reason } : optIn ? { skip: optIn } : {}
 const needsBuilds = reason ? { skip: reason } : optIn ? { skip: optIn } : companions ? {} : { skip: "no plugin builds (EVALS_COMPANIONS)" }
 const env = { companions, tmp: process.env.TMPDIR }
