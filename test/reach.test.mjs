@@ -183,7 +183,7 @@ test("a COMPANION in Seed: plugins= brings every marked tool of it, named or not
   // each of the reviewers' companions
   for (const companion of ["notion", "linear", "x", "elevenlabs"]) assert.throws(() => charts({ data: "synthetic", seed: `plugins=${companion}` }), /floor, real/, companion)
   assert.throws(() => charts({ data: "synthetic", seed: "plugins=gws" }), /floor, real: it can call gws\.read/, "Gmail")
-  assert.doesNotThrow(() => charts({ data: "synthetic", seed: "plugins=boxd" }), "boxd is accountless: no sign-in, no floor")
+  assert.throws(() => charts({ data: "synthetic", seed: "plugins=boxd" }), /Data: synthetic is below this case's floor, own: it can call boxd\./)
   // a lower floor from a companion's `gws read` with a calendar operation only
   // (the companion's other marked tools: gws.events_list is `own` too, so the case is `own`)
   const calendar = [["blocker", "count:gws.read == 1", "call:gws.read#1 args.operation == calendar.events.list"]]

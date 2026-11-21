@@ -31,7 +31,7 @@ import { lockdownPolicies, lockdownPermissions, loadPacks, companionOptions, ACC
 import { buildPolicy, installGuard } from "./guard/policy.mjs"
 import { gateCases, seedFiles, dataPreflight, loadDataMatrix } from "./gate.mjs"
 import { resolveCommitPlan } from "./commit-plan.mjs"
-import { noAccountPlugins, fakePlugins, noCredentialPlugins, pluginsOf } from "./accounts.mjs"
+import { noAccountPlugins, fakePlugins, noCredentialPlugins, noProfilePlugins, pluginsOf } from "./accounts.mjs"
 import { FAKE_HOSTS, fakeFor, hostsFor, installFake } from "./fake-mode.mjs"
 import { haltReason, readHalt, writeHalt, haltMessage } from "./halt.mjs"
 import { integrationsFor } from "./vendor-auth.mjs"
@@ -1189,7 +1189,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     // each pack gives its integration (the pack's own id unless it says otherwise).
     const packs = loadPacks()
     const named = [...new Set([plugin, ...selected.flatMap((c) => parseSeedList(parseSeed(c.seed).plugins))])]
-    const needed = integrationsFor(plugin, selected, packs, (seed) => parseSeedList(parseSeed(seed).plugins), noCredential)
+    const needed = integrationsFor(plugin, selected, packs, (seed) => parseSeedList(parseSeed(seed).plugins), noProfilePlugins({ packs, store }))
     const auth = await prepareAuth(profile, { binary, caller, horizonMs, acceptUnknownExpiry: Boolean(options.acceptUnknownTokenExpiry), needed })
     if (auth.expiry) {
       Object.assign(facts.horizon, auth.expiry)

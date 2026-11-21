@@ -164,13 +164,13 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "371cac58155e2bb289a06d6620d5ef1487762a428b307b6ec5cb1a4e05d08103",
+  "digest": "fa9939b91e7416bb2b218b1096cbe9b3a59e1422ec2c147afa297dcb35c677fb",
   "t1": [],
   "egress": [],
-  "accounts": "none",
   "release": {
     "version": "0.0.4",
     "tag": "v0.0.4",
     "commit": "83d00abbe7f72e0cf48e68d0040d89cc43ce1973"
-  }
+  },
+  "profile": false
 }

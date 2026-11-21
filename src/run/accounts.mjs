@@ -47,6 +47,20 @@ export const fakePlugins = (options) => pluginsWith("fake", options)
 /** The plugins that hold no credential in a trial, of either kind: nothing is asked of the evals profile for them and no vendor host is opened. */
 export const noCredentialPlugins = (options) => new Set([...noAccountPlugins(options), ...fakePlugins(options)])
 
+/**
+ * The plugins whose credential the evals profile cannot hold: the fake-mode plugins (github, jira) and the local plugins
+ * whose pack says `"profile": false` (charts, history, jobs, inference, utilities, voice, boxd, browse). This is ONLY the
+ * `+profile` filter — `integrationsFor`/`needed` — because their tools work locally; it must not touch grading, gating,
+ * egress or reach, which keep the master meaning of `accounts` (`noAccountPlugins`/`noCredentialPlugins`). The marker is
+ * a pack field no other code reads; `round.json` overrides `accounts`, not this.
+ */
+export const noProfilePlugins = (options = {}) => new Set([...fakePlugins(options), ...pluginsMarked(options)])
+
+/** The plugins whose pack carries a field set to `value`: static, never overridden by the store. */
+function pluginsMarked({ packs = [] } = {}) {
+  return new Set(packs.filter((pack) => pack.profile === false).map((pack) => pack.id))
+}
+
 /** The plugins a case uses: its own and every one its `Seed: plugins=` names. */
 export const pluginsOf = (caseObject) => [...new Set([caseObject.plugin, ...seedPlugins(caseObject.seed)])]
 

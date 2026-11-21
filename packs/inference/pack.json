@@ -73,7 +73,7 @@
     "denied": 0,
     "skills": 2
   },
-  "digest": "5ba62c834ebd69d2ecfcfe256e1aeb5df3a8bd5f1e852a2385319abe90ba6ee4",
+  "digest": "4f32de21f58cf8cabc9e3ce38768aba1be9a8e4731161878889c1363baf3c36b",
   "t1": [],
   "egress": [
     "openrouter.ai",
@@ -83,10 +83,10 @@
     "openrouter",
     "inference-openrouter"
   ],
-  "accounts": "none",
   "release": {
     "version": "0.0.7",
     "tag": "v0.0.7",
     "commit": "6b61922f3bec849e11e16918d0ac9795811a5bff"
-  }
+  },
+  "profile": false
 }

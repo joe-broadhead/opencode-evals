@@ -133,12 +133,12 @@
   "notes": [
     "access: jobs v0.0.0 declares the access setting (default \"all\") with no choices list, so the host shows a free-text field instead of the family's three choices (all, ask-changes, read-only). Its description names them. jobs has not had the family settings release yet; this pack records the gap and changes nothing in opencode-jobs."
   ],
-  "digest": "9b737a59633c4988051650e82312e34fffba89595d8975f880a8000ee4cfaa6e",
+  "digest": "740c68b11073d6338d77e1e5d5433b0bd07d074f6b9e6792f22a12d12fa68539",
   "egress": [],
-  "accounts": "none",
   "release": {
     "version": "0.0.4",
     "tag": "v0.0.4",
     "commit": "87453e668e0300146b1f9f7e43d3f1dff8701fa7"
-  }
+  },
+  "profile": false
 }

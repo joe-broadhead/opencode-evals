@@ -146,6 +146,11 @@ tool, whose prompt is `<<TODO>>` (compile refuses it) so it is written without s
     declined and never reaches the fake; that no request reached the egress proxy at all; and that the proxy refuses the vendors' hosts.
   - **`accounts: none`** stays as a generic setting for any other plugin: no credential and no server. Its tools exist only after a sign-in, so call, target and canary clauses on
     them are n/a, and the honest-answer item `<prefix>-NA01` (a heuristic over the answer's words) is **minor**. Such a case is not deferred for a credential, a target or a canary.
+  - **`profile: false`** is a separate pack marker for a plugin whose tools work locally but whose credential the evals profile cannot hold: charts, history, jobs, inference,
+    utilities, voice, boxd and browse (GitHub and Jira are already `accounts: fake`). Only `noProfilePlugins()` reads it, and only the `+profile` `needed` set uses that, so a
+    `--auth +profile` batch does not ask the profile for their credential. It changes nothing about grading (`accounts`, the `-NA01` item), gating, egress or the reach floor,
+    which keep their master meaning. Tavily is **not** marked: it is an accounted plugin whose key is the profile's `tavily` credential (or `TAVILY_API_KEY` in the plugin's
+    environment), so a `+profile` batch still asks the profile for it and fails closed if it is absent rather than silently skipping it.
 - **Slack, X and Google use the apps already configured**: no second Slack app, no second X app, no separate Google client. They are not owner prerequisites; `check-real`
   still runs right after each of their sign-ins, and it is the check that says whether the shared app broke the normal profile.
 - **The owner's sign-in walk: `~/evals-232/bin/signin.sh`** (installed by `scripts/profile/install.sh`; the scripts and their safety rules are in

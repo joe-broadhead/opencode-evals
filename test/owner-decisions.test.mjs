@@ -55,19 +55,18 @@ test("1: with the owner's matrix, real and candidate data go to Claude Haiku and
 
 // ---------------------------------------------------------------------------------------------- 2: GitHub and Jira in fake mode; `none` for any other plugin
 
-test("2: the accountless plugins are `accounts: none`, github and jira are `fake`, and the round.json can change any plugin's setting", () => {
-  const accountless = ["boxd", "browse", "charts", "history", "inference", "jobs", "utilities", "voice"]
+test("2: github and jira are `accounts: fake` in their packs; the store's round.json can change any plugin's setting", () => {
   const packs = loadPacks()
   assert.deepEqual([...fakePlugins({ packs })].sort(), ["github", "jira"])
-  assert.deepEqual([...noAccountPlugins({ packs })].sort(), accountless, "the local plugins run with no account and no server")
-  assert.deepEqual([...noCredentialPlugins({ packs })].sort(), [...accountless, "github", "jira"].sort())
+  assert.deepEqual([...noAccountPlugins({ packs })], [], "no plugin runs with no account and no server")
+  assert.deepEqual([...noCredentialPlugins({ packs })].sort(), ["github", "jira"])
   for (const id of ["slack", "x", "gws", "linear", "notion", "affinity", "openrouter"]) assert.equal(packs.find((p) => p.id === id).accounts, undefined, id)
   const store = scratch()
   try {
     writeFileSync(join(store, "round.json"), JSON.stringify({ accounts: { github: "signed-in", tavily: "none", slack: "fake" } }))
     assert.deepEqual([...fakePlugins({ packs, store })].sort(), ["jira", "slack"], "the round's config overrides the pack")
-    assert.deepEqual([...noAccountPlugins({ packs, store })].sort(), [...accountless, "tavily"].sort())
-    assert.deepEqual([...noCredentialPlugins({ packs, store })].sort(), [...accountless, "jira", "slack", "tavily"].sort())
+    assert.deepEqual([...noAccountPlugins({ packs, store })], ["tavily"])
+    assert.deepEqual([...noCredentialPlugins({ packs, store })].sort(), ["jira", "slack", "tavily"])
     writeFileSync(join(store, "round.json"), "{ not json")
     assert.deepEqual([...fakePlugins({ packs, store })].sort(), ["github", "jira"], "an unreadable round config changes nothing")
   } finally {
@@ -182,7 +181,7 @@ test("2: for a `none` plugin the call, target and canary clauses are n/a and the
   for (const bad of ["Here are your 3 issues.", "PR #12 is open."]) assert.ok(!NOT_SIGNED_IN.test(bad), bad)
 })
 
-test("2: phase1 expects no sign-in for the accountless plugins: check-real, the keeper and the live probes leave them out, and there is no GitHub-token step", async () => {
+test("2: phase1 expects no sign-in for github or jira: check-real, the keeper and the live probes leave them out, and there is no GitHub-token step", async () => {
   assert.equal(STEPS.some((s) => s.id === "p6b"), false)
   const root = scratch()
   try {
@@ -206,7 +205,7 @@ test("2: phase1 expects no sign-in for the accountless plugins: check-real, the 
     }
     const ctx = { store, caller: {}, opencode: "oc", profile, vendors: [], logout: null, pilot: false, confirmLabels: false, deps, noAccount: noCredentialPlugins({ packs: loadPacks() }) }
     await runPhase1({ store, ctx, log: () => {} })
-    assert.deepEqual(calls, ["check-real slack", "check-real linear", "keeper except boxd,browse,charts,github,history,inference,jira,jobs,utilities,voice", "p7 slack", "live slack", "gws"])
+    assert.deepEqual(calls, ["check-real slack", "check-real linear", "keeper except github,jira", "p7 slack", "live slack", "gws"])
     const named = []
     await runPhase1({ store, ctx: { ...ctx, deps: { ...deps, checkReal: ({ integration }) => (named.push(integration), { ok: true, line: "PASS" }) }, vendors: ["github", "slack", "jira"] }, log: () => {}, reset: true })
     assert.deepEqual(named, ["slack"])
