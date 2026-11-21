@@ -29,7 +29,7 @@
 import { closeSync, constants, existsSync, fstatSync, mkdirSync, openSync, readSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { runToEnd, removeInside } from "./sandbox.mjs"
-import { vendorCredentials, exportProfile, exportTargetsFor, verifyVendorImport } from "./vendor-auth.mjs"
+import { vendorCredentials, exportProfile, exportTargetsFor, verifyVendorImport, verifyVendorServers } from "./vendor-auth.mjs"
 
 export const CREDENTIAL_LIMIT = 64 * 1024
 
@@ -161,6 +161,12 @@ export async function prepareAuth(profile, options) {
       // Import accepts any id: prove the trial's host registered each integration and holds the credential active, or fail
       // as an infrastructure auth error (the runner marks it so, and grading never counts it as the model's).
       await verifyVendorImport({ exec, cwd: sandbox.home, env, list: vendor.list, plugins: vendor.plugins, standalone: true })
+    },
+    // On the trial's own long-lived server, after it starts and before the first prompt: an MCP server is only
+    // `connected` when the host has really reached the vendor with the imported credential.
+    async verify(context) {
+      const { sandbox, env, exec = (args, opts) => runToEnd(binary, args, { cwd: sandbox.home, env, ...opts }), url } = context
+      await verifyVendorServers({ exec, cwd: sandbox.home, env, url, list: vendor.list, plugins: vendor.plugins })
     },
   }
 }

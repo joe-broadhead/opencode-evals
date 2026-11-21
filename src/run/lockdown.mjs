@@ -57,9 +57,10 @@ export const COMPANION_CAPS = Object.freeze({
 
 export const ACCESS = "ask-changes"
 
-/** The options a plugin always runs with in this round: ask-changes, and its caps when it has any. */
+/** The options a plugin always runs with in this round: ask-changes, and its caps when it has any. The caps are the
+ * sealed rules: an arm file's or companions map's extra options add to them, but cannot raise or remove them. */
 export function companionOptions(id, extra = {}) {
-  return { ...(COMPANION_CAPS[id] ?? {}), ...extra, access: ACCESS }
+  return { ...extra, ...(COMPANION_CAPS[id] ?? {}), access: ACCESS }
 }
 
 /** Every pack under `dir`, as parsed JSON, sorted by id. */

@@ -208,27 +208,37 @@ export async function verifyVendorImport({ exec, cwd, env, list, plugins = {}, s
     const active = rows.find((row) => row?.id === credential.id && row.active === true)
     if (answer?.code !== 0 || !active) throw infraAuth(`--auth +profile: the trial's host does not hold ${plugin}'s imported credential (${credential.integrationID}) as active`)
   }
-  // An integration row is not a server: the host lists an MCP integration even when the plugin never registered its
-  // server (or registered it without the credential's OAuth client), and then the trial's tools are missing. Require
-  // the server for every imported mcp_ credential to be listed as connected.
+}
+
+/**
+ * On the trial's own server, after it starts and before the first prompt: every imported `mcp_` credential's server must
+ * settle as connected. A fresh `--standalone` server per call cannot answer this (2.3.2 starts MCP connections
+ * asynchronously as `pending`; `mcp.list` returns the current statuses without waiting), so this polls ONE server,
+ * `--server <url>`, as the client does. `pending` is retried until `deadlineMs` (2.3.2's 2 s startup grace plus its
+ * 30 s MCP startup timeout, with margin); `needs authentication`, `failed` and `disabled` fail at once. Every failure is
+ * an infrastructure auth failure, naming the plugin.
+ */
+export async function verifyVendorServers({ exec, cwd, env, url, list, plugins = {}, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = Date.now, deadlineMs = 32_000, timeoutMs = 60_000 }) {
   const mcp = list.filter((credential) => credential.integrationID.startsWith("mcp_"))
   if (!mcp.length) return
   const names = [...new Set(mcp.map((credential) => plugins[credential.integrationID] ?? credential.integrationID))]
+  const deadline = now() + deadlineMs
   let rows = []
-  for (let attempt = 0; attempt < 6; attempt++) {
-    const answer = await exec(["mcp", "list", ...flags], { cwd, env, timeoutMs })
-    if (answer?.error) throw infraAuth(`--auth +profile: \`opencode mcp list\` in the trial failed: ${answer.error}`)
-    if (answer?.code !== 0) throw infraAuth(`--auth +profile: \`opencode mcp list\` in the trial failed (exit ${answer?.code ?? "?"})`)
+  for (;;) {
+    const answer = await exec(["mcp", "list", "--server", url], { cwd, env, timeoutMs })
+    if (answer?.error) throw infraAuth(`--auth +profile: \`opencode mcp list --server\` in the trial failed: ${answer.error}`)
+    if (answer?.code !== 0) throw infraAuth(`--auth +profile: \`opencode mcp list --server\` in the trial failed (exit ${answer?.code ?? "?"})`)
     rows = mcpRows(answer.stdout)
     const statuses = names.map((name) => rows.find((row) => row.name === name)?.status ?? "")
     if (statuses.every((status) => /^connected$/i.test(status))) return
-    if (statuses.some((status) => /failed|needs authentication|disabled/i.test(status))) break
-    if (attempt < 5) await wait(500)
-  }
-  for (const name of names) {
-    const row = rows.find((entry) => entry.name === name)
-    if (!row) throw infraAuth(`--auth +profile: the trial's host registers no MCP server "${name}" for its imported credential; the plugin's server name or URL differs from the evals profile's build, or it registered no server`)
-    if (!/^connected$/i.test(row.status)) throw infraAuth(`--auth +profile: the trial's host has MCP server "${name}" ${row.status}, not connected: the imported credential is not usable`)
+    const hard = statuses.find((status) => /failed|needs authentication|disabled/i.test(status))
+    if (hard) throw infraAuth(`--auth +profile: the trial's host has MCP server "${names[statuses.indexOf(hard)]}" ${hard}, not connected: the imported credential is not usable`)
+    if (now() >= deadline) {
+      const pending = names.filter((name, index) => !/^connected$/i.test(statuses[index]))
+      const why = names.map((name, index) => `${name} ${statuses[index] || "not listed"}`).join(", ")
+      throw infraAuth(`--auth +profile: the trial's host did not connect its MCP server(s) within ${Math.round(deadlineMs / 1000)} s (${why}): the imported credential is not usable`)
+    }
+    await wait(500)
   }
 }
 
