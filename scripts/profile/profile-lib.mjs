@@ -64,6 +64,36 @@ export function rpcFailure(out) {
 const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v)
 const ERROR_WORD = /UNAVAILABLE|UNREADABLE|UPSTREAM|AUTH_REQUIRED|AUTH_SCOPE_MISSING|UNAUTHORI[SZ]ED|FORBIDDEN|FAILED|ERROR/i
 
+/**
+ * The tools-RPC envelope `{ output, text }` of an answer, or null when it is not one. A tools-RPC answer is
+ * `{ output: { output: <the tool's value>, text: <its one-line rendering> } }`: the outer `output` is the RPC's, and the
+ * inner `output` is the tool's. One definition, shared by the identity reads and the canary seeding, so they cannot drift.
+ */
+export function rpcEnvelope(value) {
+  return isObject(value) && "output" in value && typeof value.text === "string" ? value : null
+}
+
+/**
+ * The tool's own value from a tools-RPC answer: descend the RPC's `output` (or `data`/`result`), descend the
+ * `{output, text}` envelope when present, read the first text part of an MCP result, and parse a JSON string. An answer
+ * in no known shape is returned as it is: the caller decides whether it understands it.
+ */
+export function toolValue(answer) {
+  const outer = isObject(answer) && answer.output !== undefined ? answer.output : isObject(answer) && answer.data !== undefined ? answer.data : isObject(answer) && answer.result !== undefined ? answer.result : answer
+  const envelope = rpcEnvelope(outer)
+  let value = envelope ? envelope.output : outer
+  // An MCP result: content parts, the text of which is the tool's JSON.
+  if (isObject(value) && Array.isArray(value.content) && value.content[0]?.type === "text") value = value.content[0].text
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value)
+    } catch {
+      // plain text: the caller looks in it as text
+    }
+  }
+  return value
+}
+
 /** Exit codes a CLI may report when it is killed by its own timeout (124 is GNU timeout, 137/143 SIGKILL/SIGTERM). `run()`'s own spawnSync
  *  timeout is NOT one of these: it reports `status: null` with an ETIMEDOUT error. A non-null code is the CLI's own, so only a body-less one
  *  is treated as a timeout. */
@@ -119,7 +149,8 @@ export function waitForEvalsRoute(call, vendor, directory, { waitMs = RPC_WAIT_M
 /** An error signal in the answer's top levels (root, `output`, `output.output`): an RpcError (also under `data`), an error/isError/failed/refused key, an error-like code or status. Data deeper down is not scanned: it is other people's content. */
 export function errorSignal(answer) {
   if (answer?._tag === "RpcError" || answer?.data?._tag === "RpcError") return "an RpcError"
-  for (const level of [answer, answer?.output, answer?.output?.output]) {
+  const inner = rpcEnvelope(answer?.output)?.output ?? answer?.output?.output
+  for (const level of [answer, answer?.output, inner]) {
     if (!isObject(level)) continue
     for (const key of ["error", "errors", "isError", "failed", "refused"]) {
       const v = level[key]

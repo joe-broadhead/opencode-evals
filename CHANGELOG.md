@@ -22,6 +22,12 @@ EVALS-232: the harness for a round that runs every plugin against live accounts 
 
 ### Fixed
 
+- **Canary seeding reads the tools-RPC envelope, so a rerun reuses its canaries** (`scripts/seed-canaries.mjs`). A tools-RPC answer is
+  `{ output: { output: <the tool's value>, text } }`; `unwrap` now descends it through `toolValue` in `scripts/profile/profile-lib.mjs`, the one
+  definition the identity reads use too (`errorSignal` shares `rpcEnvelope`). Before, `find` read the envelope instead of the list, never matched,
+  and every rerun created the canary again (duplicates of the issue and document canaries in the sandbox team; Linear refused the milestone's
+  duplicate). A `find` whose `items` path is missing, or is not a list, is now an answer shape the seed refuses rather than falls through to
+  create, and the one seeding session is deleted on every path, as the walk's `withCheckSession` does.
 - **The harness is never more permissive than the plugin** (review of #14, round 4: the allow written for the pack's reads overrode eight asks the plugins make on purpose for private content, Slack's private search and file read
   and X's six direct-message reads). The sealed config now allows only the reads the plugin's OWN rules allow at the trial's access, taken from the host, not from the pack's read list: `packs/<id>/plugin-rules.json`
   (`scripts/plugin-rules.mjs`: all 24 builds loaded with none of the harness's rules, the probe plugin asking the host about every action of every pack; `evals pack` fails a pack with none, of another release, or that does not decide

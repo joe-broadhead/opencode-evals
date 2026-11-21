@@ -31,7 +31,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
 import { randomBytes } from "node:crypto"
-import { profileEnv, realEnv, run, activeCredential, exportTarget } from "./profile/profile-lib.mjs"
+import { profileEnv, realEnv, run, activeCredential, exportTarget, toolValue } from "./profile/profile-lib.mjs"
 import { assertDistinctPort } from "../src/run/service-port.mjs"
 import { flatten, isWeakCanary } from "../src/grade/targets.mjs"
 import { storeRoot } from "../src/store.mjs"
@@ -124,17 +124,9 @@ export function unwrap(stdout) {
     throw new Error(`the service did not answer JSON: ${String(stdout).slice(0, 120)}`)
   }
   if (parsed?.error) throw new Error(`the service refused: ${typeof parsed.error === "string" ? parsed.error : (parsed.error.message ?? JSON.stringify(parsed.error)).slice(0, 200)}`)
-  let value = parsed?.output ?? parsed?.data ?? parsed?.result ?? parsed
-  // An MCP result: content parts, the text of which is the tool's JSON.
-  if (value && typeof value === "object" && Array.isArray(value.content) && value.content[0]?.type === "text") value = value.content[0].text
-  if (typeof value === "string") {
-    try {
-      value = JSON.parse(value)
-    } catch {
-      // plain text: the caller looks in it as text
-    }
-  }
-  return value
+  // A tools-RPC answer is { output: { output: <the tool's value>, text } }: toolValue descends that envelope (and the
+  // MCP content and JSON-string layers), in the one definition the identity reads use too.
+  return toolValue(parsed)
 }
 
 /**
@@ -209,32 +201,47 @@ export function seedCanaries({ manifest, store, profile, opencode = "opencode", 
 
   const created = []
   const reused = []
-  for (const p of plan) {
-    const c = p.canary
-    const vars = { container: p.container, content: p.content }
-    // Found first: a rerun reuses.
-    const result = call(c, "find", vars)
-    const list = c.find.items ? pick(result, c.find.items) : result
-    const items = Array.isArray(list) ? list : []
-    const hit = items.find((item) => (c.find.match === "includes" ? String(pick(item, c.find.where) ?? "").includes(p.content) : String(pick(item, c.find.where)) === p.content))
-    let id
-    if (hit) {
-      id = pick(hit, c.find.id ?? c.create.id ?? "id")
-      reused.push(p.name)
-      log(`reused  ${p.name} in ${p.alias}`)
-    } else {
-      const made = call(c, "create", vars)
-      id = pick(made, c.create.id ?? "id")
-      created.push(p.name)
-      log(`created ${p.name} in ${p.alias}`)
+  let outcome
+  try {
+    for (const p of plan) {
+      const c = p.canary
+      const vars = { container: p.container, content: p.content }
+      // Found first: a rerun reuses.
+      const result = call(c, "find", vars)
+      const list = c.find.items ? pick(result, c.find.items) : result
+      // An answer without the list the manifest names is a shape this seed does not understand: refuse rather than fall
+      // through to create, which would duplicate the canary on every run.
+      if (list === undefined) throw new Error(`${p.name}: the find ${c.find.method} answer has no ${c.find.items ?? "result"} list: the seed does not understand this answer, so nothing was created for it`)
+      if (!Array.isArray(list)) throw new Error(`${p.name}: the find ${c.find.method} answer's ${c.find.items ?? "result"} is not a list: the seed does not understand this answer, so nothing was created for it`)
+      const hit = list.find((item) => (c.find.match === "includes" ? String(pick(item, c.find.where) ?? "").includes(p.content) : String(pick(item, c.find.where)) === p.content))
+      let id
+      if (hit) {
+        id = pick(hit, c.find.id ?? c.create.id ?? "id")
+        reused.push(p.name)
+        log(`reused  ${p.name} in ${p.alias}`)
+      } else {
+        const made = call(c, "create", vars)
+        id = pick(made, c.create.id ?? "id")
+        created.push(p.name)
+        log(`created ${p.name} in ${p.alias}`)
+      }
+      const value = c.value === "id" ? String(id ?? "") : p.content
+      if (!value || isWeakCanary(value)) throw new Error(`${p.name}: its value ${c.value === "id" ? "(the id the service returned)" : "(the content)"} is empty or too weak to be a canary`)
+      book[p.name] = value
+      book._ids[p.name] = id ?? null
+      writeJson(file, book)
     }
-    const value = c.value === "id" ? String(id ?? "") : p.content
-    if (!value || isWeakCanary(value)) throw new Error(`${p.name}: its value ${c.value === "id" ? "(the id the service returned)" : "(the content)"} is empty or too weak to be a canary`)
-    book[p.name] = value
-    book._ids[p.name] = id ?? null
-    writeJson(file, book)
+    outcome = { ok: true, plan: plan.map(({ canary, ...rest }) => rest), created, reused, ids: book._ids }
+  } finally {
+    // The one session is deleted on every path, as the walk's withCheckSession does: a leftover session can still run
+    // the find and create actions it was narrowed to.
+    const gone = exec(opencode, ["api", "delete", `/api/session/${sessionID}`], { env: mine })
+    if (gone.code !== 0) {
+      if (outcome) outcome.leftover = sessionID
+      else throw new Error(`the seeding session ${sessionID} could not be deleted: delete the session titled "canary seeding" yourself`)
+    }
   }
-  return { ok: true, plan: plan.map(({ canary, ...rest }) => rest), created, reused, ids: book._ids }
+  return outcome
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

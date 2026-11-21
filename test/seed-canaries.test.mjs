@@ -9,7 +9,7 @@ import { seedCanaries, manifestProblems, fill, pick, unwrap, MANIFEST_SCHEMA } f
 import { loadCanaries, flatten } from "../src/grade/targets.mjs"
 
 const ROOT = join(import.meta.dirname, "..")
-const TARGETS = { linear: { team: "T-SANDBOX" }, slack: { sandbox_channel: "C0SANDBOX" }, notion: { sandbox_page: "P-SANDBOX-0001" } }
+const TARGETS = { linear: { team: "T-SANDBOX", project: "P-SANDBOX" }, slack: { sandbox_channel: "C0SANDBOX" }, notion: { sandbox_page: "P-SANDBOX-0001" } }
 
 const MANIFEST = {
   schema: MANIFEST_SCHEMA,
@@ -17,7 +17,19 @@ const MANIFEST = {
     { name: "linear_issue", plugin: "linear", container: "linear.team", content: "Quillfeather sync stalls {{token}}", find: { method: "list_issues", input: { team: "{{container}}", query: "{{content}}" }, items: "issues", where: "title", id: "id" }, create: { method: "save_issue", input: { team: "{{container}}", title: "{{content}}", description: "Invented for the round." }, id: "id" } },
     { name: "linear_release", plugin: "linear", container: "linear.team", content: "Marlowe release {{token}}", find: { method: "list_issues", input: { team: "{{container}}", query: "{{content}}" }, items: "issues", where: "title", id: "id" }, create: { method: "save_issue", input: { team: "{{container}}", title: "{{content}}" }, id: "id" } },
     // a vendor-assigned id is the value: Slack chooses the ts
-    { name: "slack_pinned_ts", plugin: "slack", container: "slack.sandbox_channel", content: "pinned fixture note for the round", value: "id", find: { method: "slack_read_channel", input: { channel_id: "{{container}}" }, items: "messages", where: "text", id: "ts", match: "includes" }, create: { method: "slack_send_message", input: { channel_id: "{{container}}", text: "{{content}}" }, id: "ts" } },
+    { name: "slack_pinned_ts", plugin: "slack", container: "slack.sandbox_channel", content: "pinned fixture note for the round", value: "id", find: { method: "slack_read_channel", input: { channel_id: "{{container}}" }, items: "messages", where: "text", id: "ts", match: "includes" }, create: { method: "slack_send_message", input: { channel_id: "{{container}}", message: "{{content}}" }, id: "ts" } },
+  ],
+}
+
+// One canary of each Linear kind whose find is a list inside the tools-RPC envelope: a rerun of any of them must reuse.
+const FIVE = {
+  schema: MANIFEST_SCHEMA,
+  canaries: [
+    MANIFEST.canaries[0],
+    { name: "linear_document", plugin: "linear", container: "linear.team", content: "Evals spec marlin", value: "content", find: { method: "list_documents", input: { teamId: "{{container}}", query: "{{content}}" }, items: "documents", where: "title", id: "id" }, create: { method: "save_document", input: { team: "{{container}}", title: "{{content}}" }, id: "id" } },
+    { name: "linear_milestone", plugin: "linear", container: "linear.project", content: "Phase one heron", value: "content", find: { method: "list_milestones", input: { project: "{{container}}" }, items: "milestones", where: "name", id: "id" }, create: { method: "save_milestone", input: { project: "{{container}}", name: "{{content}}" }, id: "id" } },
+    { name: "linear_issue_label", plugin: "linear", container: "linear.team", content: "flaky-test 5c2e", value: "content", find: { method: "list_issue_labels", input: { team: "{{container}}", name: "{{content}}" }, items: "labels", where: "name", id: "id" }, create: { method: "create_issue_label", input: { teamId: "{{container}}", name: "{{content}}" }, id: "id" } },
+    { name: "linear_project_label", plugin: "linear", container: "linear.team", content: "evals 232 7d1a", value: "content", find: { method: "list_project_labels", input: { team: "{{container}}", name: "{{content}}" }, items: "labels", where: "name", id: "id" }, create: { method: "save_project_label", input: { teamId: "{{container}}", name: "{{content}}" }, id: "id" } },
   ],
 }
 
@@ -25,28 +37,72 @@ const MANIFEST = {
 function fake({ profile, signedIn = ["linear", "slack"], realPort = "49374", profilePort = "47950" } = {}) {
   const calls = []
   const sessions = new Map()
+  const made = [] // every session body, kept after the session itself is deleted
+  const deleted = []
   const entities = [] // { kind, container, text, id }
   let n = 0
+  let sessionN = 0
+  // The tools-RPC answer as the service makes it: { output: { output: <the tool's value>, text } }.
+  const envelope = (value, text = "ok") => ({ output: { output: value, text } })
   const rpc = (route, method, body) => {
     const session = sessions.get(body.input.sessionID)
     if (!session) return { code: 1, stdout: "", stderr: "no session" }
     const plugin = route.split(".")[0]
-    const action = { list_issues: "linear_list_issues", save_issue: "linear_save_issue", slack_read_channel: "slack_slack_read_channel", slack_send_message: "slack_slack_send_message" }[method]
+    const action = {
+      list_issues: "linear_list_issues", save_issue: "linear_save_issue",
+      list_documents: "linear_list_documents", save_document: "linear_save_document",
+      list_milestones: "linear_list_milestones", save_milestone: "linear_save_milestone",
+      list_issue_labels: "linear_list_issue_labels", create_issue_label: "linear_create_issue_label",
+      list_project_labels: "linear_list_project_labels", save_project_label: "linear_save_project_label",
+      slack_read_channel: "slack_slack_read_channel", slack_send_message: "slack_slack_send_message",
+    }[method]
     // the last matching rule wins; only an allow runs
     const rule = [...session.permissions].reverse().find((r) => r.action === action || (r.action.endsWith("*") && action.startsWith(r.action.slice(0, -1))))
     if (rule?.effect !== "allow") return { code: 0, stdout: JSON.stringify({ error: { message: `PERMISSION_DENIED ${action}` } }), stderr: "" }
     const input = body.input.input
-    if (method === "list_issues") return { code: 0, stdout: JSON.stringify({ output: { issues: entities.filter((e) => e.kind === "issue" && e.container === input.team && e.text.includes(input.query)).map((e) => ({ id: e.id, title: e.text })) } }), stderr: "" }
+    const listed = (kind, container, field, query) => ({
+      output: {
+        output: {
+          [field]: entities.filter((e) => e.kind === kind && e.container === container && (query === undefined || e.text.includes(query))).map((e) => ({ id: e.id, [kind === "issue" || kind === "document" ? "title" : "name"]: e.text })),
+        },
+        text: "1 found",
+      },
+    })
+    if (method === "list_issues") return { code: 0, stdout: JSON.stringify(listed("issue", input.team, "issues", input.query)), stderr: "" }
     if (method === "save_issue") {
       const e = { kind: "issue", container: input.team, text: input.title, id: `ISS-${++n}` }
       entities.push(e)
-      return { code: 0, stdout: JSON.stringify({ output: { id: e.id, title: e.text } }), stderr: "" }
+      return { code: 0, stdout: JSON.stringify(envelope({ id: e.id, title: e.text })), stderr: "" }
     }
-    if (method === "slack_read_channel") return { code: 0, stdout: JSON.stringify({ output: { content: [{ type: "text", text: JSON.stringify({ messages: entities.filter((e) => e.kind === "message" && e.container === input.channel_id).map((e) => ({ ts: e.id, text: e.text })) }) }] } }), stderr: "" }
-    if (method === "slack_send_message") {
-      const e = { kind: "message", container: input.channel_id, text: input.text, id: `17570000${String(++n).padStart(2, "0")}.00${n}100` }
+    if (method === "list_documents") return { code: 0, stdout: JSON.stringify(listed("document", input.teamId, "documents", input.query)), stderr: "" }
+    if (method === "save_document") {
+      const e = { kind: "document", container: input.team, text: input.title, id: `DOC-${++n}` }
       entities.push(e)
-      return { code: 0, stdout: JSON.stringify({ output: { ts: e.id } }), stderr: "" }
+      return { code: 0, stdout: JSON.stringify(envelope({ id: e.id, title: e.text })), stderr: "" }
+    }
+    if (method === "list_milestones") return { code: 0, stdout: JSON.stringify(listed("milestone", input.project, "milestones")), stderr: "" }
+    if (method === "save_milestone") {
+      const e = { kind: "milestone", container: input.project, text: input.name, id: `MIL-${++n}` }
+      entities.push(e)
+      return { code: 0, stdout: JSON.stringify(envelope({ id: e.id, name: e.text })), stderr: "" }
+    }
+    if (method === "list_issue_labels") return { code: 0, stdout: JSON.stringify(listed("issue_label", input.team, "labels", input.name)), stderr: "" }
+    if (method === "create_issue_label") {
+      const e = { kind: "issue_label", container: input.teamId, text: input.name, id: `LBL-${++n}` }
+      entities.push(e)
+      return { code: 0, stdout: JSON.stringify(envelope({ id: e.id, name: e.text })), stderr: "" }
+    }
+    if (method === "list_project_labels") return { code: 0, stdout: JSON.stringify(listed("project_label", input.team, "labels", input.name)), stderr: "" }
+    if (method === "save_project_label") {
+      const e = { kind: "project_label", container: input.teamId, text: input.name, id: `PLB-${++n}` }
+      entities.push(e)
+      return { code: 0, stdout: JSON.stringify(envelope({ id: e.id, name: e.text })), stderr: "" }
+    }
+    if (method === "slack_read_channel") return { code: 0, stdout: JSON.stringify(envelope({ content: [{ type: "text", text: JSON.stringify({ messages: entities.filter((e) => e.kind === "message" && e.container === input.channel_id).map((e) => ({ ts: e.id, text: e.text })) }) }] })), stderr: "" }
+    if (method === "slack_send_message") {
+      const e = { kind: "message", container: input.channel_id, text: input.message, id: `17570000${String(++n).padStart(2, "0")}.00${n}100` }
+      entities.push(e)
+      return { code: 0, stdout: JSON.stringify(envelope({ ts: e.id })), stderr: "" }
     }
     return { code: 1, stdout: "", stderr: `no method ${method}` }
   }
@@ -58,16 +114,24 @@ function fake({ profile, signedIn = ["linear", "slack"], realPort = "49374", pro
       const path = args[2]
       const body = JSON.parse(args[args.indexOf("--data") + 1])
       if (path === "/api/session") {
-        const id = `ses_${sessions.size + 1}`
+        const id = `ses_${++sessionN}`
         sessions.set(id, body)
+        made.push({ id, ...body })
         return { code: 0, stdout: JSON.stringify({ data: { id } }), stderr: "" }
       }
       const m = /^\/api\/rpc\/([^/]+)\/([^/]+)$/.exec(path)
       if (m) return rpc(m[1], m[2], body)
     }
+    if (args[0] === "api" && args[1] === "delete") {
+      const m = /^\/api\/session\/(ses_[A-Za-z0-9]+)$/.exec(args[2])
+      if (!m || !sessions.has(m[1])) return { code: 1, stdout: "", stderr: "no such session" }
+      sessions.delete(m[1])
+      deleted.push(m[1])
+      return { code: 0, stdout: JSON.stringify({ ok: true }), stderr: "" }
+    }
     return { code: 1, stdout: "", stderr: `unexpected ${args.join(" ")}` }
   }
-  return { exec, calls, sessions, entities, rpcCalls: () => calls.filter((c) => /^\/api\/rpc\//.test(c.args[2] ?? "")) }
+  return { exec, calls, sessions, made, deleted, entities, rpcCalls: () => calls.filter((c) => /^\/api\/rpc\//.test(c.args[2] ?? "")) }
 }
 
 function setup(t, { targets = TARGETS } = {}) {
@@ -220,8 +284,8 @@ test("the session of the seeding denies every tool of the plugins it touches exc
   const s = setup(t)
   const svc = fake({ profile: s.profile })
   seed(s, { exec: svc.exec })
-  assert.equal(svc.sessions.size, 1, "one session")
-  const [session] = [...svc.sessions.values()]
+  assert.equal(svc.made.length, 1, "one session")
+  const [session] = svc.made
   assert.equal(session.agent, "build")
   assert.deepEqual(session.location, { directory: join(s.profile, "canary-seeding") })
   assert.deepEqual(session.permissions, [
@@ -247,6 +311,9 @@ test("the helpers: dotted paths, templates, and the answers a service gives", ()
   assert.deepEqual(unwrap(JSON.stringify({ data: { id: 2 } })), { id: 2 })
   assert.deepEqual(unwrap(JSON.stringify({ output: { content: [{ type: "text", text: '{"id":3}' }] } })), { id: 3 })
   assert.deepEqual(unwrap(JSON.stringify({ output: '{"id":4}' })), { id: 4 })
+  // A tools-RPC answer is { output: { output: <the tool's value>, text } }: the descent is what find reads.
+  assert.deepEqual(unwrap(JSON.stringify({ output: { output: { milestones: [{ id: "m1", name: "X" }] }, text: "1 found" } })), { milestones: [{ id: "m1", name: "X" }] })
+  assert.deepEqual(unwrap(JSON.stringify({ output: { output: { content: [{ type: "text", text: '{"issues":[{"id":"i1"}]}' }] }, text: "1 found" } })), { issues: [{ id: "i1" }] })
   assert.throws(() => unwrap(JSON.stringify({ error: { message: "PERMISSION_DENIED x" } })), /the service refused: PERMISSION_DENIED x/)
   assert.throws(() => unwrap("not json"), /did not answer JSON/)
 })
@@ -259,8 +326,68 @@ test("a value too weak to be a canary is refused when it comes back from the ser
   // the service gives back an id the grader would find in ordinary text
   const exec = (c, a, o) => {
     const out = svc.exec(c, a, o)
-    return /slack_send_message/.test(a[2] ?? "") ? { ...out, stdout: JSON.stringify({ output: { ts: "1" } }) } : out
+    return /slack_send_message/.test(a[2] ?? "") ? { ...out, stdout: JSON.stringify({ output: { output: { ts: "1" }, text: "ok" } }) } : out
   }
   assert.throws(() => seed(s, { manifest: m, exec }), /too weak to be a canary/)
   assert.equal(existsSync(join(s.store, "canaries.json")), false)
+})
+
+test("a find descends the tools-RPC {output:{output,text}} envelope: every kind reuses on a rerun, and a created id is recorded", (t) => {
+  const s = setup(t)
+  const svc = fake({ profile: s.profile })
+  const first = seedCanaries({ manifest: FIVE, store: s.store, profile: s.profile, env: s.env, exec: svc.exec })
+  assert.deepEqual(first.created, FIVE.canaries.map((c) => c.name))
+  assert.deepEqual(first.reused, [])
+  assert.equal(svc.entities.length, 5)
+  const book = canariesOf(s)
+  const kindOf = { linear_issue: "issue", linear_document: "document", linear_milestone: "milestone", linear_issue_label: "issue_label", linear_project_label: "project_label" }
+  for (const [name, kind] of Object.entries(kindOf)) {
+    const entity = svc.entities.find((e) => e.kind === kind)
+    assert.equal(book._ids[name], entity.id, `${name} records the id its create answer returned inside the envelope`)
+  }
+  // The rerun finds each one inside the envelope: no create, no duplicate.
+  const again = seedCanaries({ manifest: FIVE, store: s.store, profile: s.profile, env: s.env, exec: svc.exec })
+  assert.deepEqual(again.created, [])
+  assert.deepEqual(again.reused, FIVE.canaries.map((c) => c.name))
+  assert.equal(svc.entities.length, 5, "nothing duplicated")
+  assert.deepEqual(canariesOf(s), book)
+})
+
+test("a find answer without the items list is refused, never turned into a create", (t) => {
+  const s = setup(t)
+  const svc = fake({ profile: s.profile })
+  const one = { ...MANIFEST, canaries: [MANIFEST.canaries[0]] }
+  const answer = (value) => (c, a, o) => /\/list_issues$/.test(a[2] ?? "") ? { code: 0, stdout: JSON.stringify({ output: { output: value, text: "" } }), stderr: "" } : svc.exec(c, a, o)
+  assert.throws(() => seedCanaries({ manifest: one, store: s.store, profile: s.profile, env: s.env, exec: answer({}) }), /has no issues list: the seed does not understand this answer/)
+  assert.equal(svc.entities.length, 0, "no create")
+  assert.equal(existsSync(join(s.store, "canaries.json")), false)
+  assert.equal(svc.deleted.length, 1, "the session is deleted on the failing path")
+  assert.equal(svc.sessions.size, 0)
+  // A value at the path that is not a list is an answer shape the seed does not understand either.
+  assert.throws(() => seedCanaries({ manifest: one, store: s.store, profile: s.profile, env: s.env, exec: answer({ issues: {} }) }), /is not a list: the seed does not understand this answer/)
+  assert.equal(svc.entities.length, 0)
+})
+
+test("the one seeding session is deleted on success and on failure, and a failed delete is reported", (t) => {
+  const s = setup(t)
+  const svc = fake({ profile: s.profile })
+  const out = seed(s, { exec: svc.exec })
+  assert.equal(out.leftover, undefined)
+  assert.deepEqual(svc.deleted, ["ses_1"])
+  assert.equal(svc.sessions.size, 0)
+  assert.equal(svc.made.length, 1, "one session made, one deleted")
+  // A session that cannot be deleted is named in the result, as the walk's withCheckSession does.
+  const s2 = setup(t)
+  const svc2 = fake({ profile: s2.profile })
+  const noDelete = (c, a, o) => a[0] === "api" && a[1] === "delete" ? { code: 1, stdout: "", stderr: "delete failed" } : svc2.exec(c, a, o)
+  assert.equal(seed(s2, { exec: noDelete }).leftover, "ses_1")
+  // And when the seeding already failed, the undeleted session is the error that is raised.
+  const s3 = setup(t)
+  const svc3 = fake({ profile: s3.profile })
+  const badAndNoDelete = (c, a, o) => {
+    if (/\/list_issues$/.test(a[2] ?? "")) return { code: 0, stdout: JSON.stringify({ output: { output: {}, text: "" } }), stderr: "" }
+    if (a[0] === "api" && a[1] === "delete") return { code: 1, stdout: "", stderr: "delete failed" }
+    return svc3.exec(c, a, o)
+  }
+  assert.throws(() => seedCanaries({ manifest: { ...MANIFEST, canaries: [MANIFEST.canaries[0]] }, store: s3.store, profile: s3.profile, env: s3.env, exec: badAndNoDelete }), /could not be deleted/)
 })
