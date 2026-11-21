@@ -181,7 +181,7 @@ test("2: for a `none` plugin the call, target and canary clauses are n/a and the
   for (const bad of ["Here are your 3 issues.", "PR #12 is open."]) assert.ok(!NOT_SIGNED_IN.test(bad), bad)
 })
 
-test("2: phase1 expects no sign-in for github or jira: check-real, the keeper and the live probes leave them out, and there is no GitHub-token step", async () => {
+test("2: phase1 excludes github and jira, then stops at disabled P7; the synthetic live step also excludes them", async () => {
   assert.equal(STEPS.some((s) => s.id === "p6b"), false)
   const root = scratch()
   try {
@@ -204,8 +204,13 @@ test("2: phase1 expects no sign-in for github or jira: check-real, the keeper an
       runBatch: async () => ({ launched: 1, planned: 1, stopped: null, bad: 0 }),
     }
     const ctx = { store, caller: {}, opencode: "oc", profile, vendors: [], logout: null, pilot: false, confirmLabels: false, deps, noAccount: noCredentialPlugins({ packs: loadPacks() }) }
-    await runPhase1({ store, ctx, log: () => {} })
-    assert.deepEqual(calls, ["check-real slack", "check-real linear", "keeper except github,jira", "p7 slack", "live slack", "gws"])
+    const result = await runPhase1({ store, ctx, log: () => {} })
+    assert.equal(result.stopped.id, "p7")
+    assert.match(result.stopped.message, /P0-7 is disabled/)
+    assert.deepEqual(calls, ["check-real slack", "check-real linear", "keeper except github,jira"])
+    // Exercise the downstream step in isolation with the synthetic probe, not via the gated sequence.
+    assert.equal((await STEPS.find((s) => s.id === "live").run(ctx)).ok, true)
+    assert.deepEqual(calls, ["check-real slack", "check-real linear", "keeper except github,jira", "live slack"])
     const named = []
     await runPhase1({ store, ctx: { ...ctx, deps: { ...deps, checkReal: ({ integration }) => (named.push(integration), { ok: true, line: "PASS" }) }, vendors: ["github", "slack", "jira"] }, log: () => {}, reset: true })
     assert.deepEqual(named, ["slack"])

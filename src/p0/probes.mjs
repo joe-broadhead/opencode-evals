@@ -1044,12 +1044,15 @@ export function egressVerdict({ id, packs = loadPacks(), companionIds = [], targ
 }
 
 /**
- * P0-7, the real host list: one scripted READ per plugin with the evals profile's credentials (`live-reads.json`, the same shape as
+ * P0-7 is disabled for live use. Only a trusted in-process synthetic scriptedRun injection can exercise the old judge:
+ * one scripted READ per plugin with the evals profile's credentials (`live-reads.json`, the same shape as
  * live-writes.json, read tools only), the batch's egress log recorded. Only the plugin's own pack hosts (and any URL its read names) are
  * judged: a `not-allowed` there is the plugin's missing `egress`. A companion's hosts, and a tunnel closed before its ClientHello, are
  * recorded as info. Writes `$EVALS_STORE/egress-hosts.json`. X and OpenRouter reads cost money at the worst-case constants: one read each.
  */
 export async function p7(env = {}) {
+  // Only an explicitly injected in-process runner may exercise the old judge in synthetic tests.
+  if (typeof env.scriptedRun !== "function") throw new Error("P0-7 is disabled: its egress verdict is not safe for live use")
   const { existsSync: exists, readFileSync: read, writeFileSync: write } = await import("node:fs")
   const { loadTargets } = await import("../grade/targets.mjs")
   const profile = env.caller?.EVALS_PROFILE ?? process.env.EVALS_PROFILE
