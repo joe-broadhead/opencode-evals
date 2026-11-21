@@ -124,7 +124,9 @@ export async function scriptedRun({ cases, arm = { package: "none" }, caller = {
     if (restarts.length) NOTES.push({ id: c.id, iteration, why: `its client made no model request within ${Math.round(restarts[0].after_ms / 1000)} s and was restarted ${restarts.length === 1 ? "once" : `${restarts.length} times`}${diagnosisText(restarts[0].diagnosis)}` })
   }
   for (const c of cases) trials[c.id].capture = readLines(join(raw, `${c.id}.t1.capture.jsonl`)).map((l) => JSON.parse(l))
-  return { root, store, raw, result, log, trials, everything, egress: result.egress ?? null, ledger: readLedgerFile(store), cleanup: () => rmSync(root, { recursive: true, force: true }), keep }
+  // `store` is the effective store (the owner's in a vendor probe), so a probe that checks run.store/run.ledger sees the
+  // ledger its spend went to; `raw` stays the probe's scratch recordings.
+  return { root, store: callerEnv.EVALS_STORE, raw, result, log, trials, everything, egress: result.egress ?? null, ledger: readLedgerFile(callerEnv.EVALS_STORE), cleanup: () => rmSync(root, { recursive: true, force: true }), keep }
 }
 
 function readLedgerFile(store) {

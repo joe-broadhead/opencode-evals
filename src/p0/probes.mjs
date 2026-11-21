@@ -922,7 +922,8 @@ export async function live(env = {}) {
       continue
     }
     const name = `tools-live-${slug(id)}`
-    const run = await scriptedRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-live-${slug(id)}`, auth: "none+profile" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
+    const batchRun = env.scriptedRun ?? scriptedRun
+    const run = await batchRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-live-${slug(id)}`, auth: "none+profile" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
     try {
       const trial = run.trials[name]
       const call = trial.calls[0]
@@ -959,7 +960,8 @@ export async function p7(env = {}) {
       continue
     }
     const name = `tools-live-read-${slug(id)}`
-    const run = await scriptedRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-p7-${slug(id)}`, auth: "none+profile" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
+    const batchRun = env.scriptedRun ?? scriptedRun
+    const run = await batchRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-p7-${slug(id)}`, auth: "none+profile" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
     try {
       const call = run.trials[name].calls[0]
       const egress = run.egress ?? {}
@@ -995,7 +997,8 @@ export async function gws(env = {}) {
   write(planFile, JSON.stringify(spec.plan))
   // The batch resolves the plan's @aliases from the owner's store (the same targets.json the probe read).
   const name = "commit-live-gws"
-  const run = await scriptedRun({ plugin: "gws", cases: [{ id: name, prompt: execute(resolved.code), extra: "- Set: commit" }], arm: fullArm(env.companions, { arm: "gws", options: {} }), options: { iteration: "p0-gws", auth: "none+profile", commitPlan: planFile, set: "commit" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
+  const batchRun = env.scriptedRun ?? scriptedRun
+  const run = await batchRun({ plugin: "gws", cases: [{ id: name, prompt: execute(resolved.code), extra: "- Set: commit" }], arm: fullArm(env.companions, { arm: "gws", options: {} }), options: { iteration: "p0-gws", auth: "none+profile", commitPlan: planFile, set: "commit" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
   try {
     const trial = run.trials[name]
     const guard = trial.summary?.guard ?? {}
