@@ -57,7 +57,7 @@ export const noCredentialPlugins = (options) => new Set([...noAccountPlugins(opt
  * opencode-inference 0.0.7 resolves it at dispatch), so a batch that names inference fails closed when the profile lacks
  * it instead of silently running the spending tools keyless.
  */
-export const noProfilePlugins = (options = {}) => new Set([...fakePlugins(options), ...pluginsMarked(options)])
+export const noProfilePlugins = (options = {}) => new Set([...noCredentialPlugins(options), ...pluginsMarked(options)])
 
 /** The plugins whose pack carries a field set to `value`: static, never overridden by the store. */
 function pluginsMarked({ packs = [] } = {}) {

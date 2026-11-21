@@ -130,7 +130,6 @@ export function vendorCredentials(exported, { needed, now = Date.now(), horizonM
         fail()
         continue
       }
-      // Two integrations may resolve to one credential (OpenRouter's two entries): one row, one import.
       if (list.some((entry) => entry.integrationID === cut.integrationID)) continue
       list.push(cut)
       plugins[cut.integrationID] = integration
@@ -226,12 +225,16 @@ export async function verifyVendorImport({ exec, cwd, env, list, plugins = {}, s
  * to, so it is waited for when the host lists one by that name (a key integration with no server row, such as gws's
  * `gws-default`, is untouched).
  */
+/** Key-authenticated integrations whose plugin registers an MCP server row of the same name (`oauth: false`, Bearer header). */
+export const KEYED_MCP_SERVERS = new Set(["tavily"])
+
 export async function verifyVendorServers({ exec, cwd, env, url, list, plugins = {}, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = Date.now, deadlineMs = 32_000, timeoutMs = 60_000 }) {
   const mcp = list.filter((credential) => credential.integrationID.startsWith("mcp_"))
   const keyed = list.filter((credential) => !credential.integrationID.startsWith("mcp_")).map((credential) => credential.integrationID)
   if (!mcp.length && !keyed.length) return
   const label = (name) => plugins[name] ?? name
-  const oauthNames = [...new Set(mcp.map((credential) => credential.integrationID))].map(label)
+  const oauthNames = [...new Set(mcp.map((credential) => label(credential.integrationID)))]
+  const expectedKeyed = keyed.filter((name) => KEYED_MCP_SERVERS.has(name))
   const deadline = now() + deadlineMs
   let rows = []
   for (;;) {
@@ -239,14 +242,15 @@ export async function verifyVendorServers({ exec, cwd, env, url, list, plugins =
     if (answer?.error) throw infraAuth(`--auth +profile: \`opencode mcp list --server\` in the trial failed: ${answer.error}`)
     if (answer?.code !== 0) throw infraAuth(`--auth +profile: \`opencode mcp list --server\` in the trial failed (exit ${answer?.code ?? "?"})`)
     rows = mcpRows(answer.stdout)
-    // A key integration's server is judged only once the host lists it: an integration that registers no server
-    // (gws's, Slack's app client) has nothing to await, and a server the plugin never registered cannot be named here.
-    const names = [...new Set([...oauthNames, ...keyed.filter((name) => rows.some((row) => row.name === name))])]
+    // Known keyed MCP servers (`tavily`) are always waited on even if the host has not listed their row yet; any other
+    // key integration that registers a server row is checked once listed, while non-MCP keys (`gws-default`, `slack-app`,
+    // `inference-openrouter`) have nothing to await.
+    const names = [...new Set([...oauthNames, ...expectedKeyed, ...keyed.filter((name) => rows.some((row) => row.name === name))])]
     if (!names.length) return
     const statuses = names.map((name) => rows.find((row) => row.name === name)?.status ?? "")
     if (statuses.every((status) => /^connected$/i.test(status))) return
-    const hard = statuses.find((status) => /failed|needs authentication|disabled/i.test(status))
-    if (hard) throw infraAuth(`--auth +profile: the trial's host has MCP server "${label(names[statuses.indexOf(hard)])}" ${hard}, not connected: the imported credential is not usable`)
+    const hardIdx = statuses.findIndex((status) => /failed|needs authentication|disabled/i.test(status))
+    if (hardIdx >= 0) throw infraAuth(`--auth +profile: the trial's host has MCP server "${label(names[hardIdx])}" ${statuses[hardIdx]}, not connected: the imported credential is not usable`)
     if (now() >= deadline) {
       const why = names.map((name, index) => `${label(name)} ${statuses[index] || "not listed"}`).join(", ")
       throw infraAuth(`--auth +profile: the trial's host did not connect its MCP server(s) within ${Math.round(deadlineMs / 1000)} s (${why}): the imported credential is not usable`)

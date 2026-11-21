@@ -106,8 +106,17 @@ const server = Bun.serve({
       const step = script[results.length]
       if (!step) return textAnswer("steps done", signal)
       const previous = previousValue(text(results[results.length - 1]?.content))
-      if (typeof step.code === "string") return toolCall("execute", JSON.stringify({ code: fillPrevious(step.code, previous) }), signal)
-      if (typeof step.tool === "string") return toolCall(step.tool, JSON.stringify(fillPrevious(step.args ?? {}, previous)), signal)
+      const missing: string[] = []
+      if (typeof step.code === "string") {
+        const code = fillPrevious(step.code, previous, { escapeCode: true, missing })
+        if (missing.length) return textAnswer(`bad step: missing ${missing.join(", ")}`, signal)
+        return toolCall("execute", JSON.stringify({ code }), signal)
+      }
+      if (typeof step.tool === "string") {
+        const args = fillPrevious(step.args ?? {}, previous, { missing })
+        if (missing.length) return textAnswer(`bad step: missing ${missing.join(", ")}`, signal)
+        return toolCall(step.tool, JSON.stringify(args), signal)
+      }
       return textAnswer("bad step", signal)
     }
     if (last?.role === "tool") return textAnswer(`after-tool: ${text(last.content).slice(0, 300)}`, signal)

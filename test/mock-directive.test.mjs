@@ -35,6 +35,10 @@ test("a directive's payload survives `]`, and a JSON argument that holds `\"` is
   assert.deepEqual(splitDirective("no directive here"), null)
   assert.deepEqual(splitDirective("[[mock:dump]]"), { kind: "dump", arg: "" })
   assert.equal(parseToolDirective("tool", "execute:not json"), null)
+  // Unbalanced `]]` inside a JSON string (kills M1: scan must respect quotes) and unmatched quote in `mock:text` (F6).
+  const unbalanced = mock("execute", { code: "return s.split(']]').join(',')" })
+  assert.deepEqual(parseToolDirective("tool", directiveOf(unbalanced).arg), { name: "execute", args: { code: "return s.split(']]').join(',')" } })
+  assert.deepEqual(directiveOf('[[mock:text:he said "hi]] trailing'), { kind: "text", arg: 'he said "hi' })
 })
 
 test("a step's {{previous.path}} reads the last result through the host's and the vendor's wrapping", () => {
@@ -50,6 +54,19 @@ test("a step's {{previous.path}} reads the last result through the host's and th
   assert.deepEqual(fillPrevious({ planId: "{{previous.planId}}", note: { ids: ["{{previous.missing}}", "{{previous.planId}}"] } }, plan), { planId: "plan_123", note: { ids: ["", "plan_123"] } })
   assert.deepEqual(fillPrevious("plan={{previous.planId}}", plan), "plan=plan_123")
   assert.equal(atPath({}, "planId"), undefined)
+  // F1: a path that meets a primitive early returns undefined, never the intermediate primitive.
+  assert.equal(atPath({ result: "oops: denied" }, "result.planId"), undefined)
+  assert.equal(atPath({ planId: "p" }, "planId.x"), undefined)
+  // F3: vendor subtrees (`docs[0].planId`) and inherited properties (`constructor`) are never matched.
+  assert.equal(atPath({ docs: [{ planId: "vendor-decoy" }] }, "result.planId"), undefined)
+  assert.equal(atPath({ docs: [{ planId: "vendor-decoy" }] }, "planId"), undefined)
+  assert.equal(atPath({}, "constructor"), undefined)
+  // F2: code steps escape single quotes and backslashes, and missing paths are recorded when requested.
+  const injected = "a'); evil(); ('"
+  assert.equal(fillPrevious("return f('{{previous.id}}')", { id: injected }, { escapeCode: true }), "return f('a\\'); evil(); (\\'')")
+  const missed = []
+  fillPrevious({ planId: "{{previous.planId}}" }, { other: 1 }, { missing: missed })
+  assert.deepEqual(missed, ["planId"])
 })
 
 const hasBun = spawnSync("bun", ["--version"], { encoding: "utf8" }).status === 0

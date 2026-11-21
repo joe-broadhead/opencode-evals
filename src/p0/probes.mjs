@@ -992,8 +992,9 @@ export async function live(env = {}) {
     try {
       const trial = run.trials[name]
       const calls = trial.calls ?? []
-      const declined = calls.some((call) => declinedIn(call) || /cannot ask the user|declined|rejected/i.test(textOf(call))) || trial.analysed.inner.declined >= 1
-      const detail = calls.length ? textOf(calls[calls.length - 1]) : ""
+      const lastCall = calls[calls.length - 1]
+      const declined = Boolean(lastCall && (declinedIn(lastCall) || /cannot ask the user|declined|rejected/i.test(textOf(lastCall)))) || (calls.length <= 1 && trial.analysed.inner.declined >= 1)
+      const detail = lastCall ? textOf(lastCall) : ""
       checks.push(ok(`${id}: the real write call is declined, not run`, declined, detail.slice(0, 120).replace(/\s+/g, " ")))
       checks.push(ok(`${id}: the guard saw no write complete`, (trial.summary?.guard?.committed ?? 0) === 0 && (trial.summary?.guard?.assert_committed ?? 0) === 0, JSON.stringify(trial.summary?.guard)))
       checks.push(ok(`${id}: the plugin loaded`, (trial.summary?.host_log?.plugin_load_failures ?? []).length === 0, JSON.stringify(trial.summary?.host_log?.plugin_load_failures ?? [])))

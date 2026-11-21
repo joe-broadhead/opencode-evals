@@ -65,7 +65,8 @@ export function splitDirective(text) {
   if (source.startsWith("]]", i)) return { kind, arg: "" }
   if (source[i] !== ":") return null
   const from = i + 1
-  const end = scan(source, from)
+  // Only JSON directives (`tool`, `steps`) carry JSON strings and brackets; plain `text`/`slow` end at the first `]]`.
+  const end = kind === "tool" || kind === "steps" ? scan(source, from) : (() => { const close = source.indexOf("]]", from); return close < 0 ? source.length : close })()
   return { kind, arg: source.slice(from, end) }
 }
 
@@ -141,37 +142,67 @@ export function previousValue(content) {
   return walk(content, 0)
 }
 
-/** The value at a dotted path, or the first value for its last segment found in the envelope (depth ≤ 5). */
+const ENVELOPE_KEYS = ["output", "result", "data", "content"]
+
+function walkKeys(root, keys) {
+  if (!keys.length) return undefined
+  let current = root
+  for (const key of keys) {
+    if (current === null || typeof current !== "object") return undefined
+    if (Array.isArray(current)) {
+      if (!/^\d+$/.test(key)) return undefined
+      current = current[Number(key)]
+    } else {
+      if (!Object.hasOwn(current, key)) return undefined
+      current = current[key]
+    }
+  }
+  return current
+}
+
+/**
+ * The value at a dotted path on `value`, or at the same dotted path inside a host/RPC wrapper envelope
+ * (`output`, `result`, `data`, `content`, depth ≤ 4). Never walks arbitrary vendor subtrees or inherited properties.
+ */
 export function atPath(value, path) {
   const keys = String(path).split(".").filter(Boolean)
-  let current = value
-  for (const key of keys) {
-    if (current === null || typeof current !== "object") break
-    current = Array.isArray(current) ? (/^\d+$/.test(key) ? current[Number(key)] : undefined) : current[key]
-  }
-  if (current !== undefined) return current
-  const leaf = keys[keys.length - 1]
+  if (!keys.length) return undefined
+  const direct = walkKeys(value, keys)
+  if (direct !== undefined) return direct
   const seen = new Set()
   const queue = [[value, 0]]
   while (queue.length) {
     const [item, depth] = queue.shift()
-    if (!item || typeof item !== "object" || depth > 5 || seen.has(item)) continue
+    if (!item || typeof item !== "object" || depth > 4 || seen.has(item)) continue
     seen.add(item)
-    if (!Array.isArray(item) && leaf in item) return item[leaf]
-    for (const inner of Array.isArray(item) ? item : Object.values(item)) queue.push([inner, depth + 1])
+    const found = walkKeys(item, keys)
+    if (found !== undefined) return found
+    if (Array.isArray(item)) {
+      for (const inner of item) queue.push([inner, depth + 1])
+    } else {
+      for (const key of ENVELOPE_KEYS) if (Object.hasOwn(item, key)) queue.push([item[key], depth + 1])
+    }
   }
   return undefined
 }
 
-/** `{{previous.<path>}}` in a step's arguments, filled from the previous result; a missing value is filled with "". */
-export function fillPrevious(value, previous) {
+const escapeCodeLiteral = (str) => String(str).replace(/\\/g, "\\\\").replace(/'/g, "\\'")
+
+/** `{{previous.<path>}}` in a step's arguments or code, filled from the previous result; a missing value is filled with "".
+ * Pass `{ escapeCode: true }` when filling a Code Mode `code` string so quotes and backslashes cannot break out of a literal. */
+export function fillPrevious(value, previous, { escapeCode = false, missing = null } = {}) {
   if (typeof value === "string") {
     return value.replace(/\{\{previous\.([A-Za-z0-9_.-]+)\}\}/g, (_, path) => {
       const found = atPath(previous, path)
-      return found === undefined || found === null ? "" : typeof found === "string" ? found : JSON.stringify(found)
+      if (found === undefined || found === null) {
+        if (Array.isArray(missing)) missing.push(path)
+        return ""
+      }
+      const rendered = typeof found === "string" ? found : JSON.stringify(found)
+      return escapeCode ? escapeCodeLiteral(rendered) : rendered
     })
   }
-  if (Array.isArray(value)) return value.map((item) => fillPrevious(item, previous))
-  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, fillPrevious(inner, previous)]))
+  if (Array.isArray(value)) return value.map((item) => fillPrevious(item, previous, { escapeCode, missing }))
+  if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, fillPrevious(inner, previous, { escapeCode, missing })]))
   return value
 }

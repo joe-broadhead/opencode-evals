@@ -189,6 +189,18 @@ test("the trial's own server is polled until each imported MCP server is connect
     }),
     /MCP server "tavily" needs authentication, not connected/,
   )
+  // F4: a known keyed MCP server (`tavily`) not yet listed on poll 1 is still waited on until listed and connected.
+  let latePolls = 0
+  await verifyVendorServers({
+    exec: async () => ({ code: 0, stdout: ++latePolls === 1 ? "" : latePolls === 2 ? "○ tavily  pending" : "✓ tavily  connected" }),
+    cwd: "/home",
+    env: {},
+    url: "http://127.0.0.1:4567",
+    list: [{ integrationID: "tavily" }],
+    plugins: { tavily: "tavily" },
+    wait: async () => {},
+  })
+  assert.equal(latePolls, 3)
   // Even when plugins[id] maps a keyed credential id to a shorter plugin label, row lookup stays on the server's row name.
   await assert.rejects(
     verifyVendorServers({
@@ -266,6 +278,16 @@ test("only the no-profile set is dropped from +profile; grading keeps the master
   assert.deepEqual(integrationsFor("affinity", [{}], packs, parse, noProfile), ["affinity"], "a plugin with an account is still asked for")
   assert.deepEqual(integrationsFor("tavily", [{}], packs, parse, noProfile), ["tavily"], "tavily is accounted: its key is asked of the profile, not skipped")
   assert.deepEqual(integrationsFor("inference", [{}], packs, parse, noProfile), ["inference-openrouter"], "inference needs its own inference-openrouter key")
+  // When round.json sets openrouter to accounts: "none", noProfilePlugins drops openrouter from mixed seeds too.
+  const store = mkdtempSync(join(tmpdir(), "evals-round-none-"))
+  try {
+    writeFileSync(join(store, "round.json"), JSON.stringify({ accounts: { openrouter: "none" } }))
+    const withRound = noProfilePlugins({ packs, store })
+    assert.equal(withRound.has("openrouter"), true)
+    assert.deepEqual(integrationsFor("inference", [{ seed: "openrouter" }], packs, parse, withRound), ["inference-openrouter"])
+  } finally {
+    rmSync(store, { recursive: true, force: true })
+  }
   // No EVALS_PROFILE and a binary that cannot run: an empty `needed` must not call exportProfile.
   const auth = await prepareAuth({ kind: "none", vendor: true }, { needed: [], binary: "/nonexistent", caller: {} })
   assert.equal(auth.profile, "none+profile")
