@@ -121,7 +121,9 @@ export async function a2(env = {}) {
   const plugins = pluginIds()
   const checks = []
   const asAll = (access) => fullArm(env.companions, { options: { access } })
-  const evaluate = [{ id: "evaluate", prompt: execute(askAll(actions)) }, { id: "rules", prompt: execute("return await tools.evalsprobe.agent_rules({})") }]
+  // The cases name the arm (slack) as their plugin seed, so the one credential the enforced path asks for is a real
+  // vendor's: the probe plugin itself (`p0`) holds no credential.
+  const evaluate = [{ id: "evaluate", prompt: execute(askAll(actions)), extra: "- Seed: plugins=slack" }, { id: "rules", prompt: execute("return await tools.evalsprobe.agent_rules({})"), extra: "- Seed: plugins=slack" }]
   // 1: the enforced path, the way every credentialed trial runs (G0 review 3.2): `+profile` with a dummy credential from a scratch
   // profile, and an arm file that names no `access` at all, so the access each plugin applies is the runner's own default. If that
   // default regressed to `all`, the `<id>_*` rules below would not be asks and this probe would fail.
@@ -130,13 +132,20 @@ export async function a2(env = {}) {
     const { mkdirSync: mk } = await import("node:fs")
     const { profileEnv } = await import("../run/vendor-auth.mjs")
     const profile = join(root, "profile")
-    mk(profile, { recursive: true })
+    mk(join(profile, ".config", "opencode"), { recursive: true })
     const bin = process.env.EVALS_OPENCODE_BIN ?? process.env.OPENCODE_BIN_2_3_2 ?? "opencode"
-    // A real-shaped credential: an MCP integration's id is mcp_<16 hex>, and `auth export` selects it by the server's
-    // name, which the host stores as the label (`p0` here, the probe's own plugin id). A plugin-id integrationID would
-    // pass a harness that wrongly filters the profile by plugin id, and fail the real host.
-    const credential = JSON.stringify([{ id: "cred_p0dummyp0dummyp0dummy00", integrationID: "mcp_0123456789abcdef", label: "p0", active: true, value: { type: "key", key: "p0-dummy-not-a-real-key-0000" } }])
-    execFileSync(bin, ["auth", "import", "--standalone"], { input: credential, env: profileEnv(profile, callerEnv), stdio: ["pipe", "pipe", "pipe"] })
+    // The scratch profile loads the arm (slack) and holds real-shaped credentials: an app client (`slack-app`, a key
+    // holding the client id) and the MCP user token whose integration id is sha1("slack\0https://mcp.slack.com/mcp").
+    // The plugin registers its MCP server only with the app client, so both are needed for `auth export slack` to
+    // resolve the integration by its name, as the real evals profile does.
+    const companions = JSON.parse(readFileSync(env.companions, "utf8"))
+    const slack = companions.slack
+    const dir = typeof slack === "string" ? slack : slack?.package
+    if (!dir) throw new Error("p0 a2 needs the slack build in --companions")
+    writeFileSync(join(profile, ".config", "opencode", "opencode.json"), JSON.stringify({ plugins: [{ package: dir }] }))
+    const importInto = (list) => execFileSync(bin, ["auth", "import", "--standalone"], { input: JSON.stringify(list), env: profileEnv(profile, callerEnv), stdio: ["pipe", "pipe", "pipe"] })
+    importInto([{ id: "cred_p0slackapp00000000000", integrationID: "slack-app", label: "Slack app", active: true, value: { type: "key", key: "p0-dummy-slack-client-id" } }])
+    importInto([{ id: "cred_p0slackuser0000000000", integrationID: "mcp_c89391481a328edc", label: "Slack", active: true, value: { type: "oauth", methodID: "mcp-oauth", access: "p0-dummy-slack-token-0000", refresh: "p0-dummy-refresh", expires: Date.now() + 24 * 3_600_000 } }])
     Object.assign(callerEnv, { EVALS_PROFILE: profile, EVALS_AUTH_STANDALONE: "1", EVALS_REAL_HOME: root })
   }
   const r1 = await scriptedRun({ cases: evaluate, arm: fullArm(env.companions, { options: {} }), prepare, options: { probe: true, iteration: "p0-a2-ask", auth: "none+profile" }, caller: env.caller, tmp: env.tmp })

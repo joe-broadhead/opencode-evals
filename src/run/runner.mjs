@@ -743,6 +743,10 @@ async function runJobBody(job, ctx, track) {
   }
 }
 
+/** The infra class of a trial that threw: a marked `auth.apply` failure is auth (never the model's), an interrupt is
+ * interrupted, anything else a trial error. */
+export const failureInfra = (error, interrupted = /^interrupted by /.test(String(error?.message ?? error))) => (interrupted ? "interrupted" : error?.infra === "auth" ? "auth" : "trial_error")
+
 /**
  * One trial, with the promise that it ends in a summary on disk, never in silence. The summary is first a stub (`infra: trial_incomplete`: the runner began this trial and never finished it,
  * as when it was killed), then the trial's own; a trial whose job throws gets a failure summary in place of the stub with the phase it reached, the error and its stack, what Docker
@@ -767,13 +771,14 @@ async function runJob(job, ctx) {
   } catch (error) {
     const message = redact(String(error?.message ?? error))
     const interrupted = /^interrupted by /.test(message)
+    const infra = failureInfra(error, interrupted)
     const modelRan = Boolean(track.result?.stdout)
     const summary = {
       exit: track.result ? (track.result.timedOut || track.result.stalled ? 124 : track.result.code ?? null) : null,
       ...(track.result?.signal ? { signal: track.result.signal } : {}),
       ...base,
-      infra: interrupted ? "interrupted" : "trial_error",
-      infra_why: `${interrupted ? "the batch was interrupted" : "the trial's job failed"} while ${track.phase}: ${message}`,
+      infra,
+      infra_why: `${interrupted ? "the batch was interrupted" : error?.infra === "auth" ? "the trial's sign-in was not usable" : "the trial's job failed"} while ${track.phase}: ${message}`,
       phase: track.phase,
       error: message,
       stack: redact(String(error?.stack ?? "").split("\n").slice(0, 10).join("\n")),

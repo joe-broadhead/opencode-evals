@@ -29,7 +29,7 @@
 import { closeSync, constants, existsSync, fstatSync, mkdirSync, openSync, readSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { runToEnd, removeInside } from "./sandbox.mjs"
-import { vendorCredentials, exportProfile, exportTargetsFor } from "./vendor-auth.mjs"
+import { vendorCredentials, exportProfile, exportTargetsFor, verifyVendorImport } from "./vendor-auth.mjs"
 
 export const CREDENTIAL_LIMIT = 64 * 1024
 
@@ -136,8 +136,9 @@ export async function prepareAuth(profile, options) {
   const { binary, caller = process.env, horizonMs = 0, acceptUnknownExpiry = false, needed = [] } = options
   if (!needed.length) throw new Error("--auth +profile: no integration to give the trials (the arm's plugin and the cases' `Seed: plugins=` name none)")
   // One `auth export <target>` per needed vendor: the host resolves a target by the server's name, so an MCP vendor's
-  // real `mcp_<hash>` credential is kept (gws-default, slack-app, x-app likewise), and nothing else leaves the profile.
-  const exported = await exportProfile({ binary, profileDir: caller.EVALS_PROFILE, targets: exportTargetsFor(needed) })
+  // real `mcp_<hash>` credential is kept, gws's `gws-default`, and Slack's and X's MCP token plus their `slack-app`/
+  // `x-app` client id (their plugins register the server only with one). Nothing else leaves the profile.
+  const exported = await exportProfile({ binary, profileDir: caller.EVALS_PROFILE, caller, targets: exportTargetsFor(needed) })
   const vendor = vendorCredentials(exported, { needed, horizonMs, acceptUnknownExpiry })
   const payload = JSON.stringify(vendor.list)
   return {
@@ -157,6 +158,9 @@ export async function prepareAuth(profile, options) {
       // and URL, so the host derives the same id; HOME and the container do not enter it.
       const imported = await exec(["auth", "import", "--standalone"], { cwd: sandbox.home, input: payload, timeoutMs: 60_000 })
       if (imported.code !== 0) throw new Error(`the vendor credential import into the sandbox failed (exit ${imported.code})`)
+      // Import accepts any id: prove the trial's host registered each integration and holds the credential active, or fail
+      // as an infrastructure auth error (the runner marks it so, and grading never counts it as the model's).
+      await verifyVendorImport({ exec, cwd: sandbox.home, env, list: vendor.list, plugins: vendor.plugins, standalone: true })
     },
   }
 }
