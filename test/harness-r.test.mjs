@@ -16,7 +16,7 @@ import { readCompanions, materialiseArm, materialiseCompanions, runtimePaths, co
 import { roundLimits, estimateRunUsd, assertLaunchWithinRound, RoundCapError, tierOf, listSpent, MIN_MEASURED_RUNS } from "../src/cost/budget.mjs"
 import { outstandingList } from "../src/cost/ledger.mjs"
 import { parseAuth } from "../src/run/auth.mjs"
-import { runBatch, listUsdOf, modelPrice, guardSummary, hostLogFacts } from "../src/run/runner.mjs"
+import { runBatch, listUsdOf, modelPrice, guardSummary, hostLogFacts, rateLimitOutcome } from "../src/run/runner.mjs"
 import { compileCase } from "../src/case/compile.mjs"
 import { flatten } from "../src/grade/targets.mjs"
 import { installFakeOpencode, installFakeBun } from "./helpers/fake-opencode.mjs"
@@ -510,6 +510,12 @@ test("a 429 with no model work is a rate limit, not an auth failure, a provider 
   assert.equal(rateLimited({ stdout: "", stderr: 'Error: 401 {"error":{"type":"authentication_error","message":"OAuth token has expired"}}' }), false)
   assert.equal(rateLimited({ stdout: "", stderr: "" }), false)
   assert.deepEqual(BACKOFF_S, [60, 120, 240])
+  // A retry only with attempts left and the previous container confirmed gone.
+  assert.deepEqual(rateLimitOutcome(0, true), { retry: true })
+  assert.equal(rateLimitOutcome(0, false).retry, false)
+  assert.equal(rateLimitOutcome(0, false).infra, "container")
+  assert.deepEqual(rateLimitOutcome(3, true), { retry: false, infra: "rate-limit" })
+  assert.deepEqual(rateLimitOutcome(3, false), { retry: false, infra: "rate-limit" })
 })
 
 const marker = (prompt) => `/tmp/evals-fake-429-${createHash("sha256").update(prompt).digest("hex").slice(0, 16)}`
@@ -529,12 +535,14 @@ test("a rate-limited run is tried again after a backoff and recorded once; after
     for (const p of prompts) rmFile(marker(p), { force: true })
     const caller = { ...once.caller, EVALS_BACKOFF_SCALE: "0.001" }
     const logs = []
-    const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "rl", model: "mock/m1", auth: "none", scripted: true, cases: "demo-a,demo-b", arm: once.arm, casesDir: once.casesDir, tools: "locked", parallel: 1 }, { caller, log: (l) => logs.push(l) })
+    const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "rl", model: "mock/m1", auth: "none", scripted: true, cases: "demo-a,demo-b", arm: once.arm, casesDir: once.casesDir, tools: "locked", parallel: 1, keep: true }, { caller, log: (l) => logs.push(l) })
     const a = result.results.find((r) => r.case === "demo-a")
     const b = result.results.find((r) => r.case === "demo-b")
     assert.equal(a.rateLimited, undefined, "demo-a succeeded on its second attempt")
     assert.equal(a.exit, 0, JSON.stringify(result.results))
     assert.equal(b.infra, "rate-limit", "demo-b never stopped being refused")
+    assert.ok(existsSync(join(result.keptAt, "runs", "demo-a.t1", "home")), "the first attempt's root is kept")
+    assert.ok(existsSync(join(result.keptAt, "runs", "demo-a.t1.a1", "home")), "the retry got a fresh root, not the first attempt's")
     assert.ok(result.rate_limited >= 4, `${result.rate_limited} rate-limited attempts counted`)
     assert.ok(logs.some((l) => /was rate-limited \(attempt 1\): trying again after 60 s/.test(l)))
     assert.ok(logs.some((l) => /three rate-limited runs in a row: paused 30 min/.test(l)))
