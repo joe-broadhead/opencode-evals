@@ -12,7 +12,7 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
-import { scriptedRun, mock, execute, textOf, executeValue, refused, refusedInCode, completedCalls, hungReason, infraReason, takeHung, takeNotes, declinedIn } from "./run.mjs"
+import { scriptedRun, mock, execute, steps, textOf, executeValue, refused, refusedInCode, completedCalls, hungReason, infraReason, takeHung, takeNotes, declinedIn } from "./run.mjs"
 import { writeActions, loadPacks, namespacePatterns } from "../run/lockdown.mjs"
 import { fillHost } from "../run/egress.mjs"
 import { decideBefore, planIdOf } from "../run/guard/logic.mjs"
@@ -872,8 +872,9 @@ export async function unknown(env = {}) {
  * probe has: a signed-in evals profile (EVALS_PROFILE) and the owner's `live-writes.json` in the store:
  *   { "slack": { "code": "return await tools.slack.slack_send_message({ channel_id: '<sandbox>', text: 'x' })", "action": "slack_slack_send_message" }, ... }
  * `code` is what Code Mode runs (the owner writes the sandbox's own ids, which this repository never holds); `action` the permission it must ask.
- * It is not part of `p0 all` until the profile is there. The review also asked for a second pass with the guard off; a run that holds a
- * credential refuses `"guard": false` (G0 review 1.6), so that pass is the credential-free P0-g gold run instead.
+ * An entry is `code`, `tool` + `args` (a direct tool such as `gws_write`) or `steps` (a sequence, `{{previous.<path>}}` filled from the
+ * previous result): see `liveEntry`. It is not part of `p0 all` until the profile is there. The review also asked for a second pass with the
+ * guard off; a run that holds a credential refuses `"guard": false` (G0 review 1.6), so that pass is the credential-free P0-g gold run instead.
  */
 /** `@slack.sandbox_channel` in a live probe's code, replaced by that target's value from targets.json: the file holds aliases, never ids. */
 export function resolveAliases(code, targets) {
@@ -889,10 +890,70 @@ export function resolveAliases(code, targets) {
   return { code: out, missing: [...new Set(missing)] }
 }
 
-/** One plugin's entry of a live-*.json file, with its aliases resolved: { code } or { error }. */
-function liveEntry(entry, targets) {
-  const resolved = resolveAliases(entry.code, targets)
-  return resolved.missing.length ? { error: `${resolved.missing.join(", ")} not in targets.json` } : { code: resolved.code }
+/** Resolve `@alias` placeholders in a direct tool's arguments, giving the raw value (not Code Mode's escaped source). */
+export function resolveArgs(value, targets) {
+  const missing = []
+  const walk = (item) => {
+    if (typeof item === "string") {
+      return item.replace(/(?<![A-Za-z0-9_.@])@([A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)+)/g, (whole, name) => {
+        const found = targets?.get(name)?.[0]
+        if (found === undefined || found === null) {
+          missing.push(whole)
+          return whole
+        }
+        return String(found)
+      })
+    }
+    if (Array.isArray(item)) return item.map(walk)
+    if (item && typeof item === "object") return Object.fromEntries(Object.entries(item).map(([key, inner]) => [key, walk(inner)]))
+    return item
+  }
+  return { value: walk(value), missing: [...new Set(missing)] }
+}
+
+/**
+ * One plugin's entry of a live-*.json file, as the scripted model's prompt, with its aliases resolved: `{ prompt, text }`
+ * or `{ error }`. An entry is one of:
+ *   { "code": "<Code Mode source>" }                          one Code Mode call (the original shape)
+ *   { "tool": "<direct tool>", "args": { … } }                 one direct tool call (`gws_read`, `gws_write`, …)
+ *   { "steps": [ { "code": … } | { "tool": …, "args": … } ] }  a sequence, one call per turn; `{{previous.<path>}}` in an
+ *                                                              argument is filled from the previous tool's result (gws:
+ *                                                              `plan`, then `gws_write` with `{{previous.planId}}`)
+ * `@alias` placeholders resolve in all three (in the code's source, or in a direct call's arguments, where the raw value
+ * is inserted rather than Code Mode's escaped source). `text` is what the step named, for the egress judge.
+ */
+export function liveEntry(entry, targets) {
+  const error = (missing) => ({ error: `${[...new Set(missing)].join(", ")} not in targets.json` })
+  if (typeof entry?.code === "string") {
+    const resolved = resolveAliases(entry.code, targets)
+    return resolved.missing.length ? error(resolved.missing) : { prompt: execute(resolved.code), text: resolved.code }
+  }
+  if (typeof entry?.tool === "string") {
+    const resolved = resolveArgs(entry.args ?? {}, targets)
+    return resolved.missing.length ? error(resolved.missing) : { prompt: mock(entry.tool, resolved.value), text: JSON.stringify(resolved.value) }
+  }
+  if (Array.isArray(entry?.steps)) {
+    const missing = []
+    const bad = []
+    const list = entry.steps.map((step, index) => {
+      if (typeof step?.code === "string") {
+        const resolved = resolveAliases(step.code, targets)
+        missing.push(...resolved.missing)
+        return { code: resolved.code }
+      }
+      if (typeof step?.tool === "string") {
+        const resolved = resolveArgs(step.args ?? {}, targets)
+        missing.push(...resolved.missing)
+        return { tool: step.tool, args: resolved.value }
+      }
+      bad.push(`step ${index + 1} has neither \`code\` nor \`tool\``)
+      return {}
+    })
+    if (missing.length) return error(missing)
+    if (bad.length) return { error: bad.join("; ") }
+    return { prompt: steps(list), text: JSON.stringify(list) }
+  }
+  return { error: "the entry has no `code`, `tool` or `steps`" }
 }
 
 /**
@@ -927,11 +988,14 @@ export async function live(env = {}) {
     }
     const name = `tools-live-${slug(id)}`
     const batchRun = env.scriptedRun ?? scriptedRun
-    const run = await batchRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-live-${slug(id)}`, auth: "none+profile" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
+    const run = await batchRun({ plugin: id, cases: [{ id: name, prompt: resolved.prompt }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-live-${slug(id)}`, auth: "none+profile" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
     try {
       const trial = run.trials[name]
-      const call = trial.calls[0]
-      checks.push(ok(`${id}: the real write call is declined, not run`, declinedIn(call) || /cannot ask the user|declined|rejected/i.test(textOf(call)) || trial.analysed.inner.declined >= 1, textOf(call).slice(0, 120).replace(/\s+/g, " ")))
+      const calls = trial.calls ?? []
+      const lastCall = calls[calls.length - 1]
+      const declined = Boolean(lastCall && (declinedIn(lastCall) || /cannot ask the user|declined|rejected/i.test(textOf(lastCall)))) || (calls.length <= 1 && trial.analysed.inner.declined >= 1)
+      const detail = lastCall ? textOf(lastCall) : ""
+      checks.push(ok(`${id}: the real write call is declined, not run`, declined, detail.slice(0, 120).replace(/\s+/g, " ")))
       checks.push(ok(`${id}: the guard saw no write complete`, (trial.summary?.guard?.committed ?? 0) === 0 && (trial.summary?.guard?.assert_committed ?? 0) === 0, JSON.stringify(trial.summary?.guard)))
       checks.push(ok(`${id}: the plugin loaded`, (trial.summary?.host_log?.plugin_load_failures ?? []).length === 0, JSON.stringify(trial.summary?.host_log?.plugin_load_failures ?? [])))
     } finally {
@@ -1005,10 +1069,11 @@ export async function p7(env = {}) {
     }
     const name = `tools-live-read-${slug(id)}`
     const batchRun = env.scriptedRun ?? scriptedRun
-    const run = await batchRun({ plugin: id, cases: [{ id: name, prompt: execute(resolved.code) }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-p7-${slug(id)}`, auth: "none+profile" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
+    const run = await batchRun({ plugin: id, cases: [{ id: name, prompt: resolved.prompt }], arm: fullArm(env.companions, { arm: id, options: {} }), options: { iteration: `p0-p7-${slug(id)}`, auth: "none+profile" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
     try {
-      const call = run.trials[name].calls[0]
-      const verdict = egressVerdict({ id, packs: loadPacks(), companionIds: Object.keys(companions).filter((key) => key !== id), targets, egress: run.egress ?? {}, code: resolved.code })
+      const calls = run.trials[name].calls ?? []
+      const call = calls[calls.length - 1]
+      const verdict = egressVerdict({ id, packs: loadPacks(), companionIds: Object.keys(companions).filter((key) => key !== id), targets, egress: run.egress ?? {}, code: resolved.text ?? "" })
       hosts[id] = { allowed: Object.keys(run.egress?.allowed ?? {}).sort(), refused: verdict.refused.map((entry) => entry.host), unknown: verdict.unknown.map((entry) => entry.host), quiet: verdict.quiet, outside: verdict.outside.map((entry) => entry.host), hostless: verdict.hostless }
       checks.push(ok(`${id}: the read completed`, call && call.status !== "error" && !/Permission denied|declined|cannot ask|Unknown tool|No tool named|Error/i.test(textOf(call)), textOf(call).slice(0, 120).replace(/\s+/g, " ")))
       checks.push(ok(`${id}: no host of its own pack was refused (its egress list is complete)`, verdict.refused.length === 0, `pack ${verdict.judged.join(", ") || "none"}; refused ${verdict.refused.map((entry) => `${entry.host} (${entry.why.join(", ")})`).join(", ") || "none"}`))
@@ -1027,8 +1092,9 @@ export async function p7(env = {}) {
 
 /**
  * The one real-body check for the `gws_plan` registry: a real plan and its commit in commit mode, against the owner's sandbox folder and
- * self address. `live-gws.json`: { "code": "const plan = await tools.gws.plan(an alias of the sandbox folder); return await tools.gws.write({ planId: plan.planId })",
- * "plan": <a commit plan naming @aliases, as --commit-plan takes> }. The plan registry allows only a plan the guard saw made for an in-sandbox target.
+ * self address. `live-gws.json` is `{ "steps": [ { "code": "…tools.gws.plan(…)…" }, { "tool": "gws_write", "args": { "planId": "{{previous.planId}}" } } ],
+ * "plan": <a commit plan naming @aliases, as --commit-plan takes> }` (or a single `code` that does both, the original shape). The plan
+ * registry allows only a plan the guard saw made for an in-sandbox target.
  */
 export async function gws(env = {}) {
   const { existsSync: exists, readFileSync: read, writeFileSync: write, mkdtempSync: mkd } = await import("node:fs")
@@ -1046,7 +1112,7 @@ export async function gws(env = {}) {
   // The batch resolves the plan's @aliases from the owner's store (the same targets.json the probe read).
   const name = "commit-live-gws"
   const batchRun = env.scriptedRun ?? scriptedRun
-  const run = await batchRun({ plugin: "gws", cases: [{ id: name, prompt: execute(resolved.code), extra: "- Set: commit" }], arm: fullArm(env.companions, { arm: "gws", options: {} }), options: { iteration: "p0-gws", auth: "none+profile", commitPlan: planFile, set: "commit" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
+  const run = await batchRun({ plugin: "gws", cases: [{ id: name, prompt: resolved.prompt, extra: "- Set: commit" }], arm: fullArm(env.companions, { arm: "gws", options: {} }), options: { iteration: "p0-gws", auth: "none+profile", commitPlan: planFile, set: "commit" }, caller: probeCaller(env, profile), ownerStore: env.store ?? null, tmp: env.tmp })
   try {
     const trial = run.trials[name]
     const guard = trial.summary?.guard ?? {}
@@ -1063,7 +1129,7 @@ export async function gws(env = {}) {
 
 // ------------------------------------------------------------------------------------------------------------------ fake
 
-/** Code Mode source listing every tool of a namespace the model can see (no `]`: a scripted call cannot carry one). */
+/** Code Mode source listing every tool of a namespace the model can see. */
 const listTools = (ns) => `const names = new Array(); let o = 0; for (;;) { const r = await search({ namespace: '${ns}', limit: 100, offset: o }); names.push(...r.items.map((i) => i.path.replace('tools.${ns}.', ''))); if (!r.next) break; o = r.next.offset } return JSON.stringify(names)`
 
 /**

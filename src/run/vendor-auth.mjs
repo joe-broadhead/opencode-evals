@@ -130,7 +130,6 @@ export function vendorCredentials(exported, { needed, now = Date.now(), horizonM
         fail()
         continue
       }
-      // Two integrations may resolve to one credential (OpenRouter's two entries): one row, one import.
       if (list.some((entry) => entry.integrationID === cut.integrationID)) continue
       list.push(cut)
       plugins[cut.integrationID] = integration
@@ -212,16 +211,30 @@ export async function verifyVendorImport({ exec, cwd, env, list, plugins = {}, s
 
 /**
  * On the trial's own server, after it starts and before the first prompt: every imported `mcp_` credential's server must
- * settle as connected. A fresh `--standalone` server per call cannot answer this (2.3.2 starts MCP connections
- * asynchronously as `pending`; `mcp.list` returns the current statuses without waiting), so this polls ONE server,
- * `--server <url>`, as the client does. `pending` is retried until `deadlineMs` (2.3.2's 2 s startup grace plus its
- * 30 s MCP startup timeout, with margin); `needs authentication`, `failed` and `disabled` fail at once. Every failure is
- * an infrastructure auth failure, naming the plugin.
+ * settle as connected, and so must a server a plugin registers under a key of its own. A fresh `--standalone` server per
+ * call cannot answer this (2.3.2 starts MCP connections asynchronously as `pending`; `mcp.list` returns the current
+ * statuses without waiting), so this polls ONE server, `--server <url>`, as the client does. `pending` is retried until
+ * `deadlineMs` (2.3.2's 2 s startup grace plus its 30 s MCP startup timeout, with margin); `needs authentication`,
+ * `failed` and `disabled` fail at once. Every failure is an infrastructure auth failure, naming the plugin.
+ *
+ * Tavily is why the second rule exists: its plugin registers `mcp.tavily.com` itself with `oauth: false` and an
+ * `Authorization: Bearer <key>` header taken from OpenCode's built-in `tavily` key integration (`src/mcp.ts` of
+ * opencode-tavily 0.0.6). No `mcp_` credential names that server, so waiting only on `mcp_` ids left the trial's first
+ * turn to race the connection and the read failed as Code Mode's `Unknown tool`, not as the sign-in problem it was; and
+ * a key the host rejected showed as a tool-less trial. The server's row is named after the integration the key belongs
+ * to, so it is waited for when the host lists one by that name (a key integration with no server row, such as gws's
+ * `gws-default`, is untouched).
  */
+/** Key-authenticated integrations whose plugin registers an MCP server row of the same name (`oauth: false`, Bearer header). */
+export const KEYED_MCP_SERVERS = new Set(["tavily"])
+
 export async function verifyVendorServers({ exec, cwd, env, url, list, plugins = {}, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)), now = Date.now, deadlineMs = 32_000, timeoutMs = 60_000 }) {
   const mcp = list.filter((credential) => credential.integrationID.startsWith("mcp_"))
-  if (!mcp.length) return
-  const names = [...new Set(mcp.map((credential) => plugins[credential.integrationID] ?? credential.integrationID))]
+  const keyed = list.filter((credential) => !credential.integrationID.startsWith("mcp_")).map((credential) => credential.integrationID)
+  if (!mcp.length && !keyed.length) return
+  const label = (name) => plugins[name] ?? name
+  const oauthNames = [...new Set(mcp.map((credential) => label(credential.integrationID)))]
+  const expectedKeyed = keyed.filter((name) => KEYED_MCP_SERVERS.has(name))
   const deadline = now() + deadlineMs
   let rows = []
   for (;;) {
@@ -229,13 +242,17 @@ export async function verifyVendorServers({ exec, cwd, env, url, list, plugins =
     if (answer?.error) throw infraAuth(`--auth +profile: \`opencode mcp list --server\` in the trial failed: ${answer.error}`)
     if (answer?.code !== 0) throw infraAuth(`--auth +profile: \`opencode mcp list --server\` in the trial failed (exit ${answer?.code ?? "?"})`)
     rows = mcpRows(answer.stdout)
+    // Known keyed MCP servers (`tavily`) are always waited on even if the host has not listed their row yet; any other
+    // key integration that registers a server row is checked once listed, while non-MCP keys (`gws-default`, `slack-app`,
+    // `inference-openrouter`) have nothing to await.
+    const names = [...new Set([...oauthNames, ...expectedKeyed, ...keyed.filter((name) => rows.some((row) => row.name === name))])]
+    if (!names.length) return
     const statuses = names.map((name) => rows.find((row) => row.name === name)?.status ?? "")
     if (statuses.every((status) => /^connected$/i.test(status))) return
-    const hard = statuses.find((status) => /failed|needs authentication|disabled/i.test(status))
-    if (hard) throw infraAuth(`--auth +profile: the trial's host has MCP server "${names[statuses.indexOf(hard)]}" ${hard}, not connected: the imported credential is not usable`)
+    const hardIdx = statuses.findIndex((status) => /failed|needs authentication|disabled/i.test(status))
+    if (hardIdx >= 0) throw infraAuth(`--auth +profile: the trial's host has MCP server "${label(names[hardIdx])}" ${statuses[hardIdx]}, not connected: the imported credential is not usable`)
     if (now() >= deadline) {
-      const pending = names.filter((name, index) => !/^connected$/i.test(statuses[index]))
-      const why = names.map((name, index) => `${name} ${statuses[index] || "not listed"}`).join(", ")
+      const why = names.map((name, index) => `${label(name)} ${statuses[index] || "not listed"}`).join(", ")
       throw infraAuth(`--auth +profile: the trial's host did not connect its MCP server(s) within ${Math.round(deadlineMs / 1000)} s (${why}): the imported credential is not usable`)
     }
     await wait(500)
@@ -269,8 +286,10 @@ export async function exportProfile({ binary, profileDir, caller = process.env, 
 
 /**
  * The integrations a `+profile` batch holds: the arm's plugin and every plugin its cases name in `Seed: plugins=`, by the ids each
- * pack gives its integration (its own id unless the pack says otherwise: OpenRouter's one key serves two entries, the MCP server's
- * and `inference-openrouter`, so both of its packs name both).
+ * pack gives its integration (its own id unless the pack says otherwise). A pack names the integrations ITS OWN tools read: the
+ * OpenRouter plugin's only credential is its MCP server's OAuth sign-in (`openrouter`, whose id is `mcp_<hash>`); the Inference
+ * plugin has its own key (`inference-openrouter`, "OpenRouter key for Inference"), a different credential with a different owner.
+ * They are not alternatives of one key: a pack that needs both names both, and a pack that needs one names one.
  */
 export function integrationsFor(plugin, cases, packs, parse, noProfile = null) {
   // A plugin whose credential the evals profile cannot hold is never asked for one: the fake-mode plugins and the

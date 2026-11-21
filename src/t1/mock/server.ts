@@ -7,6 +7,7 @@
 // A request without tools (title generation etc.) gets a short text answer.
 // Usage: bun mock/server.ts <port> <logFile>
 import { appendFileSync } from "node:fs"
+import { directiveOf, fillPrevious, parseToolDirective, previousValue } from "./directive.mjs"
 
 const port = Number(process.argv[2] ?? 0)
 const logFile = process.argv[3] ?? "/dev/null"
@@ -67,6 +68,16 @@ function textAnswer(answer: string, signal: AbortSignal) {
   }, signal)
 }
 
+function toolCall(name: string, args: string, signal: AbortSignal) {
+  return stream(async send => {
+    send(chunk({ role: "assistant", content: null, tool_calls: [{ index: 0, id: `call_${Date.now()}`, type: "function", function: { name, arguments: "" } }] }))
+    send(chunk({ tool_calls: [{ index: 0, function: { arguments: args } }] }))
+    send(chunk({}, "tool_calls"))
+    usage(send)
+    send("data: [DONE]\n\n")
+  }, signal)
+}
+
 const server = Bun.serve({
   port, hostname: "127.0.0.1", idleTimeout: 0,
   async fetch(request) {
@@ -83,13 +94,32 @@ const server = Bun.serve({
     log({ ev: "request", mentions: ["d_only_tool", "spike_probe", "schedule_create", "schedule_list", "opencode_schedule"].filter(word => all.includes(word)), stream: body.stream, roles: messages.map(m => m.role), lastRole: last?.role, userText: userText.slice(0, 200), tools, lastContent: text(last?.content).slice(0, 400) })
     const signal = request.signal
     if (!tools.length) return textAnswer("Spike title", signal)
+    // The directive, read with a bracket- and string-aware scan (a JSON array, or a once-unescaped prompt, both work).
+    const { kind, arg } = directiveOf(userText)
+    // [[mock:steps:[{tool,args}|{code}, …]]]: one call per turn. The step is chosen by how many tool results the
+    // conversation already holds; `{{previous.path}}` in an argument is filled from the last result's JSON (a gws
+    // plan's planId, for example, however the host or the vendor wrapped it).
+    if (kind === "steps") {
+      let script: { tool?: string; args?: unknown; code?: string }[]
+      try { script = JSON.parse(arg) } catch { return textAnswer("bad steps", signal) }
+      const results = messages.filter(m => m.role === "tool")
+      const step = script[results.length]
+      if (!step) return textAnswer("steps done", signal)
+      const rawPrev = results[results.length - 1]?.content
+      const previous = previousValue(text(rawPrev))
+      const missing: string[] = []
+      if (typeof step.code === "string") {
+        if (/\{\{previous\./.test(step.code)) return textAnswer("bad step: {{previous.*}} only allowed in tool args", signal)
+        return toolCall("execute", JSON.stringify({ code: step.code }), signal)
+      }
+      if (typeof step.tool === "string") {
+        const args = fillPrevious(step.args ?? {}, previous, { missing, fromMcpParts: Array.isArray(rawPrev) })
+        if (missing.length) return textAnswer(`bad step: missing ${missing.join(", ")}`, signal)
+        return toolCall(step.tool, JSON.stringify(args), signal)
+      }
+      return textAnswer("bad step", signal)
+    }
     if (last?.role === "tool") return textAnswer(`after-tool: ${text(last.content).slice(0, 300)}`, signal)
-    // The prompt can arrive JSON-escaped (`\"query\":\"x\"`), which would break both the directive match and the
-    // arguments the scripted tool call carries. Unescape once, before reading either.
-    const unescaped = userText.replace(/\\"/g, '"').replace(/\\n/g, "\n")
-    const directive = /\[\[mock:(\w+)(?::([^\]]*))?\]\]/.exec(unescaped)
-    const kind = directive?.[1] ?? "text"
-    const arg = directive?.[2] ?? "hello from mock"
     // [[mock:dump]]: the whole request body goes in the log, so a probe can read exactly what reaches a model (P0-1).
     if (kind === "dump") {
       log({ ev: "dump", body })
@@ -112,15 +142,9 @@ const server = Bun.serve({
       }, signal)
     }
     if (kind === "tool") {
-      const [name, ...rest] = arg.split(":")
-      const args = rest.join(":") || "{}"
-      return stream(async send => {
-        send(chunk({ role: "assistant", content: null, tool_calls: [{ index: 0, id: `call_${Date.now()}`, type: "function", function: { name, arguments: "" } }] }))
-        send(chunk({ tool_calls: [{ index: 0, function: { arguments: args } }] }))
-        send(chunk({}, "tool_calls"))
-        usage(send)
-        send("data: [DONE]\n\n")
-      }, signal)
+      const call = parseToolDirective(kind, arg)
+      if (!call) return textAnswer("bad tool", signal)
+      return toolCall(call.name, JSON.stringify(call.args), signal)
     }
     if (kind === "schema") {
       log({ ev: "schema", tools: body.tools })
