@@ -40,21 +40,43 @@ export function decide({ comparison, a, b, noiseFloor = LIMITS.costRegression })
     reasons.push(`carried-over findings: ${numeric.failedItems.join(", ")}`)
   }
 
+  // Both arms must be above the coverage floor, and their counts must be present, finite, nonnegative integers that
+  // add up as the grader records them. A missing, fractional or impossible count cannot meet the floor.
   const coverage = b.coverage
-  const share = coverage?.cases_declared ? coverage.cases_run / coverage.cases_declared : 0
-  const thin = share < LIMITS.minCoverage
+  const coverageA = a.coverage
+  const count = (value) => typeof value === "number" && Number.isFinite(value) && Number.isInteger(value) && value >= 0
+  const coverageProblem = (cov, label) => {
+    if (!cov || typeof cov !== "object") return `${label} coverage is missing`
+    const required = ["cases_declared", "cases_run", "items_executed", "items_testable", "items_passed", "items_blocked"]
+    const bad = required.filter((key) => !count(cov[key]))
+    if (bad.length) return `${label} coverage has no finite nonnegative integer ${bad.join(", ")}`
+    if (cov.cases_run > cov.cases_declared) return `${label} coverage has cases_run ${cov.cases_run} > cases_declared ${cov.cases_declared}`
+    if (cov.items_passed > cov.items_testable) return `${label} coverage has items_passed ${cov.items_passed} > items_testable ${cov.items_testable}`
+    if (cov.items_testable + cov.items_blocked !== cov.items_executed) return `${label} coverage has items_executed ${cov.items_executed} != items_testable ${cov.items_testable} + items_blocked ${cov.items_blocked}`
+    for (const key of ["items_na", "items_advisory"]) if (cov[key] !== undefined && !count(cov[key])) return `${label} coverage has an invalid ${key}`
+    return null
+  }
+  const problemA = coverageProblem(coverageA, "arm a")
+  const problemB = coverageProblem(coverage, "arm b")
+  const shareOf = (cov) => (cov?.cases_declared ? cov.cases_run / cov.cases_declared : 0)
+  const thinA = problemA !== null || shareOf(coverageA) < LIMITS.minCoverage
+  const thinB = problemB !== null || shareOf(coverage) < LIMITS.minCoverage
 
   if (numeric.costPerPass.delta !== null && numeric.costPerPass.delta > Math.max(LIMITS.costRegression, noiseFloor)) {
     reasons.push(`cost per passing case worse by ${Math.round(numeric.costPerPass.delta * 100)}% (floor ${Math.round(Math.max(LIMITS.costRegression, noiseFloor) * 100)}%)`)
   }
-  if (thin) reasons.push(`coverage ${coverage.cases_run}/${coverage.cases_declared} cases`)
-  if (coverage.items_blocked > 0) reasons.push(`${coverage.items_blocked} item(s) unsettled (BLOCKED)`)
+  if (problemA) reasons.push(`arm a coverage invalid: ${problemA}`)
+  else if (thinA) reasons.push(`arm a coverage ${coverageA?.cases_run ?? 0}/${coverageA?.cases_declared ?? 0} cases`)
+  if (problemB) reasons.push(`arm b coverage invalid: ${problemB}`)
+  else if (thinB) reasons.push(`arm b coverage ${coverage?.cases_run ?? 0}/${coverage?.cases_declared ?? 0} cases`)
+  if (coverageA?.items_blocked > 0) reasons.push(`arm a: ${coverageA.items_blocked} item(s) unsettled (BLOCKED)`)
+  if (coverage?.items_blocked > 0) reasons.push(`arm b: ${coverage.items_blocked} item(s) unsettled (BLOCKED)`)
   const fewTrials = comparison.axis !== "grader" && numeric.trials < LIMITS.minTrials
   if (fewTrials) reasons.push(`${numeric.trials} trial(s) per case: a model-driven comparison needs at least ${LIMITS.minTrials}, and one trial never ships`)
 
   let verdict
   if (blocking.length || reasons.some((r) => r.startsWith("cost per"))) verdict = "hold"
-  else if (numeric.newMajorFailures.length || thin || coverage.items_blocked > 0 || comparison.basis !== "verified" || fewTrials) verdict = "ask"
+  else if (numeric.newMajorFailures.length || thinA || thinB || coverageA?.items_blocked > 0 || coverage?.items_blocked > 0 || comparison.basis !== "verified" || fewTrials) verdict = "ask"
   else verdict = "ship"
 
   if (verdict === "ship") reasons.push(`no regression; ${numeric.fixes} case(s) improved; ${numeric.passRate.delta === null ? "rates unchanged" : `pass rate ${pct(numeric.passRate.a)} -> ${pct(numeric.passRate.b)}`}`)

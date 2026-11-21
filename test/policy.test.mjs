@@ -116,3 +116,46 @@ test("plugin options are an axis: two arms that differ only in access compare on
   assert.match(refused.why.join(" "), /options differs/)
   assert.equal(comparable(batch(), batch({ provenance: { ...batch().provenance, options: { sha256: DEFAULT_OPTIONS, source: "default" } } }), "skill").ok, true)
 })
+
+// Coverage validation is pure and lives here: both arms must have finite, nonnegative integer counts that add up,
+// and both must meet the floor, before a ship is possible.
+
+const cov = (over = {}) => ({ cases_declared: 10, cases_run: 10, items_executed: 10, items_testable: 10, items_passed: 10, items_blocked: 0, ...over })
+
+test("a thin baseline against a full candidate asks: both arms must meet the coverage floor", () => {
+  const a = batch({ coverage: cov({ cases_run: 1 }) })
+  const b = batch({ coverage: cov() })
+  const verdict = decide({ comparison: comparable(a, b, "skill"), a, b })
+  assert.equal(verdict.verdict, "ask")
+  assert.match(verdict.reasons.join(" "), /arm a coverage 1\/10 cases/)
+})
+
+test("a missing, fractional or incoherent coverage count asks on either arm", () => {
+  const clean = batch({ coverage: cov() })
+  const bad = [
+    ["missing cases_run", { cases_declared: 10, items_executed: 10, items_testable: 10, items_passed: 5, items_blocked: 0 }],
+    ["missing items_blocked", { cases_declared: 10, cases_run: 10, items_executed: 10, items_testable: 10, items_passed: 5 }],
+    ["fractional cases_run", cov({ cases_run: 9.5 })],
+    ["fractional items_passed", cov({ items_passed: 9.5 })],
+    ["inconsistent sums", cov({ items_executed: 10, items_testable: 8, items_blocked: 1 })],
+    ["cases_run over declared", cov({ cases_run: 11 })],
+    ["items_passed over testable", cov({ items_passed: 11 })],
+  ]
+  for (const [label, coverage] of bad) {
+    for (const arm of ["a", "b"]) {
+      const invalid = batch({ coverage })
+      const a = arm === "a" ? invalid : clean
+      const b = arm === "b" ? invalid : clean
+      const verdict = decide({ comparison: comparable(a, b, "skill"), a, b })
+      assert.equal(verdict.verdict, "ask", `${label} on arm ${arm}`)
+      assert.match(verdict.reasons.join(" "), new RegExp(`arm ${arm} coverage invalid`), `${label} on arm ${arm}`)
+    }
+  }
+})
+
+test("a clean pair with full, coherent coverage on both arms ships", () => {
+  const a = batch({ coverage: cov() })
+  const b = batch({ coverage: cov() })
+  const verdict = decide({ comparison: comparable(a, b, "skill"), a, b })
+  assert.equal(verdict.verdict, "ship")
+})
