@@ -57,6 +57,13 @@ test("the arm's companions-map options reach its sealed config; explicit options
 })
 
 test("p7 judges only the plugin's own pack hosts: companions and no-client-hello are info", () => {
+  // A fixed pack set: the real elevenlabs pack grew api.elevenlabs.io later (#28), and this test is about the rule.
+  const packs = [
+    { id: "slack", egress: ["mcp.slack.com", "slack.com"] },
+    { id: "jira", egress: ["mcp.atlassian.com"] },
+    { id: "github", egress: ["api.githubcopilot.com"] },
+    { id: "elevenlabs", egress: ["api.us.elevenlabs.io"] },
+  ]
   const egress = {
     refused: {
       "mcp.slack.com": { count: 1, why: ["not-allowed"] },
@@ -66,24 +73,24 @@ test("p7 judges only the plugin's own pack hosts: companions and no-client-hello
       "quiet.example": { count: 1, why: ["no-client-hello"] },
     },
   }
-  const verdict = egressVerdict({ id: "slack", companionIds: ["jira", "github"], egress })
+  const verdict = egressVerdict({ id: "slack", packs, companionIds: ["jira", "github"], egress })
   assert.deepEqual(verdict.refused.map((entry) => entry.host), ["mcp.slack.com"], "only its own pack host, with its why")
   assert.deepEqual(verdict.refused[0].why, ["not-allowed"])
   assert.deepEqual(verdict.quiet.sort(), ["quiet.example", "slack.com"], "a silent tunnel is not a refusal, in or out of the pack")
   assert.deepEqual(verdict.outside.map((entry) => entry.host).sort(), ["api.githubcopilot.com", "mcp.atlassian.com"], "a companion's pack hosts are recorded, not judged")
   // A refused host in no pack fails: this is the missing-egress discovery.
-  const unknown = egressVerdict({ id: "elevenlabs", companionIds: ["jira", "github"], egress: { refused: { "api.elevenlabs.io": { why: ["not-allowed"] } } } })
+  const unknown = egressVerdict({ id: "elevenlabs", packs, companionIds: ["jira", "github"], egress: { refused: { "api.elevenlabs.io": { why: ["not-allowed"] } } } })
   assert.deepEqual(unknown.unknown.map((entry) => entry.host), ["api.elevenlabs.io"], "the old elevenlabs pack names only api.us.elevenlabs.io")
   assert.equal(unknown.refused.length, 0)
   // A host with no-client-hello plus another reason is still refused (K6).
-  const both = egressVerdict({ id: "slack", egress: { refused: { "mcp.slack.com": { why: ["no-client-hello", "sni-mismatch"] } } } })
+  const both = egressVerdict({ id: "slack", packs, egress: { refused: { "mcp.slack.com": { why: ["no-client-hello", "sni-mismatch"] } } } })
   assert.deepEqual(both.refused.map((entry) => entry.host), ["mcp.slack.com"])
   assert.equal(both.quiet.length, 0)
   // A host-less refusal is info, not dropped.
-  const hostless = egressVerdict({ id: "slack", egress: { refused: { "": { why: ["too-many-tunnels"] } } } })
+  const hostless = egressVerdict({ id: "slack", packs, egress: { refused: { "": { why: ["too-many-tunnels"] } } } })
   assert.deepEqual(hostless.hostless, [{ why: ["too-many-tunnels"] }])
   // A URL in the plugin's own read is an explicit host to judge.
-  const explicit = egressVerdict({ id: "slack", code: "return await tools.slack.x({ url: 'https://auth.slack.com/oauth' })", egress: { refused: { "auth.slack.com": { why: ["not-allowed"] } } } })
+  const explicit = egressVerdict({ id: "slack", packs, code: "return await tools.slack.x({ url: 'https://auth.slack.com/oauth' })", egress: { refused: { "auth.slack.com": { why: ["not-allowed"] } } } })
   assert.deepEqual(explicit.refused.map((entry) => entry.host), ["auth.slack.com"])
   assert.equal(explicit.unknown.length, 0)
 })
@@ -114,7 +121,7 @@ test("p7's check passes on a companion's refused host and a silent tunnel, and f
     const own = await PROBES.p7({ store, companions, caller, tmp: root, scriptedRun: result({ "mcp.slack.com": { count: 1, why: ["not-allowed"] } }) })
     assert.equal(own.ok, false, "its own pack's refused host fails")
     assert.ok(own.checks.some((check) => check.ok === false && /own pack/.test(check.name)))
-    const none = await PROBES.p7({ store, companions, caller, tmp: root, scriptedRun: result({ "api.elevenlabs.io": { count: 1, why: ["not-allowed"] } }) })
+    const none = await PROBES.p7({ store, companions, caller, tmp: root, scriptedRun: result({ "not-in-any-pack.example": { count: 1, why: ["not-allowed"] } }) })
     assert.equal(none.ok, false, "a refused host in no pack fails")
     assert.ok(none.checks.some((check) => check.ok === false && /not in any pack: the plugin's missing egress\?/.test(check.detail ?? "")))
   } finally {
