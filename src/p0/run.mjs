@@ -13,15 +13,15 @@ import { compileCase } from "../case/compile.mjs"
 import { DATA_MINIMUM, fakeModePlugins } from "../case/schema.mjs"
 import { summarize, DECLINED_MARKER } from "../trace/analyse.mjs"
 
-/** `[[mock:tool:<name>:<json>]]`: the scripted model's one tool call. The arguments may not contain `]`. */
-export const mock = (tool, args = {}) => {
-  const json = JSON.stringify(args)
-  if (json.includes("]")) throw new Error(`a scripted call's arguments cannot contain "]": ${json.slice(0, 60)}`)
-  return `[[mock:tool:${tool}:${json}]]`
-}
+/** `[[mock:tool:<name>:<json>]]`: the scripted model's one tool call. The JSON may hold `]` and `\"` (an array, an index, an escaped quote). */
+export const mock = (tool, args = {}) => `[[mock:tool:${tool}:${JSON.stringify(args)}]]`
 
-/** A Code Mode `execute` that runs this code. The code may not contain `]`: use `.map(...)` and `.join(...)`, not indexing. */
+/** A Code Mode `execute` that runs this code. */
 export const execute = (code) => mock("execute", { code })
+
+/** A scripted sequence: each step is a direct tool call (`tool`, `args`) or Code Mode (`code`), one call per turn.
+ * `{{previous.path}}` in an argument is filled from the previous tool result (the planId of a gws plan, for example). */
+export const steps = (list) => `[[mock:steps:${JSON.stringify(list)}]]`
 
 const caseText = (id, prompt, extra, plugin = "p0", data = "synthetic") => `# ${id}
 - Plugin: ${plugin}

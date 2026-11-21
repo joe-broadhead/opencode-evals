@@ -161,10 +161,46 @@ test("the trial's own server is polled until each imported MCP server is connect
   let hard = 0
   await assert.rejects(verifyVendorServers({ exec: async () => { hard++; return { code: 0, stdout: "⚠ slack  needs authentication" } }, cwd: "/home", env: {}, url: "http://127.0.0.1:4567", list: [imported], plugins: { [SLACK_ID]: "slack" } }), /MCP server "slack" needs authentication, not connected/)
   assert.equal(hard, 1, "no retry on needs authentication")
-  // a key credential (gws-default) is not an MCP server and is never polled
+  // A key credential with no server row (gws-default) is checked once and returns cleanly.
   let polls = 0
   await verifyVendorServers({ exec: async () => { polls++; return { code: 0, stdout: "" } }, cwd: "/home", env: {}, url: "http://127.0.0.1:4567", list: [{ integrationID: "gws-default" }] })
-  assert.equal(polls, 0)
+  assert.equal(polls, 1)
+  // A key-authenticated MCP server (Tavily: built-in `tavily` key, `oauth: false` server row named `tavily`) IS waited on until connected.
+  let tavilyPolls = 0
+  await verifyVendorServers({
+    exec: async () => ({ code: 0, stdout: ++tavilyPolls < 2 ? "○ tavily  pending" : "✓ tavily  connected" }),
+    cwd: "/home",
+    env: {},
+    url: "http://127.0.0.1:4567",
+    list: [{ integrationID: "tavily" }],
+    plugins: { tavily: "tavily" },
+    wait: async () => {},
+  })
+  assert.equal(tavilyPolls, 2)
+  // A rejected Tavily key fails fast as infra auth.
+  await assert.rejects(
+    verifyVendorServers({
+      exec: async () => ({ code: 0, stdout: "⚠ tavily  needs authentication" }),
+      cwd: "/home",
+      env: {},
+      url: "http://127.0.0.1:4567",
+      list: [{ integrationID: "tavily" }],
+      plugins: { tavily: "tavily" },
+    }),
+    /MCP server "tavily" needs authentication, not connected/,
+  )
+  // Even when plugins[id] maps a keyed credential id to a shorter plugin label, row lookup stays on the server's row name.
+  await assert.rejects(
+    verifyVendorServers({
+      exec: async () => ({ code: 0, stdout: "⚠ custom-mcp  needs authentication" }),
+      cwd: "/home",
+      env: {},
+      url: "http://127.0.0.1:4567",
+      list: [{ integrationID: "custom-mcp" }],
+      plugins: { "custom-mcp": "custom" },
+    }),
+    /MCP server "custom" needs authentication, not connected/,
+  )
 })
 
 test("mcp list output parses into server names and statuses", () => {
@@ -217,17 +253,19 @@ test("a pending MCP server past the deadline fails the trial as infra auth, befo
 test("only the no-profile set is dropped from +profile; grading keeps the master no-account meaning", async () => {
   const packs = loadPacks()
   const noProfile = noProfilePlugins({ packs })
-  const local = ["boxd", "browse", "charts", "history", "inference", "jobs", "utilities", "voice"]
-  assert.deepEqual([...noProfile].sort(), [...local, "github", "jira"].sort(), "the eight local plugins and the two fake ones")
-  const accounted = ["affinity", "ashby", "elevenlabs", "granola", "gws", "linear", "metaview", "notion", "openrouter", "plaud", "slack", "tavily", "wisprflow", "x"]
+  const local = ["boxd", "browse", "charts", "history", "jobs", "utilities", "voice"]
+  assert.deepEqual([...noProfile].sort(), [...local, "github", "jira"].sort(), "the seven truly local plugins and the two fake ones")
+  const accounted = ["affinity", "ashby", "elevenlabs", "granola", "gws", "inference", "linear", "metaview", "notion", "openrouter", "plaud", "slack", "tavily", "wisprflow", "x"]
   for (const id of accounted) assert.equal(noProfile.has(id), false, `${id} is accounted and must still be asked for`)
   assert.equal(noProfile.has("tavily"), false)
+  assert.equal(noProfile.has("inference"), false)
   assert.deepEqual([...noAccountPlugins({ packs })], [], "accounts keeps its master meaning: no plugin is `accounts: none`")
   const parse = (seed) => String(seed ?? "").split(",").filter(Boolean)
   for (const id of [...local, "github", "jira"]) assert.deepEqual(integrationsFor(id, [{}], packs, parse, noProfile), [], `${id} has no profile credential`)
   assert.deepEqual(integrationsFor("charts", [{ seed: "linear" }], packs, parse, noProfile), ["linear"], "a signed-in seed is still asked for")
   assert.deepEqual(integrationsFor("affinity", [{}], packs, parse, noProfile), ["affinity"], "a plugin with an account is still asked for")
   assert.deepEqual(integrationsFor("tavily", [{}], packs, parse, noProfile), ["tavily"], "tavily is accounted: its key is asked of the profile, not skipped")
+  assert.deepEqual(integrationsFor("inference", [{}], packs, parse, noProfile), ["inference-openrouter"], "inference needs its own inference-openrouter key")
   // No EVALS_PROFILE and a binary that cannot run: an empty `needed` must not call exportProfile.
   const auth = await prepareAuth({ kind: "none", vendor: true }, { needed: [], binary: "/nonexistent", caller: {} })
   assert.equal(auth.profile, "none+profile")
@@ -812,12 +850,14 @@ test("files a run wrote under named places of its HOME are recorded, and nothing
   }
 })
 
-test("one OpenRouter key serves two entries: both packs name both, and the per-trial export covers them", () => {
+test("openrouter and inference name only their own integrations", () => {
   const packs = loadPacks()
-  for (const id of ["openrouter", "inference"]) assert.deepEqual([].concat(packs.find((p) => p.id === id).integration), ["openrouter", "inference-openrouter"], id)
+  assert.deepEqual([].concat(packs.find((p) => p.id === "openrouter").integration), ["openrouter"])
+  assert.deepEqual([].concat(packs.find((p) => p.id === "inference").integration), ["inference-openrouter"])
   const parse = (seed) => parseSeedList(parseSeed(seed).plugins)
-  assert.deepEqual(integrationsFor("inference", [], packs, parse), ["inference-openrouter", "openrouter"])
-  assert.deepEqual(integrationsFor("slack", [{ seed: "plugins=linear,openrouter" }, { seed: null }], packs, parse), ["inference-openrouter", "linear", "openrouter", "slack"])
+  assert.deepEqual(integrationsFor("openrouter", [], packs, parse), ["openrouter"])
+  assert.deepEqual(integrationsFor("inference", [], packs, parse), ["inference-openrouter"])
+  assert.deepEqual(integrationsFor("slack", [{ seed: "plugins=linear,openrouter" }, { seed: null }], packs, parse), ["linear", "openrouter", "slack"])
   assert.deepEqual(integrationsFor("unknown", [], [], parse), ["unknown"], "a plugin with no pack is its own integration")
 })
 

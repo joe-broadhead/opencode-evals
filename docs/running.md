@@ -213,7 +213,19 @@ The manifest is `canaries/manifest.json` (or `EVALS_CANARIES_MANIFEST`): invente
   to, and as one session whose rules deny every tool of those plugins except the `find` and `create` methods named. Fake-mode plugins have nothing to seed.
 
 `live-reads.json`, `live-writes.json` and `live-gws.json` live in the private store and hold `@alias` placeholders (resolved from `targets.json` at
-run time), never an id: `{ "slack": { "code": "return await tools.slack.slack_send_message({ channel_id: '@slack.sandbox_channel', text: 'x' })" } }`.
+run time), never an id. A plugin's entry is one of three shapes:
+
+- **Code Mode**: `{ "code": "return await tools.slack.slack_send_message({ channel_id: '@slack.sandbox_channel', text: 'x' })" }`;
+- **a direct tool**: `{ "tool": "gws_write", "args": { "planId": "plan_…" } }` — a tool the plugin registers as a direct tool rather than in Code
+  Mode (`gws_read`, `gws_write`, `gws_export`, `gws_send`, `gws_share`, `gws_delete`, `gws_admin`: `packs/gws/registered.json` lists the five
+  Code Mode names), with `@alias` replaced by the alias's raw value in every argument (a nested object or list included);
+- **a sequence**: `{ "steps": [ { "code": "…" }, { "tool": "gws_write", "args": { "planId": "{{previous.planId}}" } } ] }` — one call per turn,
+  in order; `{{previous.<path>}}` in an argument (or in a `code` string) is filled from the previous tool's result, read through whatever the
+  host or the vendor wrapped it in (a JSON string, a string of a JSON string, an MCP `{ "content": [ { "type": "text", "text": … } ] }` part, or
+  Code Mode's output) and found by its dotted path or by its last segment.
+
+`@alias` resolves in all three. The directive that carries them no longer treats `]` as its end and no longer unescapes a payload that is
+already valid JSON, so a script may index an array and a call may carry `\"` (a JSON string inside a string).
 The guard-off pass the first review asked for is not needed (with the guard on any failure of the config ask, the plugin's ask or `opencode run`'s
 rejection shows as `EVALS-ASSERT access` and halts) and `guard: false` stays refused with a credential.
 
