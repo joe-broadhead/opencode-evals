@@ -4,6 +4,118 @@ import {createMemoryAssertionBridge,ASSERTION_METADATA_KEY} from "../src/run/gua
 import {assertionFixture,deferred} from "./support/mem-assertion-fixture.mjs"
 import {permissionHost} from "./support/mem-permission-host.mjs"
 
+test("reader-created recovery blocks admission without consuming a use and admits again after drain",async()=>{
+  for(const boundary of ["open","activation","scopes","final-activation"]){
+    const f=assertionFixture(),host=permissionHost(),lookup=deferred()
+    const bridge=await createMemoryAssertionBridge({authority:f.authority,context:host.context})
+    let recovery,delegates=0,reads=0
+    try{
+      await bridge.wrap("mem_recall",()=>bridge.context.permission.assert({...f.snapshot,action:"mem_recall",resources:[]}))({query:"first"},f.request.native)
+      const before=f.authority.facts().filter(r=>r.kind==="reserved").length
+      host.context.permission.list=()=>lookup.promise
+      const reenter=()=>{if(++reads===(boundary==="final-activation"?2:1))recovery=bridge.recover()}
+      if(boundary==="scopes")f.state.onScopes=reenter;else f.state.onActivation=reenter
+      if(boundary==="open"){
+        f.authority.cancel();f.state.activation={...f.state.activation,turn:2,incarnation:2,activation_id:"activation_2"}
+        assert.throws(()=>f.authority.open(),/pending|changed/)
+      }else await assert.rejects(bridge.wrap(f.request.tool,()=>{delegates++})(f.request.input,f.request.native),/drained/)
+      assert.equal(delegates,0)
+      assert.equal(f.authority.facts().filter(r=>r.kind==="reserved").length,before)
+      lookup.resolve([]);await recovery
+      if(boundary==="open")assert.ok(f.authority.open())
+      else{
+        await bridge.wrap(f.request.tool,()=>{delegates++})(f.request.input,f.request.native)
+        assert.equal(delegates,1)
+        await assert.rejects(bridge.wrap(f.request.tool,()=>assert.fail())(f.request.input,f.request.native),/consumed/)
+      }
+    }finally{lookup.resolve([]);await recovery;await bridge.close();f.authority.close()}
+  }
+})
+
+test("close callers share disposal and refuse new public recovery without starting a lookup",async()=>{
+  const f=assertionFixture(),host=permissionHost(),disposeGate=deferred(),entered=deferred(),lookup=deferred()
+  const hook=host.context.permission.hook,subscribe=host.context.event.subscribe
+  let disposals=0,returns=0,lists=0
+  host.context.permission.hook=async(...args)=>{
+    const registration=await hook(...args)
+    return {dispose:async()=>{disposals++;entered.resolve();await disposeGate.promise;await registration.dispose()}}
+  }
+  host.context.event.subscribe=options=>{
+    const iterator=subscribe(options)[Symbol.asyncIterator]()
+    return {[Symbol.asyncIterator]:()=>({...iterator,return:()=>{returns++;return iterator.return()}})}
+  }
+  const bridge=await createMemoryAssertionBridge({authority:f.authority,context:host.context})
+  try{
+    await bridge.wrap(f.request.tool,()=>bridge.context.permission.assert(f.snapshot))(f.request.input,f.request.native)
+    host.context.permission.list=()=>{lists++;return lookup.promise}
+    const first=bridge.close(),second=bridge.close(),recovery=bridge.recover()
+    await entered.promise
+    disposeGate.resolve()
+    const results=await Promise.all([first,second])
+    lookup.resolve([])
+    assert.deepEqual(await recovery,{accepted:false,reason:"closing"})
+    assert.equal(lists,0);assert.equal(disposals,1);assert.equal(returns,1)
+    assert.ok(results.every(r=>r.closed));assert.equal(bridge.status().tasks,0)
+    assert.equal((await bridge.close()).closed,true)
+    assert.deepEqual(await bridge.recover(),{accepted:false,reason:"closed"})
+    assert.equal(disposals,1);assert.equal(returns,1)
+  }finally{disposeGate.resolve();lookup.resolve([]);await bridge.close();f.authority.close()}
+})
+
+test("close joins admitted recovery and cleanup created by events during disposal",async()=>{
+  for(const late of [false,true]){
+    const f=assertionFixture(),host=permissionHost({mode:"ask",publish:false}),gate=deferred(),entered=deferred(),disposal=deferred()
+    const hook=host.context.permission.hook
+    host.context.permission.hook=async(...args)=>{
+      const registration=await hook(...args)
+      return {dispose:async()=>{disposal.resolve();await gate.promise;await registration.dispose()}}
+    }
+    const bridge=await createMemoryAssertionBridge({authority:f.authority,context:host.context})
+    const work=bridge.wrap(f.request.tool,()=>bridge.context.permission.assert(f.snapshot))(f.request.input,f.request.native)
+    const pending=await host.ready.promise
+    await host.context.permission.reply({sessionID:pending.sessionID,requestID:pending.id,decision:"once"});await work
+    let recovery,closing,finished=false
+    const lookup=deferred()
+    try{
+      if(late){
+        const get=host.context.permission.get
+        host.context.permission.get=async input=>{entered.resolve();await lookup.promise;return get(input)}
+        closing=bridge.close().then(result=>{finished=true;return result})
+        await disposal.promise
+        await host.emit({type:"permission.asked",data:pending})
+      }else{
+        host.context.permission.list=()=>{entered.resolve();return lookup.promise}
+        recovery=bridge.recover()
+        closing=bridge.close().then(result=>{finished=true;return result})
+      }
+      await entered.promise;gate.resolve()
+      await new Promise(setImmediate) // One finite turn: the held host operation must still prevent completion.
+      assert.equal(finished,false);assert.equal(bridge.status().closed,false)
+      lookup.resolve([]);await recovery
+      assert.equal((await closing).closed,true);assert.equal(bridge.status().tasks,0)
+      assert.equal(host.calls.hookDisposals,1)
+    }finally{gate.resolve();lookup.resolve([]);await recovery;await closing;await bridge.close();f.authority.close()}
+  }
+})
+
+test("partial close refuses public recovery but stream loss still recovers its late native ask",async()=>{
+  const f=assertionFixture(),host=permissionHost({mode:"ask",publish:false})
+  const bridge=await createMemoryAssertionBridge({authority:f.authority,context:host.context})
+  let detached
+  try{
+    await bridge.wrap(f.request.tool,async()=>{detached=bridge.context.permission.assert(f.snapshot).catch(e=>e);await host.ready.promise})(f.request.input,f.request.native)
+    assert.equal((await bridge.close()).closed,false)
+    assert.deepEqual(await bridge.recover(),{accepted:false,reason:"closing"})
+    assert.equal(host.calls.list,0)
+    host.failStream()
+    assert.equal(await detached,host.declined)
+    assert.equal(host.calls.list,1);assert.equal(host.calls.reply[0].decision,"reject")
+    assert.equal((await bridge.close()).closed,true)
+    assert.equal((await bridge.close()).closed,true)
+    assert.equal(host.calls.hookDisposals,1);assert.equal(bridge.status().tasks,0)
+  }finally{for(const p of host.pending.values())p.wait.reject(host.declined);await detached;await bridge.close();f.authority.close()}
+})
+
 test("native phase truth table preserves silent allow, skipped-hook deny, unattended allow and real ask",async()=>{
   for(const mode of ["allow","deny","unattended","ask"]){
     const f=assertionFixture(),host=permissionHost({mode}),bridge=await createMemoryAssertionBridge({authority:f.authority,context:host.context})

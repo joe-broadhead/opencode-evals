@@ -11,7 +11,7 @@ export async function createMemoryAssertionBridge({authority,context}) {
   const permission=context?.permission
   if(![permission?.assert,permission?.hook,permission?.list,permission?.get,permission?.reply,context?.event?.subscribe].every(f=>typeof f==="function"))throw new Error("Memory assertion bridge: public host seams required")
   const local=new AsyncLocalStorage(),owned=new WeakSet(),tokens=new Map(),requests=new Map(),tasks=new Set(),nativeWork=new Set(),facts=[]
-  let closing=false,closed=false,partial=false
+  let closing=false,closed=false,partial=false,closeWork,hookDisposal,iteratorReturn
   const note=reason=>{partial=true;facts.push({kind:"partial",reason})}
   const fault=reason=>{note(reason);authority.cancel()}
   const watch=promise=>{
@@ -90,12 +90,14 @@ export async function createMemoryAssertionBridge({authority,context}) {
       }
     }
   }
-  const recover=()=>{
+  const recoverInternal=()=>{
     const records=[...tokens.values()].filter(r=>!r.recovered)
     for(const r of records)r.recovered=true // One list/get recovery attempt per registered token, never polling.
     const work=Promise.resolve().then(()=>recoverRecords(records))
     return watch(Promise.all(records.map(r=>r.assertion.recover(()=>work))))
   }
+  // Refusal is a result, not a detached rejection. Internal tombstone cleanup remains admitted.
+  const recover=()=>closing?Promise.resolve({accepted:false,reason:closed?"closed":"closing"}):recoverInternal()
   const event=event=>{
     if(event.type==="permission.asked")asked(event.data) // Envelope ID is deliberately unused.
     if(event.type==="permission.replied"){
@@ -108,7 +110,7 @@ export async function createMemoryAssertionBridge({authority,context}) {
   let iterator
   try{iterator=context.event.subscribe({types:["permission.asked","permission.replied"]})[Symbol.asyncIterator]()}
   catch(error){await registration.dispose();throw error}
-  const streamLost=reason=>{fault(reason);void recover()}
+  const streamLost=reason=>{fault(reason);void recoverInternal()}
   const pump=(async()=>{try{for(;;){const next=await iterator.next();if(next.done){if(!closing)streamLost("event stream ended");break}event(next.value)}}catch{streamLost("event stream failed")}})()
   const wrap=(tool,captured)=>async(input,native)=>{
     if(closing||native?.signal?.aborted)throw native?.signal?.reason??failure()
@@ -125,15 +127,25 @@ export async function createMemoryAssertionBridge({authority,context}) {
       }
     })
   }
-  const close=async()=>{
-    if(closed)return
+  const drainTasks=async()=>{while(tasks.size)await Promise.all([...tasks])}
+  const close=()=>{
+    if(closed)return Promise.resolve({closed:true,outstanding:0,partial})
+    if(closeWork)return closeWork
     closing=true;authority.cancel()
-    for(const record of tokens.values()){record.assertion.reject();if(record.pending&&nativeWork.size)cleanup(record,record.pending)}
-    await Promise.all([...tasks])
-    if(nativeWork.size)return {closed:false,outstanding:nativeWork.size,partial:true}
-    await registration.dispose();await iterator.return?.();await pump
-    closed=true;local.disable()
-    return {closed:true,outstanding:0,partial}
+    // Install serialization before invoking any host callback. Partial attempts may be retried.
+    closeWork=Promise.resolve().then(async()=>{
+      for(const record of tokens.values()){record.assertion.reject();if(record.pending&&nativeWork.size)cleanup(record,record.pending)}
+      await drainTasks()
+      if(nativeWork.size)return {closed:false,outstanding:nativeWork.size,partial:true}
+      await (hookDisposal??=Promise.resolve().then(()=>registration.dispose()))
+      await (iteratorReturn??=Promise.resolve().then(()=>iterator.return?.()))
+      await pump
+      // Disposers and queued events can create cleanup after the first drain.
+      await drainTasks()
+      closed=true;local.disable()
+      return {closed:true,outstanding:0,partial}
+    }).finally(()=>{closeWork=undefined})
+    return closeWork
   }
   const facade={...context,permission:{...permission,assert}}
   const setup=async original=>{

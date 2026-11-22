@@ -114,9 +114,19 @@ The wrapper removes its abort listener when the executor ends. Tombstones and as
 Native assert has no public AbortSignal here. Cancellation does not prove native fiber termination.
 The authority tracks assertion, once-send, cleanup, and recovery work separately from executor leases.
 Outstanding work prevents successor admission and sealing, including reentrant completion reads.
+Admission rechecks the work ledger after trusted activation and scope readers, before scope publication or reservation.
+Opening requires all work to drain. Execution refuses work from ended leases but permits supported concurrent live reads.
+Refused admission does not consume an operation use. Genuine drain permits a later admission attempt.
 
 `close()` can wait for public host operations. It reports `closed:false` if native assertions still remain after those operations settle.
 That result retains the event subscription for late cleanup. The owner must drain the work and close again, or terminate the contained workload.
+Concurrent close calls share one attempt. A partial attempt does not prevent another close attempt after native work drains.
+The hook disposer and iterator return each run at most once, including after errors.
+An unsuccessful disposer remains unsuccessful on later attempts. The bridge does not report a completed close after that error.
+Close drains tracked host work before disposal and again after the event pump ends, including cleanup created during disposal.
+Public `recover()` returns `{accepted:false,reason:"closing"}` during closing, or `{accepted:false,reason:"closed"}` after a completed close.
+These refusal results start no lookup and consume no recovery attempt.
+Internal stream-loss recovery and exact late-ask cleanup remain available during closing. They cannot approve an assertion.
 The setup disposer does not itself certify this drain. The owner must inspect bridge status.
 There is no timeout approval, retry, refund, force allow, always reply, or method that erases the outstanding-work ledger.
 Public reject can reject other asks in the same native session. The synthetic runner must exclude unrelated concurrent session work during cleanup.

@@ -60,12 +60,15 @@ export function createNativeAuthority(source, {readActivation,readScopes,readCom
     revoke("activation lost or expired");return false
   }
   const active=lease=>live()&&leases.has(lease)&&lease.pass&&!lease.ended
+  // Scope publication requires total drain; execution permits other live read assertions.
+  const workPending=(opening=false)=>opening?leases.size>0||assertionWork.size>0:[...assertionWork.keys()].some(l=>l.ended)
+  const requireDrained=()=>{if(workPending())refuse("native assertion work has not drained")}
   const receipt=lease=>active(lease)&&!lease.pending?structuredClone({...policy.memoryContext,schema:"oc-mem-native-receipt/1",tool:lease.tool,family:lease.classification.family,args:lease.input,call_id:lease.native.id,native:lease.native,invocation_id:lease.invocation_id,occurrence:lease.occurrence,operation_id:lease.operation_id,grant_id:lease.grant_id,reservation_id:lease.reservation_id,expires_at:policy.memoryIntent.expires_at,pass:true}):null
   const open=()=>{
-    if(disposed||current||leases.size||assertionWork.size)refuse("scope is already open, pending or disposed")
+    if(disposed||current||workPending(true))refuse("scope is already open, pending or disposed")
     const revision=controlRevision
     let c;try{c=activation()}catch{refuse("trusted activation unavailable")}
-    if(disposed||current||leases.size||controlRevision!==revision)refuse("activation changed during open")
+    if(disposed||current||workPending(true)||controlRevision!==revision)refuse("activation changed during open")
     if(!c||c.turn<=highestTurn||c.incarnation<=highestIncarnation||(trial!==null&&c.trial!==trial))refuse("missing, stale or foreign activation")
     highestTurn=c.turn;highestIncarnation=c.incarnation;trial=c.trial
     current={scope:scopeOf(c),generation:c.generation};proof=Object.freeze({})
@@ -145,7 +148,7 @@ export function createNativeAuthority(source, {readActivation,readScopes,readCom
   }
   const execute=async(request,delegate)=>{
     if(!live())refuse("inactive scope")
-    if([...assertionWork.keys()].some(l=>l.ended))refuse("native assertion work has not drained")
+    requireDrained()
     const scope=current
     let snapshot;try{snapshot=structuredClone(request)}catch{refuse("unsupported native input snapshot")}
     const {native,tool,input,occurrence}=snapshot??{}
@@ -154,8 +157,9 @@ export function createNativeAuthority(source, {readActivation,readScopes,readCom
     if(occurrence!==undefined&&(!text(occurrence)||occurrences.has(occurrenceKey)))refuse("invalid or reused occurrence")
     if(!native||![native.sessionID,native.messageID,native.id].every(text)||native.sessionID!==current.scope.sessionID)refuse("foreign or incomplete native identity")
     if(typeof delegate!=="function")refuse("trusted executor missing")
+    let scopes;try{scopes=readTrusted(readScopes)}catch{refuse("trusted scope map or creator reservation unavailable")}
+    requireDrained()
     try{
-      const scopes=readTrusted(readScopes)
       for(const creator of scopes?.creators??[]){
         const origin=reservations.get(creator.reservation_id)
         if(!origin||origin.revoked||origin.pending||origin.failed||creator.alias!==origin.creates||creator.schema!=="oc-mem-native-creator/1"||creator.family!==origin.classification.family||!equal(creator.args,origin.input)||creator.session!==origin.native.sessionID||creator.call_id!==origin.native.id||!["invocation_id","occurrence","operation_id","grant_id"].every(k=>creator[k]===origin[k])||!["case_id","trial_id","trial","turn","activation_id","incarnation","generation"].every(k=>creator[k]===origin.context[k]))throw new Error("unbound creator reservation")
@@ -182,6 +186,8 @@ export function createNativeAuthority(source, {readActivation,readScopes,readCom
     }
     const creates=use?.alternatives.find(a=>memoryIntentAlternativeMatches(policy,a,classification,input,native.sessionID))?.creates
     if(!live())refuse("activation lost before reservation")
+    if(current!==scope)refuse("activation changed before reservation")
+    requireDrained()
     if(grant_id)spent.add(grant_id) // Atomic, before any await or delegate; never refunded.
     if(occurrence!==undefined)occurrences.add(occurrenceKey)
     const lease={native,tool,input,occurrence:occurrence??null,invocation_id:randomUUID(),classification,sessionID:native.sessionID,target:classification.target,context:structuredClone(policy.memoryContext),operation_id:use?.id??null,grant_id,reservation_id:use?randomUUID():null,creates,pass:true,pending:false,ended:false,revoked:false,failed:false}
