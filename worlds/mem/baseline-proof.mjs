@@ -24,17 +24,22 @@ export function createBaselineProof(initial,control,intent) {
     return copy
   }
   const before=state(initial,control)
+  const bound=(event)=>{
+    const {context:c,invocation:v,request_session:s}=event
+    const family=event.path.startsWith("/v3/wiki/")?"wiki":event.path==="/records/v1/records.put"?"remember":null
+    return Boolean(intent&&intent.expires_at>Date.now()&&c?.active===true&&c.case_id===intent.case_id&&c.trial_id===intent.trial_id&&intent.turns.some(t=>t.index===c.turn)&&typeof s==="string"&&s&&s===c.session&&v?.pass===true&&v.active===true&&v.case_id===c.case_id&&v.trial_id===c.trial_id&&v.turn===c.turn&&v.session===s&&v.family===family&&typeof v.call_id==="string"&&v.call_id)
+  }
   function creator(event,id,family) {
     const {context:c,invocation:v}=event
-    if(!intent||!c?.active||c.case_id!==intent.case_id||c.trial_id!==intent.trial_id||intent.expires_at<=Date.now()||!v?.pass||v.case_id!==intent.case_id||v.trial_id!==intent.trial_id||v.turn!==c.turn||v.session!==c.session||v.family!==family||typeof id!=="string")return
+    if(!bound(event)||v.family!==family||typeof id!=="string")return
     const requested=intent.turns.find(t=>t.index===c.turn)?.calls.find(x=>x.creates&&x.family===family&&isDeepStrictEqual(x.args,v.args))
     if(!requested||creators.some(x=>x.alias===requested.creates))return
     creators.push({alias:requested.creates,id,family,args:structuredClone(v.args),case_id:intent.case_id,trial_id:intent.trial_id,turn:c.turn,session:c.session,call_id:v.call_id,status:"stored"})
   }
   function observe(event) {
     const {path,input,response,before,after,space,context}=event,payload=response.json?.data??response.json
-    const bound=context?.active&&intent&&intent.expires_at>Date.now()&&context.case_id===intent.case_id&&context.trial_id===intent.trial_id&&intent.turns.some(t=>t.index===context.turn)
-    const base={turn:bound?context.turn:null,session:bound?context.session:null,space}
+    const valid=bound(event)
+    const base={turn:valid?context.turn:null,session:event.request_session??null,request_session:event.request_session??null,binding:valid?"bound":"unbound",case_id:valid?context.case_id:null,trial_id:valid?context.trial_id:null,call_id:valid?event.invocation.call_id:null,space}
     if(path==="/v3/wiki/create") {
       const id=payload?.wiki_id??payload?.knowledge_id,w=wiki(after,id)
       const stored=ok(response)&&!wiki(before,id)&&w?.name===input.name&&scope(w)===space

@@ -9,6 +9,7 @@ const empty = () => ({ atoms: [], records: [], commitments: [], knowledge: [], c
 
 export function enrichSyntheticCoreProof(spec, core) {
   core.proof_schema = "oc-mem-durable-proof/2"
+  core.trial_id = "trial_synthetic_core"
   core.state = { ...empty(), ...structuredClone(core.seed), ...core.state }
   core.before = { ...empty(), ...structuredClone(core.seed) }
   for (const request of core.requests) request.verb = request.method.startsWith("/v1/") ? "GET" : "POST"
@@ -26,7 +27,7 @@ export function enrichSyntheticCoreProof(spec, core) {
       { turn: 2, operation: "wiki.raw.write", status: "stored", ...resource, before_version: digest(initial), version: digest(final), revision: 2, before_body: initial, body: final },
       { turn: 3, operation: "wiki.raw.read", status: "read", ...resource, version: digest(final), revision: 2, body: final },
     ]
-    for (const operation of core.operations) operation.session = core.turns[operation.turn-1].session
+    for (const operation of core.operations) Object.assign(operation,{session:core.turns[operation.turn-1].session,request_session:core.turns[operation.turn-1].session,binding:"bound",case_id:core.case_id,trial_id:core.trial_id,call_id:`call_synthetic_${operation.turn}`})
     core.turns[0].calls[0].args = { ...core.turns[0].calls[0].args, filename: "README.md", content: initial }
     core.turns[1].calls[0].args = { ...core.turns[1].calls[0].args, wiki_id: id, filename: "README.md", content: decision }
     core.turns[2].calls[0].args = { ...core.turns[2].calls[0].args, wiki_id: id, filename: "README.md" }

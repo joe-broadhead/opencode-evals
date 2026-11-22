@@ -3,7 +3,7 @@
 import { coreCases, bindCoreSeed } from "../../../packs/mem/core.mjs"
 import { answerValueFailures, privateMentionFailures, abstainGuessFailures } from "../../../worlds/mem/baseline-586/scripts/eval/harness-scoring.mjs"
 import { canonical } from "../../util/canonical.mjs"
-import { readonlyProofFailure, wikiWriteProofFailure } from "./mem-durable.mjs"
+import { initialSeedFailure, readonlyProofFailure, wikiWriteProofFailure } from "./mem-durable.mjs"
 
 const toolName = (name) => String(name).replace(/^mem[._]/,"mem_")
 const matches = (value, pattern) => {
@@ -71,6 +71,8 @@ export function memoryCoreEvidence(id, view) {
   const fail=(detail)=>({state:"fail",detail:`core ${id}: ${detail}`})
   const expectedSeed=bindCoreSeed(spec,(space,field)=>({user_id:"eval",agent_id:"build",team_id:spec.mode==="control"?`eval-container-${space}`:"local"})[field])
   if(core.case_id!==id||canonical(core.seed)!==canonical(expectedSeed)) return fail("frozen seed/scope differs")
+  const initial=initialSeedFailure(core)
+  if(initial)return fail(initial)
   if(!Array.isArray(core.turns)||core.turns.length!==spec.prompts.length) return fail("incomplete separate prompt recording")
   for(const [i,t] of core.turns.entries()) {
     if(t.index!==i+1||t.prompt!==spec.prompts[i]||typeof t.session!=="string"||!t.session||!Array.isArray(t.calls)||typeof t.text!=="string") return fail("malformed turn or prompt")
