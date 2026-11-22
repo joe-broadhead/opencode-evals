@@ -84,3 +84,46 @@ No inventory replacement, package dependency, or lock refresh is necessary here.
 
 The lead owns the retained worktree and sibling evidence until review and integration finish.
 The evidence contains exact commands, red/green logs, migration patches, integrity checks, and cleanup verification.
+
+## Residual correction after independent rereview
+
+Incremental base: `51f237f5988ac5d7ac612ff595ca0673b939dd61`.
+The rereview accepted the original reproductions and startup-only BLOCKED expectation.
+It found three remaining gaps: wiki failure precedence, malformed raw rows, and recall permission revocation.
+Independent review of this correction remains required.
+
+Wiki state and operation predicates no longer depend on successful invocation coverage.
+They still validate operation bindings, document versions, append preservation, final RAW, readback, and unrelated durable families.
+The separate invocation predicate returns a typed evidence state rather than a message that the adapter suppresses.
+Each required invocation uses its own turn's coverage.
+An observed error remains FAIL even when another turn is unavailable.
+Native read-output validation depends on the successful read, not on successful create or append captures.
+
+Malformed null, array, or scalar rows do not erase valid independent scoped pairs.
+The reader retains an explicit inventory-incomplete diagnostic alongside those pairs.
+That diagnostic is not an invocation and supplies no scope, count, arguments, or output.
+It prevents complete-empty classification and direct-event fallback, including when no valid pair remains.
+
+The exact recall permission name now enters the existing Memory permission path.
+The existing normalizer also recognizes its exact dotted alias.
+Deny revokes the receipt and prevents later allow for that invocation.
+Ask suspends the receipt until a valid resolution.
+Closed turns and unmatched invocation identities reject permission evaluations.
+The before-hook replay check, read classification, and write-intent rules remain unchanged.
+The hook implementation and runner still do not change.
+
+The unchanged reviewer scripts reproduced 3 pipeline, 4 wiki, and 4 recall lifecycle discrepancies before their respective corrections.
+All 81 pipeline, 17 wiki, and 12 closure comparisons now match without expectation changes.
+The focused 14-file suite passes 81 tests without skips.
+Its wiki matrix pairs each missing create, append, or read capture with ten independent durable violations and observed errors.
+Additional controls cover wrong read output, malformed-row positive and negative cases, alias combinations, and lifecycle transitions.
+The 38 frozen contracts and 143 archive hashes remain intact.
+
+The digest inventory appends `mem-call-context.mjs` and its previously unlisted dependency `mem-intents.mjs`.
+Every previous entry remains in the same order.
+Pure hash arithmetic verifies the 35-input inventory, dependency closure, and changed-input sensitivity.
+No lock refresh or provenance override occurs.
+
+The sibling `r2-evidence` directory records exact commands, immutable reviewer hashes, red/green logs, and cleanup verification.
+The broader older corpora were not rerun without a new affected seam.
+All native producer, complete-empty coverage, sidecar, carrier, and real-host gates remain separate.

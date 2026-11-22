@@ -3,7 +3,7 @@
 import { coreCases, bindCoreSeed } from "../../../packs/mem/core.mjs"
 import { answerValueFailures, privateMentionFailures, abstainGuessFailures } from "../../../worlds/mem/baseline-586/scripts/eval/harness-scoring.mjs"
 import { canonical } from "../../util/canonical.mjs"
-import { initialSeedFailure, readonlyProofFailure, wikiWriteProofFailure } from "./mem-durable.mjs"
+import { initialSeedFailure, readonlyProofFailure, wikiWriteProofFailure, wikiWriteCallEvidence } from "./mem-durable.mjs"
 import {resolvedMemoryArgs} from "../../run/mem-arguments.mjs"
 
 const toolName = (name) => String(name).replace(/^mem[._]/,"mem_")
@@ -98,7 +98,7 @@ export function memoryCoreEvidence(id, view) {
   }
   unavailable ||= core.turns.some(unavailableTurn)
   // Generic view.calls includes parsed source sites. It cannot veto actual Memory facts.
-  const actualCore={...core,turns:core.turns.map(t=>({...t,calls:t.calls.filter(knownCall)}))}
+  const actualCore={...core,turns:core.turns.map(t=>({...t,calls_complete:!unavailableTurn(t),calls:t.calls.filter(knownCall)}))}
   const failures=spec.assertions.flatMap((a)=>coreAssertionFailures(a,core))
   const knownFailures=failures.filter(f=>!unavailableFailure(f))
   if(knownFailures.length)return fail(knownFailures.join("; "))
@@ -119,7 +119,10 @@ export function memoryCoreEvidence(id, view) {
     if(id==="core-wiki-write"&&!effects.some((e)=>e.method==="wiki.raw.write")) return fail("wiki write receipt absent")
     if (id === "core-wiki-write") {
       const document = wikiWriteProofFailure(actualCore)
-      if (document && !(unavailable&&document==="successful typed create/append/read calls are missing")) return fail(document)
+      if (document) return fail(document)
+      const invocations=wikiWriteCallEvidence(actualCore)
+      if(invocations.state==="fail")return fail(invocations.detail)
+      if(invocations.state==="unverifiable")unavailable=true
     }
   }
   if(unavailable||failures.length)return {state:"unverifiable",detail:`core ${id}: actual execution or required typed evidence is unavailable`}

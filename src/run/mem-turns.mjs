@@ -11,13 +11,18 @@ export async function withMemoryActivation({write,clear,client,observations}){
 
 // The runner reads this private hook journal. Nothing here reads expected case arguments or answer text.
 export function nativeMemoryCalls(records,context){
-  if(!Array.isArray(records)||records.some(r=>!r||typeof r!=="object"||Array.isArray(r))||!["case_id","trial_id","session","activation_id"].every(k=>typeof context?.[k]==="string"&&context[k])||!Number.isInteger(context?.turn)||context.turn<1)return undefined
-  if(!records.some(r=>r.kind==="guard_start"&&r.case_id===context.case_id&&r.trial_id===context.trial_id))return undefined
+  if(!Array.isArray(records)||!["case_id","trial_id","session","activation_id"].every(k=>typeof context?.[k]==="string"&&context[k])||!Number.isInteger(context?.turn)||context.turn<1)return undefined
+  const shaped=records.filter(r=>r&&typeof r==="object"&&!Array.isArray(r))
+  // This is an inventory diagnostic, never an invocation or an invented scope marker.
+  // Keeping it in the supplied array prevents both complete-empty and direct fallback.
+  const incomplete=shaped.length!==records.length?[{kind:"memory_inventory_incomplete",reason:"malformed raw journal row"}]:[]
+  records=shaped
+  if(!records.some(r=>r.kind==="guard_start"&&r.case_id===context.case_id&&r.trial_id===context.trial_id))return incomplete.length?incomplete:undefined
   const scoped=r=>r.case_id===context.case_id&&r.trial_id===context.trial_id&&r.turn===context.turn&&r.session===context.session&&r.activation_id===context.activation_id
   const starts=records.filter(r=>r.kind==="memory_native_start"&&scoped(r))
   const ends=records.filter(r=>r.kind==="memory_native_end"&&scoped(r))
   // Startup establishes neither a turn's coverage nor an authoritative empty inventory.
-  if(!starts.length&&!ends.length)return undefined
+  if(!starts.length&&!ends.length)return incomplete.length?incomplete:undefined
   const same=(a,b)=>a.call_id===b.call_id&&a.incarnation===b.incarnation&&a.tool===b.tool
   const valid=r=>r.pass===true&&r.active===true&&typeof r.call_id==="string"&&r.call_id&&Number.isInteger(r.incarnation)&&r.incarnation>0&&typeof r.tool==="string"&&r.tool
   const call=(r,e,resolved)=>({tool:r.tool,args:structuredClone(r.args),args_resolved:Boolean(resolved&&typedInput(r.args)),args_source:"native_guard",status:e?.status??"unattributable",output:e?(typeof e.output==="string"?e.output:JSON.stringify(e.output)):null,call_id:r.call_id,incarnation:r.incarnation})
@@ -28,7 +33,7 @@ export function nativeMemoryCalls(records,context){
   })
   // Orphans remain visible but cannot prove an invocation without its start.
   for(const e of ends.filter(e=>!starts.some(r=>same(r,e))))calls.push(call(e,e,false))
-  return calls
+  return [...calls,...incomplete]
 }
 
 export function memoryTurn(result,{index,prompt}) {

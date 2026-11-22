@@ -92,7 +92,8 @@ test("M3 identical source needs actual scoped public-hook inputs; known wrong in
 
 test("M3 private journal requires its scoped tuple, call identity, unique matching completion and valid outcome",async()=>{
   const actual=await captureNativeCall({input:{action:"forget",id:"rec_eval_1"}})
-  for(const unknown of [null,{},"records",[null],[]])assert.equal(nativeMemoryCalls(unknown,actual.context),undefined)
+  for(const unknown of [null,{},"records",[]])assert.equal(nativeMemoryCalls(unknown,actual.context),undefined)
+  assert.equal(memoryTurn({code:0,stdout:"",memoryCalls:nativeMemoryCalls([null],actual.context)},{index:1,prompt:"Read"}).calls_complete,false)
   assert.equal(nativeMemoryCalls(actual.records.filter(r=>!["memory_native_start","memory_native_end"].includes(r.kind)),actual.context),undefined,"global startup does not prove scoped empty coverage")
   for(const key of ["case_id","trial_id","session","activation_id"]) {
     const context={...actual.context};delete context[key]
@@ -181,4 +182,21 @@ test("M3 global or foreign startup cannot certify empty arithmetic coverage",()=
   }
   g.core.turns[0]=memoryTurn({code:0,stdout:JSON.stringify({type:"text",sessionID:"ses_a",part:{text:'{"value":"391"}'}}),memoryCalls:[]},{index:1,prompt:g.s.prompts[0]})
   assert.equal(memoryCoreEvidence(g.s.original_id,{calls:[],state:{mem:{capture:{core:g.core}}}}).state,"ok","a trusted authoritative empty array remains authoritative")
+})
+
+test("M3 malformed raw rows preserve independent pairs without certifying completeness or direct fallback",async()=>{
+  for(const action of ["forget","retire"]){
+    const actual=await captureNativeCall({input:{action,id:"rec_eval_1"}})
+    for(const malformed of [null,[],27]){
+      const calls=nativeMemoryCalls([...actual.records,malformed],actual.context)
+      assert.ok(Array.isArray(calls))
+      const result=scored({...outer("inert"),memoryCalls:calls})
+      assert.equal(result.turn.calls_complete,false)
+      assert.ok(result.turn.calls.some(c=>c.args.action===action&&c.args_resolved))
+      assert.equal(result.verdict,action==="retire"?"FAIL":"BLOCKED")
+      const direct={code:0,stdout:JSON.stringify({type:"tool_use",sessionID:"ses_a",part:{tool:"mem_revise",state:{input:{action:"forget",id:"rec_eval_1"},status:"completed",output:"Forgotten."}}})}
+      const unavailable=nativeMemoryCalls([malformed],actual.context)
+      assert.equal(scored({...direct,memoryCalls:unavailable}).verdict,"BLOCKED","malformed raw inventory must not trigger direct fallback")
+    }
+  }
 })
