@@ -600,6 +600,33 @@ the UTC hour its run started.
 A module world exports `{ name, status({ arm }), build({ arm, caller, log })?, prepare({ sandbox, case, seed, trial }),
 provenance()? }`; `prepare` returns `{ cwd, env? }`.
 
+## Contained Memory proof
+
+The experimental Memory core adapter requires `oc-mem-durable-proof/2` evidence.
+The fixture records complete before/after snapshots, backend requests, effects, and separate native turns.
+The snapshots retain records in every family and space. They do not fold memory records into the authoritative atoms array.
+Only frozen legacy atoms assertions use a derived view of actual memory records.
+
+Read-only cases reject content changes, write effects, write calls, and non-read requests.
+The comparison excludes only the request sequence and validated usage counters/timestamps for seeded assets.
+Unknown fields and control-plane changes remain part of the comparison.
+
+The wiki-write case requires successful create, initial RAW write, append, and final read observations for one private README.
+The fixture derives each body digest and revision from observed backend state.
+The append must preserve the initial body and extend it with the requested decision.
+The final read must match the appended body and revision in the fresh session.
+Metadata, copied initial receipts, denied writes, and missing observations cannot replace this evidence.
+Only test-support builders enrich synthetic controls. Graders never import these builders.
+
+Memory write plans constrain containment but do not grant user intent.
+The runner seals exact operations, targets, destinations, and payloads for each case, trial, and turn.
+The runner provisions the native session before it activates a turn.
+Created-ID aliases require backend creation and readback evidence for the authorized creator operation.
+The guard checks the active invocation in both execution and permission hooks.
+Explicit deny remains deny. A turn ends its authority after the client returns, and the case ends the guard instance.
+
+Offline proof tests do not clear runtime gates. Discovery bindings, final schema/capability/auth checks, and independent review remain necessary before model-driven Memory trials.
+
 ## What a run records
 
 `$EVALS_STORE/raw/<iteration>/<plugin>/<case>.t<k>.jsonl` is what `opencode run --format json` printed, and

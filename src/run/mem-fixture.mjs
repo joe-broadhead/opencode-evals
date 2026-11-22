@@ -5,7 +5,7 @@ import { PORT, SYNTHETIC_TOKEN } from "../../worlds/mem/http.mjs"
 import { sha256 } from "../util/canonical.mjs"
 import { stageBaselineFixture } from "./mem-baseline.mjs"
 
-export function stageMemFixture(sandbox, { core = null } = {}) {
+export function stageMemFixture(sandbox, { core = null, intent = null } = {}) {
   const root = join(sandbox.tmp, "mem-fixture")
   const base = resolve(sandbox.root), rel = relative(base, root)
   if (!rel || isAbsolute(rel) || rel.split("/").includes("..") || existsSync(root)) throw new Error("unsafe or pre-existing Memory fixture stage")
@@ -17,7 +17,7 @@ export function stageMemFixture(sandbox, { core = null } = {}) {
   mkdirSync(root, { recursive: true, mode: 0o700 })
   const source = resolve(import.meta.dirname, "../../worlds/mem")
   for (const name of ["container-entry.mjs", "http.mjs", "fixture.mjs"]) copyFileSync(join(source, name), join(root, name))
-  const plan = core ? stageBaselineFixture(root, core) : null
+  const plan = core ? stageBaselineFixture(root, core, intent) : null
   writeFileSync(join(root, "descriptor.json"), JSON.stringify({ schema: "oc-mem-fixture/1", fixture: "mem-synthetic-v1", port: PORT, ...(plan ? { transport: "baseline-586" } : {}) }), { flag: "wx", mode: 0o600 })
   return { root, sandboxRoot: sandbox.root, entry: join(root, "container-entry.mjs"), url: `http://127.0.0.1:${PORT}`, port: PORT, ...(plan ? { plan, scopeMap: join(root, "scope-map.json") } : {}) }
 }

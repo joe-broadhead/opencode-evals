@@ -4,6 +4,7 @@
 import { existsSync, readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { memoryCall, validMemoryBinding } from "./mem-targets.mjs"
+import { memoryIntentAllows, intentContext } from "./mem-intents.mjs"
 
 const DEFAULT = { mode: "refuse", writes: [], actions: [] }
 
@@ -163,12 +164,14 @@ export function isUnknownTool(policy, name) {
   return policy.tools.prefixes.some((prefix) => prefix !== "evalsprobe" && (bare.startsWith(`${prefix}_`) || bare.startsWith(`${prefix}.`)))
 }
 
-export function decideBefore(policy, tool, input, plans = new Map()) {
+export function decideBefore(policy, tool, input, plans = new Map(), context = {}) {
   // The allow-list tripwire (G0 review 3.1): the lockdown removes the core tools it knows by name, and a core tool a later version adds
   // stays available. In a locked trial a tool outside this list is refused and logged, whatever it is.
   if (policy.tools && !toolAllowed(policy.tools, tool)) return { pass: false, why: "a core tool outside the locked allow-list", tool: true, write: null, committer: false }
   const memory = validMemoryBinding(policy.memoryBinding) ? memoryCall(tool, input, policy.memoryBinding) : null
   if (memory?.error) return { pass: false, why: memory.error, write: { memory: true }, committer: false }
+  if (memory && policy.memoryIntent && !intentContext(policy, context.sessionID)) return { pass: false, why: "Memory intent trial/turn/session is inactive or expired", write: null, committer: false }
+  if (memory?.write && !memoryIntentAllows(policy, memory, input, context.sessionID)) return { pass: false, why: "no sealed Memory intent for this operation, target and payload", write: { memory: true }, committer: false }
   const write = matchWrite(policy, tool, input)
   const committer = isIn(policy.plans?.committers, tool)
   // A tool no pack lists: a write by default. In the commit set the plan did not name it, so it is refused; elsewhere it is left to the ask (execute.before fires before the ask, so a refusal here

@@ -50,6 +50,7 @@ import { dirname } from "node:path"
 import { stageMemFixture, memFixtureOptions, memFixtureBinding, startMemFixture, memCaptureRecord } from "./mem-fixture.mjs"
 import { coreCases } from "../../packs/mem/core.mjs"
 import { runMemoryTurns } from "./mem-turns.mjs"
+import { coreMemoryIntent } from "./mem-intent-plan.mjs"
 
 
 export const RUNNER = "evals run"
@@ -494,7 +495,9 @@ async function runJobBody(job, ctx, track) {
   track.phase = "preparing the world"
   const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
   if (ctx.plugin === "mem" && (ctx.isolation.name !== "container" || !ctx.isolation.confines || prepared.memFixture !== true)) throw new Error("Memory trials require the contained synthetic fixture world")
-  const memFixture = ctx.plugin === "mem" ? stageMemFixture(sandbox, { core: coreCases.find((s) => s.id === job.case.id) ?? null }) : null
+  const coreSpec = ctx.plugin === "mem" ? coreCases.find((s) => s.id === job.case.id) : null
+  const memoryIntent = coreSpec ? coreMemoryIntent(coreSpec, `${name}-${digestOf(root).slice(0,16)}`, Date.now()+ctx.timeoutMs+120000) : null
+  const memFixture = ctx.plugin === "mem" ? stageMemFixture(sandbox, { core: coreSpec ?? null, intent: memoryIntent }) : null
   const cwd = within(root, prepared.cwd, "the working directory")
   // The case's own files (`Seed: files=`), copied into its project before the world's home is cut of its links.
   track.phase = "seeding the project's files"
@@ -505,7 +508,12 @@ async function runJobBody(job, ctx, track) {
   // Fake mode: the fake plugins this case uses. The sealed config carries no override: each plugin registers its own server at its default URL, and the trial
   // maps that host name to the fake (a conflicting server of the plugin's own name would switch off its namespace text and tool filter).
   const fakeIds = fakeFor(pluginsOf(job.case), ctx.fakeSet ?? new Set())
-  const config = sealedConfig({ armDir: ctx.armDir, options: memFixture ? memFixtureOptions(memFixture, ctx.options) : ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...ctx.sealed })
+  const trialSealed = {...ctx.sealed}
+  if (memoryIntent && ctx.sealed.guardDir) {
+    const policy=JSON.parse(readFileSync(join(ctx.sealed.guardDir,"guard.json"),"utf8"))
+    trialSealed.guardDir=installGuard(sandbox.tmp,{...policy,memoryIntent})
+  }
+  const config = sealedConfig({ armDir: ctx.armDir, options: memFixture ? memFixtureOptions(memFixture, ctx.options) : ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...trialSealed })
   writeConfig(sandbox, config)
   const password = newPassword()
   // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
@@ -533,7 +541,7 @@ async function runJobBody(job, ctx, track) {
     // A world's own variables go in first and never the sealed ones; the harness's (credential, endpoint) go in last.
     const fromWorld = worldEnv(prepared.env)
     if (fromWorld.dropped.length) ctx.log(`  ${name}: the world's env may not set ${fromWorld.dropped.join(", ")}: ignored`)
-    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(memFixture?.scopeMap ? { EVALS_MEM_SCOPE_MAP: memFixture.scopeMap } : {}), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}), ...(capture ? { ANTHROPIC_BASE_URL: capture.url } : {}) } })
+    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(memFixture?.scopeMap ? { EVALS_MEM_SCOPE_MAP: memFixture.scopeMap, EVALS_MEM_TURN_STATE: join(memFixture.root,"turn.json"), EVALS_MEM_ACTIVE_CALL: join(memFixture.root,"active-call.json") } : {}), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}), ...(capture ? { ANTHROPIC_BASE_URL: capture.url } : {}) } })
     // Every host command of the run goes through the trial.
     const exec = (args, options = {}) => {
       const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env, stdin: options.input !== undefined && options.input !== null })
@@ -576,7 +584,22 @@ async function runJobBody(job, ctx, track) {
           }
         }
         const core = ctx.plugin === "mem" ? coreCases.find((s) => s.id === job.case.id) : null
-        const runClient = () => core ? runMemoryTurns({ spec: core, timeoutMs: ctx.timeoutMs, client: ({ prompt, session: continued, timeoutMs }) => exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...(continued ? ["--session", continued] : ["--title", `eval ${id} t${job.trial}`]), prompt], { timeoutMs, ...stallOf(ctx, sawRequest) }) }) : exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...stallOf(ctx, sawRequest) })
+        const memoryClient = async ({prompt,session:continued,timeoutMs,index}) => {
+          let session=continued
+          if (!session) {
+            // Existing native /api/session contract (also used by T1): provision identity before granting any intent.
+            const created=await exec(["api","--server",server.url,"post","/api/session","-d",JSON.stringify({agent:"build"})],{timeoutMs:10000})
+            let value;try{value=JSON.parse(created.stdout)}catch{throw new Error("Memory session provisioning has no typed response")}
+            session=value?.data?.id??value?.id
+            if(created.code!==0||typeof session!=="string"||!session.startsWith("ses_"))throw new Error("Memory session provisioning failed")
+          }
+          const file=join(memFixture.root,"turn.json")
+          const write=(active)=>{writeFileSync(`${file}.tmp`,JSON.stringify({case_id:memoryIntent.case_id,trial_id:memoryIntent.trial_id,turn:index,session,active}),{mode:0o600});renameSync(`${file}.tmp`,file)}
+          write(true)
+          try{return await exec(["run","--server",server.url,"--format","json","-m",ctx.model,"--session",session,prompt],{timeoutMs,...stallOf(ctx,sawRequest)})}
+          finally{write(false)}
+        }
+        const runClient = () => core ? runMemoryTurns({ spec: core, timeoutMs: ctx.timeoutMs, client: memoryClient }) : exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...stallOf(ctx, sawRequest) })
         // An idle client: `opencode run` alive, the server up, the mock never asked (found in 2 of ~100 `p0 a1` runs; the processes were all asleep at 0 % CPU). It is replaced ONCE, and the
         // restart is written into the summary with what the container showed at that moment and reported by the probe: a hang that happens again is infra `no_model_request`, as before.
         const restarts = []

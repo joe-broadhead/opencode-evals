@@ -3,6 +3,7 @@
 import { coreCases, bindCoreSeed } from "../../../packs/mem/core.mjs"
 import { answerValueFailures, privateMentionFailures, abstainGuessFailures } from "../../../worlds/mem/baseline-586/scripts/eval/harness-scoring.mjs"
 import { canonical } from "../../util/canonical.mjs"
+import { readonlyProofFailure, wikiWriteProofFailure } from "./mem-durable.mjs"
 
 const toolName = (name) => String(name).replace(/^mem[._]/,"mem_")
 const matches = (value, pattern) => {
@@ -39,7 +40,7 @@ export function coreAssertionFailures(assertion, core) {
     case "expectTools": return (assertion.tools??[]).every((n)=>named(n).length) && (!(assertion.any?.length)||assertion.any.some((n)=>named(n).length)) ? [] : bad("required tool absent")
     case "forbidTools": return (assertion.tools??[]).some((n)=>named(n).length) ? bad("forbidden tool called") : []
     case "expectToolOutput": return named(assertion.tool).some((c)=>c.status==="completed"&&matches(c.output,assertion.match)) ? [] : bad("no matching successful tool output")
-    case "expectToolArgs": return named(assertion.tool).some((c)=>matches(c.code ? `${c.code}\n${canonical(c.args??{})}` : canonical(c.args??{}), assertion.match)) ? [] : bad("no matching arguments")
+    case "expectToolArgs": return named(assertion.tool).some((c)=>c.args && typeof c.args === "object" && !Array.isArray(c.args) && c.args_resolved !== false && matches(canonical(c.args), assertion.match)) ? [] : bad("resolved typed arguments are absent or do not match")
     case "expectAnswerJson": return answerValueFailures(jsonObject(text),revive(assertion))
     case "expectDecisionJson": {
       const a=jsonObject(text)
@@ -51,7 +52,8 @@ export function coreAssertionFailures(assertion, core) {
     case "expectExitSuccess": return turns.length&&turns.every((t)=>t.exit===0&&!t.timedOut) ? [] : bad("prompt did not exit successfully")
     case "anyOf": return assertion.groups.some((group)=>group.every((a)=>!coreAssertionFailures({...a,prompt:a.prompt??assertion.prompt},core).length)) ? [] : bad("no alternative satisfied")
     case "expectState": case "forbidState": {
-      const selected=core.state?.[assertion.select]
+      // Frozen legacy atoms assertions also see actual memory records, without changing the authoritative snapshot.
+      const selected=assertion.select === "atoms" && Array.isArray(core.state?.atoms) ? [...core.state.atoms, ...(core.state.records??[]).filter((r)=>r.kind==="memory").map((r)=>({...r,content:r.body}))] : core.state?.[assertion.select]
       if(!Array.isArray(selected)) return bad(`missing authoritative state ${assertion.select}`)
       const count=selected.filter((r)=>stateMatches(r,assertion.where)).length
       const bounds=assertion.count??{min:1}
@@ -83,6 +85,8 @@ export function memoryCoreEvidence(id, view) {
     if(!read)return fail("tool evidence has no matching independent backend read in its permitted scope")
   }
   if(spec.prompts.length===1) {
+    const mutation = readonlyProofFailure(core)
+    if (mutation) return fail(mutation)
     for(const key of ["atoms","knowledge"]) if(!seedMatches(core.state?.[key]??[],core.seed[key]??[])) return fail("read-only seeded state changed or crossed scope")
   } else {
     const effects=core.effects
@@ -90,6 +94,10 @@ export function memoryCoreEvidence(id, view) {
     if(id==="core-durability"&&!effects.some((e)=>e.method==="records.put"&&e.record?.body?.includes("PostgreSQL"))) return fail("decision was not durably stored")
     if(id==="core-forget"&&(!effects.some((e)=>e.method==="records.put"&&e.record?.body?.includes("8420"))||!effects.some((e)=>e.method==="records.forget"&&e.id===effects.find((e)=>e.method==="records.put")?.record?.id))) return fail("actual stored staging fact was not forgotten")
     if(id==="core-wiki-write"&&!effects.some((e)=>e.method==="wiki.raw.write")) return fail("wiki write receipt absent")
+    if (id === "core-wiki-write") {
+      const document = wikiWriteProofFailure(core)
+      if (document) return fail(document)
+    }
   }
   const failures=spec.assertions.flatMap((a)=>coreAssertionFailures(a,core))
   if(failures.length) return fail(failures.join("; "))

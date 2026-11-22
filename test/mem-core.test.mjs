@@ -4,6 +4,7 @@ import assert from "node:assert/strict"
 import { compileCase } from "../src/case/compile.mjs"
 import { gradeCase, runView } from "../src/grade/grade.mjs"
 import { coreCases, renderCore, bindCoreSeed } from "../packs/mem/core.mjs"
+import { enrichSyntheticCoreProof } from "./support/mem-core-proof.mjs"
 
 const gold = [
   ["recall-model", "helios-7b", "Extraction uses helios-7b."], ["recall-orb", "ORB-7", "Orbital Registry"],
@@ -45,7 +46,7 @@ export function goldCore(short, answer, output) {
     effects.push({method:"wiki.raw.write",space:"personal",status:"stored"})
   }
   const core = {case_id:s.original_id,seed,state,turns,effects,requests:[{method:short.startsWith("wiki-")?"/v3/wiki/page/read":"/v3/atomic/search",space:short==="privacy-shared"?"shared":"personal",status:"read",output}]}
-  return {s,core}
+  return {s,core:enrichSyntheticCoreProof(s,core)}
 }
 function check({s,core}) {
   const events = [{schema:"oc-trace/1"}]

@@ -31,7 +31,7 @@ export function namesOf(pack, tool) {
  * The policy: `mode` "refuse" (no write passes), "commit" (only `commit[<permission>] = { extract, allow }` passes, and a plan
  * commit only for a plan made in scope: `plans`) or "log" (probes: observe only). `packs` defaults to every pack here.
  */
-export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {}, plans = null, locked = false, memoryBinding = null, memoryReplies = {} } = {}) {
+export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {}, plans = null, locked = false, memoryBinding = null, memoryReplies = {}, memoryIntent = null, memoryContext = null } = {}) {
   const writes = []
   const actions = new Set()
   const boundMemory = validMemoryBinding(memoryBinding) && packs.some((p) => p.id === "mem" && p.pluginId === "mem")
@@ -65,14 +65,14 @@ export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {},
   const known = new Set()
   for (const pack of packs) for (const tool of pack.tools ?? []) for (const name of namesOf(pack, tool)) known.add(name)
   for (const write of writes) for (const name of write.names) known.add(name)
-  return { mode, writes, actions: [...actions].sort(), ...(boundMemory ? { memoryBinding, memoryReplies: mode === "commit" ? memoryReplies : {} } : {}), ...(plans ? { plans } : {}), ...(locked ? { tools: { exact: ["execute", "skill", "question", "todowrite"], prefixes: [...prefixes].sort() }, known: [...known].sort() } : {}) }
+  return { mode, writes, actions: [...actions].sort(), ...(boundMemory ? { memoryBinding: structuredClone(memoryBinding), memoryReplies: mode === "commit" ? memoryReplies : {}, ...(memoryIntent ? {memoryIntent: structuredClone(memoryIntent), memoryContext: structuredClone(memoryContext)} : {}) } : {}), ...(plans ? { plans } : {}), ...(locked ? { tools: { exact: ["execute", "skill", "question", "todowrite"], prefixes: [...prefixes].sort() }, known: [...known].sort() } : {}) }
 }
 
 /** Copies the guard into `into/guard` and writes its policy read-only beside it. Returns the guard's directory. */
 export function installGuard(into, policy) {
   const dir = join(into, "guard")
   mkdirSync(dir, { recursive: true, mode: 0o700 })
-  for (const file of ["index.ts", "plugin.ts", "logic.mjs", "mem-targets.mjs", "mem-permissions.mjs", "package.json"]) cpSync(join(GUARD_SOURCE, file), join(dir, file))
+  for (const file of ["index.ts", "plugin.ts", "logic.mjs", "mem-targets.mjs", "mem-permissions.mjs", "mem-call-context.mjs", "mem-intents.mjs", "package.json"]) cpSync(join(GUARD_SOURCE, file), join(dir, file))
   writeFileSync(join(dir, "guard.json"), `${JSON.stringify(policy, null, 1)}\n`, { mode: 0o444 })
   return dir
 }

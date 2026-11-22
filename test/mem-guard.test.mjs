@@ -8,26 +8,28 @@ import { decideBefore, matchWrite } from "../src/run/guard/logic.mjs"
 const pack = { id: "mem", pluginId: "mem", rpc: "mem.tools", tools: ["remember", "page", "revise", "wiki", "commitments"].map((name) => ({ name, permission: `mem_${name}`, class: "write" })) }
 const binding = { schema: "oc-mem-contained/1", fixture: "mem-synthetic-v1", backend: "container", origin: "http://127.0.0.1:4617" }
 const plan = () => resolveCommitPlan({ actions: ["mem_remember", "mem_page"], writes: { mem_remember: { memory: "remember", allow: ["@mem.personal"] }, mem_page: { memory: "page", allow: ["@mem.personal"] } } }, new Map([["mem.personal", ["spc-eval-personal"]]]))
+const intent=(calls)=>({memoryIntent:{schema:"oc-mem-intent/1",case_id:"synthetic-quartz",trial_id:"trial_guard",expires_at:Date.now()+60000,turns:[{index:1,calls}]},memoryContext:{case_id:"synthetic-quartz",trial_id:"trial_guard",turn:1,session:"ses_guard",active:true}})
+const decide=(policy,tool,args)=>decideBefore(policy,tool,args,new Map(),{sessionID:"ses_guard"})
 
 test("Memory's implicit personal write gets a reserved-alias extractor, never a local waiver", () => {
   const p = plan()
-  const policy = buildPolicy({ mode: "commit", packs: [pack], commit: p.writes, locked: true, memoryBinding: binding })
+  const policy = buildPolicy({ mode: "commit", packs: [pack], commit: p.writes, locked: true, memoryBinding: binding, ...intent([{family:"remember",args:{content:"Quartz is green.",kind:"fact"}},{family:"page",args:{action:"write",path:"projects/quartz",content:"Quartz."}}]) })
   for (const tool of ["mem_remember", "mem.remember"]) {
-    assert.equal(decideBefore(policy, tool, { content: "Quartz is green.", kind: "fact" }).pass, true)
-    assert.equal(decideBefore(policy, tool, { content: "x", kind: "fact", space: "production" }).pass, false)
+    assert.equal(decide(policy, tool, { content: "Quartz is green.", kind: "fact" }).pass, true)
+    assert.equal(decide(policy, tool, { content: "x", kind: "fact", space: "production" }).pass, false)
   }
-  assert.equal(decideBefore(policy, "mem_page", { action: "write", path: "projects/quartz", content: "Quartz." }).pass, true)
-  assert.equal(decideBefore(policy, "mem_page", { action: "write", path: "projects/quartz", content: "Quartz.", space: "shared" }).pass, false)
-  assert.equal(decideBefore(policy, "mem_page", { action: "write", path: "../escape", content: "x" }).pass, false)
+  assert.equal(decide(policy, "mem_page", { action: "write", path: "projects/quartz", content: "Quartz." }).pass, true)
+  assert.equal(decide(policy, "mem_page", { action: "write", path: "projects/quartz", content: "Quartz.", space: "shared" }).pass, false)
+  assert.equal(decide(policy, "mem_page", { action: "write", path: "../escape", content: "x" }).pass, false)
   assert.equal(matchWrite(policy, "mem_page", { action: "read", path: "projects/quartz" }), null)
-  assert.equal(decideBefore(policy, "mem_page", { action: "invent" }).pass, false)
+  assert.equal(decide(policy, "mem_page", { action: "invent" }).pass, false)
   const wiki = buildPolicy({ mode: "commit", packs: [pack], commit: { mem_wiki: { memory: "wiki", allow: ["spc-eval-personal"] } }, locked: true, memoryBinding: binding })
   assert.equal(decideBefore(wiki, "mem_wiki", { action: "write", wiki_id: "wiki-eval-shared", space: "personal", filename: "x.md", content: "x" }).pass, false)
-  const revise = buildPolicy({ mode: "commit", packs: [pack], commit: { mem_revise: { memory: "revise", allow: ["spc-eval-personal"] } }, locked: true, memoryBinding: { ...binding, record_spaces: { rec_eval_1: "spc-eval-personal", rec_eval_2: "spc-eval-shared" } } })
-  assert.equal(decideBefore(revise, "mem_revise", { action: "retire", id: "rec_eval_1" }).pass, true)
-  assert.equal(decideBefore(revise, "mem_revise", { action: "retire", id: "rec_eval_2" }).pass, false)
-  assert.equal(decideBefore(revise, "mem_revise", { action: "retire", ids: ["rec_eval_1", "rec_eval_2"] }).pass, false)
-  assert.equal(decideBefore(revise, "mem_revise", { action: "retire", id: "rec_eval_3" }).pass, false)
+  const revise = buildPolicy({ mode: "commit", packs: [pack], commit: { mem_revise: { memory: "revise", allow: ["spc-eval-personal"] } }, locked: true, memoryBinding: { ...binding, record_spaces: { rec_eval_1: "spc-eval-personal", rec_eval_2: "spc-eval-shared" } }, ...intent([{family:"revise",args:{action:"retire",id:"rec_eval_1"}}]) })
+  assert.equal(decide(revise, "mem_revise", { action: "retire", id: "rec_eval_1" }).pass, true)
+  assert.equal(decide(revise, "mem_revise", { action: "retire", id: "rec_eval_2" }).pass, false)
+  assert.equal(decide(revise, "mem_revise", { action: "retire", ids: ["rec_eval_1", "rec_eval_2"] }).pass, false)
+  assert.equal(decide(revise, "mem_revise", { action: "retire", id: "rec_eval_3" }).pass, false)
 })
 
 test("an unbound/host Memory extractor and production-looking aliases are refused", () => {

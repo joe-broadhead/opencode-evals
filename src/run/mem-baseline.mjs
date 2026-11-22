@@ -5,7 +5,7 @@ import { bindCoreSeed } from "../../packs/mem/core.mjs"
 export { baselineRoute } from "../../worlds/mem/baseline-routing.mjs"
 
 /** Filesystem-only staging. The unmodified archived server is NEVER imported on the host. */
-export function stageBaselineFixture(root,spec) {
+export function stageBaselineFixture(root,spec,intent=null) {
   const source=resolve(import.meta.dirname,"../../worlds/mem/baseline-586")
   const manifest=JSON.parse(readFileSync(join(source,"manifest.json"),"utf8"))
   if(manifest.source_commit!=="586dc46a133cada64c584b0506eb3aebbd906b24")throw new Error("unexpected frozen baseline pin")
@@ -20,8 +20,8 @@ export function stageBaselineFixture(root,spec) {
   writeFileSync(join(root,"baseline-586/stub/contained-server.mjs"),server.slice(0,cut)+lifecycle,{mode:0o600})
   const control=spec.mode==="control"
   const seed=bindCoreSeed(spec,(key,field)=>({user_id:"eval",agent_id:"build",team_id:control?`eval-container-${key}`:"local"})[field])
-  const plan={schema:"oc-mem-baseline-plan/1",case_id:spec.original_id,mode:spec.mode,defaultSpace:spec.defaultSpace??"personal",seed}
+  const plan={schema:"oc-mem-baseline-plan/1",case_id:spec.original_id,mode:spec.mode,defaultSpace:spec.defaultSpace??"personal",seed,...(intent?{intent}: {})}
   writeFileSync(join(root,"baseline-plan.json"),JSON.stringify(plan),{flag:"wx",mode:0o600})
-  for(const file of ["baseline-entry.mjs","baseline-routing.mjs","baseline-effects.mjs"])copyFileSync(resolve(import.meta.dirname,"../../worlds/mem",file),join(root,file))
+  for(const file of ["baseline-entry.mjs","baseline-routing.mjs","baseline-effects.mjs","baseline-proof.mjs"])copyFileSync(resolve(import.meta.dirname,"../../worlds/mem",file),join(root,file))
   return plan
 }

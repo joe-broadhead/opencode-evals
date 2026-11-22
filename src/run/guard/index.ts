@@ -20,10 +20,11 @@
 // beside this file, which `evals run` writes read-only into the batch's own copy. The plugin API is passed in, so unit tests
 // can run the logic against a stand-in.
 
-import { appendFileSync } from "node:fs"
+import { appendFileSync, writeFileSync, renameSync } from "node:fs"
 import { loadPolicy, matchWrite, isIn, isUnknownTool, planIdOf, decideBefore, judgePlan, pick, scalarLeaves, newIds } from "./logic.mjs"
-import { memoryReply, refreshMemoryScopes } from "./mem-permissions.mjs"
+import { memoryReply, refreshMemoryScopes, refreshMemoryTurn } from "./mem-permissions.mjs"
 import { memoryCall } from "./mem-targets.mjs"
+import { memoryPermissionContext } from "./mem-call-context.mjs"
 
 const OUT = () => process.env.EVALS_GUARD_OUT ?? (process.env.TMPDIR ? `${process.env.TMPDIR}/guard.jsonl` : "")
 
@@ -49,36 +50,61 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
       // The sessions that have made a tool call: a run's own, whose asks `opencode run` answers.
       const runSessions = new Set<string>()
       const memoryCalls = new Map<string, any>()
+      const registrations: any[] = []
+      const timers = new Set<ReturnType<typeof setTimeout>>()
+      const subscription = new AbortController()
+      let closed = false
+      const refreshTurn = () => {
+        try { refreshMemoryTurn(policy, process.env.EVALS_MEM_TURN_STATE) }
+        catch (error) { policy.memoryContext=null; record("memory_context_invalid", {error:String(error).slice(0,200)}) }
+      }
+      const activeReceipt = (value: any) => {
+        const file = process.env.EVALS_MEM_ACTIVE_CALL
+        if (!file || !policy.memoryIntent) return
+        writeFileSync(`${file}.tmp`, JSON.stringify(value), {mode:0o600})
+        renameSync(`${file}.tmp`, file)
+      }
 
-      await ctx.permission.hook("evaluate", (evaluation: any) => {
+      registrations.push(await ctx.permission.hook("evaluate", (evaluation: any) => {
+        refreshTurn()
         const unknown = !actions.has(evaluation.action) && isUnknownTool(policy, evaluation.action)
-        const write = actions.has(evaluation.action) || unknown
+        const memory = memoryPermissionContext(policy, evaluation, memoryCalls, closed)
+        const write = memory ? memory.write : actions.has(evaluation.action) || unknown
         record("permission", { action: evaluation.action, session: evaluation.sessionID, effect: evaluation.effect, write, ...(unknown ? { unknown: true } : {}) })
-        if (write && evaluation.effect === "allow" && policy.mode === "refuse") {
+        if (memory && !memory.pass && evaluation.effect !== "deny") {
+          evaluation.effect = "deny"
+          evaluation.message = "EVALS-ASSERT access: no active validated Memory invocation"
+        } else if (write && evaluation.effect === "allow" && policy.mode === "refuse") {
           evaluation.effect = "deny"
           evaluation.message = `EVALS-ASSERT access: ${evaluation.action} is a write and was not asked`
           record("assert", { what: "access", action: evaluation.action, session: evaluation.sessionID })
         }
-      })
+      }))
 
-      await ctx.tool.hook("execute.before", (event: any) => {
+      registrations.push(await ctx.tool.hook("execute.before", (event: any) => {
+        if (closed && memoryCall(event.tool, event.input, policy.memoryBinding)) throw new Error("Memory trial guard is disposed")
         runSessions.add(event.sessionID)
+        refreshTurn()
         if (policy.memoryBinding) refreshMemoryScopes(policy, process.env.EVALS_MEM_SCOPE_MAP)
-        const decision = decideBefore(policy, event.tool, event.input, plans)
+        const decision = decideBefore(policy, event.tool, event.input, plans, event)
         if (policy.memoryBinding) {
           const call = memoryCall(event.tool, event.input, policy.memoryBinding)
-          if (call?.write) memoryCalls.set(`${event.sessionID}:${event.id}`, { tool: event.tool, input: event.input, pass: decision.pass, target: call.target })
+          if (call?.write && [...memoryCalls.values()].some((c) => c.classification?.write)) throw new Error("Memory intent forbids concurrent write invocations")
+          if (call) memoryCalls.set(`${event.sessionID}:${event.id}`, { tool: event.tool, input: structuredClone(event.input), sessionID: event.sessionID, classification: call, pass: decision.pass, target: call.target, context: structuredClone(policy.memoryContext??null) })
+          if (call?.write && decision.pass) activeReceipt({...policy.memoryContext,family:call.family,args:event.input,call_id:event.id,pass:true})
         }
         // A write's input leaves, for `target: ... in created`: the value the tool really got, a variable resolved (private, like the rest of this log).
         const args = matchWrite(policy, event.tool, event.input) ? { args: scalarLeaves(event.input) } : {}
         record("execute_before", { tool: event.tool, call: event.id, session: event.sessionID, write: Boolean(decision.write) || decision.committer, pass: decision.pass, why: decision.why, ...args })
         if (!decision.pass) {
+          memoryCalls.delete(`${event.sessionID}:${event.id}`)
           record("assert", { what: (decision as any).tool ? "tool" : "write", tool: event.tool, why: decision.why })
           throw new Error(`EVALS-ASSERT ${(decision as any).tool ? "tool" : "write"}: ${event.tool} refused (${decision.why})`)
         }
-      })
+      }))
 
-      await ctx.tool.hook("execute.after", (event: any) => {
+      registrations.push(await ctx.tool.hook("execute.after", (event: any) => {
+        if (memoryCalls.get(`${event.sessionID}:${event.id}`)?.classification?.write) activeReceipt(null)
         memoryCalls.delete(`${event.sessionID}:${event.id}`)
         const write = matchWrite(policy, event.tool, event.input)
         const unknown = !write && isUnknownTool(policy, event.tool)
@@ -104,7 +130,7 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
             record("write_result", { tool: event.tool, call: event.id, session: event.sessionID, ids: [], error: String((error as any)?.message ?? error).slice(0, 200) })
           }
         }
-      })
+      }))
 
       // The responder: an ask of a session that is not a run's own is rejected at once, the global one included; a run's own is
       // left to `opencode run` and rejected here only if it is still pending after 3 s.
@@ -120,8 +146,10 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
           }
         }
         try {
-          for await (const event of ctx.event.subscribe({ types: ["permission.asked"] })) {
+          for await (const event of ctx.event.subscribe({ types: ["permission.asked"], signal: subscription.signal })) {
+            if (closed) break
             const ask = (event as any).data
+            refreshTurn()
             const own = runSessions.has(ask.sessionID)
             record("ask", { action: ask.action, session: ask.sessionID, request: ask.id, own })
             const memoryDecision = memoryReply(policy, ask, memoryCalls)
@@ -133,12 +161,33 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
               continue
             }
             if (!own) void reject(ask, "foreign")
-            else setTimeout(() => void reject(ask, "slow"), 3000).unref?.()
+            else {
+              const timer = setTimeout(() => { timers.delete(timer); if (!closed) void reject(ask, "slow") }, 3000)
+              timer.unref?.()
+              timers.add(timer)
+            }
           }
         } catch (error) {
           record("responder_stopped", { error: String((error as Error)?.message ?? error).slice(0, 200) })
         }
       })()
+      return async () => {
+        if (closed) return
+        closed = true
+        activeReceipt(null)
+        subscription.abort()
+        for (const timer of timers) clearTimeout(timer)
+        timers.clear()
+        memoryCalls.clear()
+        runSessions.clear()
+        plans.clear()
+        delete policy.memoryContext
+        delete policy.memoryCreators
+        for (const registration of registrations) {
+          if (typeof registration === "function") await registration()
+          else await registration?.dispose?.()
+        }
+      }
     },
   })
 }

@@ -16,7 +16,7 @@ export function memoryTurn(result,{index,prompt}) {
       const slice=key&&payload&&typeof payload==="object"?payload[key]:undefined
       const output=sites.length===1&&site.parsed?text(c.outputRaw):slice!==undefined?text(slice):null
       // Unattributable inner output stays null: it cannot satisfy a tool-output assertion.
-      calls.push({tool:site.ns==="mem"?`mem_${site.name}`:site.name,args:site.args,code,output,status:output===null?"unattributable":c.status})
+      calls.push({tool:site.ns==="mem"?`mem_${site.name}`:site.name,args:site.args,args_resolved:site.parsed,code,output,status:output===null?"unattributable":c.status})
     }
   }
   return {index,prompt,session:summary.sessionID??null,exit:result.code,timedOut:Boolean(result.timedOut||result.stalled),text:summary.finalText,calls}
