@@ -7,6 +7,7 @@ import { initialSeedFailure, readonlyProofFailure, wikiWriteProofFailure } from 
 import {resolvedMemoryArgs} from "../../run/mem-arguments.mjs"
 
 const toolName = (name) => String(name).replace(/^mem[._]/,"mem_")
+const sourceOnlyCall = (c) => c.args_source==="source"||typeof c.code==="string"&&c.args_source!=="native_guard"
 const matches = (value, pattern) => {
   if (Array.isArray(pattern)) return pattern.every((p)=>matches(value,p))
   const text=String(value).replace(/[‘’]/g,"'").replace(/[“”]/g,'"')
@@ -42,10 +43,10 @@ export function coreAssertionFailures(assertion, core) {
     case "forbidTools": return (assertion.tools??[]).some((n)=>named(n).length) ? bad("forbidden tool called") : []
     case "expectToolOutput": return named(assertion.tool).some((c)=>c.status==="completed"&&matches(c.output,assertion.match)) ? [] : bad("no matching successful tool output")
     case "expectToolArgs": {
-      const candidates=named(assertion.tool),resolved=candidates.filter(c=>c.args&&typeof c.args==="object"&&!Array.isArray(c.args)&&c.args_resolved!==false&&resolvedMemoryArgs(c.args))
+      const candidates=named(assertion.tool),resolved=candidates.filter(c=>!sourceOnlyCall(c)&&c.args&&typeof c.args==="object"&&!Array.isArray(c.args)&&c.args_resolved!==false&&resolvedMemoryArgs(c.args))
       // Every frozen argument predicate names the root action, not arbitrary nested data or comment prose.
       if(resolved.some(c=>matches(canonical({action:c.args.action}),assertion.match)))return []
-      return candidates.some(c=>c.args_resolved===false||!resolvedMemoryArgs(c.args))?bad("UNVERIFIABLE_TYPED_ARGS"):bad("resolved typed arguments are absent or do not match")
+      return turns.some(t=>t.calls_complete===false)||candidates.some(c=>sourceOnlyCall(c)||c.args_resolved===false||!resolvedMemoryArgs(c.args))?bad("UNVERIFIABLE_TYPED_ARGS"):bad("resolved typed arguments are absent or do not match")
     }
     case "expectAnswerJson": return answerValueFailures(jsonObject(text),revive(assertion))
     case "expectDecisionJson": {
@@ -87,6 +88,7 @@ export function memoryCoreEvidence(id, view) {
     if(t.index!==i+1||t.prompt!==spec.prompts[i]||typeof t.session!=="string"||!t.session||!Array.isArray(t.calls)||typeof t.text!=="string") return fail("malformed turn or prompt")
     if(i>0&&(i===spec.newSessionAfterRun ? t.session===core.turns[i-1].session : t.session!==core.turns[i-1].session)) return fail("session continuation/fresh-session contract differs")
   }
+  if(core.turns.some(t=>t.calls_complete===false||t.calls.some(sourceOnlyCall)))return {state:"unverifiable",detail:`core ${id}: actual inner execution observations are unavailable`}
   const native=core.turns.flatMap((t)=>t.calls).filter((c)=>toolName(c.tool).startsWith("mem_"))
   const trace=view.calls.map((c)=>({...c,tool:c.ns==="mem"?`mem_${c.tool}`:c.tool})).filter((c)=>toolName(c.tool).startsWith("mem_"))
   if(native.length!==trace.length||native.some((c,i)=>toolName(c.tool)!==toolName(trace[i].tool))) return fail("turn calls disagree with native trace")

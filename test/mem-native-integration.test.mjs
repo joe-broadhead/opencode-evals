@@ -21,7 +21,7 @@ async function hooksFor(intent,run){
   const root=mkdtempSync(join(tmpdir(),"mem-integrate-")),hooks={},saved={}
   for(const[k,v]of Object.entries({EVALS_GUARD_OUT:join(root,"guard.jsonl"),EVALS_MEM_TURN_STATE:join(root,"turn.json"),EVALS_MEM_ACTIVE_CALL:join(root,"active-call.json")})){saved[k]=process.env[k];process.env[k]=v}
   const write=context=>writeFileSync(join(root,"turn.json"),JSON.stringify(context)),receipt=()=>JSON.parse(readFileSync(join(root,"active-call.json"),"utf8"))
-  const context={case_id:intent.case_id,trial_id:intent.trial_id,turn:1,session:"ses_own",active:true}
+  const context={case_id:intent.case_id,trial_id:intent.trial_id,turn:1,session:"ses_own",activation_id:"native_fixture_activation",active:true}
   const families=["page","wiki","spaces"],policy=buildPolicy({mode:"commit",packs:[{id:"mem",pluginId:"mem",tools:families.map(name=>({name,permission:`mem_${name}`,class:"write"}))}],memoryBinding:binding,commit:Object.fromEntries(families.map(f=>[`mem_${f}`,{memory:f,allow:["spc-eval-personal"]}])),memoryIntent:intent,memoryReplies:{mem_wiki:"once",mem_spaces:"once"}})
   let dispose;write(context)
   try{const file=join(root,"guard.json");writeFileSync(file,JSON.stringify(policy));dispose=await guardPlugin({define:x=>x},file).setup({tool:{hook:async(n,f)=>{hooks[n]=f}},permission:{hook:async(n,f)=>{hooks[n]=f}},event:{subscribe:async function*(){}}});await run(hooks,{root,context,write,receipt,dispose})}
@@ -30,20 +30,20 @@ async function hooksFor(intent,run){
 const body="The gateway resolves context before routing.\n\nThe control plane uses PostgreSQL for PITR."
 const event=(tool,input,output=body)=>JSON.stringify({type:"tool_use",sessionID:"ses_second",part:{tool,state:{input,status:"completed",output}}})
 const turn=code=>memoryTurn({code:0,stdout:event("execute",{code})},{index:3,prompt:"Read"})
-function gradeRead(calls){const g=goldCore("wiki-write","PostgreSQL","PostgreSQL");g.core.turns[2].calls=calls;return memoryCoreEvidence(g.s.original_id,{calls:g.core.turns.flatMap(t=>t.calls),state:{mem:{capture:{core:g.core}}}})}
+function gradeRead(calls,calls_complete=true){const g=goldCore("wiki-write","PostgreSQL","PostgreSQL");g.core.turns[2].calls=calls;g.core.turns[2].calls_complete=calls_complete;return memoryCoreEvidence(g.s.original_id,{calls:g.core.turns.flatMap(t=>t.calls),state:{mem:{capture:{core:g.core}}}})}
 test("M3 unresolved source spreads, aliases and computed arguments cannot prove a required typed action",()=>{
   for(const args of ['{action:"read",...unknown}','{...unknown,action:"read"}','{action:"read",resource:{...unknown}}','{action:"read",[key]:"status"}','input']){
     const t=turn(`const input={action:"read"}; return await tools.mem.wiki(${args})`)
     assert.equal(t.calls[0].args_resolved,false,args)
-    assert.equal(gradeRead(t.calls).state,"unverifiable",args)
+    assert.equal(gradeRead(t.calls,t.calls_complete).state,"unverifiable",args)
   }
 })
-test("M3 closed literals ignore source comments/string noise and check the root action, while actual native read arguments pass",()=>{
+test("M3 closed source literals remain diagnostics, while actual native read arguments pass",()=>{
   const code='const noise="tools.mem.wiki({action: \'status\'})"; /* tools.mem.wiki({action:"status"}) */ return await tools.mem.wiki({action:"read",wiki_id:"wiki-eval-1",filename:"README.md"})'
-  const t=turn(code);assert.equal(t.calls.length,1);assert.equal(t.calls[0].args_resolved,true);assert.equal(gradeRead(t.calls).state,"ok",JSON.stringify(gradeRead(t.calls)))
+  const t=turn(code);assert.equal(t.calls.length,1);assert.equal(t.calls[0].args_resolved,false);assert.equal(gradeRead(t.calls,t.calls_complete).state,"unverifiable",JSON.stringify(gradeRead(t.calls,t.calls_complete)))
   for(const args of [{action:"status",nested:{action:"read"}},{action:"status",comment:'action:"read"'}])assert.equal(gradeRead([{tool:"mem_wiki",args,status:"completed",output:"PostgreSQL"}]).state,"fail")
   const actual=memoryTurn({code:0,stdout:event("mem_wiki",{action:"read",wiki_id:"wiki-eval-1",filename:"README.md"})},{index:3,prompt:"Read"});assert.equal(gradeRead(actual.calls).state,"ok")
-  const noise=turn('return /tools.mem.wiki({action:"read",wiki_id:"wiki-eval-1",filename:"README.md"})/');assert.notEqual(gradeRead(noise.calls).state,"ok")
+  const noise=turn('return /tools.mem.wiki({action:"read",wiki_id:"wiki-eval-1",filename:"README.md"})/');assert.equal(gradeRead(noise.calls,noise.calls_complete).state,"unverifiable")
 })
 test("M4 closing a native turn permanently revokes its calls, even after replay, repeated close or reused call IDs",async()=>{
   const input={action:"write",path:"projects/quartz",content:"Quartz."},intent={schema:"oc-mem-intent/1",case_id:"sealed-case",trial_id:"trial_life",expires_at:Date.now()+60000,turns:[{index:1,calls:[{family:"page",args:input}]},{index:2,calls:[]},{index:3,calls:[]}]}

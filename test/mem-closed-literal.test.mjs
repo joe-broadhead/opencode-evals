@@ -12,6 +12,7 @@ import {memoryTurn,nativeMemoryCalls} from "../src/run/mem-turns.mjs"
 import {readLiteral} from "../src/trace/innerArgs.mjs"
 import {guardPlugin} from "../src/run/guard/index.ts"
 import {buildPolicy} from "../src/run/guard/policy.mjs"
+import {captureNativeCall} from "./support/mem-native-observation.mjs"
 
 function scored(raw,memoryCalls) {
   const g=goldCore("forget",null,"No memories matched"),code=`return await tools.mem.revise(${raw})`
@@ -41,7 +42,7 @@ test("M3 trailing operators, member/index/call access, sequences, multiple argum
   }
 })
 
-test("M3 one closed literal permits whitespace, closed comments, nested literals and supported escaped quotes",()=>{
+test("M3 even supported closed source literals need native execution evidence",async()=>{
   for(const raw of [
     '{action:"forget",id:"rec_eval_1"}',
     ' \t\r\n{action:"forget"} \t\r\n',
@@ -53,10 +54,13 @@ test("M3 one closed literal permits whitespace, closed comments, nested literals
     "{'action':'forget',nested:{text:'single: \\'',newline:'\\n',tab:'\\t'}}",
   ]) {
     const actual=scored(raw)
-    assert.equal(actual.verdict,"PASS",raw)
-    assert.equal(actual.turn.calls[0].args_resolved,true,raw)
+    assert.equal(readLiteral(raw,{complete:true}).ok,true,raw)
+    assert.equal(actual.verdict,"BLOCKED",raw)
+    assert.equal(actual.turn.calls[0].args_resolved,false,raw)
   }
-  assert.equal(scored('{action:"retire",comment:"action: forget"} /* valid literal */').verdict,"FAIL")
+  const wrong=await captureNativeCall({input:{action:"retire",id:"rec_eval_1"},output:"Actual retired result."})
+  assert.equal(scored('{action:"retire",comment:"action: forget"} /* valid literal */',wrong.calls).verdict,"FAIL")
+  assert.equal(scored('{action:"retire",comment:"action: forget"} /* valid literal */').verdict,"BLOCKED")
 })
 
 test("M3 unterminated trivia, quotes and brackets or unsupported escapes are unresolved rather than guessed",()=>{
