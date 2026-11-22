@@ -73,7 +73,7 @@ The known dependency-closure and mutable-registry findings remain for the indepe
 
 The task evidence contains exact commands, red/green TAP files, CLI results, integrity checks, and cleanup evidence.
 The substantive checks are the explicit 79-unit allowlist, 2,218 existing focused controls, new S3 controls, 273 core controls, and 792 reviewer assertions.
-The new S3 suite has 2,616 passing tests, including the pure CLI check of 11 exact classifications.
+The new S3 suite has 2,617 passing tests, including the pure CLI check of 11 exact classifications.
 All suites report zero skips.
 Compilation still reports 62 cases and 74 items.
 All 143 archive hashes, 38 core contracts, and 48 frozen discovery files remain unchanged.

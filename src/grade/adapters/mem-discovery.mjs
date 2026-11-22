@@ -108,7 +108,7 @@ export function memoryDiscoveryEvidence(id,view){
       if(r.http_status!=null&&r.http_status!==200||r.status!=null&&r.status!==(writes.has(r.method)?"stored":"read")||r.output!=null&&(failedEnvelope(r.output)||r.output.status!=null&&r.output.status!==(["wiki.get","wiki.ingest","code-graph.get","code-graph.status"].includes(r.method)?"ready":writes.has(r.method)?"stored":"read"))||r.space!=null&&r.space!=="personal")return fail("recorded backend execution failed or contradicted")
       if(r.context!=null&&(!plain(r.context)||r.context.active!==true||r.context.case_id!==id||p.trial_id!=null&&r.context.trial_id!==p.trial_id||r.context.turn!==1||recordedTurn?.session!=null&&r.context.session!==recordedTurn.session))return fail("backend native lifetime differs")
     }
-    if(!p.requests.some(r=>r.method===s.backend.method))return fail("recorded execution omitted the required backend operation")
+    if(p.requests.every(r=>r.method!=null)&&!p.requests.some(r=>r.method===s.backend.method))return fail("recorded execution omitted the required backend operation")
   }
   if(s.write&&s.family!=="wiki-write"&&!absent(p.creators,"creator recording")&&(!Array.isArray(p.creators)||p.creators.some(c=>!plain(c))))return fail("creator recording malformed")
   if(missing.size)return unavailable([...missing].slice(0,3).join(", "))

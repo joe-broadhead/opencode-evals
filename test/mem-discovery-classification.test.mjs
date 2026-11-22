@@ -157,3 +157,9 @@ test('unavailable registered contract or unsupported outer codec is BLOCKED with
   verdict(gradeCase(c,runView([{schema:'oc-trace/1'}],{text:s.answer})),'BLOCKED');
   f.capture.schema='oc-mem-capture/0';verdict(grade(s,f),'BLOCKED');
 });
+
+test('a missing backend method artifact does not prove that the complete execution omitted the operation',()=>{
+  const s=discoveryCases[0],f=discoveryFlow(s);
+  delete f.capture.discovery.requests.at(-1).method;
+  verdict(grade(s,f),'BLOCKED');
+});
