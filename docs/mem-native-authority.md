@@ -53,6 +53,9 @@ The policy includes `memoryIntent`, `memoryOperationPlan`, and the existing cont
 The factory clones the policy. Later caller mutations cannot change its authority.
 
 The adapters are synchronous trusted readers: `readActivation`, `readScopes`, and `readCompletion`.
+Promises and other thenables refuse immediately and revoke the active authority.
+The gate observes their rejection but never uses their asynchronous results. It installs no global rejection handler.
+Recursive entry into the same reader also revokes authority.
 They are not tool arguments, environment opt-in booleans, or model-callable RPC methods.
 The runner must keep one authority instance for the entire trial, including all turns.
 If that instance loses its ledger, the runner must revoke the trial rather than recreate its budget.
@@ -85,6 +88,9 @@ Neither method replenishes uses or terminates native work by itself.
 `execute({native,tool,input,occurrence?}, delegate)` is the outer protected-executor gate.
 `native` contains the actual `{sessionID,messageID,id}` carrier fields.
 The gate validates classification, existing policy, payload, target, creator evidence, activation, and expiry.
+Each mutation also requires a matching write-policy entry with its Memory-family extractor and an explicit allowed target.
+A generic known-tool pass, payload extractor, or `local:true` entry cannot replace that authorization.
+Missing mutation entries refuse before reservation or delegation. Read behavior and the generic legacy policy remain unchanged.
 It atomically consumes one matching mutation use before it calls `delegate(execution)`.
 There is no await between the consumption and delegation.
 
@@ -118,6 +124,8 @@ Ask suspends the receipt. Deny revokes it permanently. A matching live allow can
 
 `reply(request, send)` uses the existing bounded reply policy and resource checks.
 It captures the binding before the asynchronous native reply. It never searches for a successor after that await.
+It also captures the exact pending transition revision. Every accepted ask, allow, deny, or reply transition advances that revision.
+An older reply cannot resolve a newer ask. An older send error cannot overwrite a newer permission decision.
 It sends at most one `once` reply per request. A transport error, racing denial, or late completion cannot restore a receipt.
 A `reject` return requires the runner adapter to reject or cancel the native request.
 The adapter must prevent effects after native cancellation or a late reply. That host behavior still requires qualification.
@@ -155,6 +163,9 @@ It also requires this record from `readCompletion`:
 ```
 
 Only the qualified native owner can supply this record.
+The gate captures the active scope before the completion reader and validates that same scope immediately after the reader returns.
+Close, cancellation, activation replacement, or recursive completion reads cannot produce a sealed certificate.
+Control changes during activation reads cannot reopen a cancelled scope. Scope refresh cannot transfer an executor attempt to a successor scope.
 Request booleans, an empty receipt, and zero local pending entries cannot replace it.
 A successful seal consumes the active scope. Late entry then refuses.
 
