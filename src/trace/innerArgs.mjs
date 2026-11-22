@@ -56,20 +56,22 @@ function balanced(code, open) {
 
 const isSpace = (ch) => ch === " " || ch === "\t" || ch === "\n" || ch === "\r"
 
-/** A literal object/array/primitive reader. Returns {ok, value} or {ok:false, why}. */
-export function readLiteral(text) {
+/** A literal reader. Opt-in complete mode requires one closed supported literal and trivia only; defaults retain prefix/marker behavior. */
+export function readLiteral(text, { complete = false } = {}) {
   let i = 0
+  let uncertain = false
   const fail = (why) => ({ ok: false, why })
   const skip = () => {
     for (;;) {
-      while (i < text.length && isSpace(text[i])) i++
+      while (i < text.length && (isSpace(text[i]) || complete && /\s/.test(text[i]))) i++
       if (text[i] === "/" && text[i + 1] === "/") {
-        while (i < text.length && text[i] !== "\n") i++
+        while (i < text.length && (complete ? !/[\n\r\u2028\u2029]/.test(text[i]) : text[i] !== "\n")) i++
         continue
       }
       if (text[i] === "/" && text[i + 1] === "*") {
         i += 2
         while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) i++
+        if (complete && i >= text.length) uncertain = true
         i += 2
         continue
       }
@@ -82,10 +84,15 @@ export function readLiteral(text) {
     while (i < text.length && text[i] !== quote) {
       if (text[i] === "\\") {
         const next = text[i + 1]
+        if (complete && !["n", "t", "\\", '"', "'", "`", "/"].includes(next)) uncertain = true
         i += 2
         out += next === "n" ? "\n" : next === "t" ? "\t" : next
-      } else out += text[i++]
+      } else {
+        if (complete && (quote !== "`" && ["\n", "\r"].includes(text[i]) || quote === "`" && text.startsWith("${", i))) uncertain = true
+        out += text[i++]
+      }
     }
+    if (complete && text[i] !== quote) uncertain = true
     i++
     return out
   }
@@ -94,7 +101,9 @@ export function readLiteral(text) {
     if (text[i] === '"' || text[i] === "'") return readString()
     const start = i
     while (i < text.length && /[A-Za-z0-9_$]/.test(text[i])) i++
-    return text.slice(start, i)
+    const key = text.slice(start, i)
+    if (complete && !/^(?:[A-Za-z_$][\w$]*|0|[1-9]\d*)$/.test(key)) uncertain = true
+    return key
   }
   // Skips one expression we do not read (a call, a ternary, an operator chain), up to the `,` or the closing
   // bracket that ends it at this depth. Returns false when the text ends first.
@@ -124,6 +133,7 @@ export function readLiteral(text) {
     const value = readValue()
     skip()
     if (value.ok && (text[i] === "," || text[i] === "}" || text[i] === "]")) return value
+    if (complete) uncertain = true
     i = start
     if (!skipExpression()) return fail(`unterminated expression at ${start}`)
     return { ok: true, value: { $ref: "(expression)" }, literal: "ref" }
@@ -142,6 +152,7 @@ export function readLiteral(text) {
         }
         if (i >= text.length) return fail("unterminated object")
         if (text.startsWith("...", i)) {
+          if (complete) uncertain = true
           // A spread: any key may come from it. The literal keys beside it are still read.
           i += 3
           if (!skipExpression()) return fail("unterminated spread")
@@ -155,6 +166,7 @@ export function readLiteral(text) {
         if (text[i] !== ":") {
           // A shorthand property (`{ id, start_time: … }`): the value is the local binding, not a literal.
           if (text[i] === "," || text[i] === "}") {
+            if (complete) uncertain = true
             obj[key] = { $ref: key }
             if (text[i] === ",") {
               i++
@@ -191,6 +203,7 @@ export function readLiteral(text) {
           return { ok: true, value: arr }
         }
         if (text.startsWith("...", i)) {
+          if (complete) uncertain = true
           // A spread into a list: its elements are unseen.
           i += 3
           if (!skipExpression()) return fail("unterminated spread")
@@ -220,6 +233,7 @@ export function readLiteral(text) {
     const rest = text.slice(i)
     const num = /^-?\d+(?:\.\d+)?/.exec(rest)
     if (num) {
+      if (complete && !/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(num[0])) uncertain = true
       i += num[0].length
       return { ok: true, value: Number(num[0]), literal: "number" }
     }
@@ -230,12 +244,14 @@ export function readLiteral(text) {
       ["undefined", null],
     ]) {
       if (rest.startsWith(word) && !/[A-Za-z0-9_$]/.test(rest[word.length] ?? "")) {
+        if (complete && word === "undefined") uncertain = true
         i += word.length
         return { ok: true, value, literal: word }
       }
     }
     const ident = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*/.exec(rest)
     if (ident) {
+      if (complete) uncertain = true
       i += ident[0].length
       return { ok: true, value: { $ref: ident[0] }, literal: "ref" }
     }
@@ -243,6 +259,7 @@ export function readLiteral(text) {
   }
   const value = readValue()
   skip()
+  if (complete && (uncertain || i !== text.length)) return fail("unsupported or incomplete literal")
   return value.ok ? { ok: true, value: value.value } : value
 }
 
