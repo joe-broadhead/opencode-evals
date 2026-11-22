@@ -8,7 +8,9 @@ import {mkdtempSync,writeFileSync,readFileSync,rmSync} from "node:fs"
 import {join} from "node:path"
 import {tmpdir} from "node:os"
 import {guardPlugin} from "../src/run/guard/index.ts"
-import {buildPolicy} from "../src/run/guard/policy.mjs"
+import {buildPolicy,installGuard} from "../src/run/guard/policy.mjs"
+import {stageMemFixture} from "../src/run/mem-fixture.mjs"
+import {pathToFileURL} from "node:url"
 import {createBaselineProof} from "../worlds/mem/baseline-proof.mjs"
 import {baselineObservationIdentity} from "../worlds/mem/baseline-entry.mjs"
 import {baselineScopeHeaders} from "../worlds/mem/baseline-routing.mjs"
@@ -41,6 +43,7 @@ test("M3 closed literals ignore source comments/string noise and check the root 
   const t=turn(code);assert.equal(t.calls.length,1);assert.equal(t.calls[0].args_resolved,true);assert.equal(gradeRead(t.calls).state,"ok",JSON.stringify(gradeRead(t.calls)))
   for(const args of [{action:"status",nested:{action:"read"}},{action:"status",comment:'action:"read"'}])assert.equal(gradeRead([{tool:"mem_wiki",args,status:"completed",output:"PostgreSQL"}]).state,"fail")
   const actual=memoryTurn({code:0,stdout:event("mem_wiki",{action:"read",wiki_id:"wiki-eval-1",filename:"README.md"})},{index:3,prompt:"Read"});assert.equal(gradeRead(actual.calls).state,"ok")
+  const noise=turn('return /tools.mem.wiki({action:"read",wiki_id:"wiki-eval-1",filename:"README.md"})/');assert.notEqual(gradeRead(noise.calls).state,"ok")
 })
 test("M4 closing a native turn permanently revokes its calls, even after replay, repeated close or reused call IDs",async()=>{
   const input={action:"write",path:"projects/quartz",content:"Quartz."},intent={schema:"oc-mem-intent/1",case_id:"sealed-case",trial_id:"trial_life",expires_at:Date.now()+60000,turns:[{index:1,calls:[{family:"page",args:input}]},{index:2,calls:[]},{index:3,calls:[]}]}
@@ -125,4 +128,40 @@ test("generic non-Memory restrictions retain deny-on-unasked-write and leave ask
     await hooks["execute.before"]({tool:"other_send",input:{destination:"anywhere"},id:"generic",sessionID:"ses_other"})
     for(const [effect,expected]of [["allow","deny"],["ask","ask"],["deny","deny"]]){const e={action:"other_send",sessionID:"ses_other",effect};await hooks.evaluate(e);assert.equal(e.effect,expected)}
   }finally{await dispose?.();rmSync(root,{recursive:true,force:true})}
+})
+test("isolated guard and baseline copies use the same reviewed presentation validator with no missing external imports",async()=>{
+  const root=mkdtempSync(join(tmpdir(),"mem-stage-payload-"))
+  try{
+    const spec=coreCases.find(s=>s.original_id==="core-wiki-write"),intent=coreMemoryIntent(spec,"trial_stage",Date.now()+60000),dir=installGuard(root,buildPolicy({packs:[]}))
+    const guard=await import(pathToFileURL(join(dir,"mem-intents.mjs")));assert.equal(typeof guard.memoryIntentAllows,"function")
+    const stage=stageMemFixture({root,tmp:join(root,"tmp")},{core:spec,intent})
+    const recorder=await import(pathToFileURL(join(stage.root,"baseline-proof.mjs")));assert.equal(typeof recorder.createBaselineProof,"function")
+    const payload=await import(pathToFileURL(join(stage.root,"mem-intent-plan.mjs")))
+    assert.equal(payload.coreWikiIntentPayloadMatches(intent.turns[0].calls[1].args,{...intent.turns[0].calls[1].args,content:"# Core Notes\r\n\r\nThe gateway resolves context before routing."}),true)
+  }finally{rmSync(root,{recursive:true,force:true})}
+})
+test("actual public-hook calls and pure HTTP observations satisfy the core wiki oracle across a fresh-session Code Mode read",async()=>{
+  const spec=coreCases.find(s=>s.original_id==="core-wiki-write"),intent=coreMemoryIntent(spec,"trial_native_e2e",Date.now()+60000)
+  await hooksFor(intent,async(h,{root,context,write,receipt})=>{
+    const empty={atoms:[],records:[],commitments:[],knowledge:[],conversations:[],scenarios:{},core:{},skills:[],assets:[],teamMembers:[],agents:[],acl:[],usage:{},jobs:[],curated:{},failures:{},seq:0,wikiFiles:[]},ctl={resources:[],grants:[],controlLog:[]}
+    const proof=createBaselineProof(empty,ctl,intent),id="wiki_actual_native",first="# Core Notes\r\n\r\nThe gateway resolves context before routing.",decision="The control plane uses PostgreSQL for PITR.",last=first+"\r\n\r\n"+decision
+    const row={knowledge_id:id,name:"Core Notes",type:"llm_wiki",team_id:"local",raw:{}},created={...empty,knowledge:[row]},initial={...empty,knowledge:[{...row,raw:{"README.md":first}}]},after={...empty,knowledge:[{...row,raw:{"README.md":last}}],wikiFiles:[{team_id:"local",wiki:"Core Notes",wiki_id:id,filename:"README.md",content:last}]}
+    const scopeFile=join(root,"scope-e2e.json"),oldScope=process.env.EVALS_MEM_SCOPE_MAP,turns=[]
+    const observe=(c,path,input,before,after,data)=>proof.observe({path,input,before,after,response:{status:200,json:{data}},space:"personal",...baselineObservationIdentity(baselineScopeHeaders({mode:"local"},{authorization:"Bearer eval-token","x-tdai-session-id":c.session},input),c,receipt())})
+    const finish=async(call,c,output)=>{await h["execute.after"]({...call,status:"completed",result:output});const records=readFileSync(join(root,"guard.jsonl"),"utf8").trim().split("\n").map(JSON.parse),calls=nativeMemoryCalls(records,c);turns.push({index:c.turn,prompt:spec.prompts[c.turn-1],session:c.session,exit:0,timedOut:false,text:c.turn===3?'\u007b"value":"PostgreSQL"}':"Stored.",calls})}
+    try{
+      const create={tool:"mem_wiki",input:{action:"create",name:"Core Notes",filename:"README.md",content:first},sessionID:context.session,id:"e2e-create"}
+      await h["execute.before"](create);observe(context,"/v3/wiki/create",{name:"Core Notes"},empty,created,{wiki_id:id});observe(context,"/v3/wiki/raw/write",{wiki_id:id,files:[{filename:"README.md",content:first}]},created,initial,{items:[{filename:"README.md",status:"written"}]});await finish(create,context,"Created.")
+      process.env.EVALS_MEM_SCOPE_MAP=scopeFile;writeFileSync(scopeFile,JSON.stringify({schema:"oc-mem-scopes/1",fixture:"mem-synthetic-v1",case_id:intent.case_id,trial_id:intent.trial_id,record_spaces:{},wiki_spaces:{[id]:"spc-eval-personal"},creators:proof.creators}))
+      const c2={...context,turn:2};write(c2);const append={tool:"mem_wiki",input:{action:"append",wiki_id:id,filename:"README.md",content:decision},sessionID:c2.session,id:"e2e-append"}
+      await h["execute.before"](append);observe(c2,"/v3/wiki/raw/write",{wiki_id:id,files:[{filename:"README.md",content:last}]},initial,after,{items:[{filename:"README.md",status:"written"}]});await finish(append,c2,"Appended.")
+      const c3={...context,turn:3,session:"ses_new"};write(c3);const read={tool:"mem_wiki",input:{action:"read",wiki_id:id,filename:"README.md"},sessionID:c3.session,id:"e2e-read"}
+      await h["execute.before"](read);observe(c3,"/v3/wiki/raw/read",{wiki_id:id,filenames:["README.md"]},after,after,{items:[{filename:"README.md",content:last}]});await finish(read,c3,last)
+      const result=memoryTurn({code:0,stdout:event("execute",{code:'return await tools.mem.wiki({...resolvedByHost})'}),memoryCalls:turns[2].calls},{index:3,prompt:spec.prompts[2]});turns[2].calls=result.calls
+      const core={case_id:spec.original_id,trial_id:intent.trial_id,seed:{},proof_schema:"oc-mem-durable-proof/2",before:proof.before,state:proof.state(after,ctl),operations:proof.operations,effects:[{method:"wiki.raw.write",space:"personal",status:"stored"}],requests:[{method:"/v3/wiki/raw/read",verb:"POST",space:"personal",status:"read",output:last}],turns}
+      const grade=()=>memoryCoreEvidence(spec.original_id,{calls:turns.flatMap(t=>t.calls),state:{mem:{capture:{core}}}})
+      assert.equal(grade().state,"ok",JSON.stringify(grade()));assert.equal(core.state.knowledge[0].raw["README.md"],last)
+      core.operations.at(-1).request_session=null;core.operations.at(-1).binding="unbound";assert.equal(grade().state,"fail")
+    }finally{if(oldScope===undefined)delete process.env.EVALS_MEM_SCOPE_MAP;else process.env.EVALS_MEM_SCOPE_MAP=oldScope}
+  })
 })

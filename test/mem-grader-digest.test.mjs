@@ -13,7 +13,7 @@ test("M7 executable adapter dependency inventory includes every transitive local
     assert.ok(ADAPTER_FILES.includes(file),`unhashed adapter dependency: ${file}`)
     for(const m of readFileSync(join(root,file),"utf8").matchAll(/(?:import|export)\s[^\n]*?from\s*["'](\.[^"']+)["']/g))visit(relative(root,resolve(root,dirname(file),m[1])))
   }
-  visit("src/grade/adapters/index.mjs");visit("src/grade/adapters/mem-core.mjs")
+  visit("src/grade/adapters/index.mjs");visit("src/grade/adapters/mem-core.mjs");visit("src/grade/adapters/mem-discovery.mjs");visit("src/run/mem-intent-plan.mjs")
 })
 test("M7 actual graderHash changes when only the durable oracle changes in an owned temporary copy",()=>{
   const source=readFileSync(join(root,"src/cli.mjs"),"utf8")

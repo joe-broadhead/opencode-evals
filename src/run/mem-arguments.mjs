@@ -15,9 +15,11 @@ function skip(code,i){
 }
 export function closedMemorySites(code){
   if(typeof code!=="string")return []
-  const out=[]
+  const out=[];let unsettled=false
   for(let i=0;i<code.length;){
     const next=skip(code,i);if(next!==i){i=next;continue}
+    // This literal-only reader does not parse regular-expression literals or division. Neither can prove a call site.
+    if(code[i]==="/")unsettled=true
     const m=code.slice(i).match(/^tools(?:\.[A-Za-z_$][\w$]*|\[["'][^"']+["']\])+\s*\(/)
     if(!m||i>0&&/[\w$.]/.test(code[i-1])){i++;continue}
     const open=i+m[0].length-1;let depth=1,end=open+1
@@ -26,5 +28,5 @@ export function closedMemorySites(code){
     if(site){const literal=raw.trim().startsWith("{")&&!raw.includes("${")?readLiteral(raw):{ok:false};out.push({...site,args:literal.ok?literal.value:undefined,parsed:Boolean(depth===0&&literal.ok&&resolvedMemoryArgs(literal.value))})}
     i=end+1
   }
-  return out
+  return unsettled?out.map(site=>({...site,parsed:false})):out
 }
