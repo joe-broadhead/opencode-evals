@@ -25,6 +25,7 @@ import { removeSandbox } from "./sandbox.mjs"
 import { within } from "./paths.mjs"
 import { parseAllow } from "../../docker/egress-proxy.mjs"
 import { tail } from "./secrets.mjs"
+import { creationOperation, creationID } from "./container-receipt.mjs"
 
 export const DOCKER_DIR = resolve(import.meta.dirname, "..", "..", "docker")
 export const IMAGE_REPO = "opencode-evals-sandbox"
@@ -506,9 +507,9 @@ export function containerBackend(config = containerConfig(), { exec = dockerRun 
   const rawDocker = (args, options = {}) => exec(state.docker, args, { env: state.dockerEnv, ...options })
   const docker = async (args, options = {}) => {
     if (!ownOnly) return rawDocker(args, options)
-    const create = args[0] === "run" || args[0] === "network" && args[1] === "create"
-    const kind = args[0] === "run" || args[0] === "rm" ? "container" : "network"
-    const name = args[0] === "run" ? args[args.indexOf("--name") + 1] : args.at(-1)
+    const create = creationOperation(args)
+    const kind = create?.kind ?? (args[0] === "rm" ? "container" : "network")
+    const name = create?.name ?? args.at(-1)
     const remove = args[0] === "rm" || args[0] === "network" && args[1] === "rm"
     if (remove) {
       const receipt = owned.get(`${kind}:${name}`)
@@ -528,8 +529,8 @@ export function containerBackend(config = containerConfig(), { exec = dockerRun 
       throw error
     }
     if (create) {
-      const receipt = result.stdout.trim()
-      if (result.code === 0 && /^[a-f0-9]{64}$/.test(receipt)) {
+      const receipt = creationID(result)
+      if (receipt) {
         owned.set(`${kind}:${name}`, { kind, id: receipt })
         pending.delete(`${kind}:${name}`)
         journal()
