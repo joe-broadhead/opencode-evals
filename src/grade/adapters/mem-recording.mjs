@@ -9,7 +9,7 @@ import {isDeepStrictEqual as equal} from "node:util"
 const mem=c=>c?.ns==="mem"||/^mem[._]/.test(c?.tool)
 const text=v=>typeof v==="string"?v:JSON.stringify(v)
 export function projectMemoryRecording(rawLines,source=null,nativeJournal=null){
-  const lines=rawLines.filter(line=>String(line).trim()),records=parseEvents(lines),issues=[],calls=[],trace=[],sessions=[]
+  const lines=rawLines.filter(line=>String(line).trim()),records=parseEvents(lines),issues=[],calls=[],unjoinedCalls=[],trace=[],sessions=[]
   const issue=(state,code)=>issues.push({state,code})
   const required=(v,test,code)=>{if(v==null){issue("unverifiable",code);return false}if(!test(v)){issue("fail",code);return false}return true}
   if(records.length!==lines.length)issue("fail","malformed private recording")
@@ -17,19 +17,22 @@ export function projectMemoryRecording(rawLines,source=null,nativeJournal=null){
   let ordinal=0
   const ids=new Set(),parts=new Set(),carriers=new Map()
   let executionComplete=true
+  const inspect=c=>{
+    const {args,output}=c
+    if(args==null){executionComplete=false;issue("unverifiable","recorded typed arguments")}
+    else if(!plain(args))issue("fail","malformed native invocation arguments")
+    if(c.args_resolved===false)issue("fail","explicitly unresolved native invocation")
+    if(c.status==null){executionComplete=false;issue("unverifiable","recorded invocation status")}
+    else if(c.status!=="completed")issue("fail","recorded invocation failed")
+    const payload=parseFirstJson(output)
+    if(output===undefined){executionComplete=false;issue("unverifiable","recorded invocation output absent")}
+    else if(typeof output!=="string"||!payload||typeof payload!=="object"||Object.keys(payload).length===0)issue("fail","recorded invocation returned no attributable data")
+  }
   const append=(c,carrier,nativeIndex)=>{
     const args=c.args,output=c.output,callId=c.call_id
     const item={tool:c.tool,args,args_sha256:args==null?null:sha256(JSON.stringify(args)),status:c.status,output,output_sha256:typeof output==="string"?sha256(output):null,session:carrier.session,call_id:callId,part_id:carrier.part_id,outer_tool:carrier.tool,native_index:nativeIndex,ordinal:ordinal++,inner_index:carrier.tool==="execute"?nativeIndex:null,carrier_call_id:carrier.call_id,attributable:true}
     item.identity_sha256=callId==null?null:sha256(JSON.stringify([item.session,callId,item.part_id,item.outer_tool,nativeIndex,c.tool,item.args_sha256,c.status,item.output_sha256]))
     calls.push(item)
-    if(args==null)issue("unverifiable","recorded typed arguments")
-    else if(!plain(args))issue("fail","malformed native invocation arguments")
-    if(c.args_resolved===false)issue("fail","explicitly unresolved native invocation")
-    if(c.status==null)issue("unverifiable","recorded invocation status")
-    else if(c.status!=="completed")issue("fail","recorded invocation failed")
-    const payload=parseFirstJson(output)
-    if(output===undefined)issue("unverifiable","recorded invocation output absent")
-    else if(typeof output!=="string"||!payload||typeof payload!=="object"||Object.keys(payload).length===0)issue("fail","recorded invocation returned no attributable data")
   }
   for(const e of records){
     if(!["tool_use","text"].includes(e.type))continue
@@ -44,9 +47,9 @@ export function projectMemoryRecording(rawLines,source=null,nativeJournal=null){
     if(part.id!=null){if(typeof part.id!=="string"||!part.id||parts.has(part.id))issue("fail","malformed or replayed part identity");else parts.add(part.id)}
     const sites=outer?.tool==="execute"?extractInnerCalls(outer.inputRaw?.code):[]
     const status=state.status==="completed"?"ok":state.status==="error"?"error":"unknown"
-    trace.push({tool:part.tool,via:part.tool==="execute"?"execute":"direct",args_sha256:Object.hasOwn(state,"input")?sha256(JSON.stringify(outer.inputRaw)):null,status,parent_index:null})
+    trace.push({tool:part.tool,via:part.tool==="execute"?"execute":"direct",args_sha256:state.input!=null?sha256(JSON.stringify(state.input)):null,status,parent_index:null})
     for(const site of sites)trace.push({tool:site.name,ns:site.ns,via:"execute",args_sha256:site.parsed?sha256(JSON.stringify(site.args)):null,status,parent_index:outerIndex})
-    const carrier={tool:part.tool,call_id:callId,part_id:part.id??null,session:e.sessionID,args:outer?.inputRaw,status:state.status,output:text(state.output),order:carriers.size}
+    const carrier={tool:part.tool,call_id:callId,part_id:part.id??null,session:e.sessionID,args:state.input,status:state.status,output:text(state.output),order:carriers.size}
     carriers.set(callId,carrier)
     if(part.tool==="execute"){
       // Source sites are provenance only, even for a sole returned await. No execution inference.
@@ -55,7 +58,8 @@ export function projectMemoryRecording(rawLines,source=null,nativeJournal=null){
       if(summary.inner.failures)issue("fail","recorded carrier contains an observed failure")
     }else if(mem({tool:part.tool})){
       if(!Object.hasOwn(state,"input"))issue("unverifiable","recorded typed arguments")
-      append({tool:part.tool,args:outer?.inputRaw,status:state.status,output:text(state.output),call_id:callId},carrier,0)
+      const c={tool:part.tool,args:state.input,status:state.status,output:text(state.output),call_id:callId}
+      inspect(c);append(c,carrier,0)
     }
   }
   const rawHash=sha256(rawLines.join("\n"))
@@ -79,23 +83,24 @@ export function projectMemoryRecording(rawLines,source=null,nativeJournal=null){
       const digestReady=required(nativeJournal.raw_sha256,v=>typeof v==="string"&&/^[a-f0-9]{64}$/.test(v),"native journal recording digest")
       if(digestReady&&nativeJournal.raw_sha256!==rawHash)issue("fail","native journal recording digest differs")
       const completeReady=required(nativeJournal.complete,v=>typeof v==="boolean","native journal completeness"),callsReady=required(nativeJournal.calls,Array.isArray,"native journal calls")
-      if(completeReady&&callsReady){
-        executionComplete=scopeReady&&digestReady&&nativeJournal.complete
+      if(callsReady){
+        executionComplete=scopeReady&&digestReady&&completeReady&&nativeJournal.complete
         if(!executionComplete)issue("unverifiable","incomplete native journal")
         const seen=new Set(),observedDirect=new Set();let lastCarrier=-1
         for(const c of nativeJournal.calls){
           if(!plain(c)){issue("fail","malformed native observation");continue}
+          inspect(c)
           const ready=[required(c.tool,v=>typeof v==="string"&&/^mem[._][a-z][a-z_]*$/.test(v),"native observation tool"),required(c.call_id,v=>typeof v==="string"&&v.length>0,"native observation identity"),required(c.carrier_call_id,v=>typeof v==="string"&&v.length>0,"native observation carrier")]
-          if(!ready.every(Boolean)){executionComplete=false;continue}
+          if(!ready.every(Boolean)){executionComplete=false;unjoinedCalls.push(c);continue}
           if(seen.has(c.call_id))issue("fail","replayed native observation");seen.add(c.call_id)
           const carrier=carriers.get(c.carrier_call_id)
-          if(!carrier){if(carriers.has(undefined))executionComplete=false;issue(carriers.has(undefined)?"unverifiable":"fail","orphan native observation");continue}
+          if(!carrier){if(carriers.has(undefined))executionComplete=false;issue(carriers.has(undefined)?"unverifiable":"fail","orphan native observation");unjoinedCalls.push(c);continue}
           if(carrier.order<lastCarrier)issue("fail","native carrier order differs");lastCarrier=carrier.order
           if(scope?.session!=null&&carrier.session!==scope.session||carrier.tool!=="execute"&&!mem(carrier))issue("fail","foreign native observation carrier")
           if(carrier.tool!=="execute"){
             if(observedDirect.has(carrier.call_id))issue("fail","replayed direct observation");observedDirect.add(carrier.call_id)
             const d=direct.find(d=>d.call_id===carrier.call_id)
-            if(!d||c.call_id!==d.call_id||name(c)!==name(d)||!equal(c.args,d.args)||c.status!==d.status||c.output!==d.output)issue("fail","native journal contradicts direct recording")
+            if(!d||c.call_id!==d.call_id||name(c)!==name(d)||c.args!=null&&d.args!=null&&!equal(c.args,d.args)||c.status!==d.status||c.output!==d.output)issue("fail","native journal contradicts direct recording")
           }
           append(c,carrier,calls.filter(c=>c.carrier_call_id===carrier.call_id).length)
         }
@@ -103,7 +108,7 @@ export function projectMemoryRecording(rawLines,source=null,nativeJournal=null){
       }
     }
   }else if(!executionComplete)issue("unverifiable","native Code Mode execution journal absent")
-  return {schema:"oc-mem-private-recording/1",source,raw_sha256:rawHash,sessions,text:final?.part?.text??null,text_session:final?.sessionID??null,calls,direct_calls:directCalls,trace,issues,execution_complete:executionComplete,journal_scope:journalScope}
+  return {schema:"oc-mem-private-recording/1",source,raw_sha256:rawHash,sessions,text:final?.part?.text??null,text_session:final?.sessionID??null,calls,direct_calls:directCalls,unjoined_calls:unjoinedCalls,trace,issues,execution_complete:executionComplete,journal_scope:journalScope}
 }
 
 const plain=v=>Boolean(v&&typeof v==="object"&&!Array.isArray(v))

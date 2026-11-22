@@ -11,6 +11,7 @@ const plain=v=>Boolean(v&&typeof v==="object"&&!Array.isArray(v))
 const family=c=>({wikis:"wiki",pages:"page"})[name(c)]??name(c)
 const memory=c=>c?.ns==="mem"||/^mem[._]/.test(c?.tool)
 const writes=new Set(["records.put","wiki.raw.write","sources.request","plugins.request","jobs.draft"])
+const recallKeys=new Set(["query","task","visibility","in","types","status","limit","space","filter","cursor"])
 const failedStatuses=new Set(["queued","pending","denied","unsupported","error","failed","failure","rejected"])
 const outputStatus=method=>["wiki.get","wiki.ingest","code-graph.get","code-graph.status"].includes(method)?"ready":writes.has(method)?"stored":"read"
 function failedEnvelope(v){
@@ -27,6 +28,29 @@ function bindingMatches(s,c){
 function truthfulAnswer(s,text){
   const answer=text.trim()
   return s.legacy_answer_contract?answer===s.answer:s.family==="exact-read"?answer.includes("Quartz full current body. Record nonce QREC-71.")&&!/\b(?:not|missing|unsupported|partial)\b/i.test(answer):s.family==="code"?answer.includes("submitInvoice")&&answer.includes("parseInvoice")&&!/\b(?:not|unknown|unsupported|partial)\b/i.test(answer):s.family==="wiki-graph"?["README.md","design.md","quartz-docs"].every(v=>answer.includes(v))&&!/unknown|unsupported|partial/i.test(answer):s.family==="skills"?/\b1\b[\s\S]*expired[\s\S]*\b2\b[\s\S]*current/i.test(answer):["sources","jobs"].includes(s.family)?answer===s.answer:false
+}
+
+// records.put admits only these observed producer metadata fields, for every write row.
+// The same closed payload is used to check the resulting stored object.
+function recordPayload(s,wire,session,q){
+  const record=q.typed(wire?.record,"backend wire record",plain)
+  if(!record)return
+  const expected=s.backend.input.record,metadata={}
+  if(Object.hasOwn(record,"type")&&!Object.hasOwn(expected,"type"))metadata.type=expected.kind
+  if(Object.hasOwn(record,"title"))metadata.title=expected.body.slice(0,200)
+  if(Object.hasOwn(record,"stated_by")&&["agent","person"].includes(record.stated_by))metadata.stated_by=record.stated_by
+  if(Object.hasOwn(record,"source")){
+    const source=q.typed(record.source,"record source metadata",plain)
+    if(source){
+      if(!equal(Object.keys(source),["session"])||typeof source.session!=="string")q.fail("record source metadata malformed")
+      q.check("record source session differs",[[source.session,"record source session"],[session,"native session artifact"]],()=>source.session===session)
+      metadata.source=source
+    }
+  }
+  if(Object.hasOwn(record,"fields")&&s.family==="commitment")metadata.fields={what:expected.body,owner:"user",state:"open"}
+  const payload={...expected,...metadata}
+  if(!Object.keys(wire).every(k=>["record","upsert_path"].includes(k))||wire.upsert_path!==undefined&&!(s.family==="page"&&wire.upsert_path===true)||!equal(record,payload))q.fail("record wire payload differs from authorized content")
+  return payload
 }
 
 // Compare only supplied overlapping facts. An absent copy/field stays unavailable, never filled.
@@ -66,13 +90,15 @@ export function memoryDiscoveryEvidence(id,view){
       else if(status!==undefined&&status!=="completed")q.fail("failed native invocation")
       const output=field(c.output,actual?"actual call output":"native call output","string")
       if(output!==undefined){try{if(failedEnvelope(JSON.parse(output)))q.fail("error-bearing native output")}catch{/* Prose supplies no backend truth. */}}
-      if(actual&&c.attributable!==true){q.missing("executed inner-call attribution");continue}
-      if(args){
+      const tool=field(c.tool,"native invocation tool","string")
+      if(args&&tool!==undefined){
+        if(name(c)==="recall"&&Object.keys(args).some(k=>!recallKeys.has(k)))q.fail("unknown recall argument")
         const classified=memoryCall(`mem_${family(c)}`,args,{})
         if(classified?.error&&!bindingMatches(s,c)||!classified&&name(c)!=="recall"||name(c)!==family(c)&&classified?.write)q.fail("unknown or malformed native action")
         const change=name(c)==="remember"||["page","commitments","wiki","spaces"].includes(name(c))&&(["write","append","replace","delete","move","add","update","create"].includes(args.action)||args.bind||args.job?.op==="draft")
         if(change&&(!s.write||name(c)!==s.binding.tool||!equal(args,s.binding.args)))q.fail("unrequested mutation invocation")
       }
+      if(actual&&c.attributable!==true)q.missing("executed inner-call attribution")
     }
     if(complete&&calls.every(c=>plain(c?.args)&&c.status!=null&&c.status!=="unattributable"&&(!actual||c.attributable===true))&&!calls.some(c=>bindingMatches(s,c)&&c.status==="completed"))q.fail("recorded execution omitted the required typed invocation")
   }
@@ -146,21 +172,26 @@ export function memoryDiscoveryEvidence(id,view){
   invocations(native,false,directOnly||view.memoryRecording?.execution_complete===true)
   const actualCalls=view.memoryRecording?.schema==="oc-mem-private-recording/1"&&Array.isArray(view.memoryRecording.calls)?view.memoryRecording.calls:undefined
   invocations(actualCalls,true,view.memoryRecording?.execution_complete===true)
+  if(Array.isArray(view.memoryRecording?.unjoined_calls))invocations(view.memoryRecording.unjoined_calls,true,false)
   if(Array.isArray(view.memoryRecording?.direct_calls))invocations(view.memoryRecording.direct_calls,true,false)
   if(native){
     if(directOnly&&(native.length!==trace.length||native.some((c,i)=>name(c)!==name(trace[i]))))q.fail("typed native calls disagree with trace")
     for(const [i,c]of native.entries()){
       if(!directOnly)continue // Code Mode source sites carry no executed-call count or argument authority.
+      if(trace[i]?.status==="error")q.fail("official trace records a failed invocation")
+      // The public codec defaults missing raw input to {}. That digest is not typed evidence.
+      const direct=view.memoryRecording?.direct_calls?.[i]
+      if(direct&&direct.args==null){q.missing("actual typed arguments");continue}
       const args=plain(c.args)?c.args:undefined
       const digest=trace[i]?.args_sha256
       q.check("official trace argument digest malformed",[[digest,"official trace argument digest"]],()=>typeof digest==="string"&&/^[a-f0-9]{64}$/.test(digest))
       if(typeof digest==="string"&&/^[a-f0-9]{64}$/.test(digest))q.check("private arguments contradict official digest",[[args,"private argument artifact"]],()=>sha256(JSON.stringify(args))===digest)
-      if(trace[i]?.status==="error")q.fail("official trace records a failed invocation")
     }
   }
   const requests=p&&list(p.requests,"backend recording"),outerRequests=capture&&list(capture.requests,"capture backend recording")
   for(const observations of [requests,outerRequests]){
   const rows=observations?.filter(plain)
+  const actualWrites=actualCalls?.filter(c=>bindingMatches(s,c)&&c.status==="completed"&&c.attributable===true),usedWrites=new Set()
   if(observations&&rows.length!==observations.length)q.fail("backend observation malformed")
   for(const r of rows??[]){
     for(const key of ["method","space","input","wire_input","output","status","http_status","context"])q.need(r[key],`backend ${key} artifact`)
@@ -176,8 +207,21 @@ export function memoryDiscoveryEvidence(id,view){
       q.check("backend session differs",[[context.session,"backend context session"],[t?.session,"native session artifact"]],()=>context.session===t.session)
       q.check("backend session contradicts actual recording",[[context.session,"backend context session"],[view.memoryRecording?.text_session,"actual final session"]],()=>context.session===view.memoryRecording.text_session)
     }
-    if(writes.has(r.method)&&(!s.write||r.method!==s.backend.method))q.fail("unrequested backend mutation")
+    if(writes.has(r.method)){
+      if(!s.write||r.method!==s.backend.method)q.fail("unrequested backend mutation")
+      else{
+        q.check("backend mutation payload is not authorized",[[input,"backend input artifact"]],()=>equal(input,s.backend.input))
+        if(r.method==="records.put")recordPayload(s,wire,t?.session,q)
+        else q.check("backend mutation wire payload is not authorized",[[wire,"backend wire_input artifact"]],()=>equal(wire,s.backend.input))
+        if(view.memoryRecording?.execution_complete===true)q.check("backend write is not a distinct actual invocation",[[actualWrites,"actual invocation recording"],[out,"backend output artifact"],[context?.session,"backend context session"]],()=>{
+          const i=actualWrites.findIndex((c,i)=>!usedWrites.has(i)&&c.session===context.session&&equal(parseFirstJson(c.output),out))
+          if(i<0)return false
+          usedWrites.add(i);return true
+        })
+      }
+    }
   }
+  if(s.write&&view.memoryRecording?.execution_complete===true&&actualWrites&&rows?.filter(r=>writes.has(r.method)).length>actualWrites.length)q.fail("backend write count exceeds actual invocation inventory")
   const matching=rows?.filter(r=>r.method===s.backend.method&&r.input!=null&&equal(r.input,s.backend.input))
   if(matching?.length>1||rows?.every(r=>r.method!=null&&r.input!=null)&&matching.length===0)q.fail("recorded execution omitted or replayed required backend operation")
   }
@@ -225,18 +269,11 @@ export function memoryDiscoveryEvidence(id,view){
       if(plain(created)){
         let authorized
         if(["memory","page","commitment"].includes(s.family)){
-          const expected=s.backend.input.record,wire=r&&plain(r.wire_input)?r.wire_input:undefined,record=wire&&plain(wire.record)?wire.record:undefined,metadata={}
+          const expected=s.backend.input.record,wire=r&&plain(r.wire_input)?r.wire_input:undefined
           // Unknown stored fields fail even when the wire artifact is unavailable.
           if(Object.keys(created).some(k=>![...Object.keys(expected),"id","status","version","type","title","stated_by","source","fields"].includes(k)))q.fail("written record contains hidden payload")
-          if(record){
-            if(Object.hasOwn(record,"type")&&!Object.hasOwn(expected,"type"))metadata.type=expected.kind
-            if(Object.hasOwn(record,"title"))metadata.title=expected.body.slice(0,200)
-            if(Object.hasOwn(record,"stated_by")&&["agent","person"].includes(record.stated_by))metadata.stated_by=record.stated_by
-            if(Object.hasOwn(record,"source")){q.need(t?.session,"native session artifact");if(t?.session!=null)metadata.source={session:t.session}}
-            if(Object.hasOwn(record,"fields")&&s.family==="commitment")metadata.fields={what:expected.body,owner:"user",state:"open"}
-          }
-          q.check("record wire payload differs from authorized content",[[record,"backend wire_input artifact"]],()=>Object.keys(wire).every(k=>["record","upsert_path"].includes(k))&&(wire.upsert_path===undefined||s.family==="page"&&wire.upsert_path===true)&&equal(record,{...expected,...metadata}))
-          if(record&&(!Object.hasOwn(record,"source")||t?.session!=null))authorized={...expected,...metadata,id:created.id,status:"current",version:1}
+          const payload=recordPayload(s,wire,t?.session,q)
+          if(payload)authorized={...payload,id:created.id,status:"current",version:1}
         }else authorized={id:created.id,...s.backend.input,...(s.family==="sources"?{state:"requested"}:{status:"draft",active:false,next_due:null,version:1})}
         if(authorized){if(!equal(created,authorized))q.fail("written object is not the closed authorized payload");q.check("stored output contradicts actual object",[[out,"backend output artifact"]],()=>equal(out[s.family==="sources"?"request":s.family==="jobs"?"job":"record"],authorized)&&(s.family!=="jobs"||equal(out.draft,{version:1,state:"draft"})))}
         if(typeof created.id!=="string")q.fail("stored identity malformed")

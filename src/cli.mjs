@@ -215,7 +215,11 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
         if (discoveryRecording) {
           let journal = null
           if (existsSync(`${rawBase}.mem-invocations.json`)) {
-            try { journal = JSON.parse(read(`${rawBase}.mem-invocations.json`)) }
+            try {
+              journal = JSON.parse(read(`${rawBase}.mem-invocations.json`))
+              // Null is the projector's absent-file sentinel, never a valid supplied journal.
+              if (!journal || typeof journal !== "object" || Array.isArray(journal)) journal = { schema: "malformed" }
+            }
             catch { journal = { schema: "malformed" } }
           }
           memoryRecording = projectMemoryRecording(rawLines, { case_id: caseObject.id, trial: trial ?? 1 }, journal)

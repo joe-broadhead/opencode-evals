@@ -1,5 +1,42 @@
 # Discovery evidence: R2 and native execution observations
 
+## Consolidated consumer corrections
+
+The correction base is signed `46972538cb0d3a7afaebf24f10b43f2a5f089eb2`.
+These changes address H1, F1/M1, F2, and F3/M2 from the independent reviews.
+They do not change the native producer or establish runtime readiness.
+
+Every backend write requires the authorized method, canonical payload, and wire payload.
+The adapter checks each outer and nested row, not only the expected matching row.
+Each supplied write must match a distinct invocation in a complete native inventory.
+An extra matching-method write cannot borrow the successful expected row.
+Valid optional reads do not grant write permission.
+
+Known-schema observations retain their local status, output, and argument evidence despite missing completeness or identity metadata.
+The private projection adds `unjoined_calls` for observations without a valid tool, call identity, or carrier join.
+These observations can establish contradictions but never grant execution credit or supply proof joins.
+Argument classification requires an observed tool and arguments.
+Status and error-output checks do not require that tool identity.
+Unsupported future journal versions remain unavailable.
+
+The projection retains actual direct input values.
+Absent or null input remains unavailable, even when the public codec supplies a digest for its default empty object.
+A recorded empty object remains supplied evidence and receives normal argument validation.
+Neither the public codec nor expected arguments can repair missing direct input.
+
+The CLI distinguishes file absence from a supplied JSON value.
+A supplied null, array, string, boolean, or number is a malformed journal and produces FAIL.
+The in-memory interface retains its default-null absence convention.
+Direct recordings without a sidecar can pass.
+A complete empty journal fails, and an incomplete empty journal remains BLOCKED.
+
+The focused matrix covers all 24 cases and both recording modes.
+It includes unrelated missing metadata, malformed fields, optional reads, extra writes, and 528 on-disk sidecar classifications.
+The original independent CLI safety suites remain unchanged.
+All checks use synthetic offline evidence, not native production recordings.
+
+## Prior R2 handoff
+
 Incremental base: signed `9531cf698aac0c6a875ef0c27a144ffe2d4602fc`.
 This document supersedes the earlier sole-returned-await exception.
 The historical reports remain unchanged.
