@@ -1,5 +1,18 @@
 # Discovery evidence: R2 and native execution observations
 
+## Definite mutation count
+
+The reciprocal-count correction starts from signed `91ceca7d871b027eee6cb99f3320faa7b814a245`.
+The count uses definite mutation semantics, not exact authorized-payload matching.
+`mem_remember` identifies a mutation even when its arguments are unavailable.
+Action-based tools require a supplied known mutation action.
+Source requests require the source-binding discriminator, and job drafts require the draft operation.
+Missing payload content does not erase a known mutation.
+Missing action information does not establish a mutation, and optional reads do not count.
+Complete identity inventories and completed status remain required by the reciprocal check.
+Payload availability and authorization checks remain independent.
+No absent inventory becomes an empty inventory.
+
 ## Record-envelope correction
 
 The incremental base is signed `091158ef029415f6befd7d1dcdf89a8a307f438e`.

@@ -29,6 +29,15 @@ function bindingMatches(s,c){
 function possibleBinding(s,c){
   return (s.write?name(c):family(c))===s.binding.tool&&(c.args==null||bindingMatches(s,c))&&(c.status==null||c.status==="completed")
 }
+// Count an observed mutation independently of whether its full payload is available/authorized.
+function definiteMutation(c){
+  const tool=name(c),args=c.args
+  if(tool==="remember")return true
+  if(!plain(args))return false
+  if(tool==="spaces")return args.action==="sources"&&plain(args.bind)||args.action==="jobs"&&args.job?.op==="draft"
+  const actions={page:["write","append","replace","move","delete","export"],wiki:["create","write","append","delete"],commitments:["add","update","delete"],revise:["correct","confirm","retire","restore","forget"]}
+  return Object.hasOwn(actions,tool)&&actions[tool].includes(args.action)
+}
 function truthfulAnswer(s,text){
   const answer=text.trim()
   return s.legacy_answer_contract?answer===s.answer:s.family==="exact-read"?answer.includes("Quartz full current body. Record nonce QREC-71.")&&!/\b(?:not|missing|unsupported|partial)\b/i.test(answer):s.family==="code"?answer.includes("submitInvoice")&&answer.includes("parseInvoice")&&!/\b(?:not|unknown|unsupported|partial)\b/i.test(answer):s.family==="wiki-graph"?["README.md","design.md","quartz-docs"].every(v=>answer.includes(v))&&!/unknown|unsupported|partial/i.test(answer):s.family==="skills"?/\b1\b[\s\S]*expired[\s\S]*\b2\b[\s\S]*current/i.test(answer):["sources","jobs"].includes(s.family)?answer===s.answer:false
@@ -228,7 +237,7 @@ export function memoryDiscoveryEvidence(id,view){
     }
   }
   if(s.write&&view.memoryRecording?.execution_complete===true&&possibleWrites&&rows?.filter(r=>writes.has(r.method)).length>possibleWrites.length)q.fail("backend write count exceeds actual invocation inventory")
-  if(s.write&&view.memoryRecording?.execution_complete===true&&rows?.every(r=>typeof r.method==="string")&&actualCalls?.filter(c=>c.attributable===true&&bindingMatches(s,c)&&c.status==="completed").length>rows.filter(r=>writes.has(r.method)).length)q.fail("actual write count exceeds backend observation inventory")
+  if(s.write&&view.memoryRecording?.execution_complete===true&&rows?.every(r=>typeof r.method==="string")&&actualCalls?.filter(c=>c.attributable===true&&definiteMutation(c)&&c.status==="completed").length>rows.filter(r=>writes.has(r.method)).length)q.fail("actual write count exceeds backend observation inventory")
   const matching=rows?.filter(r=>r.method===s.backend.method&&r.input!=null&&equal(r.input,s.backend.input))
   if(matching?.length>1||rows?.every(r=>r.method!=null&&r.input!=null)&&matching.length===0)q.fail("recorded execution omitted or replayed required backend operation")
   }
