@@ -1,13 +1,61 @@
 import { createHash } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 
 // Logical public-client seam ONLY. No HTTP codec is qualified by the retained
-// 2.2.6 CLI source. See docs/native-completion.md before integrating this module.
+// 2.2.6 CLI source. See docs/native-completion.md and the source-backed union
+// classification in docs/native-completion-transcript.md before integration.
 const PIN = 'dc2ffcf8bf26f9e669b6aa22b95f50e12be15e06';
 const CEILINGS = Object.freeze({ deadlineMs: 120_000, maxPages: 100,
   maxEvents: 10_000, maxBytes: 4_194_304, maxRawBytes: 8_388_608, closeMs: 1000 });
 const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const id = (value) => typeof value === 'string' && value.length > 0 && value.length <= 512;
 const fail = (code) => { throw new Error(code); };
+const modelRef = (value) => object(value) && id(value.id) && id(value.providerID) &&
+  (value.variant === undefined || id(value.variant));
+const locationRef = (value) => object(value) && id(value.directory) &&
+  (value.workspaceID === undefined || id(value.workspaceID));
+const movedLocation = (value) => object(value) && locationRef(value.location) &&
+  (value.projectID === undefined || id(value.projectID)) &&
+  (value.subpath === undefined || typeof value.subpath === 'string');
+const annotation = (message) => ['agent-switched', 'model-switched', 'system'].includes(message.type);
+const conflictingWork = (message) => ['synthetic', 'skill', 'shell', 'compaction', 'location-switched'].includes(message.type);
+function supportedMessage(message) {
+  // Preserve the original logical user/assistant seam. New native variants must
+  // carry their source-required fields; none is converted to user/assistant/idle.
+  if (['user', 'assistant'].includes(message.type)) return true;
+  if (message.type === 'idle') return ['succeeded', 'failed', 'interrupted'].includes(message.outcome);
+  if (!object(message.time) || !Number.isFinite(message.time.created) ||
+      (message.metadata !== undefined && !object(message.metadata))) return false;
+  switch (message.type) {
+    case 'agent-switched':
+      return id(message.agent) && (message.previous === undefined || id(message.previous));
+    case 'model-switched':
+      return modelRef(message.model) && (message.previous === undefined || modelRef(message.previous));
+    case 'system':
+    case 'synthetic':
+      return typeof message.text === 'string' &&
+        (message.description === undefined || typeof message.description === 'string');
+    case 'location-switched':
+      return movedLocation(message) && (message.previous === undefined || movedLocation(message.previous));
+    case 'skill':
+      return id(message.skill) && id(message.name) && typeof message.text === 'string';
+    case 'shell':
+      return id(message.shellID) && typeof message.command === 'string' &&
+        ['running', 'exited', 'timeout', 'killed'].includes(message.status) &&
+        (message.time.completed === undefined || Number.isFinite(message.time.completed)) &&
+        (message.exit === undefined || Number.isFinite(message.exit)) &&
+        (message.output === undefined || (object(message.output) && typeof message.output.output === 'string' &&
+          Number.isFinite(message.output.cursor) && Number.isFinite(message.output.size) && typeof message.output.truncated === 'boolean'));
+    case 'compaction':
+      return ['auto', 'manual'].includes(message.reason) &&
+        (message.model === undefined || modelRef(message.model)) &&
+        (message.native === undefined || object(message.native)) &&
+        (['running', 'completed'].includes(message.status) ? typeof message.summary === 'string'
+          : message.status === 'failed' && object(message.error) &&
+            typeof message.error.type === 'string' && typeof message.error.message === 'string');
+    default: return false;
+  }
+}
 const typedArrayByteLength = Object.getOwnPropertyDescriptor(
   Object.getPrototypeOf(Uint8Array.prototype), 'byteLength',
 ).get;
@@ -99,9 +147,9 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
       const input = cursor ? { sessionID, limit: 200, cursor } : { sessionID, limit: 200, order: 'desc' };
       const value = await read(kind, () => client.message.list(input, options()));
       if (!object(value) || !Array.isArray(value.data) || value.data.length > 200 || !object(value.cursor) ||
-          (value.cursor.next != null && !id(value.cursor.next))) fail('invalid_message_page');
+          (value.cursor.next != null && (!id(value.cursor.next) || value.data.length === 0))) fail('invalid_message_page');
       for (const message of value.data) {
-        if (!object(message) || !id(message.id) || !['user', 'assistant', 'idle'].includes(message.type) ||
+        if (!object(message) || !id(message.id) || !supportedMessage(message) ||
             seen.has(message.id) || (message.sessionID !== undefined && message.sessionID !== sessionID))
           fail('invalid_message_identity');
         seen.add(message.id); all.push(message);
@@ -190,6 +238,8 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
     const baseline = await messages('baseline');
     const baselineIDs = new Set(baseline.map((item) => item.id));
     result.baseline = { messageIDs: [...baselineIDs] };
+    if (baseline.some((message) => ['shell', 'compaction'].includes(message.type) && message.status === 'running'))
+      fail('baseline_unsettled_work');
     result.preflight = await quiet('preflight');
     if (result.preflight.status !== 'empty') fail('preflight_not_empty');
     if (result.health.stream !== 'connected' || result.health.issues.length) fail('preflight_event_conflict');
@@ -223,6 +273,10 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
       if (!id(promptID) || delivery.data.sessionID !== sessionID || baselineIDs.has(promptID)) return;
       const index = segment.findIndex((message) => message.id === promptID && message.type === 'user');
       if (index < 0) return;
+      if (segment.some((message) => !baselineIDs.has(message.id) && conflictingWork(message)) ||
+          segment.slice(index + 1).some((message) => !baselineIDs.has(message.id) && !annotation(message))) {
+        result.native = { status: 'unknown' }; return;
+      }
       const following = segment.slice(0, index).reverse();
       if (following.some((message) => message.type === 'user' || baselineIDs.has(message.id))) return;
       const firstIdle = following.find((message) => message.type === 'idle');
@@ -235,14 +289,16 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
     const promptID = delivery?.data.inboxID;
     const promptIndex = projection.findIndex((message) => message.id === promptID);
     const newUsers = projection.filter((message) => message.type === 'user' && !baselineIDs.has(message.id));
-    const signature = (items) => items.map(({ id, type }) => [id, type]);
     const newCount = projection.length - baseline.length;
+    const workConflict = projection.some((message) => !baselineIDs.has(message.id) && conflictingWork(message));
+    if (workConflict) issue('conflicting_transcript_work');
     const baselineIntact = newCount >= 0 &&
-      JSON.stringify(signature(projection.slice(newCount))) === JSON.stringify(signature(baseline));
+      isDeepStrictEqual(projection.slice(newCount), baseline);
     if (!baselineIntact) issue('baseline_changed');
     if (!delivery || delivery.data.sessionID !== sessionID || baselineIDs.has(promptID) ||
         promptIndex < 0 || projection[promptIndex].type !== 'user' || newUsers.length !== 1 ||
-        newUsers[0].id !== promptID || !baselineIntact || promptIndex !== newCount - 1) issue('prompt_not_corroborated');
+        newUsers[0].id !== promptID || !baselineIntact || workConflict || promptIndex >= newCount ||
+        !projection.slice(promptIndex + 1, newCount).every(annotation)) issue('prompt_not_corroborated');
     else {
       result.admission = { status: 'known', promptID };
       const firstIdle = projection.slice(0, promptIndex).reverse().find((message) => message.type === 'idle');
