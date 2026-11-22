@@ -5,10 +5,10 @@ import { creationOperation, creationID } from "../src/run/container-receipt.mjs"
 
 const id = n => String(n).padStart(64, "0")
 const binding = { invocation_id: "11111111-1111-4111-8111-111111111111", manifest_sha256: "a".repeat(64), trial_id: "baseline-direct-a-r1" }
-const plan = () => ({ binding, context: "colima-mem-evals-20261122", image: `sha256:${"b".repeat(64)}`, user: "1000:1000", allow: ["opencode.ai"],
+const plan = () => ({ binding, context: "colima-mem-evals-20261122", image: `sha256:${"b".repeat(64)}`, imageEnv: ["PATH=/usr/bin:/bin"], user: "1000:1000", allow: ["opencode.ai"],
   control: "/parent/control", store: "/parent/store", dockerConfig: "/parent/docker", work: "/staged/work", inputs: "/staged/inputs", binaries: "/staged/bin",
   inputs_sha256: "c".repeat(64), binaries_sha256: "d".repeat(64), timeoutMs: 1000, cleanupMs: 1000, operationMs: 100, outputBytes: 4096,
-  descriptor: { options: { plugin: "mem" } }, credentialNames: ["OPENCODE_API_KEY"] })
+  descriptor: { options: { plugin: "mem", iteration: "trial-a", model: "opencode/deepseek-v4.1-flash#low", auth: "env:OPENCODE_API_KEY", cases: "core-a", casesDir: "/inputs/cases", set: "core", trials: 1, parallel: 1, arm: "/inputs/arm", world: "/inputs/harness/worlds/mem/index.mjs", host: "2.2.6", timeout: 60, stale: "refuse", tools: "locked", isolation: "owned-container", harnessRetries: 0, processGroup: "inherited" } }, credentialNames: ["OPENCODE_API_KEY"] })
 function fake({ reject = false } = {}) {
   let next = 0
   const calls = [], resources = new Map(), journals = []
@@ -22,6 +22,7 @@ function fake({ reject = false } = {}) {
       return ok(JSON.stringify([{ Id: a.at(-1), command }]))
     }
     if (a[0] === "rm" || a[0] === "network" && a[1] === "rm") resources.delete(a.at(-1))
+    if (a[0] === "logs") return ok('{"ev":"listening"}')
     return ok()
   } }
   const deps = { docker, clock: clock(), journal: async j => journals.push(structuredClone(j)), validateInputs: async () => ({ work: { dev: 1, ino: 2 }, inputs_sha256: "c".repeat(64), binaries_sha256: "d".repeat(64) }),
@@ -121,6 +122,71 @@ test("missing closure and failed cleanup do not overwrite independent known nati
   assert.equal(result.native, "failed")
   assert.equal(result.accounting.complete, false)
   assert.equal(result.cleanup_verified, true)
+  const blocked = fake()
+  blocked.deps.docker.closed = () => false
+  blocked.deps.nativeSnapshot = () => ({ binding, outcome: "interrupted" })
+  const negative = await drive(containTrial(plan(), blocked.deps), blocked.deps.clock)
+  assert.equal(negative.native, "interrupted")
+  assert.equal(negative.cleanup_verified, false)
+  assert.equal(negative.accounting.complete, false)
 })
 
 export { fake, plan, id, clock, drive }
+
+test("late/lost creation receipt never adopts a reused name or admits execution after teardown", async () => {
+  const f = fake(), original = f.deps.docker.run
+  let release
+  f.deps.docker.run = async args => {
+    const result = await original(args)
+    if (args[2] === "create") await new Promise(resolve => { release = resolve })
+    return result
+  }
+  const result = await drive(containTrial(plan(), f.deps), f.deps.clock)
+  assert.equal(result.cleanup_verified, false)
+  assert.equal(result.creation_unknown, true)
+  assert.equal(f.resources.size, 1, "unknown creation is retained, not swept by name")
+  release()
+  for (let i = 0; i < 100; i++) await Promise.resolve()
+  assert.equal(f.calls.some(a => a[2] === "start" || a[2] === "exec"), false)
+  assert.ok(f.journals.at(-1).pending.length)
+})
+
+test("worker exit does not prove descendants gone; exact outer removal precedes the data reader", async () => {
+  const f = fake(), original = f.deps.docker.run
+  let descendants = false
+  f.deps.docker.run = async args => {
+    if (args[2] === "exec") descendants = true
+    if (args[2] === "rm" && args.at(-1) === id(4)) descendants = false
+    return original(args)
+  }
+  f.deps.finalize = async () => { assert.equal(descendants, false); return { native: "unknown" } }
+  assert.equal((await drive(containTrial(plan(), f.deps), f.deps.clock)).cleanup_verified, true)
+})
+
+test("external config proof checks mounts, resource limits, Env, namespaces, entrypoint and image", () => {
+  const expected = { kind: "container", id: id(4), image: `sha256:${"a".repeat(64)}`, imageEnv: ["PATH=/usr/bin:/bin"], user: "1000:1000", network: id(2), memory: 3221225472, cpu: 1500000000, pids: 512, entrypoint: ["/usr/bin/tini", "--"], command: ["sleep", "infinity"], cwd: "/work", tmpfs: { "/tmp": "rw,nosuid,nodev,size=256m" }, mounts: [{ source: "/staged/work", target: "/work", readonly: false }] }
+  const actual = { Id: id(4), Image: `sha256:${"a".repeat(64)}`, Config: { User: "1000:1000", Env: ["PATH=/usr/bin:/bin"], Entrypoint: ["/usr/bin/tini", "--"], Cmd: ["sleep", "infinity"], WorkingDir: "/work" }, HostConfig: { Privileged: false, ReadonlyRootfs: true, NetworkMode: id(2), CapDrop: ["ALL"], SecurityOpt: ["no-new-privileges"], Memory: 3221225472, MemorySwap: 3221225472, NanoCpus: 1500000000, PidsLimit: 512, Tmpfs: { "/tmp": "rw,nosuid,nodev,size=256m" }, LogConfig: { Type: "local", Config: { "max-size": "1m", "max-file": "1" } } }, NetworkSettings: { Networks: { owned: { NetworkID: id(2) } } }, Mounts: [{ Type: "bind", Source: "/staged/work", Destination: "/work", RW: true, Propagation: "rprivate" }], State: { Running: false, Status: "created" } }
+  assert.equal(verifyOwnedConfig(actual, expected), true)
+  for (const mutate of [x => x.Id = "reused-name", x => x.Image = "wrong", x => x.Config.Env.push("OPENCODE_API_KEY=value"), x => x.Config.Entrypoint = ["/bin/sh"], x => x.HostConfig.Privileged = true, x => x.HostConfig.NetworkMode = "host", x => x.HostConfig.Memory = 0, x => x.HostConfig.PidMode = "host", x => x.Mounts.push({ Type: "bind", Source: "/parent/store", Destination: "/store", RW: true }), x => x.HostConfig.VolumesFrom = ["foreign"], x => x.HostConfig.LogConfig = {}, x => x.NetworkSettings.Networks.other = { NetworkID: id(7) }]) {
+    const changed = structuredClone(actual); mutate(changed); assert.equal(verifyOwnedConfig(changed, expected), false)
+  }
+})
+
+test("parent cancellation closes creation admission before any workload operation", async () => {
+  const f = fake(), controller = new AbortController()
+  controller.abort(); f.deps.signal = controller.signal
+  const result = await drive(containTrial(plan(), f.deps), f.deps.clock)
+  assert.equal(result.reason, "cancelled")
+  assert.equal(f.calls.length, 0)
+  assert.equal(result.successor_allowed, false)
+})
+
+test("a blocking parent callback cannot evade its elapsed-time bound by returning before a timer callback runs", async () => {
+  const f = fake(), original = f.deps.validateInputs
+  let elapsed = 0
+  f.deps.clock.now = () => elapsed
+  f.deps.validateInputs = async p => { elapsed = 101; return original(p) }
+  const result = await drive(containTrial(plan(), f.deps), f.deps.clock)
+  assert.equal(result.reason, "inputs")
+  assert.equal(f.calls.length, 0)
+})

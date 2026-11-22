@@ -41,7 +41,8 @@ import { loadTargets, loadCanaries } from "../grade/targets.mjs"
 import { batchEgress } from "./egress.mjs"
 import { snapshotFiles, changedFiles, snapshotHome, changedHome, homeLinks } from "./files.mjs"
 import { segment, within, inside } from "./paths.mjs"
-import { selectIsolation, isLive, defaultIsolation } from "./isolation.mjs"
+import { selectIsolation, isLive, defaultIsolation, containerContained } from "./isolation.mjs"
+import { ownedSession } from "./owned-launch.mjs"
 import { containerConfig, findBinary, markBatchDir } from "./container.mjs"
 import { redactor, scrubTree, registerSecrets, tail } from "./secrets.mjs"
 import { splitTrial } from "../grade/trials.mjs"
@@ -55,6 +56,7 @@ import { selectMemoryPlan } from "./mem-case-plan.mjs"
 import { setProcessGroupMode } from "./sandbox.mjs"
 import { qualifyConditions, sha256 } from "./wave-manifest.mjs"
 import { memoryArtifact } from "./mem-arm.mjs"
+import { singleAttemptCost } from "../cost/attempt.mjs"
 
 
 export const RUNNER = "evals run"
@@ -299,28 +301,10 @@ const billedOf = (stdout) => {
 
 /** Opt-in single-attempt evidence: an absent receipt is unknown, never an estimated actual cost. */
 export function settleSingleAttempt(store, identity, result = {}, price = null) {
-  const parts = []
-  for (const line of String(result.stdout ?? "").split("\n")) {
-    try { const event = JSON.parse(line); if (event.type === "step_finish") parts.push(event.part ?? {}) } catch { /* incomplete stream */ }
-  }
-  const number = value => typeof value === "number" && Number.isFinite(value) && value >= 0
-  const receipts = parts.map(p => {
-    const valid = number(p.tokens?.input) && number(p.tokens?.output) && number(p.tokens?.cache?.read) && number(p.tokens?.cache?.write)
-    const tokens = valid ? { input: p.tokens.input, output: p.tokens.output, cacheRead: p.tokens.cache.read, cacheWrite: p.tokens.cache.write } : null
-    return { billed_usd: number(p.cost) ? p.cost : null, tokens, list_usd: tokens ? listUsdOf(tokens, price) : null }
-  })
-  const known = key => receipts.some(r => r[key] !== null) ? receipts.reduce((n, r) => n + (r[key] ?? 0), 0) : null
   // Pinned 2.2.6 noninteractive.ts checks native prompt outcomes internally, but does not
   // emit a prompt-terminal JSON record. Step receipts/exit zero cannot replace the absent
   // qualified recorder seal. Keep totals unresolved even when every observed step is priced.
-  const cost = {
-    receipts, known_billed_usd: known("billed_usd"), known_list_usd: known("list_usd"),
-    receipt_usage_complete: receipts.length > 0 && receipts.every(r => r.tokens !== null),
-    attempt_complete: false, completion_basis: "qualified-native-terminal-unavailable",
-    billed_usd: null, list_usd: null, tokens: null,
-    cost_source: known("billed_usd") === null ? "missing" : "billed-partial",
-    billed_incomplete: true, usage_missing: true,
-  }
+  const cost = singleAttemptCost(result.stdout, price)
   recordRun(store, { ...identity, ...cost })
   return cost
 }
@@ -403,7 +387,7 @@ const writeAtomic = (file, text) => {
  */
 async function startServer({ binary, cwd, env, password, trial, timeoutMs = 60_000 }) {
   let last = ""
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < (trial.parentRemovalRequired ? 1 : 3); attempt++) {
     const port = await trial.port(attempt)
     const spec = trial.wrap({ command: binary, args: ["serve", "--hostname", "127.0.0.1", "--port", String(port)], cwd, env })
     const proc = start(spec.command, spec.args, { cwd: spec.cwd, env: spec.env })
@@ -532,7 +516,7 @@ async function runJobBody(job, ctx, track) {
   const sandbox = makeSandbox(root)
   track.phase = "preparing the world"
   const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
-  if (ctx.plugin === "mem" && (ctx.isolation.name !== "container" || !ctx.isolation.confines || prepared.memFixture !== true)) throw new Error("Memory trials require the contained synthetic fixture world")
+  if (ctx.plugin === "mem" && (!containerContained(ctx.isolation) || prepared.memFixture !== true)) throw new Error("Memory trials require the contained synthetic fixture world")
   const memoryPlan = ctx.plugin === "mem" ? selectMemoryPlan(job.case.id,{trial_id:`${name}-${digestOf(root).slice(0,16)}`,expires_at:Date.now()+ctx.timeoutMs+120000}) : null
   const memoryIntent = memoryPlan?.intent ?? null
   const memFixture = memoryPlan ? stageMemFixture(sandbox, { [memoryPlan.kind]: memoryPlan.spec, intent: memoryIntent }) : null
@@ -558,7 +542,7 @@ async function runJobBody(job, ctx, track) {
   }
   const config = sealedConfig({ armDir: ctx.armDir, options: memFixture ? memFixtureOptions(memFixture, ctx.options) : ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...trialSealed })
   writeConfig(sandbox, config)
-  const password = newPassword()
+  const password = ctx.contained?.password ?? newPassword()
   // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
   // Every token value the batch has read so far and this run's password, built at the moment of each write or scrub, so a
   // rotation since the trial began is covered; a full redactor (with .active and .buffer), so scrubTree can use it.
@@ -680,6 +664,12 @@ async function runJobBody(job, ctx, track) {
     }
     track.result = result
     track.phase = "recording the trial"
+    if (ctx.contained) {
+      // Do NOT read the hostile sandbox here. The entire runner is still in the outer container.
+      // Raw bytes are already continuously spooled by start(). The parent owns every final read.
+      ctx.contained.recordExecution({ exit: result.code ?? null, ...(memFixture ? { capture: `batch/runs/${name}/tmp/mem-fixture/capture.json` } : {}) })
+      return { case: id, trial: job.trial, exit: result.code ?? null, provisional: true, usage_missing: true }
+    }
     // A command that ended by a signal or an OOM kill, with no exit code of its own: what Docker says of the container is read now, while it exists.
     const oomNow = await trial.oomKills()
     const diagnosis = (result.code === null && !result.timedOut && !result.stalled) || oomNow || noRequest ? await trial.diagnose?.() : null
@@ -823,8 +813,10 @@ async function runJobBody(job, ctx, track) {
     // interrupted included; a kept sandbox keeps no secret.
     await trial?.leave({ reason: "finally" })
     if (trial && !gone) gone = await trial.gone()
-    ctx.auth.cleanup({ sandbox, gone: trial ? gone : true })
-    if (ctx.keep && (gone || !trial)) scrubTree(root, redactorNow())
+    if (!ctx.contained) {
+      ctx.auth.cleanup({ sandbox, gone: trial ? gone : true })
+      if (ctx.keep && (gone || !trial)) scrubTree(root, redactorNow())
+    }
   }
 }
 
@@ -839,6 +831,14 @@ export const failureInfra = (error, interrupted = /^interrupted by /.test(String
  * goes back unless the model had already worked (found in 1 of 50 `p0 a1` runs: a trial with no summary, whose cause was lost).
  */
 async function runJob(job, ctx) {
+  if (ctx.contained) {
+    const track = { phase: "starting", trial: null, result: null, diagnosis: null }
+    try { return await runJobBody(job, ctx, track) }
+    catch {
+      ctx.contained.recordExecution({ exit: track.result?.code ?? null })
+      return { case: job.case.id, trial: job.trial, exit: null, provisional: true, usage_missing: true }
+    }
+  }
   const id = segment("case id", job.case.id)
   const name = `${id}.t${job.trial}`
   const file = within(ctx.rawDir, join(ctx.rawDir, `${name}.summary.json`), "a recording")
@@ -917,6 +917,9 @@ export const trialBinaries = ({ binary, needsClaude = false, needsBrowse = false
 export const browseInTrial = (plugin, cases = []) => plugin === "browse" || cases.some((c) => pluginsOf(c).includes("browse"))
 
 export async function runBatch(options, { caller = process.env, log = (line) => console.log(line) } = {}) {
+  // Before store/auth/world access: an ordinary CLI or an environment hint grants no capability.
+  const contained = (options.isolation ?? caller.EVALS_ISOLATION) === "owned-container" ? ownedSession(options.ownedSession) : null
+  if (contained && (JSON.stringify(Object.fromEntries(Object.entries(options).filter(([k]) => k !== "ownedSession"))) !== JSON.stringify(contained.options) || caller.HOME !== "/work/home" || caller.EVALS_TMP !== "/work/tmp" || caller.EVALS_STORE !== "/work/store")) throw new Error("owned descriptor/options or work paths disagree")
   const retryLimit = harnessRetryLimit(options.harnessRetries)
   setProcessGroupMode(options.processGroup ?? "isolated")
   if (options.condition !== undefined && !["direct", "search"].includes(options.condition)) throw new Error("--condition must be direct or search")
@@ -962,6 +965,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   if (!selected.length) throw new Error(`nothing to run: all ${chosen.length} selected case(s) are deferred (${deferred.slice(0, 3).map((d) => `${d.case}: ${d.why}`).join("; ")}${deferred.length > 3 ? "; …" : ""})`)
   const rawDir = within(rawRoot(caller), join(rawRoot(caller), iteration, plugin), "the recordings directory")
   const jobs = plan({ cases: selected, trials, recorded: recordedTrials(rawDir), append: Boolean(options.append) })
+  if (contained && (jobs.length !== 1 || jobs[0].trial !== 1 || jobs[0].case.id !== contained.options.cases)) throw new Error("owned execution must select exactly its bound physical trial")
 
   // An arm is a built plugin directory, `none`, or a JSON file naming one and the options it runs with:
   //   { "package": "../opencode-history", "options": { "access": "ask-changes" } }
@@ -1023,7 +1027,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const baseConfig = isolationName === "container" ? containerConfig({ store, env: caller }) : null
   // Each batch reaches the model's hosts, and the hosts of the credentialed plugins its cases name, and nothing else (R3).
   const egress = baseConfig ? batchEgress({ model: options.model, vendor: Boolean(profile.vendor), exclude: noCredential, cases: selected, packs: loadPacks(), targets: loadTargets(caller), base: baseConfig.allow, explicit: Boolean(baseConfig.source || caller.EVALS_EGRESS_ALLOW) }) : null
-  const isolationSpec = { name: isolationName, live, unsafe: Boolean(options.unsafeNoIsolation), config: baseConfig ? { ...baseConfig, allow: egress.allow } : null }
+  const isolationSpec = { name: isolationName, live, unsafe: Boolean(options.unsafeNoIsolation), config: contained ? { ownedSession: options.ownedSession } : baseConfig ? { ...baseConfig, allow: egress.allow } : null }
   if (options.dryRun) {
     log(`evals run: ${plugin} ${iteration}  ${selected.length} case(s) x ${trials} trial(s) = ${jobs.length} run(s)  model ${options.model}  parallel ${parallel}`)
     let refused = false
@@ -1084,7 +1088,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
 
   // On disk, not in a memory-backed /tmp: a trial that fills its sandbox would otherwise fill the machine's memory.
   const tmpRoot = batchTmp(caller)
-  const batchRoot = within(tmpRoot, mkdtempSync(join(tmpRoot, `evals-run-${iteration}-`)), "the batch directory")
+  const batchRoot = contained ? "/work/batch" : within(tmpRoot, mkdtempSync(join(tmpRoot, `evals-run-${iteration}-`)), "the batch directory")
+  if (contained) mkdirSync(batchRoot, { mode: 0o700 })
   // The marker that lets a later sweep remove this directory if this runner dies without cleaning up (container only).
   if (isolation.batchLabel) markBatchDir(batchRoot, isolation.batchLabel)
 
@@ -1105,6 +1110,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const finish = (facts = {}, { gone = true } = {}) => {
     if (finished) return
     finished = true
+    if (contained) return // No final summaries, cleanup, release or accounting inside the workload.
     if (retryLimit === 0 && reservation) {
       const recorded = readLedger(store).filter(e => e.kind === "run" && e.batch === reservation.batch)
       for (const job of startedJobs) {
@@ -1318,10 +1324,11 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       facts.deferred = deferred
       log(`deferred ${deferred.length} case(s): ${deferred.slice(0, 4).map((d) => `${d.case} (${d.why})`).join("; ")}${deferred.length > 4 ? "; …" : ""}`)
     }
-    const routed = await preflightRoute({ fake, batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: scripted && Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs, sealed })
+    // Owned mode checks routing on the actual fixture/server below, not a replacement preflight server.
+    const routed = contained ? { ok: true, waitedMs: null } : await preflightRoute({ fake, batchRoot, isolation, mounts, caller, auth, binary, model: options.model, armDir, options: pluginOptions, scripted, scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined, mockInTrial: scripted && Boolean(harnessDir) && isolation.confines, mockUrl: mock?.url ?? null, harnessDir, bunBinary: caller.EVALS_BUN ?? "bun", routeTimeoutMs, sealed })
     if (!routed.ok) throw new Error(`preflight: the model ${options.model} does not route inside a trial within ${routeTimeoutMs / 1000} s, so no run was reserved. The trial's server lists ${routed.listed.length ? routed.listed.slice(0, 12).join(", ") : "no model"}`)
-    facts.preflight = { model: options.model, routed_after_ms: routed.waitedMs }
-    log(`preflight: ${options.model} routes inside a trial (after ${(routed.waitedMs / 1000).toFixed(1)} s)`)
+    facts.preflight = contained ? { model: options.model, status: "deferred-to-contained-trial" } : { model: options.model, routed_after_ms: routed.waitedMs }
+    if (!contained) log(`preflight: ${options.model} routes inside a trial (after ${(routed.waitedMs / 1000).toFixed(1)} s)`)
     // Money, then runs: both checked under the ledger's lock before anything launches, and the whole batch reserved in
     // the same step. The dollar caps are the caller's.
     // Every batch's reserved runs count, at the price each was reserved with, before they bill. A batch with no price
@@ -1364,6 +1371,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
 
     mkdirSync(rawDir, { recursive: true, mode: 0o700 })
     const ctx = {
+      contained,
       store, plugin, iteration, month: reservation.month, batch: reservation.batch, batchRoot, rawDir, binary, opencode, hostVersion,
       model: options.model, options: pluginOptions, timeoutMs: Number(options.timeout ?? 420) * 1000,
       keep: keepRoot, keepCredentials: keepRoot && Boolean(options.keepCredentials), caller, auth, world, armDir, arm, runnerVersion: harnessVersion(),

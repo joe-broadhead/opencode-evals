@@ -5,6 +5,7 @@ import { PORT, SYNTHETIC_TOKEN } from "../../worlds/mem/http.mjs"
 import { sha256 } from "../util/canonical.mjs"
 import { stageBaselineFixture } from "./mem-baseline.mjs"
 import { stageDiscoveryFixture } from "./mem-discovery-stage.mjs"
+import { containerContained } from "./isolation.mjs"
 
 export function stageMemFixture(sandbox, { core = null, discovery = null, intent = null } = {}) {
   const root = join(sandbox.tmp, "mem-fixture")
@@ -30,12 +31,12 @@ export function memFixtureOptions(spec, options = {}) {
 }
 
 export function memFixtureBinding(isolation) {
-  if (isolation?.name !== "container" || isolation.confines !== true) return null
+  if (!containerContained(isolation)) return null
   return { schema: "oc-mem-contained/1", fixture: "mem-synthetic-v1", backend: "container", origin: `http://127.0.0.1:${PORT}` }
 }
 
 export async function startMemFixture({ spec, isolation, trial, binary, launch, stop }) {
-  if (isolation?.name !== "container" || isolation.confines !== true) throw new Error("Memory fixture requires the container backend")
+  if (!containerContained(isolation)) throw new Error("Memory fixture requires the container backend")
   const wrapped = trial.wrap({ command: binary, args: [spec.entry, spec.root], cwd: spec.root, env: { HOME: spec.root, TMPDIR: spec.root, EVALS_MEM_CONTAINED: "mem-synthetic-v1" } })
   const proc = launch(wrapped)
   try {
