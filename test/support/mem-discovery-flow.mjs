@@ -42,7 +42,10 @@ export function discoveryFlow(s,mode='direct',{recordMetadata=null,confirmation=
   const capture=store.capture();store.close();
   if(confirmation)for(const requests of [capture.requests,capture.discovery.requests])requests.at(-1).output.confirmation=structuredClone(confirmation);
   const normalized=normalizedDiscovery(calls,s,mode,session);
-  capture.discovery.turns=[normalized.turn];
+  // Retain the finite store's completed operation observations, not the codec's
+  // source diagnostics. Tests may reuse these observations to build a new flow.
+  // This synthetic proof copy claims no native host observation or wiring.
+  capture.discovery.turns=[{...normalized.turn,calls_complete:true,calls:structuredClone(calls)}];
   const f={capture,trace:normalized.trace,rawLines:normalized.rawLines,recording:normalized.recording,journal:normalized.journal,head:normalized.head};
   f.grade=()=>{
     const files=[{path:'mem-fixture/capture.json',change:'added',text:JSON.stringify(capture)}];

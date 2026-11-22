@@ -114,7 +114,7 @@ export function projectMemoryRecording(rawLines,source=null,nativeJournal=null){
 
 const plain=v=>Boolean(v&&typeof v==="object"&&!Array.isArray(v))
 const name=c=>c.ns==="mem"?c.tool:String(c.tool).replace(/^mem[._]/,"")
-export function reconcileMemoryRecording(id,recording,view,turn,native,q){
+export function reconcileMemoryRecording(id,recording,view,turn,native,q,nativeComplete=true){
   const r=q.typed(recording,"actual private recording lineage",plain)
   if(!r)return
   if(r.schema!=="oc-mem-private-recording/1"){q.fail("private recording projection malformed");return}
@@ -132,6 +132,13 @@ export function reconcileMemoryRecording(id,recording,view,turn,native,q){
   const sessions=q.typed(r.sessions,"recorded sessions",Array.isArray)
   for(const value of sessions??[])q.check("foreign or mixed actual session",[[value,"actual call session"],[session,"actual final session"]],()=>typeof value==="string"&&value===session)
   const trace=q.typed(r.trace,"recorded trace lineage",Array.isArray),actual=q.typed(r.calls,"recorded calls",Array.isArray)
+  const compareProof=(proof,c)=>{
+    if(name(proof)!==name(c))q.fail("private proof tool/order contradicts actual recording")
+    q.check("private proof arguments contradict actual recording",[[proof.args,"private argument artifact"],[c.args,"actual typed arguments"]],()=>equal(proof.args,c.args)&&sha256(JSON.stringify(proof.args))===c.args_sha256)
+    q.check("private proof status contradicts actual recording",[[proof.status,"native call status"],[c.status,"actual invocation status"]],()=>proof.status===c.status)
+    q.check("private proof output contradicts actual recording",[[proof.output,"native call output"],[c.output,"actual call output"]],()=>proof.output===c.output)
+    for(const key of ["call_id","part_id","identity_sha256"])if(Object.hasOwn(proof,key))q.check("private proof call identity contradicts actual recording",[[proof[key],"native call identity"],[c[key],"actual call identity"]],()=>proof[key]===c[key])
+  }
   if(trace){
     if(trace.length!==view.calls.length)q.fail("official trace call order/count contradicts actual recording")
     const seqs=new Set()
@@ -148,9 +155,33 @@ export function reconcileMemoryRecording(id,recording,view,turn,native,q){
       else if(c.status!==sig.status)q.fail("official invocation outcome contradicts actual recording")
     }
   }
+  // A mixed turn still has an ordered direct-event inventory. Compare that copy
+  // with recorded direct events, not with source sites or inner journal ordinals.
+  const directProof=!nativeComplete&&native?.filter(c=>c.args_source==="native_event")
+  if(directProof?.length){
+    const direct=q.typed(r.direct_calls,"actual direct call recording",Array.isArray)
+    if(direct){
+      if(direct.length!==directProof.length)q.fail("private direct call count contradicts actual recording")
+      for(const [i,c]of direct.entries()){
+        if(!plain(c)){q.fail("actual direct call lineage malformed");continue}
+        if(directProof[i])compareProof(directProof[i],c)
+      }
+    }
+  }
   if(actual){
     if(actual.some(c=>!plain(c))){q.fail("actual call lineage malformed");return}
-    const joinable=r.execution_complete===true&&actual.every(c=>c.attributable===true)
+    // The remaining captured rows need identity, not a position among source sites.
+    if(!nativeComplete)for(const proof of native??[]){
+      if(proof.args_source==="native_event")continue
+      if(typeof proof.call_id!=="string"||!proof.call_id)q.missing("private invocation identity")
+      else if(native.filter(c=>c.call_id===proof.call_id).length!==1)q.fail("replayed private invocation identity")
+      else if(!actual.some(c=>c.call_id===proof.call_id)){
+        if(r.execution_complete===true)q.fail("private invocation absent from complete actual recording")
+        else q.missing("private invocation binding")
+      }
+    }
+    // Excluded source sites do not imply a complete private invocation inventory.
+    const joinable=nativeComplete&&r.execution_complete===true&&actual.every(c=>c.attributable===true)
     if(native&&joinable&&actual.length!==native.length)q.fail("private proof call count contradicts actual recording")
     for(const [i,c]of actual.entries()){
       if(c.ordinal!==i)q.fail("actual call order malformed")
@@ -162,11 +193,7 @@ export function reconcileMemoryRecording(id,recording,view,turn,native,q){
       // Even incomplete journals can establish a contradiction for a supplied observation.
       const proof=joinable?native?.[i]:c.call_id!=null?native?.find(p=>p.call_id!=null&&p.call_id===c.call_id):undefined
       if(!proof)continue
-      if(name(proof)!==name(c))q.fail("private proof tool/order contradicts actual recording")
-      q.check("private proof arguments contradict actual recording",[[proof.args,"private argument artifact"],[c.args,"actual typed arguments"]],()=>equal(proof.args,c.args)&&sha256(JSON.stringify(proof.args))===c.args_sha256)
-      q.check("private proof status contradicts actual recording",[[proof.status,"native call status"],[c.status,"actual invocation status"]],()=>proof.status===c.status)
-      q.check("private proof output contradicts actual recording",[[proof.output,"native call output"],[c.output,"actual call output"]],()=>proof.output===c.output)
-      for(const key of ["call_id","part_id","identity_sha256"])if(Object.hasOwn(proof,key))q.check("private proof call identity contradicts actual recording",[[proof[key],"native call identity"],[c[key],"actual call identity"]],()=>proof[key]===c[key])
+      compareProof(proof,c)
     }
   }
   if(r.execution_complete!==true)q.missing("complete native execution observations")

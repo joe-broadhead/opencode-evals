@@ -181,10 +181,14 @@ export function memoryDiscoveryEvidence(id,view){
     q.check("native answer differs from the literal outcome",[[text,"native answer artifact"]],()=>truthfulAnswer(s,text))
     q.check("actual answer contradicts private proof",[[answer,"official recording text"],[text,"native answer artifact"]],()=>answer.trim()===text.trim())
   }
-  const calls=t&&list(t.calls,"native call recording"),native=calls?.filter(memory),trace=view.calls.filter(memory)
+  const calls=t&&list(t.calls,"native call recording"),trace=view.calls.filter(memory)
+  // memoryTurn's source rows describe syntax, not invocations or their absence.
+  // Do not confuse this provenance marker with unresolved actual captured input.
+  const nativeComplete=t?.calls_complete!==false&&!calls?.some(c=>c?.args_source==="source")
+  const native=calls?.filter(c=>memory(c)&&c.args_source!=="source")
   if(calls&&calls.some(c=>!plain(c)||typeof c.tool!=="string"))q.fail("native calls malformed")
   const directOnly=!view.calls.some(c=>c.tool==="execute")
-  invocations(native,false,directOnly||view.memoryRecording?.execution_complete===true)
+  invocations(native,false,nativeComplete&&(directOnly||view.memoryRecording?.execution_complete===true))
   const actualCalls=view.memoryRecording?.schema==="oc-mem-private-recording/1"&&Array.isArray(view.memoryRecording.calls)?view.memoryRecording.calls:undefined
   invocations(actualCalls,true,view.memoryRecording?.execution_complete===true)
   if(Array.isArray(view.memoryRecording?.unjoined_calls))invocations(view.memoryRecording.unjoined_calls,true,false)
@@ -308,6 +312,6 @@ export function memoryDiscoveryEvidence(id,view){
     if(s.family==="wiki-graph"&&!(Array.isArray(out.nodes)&&out.nodes.some(n=>n?.id==="README.md")&&Array.isArray(out.edges)&&out.edges.some(e=>e?.source==="README.md"&&e?.target==="design.md")&&Array.isArray(out.communities)&&out.communities.some(c=>c?.id==="quartz-docs"&&c?.nonce==="QWIKI-64")))q.fail("canonical document topology not proven")
   }
   }
-  reconcileMemoryRecording(id,view.memoryRecording,view,t,native,q)
+  reconcileMemoryRecording(id,view.memoryRecording,view,t,native,q,nativeComplete)
   return q.finish()
 }
