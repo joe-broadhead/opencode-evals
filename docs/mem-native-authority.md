@@ -7,6 +7,9 @@ It does not install a host hook, transform an executor, or enable production con
 The legacy guard, runner, CLI, observer producer, discovery generator, and frozen requests remain unchanged.
 Live integration and independent review remain separate gates.
 
+The separate [controlled assertion bridge](mem-native-assertion-bridge.md) adds an opt-in ID-free native assertion lifecycle.
+The original request-ID methods retain their existing synthetic semantics. They cannot mix with assertions within one executor.
+
 ## Policy semantics
 
 `oc-mem-intent/1` remains an exact-payload allowlist. It does not acquire implicit quotas.

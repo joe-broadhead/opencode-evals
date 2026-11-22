@@ -7,6 +7,7 @@ import {memoryCall,validMemoryBinding} from "./mem-targets.mjs"
 import {decideBefore} from "./logic.mjs"
 import {registerMemoryScopes,memoryReply} from "./mem-permissions.mjs"
 import {memoryActionMatches} from "./mem-call-context.mjs"
+import {createNativeAssertion} from "./mem-native-assertion.mjs"
 
 const text=v=>typeof v==="string"&&v.length>0
 const positive=v=>Number.isSafeInteger(v)&&v>0
@@ -20,12 +21,12 @@ export function createNativeAuthority(source, {readActivation,readScopes,readCom
   if(!validIntent(policy.memoryIntent)||!validMemoryBinding(policy.memoryBinding)||!expected||!equal(expected,policy.memoryOperationPlan))throw new Error("explicit supported operation-use plan required")
   if(typeof readActivation!=="function"||typeof readScopes!=="function"||typeof readCompletion!=="function")throw new Error("trusted runner adapters required")
   // These sets survive scope closure. Decline/error/cancellation never refund a use.
-  const spent=new Set(),occurrences=new Set(),leases=new Set(),requests=new Map(),reservations=new Map(),reading=new Set(),facts=[]
+  const spent=new Set(),occurrences=new Set(),leases=new Set(),requests=new Map(),assertionRequests=new Map(),reservations=new Map(),reading=new Set(),assertionWork=new Map(),facts=[]
   let current=null,proof=null,highestTurn=0,highestIncarnation=0,trial=null,disposed=false,controlRevision=0
   const fact=(kind,body={})=>facts.push({kind,...structuredClone(body)})
   const revoke=reason=>{
     controlRevision++
-    for(const lease of leases){lease.pass=false;lease.revoked=true;lease.pending=false}
+    for(const lease of new Set([...leases,...assertionWork.keys()])){lease.pass=false;lease.revoked=true;lease.pending=false}
     if(current){fact("revoked",{scope:current.scope,reason});current=null}
   }
   const refuse=reason=>{fact("refused",{reason});throw new Error(`Memory native authority: ${reason}`)}
@@ -61,7 +62,7 @@ export function createNativeAuthority(source, {readActivation,readScopes,readCom
   const active=lease=>live()&&leases.has(lease)&&lease.pass&&!lease.ended
   const receipt=lease=>active(lease)&&!lease.pending?structuredClone({...policy.memoryContext,schema:"oc-mem-native-receipt/1",tool:lease.tool,family:lease.classification.family,args:lease.input,call_id:lease.native.id,native:lease.native,invocation_id:lease.invocation_id,occurrence:lease.occurrence,operation_id:lease.operation_id,grant_id:lease.grant_id,reservation_id:lease.reservation_id,expires_at:policy.memoryIntent.expires_at,pass:true}):null
   const open=()=>{
-    if(disposed||current||leases.size)refuse("scope is already open, pending or disposed")
+    if(disposed||current||leases.size||assertionWork.size)refuse("scope is already open, pending or disposed")
     const revision=controlRevision
     let c;try{c=activation()}catch{refuse("trusted activation unavailable")}
     if(disposed||current||leases.size||controlRevision!==revision)refuse("activation changed during open")
@@ -73,11 +74,11 @@ export function createNativeAuthority(source, {readActivation,readScopes,readCom
   const verifyAuthority=request=>{
     if(!live()||request?.proof!==proof||request.generation!==current.generation)return null
     if(request.action==="open")return structuredClone(current)
-    if(request.action!=="seal"||!equal(request.scope,current.scope)||leases.size)return null
+    if(request.action!=="seal"||!equal(request.scope,current.scope)||leases.size||assertionWork.size)return null
     const scope=current
     // This record comes from the private qualified runner adapter, never request booleans.
     let completion;try{completion=readTrusted(readCompletion)}catch{return null}
-    if(current!==scope||!live()||current!==scope||leases.size)return null
+    if(current!==scope||!live()||current!==scope||leases.size||assertionWork.size)return null
     if(completion?.schema!=="oc-mem-native-completion/1"||!equal(completion.scope,scope.scope)||completion.generation!==scope.generation||completion.terminal?.sessionID!==scope.scope.sessionID||!text(completion.terminal?.messageID)||completion.terminal.status!=="completed"||completion.dispatch?.closed!==true||completion.dispatch.outstanding!==0||completion.audit?.status!=="clean")return null
     const verified={...structuredClone(scope),quiescent:true}
     fact("sealed",verified);current=null
@@ -104,7 +105,7 @@ export function createNativeAuthority(source, {readActivation,readScopes,readCom
     const request=structuredClone(requestOf(event)),key=requestKey(request)
     const targets=new Set([lease.target,...(lease.input.ids??[]),lease.input.id,lease.input.wiki_id,lease.input.path].filter(Boolean))
     const resourcesOK=!lease.classification.write||(Array.isArray(request.resources)&&request.resources.length>0&&request.resources.every(r=>targets.has(r)))
-    if(!active(lease)||lease.boundRequest||!resourcesOK||!text(request.requestID)||requests.has(key)||request.sessionID!==lease.native.sessionID||request.source?.type!=="tool"||request.source.id!==lease.native.id||request.source.messageID!==lease.native.messageID||!memoryActionMatches(lease,request.action)){
+    if(!active(lease)||lease.boundRequest||!resourcesOK||!text(request.requestID)||requests.has(key)||assertionRequests.has(key)||request.sessionID!==lease.native.sessionID||request.source?.type!=="tool"||request.source.id!==lease.native.id||request.source.messageID!==lease.native.messageID||!memoryActionMatches(lease,request.action)){
       lease.pass=false;lease.revoked=true;refuse("invalid or already bound native request")
     }
     lease.boundRequest=key
@@ -144,6 +145,7 @@ export function createNativeAuthority(source, {readActivation,readScopes,readCom
   }
   const execute=async(request,delegate)=>{
     if(!live())refuse("inactive scope")
+    if([...assertionWork.keys()].some(l=>l.ended))refuse("native assertion work has not drained")
     const scope=current
     let snapshot;try{snapshot=structuredClone(request)}catch{refuse("unsupported native input snapshot")}
     const {native,tool,input,occurrence}=snapshot??{}
@@ -185,7 +187,21 @@ export function createNativeAuthority(source, {readActivation,readScopes,readCom
     const lease={native,tool,input,occurrence:occurrence??null,invocation_id:randomUUID(),classification,sessionID:native.sessionID,target:classification.target,context:structuredClone(policy.memoryContext),operation_id:use?.id??null,grant_id,reservation_id:use?randomUUID():null,creates,pass:true,pending:false,ended:false,revoked:false,failed:false}
     if(lease.reservation_id)reservations.set(lease.reservation_id,lease)
     leases.add(lease);fact("reserved",{native,invocation_id:lease.invocation_id,occurrence:lease.occurrence,grant_id,reservation_id:lease.reservation_id})
-    const execution=Object.freeze({receipt:()=>receipt(lease),bindRequest:event=>bindRequest(lease,event),cancel:()=>{lease.pass=false;lease.revoked=true;lease.pending=false;fact("cancelled",{invocation_id:lease.invocation_id,occurrence:lease.occurrence})}})
+    const cancel=()=>{lease.pass=false;lease.revoked=true;lease.pending=false;fact("cancelled",{invocation_id:lease.invocation_id,occurrence:lease.occurrence})}
+    const beginAssertion=snapshot=>{
+      const targets=new Set([lease.target,...(lease.input.ids??[]),lease.input.id,lease.input.wiki_id,lease.input.path].filter(Boolean))
+      if(lease.assertion||lease.boundRequest||!active(lease)||snapshot?.sessionID!==lease.native.sessionID||snapshot.source?.type!=="tool"||snapshot.source.id!==lease.native.id||snapshot.source.messageID!==lease.native.messageID||!memoryActionMatches(lease,snapshot.action)||!Array.isArray(snapshot.resources)||(lease.classification.write&&!snapshot.resources.length)||snapshot.resources.some(r=>!targets.has(r))){cancel();refuse("invalid or repeated native assertion")}
+      lease.pending=true
+      try{lease.assertion=createNativeAssertion(snapshot,{
+        live:()=>active(lease),revoke:cancel,resume:()=>{lease.pending=false},
+        claimRequest:request=>{const key=requestKey({sessionID:request.sessionID,requestID:request.id});if(requests.has(key)||assertionRequests.has(key))return false;assertionRequests.set(key,lease);return true},
+        replyDecision:request=>memoryReply(policy,{...request,action:normalize(request.action)},new Map([[`${lease.native.sessionID}:${lease.native.id}`,lease]])),
+        observe:row=>fact("assertion",{...row,invocation_id:lease.invocation_id}),
+        track:()=>{assertionWork.set(lease,(assertionWork.get(lease)??0)+1);return ()=>{const n=assertionWork.get(lease)-1;if(n)assertionWork.set(lease,n);else assertionWork.delete(lease)}},
+      })}catch(error){cancel();throw error}
+      return lease.assertion
+    }
+    const execution=Object.freeze({receipt:()=>receipt(lease),beginAssertion,bindRequest:event=>{if(lease.assertion){cancel();refuse("cannot mix assertion and legacy request APIs")}return bindRequest(lease,event)},cancel})
     try{return await delegate(execution)}
     catch(error){lease.failed=true;throw error}
     finally{lease.ended=true;lease.pass=false;leases.delete(lease);fact("ended",{invocation_id:lease.invocation_id,occurrence:lease.occurrence})}
