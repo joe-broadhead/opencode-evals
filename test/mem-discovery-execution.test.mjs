@@ -6,11 +6,26 @@ import {createDiscoveryStore} from "../worlds/mem/discovery-store.mjs"
 import {compileCase} from "../src/case/compile.mjs"
 import {gradeCase,runView} from "../src/grade/grade.mjs"
 import {adapterState} from "../src/grade/adapters/index.mjs"
+import {normalizedDiscovery} from "./support/mem-discovery-flow.mjs"
 
 function exercise(spec,{fault,space="personal",method=spec.backend.method,tool=spec.binding.tool,args=spec.binding.args,text=spec.answer,permission="allow"}={}){
   const trial_id="trial_unit",session="ses_discovery",context={case_id:spec.id,trial_id,turn:1,session,active:true}
   const intent=discoveryIntent(spec,trial_id,Date.now()+60000)
   const store=createDiscoveryStore({spec,intent,permission:{effect:permission},fault}),calls=[]
+  const finish=response=>{
+    const capture=store.capture();capture.discovery.turns=[{index:1,prompt:spec.prompt,session,exit:0,timedOut:false,text,calls}]
+    const actual=Object.fromEntries(["direct","execute"].map(via=>[via,normalizedDiscovery(calls,{...spec,answer:text},via,session,trial_id)]))
+    const c=compileCase(`${spec.id}.md`,renderDiscoveryCase(spec))
+    const grade=(via="direct",guardLog=[{kind:"guard_start",case_id:spec.id,trial_id}])=>gradeCase(c,runView([actual[via].head,...actual[via].trace],{memoryRecording:actual[via].recording,state:adapterState("mem",[{path:"mem-fixture/capture.json",change:"added",text:JSON.stringify(capture)}]),text,guardLog}))
+    return {grade,response,capture,store}
+  }
+  if(["deny","ask-declined"].includes(permission)){
+    // A denied flow stops before attempting to derive identifiers from forbidden lookups.
+    const invocation={...context,tool:`mem_${tool}`,args:structuredClone(args),pass:true}
+    const response=store.request(method,spec.backend.input,{space,context,invocation})
+    calls.push({tool:invocation.tool,args:invocation.args,status:"completed",output:JSON.stringify(response.json)})
+    return finish(response)
+  }
   const lookup=(tool,args,method,input)=>{const r=store.request(method,input,{context});assert.equal(r.status,200,`${spec.id} prerequisite ${method}`);calls.push({tool:`mem_${tool}`,args,status:"completed",output:JSON.stringify(r.json)});return r.json}
   let input=structuredClone(spec.backend.input),derived=structuredClone(spec.binding.args)
   if(spec.family==="exact-read"){
@@ -45,10 +60,7 @@ function exercise(spec,{fault,space="personal",method=spec.backend.method,tool=s
   const response=store.request(method,input,{space,context,invocation})
   native.output=JSON.stringify(response.json)
   calls.push(native)
-  const capture=store.capture();capture.discovery.turns=[{index:1,prompt:spec.prompt,session,exit:0,timedOut:false,text,calls}]
-  const c=compileCase(`${spec.id}.md`,renderDiscoveryCase(spec))
-  const grade=(via="direct",guardLog=[{kind:"guard_start",case_id:spec.id,trial_id}])=>gradeCase(c,runView([{schema:"oc-trace/1"},...calls.map((call,i)=>({kind:"tool_call",seq:i+1,...(via==="direct"?{tool:call.tool,via}:{tool:call.tool.replace(/^mem_/,""),ns:"mem",via:"execute"}),args:call.args}))],{state:adapterState("mem",[{path:"mem-fixture/capture.json",change:"added",text:JSON.stringify(capture)}]),text,guardLog}))
-  return {grade,response,capture,store}
+  return finish(response)
 }
 
 test("24 discovery plans reach finite backend truth and native grading in direct and inner-call conditions",()=>{
@@ -74,7 +86,8 @@ test("source requests and job drafts are real scoped fake mutations, never accou
 test("case aliases are visible through forwarded inventory/template metadata, never a confirmed binding, and closed stores reject later work",()=>{
   for(const s of discoveryCases.filter(s=>["sources","jobs"].includes(s.family))){
     const intent=discoveryIntent(s,"trial_lookup",Date.now()+60000),store=createDiscoveryStore({spec:s,intent})
-    const read=store.request(s.family==="sources"?"sources.list":"jobs.templates",{})
+    const context={case_id:s.id,trial_id:"trial_lookup",turn:1,session:"ses_lookup",active:true}
+    const read=store.request(s.family==="sources"?"sources.list":"jobs.templates",{},{context})
     if(s.family==="sources"){assert.equal(read.json.sources[0].account,"quartz-synthetic");assert.equal(read.json.sources[0].enabled,false);assert.notEqual(read.json.sources[0].status,"confirmed");assert.equal(store.capture().after.personal.bindings.length,0)}
     else assert.match(read.json.templates[0].name,/Quartz.*quartz-synthetic/)
     store.close();const frozen=store.capture();assert.notEqual(store.request(s.backend.method,s.backend.input).status,200);assert.deepEqual(store.capture(),frozen)
@@ -83,8 +96,10 @@ test("case aliases are visible through forwarded inventory/template metadata, ne
 test("faults target the required operation, leaving actual scoped lookup results available; unknown drafts have no version or diff",()=>{
   const s=discoveryCases.find(s=>s.family==="jobs"),intent=discoveryIntent(s,"trial_fault",Date.now()+60000)
   const store=createDiscoveryStore({spec:s,intent,fault:"noop"})
-  assert.equal(store.request("jobs.templates",{}).json.templates[0].id,"slack-threads-project")
-  for(const method of ["jobs.get","jobs.versions","jobs.diff"]){const reply=store.request(method,{job_id:"unknown"});assert.equal(reply.status,404);assert.ok(!reply.json.version)}
+  const context={case_id:s.id,trial_id:"trial_fault",turn:1,session:"ses_fault",active:true}
+  assert.equal(store.request("jobs.templates",{},{context}).json.templates[0].id,"slack-threads-project")
+  for(const method of ["jobs.get","jobs.versions","jobs.diff"]){const reply=store.request(method,{job_id:"unknown"},{context});assert.equal(reply.status,404);assert.ok(!reply.json.version)}
+  store.close()
 })
 test("each discovery grade needs its own guard frame, backend context and unchanged unrelated durable families",()=>{
   for(const s of discoveryCases){

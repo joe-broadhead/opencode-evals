@@ -5,10 +5,19 @@ import {createHash} from "node:crypto"
 const copy=v=>structuredClone(v)
 const plain=v=>Boolean(v&&typeof v==="object"&&!Array.isArray(v))
 export function createDiscoveryStore({spec,intent,permission={effect:"allow"},fault:configuredFault=null}){
-  if(!spec?.backend||intent?.case_id!==spec.id)throw new Error("bound discovery plan required")
+  if(!spec?.backend||intent?.schema!=="oc-mem-intent/1"||intent.case_id!==spec.id||typeof intent.trial_id!=="string"||!intent.trial_id||!Number.isFinite(intent.expires_at)||!Array.isArray(intent.turns)||intent.turns.length!==1||intent.turns[0]?.index!==1||!Array.isArray(intent.turns[0].calls))throw new Error("bound discovery plan required")
   if(!["allow","deny","ask-approved","ask-declined"].includes(permission.effect))throw new Error("invalid fake permission condition")
   const before=copy(spec.seed),after=copy(before),requests=[],creators=[]
-  let closed=false
+  let closed=false,session=null
+  // Context is supplied by the native owner, never recovered from a prior request or a body/header.
+  // This finite one-turn store cannot switch sessions once a legitimate native lifetime is established.
+  function checkLifetime(context){
+    if(closed)return {status:409,json:{error:{code:"store_closed"}}}
+    if(context?.active!==true||context.case_id!==spec.id||context.trial_id!==intent.trial_id||context.turn!==1||!intent.turns?.some(t=>t.index===context.turn)||typeof context.session!=="string"||!context.session||!Number.isFinite(intent.expires_at)||intent.expires_at<=Date.now()||session!==null&&context.session!==session)return {status:403,json:{error:{code:"intent_denied"}}}
+    if(!["allow","ask-approved"].includes(permission.effect))return {status:403,json:{error:{code:"permission_denied"},status:"denied"}}
+    session=context.session
+    return {status:200}
+  }
   const view=()=>({schema:"oc-mem-capture/1",fixture:"mem-synthetic-v1",before:copy(before),after:copy(after),requests:copy(requests),discovery:{schema:"oc-mem-discovery-proof/1",suite:spec.suite,case_id:spec.id,trial_id:intent.trial_id,permission:copy(permission),before:copy(before),state:copy(after),requests:copy(requests),creators:copy(creators),turns:[]}})
   function request(method,input,{space="personal",context=null,invocation=null}={}){
     if(closed)return {status:409,json:{error:{code:"store_closed"}}}
@@ -16,7 +25,10 @@ export function createDiscoveryStore({spec,intent,permission={effect:"allow"},fa
     const wire_input=copy(input)
     input=canonicalDiscoveryInput(method,input,context)
     let status=200,out={},state=after[space],write=["records.put","wiki.raw.write","sources.request","plugins.request","jobs.draft"].includes(method)
-    const finish=(result,code=status)=>{const value=copy(result);requests.push({method,verb:"POST",space,input:copy(input),wire_input,output:value,status:code===200?(write?(value.status??"stored"):"read"):code===404||code===409?"unsupported":"denied",http_status:code,context:copy(context)});return {status:code,json:value}}
+     const finish=(result,code=status)=>{const value=copy(result);requests.push({method,verb:"POST",space,input:copy(input),wire_input,output:value,status:code===200?(write?(value.status??"stored"):"read"):code===404||code===409?"unsupported":"denied",http_status:code,context:copy(context)});return {status:code,json:value}}
+     const lifetime=checkLifetime(context)
+     if(lifetime.status!==200)return finish(lifetime.json,lifetime.status)
+     if(invocation&&(invocation.pass!==true||invocation.active!==true||invocation.case_id!==context.case_id||invocation.trial_id!==context.trial_id||invocation.turn!==context.turn||invocation.session!==context.session))return finish({error:{code:"invocation_denied"}},403)
     if(!state)return finish({error:{code:"scope_denied"}},403)
     if(!plain(input))return finish({error:{code:"invalid_input"}},400)
     if(method.startsWith("wiki.")&&method!=="wiki.list"&&input.wiki_id!==`wiki-eval-${space}`)return finish({error:{code:"resource_not_visible"}},404)
@@ -27,11 +39,9 @@ export function createDiscoveryStore({spec,intent,permission={effect:"allow"},fa
     if(!write&&!validDiscoveryReadInput(method,input))return finish({error:{code:"invalid_read_input"}},400)
     if(fault==="unsupported")return finish({error:{code:"unsupported_operation"}},409)
     if(fault==="denied")return finish({error:{code:"policy_denied"}},403)
-    const bound=context?.active===true&&context.case_id===spec.id&&context.trial_id===intent.trial_id&&context.turn===1&&typeof context.session==="string"&&intent.expires_at>Date.now()
-    if(write){
+     if(write){
       const expected=intent.turns[0].calls.find(c=>c.family===spec.binding.tool&&equal(c.args,invocation?.args))
-      if(!spec.write||space!=="personal"||!bound||!expected||invocation?.case_id!==spec.id||invocation?.trial_id!==intent.trial_id||invocation?.turn!==1||invocation?.session!==context.session||String(invocation?.tool).replace(/^mem\./,"mem_")!==`mem_${spec.binding.tool}`||!invocation.pass||method!==spec.backend.method||!equal(input,spec.backend.input))return finish({error:{code:"intent_denied"}},403)
-      if(["deny","ask-declined"].includes(permission.effect))return finish({error:{code:"permission_denied"},status:"denied"},403)
+       if(!spec.write||space!=="personal"||!expected||invocation?.case_id!==spec.id||invocation?.trial_id!==intent.trial_id||invocation?.turn!==1||invocation?.session!==context.session||String(invocation?.tool).replace(/^mem\./,"mem_")!==`mem_${spec.binding.tool}`||!invocation.pass||method!==spec.backend.method||!equal(input,spec.backend.input))return finish({error:{code:"intent_denied"}},403)
       if(["queued","partial","noop"].includes(fault))return finish({status:fault})
       if(method==="records.put"){
         const record={...copy(wire_input.record),...copy(input.record),id:"rec_01KABCDE1234567890ABCDEFGK",status:"current",version:1}
@@ -109,5 +119,5 @@ export function createDiscoveryStore({spec,intent,permission={effect:"allow"},fa
     if(fault==="metadata-only")out={title:JSON.stringify(out),metadata_only:true}
     return finish(out)
   }
-  return {request,capture:view,close(){closed=true}}
+   return {request,checkLifetime,capture:view,close(){closed=true}}
 }

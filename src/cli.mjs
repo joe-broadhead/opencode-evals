@@ -40,6 +40,7 @@ import { harnessVersion } from "./version.mjs"
 import { traceFromFiles } from "./trace/normalise.mjs"
 import { gradeCase, runView } from "./grade/grade.mjs"
 import { adapterState, ADAPTER_FILES } from "./grade/adapters/index.mjs"
+import { projectMemoryRecording } from "./grade/adapters/mem-recording.mjs"
 import { decide, numericVerdict } from "./policy/decide.mjs"
 import { comparable, DEFAULT_OPTIONS } from "./policy/comparable.mjs"
 import { checkX } from "./t0/x.mjs"
@@ -206,14 +207,30 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
       const rawBase = join(rawDir, iteration, plugin, trialName(caseObject.id, trial))
       let text = null
       let rawArgs = null
+      let memoryRecording = null
       let guardLog = null
+      const discoveryRecording = plugin === "mem" && caseObject.items.some(i => (i.evidence ?? []).some(e => e.kind === "memory-discovery"))
       if (existsSync(`${rawBase}.jsonl`)) {
         const rawLines = read(`${rawBase}.jsonl`).split("\n").filter(Boolean)
-        const last = [...rawLines]
-          .reverse()
-          .map((l) => JSON.parse(l))
-          .find((e) => e.type === "text")
-        text = last?.part?.text ?? null
+        if (discoveryRecording) {
+          let journal = null
+          if (existsSync(`${rawBase}.mem-invocations.json`)) {
+            try {
+              journal = JSON.parse(read(`${rawBase}.mem-invocations.json`))
+              // Null is the projector's absent-file sentinel, never a valid supplied journal.
+              if (!journal || typeof journal !== "object" || Array.isArray(journal)) journal = { schema: "malformed" }
+            }
+            catch { journal = { schema: "malformed" } }
+          }
+          memoryRecording = projectMemoryRecording(rawLines, { case_id: caseObject.id, trial: trial ?? 1 }, journal)
+          text = memoryRecording.text
+        } else {
+          const last = [...rawLines]
+            .reverse()
+            .map((l) => JSON.parse(l))
+            .find((e) => e.type === "text")
+          text = last?.part?.text ?? null
+        }
         // The arguments the case declares checkable are read from the recording here, and kept out of every trace.
         // R6's `target:` and `gws-plan:` read the call's own arguments too, and so does a case that declares keys checkable.
         if (caseObject.checkable?.length || needsRawArgs(caseObject)) rawArgs = rawCallArgs(rawLines)
@@ -227,7 +244,7 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
       // The plugins that ran with no account (the pack's `accounts: none`, as the store's round.json overrides it): their cases have no target or canary.
       const none = noAccountPlugins({ packs: loadPacks(), store: storePath() })
       const noAccount = none.size && pluginsOf(caseObject).some((id) => none.has(id)) ? { plugins: none, all: usesOnlyNoAccount(caseObject, none) } : null
-      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) ?? adapterState(plugin, files), scope, rawArgs, guardLog, checkable: caseObject.checkable ?? [], files, targets, canaries, guard, noAccount })
+      const view = runView(lines, { text, state: stateFor(iteration, caseObject.id) ?? adapterState(plugin, files), scope, rawArgs, memoryRecording, guardLog, checkable: caseObject.checkable ?? [], files, targets, canaries, guard, noAccount })
       results.push({ ...gradeCase(caseObject, view), ...(trial ? { trial } : {}) })
     }
   }
