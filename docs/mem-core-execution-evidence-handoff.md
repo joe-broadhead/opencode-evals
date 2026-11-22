@@ -1,5 +1,7 @@
 # Core M3: execution evidence, not source inference
 
+The subsequent [scoped-evidence correction](mem-core-m3-fragments-handoff.md) supersedes this increment's coverage claims.
+
 Base: signed `6a7c4f7ec67eb3abfee6b389edd1c4a75c430e69`.
 This change implements the lead's stronger proof contract.
 Independent delta review remains required before M3 closure.

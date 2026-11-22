@@ -88,7 +88,7 @@ test("actual scoped hook arguments outrank unresolved source text, without deriv
     assert.equal(observed.length,1);assert.deepEqual(observed[0].args,call.input);assert.equal(observed[0].output,"actual observed output")
     const result=memoryTurn({code:0,stdout:event("execute",{code:'return await tools.mem.wiki({...unknown})'}),memoryCalls:observed},{index:1,prompt:"Read"})
     assert.equal(result.calls.length,1);assert.equal(result.calls[0].args_resolved,true);assert.equal(result.calls[0].args.wiki_id,"actual-observed-wiki")
-    assert.deepEqual(nativeMemoryCalls(records,{...context,session:"foreign"}),[])
+    assert.equal(nativeMemoryCalls(records,{...context,session:"foreign"}),undefined)
   })
 })
 test("M6 sealed core wiki presentation reaches public permission and observed creator linkage with actual CRLF bytes",async()=>{

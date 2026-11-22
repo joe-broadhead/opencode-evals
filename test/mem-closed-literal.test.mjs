@@ -90,7 +90,7 @@ test("M3 scoped actual private-hook arguments still outrank uncertain source; an
       const records=readFileSync(join(root,"guard.jsonl"),"utf8").trim().split("\n").map(JSON.parse),observed=nativeMemoryCalls(records,context)
       assert.equal(observed.length,1);assert.deepEqual(observed[0].args,input)
       assert.equal(scored('{action:"forget"} && unknown',observed).verdict,action==="forget"?"PASS":"FAIL")
-      assert.deepEqual(nativeMemoryCalls(records,{...context,activation_id:"foreign_activation"}),[])
+      assert.equal(nativeMemoryCalls(records,{...context,activation_id:"foreign_activation"}),undefined)
     }finally{await dispose?.();for(const [key,value]of Object.entries(saved)){if(value===undefined)delete process.env[key];else process.env[key]=value}rmSync(root,{recursive:true,force:true})}
   }
 })

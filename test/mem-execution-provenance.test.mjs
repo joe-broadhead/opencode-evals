@@ -10,9 +10,10 @@ import {coreAssertionFailures,memoryCoreEvidence} from "../src/grade/adapters/me
 import {captureNativeCall} from "./support/mem-native-observation.mjs"
 
 const outer=(code,output="Forgotten.",extra={})=>({code:0,stdout:JSON.stringify({type:"tool_use",sessionID:"ses_a",part:{tool:"execute",state:{status:"completed",input:{code},output}},...extra})})
-function scored(result) {
+function scored(result,mutate=()=>{}) {
   const g=goldCore("forget",null,"No memories matched")
   const turn=memoryTurn(result,{index:2,prompt:g.s.prompts[1]});g.core.turns[1]=turn
+  mutate(g.core)
   const events=[{schema:"oc-trace/1"}];let seq=1
   for(const t of g.core.turns)for(const c of t.calls)events.push({kind:"tool_call",seq:seq++,tool:c.tool,args:c.args,via:"direct"})
   const verdict=gradeCase(compileCase(`${g.s.id}.md`,renderCore(g.s)),runView(events,{state:{mem:{capture:{core:g.core}}},text:g.core.turns.at(-1).text})).verdict
@@ -86,13 +87,13 @@ test("M3 identical source needs actual scoped public-hook inputs; known wrong in
   }
   assert.equal(good.receipt,null);assert.equal(wrong.receipt,null)
   const foreign=nativeMemoryCalls(good.records,{...good.context,session:"ses_foreign"})
-  assert.deepEqual(foreign,[]);assert.equal(scored({...outer("unknown"),memoryCalls:foreign}).verdict,"FAIL")
+  assert.equal(foreign,undefined);assert.equal(scored({...outer("unknown"),memoryCalls:foreign}).verdict,"BLOCKED")
 })
 
 test("M3 private journal requires its scoped tuple, call identity, unique matching completion and valid outcome",async()=>{
   const actual=await captureNativeCall({input:{action:"forget",id:"rec_eval_1"}})
   for(const unknown of [null,{},"records",[null],[]])assert.equal(nativeMemoryCalls(unknown,actual.context),undefined)
-  assert.deepEqual(nativeMemoryCalls(actual.records.filter(r=>!["memory_native_start","memory_native_end"].includes(r.kind)),actual.context),[],"an installed observer with no calls is a known empty journal")
+  assert.equal(nativeMemoryCalls(actual.records.filter(r=>!["memory_native_start","memory_native_end"].includes(r.kind)),actual.context),undefined,"global startup does not prove scoped empty coverage")
   for(const key of ["case_id","trial_id","session","activation_id"]) {
     const context={...actual.context};delete context[key]
     assert.equal(nativeMemoryCalls(actual.records,context),undefined,key)
@@ -124,4 +125,60 @@ test("M3 official structured direct events retain argument proof, while foreign-
   for(const status of ["running",undefined])assert.equal(scored(direct("forget",status===undefined?null:status)).verdict,"BLOCKED")
   const foreign=direct("forget");foreign.stdout=JSON.stringify({type:"text",sessionID:"ses_a",part:{text:"Native session"}})+"\n"+foreign.stdout.replace("ses_a","ses_foreign")
   assert.equal(scored(foreign).verdict,"BLOCKED")
+})
+
+test("M3 every scoped frame is accounted for before journal completeness",async()=>{
+  const actual=await captureNativeCall({input:{action:"forget",id:"rec_eval_1"}})
+  const orphan=actual.records.find(r=>r.kind==="memory_native_end")
+  for(const records of [
+    [...actual.records,{...orphan,call_id:"orphan"}],
+    actual.records.filter(r=>r.kind!=="memory_native_end").map(r=>r.kind==="memory_native_start"?{...r,pass:false}:r),
+  ]) {
+    const result=scored({...outer("inert"),memoryCalls:nativeMemoryCalls(records,actual.context)})
+    assert.equal(result.turn.calls_complete,false)
+    assert.equal(result.verdict,"BLOCKED")
+  }
+  const partial=nativeMemoryCalls([...actual.records,{...orphan,call_id:"orphan"}],actual.context)
+  assert.ok(partial.some(c=>c.call_id==="orphan"&&c.status==="completed"),"do not discard orphan diagnostics")
+})
+
+test("M3 unavailable runner envelope preserves validated direct facts but cannot certify silence",()=>{
+  const stdout=JSON.stringify({type:"tool_use",sessionID:"ses_a",part:{tool:"mem_revise",state:{input:{action:"forget",id:"rec_eval_1"},status:"completed",output:"Forgotten."}}})
+  assert.equal(scored({code:0,stdout,memoryCalls:undefined}).verdict,"PASS")
+  assert.equal(scored({code:0,stdout,memoryCalls:[]}).verdict,"FAIL","authoritative empty never falls back")
+  for(const input of [[],null,"{}"]){
+    const raw=JSON.parse(stdout);raw.part.state.input=input
+    assert.equal(memoryTurn({code:0,stdout:JSON.stringify(raw)},{index:1,prompt:"read"}).calls_complete,false)
+  }
+  assert.equal(memoryTurn({code:0,stdout:"",memoryCalls:undefined},{index:1,prompt:"arithmetic"}).calls_complete,false)
+  const unknownSession=JSON.parse(stdout);delete unknownSession.sessionID
+  assert.equal(scored({code:0,stdout:JSON.stringify(unknownSession)}).verdict,"BLOCKED","unknown direct session is not a product failure")
+})
+
+test("M3 partial coverage cannot erase independently observed wrong actions or state",async()=>{
+  const wrong=await captureNativeCall({input:{action:"retire",id:"rec_eval_1"}})
+  for(const mutate of [c=>{c.turns[2].calls_complete=false},c=>{c.turns[1].calls_complete=false}])
+    assert.equal(scored({...outer("inert"),memoryCalls:wrong.calls},mutate).verdict,"FAIL")
+  const orphan={...wrong.records.find(r=>r.kind==="memory_native_end"),call_id:"orphan"}
+  assert.equal(scored({...outer("inert"),memoryCalls:nativeMemoryCalls([...wrong.records,orphan],wrong.context)}).verdict,"FAIL")
+  assert.equal(scored({...outer("inert"),memoryCalls:[...wrong.calls,null]}).verdict,"FAIL","malformed inventory entries cannot erase a validated contradiction")
+  const direct={code:0,stdout:JSON.stringify({type:"tool_use",sessionID:"ses_a",part:{tool:"mem_revise",state:{input:{action:"retire",id:"rec_eval_1"},status:"completed",output:"Retired."}}})+"\n"+outer("inert").stdout}
+  assert.equal(scored(direct).verdict,"FAIL")
+  const g=goldCore("abstain-empty",null,"No memories matched")
+  g.core.turns[0].calls_complete=false
+  g.core.state.records.push({id:"unrequested",kind:"memory",space_id:"shared",body:"Unrequested payload"})
+  assert.equal(memoryCoreEvidence(g.s.original_id,{calls:[],state:{mem:{capture:{core:g.core}}}}).state,"fail")
+})
+
+test("M3 global or foreign startup cannot certify empty arithmetic coverage",()=>{
+  const g=goldCore("discipline-arithmetic","391","")
+  const context={case_id:g.s.original_id,trial_id:"trial_empty",turn:1,session:"ses_a",activation_id:"empty1"}
+  for(const marker of [{kind:"guard_start"},{kind:"guard_start",case_id:"foreign",trial_id:"foreign"},{kind:"guard_start",case_id:context.case_id,trial_id:context.trial_id}]){
+    const memoryCalls=nativeMemoryCalls([marker],context)
+    assert.equal(memoryCalls,undefined)
+    g.core.turns[0]=memoryTurn({code:0,stdout:JSON.stringify({type:"text",sessionID:"ses_a",part:{text:'{"value":"391"}'}}),memoryCalls},{index:1,prompt:g.s.prompts[0]})
+    assert.equal(memoryCoreEvidence(g.s.original_id,{calls:[],state:{mem:{capture:{core:g.core}}}}).state,"unverifiable")
+  }
+  g.core.turns[0]=memoryTurn({code:0,stdout:JSON.stringify({type:"text",sessionID:"ses_a",part:{text:'{"value":"391"}'}}),memoryCalls:[]},{index:1,prompt:g.s.prompts[0]})
+  assert.equal(memoryCoreEvidence(g.s.original_id,{calls:[],state:{mem:{capture:{core:g.core}}}}).state,"ok","a trusted authoritative empty array remains authoritative")
 })
