@@ -27,7 +27,7 @@ test("RAW operation receipts capture observed per-turn versions; denied/no-op wr
   const prior=empty(),created={...empty(),knowledge:[wiki]}
   const context={case_id:"core-wiki-write",trial_id:"trial_1",turn:1,session:"ses_own",active:true}
   const invocation={...context,family:"wiki",args:{action:"create",name:"Core Notes"},pass:true,call_id:"call_create"}
-  proof.observe({path:"/v3/wiki/create",input:{name:"Core Notes",team_id:"local"},response:{status:200,json:{data:{knowledge_id:wiki.knowledge_id}}},before:prior,after:created,space:"personal",context,invocation})
+  proof.observe({path:"/v3/wiki/create",input:{name:"Core Notes",team_id:"local"},response:{status:200,json:{data:{knowledge_id:wiki.knowledge_id}}},before:prior,after:created,space:"personal",context,invocation,request_session:"ses_own"})
   assert.equal(proof.creators.length,1);assert.equal(proof.creators[0].id,"wiki_backend_1")
   const initial="The gateway resolves context before routing.",final=`${initial}\n\nThe control plane uses PostgreSQL for PITR.`
   const first={...empty(),knowledge:[{...wiki,raw:{"README.md":initial}}]}
@@ -62,7 +62,7 @@ test("store-created memory alias is justified by actual pure records-store readb
     const after={...empty(),records:read.json.records.map(r=>({...r,space_id:"eval-space-personal"}))}
     const context={case_id:"core-forget",trial_id:"trial_store",turn:1,session:"ses_store",active:true}
     const invocation={...context,family:"remember",args:{content:"The staging port is 8420.",kind:"fact"},call_id:"call_store",pass:true}
-    proof.observe({path:"/records/v1/records.put",input,response,before:empty(),after,space:"personal",context,invocation})
+    proof.observe({path:"/records/v1/records.put",input,response,before:empty(),after,space:"personal",context,invocation,request_session:"ses_store"})
     assert.equal(proof.creators.length,1);assert.equal(proof.creators[0].id,read.json.records[0].id)
     const forged=createBaselineProof(empty(),control,intent)
     forged.observe({path:"/records/v1/records.put",input,response,before:empty(),after:{...after,records:after.records.map(r=>({...r,space_id:"eval-space-shared"}))},space:"personal",context,invocation})
@@ -76,12 +76,13 @@ test("the actual projector/recorder shape, with no synthetic enricher, satisfies
   const row={knowledge_id:id,name:"Core Notes",type:"llm_wiki",team_id:"local",raw:{}}
   const created={...empty(),knowledge:[row]},first={...created,knowledge:[{...row,raw:{"README.md":initial}}]},after={...created,knowledge:[{...row,raw:{"README.md":final}}],wikiFiles:[{team_id:"local",wiki:"Core Notes",wiki_id:id,filename:"README.md",content:final}]}
   const context=t=>({case_id:spec.original_id,trial_id:"trial_grade",turn:t,session:t===3?"ses_new":"ses_first",active:true})
-  proof.observe({path:"/v3/wiki/create",input:{name:"Core Notes"},response:{status:200,json:{data:{wiki_id:id}}},before:empty(),after:created,space:"personal",context:context(1)})
-  const write=(turn,before,after,body)=>({path:"/v3/wiki/raw/write",input:{wiki_id:id,files:[{filename:"README.md",content:body}]},response:{status:200,json:{data:{items:[{filename:"README.md",status:"written"}]}}},before,after,space:"personal",context:context(turn)})
+  const identity=(turn,args)=>({context:context(turn),request_session:context(turn).session,invocation:{...context(turn),family:"wiki",args,pass:true,call_id:`call_fixture_${turn}`}})
+  proof.observe({path:"/v3/wiki/create",input:{name:"Core Notes"},response:{status:200,json:{data:{wiki_id:id}}},before:empty(),after:created,space:"personal",...identity(1,{action:"create",name:"Core Notes"})})
+  const write=(turn,before,after,body)=>({path:"/v3/wiki/raw/write",input:{wiki_id:id,files:[{filename:"README.md",content:body}]},response:{status:200,json:{data:{items:[{filename:"README.md",status:"written"}]}}},before,after,space:"personal",...identity(turn,{action:turn===1?"write":"append",wiki_id:id,filename:"README.md",content:turn===1?body:"The control plane uses PostgreSQL for PITR."})})
   proof.observe(write(1,created,first,initial));proof.observe(write(2,first,after,final))
-  proof.observe({path:"/v3/wiki/raw/read",input:{wiki_id:id,filenames:["README.md"]},response:{status:200,json:{data:{items:[{filename:"README.md",content:final}]}}},before:after,after,space:"personal",context:context(3)})
+  proof.observe({path:"/v3/wiki/raw/read",input:{wiki_id:id,filenames:["README.md"]},response:{status:200,json:{data:{items:[{filename:"README.md",content:final}]}}},before:after,after,space:"personal",...identity(3,{action:"read",wiki_id:id,filename:"README.md"})})
   const calls=[{tool:"mem_wiki",args:{action:"create",name:"Core Notes"},status:"completed",output:"Created."},{tool:"mem_wiki",args:{action:"append",wiki_id:id,filename:"README.md",content:"The control plane uses PostgreSQL for PITR."},status:"completed",output:"Appended."},{tool:"mem_wiki",args:{action:"read",wiki_id:id,filename:"README.md"},status:"completed",output:final}]
-  const core={case_id:spec.original_id,proof_schema:"oc-mem-durable-proof/2",seed:{},before:proof.before,state:proof.state(after,control),operations:proof.operations,effects:[{method:"wiki.raw.write",space:"personal",status:"stored"}],requests:[{method:"/v3/wiki/raw/read",space:"personal",status:"read",output:final}],turns:spec.prompts.map((prompt,i)=>({index:i+1,prompt,session:context(i+1).session,exit:0,timedOut:false,text:i===2?'{"value":"PostgreSQL"}':"Stored.",calls:[calls[i]]}))}
+  const core={case_id:spec.original_id,trial_id:intent.trial_id,proof_schema:"oc-mem-durable-proof/2",seed:{},before:proof.before,state:proof.state(after,control),operations:proof.operations,effects:[{method:"wiki.raw.write",space:"personal",status:"stored"}],requests:[{method:"/v3/wiki/raw/read",space:"personal",status:"read",output:final}],turns:spec.prompts.map((prompt,i)=>({index:i+1,prompt,session:context(i+1).session,exit:0,timedOut:false,text:i===2?'{"value":"PostgreSQL"}':"Stored.",calls:[calls[i]]}))}
   const grade=()=>memoryCoreEvidence(spec.original_id,{calls,state:{mem:{capture:{core}}}})
   assert.equal(grade().state,"ok",grade().detail)
   core.operations=core.operations.filter(o=>o.turn!==2);assert.equal(grade().state,"fail")

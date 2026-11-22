@@ -7,6 +7,13 @@ import { baselineRoute, baselineScopeHeaders } from "./baseline-routing.mjs"
 import { baselineEffect } from "./baseline-effects.mjs"
 import { createBaselineProof } from "./baseline-proof.mjs"
 
+// A transport observation, not an authority claim. Missing/foreign identity must
+// survive to the recorder; never replace it with a sidecar's current session.
+export function baselineObservationIdentity(headers,context,invocation) {
+  const session=headers["x-tdai-session-id"]
+  return {request_session:typeof session==="string"&&session?session:null,context,invocation}
+}
+
 export async function serveBaseline(root) {
   if(process.platform!=="linux"||!existsSync("/.dockerenv")||process.env.EVALS_MEM_CONTAINED!=="mem-synthetic-v1")throw new Error("baseline is container only")
   const plan=JSON.parse(readFileSync(join(root,"baseline-plan.json"),"utf8"))
@@ -30,7 +37,7 @@ export async function serveBaseline(root) {
     for(const w of state.knowledge??[])if(["personal","shared"].includes(alias(w.team_id)))wiki_spaces[w.knowledge_id]=`spc-eval-${alias(w.team_id)}`
     atomic("scope-map.json",{schema:"oc-mem-scopes/1",fixture:"mem-synthetic-v1",case_id:plan.case_id,trial_id:plan.intent?.trial_id,record_spaces,wiki_spaces,creators:proof.creators})
     const spaces=(value)=>Object.fromEntries(["personal","shared"].map((space)=>[space,{records:(value.records??[]).filter((r)=>alias(r.space_id)===space),raw:{}}]))
-    atomic("capture.json",{schema:"oc-mem-capture/1",fixture:"mem-synthetic-v1",before:spaces(before),after:spaces(state),requests,core:{proof_schema:"oc-mem-durable-proof/2",case_id:plan.case_id,seed:plan.seed,before:proof.before,state:proof.state(state,control.state()),operations:proof.operations,effects,requests,turns:[]},control:control.state()})
+    atomic("capture.json",{schema:"oc-mem-capture/1",fixture:"mem-synthetic-v1",before:spaces(before),after:spaces(state),requests,core:{proof_schema:"oc-mem-durable-proof/2",case_id:plan.case_id,trial_id:plan.intent?.trial_id,seed:plan.seed,before:proof.before,state:proof.state(state,control.state()),operations:proof.operations,effects,requests,turns:[]},control:control.state()})
   }
   try {await capture()} catch(error) {try {await control.close()} finally {await stub.close()};throw error}
   // Serialize complete backend observation windows; overlapping before/after snapshots cannot prove an operation.
@@ -59,7 +66,7 @@ export async function serveBaseline(root) {
       const after=await stub.snapshot()
       const effect=baselineEffect(route.path,input,{status:answer.status,json:value},prior,after,space)
       if(effect)effects.push(effect)
-      proof.observe({path:route.path,input,response:{status:answer.status,json:value},before:prior,after,space,context,invocation:headers["x-tdai-session-id"]&&headers["x-tdai-session-id"]!==context?.session?null:invocation})
+      proof.observe({path:route.path,input,response:{status:answer.status,json:value},before:prior,after,space,...baselineObservationIdentity(headers,context,invocation)})
       await capture()
       res.writeHead(answer.status,{"content-type":answer.headers.get("content-type")??"application/json"});res.end(output)
     }catch(error){res.writeHead(400,{"content-type":"application/json"});res.end(JSON.stringify({error:String(error.message)}))}

@@ -1,12 +1,46 @@
 // Independent durable proof. No expected answer, transcript, or claimed receipt repairs missing state.
 import { canonical } from "../../util/canonical.mjs"
 import { createHash } from "node:crypto"
+import { isDeepStrictEqual } from "node:util"
+import { coreWikiParagraph } from "./mem-core-markdown.mjs"
 
 const ARRAYS = ["atoms", "records", "commitments", "knowledge", "conversations", "skills", "assets", "teamMembers", "agents", "acl", "jobs", "wikiFiles"]
 const OBJECTS = ["scenarios", "core", "curated", "failures", "usage", "control"]
 const plain = (v) => Boolean(v && typeof v === "object" && !Array.isArray(v))
 export function completeState(state) {
   return plain(state) && ARRAYS.every((k) => Array.isArray(state[k])) && OBJECTS.every((k) => plain(state[k])) && Number.isInteger(state.seq)
+}
+
+// The frozen stub seeds only these three families. Content is compared in full,
+// including unknown nested fields; only documented seed/projector additions vary.
+export function initialSeedFailure(core) {
+  const before=core.before, seed=core.seed
+  if (!completeState(before) || !plain(seed) || Object.keys(seed).some(k=>!["atoms","knowledge","assets"].includes(k))) return "complete frozen initial seed proof is missing"
+  const expected=Object.fromEntries([...ARRAYS.map(k=>[k,structuredClone(seed[k]??[])]),...OBJECTS.map(k=>[k,k==="control"?{resources:[],grants:[],controlLog:[]} : {}]),["seq",before.seq]])
+  const actual=structuredClone(before)
+  if(before.seq<0 || !["atoms","knowledge","assets"].every(k=>Array.isArray(expected[k])&&actual[k].length===expected[k].length)) return "before-state differs from the frozen seed"
+  const timestamp=v=>typeof v==="string"&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(v)&&Number.isFinite(Date.parse(v))
+  for(const [i,atom] of actual.atoms.entries()) {
+    const frozen=expected.atoms[i]
+    if(!plain(atom)||!plain(frozen)) return "unverifiable initial atom shape"
+    for(const [key,valid] of Object.entries({id:v=>typeof v==="string"&&/^m_\d{4,}$/.test(v),version:v=>v===1,created_at:timestamp,updated_at:timestamp})) {
+      if(!Object.hasOwn(frozen,key)&&Object.hasOwn(atom,key)) {if(!valid(atom[key]))return "invalid initial atom metadata";delete atom[key]}
+    }
+  }
+  for(const [i,w] of actual.knowledge.entries()) {
+    const frozen=expected.knowledge[i]
+    if(!plain(w)||!plain(frozen))return "unverifiable initial knowledge shape"
+    const space=["local","eval-container-personal"].includes(frozen.team_id)?"personal":frozen.team_id==="eval-container-shared"?"shared":frozen.team_id
+    if(!Object.hasOwn(frozen,"space")&&Object.hasOwn(w,"space")) {if(w.space!==space)return "invalid initial knowledge scope";delete w.space}
+    if(!Object.hasOwn(frozen,"raw_versions")&&Object.hasOwn(w,"raw_versions")) {
+      const versions=Object.fromEntries(Object.entries(frozen.raw??{}).map(([file,body])=>[file,{digest:createHash("sha256").update(body).digest("hex"),revision:0}]))
+      if(!isDeepStrictEqual(w.raw_versions,versions))return "invalid initial RAW versions"
+      delete w.raw_versions
+    }
+  }
+  // derivedState() materializes these exact references from seeded RAW bytes.
+  expected.wikiFiles=expected.knowledge.filter(w=>w.type==="llm_wiki").flatMap(w=>Object.entries(w.raw??{}).map(([filename,content])=>({team_id:w.team_id??null,wiki:w.name,wiki_id:w.knowledge_id,filename,content:String(content)})))
+  return isDeepStrictEqual(actual,expected)?null:"before-state contains content outside the frozen seed"
 }
 
 const READS = new Set([
@@ -55,8 +89,8 @@ function readCall(call) {
 
 export function readonlyProofFailure(core) {
   if (core.proof_schema !== "oc-mem-durable-proof/2" || !completeState(core.before) || !completeState(core.state)) return "complete authoritative before/after state is missing"
-  // The frozen core seeds contain only atoms, knowledge and assets. An injected baseline is not permission.
-  if (Object.keys(core.before).some((k)=>![...ARRAYS,...OBJECTS,"seq"].includes(k)) || ARRAYS.filter((k)=>!["atoms","knowledge","assets"].includes(k)).some((k)=>core.before[k].length) || OBJECTS.filter((k)=>k!=="control").some((k)=>Object.keys(core.before[k]).length) || canonical(core.before.control)!==canonical({resources:[],grants:[],controlLog:[]}) || canonical(core.before.assets)!==canonical(core.seed.assets??[])) return "before-state contains content outside the frozen seed"
+  const initial=initialSeedFailure(core)
+  if(initial)return initial
   const before = metadataOnly(core.before, core.before), after = metadataOnly(core.state, core.before)
   if (!before || !after || canonical(before) !== canonical(after)) return "read-only durable content changed in a family or space"
   if (!Array.isArray(core.effects) || core.effects.length) return "read-only case has a write effect"
@@ -69,10 +103,10 @@ export function readonlyProofFailure(core) {
 const text = (s) => String(s).replace(/\s+/g, " ").trim().toLowerCase()
 const sha = (s) => createHash("sha256").update(s).digest("hex")
 // These are the two document instructions, not a selector over arbitrary state JSON or an answer fallback.
-const INITIAL_README = "The gateway resolves context before routing."
-const APPENDED_DECISION = "The control plane uses PostgreSQL for PITR."
 export function wikiWriteProofFailure(core) {
   if (core.proof_schema !== "oc-mem-durable-proof/2" || !completeState(core.before) || !completeState(core.state) || !Array.isArray(core.operations) || core.operations.some((o)=>!plain(o))) return "typed RAW document proof is missing"
+  const initial=initialSeedFailure(core)
+  if(initial)return initial
   const wikis = core.state.knowledge
   if (core.before.knowledge.length || wikis.length !== 1) return "the requested new wiki is not the only created wiki"
   const wiki = wikis[0], id = wiki.knowledge_id, file = "README.md"
@@ -81,14 +115,14 @@ export function wikiWriteProofFailure(core) {
   const called = (turn, actions) => native[turn - 1].find((c) => c.status === "completed" && plain(c.args) && actions.includes(c.args.action) && (turn === 1 ? c.args.name === "Core Notes" && (c.args.filename === undefined || c.args.filename === file) : c.args.wiki_id === id && c.args.filename === file))
   if (!called(1, ["create"]) || !called(2, ["append"]) || !called(3, ["read", "search"])) return "successful typed create/append/read calls are missing"
   const ops = core.operations
-  const scope = (o, turn) => o.turn === turn && o.session === core.turns[turn-1].session && o.space === "personal" && o.wiki_id === id
+  const scope = (o, turn) => o.binding === "bound" && o.case_id === core.case_id && typeof core.trial_id === "string" && core.trial_id && o.trial_id === core.trial_id && typeof o.call_id === "string" && o.call_id && o.request_session === o.session && o.turn === turn && o.session === core.turns[turn-1].session && o.space === "personal" && o.wiki_id === id
   const select = (turn, operation, status) => ops.filter((o) => scope(o,turn) && o.operation === operation && o.status === status && o.filename === file)
   const create = ops.filter((o) => scope(o,1) && o.operation === "wiki.create" && o.status === "stored" && (o.filename === undefined || o.filename === file)), first = select(1, "wiki.raw.write", "stored"), append = select(2, "wiki.raw.write", "stored")
   const read = ops.filter((o) => scope(o,3) && ["wiki.raw.read", "wiki.page.read"].includes(o.operation) && o.status === "read" && o.filename === file)
   if (create.length !== 1 || first.length !== 1 || append.length !== 1 || read.length !== 1) return "per-turn create/write/append/read observations are incomplete"
   const a = first[0], b = append[0], r = read[0]
-  if (create[0].name !== "Core Notes" || typeof a.body !== "string" || text(a.body) !== text(INITIAL_README) || a.before_version !== null || a.version !== sha(a.body) || a.revision !== 1) return "initial RAW README was not successfully created"
-  if (typeof b.body !== "string" || b.before_body !== a.body || !b.body.startsWith(a.body) || text(b.body.slice(a.body.length)) !== text(APPENDED_DECISION) || b.before_version !== a.version || b.version !== sha(b.body) || b.version === a.version || b.revision !== 2) return "the actual append did not preserve and extend the initial RAW body/version"
+  if (create[0].name !== "Core Notes" || !coreWikiParagraph(a.body,"initial") || a.before_version !== null || a.version !== sha(a.body) || a.revision !== 1) return "initial RAW README was not successfully created"
+  if (typeof b.body !== "string" || b.before_body !== a.body || !b.body.startsWith(a.body) || !coreWikiParagraph(b.body.slice(a.body.length),"append") || b.before_version !== a.version || b.version !== sha(b.body) || b.version === a.version || b.revision !== 2) return "the actual append did not preserve and extend the initial RAW body/version"
   const raw = wiki.raw?.[file], version = wiki.raw_versions?.[file]
   if (Object.keys(wiki.raw??{}).length !== 1) return "an unrequested RAW document was written"
   const required = new Set([create[0],a,b,read[0]])
