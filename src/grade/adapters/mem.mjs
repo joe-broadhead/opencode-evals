@@ -29,5 +29,6 @@ export function memState(files) {
   facts.reads = { count: reads.length, last_text: last?.content ?? (last?.records ?? []).map((r) => r.body).join("\n") }
   const lists = data.requests.filter((r) => r.method === "records.list")
   facts.list = { more: lists.at(-1)?.output?.more ?? false }
+  facts.capture = data
   return { mem: facts }
 }

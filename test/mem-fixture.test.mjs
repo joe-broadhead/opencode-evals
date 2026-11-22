@@ -54,3 +54,22 @@ test("record writes use typed input, pagination is explicit, reads come from dur
     assert.equal(fixture.call("records.revise", { id: a.record.id, action: "restore" }).record.status, "current")
   } finally { rmSync(dir, { recursive: true, force: true }) }
 })
+
+test("synthetic permission receipts distinguish default allow, explicit deny, ask approved and ask declined", () => {
+  for (const [permission, stored, decision] of [
+    [{ effect: "allow" }, true, "allow"],
+    [{ effect: "deny" }, false, "deny"],
+    [{ effect: "ask", reply: "approved" }, true, "approved"],
+    [{ effect: "ask", reply: "declined" }, false, "declined"],
+  ]) {
+    const dir = mkdtempSync(join(tmpdir(), "mem-permission-"))
+    try {
+      const f = openFixture(dir, { permission })
+      const receipt = f.call("records.put", { record: { kind: "memory", type: "fact", body: "Quartz is green." } })
+      assert.equal(receipt.status, stored ? "stored" : "denied")
+      assert.equal(openFixture(dir).snapshot().after.personal.records.length, stored ? 1 : 0)
+      assert.deepEqual(f.snapshot().requests[0].permission, { effect: permission.effect, decision })
+      assert.throws(() => openFixture(dir, { permission: { effect: stored ? "deny" : "allow" } }), /permission/)
+    } finally { rmSync(dir, { recursive: true, force: true }) }
+  }
+})

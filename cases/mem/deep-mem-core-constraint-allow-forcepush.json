@@ -1,0 +1,62 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-mem-core-constraint-allow-forcepush",
+  "plugin": "mem",
+  "skill": "mem.usage",
+  "tier": "T3",
+  "source": null,
+  "decision": null,
+  "data_check": null,
+  "prompt": "Can I force-push my own feature branch after rebasing? Return only JSON: {\"decision\":\"ALLOW\" or \"DENY\",\"because\":\"one sentence\"}.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 8,
+    "tokens": 64000,
+    "wall_ms": 180000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "sets": [
+    "deep",
+    "mem-core"
+  ],
+  "status": "deferred",
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "MEM-CT01",
+      "severity": "blocker",
+      "ask": "Frozen core truth, real read evidence, typed answer and unchanged synthetic scope agree.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "memory-core",
+          "id": "core-constraint-allow-forcepush"
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 13
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Port status: blocked-missing-frozen-truth. Full seed, expected values and original assertion parameters absent from retained artifact. Supply the immutable source matching the inventory digest.",
+      "line": 17
+    },
+    {
+      "id": null,
+      "text": "Original assertion types: expectTools, expectToolOutput, expectDecisionJson, maxToolCalls, expectExitSuccess. Multi-turn continuation must preserve the original separate prompts; concatenation is not yet runtime-compatible.",
+      "line": 18
+    }
+  ],
+  "hashes": {
+    "source_sha256": "8d98c908f00329f31c6e7cd1332252843ceeb0284d6c8a72b2025f3f36a315dd"
+  }
+}

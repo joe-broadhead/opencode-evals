@@ -1,5 +1,9 @@
 # Memory setup: offline only
 
+For the incremental implementation and current gates, read
+[Offline phase 2](OFFLINE-PHASE2.md). The remainder records the original setup
+phase; its zero-core-port and absent-transport statements are historical.
+
 This is an incomplete source pack, not a published-release or runtime snapshot.
 `setup.mjs` uses `EVALS_REPO_MEM`, checks tracked source cleanliness, and captures
 the actual dependency-free tool declarations without calling them. It records

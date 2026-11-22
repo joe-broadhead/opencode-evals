@@ -10,6 +10,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } fr
 import { dirname, join, relative, resolve } from "node:path"
 import { execFileSync } from "node:child_process"
 import { sha256 } from "../util/canonical.mjs"
+import { isMemoryPackage, materialiseMemoryArm, memoryArtifact } from "./mem-arm.mjs"
 
 const filesUnder = (dir) => {
   if (!existsSync(dir)) return []
@@ -48,6 +49,7 @@ export function runtimePaths(source) {
 /** Copies a built plugin into `into`. Throws when the source is not a built plugin. */
 export function materialiseArm(source, into) {
   if (!existsSync(join(source, "package.json"))) throw new Error(`no plugin at ${source}: no package.json`)
+  if (isMemoryPackage(JSON.parse(readFileSync(join(source, "package.json"), "utf8")))) return materialiseMemoryArm(source, into)
   if (!existsSync(join(source, "dist")) || !statSync(join(source, "dist")).isDirectory()) throw new Error(`${source} is not built: no dist/`)
   mkdirSync(into, { recursive: true, mode: 0o700 })
   for (const part of runtimePaths(source)) {
@@ -72,11 +74,12 @@ const git = (dir, args) => {
 export function armProvenance(dir, source = dir) {
   if (!dir) return { arm: "none", sha256: null, provenance: { arm: "none" } }
   const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"))
-  const plugin = treeDigest(join(dir, "dist"))
+  const memory = isMemoryPackage(pkg) ? memoryArtifact(dir) : null
+  const plugin = memory ? memory.closure_sha256 : treeDigest(join(dir, "dist"))
   const declared = existsSync(join(dir, ".provenance.json")) ? JSON.parse(readFileSync(join(dir, ".provenance.json"), "utf8")) : null
-  const commit = git(source, ["rev-parse", "--short=12", "HEAD"])
+  const commit = memory ? null : git(source, ["rev-parse", "--short=12", "HEAD"])
   const dirty = commit ? Boolean(git(source, ["status", "--porcelain"])) : false
-  const provenance = declared ?? {
+  const provenance = memory ? { plugin, plugin_version: pkg.version, plugin_commit: memory.source_commit, archive_sha256: memory.archive_sha256, packaging: "oc-mem-arm/1", skills: treeDigest(join(dir, "skills")) } : declared ?? {
     plugin,
     plugin_version: pkg.version ?? null,
     plugin_commit: commit ? `${commit}${dirty ? "+dirty" : ""}` : null,

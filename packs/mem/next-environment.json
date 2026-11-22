@@ -1,0 +1,10 @@
+{
+  "schema": "oc-mem-environment-request/1",
+  "execution_authorized_now": false,
+  "isolation": { "backend": "container", "docker_minimum": 28, "daemon": "owner-required; do not start from this task" },
+  "runtime": { "opencode_version": "2.2.6", "platform": "linux", "source": "official matching binary only", "sha256": null, "fixture_script_runtime_sha256": null, "image_digest": null },
+  "provider": { "model": "opencode/deepseek-v4.1-flash", "variant": "low", "auth_profile": "env:OPENCODE_API_KEY", "key_values": "never recorded", "egress_proposed": ["opencode.ai:443"], "egress_approved": false, "price_catalog_sha256": null, "fallback": false },
+  "later_limits": { "list_price_usd": 10, "wall_minutes": 60, "concurrency": 1, "per_request_tokens": null, "provider_request_cap": null },
+  "artifacts": { "baseline_source_commit": "586dc46a133cada64c584b0506eb3aebbd906b24", "baseline_tarball_sha256": null, "final_candidate_source_commit": null, "final_candidate_tarball_sha256": null, "permission_candidate_reference_only": "c1963c880a490edd94efc238525d1f9002064907", "candidate_is_final": false },
+  "required_before_any_model_call": ["immutable baseline source and service interface", "all 38 frozen core truths and original assertions", "final combined permission and coverage artifact", "actual contained catalog and rules sidecars", "gateway/control/records lifecycle and oracle verification", "actual direct/search traces", "host deny/ask approval/decline integration", "matching official Linux runtime and image hashes", "supported isolated provider env injection", "provider-only egress approval", "enforceable token/request/price/time ceilings", "implementation-axis comparability"]
+}

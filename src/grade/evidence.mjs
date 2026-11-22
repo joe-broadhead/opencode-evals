@@ -11,6 +11,7 @@ import { ID_SHAPE } from "../run/guard/logic.mjs"
 import { gwsPlanFacts } from "./gws.mjs"
 import { writeIndex, writeOf } from "./writes.mjs"
 import { fixtureFacts } from "../fake/facts.mjs"
+import { memoryCoreEvidence } from "./adapters/mem-core.mjs"
 
 const aliasList = (text) => text.split(",").map((part) => part.trim())
 
@@ -45,6 +46,8 @@ export function parseClause(text) {
   if (!line) return { ok: false, why: "empty clause" }
 
   let m
+  m = /^memory-core:(core-[a-z0-9-]+)$/.exec(line)
+  if (m) return { ok: true, clause: { kind: "memory-core", id: m[1] } }
   // call:<tool>#<n> [args.<key> <op> <value>]
   m = /^call:([A-Za-z0-9_.*-]+)#(\d+)(?:\s+(args\.[A-Za-z0-9_.-]+)\s+(\S+)(?:\s+(.+))?)?$/.exec(line)
   if (m) {
@@ -357,6 +360,7 @@ const pathOf = (object, path) => {
  * @returns {{state: "ok"|"fail"|"unverifiable", detail: string}}
  */
 export function evaluateClause(clause, view) {
+  if (clause.kind === "memory-core") return view.scope?.ns && view.scope.ns !== "mem" ? { state: "unverifiable", detail: "Memory core clause used outside Memory" } : memoryCoreEvidence(clause.id, view)
   switch (clause.kind) {
     case "call": {
       const calls = selectCalls(view.calls, clause.tool, view.scope)

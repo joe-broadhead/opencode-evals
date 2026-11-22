@@ -62,7 +62,7 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
         runSessions.add(event.sessionID)
         const decision = decideBefore(policy, event.tool, event.input, plans)
         // A write's input leaves, for `target: ... in created`: the value the tool really got, a variable resolved (private, like the rest of this log).
-        const args = matchWrite(policy, event.tool) ? { args: scalarLeaves(event.input) } : {}
+        const args = matchWrite(policy, event.tool, event.input) ? { args: scalarLeaves(event.input) } : {}
         record("execute_before", { tool: event.tool, call: event.id, session: event.sessionID, write: Boolean(decision.write) || decision.committer, pass: decision.pass, why: decision.why, ...args })
         if (!decision.pass) {
           record("assert", { what: (decision as any).tool ? "tool" : "write", tool: event.tool, why: decision.why })
@@ -71,7 +71,7 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
       })
 
       await ctx.tool.hook("execute.after", (event: any) => {
-        const write = matchWrite(policy, event.tool)
+        const write = matchWrite(policy, event.tool, event.input)
         const unknown = !write && isUnknownTool(policy, event.tool)
         const committer = isIn(policy.plans?.committers, event.tool)
         if (policy.plans && isIn(policy.plans.makers, event.tool) && event.status === "completed") {

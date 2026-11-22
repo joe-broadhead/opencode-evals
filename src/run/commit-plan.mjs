@@ -32,7 +32,15 @@ export function resolveCommitPlan(plan, targets) {
   if (missing.length || extra.length) throw new Error(`commit plan: \`actions\` and \`writes\` must name the same actions${missing.length ? `; in writes only: ${missing.join(", ")}` : ""}${extra.length ? `; in actions only: ${extra.join(", ")}` : ""}`)
   const resolved = {}
   for (const [action, write] of Object.entries(writes)) {
+    if (write?.memory !== undefined) {
+      if (!["remember", "page", "wiki", "commitments", "revise"].includes(write.memory) || action !== `mem_${write.memory}` || write.local || write.extract) throw new Error("commit plan: invalid Memory extractor")
+      const allow = resolveList(write.allow, targets, `${action}.allow`)
+      if (write.allow.some((a) => !["@mem.personal", "@mem.shared"].includes(a)) || allow.some((v) => !["spc-eval-personal", "spc-eval-shared"].includes(v))) throw new Error("commit plan: Memory allows reserved synthetic aliases only")
+      resolved[action] = { memory: write.memory, allow }
+      continue
+    }
     if (write?.local === true) {
+      if (action.startsWith("mem_")) throw new Error("commit plan: Memory requires reserved target extraction, not a local waiver")
       if (write.allow || write.extract) throw new Error(`commit plan: ${action} is local: it takes no extract or allow`)
       resolved[action] = { local: true }
       continue

@@ -47,6 +47,7 @@ import { redactor, scrubTree, registerSecrets, tail } from "./secrets.mjs"
 import { splitTrial } from "../grade/trials.mjs"
 import { digestOf } from "../util/canonical.mjs"
 import { dirname } from "node:path"
+import { stageMemFixture, memFixtureOptions, memFixtureBinding, startMemFixture, memCaptureRecord } from "./mem-fixture.mjs"
 
 
 export const RUNNER = "evals run"
@@ -490,6 +491,8 @@ async function runJobBody(job, ctx, track) {
   const sandbox = makeSandbox(root)
   track.phase = "preparing the world"
   const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
+  if (ctx.plugin === "mem" && (ctx.isolation.name !== "container" || !ctx.isolation.confines || prepared.memFixture !== true)) throw new Error("Memory trials require the contained synthetic fixture world")
+  const memFixture = ctx.plugin === "mem" ? stageMemFixture(sandbox) : null
   const cwd = within(root, prepared.cwd, "the working directory")
   // The case's own files (`Seed: files=`), copied into its project before the world's home is cut of its links.
   track.phase = "seeding the project's files"
@@ -500,7 +503,7 @@ async function runJobBody(job, ctx, track) {
   // Fake mode: the fake plugins this case uses. The sealed config carries no override: each plugin registers its own server at its default URL, and the trial
   // maps that host name to the fake (a conflicting server of the plugin's own name would switch off its namespace text and tool filter).
   const fakeIds = fakeFor(pluginsOf(job.case), ctx.fakeSet ?? new Set())
-  const config = sealedConfig({ armDir: ctx.armDir, options: ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...ctx.sealed })
+  const config = sealedConfig({ armDir: ctx.armDir, options: memFixture ? memFixtureOptions(memFixture, ctx.options) : ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...ctx.sealed })
   writeConfig(sandbox, config)
   const password = newPassword()
   // This run's secrets: the batch's (the access token, a key passed through) and its own server password.
@@ -524,6 +527,7 @@ async function runJobBody(job, ctx, track) {
     if (ctx.captureServer) capture = await startCapture({ trial, ctx, sandbox })
     const fakes = []
     for (const id of fakeIds) fakes.push(await startFakeMcp({ trial, ctx, sandbox, id, port: await freePort() }))
+    const memory = memFixture ? await startMemFixture({ spec: memFixture, isolation: ctx.isolation, trial, binary: ctx.bunBinary, launch: (s) => start(s.command, s.args, { cwd: s.cwd, env: s.env }), stop }) : null
     // A world's own variables go in first and never the sealed ones; the harness's (credential, endpoint) go in last.
     const fromWorld = worldEnv(prepared.env)
     if (fromWorld.dropped.length) ctx.log(`  ${name}: the world's env may not set ${fromWorld.dropped.join(", ")}: ignored`)
@@ -604,6 +608,7 @@ async function runJobBody(job, ctx, track) {
       await stop(mock?.proc, { graceMs: 200 })
       await stop(capture?.proc, { graceMs: 200 })
       for (const f of fakes) await stop(f.proc, { graceMs: 200 })
+      await memory?.stop()
     }
     track.result = result
     track.phase = "recording the trial"
@@ -666,7 +671,7 @@ async function runJobBody(job, ctx, track) {
     }
     // The sandbox is hostile once a run has been in it: a working directory it replaced with a link out of the sandbox
     // is not walked, so no file outside the sandbox can reach the files record.
-    const files = [...(inside(root, cwd) ? changedFiles(before, cwd) : []), ...(job.case.home_files?.length ? changedHome(homeBefore, sandbox.home, job.case.home_files) : [])]
+    const files = [...(inside(root, cwd) ? changedFiles(before, cwd) : []), ...(job.case.home_files?.length ? changedHome(homeBefore, sandbox.home, job.case.home_files) : []), ...(memFixture ? [await memCaptureRecord(memFixture, trial)] : [])]
     const linked = job.case.home_files?.length ? homeLinks(sandbox.home, job.case.home_files) : []
     if (linked.length) summary.home_links_refused = linked
     if (!inside(root, cwd)) summary.files_refused = "the working directory no longer resolves inside the sandbox"
@@ -823,11 +828,11 @@ async function runJob(job, ctx) {
  * shebang; the image has no Node). `EVALS_NODE_BIN` names the host Node to mount, as `EVALS_CLAUDE_BIN` does for
  * `claude`.
  */
-export const trialBinaries = ({ binary, needsClaude = false, needsBrowse = false, scripted = false, captureServer = false, fakeIds = [], caller = process.env }) => ({
+export const trialBinaries = ({ binary, needsClaude = false, needsBrowse = false, needsMemory = false, scripted = false, captureServer = false, fakeIds = [], caller = process.env }) => ({
   opencode: binary,
   ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}),
   ...(needsBrowse ? { node: caller.EVALS_NODE_BIN ?? "node" } : {}),
-  ...(scripted || captureServer || fakeIds.length ? { bun: caller.EVALS_BUN ?? "bun" } : {}),
+  ...(scripted || needsMemory || captureServer || fakeIds.length ? { bun: caller.EVALS_BUN ?? "bun" } : {}),
 })
 
 /**
@@ -1089,7 +1094,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     const needsBrowse = browseInTrial(plugin, selected)
     // The fake-mode plugins any selected case uses.
     const fakeIds = [...new Set(selected.flatMap((c) => fakeFor(pluginsOf(c), fakeSet)))].sort()
-    const binaries = trialBinaries({ binary, needsClaude, needsBrowse, scripted, captureServer: options.captureServer, fakeIds, caller })
+    const binaries = trialBinaries({ binary, needsClaude, needsBrowse, needsMemory: plugin === "mem", scripted, captureServer: options.captureServer, fakeIds, caller })
     await isolation.prepare({ batchRoot, caller, binaries, log })
     if (isolation.confines) facts.isolation_detail = isolation.describe()
     // The harness's scripted model, when asked for: T1's mock server, for the whole batch on loopback, or, in a confined
@@ -1134,7 +1139,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     let guardDir = null
     if (guardOn) {
       const guardMode = commitPlan ? "commit" : options.guardMode ?? "refuse"
-      guardDir = installGuard(harnessDir, buildPolicy({ mode: guardMode, commit: commitPlan?.writes ?? {}, plans: commitPlan?.plans ?? null, locked: toolsMode === "locked", ...(options.lockPacks ? { packs: options.lockPacks } : {}) }))
+      guardDir = installGuard(harnessDir, buildPolicy({ mode: guardMode, commit: commitPlan?.writes ?? {}, plans: commitPlan?.plans ?? null, locked: toolsMode === "locked", ...(plugin === "mem" ? { memoryBinding: memFixtureBinding(isolation) } : {}), ...(options.lockPacks ? { packs: options.lockPacks } : {}) }))
       facts.guard = { mode: guardMode }
     }
     // The probe is a trial of its own: under `container`, it proves a container starts before anything is reserved.

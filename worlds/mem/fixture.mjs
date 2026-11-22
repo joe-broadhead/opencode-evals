@@ -9,7 +9,7 @@ const METHODS = new Set(["wiki.raw.write", "wiki.raw.read", "records.put", "reco
 const INPUTS = { "records.put": ["record", "space"], "records.get": ["id", "space"], "records.list": ["limit", "cursor", "space"], "records.revise": ["id", "action", "space"] }
 const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v)
 
-export function openFixture(directory) {
+export function openFixture(directory, options = {}) {
   const dir = resolve(directory)
   if (existsSync(dir) && lstatSync(dir).isSymbolicLink()) throw new Error("fixture directory must not be a symlink")
   mkdirSync(dir, { recursive: true, mode: 0o700 })
@@ -17,6 +17,10 @@ export function openFixture(directory) {
   if (existsSync(file) && lstatSync(file).isSymbolicLink()) throw new Error("fixture capture must not be a symlink")
   let state = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : { schema: "oc-mem-capture/1", fixture: "mem-synthetic-v1", before: empty(), after: empty(), requests: [] }
   if (state.schema !== "oc-mem-capture/1" || state.fixture !== "mem-synthetic-v1") throw new Error("not a synthetic Memory fixture")
+  const permission = options.permission ?? state.permission ?? { effect: "allow" }
+  if (!plain(permission) || Object.keys(permission).some((k) => !["effect", "reply"].includes(k)) || !["allow", "deny", "ask"].includes(permission.effect) || (permission.effect === "ask" && !["approved", "declined"].includes(permission.reply)) || (permission.effect !== "ask" && permission.reply !== undefined)) throw new Error("invalid fixture permission contract")
+  if (state.permission && JSON.stringify(state.permission) !== JSON.stringify(permission)) throw new Error("fixture permission contract cannot change on reopen")
+  state.permission = structuredClone(permission)
   const persist = () => {
     // Exclusive temporary creation prevents a planted link being followed. No values leave this directory.
     const temp = join(dir, `capture-${process.pid}-${state.requests.length}.tmp`)
@@ -35,7 +39,10 @@ export function openFixture(directory) {
       if (!space) throw new Error("only reserved synthetic wiki aliases route")
       if (method.startsWith("wiki.") && (typeof input.filename !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,100}$/.test(input.filename))) throw new Error("filename must be flat")
       let output
-      if (method === "records.put") {
+      const write = ["records.put", "records.revise", "wiki.raw.write"].includes(method)
+      const decision = permission.effect === "ask" ? permission.reply : permission.effect
+      if (write && ["deny", "declined"].includes(decision)) output = { status: "denied", changed: false }
+      else if (method === "records.put") {
         const record = input.record
         if (!plain(record) || Object.keys(record).some((k) => !["kind", "type", "body", "path"].includes(k)) || !["memory", "page", "commitment"].includes(record.kind) || typeof record.body !== "string" || record.body.length > 8192) throw new Error("unsupported record input")
         if (record.kind === "page" && (typeof record.path !== "string" || !/^[a-z0-9-]+(?:\/[a-z0-9-]+)*$/.test(record.path))) throw new Error("invalid page path")
@@ -73,7 +80,7 @@ export function openFixture(directory) {
         output = { status: "read", filename: input.filename, content }
       }
       output = structuredClone(output)
-      state.requests.push({ method, space, status: output.status, input: structuredClone(input), output })
+      state.requests.push({ method, space, status: output.status, input: structuredClone(input), output, ...(write ? { permission: { effect: permission.effect, decision } } : {}) })
       persist()
       return output
     },

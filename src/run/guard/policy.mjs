@@ -4,6 +4,7 @@
 import { cpSync, mkdirSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
 import { loadPacks, CAPPED_SPEND_READS } from "../lockdown.mjs"
+import { validMemoryBinding } from "./mem-targets.mjs"
 
 export const GUARD_SOURCE = resolve(import.meta.dirname)
 
@@ -30,7 +31,7 @@ export function namesOf(pack, tool) {
  * The policy: `mode` "refuse" (no write passes), "commit" (only `commit[<permission>] = { extract, allow }` passes, and a plan
  * commit only for a plan made in scope: `plans`) or "log" (probes: observe only). `packs` defaults to every pack here.
  */
-export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {}, plans = null, locked = false } = {}) {
+export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {}, plans = null, locked = false, memoryBinding = null } = {}) {
   const writes = []
   const actions = new Set()
   for (const pack of packs) {
@@ -39,7 +40,7 @@ export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {},
       if (tool.class !== "write" || CAPPED_SPEND_READS.includes(tool.permission)) continue
       actions.add(tool.permission)
       const declared = commit[tool.permission]
-      writes.push({ names: namesOf(pack, tool), action: tool.permission, ...(declared ? { ...(declared.extract ? { extract: declared.extract } : {}), ...(declared.allow ? { allow: declared.allow } : {}), ...(declared.local === true ? { local: true } : {}) } : {}) })
+      writes.push({ names: namesOf(pack, tool), action: tool.permission, ...(declared ? { ...(declared.memory && pack.id === "mem" ? { memory: declared.memory } : {}), ...(declared.extract ? { extract: declared.extract } : {}), ...(declared.allow ? { allow: declared.allow } : {}), ...(declared.local === true ? { local: true } : {}) } : {}) })
     }
   }
   // A commit set may name an action no pack lists (a tool the plugin registers that its pack lacks): it is then a write the plan declares, so the guard treats it like one.
@@ -58,14 +59,14 @@ export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {},
   const known = new Set()
   for (const pack of packs) for (const tool of pack.tools ?? []) for (const name of namesOf(pack, tool)) known.add(name)
   for (const write of writes) for (const name of write.names) known.add(name)
-  return { mode, writes, actions: [...actions].sort(), ...(plans ? { plans } : {}), ...(locked ? { tools: { exact: ["execute", "skill", "question", "todowrite"], prefixes: [...prefixes].sort() }, known: [...known].sort() } : {}) }
+  return { mode, writes, actions: [...actions].sort(), ...(validMemoryBinding(memoryBinding) && packs.some((p) => p.id === "mem" && p.pluginId === "mem") ? { memoryBinding } : {}), ...(plans ? { plans } : {}), ...(locked ? { tools: { exact: ["execute", "skill", "question", "todowrite"], prefixes: [...prefixes].sort() }, known: [...known].sort() } : {}) }
 }
 
 /** Copies the guard into `into/guard` and writes its policy read-only beside it. Returns the guard's directory. */
 export function installGuard(into, policy) {
   const dir = join(into, "guard")
   mkdirSync(dir, { recursive: true, mode: 0o700 })
-  for (const file of ["index.ts", "plugin.ts", "logic.mjs", "package.json"]) cpSync(join(GUARD_SOURCE, file), join(dir, file))
+  for (const file of ["index.ts", "plugin.ts", "logic.mjs", "mem-targets.mjs", "package.json"]) cpSync(join(GUARD_SOURCE, file), join(dir, file))
   writeFileSync(join(dir, "guard.json"), `${JSON.stringify(policy, null, 1)}\n`, { mode: 0o444 })
   return dir
 }
