@@ -8,13 +8,14 @@ const OPS = {
   revise: { read: ["history"], write: ["correct", "confirm", "retire", "restore", "forget"] },
 }
 const KEYS = {
+  recall: ["query", "task", "visibility", "in", "types", "status", "limit", "space", "filter", "cursor"],
   remember: ["content", "kind", "why", "links", "supersedes", "stated_by", "task", "visibility"],
   page: ["action", "path", "prefix", "type", "title", "content", "section", "to", "depth", "confirm", "space"],
   wiki: ["action", "query", "knowledge_id", "wiki_id", "name", "filename", "content", "ingest", "ref", "confirm", "path", "visibility", "type", "space", "cursor"],
   commitments: ["action", "id", "what", "owner", "due", "trigger", "state", "project", "link", "due_before"],
   revise: ["action", "id", "ids", "content", "reason"],
 }
-const familyOf = (tool) => /^(?:mem_|mem\.)(remember|page|wiki|commitments|revise|spaces|read|code)$/.exec(tool)?.[1]
+const familyOf = (tool) => /^(?:mem_|mem\.)(recall|remember|page|wiki|commitments|revise|spaces|read|code)$/.exec(tool)?.[1]
 const pathOK = (p) => typeof p === "string" && /^[a-z0-9-]+(?:\/[a-z0-9-]+)*\/?$/.test(p)
 
 export function memoryCall(tool, input, binding = {}) {
@@ -23,6 +24,7 @@ export function memoryCall(tool, input, binding = {}) {
   if(["spaces","read","code"].includes(family))return discoveryShape(family,input)
   const fail = (error) => ({ family, error, write: true })
   if (!input || typeof input !== "object" || Array.isArray(input) || Object.keys(input).some((k) => !KEYS[family].includes(k))) return fail("unknown or malformed Memory input")
+  if (family === "recall") return typeof input.query === "string" && input.query.trim() ? { family, action: "recall", write: false } : fail("missing recall query")
   const action = family === "remember" ? "remember" : input.action
   if(family==="wiki"&&["graph","documents","pages"].includes(action)){
     if(Object.keys(input).some(k=>!["action","wiki_id","space","cursor"].includes(k))||["wiki_id","space"].some(k=>input[k]!==undefined&&(typeof input[k]!=="string"||!input[k]||input[k].length>200))||input.cursor!==undefined&&(typeof input.cursor!=="string"||input.cursor.length>4096))return fail("invalid closed wiki read arguments")

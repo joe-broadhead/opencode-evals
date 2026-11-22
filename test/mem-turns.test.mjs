@@ -15,11 +15,15 @@ test("native Memory continuation uses each original prompt and exactly the froze
     assert.equal(r.turns[0].calls[0].output,"PostgreSQL")
   }
 })
-test("native inner-call capture keeps namespace/arguments and refuses unattributable multi-call output",()=>{
+test("source diagnostics keep namespace/arguments but never borrow outer output or argument authority",()=>{
   const make=(code,output)=>memoryTurn({code:0,stdout:JSON.stringify({type:"tool_use",sessionID:"ses_a",part:{tool:"execute",state:{status:"completed",input:{code},output}}})},{index:1,prompt:"question"})
   const sole=make('return await tools.mem.recall({query:"database"})',"PostgreSQL")
   assert.equal(sole.calls[0].tool,"mem_recall")
   assert.deepEqual(sole.calls[0].args,{query:"database"})
+  assert.equal(sole.calls[0].args_resolved,false)
+  assert.equal(sole.calls[0].args_source,"source")
+  assert.equal(sole.calls[0].output,null)
+  assert.equal(sole.calls_complete,false)
   const multi=make('await tools.mem.recall({query:"a"}); await tools.mem.recall({query:"b"}); return "PostgreSQL"',"PostgreSQL")
   assert.equal(multi.calls[0].output,null)
   assert.equal(multi.calls[0].status,"unattributable")

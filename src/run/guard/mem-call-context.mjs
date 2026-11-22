@@ -2,7 +2,7 @@
 import { validMemoryBinding } from "./mem-targets.mjs"
 import { activeIntentMatches } from "./mem-intents.mjs"
 const normalize = (name) => String(name).replace(/^mem\./, "mem_")
-const ACTIONS = new Set(["mem_remember", "mem_revise", "mem_page", "mem_wiki", "mem_commitments", "mem_spaces", "mem_read", "mem_code", "memory.revise", "memory.forget", "page.write", "page.delete", "wiki.write", "wiki.delete"])
+const ACTIONS = new Set(["mem_recall", "mem_remember", "mem_revise", "mem_page", "mem_wiki", "mem_commitments", "mem_spaces", "mem_read", "mem_code", "memory.revise", "memory.forget", "page.write", "page.delete", "wiki.write", "wiki.delete"])
 
 export function memoryActionMatches(call, action) {
   const family = call.classification?.family ?? normalize(call.tool).slice(4)
