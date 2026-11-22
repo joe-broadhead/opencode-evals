@@ -29,20 +29,96 @@ function bindingMatches(s,c){
   if(!s.write){if(args.space!==undefined&&!["personal","eval-space-personal","spc-eval-personal"].includes(args.space))return false;delete args.space;if(s.family==="skills"&&args.skill?.offset===0)delete args.skill.offset;if(["wiki-read","wiki-graph"].includes(s.family)&&args.wiki_id===undefined)args.wiki_id=s.backend.input.wiki_id}
   return equal(args,s.binding.args)
 }
+function truthfulAnswer(s,answer){
+  answer=answer.trim()
+  return s.legacy_answer_contract?answer===s.answer:s.family==="exact-read"?answer.includes("Quartz full current body. Record nonce QREC-71.")&&!/\b(?:not|missing|unsupported|partial)\b/i.test(answer):s.family==="code"?answer.includes("submitInvoice")&&answer.includes("parseInvoice")&&!/\b(?:not|unknown|unsupported|partial)\b/i.test(answer):s.family==="wiki-graph"?["README.md","design.md","quartz-docs"].every(v=>answer.includes(v))&&!/unknown|unsupported|partial/i.test(answer):s.family==="skills"?/\b1\b[\s\S]*expired[\s\S]*\b2\b[\s\S]*current/i.test(answer):["sources","jobs"].includes(s.family)?answer===s.answer:false
+}
 export function memoryDiscoveryEvidence(id,view){
-  const s=discoveryCases.find(s=>s.id===id),p=view.state?.mem?.capture?.discovery
+  const s=discoveryCases.find(s=>s.id===id)
   const fail=detail=>({state:"fail",detail:`discovery ${id}: ${detail}`})
-  if(!s||!p||p.schema!=="oc-mem-discovery-proof/1"||p.suite!==DISCOVERY_VERSION||p.case_id!==id||typeof p.trial_id!=="string")return fail("bound authoritative proof missing")
-  if(!["allow","ask-approved"].includes(p.permission?.effect))return fail("successful fake permission condition missing")
-  if(view.scope?.ns&&view.scope.ns!=="mem"||!view.guardLog?.some(r=>r.kind==="guard_start"&&r.case_id===id&&r.trial_id===p.trial_id))return fail("native guard/case/trial binding missing")
+  const unavailable=detail=>({state:"unverifiable",detail:`discovery ${id}: unavailable ${detail}`})
+  if(!s)return unavailable("case contract")
+  const missing=new Set(),absent=(value,label)=>{if(value==null){missing.add(label);return true}return false}
+  if(view.answer?.available!==true)missing.add("official recording text")
+  let capture=view.state?.mem?.capture
+  if(capture==null){
+    // The state adapter can discard an invalid file. Inspect actual supplied bytes for classification only.
+    // This never repairs a missing state dependency or supplies a route to PASS.
+    missing.add("state adapter result")
+    if(view.files!=null&&(!Array.isArray(view.files)||view.files.some(f=>!plain(f))))return fail("file recording malformed")
+    const files=view.files?.filter(f=>f.path==="mem-fixture/capture.json"&&f.change!=="deleted")??[]
+    if(files.length>1)return fail("conflicting authoritative captures")
+    if(!files.length||files[0].text==null)return unavailable("authoritative capture")
+    if(typeof files[0].text!=="string")return fail("authoritative capture text malformed")
+    try{capture=JSON.parse(files[0].text)}catch{return fail("authoritative capture JSON malformed")}
+  }
+  if(!plain(capture))return fail("authoritative capture malformed")
+  if(!absent(capture.fixture,"capture identity")&&capture.fixture!=="mem-synthetic-v1")return fail("authoritative capture is foreign")
+  if(capture.schema!=="oc-mem-capture/1")return typeof capture.schema==="string"&&/^oc-mem-capture\/\d+$/.test(capture.schema)||capture.schema==null?unavailable("capture schema version"):fail("capture schema malformed")
+  if(!absent(capture.requests,"capture backend recording")&&!Array.isArray(capture.requests))return fail("capture backend recording malformed")
+  for(const key of ["before","after"]){
+    if(absent(capture[key],`capture ${key} artifact`))continue
+    if(!plain(capture[key]))return fail("capture state malformed")
+    for(const state of Object.values(capture[key]))if(!plain(state)||!Array.isArray(state.records)||!plain(state.raw)||Object.values(state.raw).some(v=>typeof v!=="string"))return fail("capture state malformed")
+  }
+  const p=capture.discovery
+  if(p==null)return unavailable("discovery capture")
+  if(!plain(p))return fail("discovery capture malformed")
+  if(!absent(p.case_id,"case identity")&&p.case_id!==id||!absent(p.trial_id,"trial identity")&&(typeof p.trial_id!=="string"||!p.trial_id))return fail("bound authoritative proof malformed or foreign")
+  if(p.schema!=="oc-mem-discovery-proof/1"){
+    if(!absent(p.schema,"discovery schema version"))return typeof p.schema==="string"&&/^oc-mem-discovery-proof\/\d+$/.test(p.schema)?unavailable("discovery schema version"):fail("discovery schema malformed")
+  }
+  if(p.suite!==DISCOVERY_VERSION){
+    if(!absent(p.suite,"suite version"))return typeof p.suite==="string"&&/^mem-discovery\/\d+$/.test(p.suite)?unavailable("suite version"):fail("suite version malformed")
+  }
+  if(!absent(p.permission,"permission recording")&&(!plain(p.permission)||!absent(p.permission.effect,"permission condition")&&!["allow","ask-approved"].includes(p.permission.effect)))return fail("successful fake permission condition contradicted")
+  if(view.scope?.ns&&view.scope.ns!=="mem")return fail("foreign native scope")
+  if(!absent(view.guardLog,"guard recording")&&(!Array.isArray(view.guardLog)||view.guardLog.some(r=>!plain(r))||!view.guardLog.some(r=>r.kind==="guard_start"&&r.case_id===id&&(p.trial_id==null||r.trial_id===p.trial_id))))return fail("native guard/case/trial binding differs")
+  if(!absent(p.before,"seed artifact")&&!equal(p.before,s.seed))return fail("canonical seed changed")
+  if(!absent(p.state,"poststate artifact")&&(!plain(p.state)||!equal(Object.keys(p.state).sort(),Object.keys(s.seed).sort())))return fail("canonical poststate malformed")
+  if(!absent(p.requests,"backend recording")&&!Array.isArray(p.requests)||!absent(p.turns,"native recording")&&(!Array.isArray(p.turns)||p.turns.length!==1))return fail("backend/native recording malformed or incomplete execution")
+  const recordedTurn=p.turns?.[0]
+  let digestUnavailable=false
+  if(Array.isArray(p.turns)&&recordedTurn==null)return fail("native turn malformed")
+  if(recordedTurn!=null){
+    if(!plain(recordedTurn))return fail("native turn malformed")
+    for(const [key,expected]of [["index",1],["prompt",s.prompt],["exit",0],["timedOut",false]])if(!absent(recordedTurn[key],`native ${key} artifact`)&&recordedTurn[key]!==expected)return fail("native turn contract differs")
+    if(!absent(recordedTurn.session,"native session artifact")&&(typeof recordedTurn.session!=="string"||!recordedTurn.session))return fail("native session malformed")
+    if(!absent(recordedTurn.text,"native answer artifact")&&(typeof recordedTurn.text!=="string"||!truthfulAnswer(s,recordedTurn.text)))return fail("native answer malformed or differs from the literal outcome")
+    if(!absent(recordedTurn.calls,"native call recording")){
+      if(!Array.isArray(recordedTurn.calls)||recordedTurn.calls.some(c=>!plain(c)||typeof c.tool!=="string"))return fail("native calls malformed")
+      const memory=recordedTurn.calls.filter(c=>String(c?.tool).startsWith("mem_")||String(c?.tool).startsWith("mem."))
+      const trace=view.calls.filter(c=>c.ns==="mem"||/^mem[._]/.test(c.tool))
+      if(memory.length!==trace.length||memory.some((c,i)=>name(c)!==name(trace[i])))return fail("typed native calls disagree with trace")
+      for(const [i,c]of memory.entries()){
+        if(!absent(c.args,"private argument artifact")&&!plain(c.args))return fail("native arguments malformed")
+        if(!absent(c.status,"native call status")&&nativeFailure(c))return fail("failed native invocation")
+        const digest=trace[i].args_sha256
+        if(digest==null)digestUnavailable=true
+        else if(typeof digest!=="string"||!/^[a-f0-9]{64}$/.test(digest))return fail("official trace argument digest malformed")
+        else if(c.args!=null&&sha256(JSON.stringify(c.args))!==digest)return fail("private arguments contradict the official trace digest")
+      }
+      if(memory.every(c=>c.args!=null&&c.status!=null)&&!memory.some(c=>bindingMatches(s,c)&&c.status==="completed"))return fail("recorded execution omitted the required typed invocation")
+    }
+  }
+  if(Array.isArray(p.requests)){
+    for(const r of p.requests){
+      if(!plain(r))return fail("backend observation malformed")
+      for(const key of ["method","space","input","wire_input","output","status","http_status","context"])absent(r[key],`backend ${key} artifact`)
+      if(r.http_status!=null&&r.http_status!==200||r.status!=null&&r.status!==(writes.has(r.method)?"stored":"read")||r.output!=null&&(failedEnvelope(r.output)||r.output.status!=null&&r.output.status!==(["wiki.get","wiki.ingest","code-graph.get","code-graph.status"].includes(r.method)?"ready":writes.has(r.method)?"stored":"read"))||r.space!=null&&r.space!=="personal")return fail("recorded backend execution failed or contradicted")
+      if(r.context!=null&&(!plain(r.context)||r.context.active!==true||r.context.case_id!==id||p.trial_id!=null&&r.context.trial_id!==p.trial_id||r.context.turn!==1||recordedTurn?.session!=null&&r.context.session!==recordedTurn.session))return fail("backend native lifetime differs")
+    }
+    if(!p.requests.some(r=>r.method===s.backend.method))return fail("recorded execution omitted the required backend operation")
+  }
+  if(s.write&&s.family!=="wiki-write"&&!absent(p.creators,"creator recording")&&(!Array.isArray(p.creators)||p.creators.some(c=>!plain(c))))return fail("creator recording malformed")
+  if(missing.size)return unavailable([...missing].slice(0,3).join(", "))
   if(!equal(p.before,s.seed)||!plain(p.state)||!equal(Object.keys(p.state).sort(),Object.keys(s.seed).sort())||!Array.isArray(p.requests)||!Array.isArray(p.turns)||p.turns.length!==1)return fail("canonical seed/state/turn missing or changed")
   const t=p.turns[0]
   if(t.index!==1||t.prompt!==s.prompt||typeof t.session!=="string"||!t.session||t.exit!==0||t.timedOut||!Array.isArray(t.calls))return fail("native turn contract differs")
   const native=t.calls.filter(c=>String(c.tool).startsWith("mem_")||String(c.tool).startsWith("mem.")),trace=view.calls.filter(c=>c.ns==="mem"||/^mem[._]/.test(c.tool))
   if(native.length!==trace.length||native.some((c,i)=>name(c)!==name(trace[i])))return fail("typed native calls disagree with trace")
-  // Match the official events() codec, not canonical-sorted JSON or safeArgs' redacted shapes.
-  // Both direct inputRaw and parsed inner site.args use JSON.stringify in recorded key order.
-  if(native.some((c,i)=>!plain(c.args)||typeof trace[i].args_sha256!=="string"||!/^[a-f0-9]{64}$/.test(trace[i].args_sha256)||sha256(JSON.stringify(c.args))!==trace[i].args_sha256))return {state:"unverifiable",detail:`discovery ${id}: private typed arguments lack a matching official trace digest`}
+  // Digest checks above use the official events() codec, not sorted JSON or redacted shapes.
+  // Absence stays pending until known output/state/answer contradictions have been checked.
   for(const c of native){if(!plain(c.args)||c.args_resolved===false||nativeFailure(c))return fail("unresolved, malformed or failed native invocation");const classified=memoryCall(`mem_${family(c)}`,c.args,{});if(classified?.error&&!bindingMatches(s,c)||!classified&&name(c)!=="recall"||name(c)!==family(c)&&classified?.write)return fail("unknown or malformed native action")}
   if(!native.some(c=>bindingMatches(s,c)&&c.status==="completed"&&c.args_resolved!==false))return fail("source-bound typed invocation absent or wrong action/arguments")
   const changes=native.filter(c=>["remember","page","commitments","wiki","spaces"].includes(name(c))&&((name(c)==="remember")||["write","append","replace","delete","move","add","update","create"].includes(c.args?.action)||c.args?.bind||c.args?.job?.op==="draft"))
@@ -92,8 +168,7 @@ export function memoryDiscoveryEvidence(id,view){
     if(typeof created.id!=="string"||!p.creators?.some(c=>c.id===created.id&&c.case_id===id&&c.trial_id===p.trial_id&&c.turn===1&&c.session===t.session&&name(c)===s.binding.tool&&equal(c.args,s.binding.args)&&c.status==="stored"))return fail("backend-owned creation identity is unlinked")
   }
   if(typeof t.text!=="string")return fail("answer missing")
-  const answer=t.text.trim(),lower=answer.toLowerCase()
-  const truthful=s.legacy_answer_contract?answer===s.answer:s.family==="exact-read"?answer.includes("Quartz full current body. Record nonce QREC-71.")&&!/\b(?:not|missing|unsupported|partial)\b/i.test(answer):s.family==="code"?answer.includes("submitInvoice")&&answer.includes("parseInvoice")&&!/\b(?:not|unknown|unsupported|partial)\b/i.test(answer):s.family==="wiki-graph"?["README.md","design.md","quartz-docs"].every(v=>answer.includes(v))&&!/unknown|unsupported|partial/i.test(answer):s.family==="skills"?/\b1\b[\s\S]*expired[\s\S]*\b2\b[\s\S]*current/i.test(answer):["sources","jobs"].includes(s.family)?answer===s.answer:false
-  if(!truthful)return fail("answer differs from the literal verified outcome")
+  if(!truthfulAnswer(s,t.text))return fail("answer differs from the literal verified outcome")
+  if(digestUnavailable)return unavailable("official trace argument digest")
   return {state:"ok",detail:`${id}: scoped durable discovery contract agrees (offline-capable, not runtime approval)`}
 }

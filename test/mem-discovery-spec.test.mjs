@@ -11,9 +11,9 @@ for(const s of discoveryCases)for(const mode of ['direct','execute']){
   });
   for(const [label,mutate,expected] of [
     ['missing digest',f=>delete f.trace.filter(c=>c.kind==='tool_call').at(-1).args_sha256,'BLOCKED'],
-    ['malformed digest',f=>f.trace.filter(c=>c.kind==='tool_call').at(-1).args_sha256='not-a-digest','BLOCKED'],
-    ['different digest',f=>f.trace.filter(c=>c.kind==='tool_call').at(-1).args_sha256='0'.repeat(64),'BLOCKED'],
-    ['redacted shape forgery',f=>{const c=f.trace.filter(c=>c.kind==='tool_call').at(-1);delete c.args_sha256;f.capture.discovery.turns[0].calls.at(-1).args=c.args},'BLOCKED'],
+    ['malformed digest',f=>f.trace.filter(c=>c.kind==='tool_call').at(-1).args_sha256='not-a-digest','FAIL'],
+    ['different digest',f=>f.trace.filter(c=>c.kind==='tool_call').at(-1).args_sha256='0'.repeat(64),'FAIL'],
+    ['redacted shape forgery',f=>{const c=f.trace.filter(c=>c.kind==='tool_call').at(-1);delete c.args_sha256;f.capture.discovery.turns[0].calls.at(-1).args=c.args},'FAIL'],
     ['foreign call',f=>f.trace.filter(c=>c.kind==='tool_call').at(-1).tool='mem_foreign','FAIL'],
     ['foreign native session',f=>f.capture.discovery.turns[0].session='ses_foreign','FAIL'],
   ])test(`${s.id} ${mode}: ${label}`,()=>{const f=discoveryFlow(s,mode);mutate(f);assert.equal(f.grade().verdict,expected)});
