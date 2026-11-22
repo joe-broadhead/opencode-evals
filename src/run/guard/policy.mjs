@@ -31,9 +31,15 @@ export function namesOf(pack, tool) {
  * The policy: `mode` "refuse" (no write passes), "commit" (only `commit[<permission>] = { extract, allow }` passes, and a plan
  * commit only for a plan made in scope: `plans`) or "log" (probes: observe only). `packs` defaults to every pack here.
  */
-export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {}, plans = null, locked = false, memoryBinding = null } = {}) {
+export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {}, plans = null, locked = false, memoryBinding = null, memoryReplies = {} } = {}) {
   const writes = []
   const actions = new Set()
+  const boundMemory = validMemoryBinding(memoryBinding) && packs.some((p) => p.id === "mem" && p.pluginId === "mem")
+  if (boundMemory) {
+    const internal = ["memory.revise", "memory.forget", "page.write", "page.delete", "wiki.write", "wiki.delete"]
+    for (const action of internal) actions.add(action)
+    if (!memoryReplies || typeof memoryReplies !== "object" || Object.entries(memoryReplies).some(([action, reply]) => ![...internal, "mem_remember", "mem_revise", "mem_page", "mem_wiki", "mem_commitments"].includes(action) || !["once", "reject"].includes(reply))) throw new Error("invalid bounded Memory permission reply")
+  }
   for (const pack of packs) {
     for (const tool of pack.tools ?? []) {
       // a metered spending tool (lockdown.mjs CAPPED_SPEND_READS) is allowed in a trial whatever class its pack gives it: not a write for the guard
@@ -59,14 +65,14 @@ export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {},
   const known = new Set()
   for (const pack of packs) for (const tool of pack.tools ?? []) for (const name of namesOf(pack, tool)) known.add(name)
   for (const write of writes) for (const name of write.names) known.add(name)
-  return { mode, writes, actions: [...actions].sort(), ...(validMemoryBinding(memoryBinding) && packs.some((p) => p.id === "mem" && p.pluginId === "mem") ? { memoryBinding } : {}), ...(plans ? { plans } : {}), ...(locked ? { tools: { exact: ["execute", "skill", "question", "todowrite"], prefixes: [...prefixes].sort() }, known: [...known].sort() } : {}) }
+  return { mode, writes, actions: [...actions].sort(), ...(boundMemory ? { memoryBinding, memoryReplies: mode === "commit" ? memoryReplies : {} } : {}), ...(plans ? { plans } : {}), ...(locked ? { tools: { exact: ["execute", "skill", "question", "todowrite"], prefixes: [...prefixes].sort() }, known: [...known].sort() } : {}) }
 }
 
 /** Copies the guard into `into/guard` and writes its policy read-only beside it. Returns the guard's directory. */
 export function installGuard(into, policy) {
   const dir = join(into, "guard")
   mkdirSync(dir, { recursive: true, mode: 0o700 })
-  for (const file of ["index.ts", "plugin.ts", "logic.mjs", "mem-targets.mjs", "package.json"]) cpSync(join(GUARD_SOURCE, file), join(dir, file))
+  for (const file of ["index.ts", "plugin.ts", "logic.mjs", "mem-targets.mjs", "mem-permissions.mjs", "package.json"]) cpSync(join(GUARD_SOURCE, file), join(dir, file))
   writeFileSync(join(dir, "guard.json"), `${JSON.stringify(policy, null, 1)}\n`, { mode: 0o444 })
   return dir
 }

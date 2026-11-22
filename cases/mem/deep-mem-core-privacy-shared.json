@@ -10,8 +10,8 @@
   "prompt": "Search the shared space: what is the shared codename? Return only JSON: {\"value\":\"...\" or null,\"evidence\":\"...\"}. \"value\" is the answer alone: a name, a number, yes or no. \"evidence\" is optional: anything else, such as a record id or a reason.",
   "controls": [],
   "budgets": {
-    "outer_calls": 8,
-    "inner_calls": 8,
+    "outer_calls": 14,
+    "inner_calls": 14,
     "tokens": 64000,
     "wall_ms": 180000
   },
@@ -28,7 +28,7 @@
     {
       "id": "MEM-CT01",
       "severity": "blocker",
-      "ask": "Frozen core truth, real read evidence, typed answer and unchanged synthetic scope agree.",
+      "ask": "Every frozen assertion and the independent durable-state oracle agree.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -47,16 +47,16 @@
   "notes": [
     {
       "id": null,
-      "text": "Port status: blocked-missing-frozen-truth. Full seed, expected values and original assertion parameters absent from retained artifact. Supply the immutable source matching the inventory digest.",
+      "text": "Literal port: 2026-11-12.12; 7 assertions. Runtime proof remains pending.",
       "line": 17
     },
     {
       "id": null,
-      "text": "Original assertion types: expectTools, expectToolOutput, expectAnswerJson, forbidAnswer, forbidAnswer, maxToolCalls, expectExitSuccess. Multi-turn continuation must preserve the original separate prompts; concatenation is not yet runtime-compatible.",
+      "text": "The native Memory turn plan selects all 1 original prompts separately; fresh session after turn none. Never concatenate continuation prompts.",
       "line": 18
     }
   ],
   "hashes": {
-    "source_sha256": "f9890cf67b0c567aa35044c0fff4aeab5e7fd913bd174a6e20c9974d68936a15"
+    "source_sha256": "ebbf29218845c9dcdb21a7e1e79bbbf0bffd4f49fcc29f37294121ab79ce7bd2"
   }
 }

@@ -1,0 +1,25 @@
+{
+  "package": "@we-the-rebel-alliance/source-contract",
+  "repo": "https://github.com/we-the-rebel-alliance/source-contract",
+  "version": "0.3.0",
+  "commit": "2fd55cdc0c6c1067927fefc403a88bfd18c9a971",
+  "tag": "v0.3.0",
+  "tagObject": "6e5136e274b7071d326d09d4ae5812b135228afb",
+  "commitNote": "the tagged release v0.3.0: the event kinds, x-<plugin>/<kind> extensions and the contract isEventKind, copied from the release tarball after verifying it against the release SHA256SUMS",
+  "path": "dist/",
+  "from": "src/vendor/source-contract",
+  "files": [
+    "events.js",
+    "chunks/chunk-LJL3EALP.js",
+    "chunks/chunk-NUBUQFLH.js",
+    "chunks/chunk-CUITXC5J.js"
+  ],
+  "sha256": {
+    "events.js": "4371c957d5b8482410a1a4b3112eb6846de3fba672cc9862d129a77780cfd040",
+    "chunks/chunk-LJL3EALP.js": "6e9f5bcb4ed13a1bce165a37f766d0cc6ff60f8103bcbe357061977cfb2669d8",
+    "chunks/chunk-NUBUQFLH.js": "7af09eece1414e0b0f9bb201427d662b96f29b650bb6115998362135dce303b6",
+    "chunks/chunk-CUITXC5J.js": "7356ce701b8031c195cd80c607e42132327c70f5ce77d8d90136fdbf229391be"
+  },
+  "vendored": "2026-11-18",
+  "note": "The records service ships alone (records/Dockerfile copies records/src into the image), so it cannot import the plugin copy at runtime. Only the contract's isEventKind and EVENT_KINDS are used, from the package events module, unchanged: the store kind gate is the contract rule, never a list copied by hand. check:copies and test/source-kinds.test.js hold every file here byte-identical to src/vendor/source-contract, so a vendored bump cannot leave the store behind. Do not edit a file in this directory: a change belongs upstream, or in a new copy of the whole module."
+}

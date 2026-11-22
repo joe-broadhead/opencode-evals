@@ -7,11 +7,11 @@
   "source": null,
   "decision": null,
   "data_check": null,
-  "prompt": "Record a durable decision: keep the control plane on PostgreSQL for PITR. Do not store tracker status.\nThen: Which database did we choose? Return only JSON: {\"value\":\"...\" or null,\"evidence\":\"...\"}. \"value\" is the answer alone: a name, a number, yes or no. \"evidence\" is optional: anything else, such as a record id or a reason.",
+  "prompt": "Record a durable decision: keep the control plane on PostgreSQL for PITR. Do not store tracker status.",
   "controls": [],
   "budgets": {
-    "outer_calls": 8,
-    "inner_calls": 8,
+    "outer_calls": 14,
+    "inner_calls": 14,
     "tokens": 64000,
     "wall_ms": 180000
   },
@@ -28,7 +28,7 @@
     {
       "id": "MEM-CT01",
       "severity": "blocker",
-      "ask": "Frozen core truth, real read evidence, typed answer and unchanged synthetic scope agree.",
+      "ask": "Every frozen assertion and the independent durable-state oracle agree.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -40,23 +40,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 13
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Port status: blocked-missing-frozen-truth. Full seed, expected values and original assertion parameters absent from retained artifact. Supply the immutable source matching the inventory digest.",
-      "line": 19
+      "text": "Literal port: 2026-11-12.12; 6 assertions. Runtime proof remains pending.",
+      "line": 17
     },
     {
       "id": null,
-      "text": "Original assertion types: expectTools, expectTools, expectAnswerJson, expectState, maxToolCalls, expectExitSuccess. Multi-turn continuation must preserve the original separate prompts; concatenation is not yet runtime-compatible.",
-      "line": 20
+      "text": "The native Memory turn plan selects all 2 original prompts separately; fresh session after turn 1. Never concatenate continuation prompts.",
+      "line": 18
     }
   ],
   "hashes": {
-    "source_sha256": "de09e1478eda6c866beb450d294d9251f7172d39554eba0dcc5f28d73fc8495e"
+    "source_sha256": "af06fa1d2ac8afcce0ef9b620cbdb53b87fdff923fc5e9f0c6ce9ca225047221"
   }
 }

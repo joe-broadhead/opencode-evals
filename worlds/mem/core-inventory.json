@@ -1,7 +1,7 @@
 {
   "version": "2026-11-12.12",
   "source_sha256": "614dc70d7636b8a81d05cdef67fc0e0a73b1141ff13dc0c59a012249a67262fd",
-  "port_status": "not-ported-no-runtime-score",
+  "port_status": "offline-truth-ported-not-runtime-verified",
   "cases": [
     {
       "id": "core-recall-model",
@@ -16,7 +16,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-recall-orb",
@@ -31,7 +31,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-recall-port",
@@ -46,7 +46,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-recall-region",
@@ -61,7 +61,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-prior-db",
@@ -76,7 +76,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-prior-version",
@@ -91,7 +91,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-update-mortgage",
@@ -106,7 +106,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-update-owner",
@@ -121,7 +121,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-update-region",
@@ -136,7 +136,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-update-flag",
@@ -151,7 +151,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-temporal-inside",
@@ -166,7 +166,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-temporal-outside",
@@ -181,7 +181,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-temporal-older",
@@ -196,7 +196,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-abstain-empty",
@@ -212,7 +212,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-abstain-related",
@@ -228,7 +228,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-abstain-question",
@@ -244,7 +244,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-abstain-positive",
@@ -259,7 +259,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-constraint-migration",
@@ -274,7 +274,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-constraint-deps",
@@ -289,7 +289,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-constraint-freeze",
@@ -304,7 +304,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-constraint-private",
@@ -319,7 +319,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-constraint-allow-dev",
@@ -334,7 +334,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-constraint-allow-hotfix",
@@ -349,7 +349,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-constraint-allow-read",
@@ -364,7 +364,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-constraint-allow-forcepush",
@@ -379,7 +379,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-privacy-private",
@@ -396,7 +396,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-privacy-shared",
@@ -413,7 +413,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-privacy-cross",
@@ -432,7 +432,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-wiki-owner",
@@ -447,7 +447,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-wiki-forbid",
@@ -463,7 +463,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-discipline-arithmetic",
@@ -476,7 +476,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-source-attribution",
@@ -491,7 +491,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-multihop",
@@ -506,7 +506,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-preference",
@@ -521,7 +521,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-discipline-injection",
@@ -537,7 +537,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-durability",
@@ -554,7 +554,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-forget",
@@ -576,7 +576,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     },
     {
       "id": "core-wiki-write",
@@ -596,7 +596,7 @@
         "maxToolCalls",
         "expectExitSuccess"
       ],
-      "status": "blocked-core-port"
+      "status": "offline-truth-ported"
     }
   ]
 }

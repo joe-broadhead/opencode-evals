@@ -11,6 +11,7 @@
     "bin/",
     "src/",
     "packs/",
+    "worlds/mem/",
     "cost/",
     "docker/",
     "CHANGELOG.md"

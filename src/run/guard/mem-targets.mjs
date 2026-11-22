@@ -32,17 +32,18 @@ export function memoryCall(tool, input, binding = {}) {
     if (["write", "append", "replace"].includes(action) && typeof input.content !== "string") return fail("missing page content")
   }
   if (family === "wiki") {
-    if (action !== "create" && !["wiki-eval-personal", "wiki-eval-shared"].includes(input.wiki_id)) return fail("only reserved synthetic wikis are writable")
+    if (action !== "create" && !["wiki-eval-personal", "wiki-eval-shared"].includes(input.wiki_id) && !binding.wiki_spaces?.[input.wiki_id]) return fail("only reserved synthetic wikis are writable")
     if (["write", "append"].includes(action) && (typeof input.content !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,100}$/.test(input.filename))) return fail("invalid flat document write")
   }
   const ids = input.ids ?? (input.id ? [input.id] : [])
-  if ((family === "revise" || (family === "commitments" && action !== "add")) && (!Array.isArray(ids) || !ids.length || ids.some((id) => !/^rec_eval_[0-9]+$/.test(id)))) return fail("only reserved synthetic record ids are writable")
+  if ((family === "revise" || (family === "commitments" && action !== "add")) && (!Array.isArray(ids) || !ids.length || ids.some((id) => !/^rec_[A-Za-z0-9_]{1,128}$/.test(id)))) return fail("only registered synthetic record ids are writable")
   if (family === "commitments" && action === "add" && typeof input.what !== "string") return fail("missing commitment text")
   const recordScopes = ids.map((id) => binding.record_spaces?.[id])
   if (ids.length && (recordScopes.some((s) => !["spc-eval-personal", "spc-eval-shared"].includes(s)) || new Set(recordScopes).size !== 1)) return fail("record target scope is unknown or mixed")
-  const scope = input.space ?? recordScopes[0] ?? (input.wiki_id === "wiki-eval-shared" ? "shared" : "personal")
+  const scope = input.space ?? recordScopes[0] ?? binding.wiki_spaces?.[input.wiki_id] ?? (input.wiki_id === "wiki-eval-shared" ? "shared" : "personal")
   const target = ({ personal: "spc-eval-personal", shared: "spc-eval-shared", "spc-eval-personal": "spc-eval-personal", "spc-eval-shared": "spc-eval-shared" })[scope]
   if (!target) return fail("only reserved synthetic spaces are writable")
-  if (family === "wiki" && input.wiki_id && target !== (input.wiki_id === "wiki-eval-shared" ? "spc-eval-shared" : "spc-eval-personal")) return fail("wiki id and requested scope disagree")
+  if (family === "wiki" && input.wiki_id && target !== (binding.wiki_spaces?.[input.wiki_id] ?? (input.wiki_id === "wiki-eval-shared" ? "spc-eval-shared" : "spc-eval-personal"))) return fail("wiki id and requested scope disagree")
+  if (recordScopes.length && recordScopes[0] !== target) return fail("record id and requested scope disagree")
   return { family, action, write: true, target }
 }

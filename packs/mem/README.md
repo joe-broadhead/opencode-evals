@@ -1,5 +1,8 @@
 # Memory setup: offline only
 
+The current increment is [Offline phase 3](OFFLINE-PHASE3.md). It resolves the
+missing core source and ports all 38 contracts. Runtime verification remains pending.
+
 For the incremental implementation and current gates, read
 [Offline phase 2](OFFLINE-PHASE2.md). The remainder records the original setup
 phase; its zero-core-port and absent-transport statements are historical.

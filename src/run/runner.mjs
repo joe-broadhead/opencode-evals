@@ -48,6 +48,8 @@ import { splitTrial } from "../grade/trials.mjs"
 import { digestOf } from "../util/canonical.mjs"
 import { dirname } from "node:path"
 import { stageMemFixture, memFixtureOptions, memFixtureBinding, startMemFixture, memCaptureRecord } from "./mem-fixture.mjs"
+import { coreCases } from "../../packs/mem/core.mjs"
+import { runMemoryTurns } from "./mem-turns.mjs"
 
 
 export const RUNNER = "evals run"
@@ -492,7 +494,7 @@ async function runJobBody(job, ctx, track) {
   track.phase = "preparing the world"
   const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
   if (ctx.plugin === "mem" && (ctx.isolation.name !== "container" || !ctx.isolation.confines || prepared.memFixture !== true)) throw new Error("Memory trials require the contained synthetic fixture world")
-  const memFixture = ctx.plugin === "mem" ? stageMemFixture(sandbox) : null
+  const memFixture = ctx.plugin === "mem" ? stageMemFixture(sandbox, { core: coreCases.find((s) => s.id === job.case.id) ?? null }) : null
   const cwd = within(root, prepared.cwd, "the working directory")
   // The case's own files (`Seed: files=`), copied into its project before the world's home is cut of its links.
   track.phase = "seeding the project's files"
@@ -527,11 +529,11 @@ async function runJobBody(job, ctx, track) {
     if (ctx.captureServer) capture = await startCapture({ trial, ctx, sandbox })
     const fakes = []
     for (const id of fakeIds) fakes.push(await startFakeMcp({ trial, ctx, sandbox, id, port: await freePort() }))
-    const memory = memFixture ? await startMemFixture({ spec: memFixture, isolation: ctx.isolation, trial, binary: ctx.bunBinary, launch: (s) => start(s.command, s.args, { cwd: s.cwd, env: s.env }), stop }) : null
+    const memory = memFixture ? await startMemFixture({ spec: memFixture, isolation: ctx.isolation, trial, binary: ctx.nodeBinary, launch: (s) => start(s.command, s.args, { cwd: s.cwd, env: s.env }), stop }) : null
     // A world's own variables go in first and never the sealed ones; the harness's (credential, endpoint) go in last.
     const fromWorld = worldEnv(prepared.env)
     if (fromWorld.dropped.length) ctx.log(`  ${name}: the world's env may not set ${fromWorld.dropped.join(", ")}: ignored`)
-    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}), ...(capture ? { ANTHROPIC_BASE_URL: capture.url } : {}) } })
+    const env = sandboxEnv({ sandbox, config, password, caller: ctx.caller, world: fromWorld.env, extra: { ...(job.authEnv ?? ctx.auth.env), ...(memFixture?.scopeMap ? { EVALS_MEM_SCOPE_MAP: memFixture.scopeMap } : {}), ...(mockUrl ? { SPIKE_MOCK_URL: mockUrl } : {}), ...(capture ? { ANTHROPIC_BASE_URL: capture.url } : {}) } })
     // Every host command of the run goes through the trial.
     const exec = (args, options = {}) => {
       const spec = trial.wrap({ command: ctx.binary, args, cwd: options.cwd ?? cwd, env: options.env ?? env, stdin: options.input !== undefined && options.input !== null })
@@ -573,7 +575,8 @@ async function runJobBody(job, ctx, track) {
             return false
           }
         }
-        const runClient = () => exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...stallOf(ctx, sawRequest) })
+        const core = ctx.plugin === "mem" ? coreCases.find((s) => s.id === job.case.id) : null
+        const runClient = () => core ? runMemoryTurns({ spec: core, timeoutMs: ctx.timeoutMs, client: ({ prompt, session: continued, timeoutMs }) => exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...(continued ? ["--session", continued] : ["--title", `eval ${id} t${job.trial}`]), prompt], { timeoutMs, ...stallOf(ctx, sawRequest) }) }) : exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...stallOf(ctx, sawRequest) })
         // An idle client: `opencode run` alive, the server up, the mock never asked (found in 2 of ~100 `p0 a1` runs; the processes were all asleep at 0 % CPU). It is replaced ONCE, and the
         // restart is written into the summary with what the container showed at that moment and reported by the probe: a hang that happens again is infra `no_model_request`, as before.
         const restarts = []
@@ -671,7 +674,7 @@ async function runJobBody(job, ctx, track) {
     }
     // The sandbox is hostile once a run has been in it: a working directory it replaced with a link out of the sandbox
     // is not walked, so no file outside the sandbox can reach the files record.
-    const files = [...(inside(root, cwd) ? changedFiles(before, cwd) : []), ...(job.case.home_files?.length ? changedHome(homeBefore, sandbox.home, job.case.home_files) : []), ...(memFixture ? [await memCaptureRecord(memFixture, trial)] : [])]
+    const files = [...(inside(root, cwd) ? changedFiles(before, cwd) : []), ...(job.case.home_files?.length ? changedHome(homeBefore, sandbox.home, job.case.home_files) : []), ...(memFixture ? [await memCaptureRecord(memFixture, trial, result.turns)] : [])]
     const linked = job.case.home_files?.length ? homeLinks(sandbox.home, job.case.home_files) : []
     if (linked.length) summary.home_links_refused = linked
     if (!inside(root, cwd)) summary.files_refused = "the working directory no longer resolves inside the sandbox"
@@ -832,7 +835,8 @@ export const trialBinaries = ({ binary, needsClaude = false, needsBrowse = false
   opencode: binary,
   ...(needsClaude ? { claude: caller.EVALS_CLAUDE_BIN ?? "claude" } : {}),
   ...(needsBrowse ? { node: caller.EVALS_NODE_BIN ?? "node" } : {}),
-  ...(scripted || needsMemory || captureServer || fakeIds.length ? { bun: caller.EVALS_BUN ?? "bun" } : {}),
+  ...(scripted || captureServer || fakeIds.length ? { bun: caller.EVALS_BUN ?? "bun" } : {}),
+  ...(needsMemory ? { node: caller.EVALS_NODE ?? "node" } : {}),
 })
 
 /**
@@ -1139,7 +1143,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
     let guardDir = null
     if (guardOn) {
       const guardMode = commitPlan ? "commit" : options.guardMode ?? "refuse"
-      guardDir = installGuard(harnessDir, buildPolicy({ mode: guardMode, commit: commitPlan?.writes ?? {}, plans: commitPlan?.plans ?? null, locked: toolsMode === "locked", ...(plugin === "mem" ? { memoryBinding: memFixtureBinding(isolation) } : {}), ...(options.lockPacks ? { packs: options.lockPacks } : {}) }))
+      guardDir = installGuard(harnessDir, buildPolicy({ mode: guardMode, commit: commitPlan?.writes ?? {}, plans: commitPlan?.plans ?? null, locked: toolsMode === "locked", ...(plugin === "mem" ? { memoryBinding: memFixtureBinding(isolation), memoryReplies: options.memoryReplies ?? {} } : {}), ...(options.lockPacks ? { packs: options.lockPacks } : {}) }))
       facts.guard = { mode: guardMode }
     }
     // The probe is a trial of its own: under `container`, it proves a container starts before anything is reserved.
@@ -1285,6 +1289,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       harnessDir,
       sealed,
       bunBinary: caller.EVALS_BUN ?? "bun",
+      nodeBinary: caller.EVALS_NODE ?? "node",
       scriptedProvider: scripted && harnessDir ? join(harnessDir, "mock", "provider") : undefined,
       mounts,
       prompts: gated.prompts,

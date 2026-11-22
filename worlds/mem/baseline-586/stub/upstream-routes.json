@@ -1,0 +1,39 @@
+{
+  "about": "POST routes the deployed memory core and hub serve under /v3, read from the images' own route tables on 2026-11-03 (core: src/gateway/v2-router.ts, skill-handlers.ts, and the meta route strings; hub: knowledge/openapi.yaml plus the tools router). test/upstream-routes.test.js holds the stub, the plugin, the gateway, and the operator scripts to this list. Refresh it from the images when they change; never add a route here that the deployed images do not serve. The operator routes /ops/orphans and /ops/purge/team were added on 2026-11-18 from opencode-mem-deploy build/core/README.md and ops-privacy.ts (core_patch aad24e09, deployed that day); the rest is the 2026-11-03 reading.",
+  "version": "2.0.0-beta.1",
+  "images": { "core": "f9b286246d0e", "hub": "99c234f606be" },
+  "core": [
+    "/ops/orphans", "/ops/purge/team",
+    "/atomic/count", "/atomic/delete", "/atomic/query", "/atomic/search", "/atomic/update",
+    "/conversation/add", "/conversation/count", "/conversation/delete", "/conversation/query", "/conversation/search",
+    "/core/count", "/core/read", "/core/write",
+    "/knowledge/create", "/knowledge/delete", "/knowledge/get", "/knowledge/list", "/knowledge/update",
+    "/scenario/count", "/scenario/ls", "/scenario/read", "/scenario/rm", "/scenario/write",
+    "/skill/conversation/add", "/skill/conversation/force-archive", "/skill/create", "/skill/delete", "/skill/extract",
+    "/skill/files/read", "/skill/files/remove", "/skill/files/write", "/skill/get", "/skill/list", "/skill/listing",
+    "/skill/patch", "/skill/search", "/skill/update", "/skill/versions",
+    "/meta/acl/check", "/meta/acl/grant", "/meta/acl/list", "/meta/acl/revoke",
+    "/meta/agent-fixed-asset/list", "/meta/agent-fixed-asset/list-with-detail", "/meta/agent-fixed-asset/set",
+    "/meta/agent-fixed-asset/summary-by-agents",
+    "/meta/agent/archive", "/meta/agent/create", "/meta/agent/delete", "/meta/agent/get", "/meta/agent/list", "/meta/agent/update",
+    "/meta/asset/create", "/meta/asset/delete", "/meta/asset/get", "/meta/asset/list", "/meta/asset/list-accessible",
+    "/meta/asset/touch-usage", "/meta/asset/update",
+    "/meta/auth/verify", "/meta/config/user/get", "/meta/config/user/set", "/meta/instance-quota/get",
+    "/meta/participation-log/append", "/meta/participation-log/list",
+    "/meta/task-agent/link", "/meta/task-agent/list", "/meta/task-agent/unlink",
+    "/meta/task/archive", "/meta/task/create", "/meta/task/delete", "/meta/task/get", "/meta/task/list", "/meta/task/update",
+    "/meta/team-member/add", "/meta/team-member/get", "/meta/team-member/list", "/meta/team-member/remove",
+    "/meta/team/create", "/meta/team/delete", "/meta/team/get", "/meta/team/list", "/meta/team/update",
+    "/meta/user-key/create", "/meta/user-key/get", "/meta/user-key/list", "/meta/user-key/revoke", "/meta/user-key/update",
+    "/meta/user/create", "/meta/user/delete", "/meta/user/get", "/meta/user/list"
+  ],
+  "hub": [
+    "/code-graph/callees", "/code-graph/callers", "/code-graph/create", "/code-graph/delete", "/code-graph/explore",
+    "/code-graph/files", "/code-graph/get", "/code-graph/impact", "/code-graph/list", "/code-graph/node",
+    "/code-graph/search", "/code-graph/status", "/code-graph/sync",
+    "/wiki/create", "/wiki/delete", "/wiki/get", "/wiki/graph", "/wiki/ingest", "/wiki/list",
+    "/wiki/page/ls", "/wiki/page/read", "/wiki/page/rm", "/wiki/page/write",
+    "/wiki/raw/ls", "/wiki/raw/read", "/wiki/raw/rm", "/wiki/raw/write", "/wiki/search",
+    "/tools/call", "/tools/list"
+  ]
+}

@@ -10,8 +10,8 @@
   "prompt": "What did we decide about Q4 pricing? Return only JSON: {\"value\":\"...\" or null,\"evidence\":\"...\"}. \"value\" is the answer alone: a name, a number, yes or no. \"evidence\" is optional: anything else, such as a record id or a reason.",
   "controls": [],
   "budgets": {
-    "outer_calls": 8,
-    "inner_calls": 8,
+    "outer_calls": 14,
+    "inner_calls": 14,
     "tokens": 64000,
     "wall_ms": 180000
   },
@@ -28,7 +28,7 @@
     {
       "id": "MEM-CT01",
       "severity": "blocker",
-      "ask": "Frozen core truth, real read evidence, typed answer and unchanged synthetic scope agree.",
+      "ask": "Every frozen assertion and the independent durable-state oracle agree.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -47,16 +47,16 @@
   "notes": [
     {
       "id": null,
-      "text": "Port status: blocked-missing-frozen-truth. Full seed, expected values and original assertion parameters absent from retained artifact. Supply the immutable source matching the inventory digest.",
+      "text": "Literal port: 2026-11-12.12; 6 assertions. Runtime proof remains pending.",
       "line": 17
     },
     {
       "id": null,
-      "text": "Original assertion types: expectTools, expectToolOutput, expectAnswerJson, answerSentences, maxToolCalls, expectExitSuccess. Multi-turn continuation must preserve the original separate prompts; concatenation is not yet runtime-compatible.",
+      "text": "The native Memory turn plan selects all 1 original prompts separately; fresh session after turn none. Never concatenate continuation prompts.",
       "line": 18
     }
   ],
   "hashes": {
-    "source_sha256": "8adde57d387c7cc71aa34631b9261248ece2591d35f11c16219ca623289c8582"
+    "source_sha256": "ff86fd1c7fa10366e243c3af659039afde795f1dca5a031c73af6035d68fe191"
   }
 }

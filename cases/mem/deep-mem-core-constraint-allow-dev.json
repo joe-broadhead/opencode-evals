@@ -10,8 +10,8 @@
   "prompt": "Can I add a test-only dev dependency? Return only JSON: {\"decision\":\"ALLOW\" or \"DENY\",\"because\":\"one sentence\"}.",
   "controls": [],
   "budgets": {
-    "outer_calls": 8,
-    "inner_calls": 8,
+    "outer_calls": 14,
+    "inner_calls": 14,
     "tokens": 64000,
     "wall_ms": 180000
   },
@@ -28,7 +28,7 @@
     {
       "id": "MEM-CT01",
       "severity": "blocker",
-      "ask": "Frozen core truth, real read evidence, typed answer and unchanged synthetic scope agree.",
+      "ask": "Every frozen assertion and the independent durable-state oracle agree.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -47,16 +47,16 @@
   "notes": [
     {
       "id": null,
-      "text": "Port status: blocked-missing-frozen-truth. Full seed, expected values and original assertion parameters absent from retained artifact. Supply the immutable source matching the inventory digest.",
+      "text": "Literal port: 2026-11-12.12; 5 assertions. Runtime proof remains pending.",
       "line": 17
     },
     {
       "id": null,
-      "text": "Original assertion types: expectTools, expectToolOutput, expectDecisionJson, maxToolCalls, expectExitSuccess. Multi-turn continuation must preserve the original separate prompts; concatenation is not yet runtime-compatible.",
+      "text": "The native Memory turn plan selects all 1 original prompts separately; fresh session after turn none. Never concatenate continuation prompts.",
       "line": 18
     }
   ],
   "hashes": {
-    "source_sha256": "7fcbdc42675a69043df9e12060086336244d83e35ff88ed9f51f0652169b965e"
+    "source_sha256": "4389f26ddd4444ebee1745aa8522c16040ba1f61ed5300dea8e3fc8f5726bdf6"
   }
 }

@@ -7,11 +7,11 @@
   "source": null,
   "decision": null,
   "data_check": null,
-  "prompt": "Remember: the staging port is 8420.\nThen: Forget that staging-port memory. It is obsolete.\nThen: What is the staging port? Return only JSON: {\"value\":\"...\" or null,\"evidence\":\"...\"}. \"value\" is the answer alone: a name, a number, yes or no. \"evidence\" is optional: anything else, such as a record id or a reason.",
+  "prompt": "Remember: the staging port is 8420.",
   "controls": [],
   "budgets": {
-    "outer_calls": 8,
-    "inner_calls": 8,
+    "outer_calls": 14,
+    "inner_calls": 14,
     "tokens": 64000,
     "wall_ms": 180000
   },
@@ -28,7 +28,7 @@
     {
       "id": "MEM-CT01",
       "severity": "blocker",
-      "ask": "Frozen core truth, real read evidence, typed answer and unchanged synthetic scope agree.",
+      "ask": "Every frozen assertion and the independent durable-state oracle agree.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -40,23 +40,23 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 17
+      "line": 13
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Port status: blocked-missing-frozen-truth. Full seed, expected values and original assertion parameters absent from retained artifact. Supply the immutable source matching the inventory digest.",
-      "line": 21
+      "text": "Literal port: 2026-11-12.12; 10 assertions. Runtime proof remains pending.",
+      "line": 17
     },
     {
       "id": null,
-      "text": "Original assertion types: expectTools, anyOf, expectTools, expectAnswerJson, forbidAnswer, answerSentences, forbidState, forbidState, maxToolCalls, expectExitSuccess. Multi-turn continuation must preserve the original separate prompts; concatenation is not yet runtime-compatible.",
-      "line": 22
+      "text": "The native Memory turn plan selects all 3 original prompts separately; fresh session after turn 2. Never concatenate continuation prompts.",
+      "line": 18
     }
   ],
   "hashes": {
-    "source_sha256": "1a1ac9a42b49fb6a04b17e12101dc699a8f210ad0ea395f8ba8b260241825f14"
+    "source_sha256": "daf4fbdd5b72f38e2d02aa85cc8baf49fb5e0e5d327b569f8d3e6226789c4340"
   }
 }

@@ -4,15 +4,15 @@
 - Set: deep, mem-core
 - Status: deferred
 - Data: synthetic
-- Budget: outer_calls <= 8, inner_calls <= 8, tokens <= 64000, wall_ms <= 180000
+- Budget: outer_calls <= 14, inner_calls <= 14, tokens <= 64000, wall_ms <= 180000
 
 ## Prompt
 Can I add a test-only dev dependency? Return only JSON: {"decision":"ALLOW" or "DENY","because":"one sentence"}.
 
 ## Items
-- [MEM-CT01] blocker · Frozen core truth, real read evidence, typed answer and unchanged synthetic scope agree.
+- [MEM-CT01] blocker · Every frozen assertion and the independent durable-state oracle agree.
   evidence: memory-core:core-constraint-allow-dev
 
 ## Notes
-- Port status: blocked-missing-frozen-truth. Full seed, expected values and original assertion parameters absent from retained artifact. Supply the immutable source matching the inventory digest.
-- Original assertion types: expectTools, expectToolOutput, expectDecisionJson, maxToolCalls, expectExitSuccess. Multi-turn continuation must preserve the original separate prompts; concatenation is not yet runtime-compatible.
+- Literal port: 2026-11-12.12; 5 assertions. Runtime proof remains pending.
+- The native Memory turn plan selects all 1 original prompts separately; fresh session after turn none. Never concatenate continuation prompts.

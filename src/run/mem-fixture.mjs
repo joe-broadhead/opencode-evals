@@ -3,8 +3,9 @@ import { mkdirSync, copyFileSync, writeFileSync, readFileSync, lstatSync, exists
 import { join, resolve, relative, isAbsolute } from "node:path"
 import { PORT, SYNTHETIC_TOKEN } from "../../worlds/mem/http.mjs"
 import { sha256 } from "../util/canonical.mjs"
+import { stageBaselineFixture } from "./mem-baseline.mjs"
 
-export function stageMemFixture(sandbox) {
+export function stageMemFixture(sandbox, { core = null } = {}) {
   const root = join(sandbox.tmp, "mem-fixture")
   const base = resolve(sandbox.root), rel = relative(base, root)
   if (!rel || isAbsolute(rel) || rel.split("/").includes("..") || existsSync(root)) throw new Error("unsafe or pre-existing Memory fixture stage")
@@ -16,13 +17,14 @@ export function stageMemFixture(sandbox) {
   mkdirSync(root, { recursive: true, mode: 0o700 })
   const source = resolve(import.meta.dirname, "../../worlds/mem")
   for (const name of ["container-entry.mjs", "http.mjs", "fixture.mjs"]) copyFileSync(join(source, name), join(root, name))
-  writeFileSync(join(root, "descriptor.json"), JSON.stringify({ schema: "oc-mem-fixture/1", fixture: "mem-synthetic-v1", port: PORT }), { flag: "wx", mode: 0o600 })
-  return { root, sandboxRoot: sandbox.root, entry: join(root, "container-entry.mjs"), url: `http://127.0.0.1:${PORT}`, port: PORT }
+  const plan = core ? stageBaselineFixture(root, core) : null
+  writeFileSync(join(root, "descriptor.json"), JSON.stringify({ schema: "oc-mem-fixture/1", fixture: "mem-synthetic-v1", port: PORT, ...(plan ? { transport: "baseline-586" } : {}) }), { flag: "wx", mode: 0o600 })
+  return { root, sandboxRoot: sandbox.root, entry: join(root, "container-entry.mjs"), url: `http://127.0.0.1:${PORT}`, port: PORT, ...(plan ? { plan, scopeMap: join(root, "scope-map.json") } : {}) }
 }
 
 export function memFixtureOptions(spec, options = {}) {
   // These settings override an arm's endpoints; no production credential or source-plugin bridge is used.
-  return { ...options, ownService: true, controlURL: spec.url, baseURL: `${spec.url}/core`, knowledgeURL: `${spec.url}/knowledge`, token: SYNTHETIC_TOKEN, knowledgeToken: SYNTHETIC_TOKEN, capture: false, collect: false, spool: false, bootstrap: false, stateDir: join(spec.root, "plugin-state") }
+  return { ...options, ownService: true, controlURL: spec.plan?.mode === "local" ? "" : spec.url, baseURL: `${spec.url}/core`, knowledgeURL: `${spec.url}/knowledge`, token: spec.plan ? "eval-token" : SYNTHETIC_TOKEN, knowledgeToken: spec.plan ? "eval-token" : SYNTHETIC_TOKEN, ...(spec.plan ? { user: "eval", agent: "build", space: "local", now: "2026-11-12T10:00:00Z" } : {}), capture: false, collect: false, spool: false, bootstrap: false, stateDir: join(spec.root, "plugin-state") }
 }
 
 export function memFixtureBinding(isolation) {
@@ -41,7 +43,7 @@ export async function startMemFixture({ spec, isolation, trial, binary, launch, 
   } catch (e) { await stop(proc); throw e }
 }
 
-export async function memCaptureRecord(spec, trial) {
+export async function memCaptureRecord(spec, trial, turns = null) {
   if (!(await trial.gone())) throw new Error("Memory fixture container still present or removal unverified")
   const path = join(spec.root, "capture.json")
   const base = resolve(spec.sandboxRoot), rel = relative(base, path)
@@ -52,8 +54,13 @@ export async function memCaptureRecord(spec, trial) {
     if (!existsSync(at) || lstatSync(at).isSymbolicLink()) throw new Error("unsafe link or missing Memory capture ancestor")
   }
   if (!existsSync(path) || lstatSync(path).isSymbolicLink() || !lstatSync(path).isFile() || lstatSync(path).size > 65536) throw new Error("Memory fixture capture is missing, unsafe or truncated")
-  const text = readFileSync(path, "utf8")
+  let text = readFileSync(path, "utf8")
   const data = JSON.parse(text)
   if (data.schema !== "oc-mem-capture/1" || data.fixture !== "mem-synthetic-v1") throw new Error("wrong Memory capture schema")
+  if (spec.plan) {
+    if (data.core?.case_id !== spec.plan.case_id || !Array.isArray(turns)) throw new Error("Memory native turn capture is missing")
+    data.core.turns = turns
+    text = JSON.stringify(data)
+  }
   return { path: "mem-fixture/capture.json", change: "added", text, bytes: Buffer.byteLength(text), sha256: sha256(text) }
 }

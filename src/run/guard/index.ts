@@ -22,6 +22,8 @@
 
 import { appendFileSync } from "node:fs"
 import { loadPolicy, matchWrite, isIn, isUnknownTool, planIdOf, decideBefore, judgePlan, pick, scalarLeaves, newIds } from "./logic.mjs"
+import { memoryReply, refreshMemoryScopes } from "./mem-permissions.mjs"
+import { memoryCall } from "./mem-targets.mjs"
 
 const OUT = () => process.env.EVALS_GUARD_OUT ?? (process.env.TMPDIR ? `${process.env.TMPDIR}/guard.jsonl` : "")
 
@@ -46,6 +48,7 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
       const plans = new Map<string, { ok: boolean }>()
       // The sessions that have made a tool call: a run's own, whose asks `opencode run` answers.
       const runSessions = new Set<string>()
+      const memoryCalls = new Map<string, any>()
 
       await ctx.permission.hook("evaluate", (evaluation: any) => {
         const unknown = !actions.has(evaluation.action) && isUnknownTool(policy, evaluation.action)
@@ -60,7 +63,12 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
 
       await ctx.tool.hook("execute.before", (event: any) => {
         runSessions.add(event.sessionID)
+        if (policy.memoryBinding) refreshMemoryScopes(policy, process.env.EVALS_MEM_SCOPE_MAP)
         const decision = decideBefore(policy, event.tool, event.input, plans)
+        if (policy.memoryBinding) {
+          const call = memoryCall(event.tool, event.input, policy.memoryBinding)
+          if (call?.write) memoryCalls.set(`${event.sessionID}:${event.id}`, { tool: event.tool, input: event.input, pass: decision.pass, target: call.target })
+        }
         // A write's input leaves, for `target: ... in created`: the value the tool really got, a variable resolved (private, like the rest of this log).
         const args = matchWrite(policy, event.tool, event.input) ? { args: scalarLeaves(event.input) } : {}
         record("execute_before", { tool: event.tool, call: event.id, session: event.sessionID, write: Boolean(decision.write) || decision.committer, pass: decision.pass, why: decision.why, ...args })
@@ -71,6 +79,7 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
       })
 
       await ctx.tool.hook("execute.after", (event: any) => {
+        memoryCalls.delete(`${event.sessionID}:${event.id}`)
         const write = matchWrite(policy, event.tool, event.input)
         const unknown = !write && isUnknownTool(policy, event.tool)
         const committer = isIn(policy.plans?.committers, event.tool)
@@ -115,6 +124,14 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
             const ask = (event as any).data
             const own = runSessions.has(ask.sessionID)
             record("ask", { action: ask.action, session: ask.sessionID, request: ask.id, own })
+            const memoryDecision = memoryReply(policy, ask, memoryCalls)
+            if (memoryDecision !== null) {
+              try {
+                await ctx.permission.reply({ sessionID: ask.sessionID, requestID: ask.id, decision: memoryDecision })
+                record("memory_reply", { action: ask.action, session: ask.sessionID, request: ask.id, decision: memoryDecision })
+              } catch (error) { record("memory_reply_failed", { action: ask.action, error: String((error as Error)?.message ?? error).slice(0,200) }) }
+              continue
+            }
             if (!own) void reject(ask, "foreign")
             else setTimeout(() => void reject(ask, "slow"), 3000).unref?.()
           }
