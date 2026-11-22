@@ -9,12 +9,17 @@ import {events} from '../../src/trace/normalise.mjs';
 import {memoryTurn} from '../../src/run/mem-turns.mjs';
 import {projectMemoryRecording} from '../../src/grade/adapters/mem-recording.mjs';
 
-export function normalizedDiscovery(calls,s,mode='direct',session='ses_spec'){
+export function normalizedDiscovery(calls,s,mode='direct',session='ses_spec',trial_id='spec_trial'){
+  // Synthetic native observations captured from the completed operation list BEFORE any source/proof
+  // mutation. This is a consumer fixture, not a claim that the unmerged native producer emitted it.
+  const observed=structuredClone(calls);
   const rawLines=[...calls.map((c,i)=>({type:'tool_use',sessionID:session,part:{id:`part_${i}`,callID:`call_${i}`,tool:mode==='direct'?c.tool:'execute',state:{input:mode==='direct'?c.args:{code:`return await tools.mem.${c.tool.slice(4)}(${JSON.stringify(c.args)})`},output:c.output,status:c.status}}})),{type:'text',sessionID:session,part:{text:s.answer}}].map(v=>JSON.stringify(v));
-  const recording=projectMemoryRecording(rawLines,{case_id:s.id,trial:1}),head={schema:'oc-trace/1',privacy:{raw:{sha256:recording.raw_sha256}}};
-  return {rawLines,recording,head,trace:events({rawLines}),turn:memoryTurn({code:0,stdout:rawLines.join('\n')},{index:1,prompt:s.prompt})};
+  const source={case_id:s.id,trial:1},raw_sha256=projectMemoryRecording(rawLines,source).raw_sha256;
+  const journal=mode==='execute'?{schema:'oc-mem-invocations/1',scope:{...source,trial_id,turn:1,session},raw_sha256,complete:true,calls:observed.map((c,i)=>({call_id:`native_${i}`,carrier_call_id:`call_${i}`,tool:c.tool,args:c.args,status:c.status,output:c.output}))}:null;
+  const recording=projectMemoryRecording(rawLines,source,journal),head={schema:'oc-trace/1',privacy:{raw:{sha256:recording.raw_sha256}}};
+  return {rawLines,recording,journal,head,trace:events({rawLines}),turn:memoryTurn({code:0,stdout:rawLines.join('\n')},{index:1,prompt:s.prompt})};
 }
-export function discoveryFlow(s,mode='direct',{recordMetadata=null}={}){
+export function discoveryFlow(s,mode='direct',{recordMetadata=null,confirmation=null}={}){
   const trial_id='spec_trial',session='ses_spec',context={case_id:s.id,trial_id,session,turn:1,active:true};
   const intent=discoveryIntent(s,trial_id,Date.now()+60000),store=createDiscoveryStore({spec:s,intent}),calls=[];
   let args=structuredClone(s.binding.args),input=structuredClone(s.backend.input);
@@ -32,11 +37,16 @@ export function discoveryFlow(s,mode='direct',{recordMetadata=null}={}){
   if(recordMetadata)input.record={...input.record,...structuredClone(recordMetadata)};
   const invocation={...context,tool:`mem_${s.binding.tool}`,args,pass:true};
   const response=store.request(s.backend.method,input,{context,invocation});assert.equal(response.status,200);
+  if(confirmation)response.json.confirmation=structuredClone(confirmation);
   calls.push({tool:invocation.tool,args,status:'completed',output:JSON.stringify(response.json)});
   const capture=store.capture();store.close();
+  if(confirmation)for(const requests of [capture.requests,capture.discovery.requests])requests.at(-1).output.confirmation=structuredClone(confirmation);
   const normalized=normalizedDiscovery(calls,s,mode,session);
   capture.discovery.turns=[normalized.turn];
-  const f={capture,trace:normalized.trace,rawLines:normalized.rawLines,recording:normalized.recording,head:normalized.head};
-  f.grade=()=>gradeCase(compileCase(s.id+'.md',renderDiscoveryCase(s)),runView([f.head,...f.trace],{memoryRecording:f.recording,state:adapterState('mem',[{path:'mem-fixture/capture.json',change:'added',text:JSON.stringify(capture)}]),text:f.recording?.text??null,guardLog:[{kind:'guard_start',case_id:s.id,trial_id}]}));
+  const f={capture,trace:normalized.trace,rawLines:normalized.rawLines,recording:normalized.recording,journal:normalized.journal,head:normalized.head};
+  f.grade=()=>{
+    const files=[{path:'mem-fixture/capture.json',change:'added',text:JSON.stringify(capture)}];
+    return gradeCase(compileCase(s.id+'.md',renderDiscoveryCase(s)),runView([f.head,...f.trace],{memoryRecording:f.recording,state:adapterState('mem',files),files,text:f.recording?.text??null,guardLog:[{kind:'guard_start',case_id:s.id,trial_id}]}));
+  };
   return f;
 }

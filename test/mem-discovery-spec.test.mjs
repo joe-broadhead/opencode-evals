@@ -72,5 +72,5 @@ for(const s of discoveryCases)for(const mode of ['direct','execute']){
     ['denied permission proof',f=>f.capture.discovery.permission.effect='deny'],
     ['unknown permission proof',f=>f.capture.discovery.permission.effect='unknown'],
   ])test(`${s.id} ${mode}: rejects ${label} before accepting truth fields`,()=>{const f=discoveryFlow(s,mode);mutate(f);assert.equal(f.grade().verdict,'FAIL')});
-  if(s.family==='sources')test(`${s.id} ${mode}: stored request may await confirmation without becoming a binding`,()=>{const f=discoveryFlow(s,mode);observation(f).output.confirmation={state:'pending'};assert.equal(f.grade().verdict,'PASS');assert.deepEqual(f.capture.discovery.state.personal.bindings,[])});
+  if(s.family==='sources')test(`${s.id} ${mode}: stored request may await confirmation without becoming a binding`,()=>{const f=discoveryFlow(s,mode,{confirmation:{state:'pending'}});assert.equal(f.grade().verdict,'PASS');assert.deepEqual(f.capture.discovery.state.personal.bindings,[])});
 }

@@ -14,7 +14,7 @@ function exercise(spec,{fault,space="personal",method=spec.backend.method,tool=s
   const store=createDiscoveryStore({spec,intent,permission:{effect:permission},fault}),calls=[]
   const finish=response=>{
     const capture=store.capture();capture.discovery.turns=[{index:1,prompt:spec.prompt,session,exit:0,timedOut:false,text,calls}]
-    const actual=Object.fromEntries(["direct","execute"].map(via=>[via,normalizedDiscovery(calls,{...spec,answer:text},via,session)]))
+    const actual=Object.fromEntries(["direct","execute"].map(via=>[via,normalizedDiscovery(calls,{...spec,answer:text},via,session,trial_id)]))
     const c=compileCase(`${spec.id}.md`,renderDiscoveryCase(spec))
     const grade=(via="direct",guardLog=[{kind:"guard_start",case_id:spec.id,trial_id}])=>gradeCase(c,runView([actual[via].head,...actual[via].trace],{memoryRecording:actual[via].recording,state:adapterState("mem",[{path:"mem-fixture/capture.json",change:"added",text:JSON.stringify(capture)}]),text,guardLog}))
     return {grade,response,capture,store}

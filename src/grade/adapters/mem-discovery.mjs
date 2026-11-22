@@ -4,6 +4,7 @@ import {discoveryCases,DISCOVERY_VERSION} from "../../../packs/mem/discovery-pla
 import {memoryCall} from "../../run/guard/mem-targets.mjs"
 import {sha256} from "../../util/canonical.mjs"
 import {reconcileMemoryRecording} from "./mem-recording.mjs"
+import {parseFirstJson} from "../../trace/resultCounts.mjs"
 
 const name=c=>c.ns==="mem"?c.tool:String(c.tool).replace(/^mem[._]/,"")
 const plain=v=>Boolean(v&&typeof v==="object"&&!Array.isArray(v))
@@ -28,6 +29,18 @@ function truthfulAnswer(s,text){
   return s.legacy_answer_contract?answer===s.answer:s.family==="exact-read"?answer.includes("Quartz full current body. Record nonce QREC-71.")&&!/\b(?:not|missing|unsupported|partial)\b/i.test(answer):s.family==="code"?answer.includes("submitInvoice")&&answer.includes("parseInvoice")&&!/\b(?:not|unknown|unsupported|partial)\b/i.test(answer):s.family==="wiki-graph"?["README.md","design.md","quartz-docs"].every(v=>answer.includes(v))&&!/unknown|unsupported|partial/i.test(answer):s.family==="skills"?/\b1\b[\s\S]*expired[\s\S]*\b2\b[\s\S]*current/i.test(answer):["sources","jobs"].includes(s.family)?answer===s.answer:false
 }
 
+// Compare only supplied overlapping facts. An absent copy/field stays unavailable, never filled.
+function copies(left,right,q){
+  if(left===null&&right===null)return
+  if(left==null||right==null){q.missing("overlapping capture artifact");return}
+  if(Array.isArray(left)&&Array.isArray(right)){
+    if(left.length!==right.length)q.fail("capture copies contradict each other")
+    for(let i=0;i<Math.min(left.length,right.length);i++)copies(left[i],right[i],q)
+  }else if(plain(left)&&plain(right)){
+    for(const k of new Set([...Object.keys(left),...Object.keys(right)]))copies(left[k],right[k],q)
+  }else if(!equal(left,right))q.fail("capture copies contradict each other")
+}
+
 // Each predicate declares its fragments. Only the final reduction chooses FAIL > BLOCKED > PASS.
 function checks(id){
   const failures=new Set(),missing=new Set()
@@ -43,7 +56,7 @@ export function memoryDiscoveryEvidence(id,view){
   if(!s){q.missing("case contract");return q.finish()}
   const object=(v,label)=>q.typed(v,label,plain),list=(v,label)=>q.typed(v,label,Array.isArray)
   const field=(v,label,type)=>q.typed(v,label,x=>typeof x===type)
-  const invocations=(calls,actual=false)=>{
+  const invocations=(calls,actual=false,complete=true)=>{
     if(!calls)return
     for(const c of calls){
       if(!plain(c)){q.fail("native calls malformed");continue}
@@ -61,7 +74,7 @@ export function memoryDiscoveryEvidence(id,view){
         if(change&&(!s.write||name(c)!==s.binding.tool||!equal(args,s.binding.args)))q.fail("unrequested mutation invocation")
       }
     }
-    if(calls.every(c=>plain(c?.args)&&c.status!=null&&c.status!=="unattributable"&&(!actual||c.attributable===true))&&!calls.some(c=>bindingMatches(s,c)&&c.status==="completed"))q.fail("recorded execution omitted the required typed invocation")
+    if(complete&&calls.every(c=>plain(c?.args)&&c.status!=null&&c.status!=="unattributable"&&(!actual||c.attributable===true))&&!calls.some(c=>bindingMatches(s,c)&&c.status==="completed"))q.fail("recorded execution omitted the required typed invocation")
   }
   const answer=field(view.answer?.text,"official recording text","string")
   q.check("actual answer differs from the literal outcome",[[answer,"official recording text"]],()=>truthfulAnswer(s,answer))
@@ -92,6 +105,7 @@ export function memoryDiscoveryEvidence(id,view){
     const supported=q.version(p.schema,"oc-mem-discovery-proof/1","discovery schema version",/^oc-mem-discovery-proof\/\d+$/)&&q.version(p.suite,DISCOVERY_VERSION,"suite version",/^mem-discovery\/\d+$/)
     if(!supported)p=undefined
   }
+  if(view.memoryRecording?.journal_scope)q.check("native journal semantic trial contradicts capture",[[view.memoryRecording.journal_scope.trial_id,"native journal trial"],[p?.trial_id,"trial identity"]],()=>view.memoryRecording.journal_scope.trial_id===p.trial_id)
   if(view.scope?.ns&&view.scope.ns!=="mem")q.fail("foreign native scope")
   const guard=list(view.guardLog,"guard recording")
   if(guard&&guard.some(r=>!plain(r)))q.fail("guard recording malformed")
@@ -101,15 +115,20 @@ export function memoryDiscoveryEvidence(id,view){
     q.check("native guard/case/trial binding differs",[[guard,"guard recording"],[p.trial_id,"trial identity"]],()=>guard.some(r=>r?.kind==="guard_start"&&r.case_id===id&&r.trial_id===p.trial_id))
   }
   const before=p&&object(p.before,"seed artifact"),state=p&&object(p.state,"poststate artifact")
+  const outerBefore=capture&&object(capture.before,"capture before artifact"),outerState=capture&&object(capture.after,"capture after artifact")
   const shape=states=>equal(Object.keys(states).sort(),Object.keys(s.seed).sort())&&Object.entries(s.seed).every(([scope,seed])=>plain(states[scope])&&equal(Object.keys(states[scope]).sort(),Object.keys(seed).sort())&&Object.entries(seed).every(([k,v])=>Array.isArray(v)?Array.isArray(states[scope][k]):plain(states[scope][k])))
+  for(const [before,state] of [[outerBefore,outerState]]){
+    if(before){if(!shape(before))q.fail("capture seed malformed");if(!equal(before,s.seed))q.fail("capture seed changed")}
+    if(state&&!shape(state))q.fail("capture poststate malformed")
+    q.check("outer unexpected shared durable effect",[[before,"capture before artifact"],[state,"capture after artifact"]],()=>equal(before.shared,state.shared))
+    if(!s.write)q.check("outer read changed durable content",[[before,"capture before artifact"],[state,"capture after artifact"]],()=>equal(before,state))
+  }
   if(before){if(!shape(before))q.fail("canonical seed malformed");q.check("canonical seed changed",[[before,"seed artifact"]],()=>equal(before,s.seed))}
   if(state&&!shape(state))q.fail("canonical poststate malformed")
-  const b=before&&shape(before)?before.personal:undefined,a=state&&shape(state)?state.personal:undefined
   q.check("unexpected shared durable effect",[[before,"seed artifact"],[state,"poststate artifact"]],()=>equal(before.shared,state.shared))
   if(!s.write)q.check("a read changed durable content",[[before,"seed artifact"],[state,"poststate artifact"]],()=>equal(before,state))
   if(capture&&p){
-    q.check("capture seed contradicts discovery seed",[[capture.before,"capture before artifact"],[before,"seed artifact"]],()=>equal(capture.before,before))
-    // The discovery state is the oracle's authoritative poststate. Outer state is not a fallback.
+    copies(capture.before,p.before,q);copies(capture.after,p.state,q);copies(capture.requests,p.requests,q)
   }
   const turns=p&&list(p.turns,"native recording")
   if(turns&&turns.length!==1)q.fail("native recording omitted or replayed the turn")
@@ -123,12 +142,15 @@ export function memoryDiscoveryEvidence(id,view){
   }
   const calls=t&&list(t.calls,"native call recording"),native=calls?.filter(memory),trace=view.calls.filter(memory)
   if(calls&&calls.some(c=>!plain(c)||typeof c.tool!=="string"))q.fail("native calls malformed")
-  invocations(native)
+  const directOnly=!view.calls.some(c=>c.tool==="execute")
+  invocations(native,false,directOnly||view.memoryRecording?.execution_complete===true)
   const actualCalls=view.memoryRecording?.schema==="oc-mem-private-recording/1"&&Array.isArray(view.memoryRecording.calls)?view.memoryRecording.calls:undefined
-  invocations(actualCalls,true)
+  invocations(actualCalls,true,view.memoryRecording?.execution_complete===true)
+  if(Array.isArray(view.memoryRecording?.direct_calls))invocations(view.memoryRecording.direct_calls,true,false)
   if(native){
-    if(native.length!==trace.length||native.some((c,i)=>name(c)!==name(trace[i])))q.fail("typed native calls disagree with trace")
+    if(directOnly&&(native.length!==trace.length||native.some((c,i)=>name(c)!==name(trace[i]))))q.fail("typed native calls disagree with trace")
     for(const [i,c]of native.entries()){
+      if(!directOnly)continue // Code Mode source sites carry no executed-call count or argument authority.
       const args=plain(c.args)?c.args:undefined
       const digest=trace[i]?.args_sha256
       q.check("official trace argument digest malformed",[[digest,"official trace argument digest"]],()=>typeof digest==="string"&&/^[a-f0-9]{64}$/.test(digest))
@@ -136,10 +158,13 @@ export function memoryDiscoveryEvidence(id,view){
       if(trace[i]?.status==="error")q.fail("official trace records a failed invocation")
     }
   }
-  const requests=p&&list(p.requests,"backend recording"),rows=requests?.filter(plain)
-  if(requests&&rows.length!==requests.length)q.fail("backend observation malformed")
+  const requests=p&&list(p.requests,"backend recording"),outerRequests=capture&&list(capture.requests,"capture backend recording")
+  for(const observations of [requests,outerRequests]){
+  const rows=observations?.filter(plain)
+  if(observations&&rows.length!==observations.length)q.fail("backend observation malformed")
   for(const r of rows??[]){
     for(const key of ["method","space","input","wire_input","output","status","http_status","context"])q.need(r[key],`backend ${key} artifact`)
+    if(r.verb!=null&&r.verb!=="POST")q.fail("backend verb contradicts operation")
     if(r.http_status!=null&&r.http_status!==200||r.space!=null&&r.space!=="personal"||r.status!=null&&(r.method==null?!["read","stored"].includes(r.status):r.status!==(writes.has(r.method)?"stored":"read")))q.fail("failed or foreign backend observation")
     const input=object(r.input,"backend input artifact"),wire=object(r.wire_input,"backend wire_input artifact"),out=object(r.output,"backend output artifact"),context=object(r.context,"backend context artifact")
     if(out&&(failedEnvelope(out)||r.method!=null&&out.status!=null&&out.status!==outputStatus(r.method)))q.fail("error-bearing or conflicting backend output")
@@ -155,17 +180,39 @@ export function memoryDiscoveryEvidence(id,view){
   }
   const matching=rows?.filter(r=>r.method===s.backend.method&&r.input!=null&&equal(r.input,s.backend.input))
   if(matching?.length>1||rows?.every(r=>r.method!=null&&r.input!=null)&&matching.length===0)q.fail("recorded execution omitted or replayed required backend operation")
-  const r=matching?.length===1?matching[0]:undefined,out=r&&plain(r.output)?r.output:undefined
-  const creators=p&&s.write&&s.family!=="wiki-write"?list(p.creators,"creator recording"):undefined
+  }
+  const creators=p&&list(p.creators,"creator recording")
+  const creatorCollections=[creators]
+  if(capture?.creators!==undefined){const outerCreators=list(capture.creators,"outer creator recording");creatorCollections.push(outerCreators);copies(capture.creators,p?.creators,q)}
+  for(const creators of creatorCollections){
+  const creatorIds=new Set()
   for(const c of creators??[]){
     if(!plain(c)){q.fail("creator recording malformed");continue}
+    if(Object.keys(c).some(k=>!["id","case_id","trial_id","turn","session","tool","args","status"].includes(k)))q.fail("creator has unrecognized fields")
+    if(!s.write||s.family==="wiki-write")q.fail("unrequested creator observation")
+    if(creatorIds.has(c.id))q.fail("duplicate creator identity");creatorIds.add(c.id)
     for(const key of ["id","case_id","trial_id","turn","session","tool","args","status"])q.need(c[key],`creator ${key} artifact`)
     if(c.id!=null&&typeof c.id!=="string"||c.case_id!=null&&c.case_id!==id||c.turn!=null&&c.turn!==1||c.tool!=null&&name(c)!==s.binding.tool||c.args!=null&&!equal(c.args,s.binding.args)||c.status!=null&&c.status!=="stored")q.fail("creator contradicts the sealed operation")
     q.check("creator trial differs",[[c.trial_id,"creator trial artifact"],[p?.trial_id,"trial identity"]],()=>c.trial_id===p.trial_id)
     q.check("creator session differs",[[c.session,"creator session artifact"],[t?.session,"native session artifact"]],()=>c.session===t.session)
     q.check("creator session contradicts actual recording",[[c.session,"creator session artifact"],[view.memoryRecording?.text_session,"actual final session"]],()=>c.session===view.memoryRecording.text_session)
+    if(view.memoryRecording?.execution_complete===true)q.check("creator is not an actual completed creation",[[actualCalls,"actual invocation recording"]],()=>actualCalls.some(a=>{
+      const output=parseFirstJson(a.output)
+      return a.attributable===true&&name(a)===name(c)&&equal(a.args,c.args)&&a.session===c.session&&a.status==="completed"&&(output?.record?.id===c.id||output?.request?.id===c.id||output?.job?.id===c.id)
+    }))
+  }
   }
   const allowed=s.family==="wiki-write"?"raw":s.family==="sources"?"sourceRequests":s.family==="jobs"?"jobs":"records"
+  for(const [seed,post,observations] of [[before,state,requests],[outerBefore,outerState,outerRequests]]){
+  const b=seed&&shape(seed)?seed.personal:undefined,a=post&&shape(post)?post.personal:undefined
+  const matching=observations?.filter(r=>plain(r)&&r.method===s.backend.method&&equal(r.input,s.backend.input)),r=matching?.length===1?matching[0]:undefined,out=r&&plain(r.output)?r.output:undefined
+  if(view.memoryRecording?.execution_complete===true)q.check("backend output contradicts actual invocation",[[actualCalls,"actual invocation recording"],[out,"backend output artifact"]],()=>actualCalls.some(c=>bindingMatches(s,c)&&c.status==="completed"&&equal(parseFirstJson(c.output),out)))
+  for(const c of creatorCollections.flatMap(c=>c??[])){
+    if(!plain(c))continue
+    q.check("creator identity already existed",[[b,"seed artifact"]],()=>!(b[allowed]??[]).some?.(v=>v?.id===c.id))
+    q.check("creator identity is orphaned",[[a,"poststate artifact"]],()=>Array.isArray(a[allowed])&&a[allowed].filter(v=>v?.id===c.id).length===1)
+    q.check("creator is not a backend creation",[[out,"backend output artifact"]],()=>out.created===true&&out.record?.id===c.id||out.request?.id===c.id||out.job?.id===c.id)
+  }
   if(s.write){
     q.check("unrelated personal durable family changed",[[a,"poststate artifact"],[b,"seed artifact"]],()=>Object.keys(b).every(k=>k===allowed||equal(a[k],b[k])))
     if(s.family==="wiki-write"){
@@ -206,6 +253,7 @@ export function memoryDiscoveryEvidence(id,view){
     }
     if(s.family==="code"&&!(Array.isArray(out.nodes)&&out.nodes.some(n=>n?.id==="submitInvoice"&&n?.nonce==="QCODE-37")&&Array.isArray(out.edges)&&out.edges.some(e=>e?.source==="submitInvoice"&&e?.target==="parseInvoice"&&e?.kind==="calls")))q.fail("canonical code topology not proven")
     if(s.family==="wiki-graph"&&!(Array.isArray(out.nodes)&&out.nodes.some(n=>n?.id==="README.md")&&Array.isArray(out.edges)&&out.edges.some(e=>e?.source==="README.md"&&e?.target==="design.md")&&Array.isArray(out.communities)&&out.communities.some(c=>c?.id==="quartz-docs"&&c?.nonce==="QWIKI-64")))q.fail("canonical document topology not proven")
+  }
   }
   reconcileMemoryRecording(id,view.memoryRecording,view,t,native,q)
   return q.finish()

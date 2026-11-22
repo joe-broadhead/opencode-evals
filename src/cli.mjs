@@ -213,7 +213,12 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
       if (existsSync(`${rawBase}.jsonl`)) {
         const rawLines = read(`${rawBase}.jsonl`).split("\n").filter(Boolean)
         if (discoveryRecording) {
-          memoryRecording = projectMemoryRecording(rawLines, { case_id: caseObject.id, trial })
+          let journal = null
+          if (existsSync(`${rawBase}.mem-invocations.json`)) {
+            try { journal = JSON.parse(read(`${rawBase}.mem-invocations.json`)) }
+            catch { journal = { schema: "malformed" } }
+          }
+          memoryRecording = projectMemoryRecording(rawLines, { case_id: caseObject.id, trial: trial ?? 1 }, journal)
           text = memoryRecording.text
         } else {
           const last = [...rawLines]

@@ -3,19 +3,34 @@
 import {parseEvents,summarize} from "../../trace/analyse.mjs"
 import {extractInnerCalls} from "../../trace/innerArgs.mjs"
 import {parseFirstJson} from "../../trace/resultCounts.mjs"
-import {memoryTurn} from "../../run/mem-turns.mjs"
 import {sha256} from "../../util/canonical.mjs"
 import {isDeepStrictEqual as equal} from "node:util"
 
 const mem=c=>c?.ns==="mem"||/^mem[._]/.test(c?.tool)
 const text=v=>typeof v==="string"?v:JSON.stringify(v)
-export function projectMemoryRecording(rawLines,source=null){
+export function projectMemoryRecording(rawLines,source=null,nativeJournal=null){
   const lines=rawLines.filter(line=>String(line).trim()),records=parseEvents(lines),issues=[],calls=[],trace=[],sessions=[]
   const issue=(state,code)=>issues.push({state,code})
+  const required=(v,test,code)=>{if(v==null){issue("unverifiable",code);return false}if(!test(v)){issue("fail",code);return false}return true}
   if(records.length!==lines.length)issue("fail","malformed private recording")
   const final=records.filter(e=>e.type==="text").at(-1)
   let ordinal=0
-  const ids=new Set(),parts=new Set()
+  const ids=new Set(),parts=new Set(),carriers=new Map()
+  let executionComplete=true
+  const append=(c,carrier,nativeIndex)=>{
+    const args=c.args,output=c.output,callId=c.call_id
+    const item={tool:c.tool,args,args_sha256:args==null?null:sha256(JSON.stringify(args)),status:c.status,output,output_sha256:typeof output==="string"?sha256(output):null,session:carrier.session,call_id:callId,part_id:carrier.part_id,outer_tool:carrier.tool,native_index:nativeIndex,ordinal:ordinal++,inner_index:carrier.tool==="execute"?nativeIndex:null,carrier_call_id:carrier.call_id,attributable:true}
+    item.identity_sha256=callId==null?null:sha256(JSON.stringify([item.session,callId,item.part_id,item.outer_tool,nativeIndex,c.tool,item.args_sha256,c.status,item.output_sha256]))
+    calls.push(item)
+    if(args==null)issue("unverifiable","recorded typed arguments")
+    else if(!plain(args))issue("fail","malformed native invocation arguments")
+    if(c.args_resolved===false)issue("fail","explicitly unresolved native invocation")
+    if(c.status==null)issue("unverifiable","recorded invocation status")
+    else if(c.status!=="completed")issue("fail","recorded invocation failed")
+    const payload=parseFirstJson(output)
+    if(output===undefined)issue("unverifiable","recorded invocation output absent")
+    else if(typeof output!=="string"||!payload||typeof payload!=="object"||Object.keys(payload).length===0)issue("fail","recorded invocation returned no attributable data")
+  }
   for(const e of records){
     if(!["tool_use","text"].includes(e.type))continue
     sessions.push(e.sessionID)
@@ -31,29 +46,64 @@ export function projectMemoryRecording(rawLines,source=null){
     const status=state.status==="completed"?"ok":state.status==="error"?"error":"unknown"
     trace.push({tool:part.tool,via:part.tool==="execute"?"execute":"direct",args_sha256:Object.hasOwn(state,"input")?sha256(JSON.stringify(outer.inputRaw)):null,status,parent_index:null})
     for(const site of sites)trace.push({tool:site.name,ns:site.ns,via:"execute",args_sha256:site.parsed?sha256(JSON.stringify(site.args)):null,status,parent_index:outerIndex})
-    const native=memoryTurn({code:0,stdout:line},{index:1,prompt:""}).calls
-    const relevant=native.filter(mem)
-    if(relevant.length&&summary.inner.failures)issue("fail","recorded inner invocation failed")
-    // A call site is not proof of execution. Only a sole unconditional returned await has bounded
-    // attribution here. Other programs need runtime per-inner lineage, which this recording lacks.
-    let attributable=true
-    if(relevant.length&&part.tool==="execute"){
-      const site=sites[0],code=outer.inputRaw?.code?.trim().replace(/;$/,"").trim()
-      attributable=sites.length===1&&site.parsed&&site.ns==="mem"&&code===`return await tools.mem.${site.name}(${JSON.stringify(site.args)})`
-      if(!attributable)issue("unverifiable","executed inner-call attribution")
-    }
-    for(const [i,c]of native.entries())if(mem(c)){
-      const output=c.output,args=c.args
-      calls.push({tool:c.tool,args,args_sha256:args==null?null:sha256(JSON.stringify(args)),status:state.status,output,output_sha256:typeof output==="string"?sha256(output):null,session:e.sessionID,call_id:callId,part_id:part.id??null,outer_tool:part.tool,native_index:i,ordinal:ordinal++,inner_index:part.tool==="execute"?i:null,trace_index:part.tool==="execute"?outerIndex+1+i:outerIndex,attributable,
-        identity_sha256:callId==null?null:sha256(JSON.stringify([e.sessionID,callId,part.id??null,part.tool,i,c.tool,args==null?null:sha256(JSON.stringify(args)),state.status,output==null?null:sha256(text(output))]))})
+    const carrier={tool:part.tool,call_id:callId,part_id:part.id??null,session:e.sessionID,args:outer?.inputRaw,status:state.status,output:text(state.output),order:carriers.size}
+    carriers.set(callId,carrier)
+    if(part.tool==="execute"){
+      // Source sites are provenance only, even for a sole returned await. No execution inference.
+      executionComplete=false
+      if(state.status&&state.status!=="completed")issue("fail","recorded carrier failed")
+      if(summary.inner.failures)issue("fail","recorded carrier contains an observed failure")
+    }else if(mem({tool:part.tool})){
       if(!Object.hasOwn(state,"input"))issue("unverifiable","recorded typed arguments")
-      if(state.status==null)issue("unverifiable","recorded invocation status")
-      else if(state.status!=="completed")issue("fail","recorded invocation failed")
-      const payload=parseFirstJson(output)
-      if(!Object.hasOwn(state,"output")||state.output==null||state.output===""||attributable&&(output==null||output===""||!payload||typeof payload!=="object"||Object.keys(payload).length===0))issue("fail","recorded invocation returned no attributable data")
+      append({tool:part.tool,args:outer?.inputRaw,status:state.status,output:text(state.output),call_id:callId},carrier,0)
     }
   }
-  return {schema:"oc-mem-private-recording/1",source,raw_sha256:sha256(rawLines.join("\n")),sessions,text:final?.part?.text??null,text_session:final?.sessionID??null,calls,trace,issues}
+  const rawHash=sha256(rawLines.join("\n"))
+  // Retain direct facts for contradiction checks only. They never repair a supplied journal.
+  const directCalls=[...calls]
+  let journalScope=null
+  if(nativeJournal!=null){
+    // A supplied journal never falls back, including empty, incomplete, malformed or future schemas.
+    const direct=calls.splice(0);ordinal=0;executionComplete=false
+    if(!plain(nativeJournal))issue("fail","malformed native journal")
+    else if(nativeJournal.schema!=="oc-mem-invocations/1")issue(nativeJournal.schema==null||/^oc-mem-invocations\/\d+$/.test(nativeJournal.schema)?"unverifiable":"fail","unsupported native journal schema")
+    else{
+      journalScope=nativeJournal.scope
+      const scope=journalScope
+      let scopeReady=required(scope,plain,"native journal scope")
+      if(scopeReady){
+        const ready=[required(scope.case_id,v=>typeof v==="string"&&v.length>0,"native journal case"),required(scope.trial,v=>Number.isInteger(v)&&v>0,"native journal physical trial"),required(scope.trial_id,v=>typeof v==="string"&&v.length>0,"native journal semantic trial"),required(scope.turn,v=>v===1,"native journal turn"),required(scope.session,v=>typeof v==="string"&&v.length>0,"native journal session")]
+        scopeReady=ready.every(Boolean)
+        if(source?.case_id!=null&&scope.case_id!=null&&scope.case_id!==source.case_id||source?.trial!=null&&scope.trial!=null&&scope.trial!==source.trial||final?.sessionID!=null&&scope.session!=null&&scope.session!==final.sessionID)issue("fail","foreign native journal scope")
+      }
+      const digestReady=required(nativeJournal.raw_sha256,v=>typeof v==="string"&&/^[a-f0-9]{64}$/.test(v),"native journal recording digest")
+      if(digestReady&&nativeJournal.raw_sha256!==rawHash)issue("fail","native journal recording digest differs")
+      const completeReady=required(nativeJournal.complete,v=>typeof v==="boolean","native journal completeness"),callsReady=required(nativeJournal.calls,Array.isArray,"native journal calls")
+      if(completeReady&&callsReady){
+        executionComplete=scopeReady&&digestReady&&nativeJournal.complete
+        if(!executionComplete)issue("unverifiable","incomplete native journal")
+        const seen=new Set(),observedDirect=new Set();let lastCarrier=-1
+        for(const c of nativeJournal.calls){
+          if(!plain(c)){issue("fail","malformed native observation");continue}
+          const ready=[required(c.tool,v=>typeof v==="string"&&/^mem[._][a-z][a-z_]*$/.test(v),"native observation tool"),required(c.call_id,v=>typeof v==="string"&&v.length>0,"native observation identity"),required(c.carrier_call_id,v=>typeof v==="string"&&v.length>0,"native observation carrier")]
+          if(!ready.every(Boolean)){executionComplete=false;continue}
+          if(seen.has(c.call_id))issue("fail","replayed native observation");seen.add(c.call_id)
+          const carrier=carriers.get(c.carrier_call_id)
+          if(!carrier){if(carriers.has(undefined))executionComplete=false;issue(carriers.has(undefined)?"unverifiable":"fail","orphan native observation");continue}
+          if(carrier.order<lastCarrier)issue("fail","native carrier order differs");lastCarrier=carrier.order
+          if(scope?.session!=null&&carrier.session!==scope.session||carrier.tool!=="execute"&&!mem(carrier))issue("fail","foreign native observation carrier")
+          if(carrier.tool!=="execute"){
+            if(observedDirect.has(carrier.call_id))issue("fail","replayed direct observation");observedDirect.add(carrier.call_id)
+            const d=direct.find(d=>d.call_id===carrier.call_id)
+            if(!d||c.call_id!==d.call_id||name(c)!==name(d)||!equal(c.args,d.args)||c.status!==d.status||c.output!==d.output)issue("fail","native journal contradicts direct recording")
+          }
+          append(c,carrier,calls.filter(c=>c.carrier_call_id===carrier.call_id).length)
+        }
+        if(executionComplete&&direct.some(c=>!observedDirect.has(c.call_id)))issue("fail","native journal omitted actual direct invocation")
+      }
+    }
+  }else if(!executionComplete)issue("unverifiable","native Code Mode execution journal absent")
+  return {schema:"oc-mem-private-recording/1",source,raw_sha256:rawHash,sessions,text:final?.part?.text??null,text_session:final?.sessionID??null,calls,direct_calls:directCalls,trace,issues,execution_complete:executionComplete,journal_scope:journalScope}
 }
 
 const plain=v=>Boolean(v&&typeof v==="object"&&!Array.isArray(v))
@@ -84,7 +134,7 @@ export function reconcileMemoryRecording(id,recording,view,turn,native,q){
       const c=view.calls[i];if(!c)continue
       if(!Number.isInteger(c.seq)||seqs.has(c.seq))q.fail("replayed official trace call identity");seqs.add(c.seq)
       if(sig.tool!==c.tool||sig.ns!==c.ns||sig.via!==c.via)q.fail("official trace tool/order contradicts actual recording")
-      q.check("official argument digest contradicts actual recording",[[c.args_sha256,"official trace argument digest"],[sig.args_sha256,"actual argument digest"]],()=>c.args_sha256===sig.args_sha256)
+      if(sig.args_sha256!==null||c.args_sha256!=null)q.check("official argument digest contradicts actual recording",[[c.args_sha256,"official trace argument digest"],[sig.args_sha256,"actual argument digest"]],()=>c.args_sha256===sig.args_sha256)
       if(sig.parent_index===null?c.parent_seq!==undefined:c.parent_seq!==view.calls[sig.parent_index]?.seq)q.fail("official inner call parent contradicts actual recording")
       const results=view.events.filter(e=>e.kind==="tool_result"&&e.for_seq===c.seq)
       if(results.length>1)q.fail("replayed official invocation outcome")
@@ -94,7 +144,7 @@ export function reconcileMemoryRecording(id,recording,view,turn,native,q){
   }
   if(actual){
     if(actual.some(c=>!plain(c))){q.fail("actual call lineage malformed");return}
-    const joinable=actual.every(c=>c.attributable===true)
+    const joinable=r.execution_complete===true&&actual.every(c=>c.attributable===true)
     if(native&&joinable&&actual.length!==native.length)q.fail("private proof call count contradicts actual recording")
     for(const [i,c]of actual.entries()){
       if(c.ordinal!==i)q.fail("actual call order malformed")
@@ -103,8 +153,8 @@ export function reconcileMemoryRecording(id,recording,view,turn,native,q){
       q.check("actual call identity digest malformed",[[c.call_id,"actual call identity"],[c.identity_sha256,"actual identity digest"]],()=>typeof c.call_id==="string"&&c.identity_sha256===sha256(JSON.stringify(identity)))
       q.check("actual argument digest malformed",[[c.args,"actual typed arguments"],[c.args_sha256,"actual argument digest"]],()=>plain(c.args)&&c.args_sha256===sha256(JSON.stringify(c.args)))
       q.check("actual output digest malformed",[[c.output,"actual call output"],[c.output_sha256,"actual output digest"]],()=>typeof c.output==="string"&&c.output_sha256===sha256(c.output))
-      if(!joinable){q.missing("executed inner-call attribution");continue}
-      const proof=native?.[i]
+      // Even incomplete journals can establish a contradiction for a supplied observation.
+      const proof=joinable?native?.[i]:native?.find(p=>p.call_id===c.call_id)
       if(!proof)continue
       if(name(proof)!==name(c))q.fail("private proof tool/order contradicts actual recording")
       q.check("private proof arguments contradict actual recording",[[proof.args,"private argument artifact"],[c.args,"actual typed arguments"]],()=>equal(proof.args,c.args)&&sha256(JSON.stringify(proof.args))===c.args_sha256)
@@ -112,5 +162,10 @@ export function reconcileMemoryRecording(id,recording,view,turn,native,q){
       q.check("private proof output contradicts actual recording",[[proof.output,"native call output"],[c.output,"actual call output"]],()=>proof.output===c.output)
       for(const key of ["call_id","part_id","identity_sha256"])if(Object.hasOwn(proof,key))q.check("private proof call identity contradicts actual recording",[[proof[key],"native call identity"],[c[key],"actual call identity"]],()=>proof[key]===c[key])
     }
+  }
+  if(r.execution_complete!==true)q.missing("complete native execution observations")
+  if(r.journal_scope){
+    q.check("native journal turn/session differs",[[r.journal_scope.turn,"journal turn"],[r.journal_scope.session,"journal session"],[turn?.index,"native turn index"],[turn?.session,"native session artifact"]],()=>r.journal_scope.turn===turn.index&&r.journal_scope.session===turn.session)
+    q.check("native journal trial differs",[[r.journal_scope.trial_id,"journal trial"],[view.guardLog,"guard recording"]],()=>view.guardLog.some(g=>g?.kind==="guard_start"&&g.case_id===id&&g.trial_id===r.journal_scope.trial_id))
   }
 }

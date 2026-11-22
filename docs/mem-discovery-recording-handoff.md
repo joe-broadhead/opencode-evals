@@ -1,120 +1,136 @@
-# Discovery recording lineage and contradiction precedence
+# Discovery evidence: R2 and native execution observations
 
-Base: signed `21005bbb6d3527fcbf49bfff2f5c68b201afed9f`.
-This increment addresses residual Standards H/S1-R1 and M/S3-R1.
-It does not accept the earlier SPEC work or merge the separate S2/S4 and core/guard work.
-The lead owns independent review at the new signed pin.
+Incremental base: signed `9531cf698aac0c6a875ef0c27a144ffe2d4602fc`.
+This document supersedes the earlier sole-returned-await exception.
+The historical reports remain unchanged.
 
-## Private interface
+## Capture consistency
 
-`projectMemoryRecording(rawLines, source)` parses one private native recording.
-The CLI supplies `source.case_id` and the physical trial selection from its case-file selection.
-These values are not caller headers or claims from the model.
-Discovery is a single-native-run, single-turn contract.
-The proof turn index and backend context must both identify that turn.
-The recording supplies the actual per-event sessions and ordered invocation identities.
+The discovery adapter validates both outer and nested capture collections independently.
+It also compares overlapping facts under `oc-mem-capture/1` and `oc-mem-discovery-proof/1`.
+The overlapping fields are:
 
-The parser uses the existing `parseEvents`, `summarize`, `extractInnerCalls`, `parseFirstJson`, and `memoryTurn` codecs.
-It never evaluates JavaScript or runs a model.
-The typed projection contains:
+- Outer `before` and nested `before`
+- Outer `after` and nested `state`
+- Outer `requests` and nested `requests`
+- Outer `creators`, when supplied, and nested `creators`
 
-| Field | Private fact |
-| --- | --- |
-| `source` | Native CLI case and physical trial selection |
-| `raw_sha256` | SHA-256 of the actual JSONL joined exactly as the official codec joins it |
-| `sessions`, `text_session`, `text` | Actual event sessions and final recorded answer |
-| `calls` | Actual ordered Memory calls, identities, typed arguments, statuses, outputs, and digests |
-| `trace` | Structural call lineage for comparison with the normalized trace |
-| `issues` | Bounded parser or attribution conditions, without private values |
+An absent artifact remains unavailable.
+The adapter never fills one copy from another copy.
+Available contradictions retain FAIL precedence over unrelated missing artifacts.
+The final priority remains FAIL, then BLOCKED, then PASS.
 
-`runView(..., {memoryRecording})` carries this projection as a non-enumerable private property.
-Only Memory discovery clauses receive the projection in CLI grading.
-Other plugins retain their existing evidence-loading behavior.
-The ordinary trace, vocabulary, argument redaction, and generic grading defaults remain unchanged.
-The projection never enters verdicts, ordinary JSON/debug enumeration, or diagnostics.
+Every supplied creator must have a closed identity, context, tool, argument payload, and stored status.
+Creator identities must be unique and absent from the seed.
+Each creator must identify an actual new object and a successful backend creation.
+Complete actual invocation evidence must also identify that creation.
+Read cases and raw-file writes cannot supply object creators.
 
-## Reconciliation
+## Private recording interface
 
-The actual JSONL digest must match the official trace source digest.
-Each actual call has a native call identity and an ordered position.
-Duplicate call identities, duplicate part identities, replays, and inconsistent identity digests fail.
-The existing native proof omits per-call IDs, so its ordered tuple is reconciled with the actual recording.
-That tuple includes tool, argument digest, status, output, and the native turn session.
-Optional identities present in a proof must also match.
-No ID is invented when the actual recording lacks its required identity.
+```js
+projectMemoryRecording(rawLines, source, nativeJournal = null)
+```
 
-The validator also reconciles all normalized call positions, parent links, argument digests, and outcomes.
-It rejects duplicate result events and mismatching recorded outcomes.
-Argument digests retain the official `sha256(JSON.stringify(arguments))` codec and recorded key order.
-No sorted canonical digest or redacted argument shape replaces the actual argument digest.
+The CLI supplies `source.case_id` and `source.trial` from its case and physical trial selection.
+Physical trial numbers start at one.
+The semantic `trial_id` is distinct from the physical trial number.
+The grader compares that semantic identity with the capture and native guard.
 
-The actual final answer must satisfy the case truth contract and agree with the proof answer.
-Only leading and trailing whitespace is normalized.
-Actual sessions must agree across the recording, private proof, backend observations, and creator evidence.
-A successful proof cannot credit a foreign or failed actual recording.
+The projection remains a non-enumerable `runView.memoryRecording` property.
+It never enters ordinary traces, verdicts, or diagnostic messages.
+The raw source digest still binds the projection to the official trace.
+Argument digests retain the existing `sha256(JSON.stringify(arguments))` codec and recorded key order.
 
-Missing lineage is BLOCKED.
-Present contradictions are FAIL.
-Complete recordings without the expected call or backend operation remain FAIL.
-This includes the eight baseline missing-tool cases.
+Direct native tool events remain execution evidence.
+Code Mode source is never execution evidence, including a sole returned await with valid literal arguments.
+The source parser supplies structural trace facts only.
+Its call sites cannot grant execution credit or set executed-call counts.
+Native observations can describe dynamic arguments, loops, or calls absent from source sites.
 
-## Code Mode execution evidence
+## Discovery consumer contract
 
-A source call site alone does not establish execution.
-The bounded supported inner form is a sole returned unconditional await with an attributable recorded result.
-The argument literal is parsed by the existing codec, not evaluated.
-The projection binds that result to the containing call identity and normalized parent.
+The discovery-only CLI reads `${rawBase}.mem-invocations.json` when that file exists.
+The file is private native evidence, not model output, a capture header, or an ordinary trace field.
+The current branch implements the consumer only.
+The core worker owns the producer and `mem-turns` integration.
+No producer schema agreement or merged runtime emission is claimed here.
 
-Conditional, multi-site, or other unattributed programs require native per-inner execution evidence that this recorder does not supply.
-They are BLOCKED, not credited as successful executions.
-The existing `unattributable` status means missing attribution, not an observed tool error.
-An explicit native `args_resolved:false` still fails the discovery contract.
-Actual errors and known no-data outcomes remain FAIL.
-No runner, guard, or source-plugin changes were made to manufacture missing receipts.
+The consumer accepts this schema:
 
-## One validation reduction
+```json
+{
+  "schema": "oc-mem-invocations/1",
+  "scope": {
+    "case_id": "<native case ID>",
+    "trial": 1,
+    "trial_id": "<native semantic trial ID>",
+    "turn": 1,
+    "session": "<native session ID>"
+  },
+  "raw_sha256": "<SHA-256 of the selected raw JSONL>",
+  "complete": true,
+  "calls": [
+    {
+      "call_id": "<unique native invocation ID>",
+      "carrier_call_id": "<raw tool-event callID>",
+      "tool": "mem_page",
+      "args": {"action": "read", "id": "<resolved ID>"},
+      "status": "completed",
+      "output": "<actual native output string>"
+    }
+  ]
+}
+```
 
-The adapter now evaluates predicates only when their own required fragments are available and well typed.
-It records both known contradictions and unavailable fragments.
-It makes one final choice: FAIL before BLOCKED before PASS.
-There is no preliminary missing-artifact return before the state or invocation checks.
-Expected facts never fill an unavailable actual artifact.
+The journal covers all Memory invocations in that scope, including direct invocations.
+Its array order is the native invocation order.
+Each invocation identifies its raw carrier event.
+Multiple invocations can identify the same Code Mode carrier.
+Native invocation IDs remain unique across the journal.
+Direct journal observations must agree with actual direct events.
+The recorder must capture resolved arguments, actual status, and actual output at invocation time.
+It cannot reconstruct observations from source or from the private fixture proof.
 
-For example, available seed and poststate can prove an unexpected shared write without a guard log or answer.
-The same rule applies to unauthorized personal content, closed payloads, unresolved invocations, failed output, and foreign sessions.
-Backend and creator sessions are compared with the actual recording even when the proof turn is unavailable.
-Malformed nested values fail without unsafe dependent dereferences.
+The raw digest uses the existing codec: `sha256(rawLines.join("\n"))` after removal of blank lines.
+The case, physical trial, turn, session, semantic trial, and carrier identities must agree with independently available evidence.
+Discovery currently supports one native turn per trial.
 
-## Tests and fixture migration
+`complete:true` means that the journal contains every Memory invocation in the scope.
+A complete empty journal is authoritative, even when the source contains required calls.
+It cannot satisfy a case that requires an invocation.
+A source-derived empty proof is not an authoritative empty journal.
+An incomplete, absent, or unsupported future journal supplies no execution fallback from source.
+Missing required execution evidence produces BLOCKED.
+Malformed or contradictory supplied evidence produces FAIL.
+An incomplete journal can still establish an error, unauthorized argument payload, or foreign scope.
 
-The original reviewer source and artifacts remain immutable.
-The owned red run reproduced all three real-CLI false passes and all 144 FAIL-to-BLOCKED counterexamples.
-Separate upgraded copies add only legitimate synthetic recording identity, source digest, and private-projection plumbing.
-Their negative expectations remain unchanged.
+Raw direct facts remain available for independent contradiction checks.
+They never repair a supplied journal or change its authoritative call inventory.
+A complete journal that omits an actual direct event is contradictory.
 
-The new pure CLI matrix covers all 24 cases in direct and inner modes: 48 positive and 144 contradictory recordings.
-Actual recordings are captured independently before private-proof mutations.
-Additional controls cover order, identity, replay, outcomes, unsupported execution attribution, and privacy.
-One unit matrix checks 3,496 contradiction-plus-independent-absence combinations without spawning per-case processes.
+## Tests and integration gates
 
-All original 79 units, 2,218 SPEC controls, 2,617 S3 controls, 273 core controls, and 792 reviewer assertions remain passing.
-The new recording suite has seven passing tests with the larger matrices inside them.
-The residual reviewer requirements have two passing assertions.
-The generic CLI/grader/analyzer/privacy/trace suites have 37 passing tests with zero skips.
-Their private replay is synthetic and temporary, not a source recording or catalog measurement.
+The R2 reproduction at the base had 220 failed safety assertions out of 288.
+Those assertions cover all 24 cases in direct and Code Mode forms.
+The first journal tests also reproduced source-only credit and ignored empty journals.
 
-Compilation remains 62 cases and 74 items.
-All 143 archive hashes, 38 core contracts, and 48 frozen discovery artifacts remain unchanged.
+Positive synthetic fixtures now capture native observations from completed operation lists before proof or source mutations.
+These fixtures exercise the consumer contract only.
+They are not runtime recordings or evidence that the native producer exists.
+The positive confirmation fixture supplies consistent outer, nested, and actual observations.
+No previous negative expectation changed.
 
-## Hash inventory and integration
+The new suite also covers absent, incomplete, empty, malformed, foreign, replayed, and failed native observations.
+Source-only controls include literal awaits, dead branches, absent call sites, and dynamic arguments.
+Pure CLI controls exercise the sidecar loader and R2 contradictions.
+Original reports, probes, archive files, frozen cases, and core contracts remain unchanged.
 
-The inventory preserves every prior entry and adds the new private helper, its newly consumed codec dependencies, and the CLI projection loader.
-The additions are `mem-recording.mjs`, `mem-turns.mjs`, `innerArgs.mjs`, `resultCounts.mjs`, and `src/cli.mjs`.
-Existing analyzer and grader modules were already in the effective grader hash.
+The existing dependency inventory remains a union.
+No prior entry was removed, including `mem-turns.mjs` after removal of its projector import.
+The separately owned S2/S4 and core changes remain unmerged.
+The integration owner must align the native producer with this consumer contract before a combined runtime claim.
+The integration owner must also union the four older dependency omissions and refresh combined provenance.
 
-The four older S2 closure omissions on this branch remain known and unmerged.
-Integration must union the separately reviewed S2/S4 entries and immutable-plan implementation, not replace either inventory.
-Core f846 and other guard work remain outside this branch.
-The combined lock must be refreshed only by the integration owner, with unrun/runtime flags preserved.
-
-These pure results are implementation evidence, not runtime readiness, independent acceptance, or permission to integrate.
+All results are offline implementation evidence.
+Independent review, native producer integration, and runtime trials remain pending.

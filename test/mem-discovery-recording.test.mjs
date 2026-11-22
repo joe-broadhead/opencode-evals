@@ -8,7 +8,6 @@ import {discoveryCases,renderDiscoveryCase} from '../packs/mem/discovery-plan.mj
 import {discoveryFlow} from './support/mem-discovery-flow.mjs';
 import {projectMemoryRecording} from '../src/grade/adapters/mem-recording.mjs';
 import {events} from '../src/trace/normalise.mjs';
-import {extractInnerCalls} from '../src/trace/innerArgs.mjs';
 import {compileCase} from '../src/case/compile.mjs';
 import {gradeCase,runView} from '../src/grade/grade.mjs';
 import {adapterState} from '../src/grade/adapters/index.mjs';
@@ -18,9 +17,15 @@ import {memoryTurn} from '../src/run/mem-turns.mjs';
 function actual(f,mutate,{keepTrace=false,keepHead=false}={}){
   const rows=f.rawLines.map(JSON.parse);mutate(rows);
   const source=f.recording.source;
-  f.rawLines=rows.map(JSON.stringify);f.recording=projectMemoryRecording(f.rawLines,source);
+  f.rawLines=rows.map(JSON.stringify);
+  if(f.journal)f.journal.raw_sha256=projectMemoryRecording(f.rawLines,source).raw_sha256;
+  f.recording=projectMemoryRecording(f.rawLines,source,f.journal);
   if(!keepTrace)f.trace=events({rawLines:f.rawLines});
   if(!keepHead)f.head={schema:'oc-trace/1',privacy:{raw:{sha256:f.recording.raw_sha256}}};
+}
+function observed(f,index,mutate){
+  if(f.journal){mutate(f.journal.calls.at(index));f.recording=projectMemoryRecording(f.rawLines,f.recording.source,f.journal)}
+  else actual(f,rows=>{const row=rows.filter(r=>r.type==='tool_use').at(index),call={args:row.part.state.input,status:row.part.state.status,output:row.part.state.output};mutate(call);row.part.state={input:call.args,status:call.status,output:call.output}});
 }
 function grade(s,f,{guardLog=[{kind:'guard_start',case_id:s.id,trial_id:'spec_trial'}],text=f.recording?.text??null}={}){
   return gradeCase(compileCase(s.id+'.md',renderDiscoveryCase(s)),runView([f.head,...f.trace],{memoryRecording:f.recording,text,guardLog,state:adapterState('mem',[{path:'mem-fixture/capture.json',change:'added',text:JSON.stringify(f.capture)}])}));
@@ -33,8 +38,8 @@ test('actual private answer, session, and invocation status independently contra
     rows=>{rows.at(-1).part.text='Incorrect actual result'},
     rows=>{for(const r of rows)r.sessionID='ses_foreign_actual'},
     rows=>{const r=rows.find(r=>r.type==='tool_use');r.part.state.status='error';r.part.state.output='Invocation failed'},
-    rows=>{rows.find(r=>r.type==='tool_use').part.state.output='{}'},
   ]){const f=discoveryFlow(s,mode);actual(f,mutate);verdict(grade(s,f),'FAIL')}
+  for(const mode of ['direct','execute']){const f=discoveryFlow(s,mode);observed(f,0,c=>c.output='{}');verdict(grade(s,f),'FAIL')}
 });
 
 test('every discovery case has direct and inner positives through actual pure CLI grade, with private contradictions kept independent',async()=>{
@@ -49,6 +54,7 @@ test('every discovery case has direct and inner positives through actual pure CL
         const base=join(native,`${s.id}.t${trial}`);
         writeFileSync(join(traces,`${s.id}.t${trial}.trace.jsonl`),[f.head,...f.trace].map(JSON.stringify).join('\n'));
         writeFileSync(base+'.jsonl',f.rawLines.join('\n'));
+        if(f.journal)writeFileSync(base+'.mem-invocations.json',JSON.stringify({...f.journal,scope:{...f.journal.scope,trial}}));
         writeFileSync(base+'.files.json',JSON.stringify([{path:'mem-fixture/capture.json',change:'added',text:JSON.stringify(f.capture)}]));
         writeFileSync(base+'.guard.jsonl',JSON.stringify({kind:'guard_start',case_id:s.id,trial_id:'spec_trial'}));
         expected.push({id:s.id,trial,label,result});
@@ -83,6 +89,7 @@ test('recorded order, identity, digest, outcome and attributed execution are ind
     ]){const f=discoveryFlow(s,mode);mutate(f);assert.equal(grade(s,f).verdict,expected,label)}
     if(mode==='execute'){
       const f=discoveryFlow(s,mode);
+      f.journal=null;
       actual(f,rows=>{rows[0].part.state.input.code=`if (false) { ${rows[0].part.state.input.code.replace('return ','')} }`});
       verdict(grade(s,f),'BLOCKED'); // A syntactic site plus a returned body is not proof of that call executing.
     }
@@ -103,11 +110,7 @@ test('available contradictions dominate every independently missing fragment wit
       ['denied backend status',f=>main(f).status='denied',['requests']],
       ['foreign backend session',f=>main(f).context.session='foreign_backend',['requests']],
       ['foreign actual session',f=>actual(f,rows=>{for(const row of rows)row.sessionID='foreign_actual'}),[]],
-      ['closed actual invocation payload',f=>actual(f,rows=>{
-        const row=rows.filter(r=>r.type==='tool_use').at(-1);
-        if(mode==='direct')row.part.state.input.scope={all:true};
-        else{const site=extractInnerCalls(row.part.state.input.code)[0],args={...site.args,scope:{all:true}};row.part.state.input.code=`return await tools.mem.${site.name}(${JSON.stringify(args)})`}
-      }),[]],
+      ['closed actual invocation payload',f=>observed(f,-1,c=>c.args.scope={all:true}),[]],
       ['failed actual invocation',f=>actual(f,rows=>{rows[0].part.state.status='error';rows[0].part.state.output='Invocation failed'}),[]],
     ];
     if(s.write)attacks.push(['closed stored payload',f=>{
@@ -157,6 +160,7 @@ test('present malformed nested proof fragments fail without dereferencing unavai
 
 test('unattributed multi-site Code Mode source is unavailable lineage, not asserted execution',()=>{
   const s=discoveryCases.find(s=>s.family==='exact-read'),f=discoveryFlow(s,'execute');
+  f.journal=null;
   actual(f,rows=>{
     const r=rows.filter(r=>r.type==='tool_use').at(-1),call=r.part.state.input.code.replace('return ','');
     r.part.state.input.code=`const a = ${call}; const b = ${call}; return {};`;
