@@ -75,6 +75,9 @@ It must not discover credentials or inherit the host environment.
 
 Each creation first records a pending receipt. A successful full 64-character ID replaces that pending receipt.
 The parent persists that ID before inspection or start. A name, label, short ID, or cidfile grants no cleanup authority.
+If the full successful ID arrives without client closure, the parent journals it for exact-ID removal but retains the pending uncertainty.
+Output overflow also blocks continuation. Neither condition permits inspection for launch, start, exec, or finalization.
+Creation identity and client closure are separate facts; removing the known ID does not resolve missing closure or lost output.
 
 The parent verifies the image, mounts, environment, namespaces, resource limits, entry point, and network configuration before start.
 It verifies effective network membership again before workload execution.
@@ -130,6 +133,11 @@ The actual trial checks model routing. It does not start a replacement preflight
 The recorder writes bytes continuously to fresh no-follow files. Each file has an 8 MiB limit.
 The total spool has a 32 MiB limit and at most 63 children.
 The runner retains a bounded in-memory view for its existing execution logic.
+The entry keeps the recorder active after execution returns and waits for each original child's `close` event, not only `exit`.
+That event establishes closure of the child's stdio, not descendant absence.
+The drain allows one second by default, with an injectable bound no greater than two seconds.
+If closure remains unavailable, the spool retains its prefix and marks the receipt incomplete (`overflow: true`, `streams_closed: false`).
+Late data cannot upgrade that receipt. No new recorded child can start during drain, and legacy exit-only behavior remains unchanged without a recorder.
 The receipt contains digests, bindings, bounded exit metadata, and fixed capture locations. It never certifies outer cleanup or native success.
 The inner runner skips final sandbox reads, credential scrubbing, final summaries, reservation release, and final accounting.
 Its private staging ledger is not the aggregate ledger.
@@ -139,7 +147,14 @@ Only after verified resource absence and client closure does the parent read the
 The bounded reader verifies root identity, path ancestry, regular-file type, link count, and size before reading.
 The finalizer verifies receipt bindings and digests before it accepts bytes.
 It redacts known secrets and computes partial accounting through the same reader as the legacy single-attempt path.
-A missing fixture capture does not erase independently verified partial billing.
+After validating the bound manifest and duplicate-free file entries, the finalizer verifies raw JSONL before auxiliary files, regardless of their order.
+A missing or damaged auxiliary file or fixture capture does not erase independently verified partial billing.
+A bounded incomplete spool can supply a verified prefix lower bound, never complete usage or verified overall evidence.
+Unbound, duplicate, missing, or digest-invalid raw evidence supplies no billing.
+The parent accepts exit metadata only as null or an integer from 0 through 255, even if the producer previously validated it.
+Invalid exit metadata leaves overall evidence unknown without erasing verified raw cost.
+Summaries export explicit bounded identity fields and typed statuses, not arbitrary receipt objects or extra parent binding properties.
+The launch descriptor digest binds identity; it is not an authenticity signature over writable receipt metadata.
 
 Raw spool files remain private, untrusted evidence. They can contain arbitrary runtime output.
 The parent must supply every designated secret to redaction, including the generated server password passed to its finalization callback.

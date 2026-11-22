@@ -2,6 +2,8 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { containTrial, verifyOwnedConfig } from "../src/run/owned-containment.mjs"
 import { creationOperation, creationID } from "../src/run/container-receipt.mjs"
+import { createOwnedDockerClient } from "../src/run/owned-docker-client.mjs"
+import { EventEmitter } from "node:events"
 
 const id = n => String(n).padStart(64, "0")
 const binding = { invocation_id: "11111111-1111-4111-8111-111111111111", manifest_sha256: "a".repeat(64), trial_id: "baseline-direct-a-r1" }
@@ -189,4 +191,39 @@ test("a blocking parent callback cannot evade its elapsed-time bound by returnin
   const result = await drive(containTrial(plan(), f.deps), f.deps.clock)
   assert.equal(result.reason, "inputs")
   assert.equal(f.calls.length, 0)
+})
+
+test("successful own ID is journaled and removed despite early original-client exit without close", async () => {
+  const f = fake(), original = f.deps.docker.run, child = new EventEmitter(), signals = []
+  child.stdout = new EventEmitter(); child.stderr = new EventEmitter(); child.kill = signal => signals.push(signal)
+  const client = createOwnedDockerClient({ binary: "/pinned/docker", context: plan().context, config: "/parent/docker" }, { spawn: () => child, clock: f.deps.clock, graceMs: 10 })
+  f.deps.docker.run = async (args, options) => {
+    if (args[2] === "create") {
+      const created = await original(args)
+      const pending = client.run(args, options)
+      child.stdout.emit("data", Buffer.from(`${created.stdout}\n`)); child.emit("exit", 0, null)
+      child.stderr.emit("data", Buffer.alloc(options.maxBytes + 1))
+      const result = await pending
+      assert.equal(result.closed, false); assert.equal(result.overflow, true)
+      assert.ok(f.deps.clock.now() < plan().operationMs)
+      return result
+    }
+    if (args[2] === "stop" || args[2] === "rm") assert.ok(f.journals.at(-1).resources.some(r => r.id === args.at(-1)), "persist before removal")
+    return original(args)
+  }
+  f.deps.docker.stopClients = () => client.stopClients()
+  f.deps.docker.closed = () => client.closed()
+  const r = await drive(containTrial(plan(), f.deps), f.deps.clock)
+  assert.ok(f.journals.some(j => j.resources.some(r => r.id === id(3))))
+  assert.ok(f.calls.some(a => a[2] === "rm" && a.at(-1) === id(3)))
+  assert.equal(f.resources.size, 0, "separately known networks also reclaimed")
+  assert.ok(f.journals.at(-1).pending.length)
+  assert.equal(r.creation_unknown, true)
+  assert.equal(r.host_clients_closed, false)
+  assert.equal(r.cleanup_verified, false)
+  assert.equal(r.successor_allowed, false)
+  assert.equal(f.calls.some(a => a[2] === "start" || a[2] === "exec" || a[0] === "finalize"), false)
+  assert.deepEqual(signals, [])
+  child.emit("close", 0, null)
+  assert.equal(await client.stopClients(), true)
 })

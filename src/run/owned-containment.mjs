@@ -97,8 +97,15 @@ export async function containTrial(plan, deps) {
     let result
     try { result = await run(args) } catch (e) { state.uncertain = true; throw e }
     const id = creationID(result)
-    if (!id || result.closed !== true) { state.uncertain = true; throw new Error("creation_unknown") }
+    if (!id) { state.uncertain = true; throw new Error("creation_unknown") }
     state.resources.push({ kind: expected.kind, id, context: p.context })
+    // An accepted full own ID is cleanup authority even when client closure/output is uncertain.
+    // Retain the pending entry too; no inspect/start/exec may continue from this response.
+    if (result.closed !== true || result.overflow === true) {
+      state.uncertain = true
+      await save()
+      throw new Error("creation_unknown")
+    }
     state.pending = state.pending.filter(x => x !== pending)
     await save() // record BEFORE inspect, and certainly before start
     const inspected = await run([...(expected.kind === "network" ? ["network"] : []), "inspect", id])

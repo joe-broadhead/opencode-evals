@@ -207,9 +207,11 @@ export async function killAll({ graceMs = 1500 } = {}) {
 /** A process in its own group, so a timeout or a stop reaches what it started (a provider's CLI included). */
 export function start(command, args, { cwd, env, input = null } = {}, { spawn: spawnProcess = spawn, kill = process.kill.bind(process) } = {}) {
   const inherited = processGroupMode === "inherited"
-  const record = processRecorder?.start({ command, args })
+  const recorder = processRecorder
+  const record = recorder?.start({ command, args })
   const maxBytes = processOutputLimit
   const child = spawnProcess(command, args, { cwd, env, stdio: [input === null ? "ignore" : "pipe", "pipe", "pipe"], detached: !inherited })
+  if (record) child.once("close", () => record.close?.())
   if (child.pid && !inherited) groups.add(child.pid)
   if (child.pid && inherited) inheritedChildren.add(child)
   let ended = false
@@ -226,7 +228,7 @@ export function start(command, args, { cwd, env, input = null } = {}, { spawn: s
       else stderr += data
     } catch {
       outputTruncated = true
-      processRecorder?.incomplete?.()
+      recorder?.incomplete?.()
       if (!ended) child.kill("SIGKILL")
     }
   }
