@@ -8,6 +8,13 @@ const CEILINGS = Object.freeze({ deadlineMs: 120_000, maxPages: 100,
 const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const id = (value) => typeof value === 'string' && value.length > 0 && value.length <= 512;
 const fail = (code) => { throw new Error(code); };
+const typedArrayByteLength = Object.getOwnPropertyDescriptor(
+  Object.getPrototypeOf(Uint8Array.prototype), 'byteLength',
+).get;
+function rawViewBytes(raw) {
+  try { return raw instanceof Uint8Array ? typedArrayByteLength.call(raw) : undefined; }
+  catch { return undefined; } // Unsupported receivers have no trusted view length.
+}
 
 /**
  * Observe one runner-controlled serial turn. launch is the caller's existing CLI
@@ -193,10 +200,11 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
         JSON.stringify(receipt.binding?.scope?.sessionIDs) !== JSON.stringify(bound.scope.sessionIDs))
       fail('launch_binding_disagreement');
     const raw = receipt.raw;
-    if (!(raw instanceof Uint8Array) || raw.byteLength > cap.maxRawBytes) issue('raw_byte_limit_or_missing');
+    const rawBytes = rawViewBytes(raw);
+    if (rawBytes === undefined || rawBytes > cap.maxRawBytes) issue('raw_byte_limit_or_missing');
     else {
       // Do not parse, normalize, append to, or rewrite the native CLI bytes.
-      result.raw = { status: 'known', bytes: raw.byteLength,
+      result.raw = { status: 'known', bytes: rawBytes,
         sha256: createHash('sha256').update(raw).digest('hex') };
     }
     try {

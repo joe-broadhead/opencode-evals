@@ -63,6 +63,9 @@ The callback must enforce raw byte bounds while capturing, not allocate unlimite
 The verifier checks size again and hashes the original bytes without parsing or changing them.
 It reads the receipt's `raw` property once. The size check, reported byte count, and digest use that same byte value.
 A subarray retains its original offset and length. Its backing buffer is not the capture.
+The verifier captures the actual view size once with the trusted typed-array byte-length intrinsic.
+Caller-defined `length`, `byteLength`, `buffer`, `byteOffset`, or conversion methods do not supply size authority or reconstruct the capture.
+An unsupported receiver leaves raw capture unknown without suppressing an independently observed native negative.
 It returns a provisional object, not a file. The caller must persist it only in its private, bounded staging store
 with owner-only permissions (for example, directory mode `0700`, file mode `0600`). Do not append it to native JSONL.
 The object can contain full prompt/message/error data and must not be published as a public trace.

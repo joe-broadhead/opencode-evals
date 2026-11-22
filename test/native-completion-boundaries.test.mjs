@@ -260,3 +260,46 @@ test('Standards-C5: older history failure preserves only a validated contiguous 
     }
   });
 });
+
+test('N1: intrinsic view size governs the cap and count despite shadowed byte metadata', async (t) => {
+  for (const maxRawBytes of [1, 63, 64, 65]) await t.test(`cap ${maxRawBytes}`, async () => {
+    const raw = new Uint8Array(64).fill(7);
+    Object.defineProperties(raw, {
+      byteLength: { value: 1 },
+      length: { get() { assert.fail('caller length is not size authority'); } },
+      buffer: { get() { assert.fail('do not reconstruct from caller buffer'); } },
+      byteOffset: { get() { assert.fail('do not reconstruct from caller offset'); } },
+    });
+    const f = fixture(), original = f.launch;
+    let reads = 0;
+    f.launch = async (input) => ({ ...await original(input), get raw() { reads++; return raw; } });
+    const result = await run(f, { limits: { maxRawBytes } });
+    assert.equal(reads, 1);
+    assert.deepEqual([...raw], Array(64).fill(7));
+    assert.equal(result.logicalProof, maxRawBytes >= 64);
+    if (maxRawBytes < 64) {
+      assert.equal(result.raw.status, 'unknown');
+      assert.ok(result.health.issues.includes('raw_byte_limit_or_missing'));
+    } else {
+      assert.equal(result.raw.bytes, 64);
+      assert.equal(result.raw.sha256, '6cfeeb3aa25d3f411dae5eec17d7369ca7153e72dcf54bcf4c3daec0f5b21fc7');
+    }
+  });
+});
+
+test('N1: unsupported raw view shapes remain unknown without erasing native negatives', async () => {
+  for (const outcome of ['failed', 'interrupted']) {
+    for (const raw of [Object.create(Uint8Array.prototype), new Uint16Array(2), new Proxy(new Uint8Array(2), {})]) {
+      const f = fixture(), original = f.launch;
+      f.launch = async (input) => ({ ...await original(input), raw });
+      f.client.message.list = async () => ({ data: f.launches ? [
+        { id: 'idle', type: 'idle', outcome }, { id: 'prompt', type: 'user' },
+      ] : [], cursor: { next: null } });
+      const result = await run(f);
+      assert.equal(result.raw.status, 'unknown');
+      assert.equal(result.native.outcome, outcome);
+      assert.equal(result.logicalProof, false);
+      assert.equal(f.returns, 1);
+    }
+  }
+});
