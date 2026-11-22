@@ -34,7 +34,13 @@ for(const s of discoveryCases.filter(s=>!s.write))for(const mode of ['direct','e
 
 for(const s of discoveryCases.filter(s=>!s.write))test(`${s.id}: source-only mutation text is not an invocation`,()=>{
   const f=discoveryFlow(s,'execute'),raw=f.rawLines.map(JSON.parse);
+  const operations=JSON.stringify(f.journal.calls),observations=JSON.stringify(f.recording.calls),scope=structuredClone(f.journal.scope);
   raw.at(-2).part.state.input.code+='; // tools.mem.remember({content:"Unauthorized",kind:"fact"})';
-  // The extra source site has no observed outcome: unavailable, not an executed mutation.
-  refresh(f,raw);assert.equal(f.grade().verdict,'BLOCKED');
+  // C1: the complete independent journal, not the extra source site, defines actual coverage.
+  refresh(f,raw);
+  assert.equal(JSON.stringify(f.journal.calls),operations);
+  assert.equal(JSON.stringify(f.recording.calls),observations);
+  assert.deepEqual(f.journal.scope,scope);
+  assert.equal(f.journal.complete,true);assert.equal(f.recording.execution_complete,true);
+  assert.equal(f.grade().verdict,'PASS');
 });

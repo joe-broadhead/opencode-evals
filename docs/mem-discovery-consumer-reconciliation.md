@@ -23,6 +23,17 @@ Tool, arguments, status, output, and supplied identity fields still require agre
 The existing checks retain complete-empty semantics, journal scope, digest binding, reciprocal mutation counts, and read-only mutation rejection.
 Core conversion and grading semantics do not change.
 
+Public inner trace rows also describe source sites, not actual executions.
+Their raw-derived signatures still bind count, sequence, tool, arguments, parent, and duplicate-result structure.
+They do not require execution outcomes. Carrier, direct-call, and independent journal outcomes still require the existing checks.
+An incomplete or missing journal still blocks credit. Actual errors and backend rejections still fail.
+
+C1 changes the earlier source-only mutation test from BLOCKED to PASS only with complete independent actual coverage.
+The migrated test verifies unchanged journal operations, projected observations, and scope after the source-only edit.
+The original assertion treated an extra source site as an unavailable invocation outcome.
+That interpretation conflicted with the combined rule that source diagnostics cannot veto independently recorded execution.
+No actual missing-status, missing-identity, incomplete-journal, failed-carrier, or backend-mutation expectation changes.
+
 ## Synthetic test support
 
 The finite-store fixture records each completed operation and its returned output before conversion.

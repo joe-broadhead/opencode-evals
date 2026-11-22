@@ -151,6 +151,9 @@ export function reconcileMemoryRecording(id,recording,view,turn,native,q,nativeC
       if(sig.parent_index===null?c.parent_seq!==undefined:c.parent_seq!==view.calls[sig.parent_index]?.seq)q.fail("official inner call parent contradicts actual recording")
       const results=view.events.filter(e=>e.kind==="tool_result"&&e.for_seq===c.seq)
       if(results.length>1)q.fail("replayed official invocation outcome")
+      // Inner trace rows come from source sites, not observed executions. Their
+      // structure stays bound above; only carrier/direct/journal outcomes prove execution.
+      if(sig.via==="execute"&&Number.isInteger(sig.parent_index))continue
       if(c.status==="unknown")q.missing("official invocation outcome")
       else if(c.status!==sig.status)q.fail("official invocation outcome contradicts actual recording")
     }
