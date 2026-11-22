@@ -4,10 +4,24 @@ import {mkdirSync,writeFileSync} from "node:fs"
 import {join,resolve} from "node:path"
 import {memCases} from "./cases.mjs"
 import {spacesDiscoveryIntent} from "../../src/run/guard/mem-discovery-intents.mjs"
+import {isDeepStrictEqual} from "node:util"
 export const DISCOVERY_VERSION="mem-discovery/2"
 export const RECORD_ID="rec_01KABCDE1234567890ABCDEFGH"
 export const SKILL_ID="skill-quartz"
 const clone=v=>structuredClone(v)
+// Contract snapshots retain their data types. Reject mutable exotic containers rather than
+// silently flattening them (JSON cloning) or pretending Object.freeze seals Map/typed arrays.
+export function immutableDiscoveryClone(value){
+  const snapshot=clone(value),seen=new WeakSet()
+  const freeze=v=>{
+    if(!v||typeof v!=="object"||seen.has(v))return v
+    if(!Array.isArray(v)&&Object.getPrototypeOf(v)!==Object.prototype)throw new Error("unsupported mutable discovery contract type")
+    seen.add(v)
+    for(const child of Object.values(v))freeze(child)
+    return Object.freeze(v)
+  }
+  return freeze(snapshot)
+}
 const empty=()=>({records:[],raw:{},skills:[],codeGraphs:[],wikiGraphs:[],sourceRequests:[],bindings:[],jobs:[],providers:[{source:"gmail",account:"quartz-synthetic",enabled:false,status:"unconfirmed",provider:"synthetic-no-collector"}],templates:[{id:"slack-threads-project",name:"Quartz inactive draft for quartz-synthetic",connector:"slack",grants:[],budgets:{calls:0},every:"inactive until human approval"}]})
 const record={id:RECORD_ID,kind:"memory",type:"fact",title:"Quartz fact",body:"Quartz full current body. Record nonce QREC-71.",version:2,status:"current"}
 const versions=[{skill_id:SKILL_ID,name:"Quartz",description:"Version marker QS-V1-42",version:1,content:"Skill body QS-V1-42.",is_expired:true},{skill_id:SKILL_ID,name:"Quartz",description:"Version marker QS-V2-93",version:2,content:"Skill body QS-V2-93.",is_expired:false}]
@@ -36,11 +50,16 @@ function contract(old){
   const prompt=old.family==="exact-read"?(old.id.endsWith("-p")?"Show my Quartz fact in full, not a ranked snippet.":"Read the full current body of my Quartz fact."):old.prompt
   return {id:old.id,original_id:old.id,family:old.family,prompt,prompts:[prompt],suite:DISCOVERY_VERSION,binding,backend,answer,legacy_answer_contract:Boolean(old.answer),seed,write:["memory","page","commitment","wiki-write","sources","jobs"].includes(old.family),source_profile:"5488730012f893f2e456d5bc6540ab3b4708d9c5-PROVISIONAL"}
 }
-export const discoveryCases=memCases.map(contract)
+export const discoveryCases=immutableDiscoveryClone(memCases.map(contract))
 export const discoverySuiteHash=createHash("sha256").update(JSON.stringify(discoveryCases)).digest("hex")
+export function discoverySnapshot(spec){
+  const canonical=discoveryCases.find(s=>s.id===spec?.id)
+  if(!canonical||!isDeepStrictEqual(spec,canonical))throw new Error("unknown or changed discovery case; no snapshot")
+  return immutableDiscoveryClone(canonical)
+}
 export function discoveryIntent(spec,trial_id,expires_at){
-  if(!discoveryCases.some(s=>s.id===spec?.id))throw new Error("unknown discovery case; no intent")
-  return {schema:"oc-mem-intent/1",case_id:spec.id,trial_id,expires_at,turns:[{index:1,calls:spec.write?[{family:spec.binding.tool,args:clone(spec.binding.args)}]:[]}]}
+  const canonical=discoverySnapshot(spec)
+  return immutableDiscoveryClone({schema:"oc-mem-intent/1",case_id:canonical.id,trial_id,expires_at,turns:[{index:1,calls:canonical.write?[{family:canonical.binding.tool,args:canonical.binding.args}]:[]}]})
 }
 export function renderDiscoveryCase(s){return `# ${s.id}
 - Plugin: mem

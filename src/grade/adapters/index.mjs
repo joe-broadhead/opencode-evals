@@ -15,4 +15,4 @@ export function adapterState(plugin, files) {
 }
 
 /** The adapter files, for the grader hash: a change to one can change a verdict. */
-export const ADAPTER_FILES = ["src/grade/adapters/index.mjs", "src/grade/adapters/charts.mjs", "src/grade/adapters/mem.mjs", "src/grade/adapters/mem-core.mjs", "src/grade/adapters/mem-discovery.mjs", "packs/mem/discovery-plan.mjs", "packs/mem/core.mjs", "worlds/mem/core-inventory.json", "worlds/mem/baseline-586/core-contracts.json", "worlds/mem/baseline-586/scripts/eval/harness-scoring.mjs"]
+export const ADAPTER_FILES = ["src/grade/adapters/index.mjs", "src/grade/adapters/charts.mjs", "src/grade/adapters/mem.mjs", "src/grade/adapters/mem-core.mjs", "src/grade/adapters/mem-discovery.mjs", "packs/mem/discovery-plan.mjs", "packs/mem/cases.mjs", "src/run/guard/mem-targets.mjs", "src/run/guard/mem-discovery-shapes.mjs", "src/run/guard/mem-discovery-intents.mjs", "packs/mem/core.mjs", "worlds/mem/core-inventory.json", "worlds/mem/baseline-586/core-contracts.json", "worlds/mem/baseline-586/scripts/eval/harness-scoring.mjs"]
