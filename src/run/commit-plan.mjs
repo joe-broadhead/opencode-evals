@@ -35,7 +35,7 @@ export function resolveCommitPlan(plan, targets) {
     if (write?.memory !== undefined) {
       // Eligibility/containment only. The guard additionally requires the runner's sealed per-case/trial/turn intent.
       // Neither a plan nor plugin-default allow is authority for every operation in this space.
-      if (!["remember", "page", "wiki", "commitments", "revise"].includes(write.memory) || action !== `mem_${write.memory}` || write.local || write.extract) throw new Error("commit plan: invalid Memory extractor")
+      if (!["remember", "page", "wiki", "commitments", "revise", "spaces"].includes(write.memory) || action !== `mem_${write.memory}` || write.local || write.extract) throw new Error("commit plan: invalid Memory extractor")
       const allow = resolveList(write.allow, targets, `${action}.allow`)
       if (write.allow.some((a) => !["@mem.personal", "@mem.shared"].includes(a)) || allow.some((v) => !["spc-eval-personal", "spc-eval-shared"].includes(v))) throw new Error("commit plan: Memory allows reserved synthetic aliases only")
       resolved[action] = { memory: write.memory, allow }

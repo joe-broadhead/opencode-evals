@@ -10,68 +10,58 @@
   "prompt": "List versions of the stored Quartz skill.",
   "controls": [],
   "budgets": {
-    "outer_calls": 8,
-    "inner_calls": 8,
+    "outer_calls": 14,
+    "inner_calls": 14,
     "tokens": 64000,
     "wall_ms": 180000
   },
   "seed": null,
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "action",
-    "query",
-    "kind",
-    "content",
-    "path",
-    "wiki_id",
-    "filename",
-    "what"
-  ],
   "sets": [
     "deep",
     "mem-discovery"
   ],
-  "status": "deferred",
+  "status": "active",
   "data": "synthetic",
   "items": [
     {
-      "id": "MEM-OC01",
+      "id": "MEM-CT02",
       "severity": "blocker",
-      "ask": "The request reaches the correct family and the independent synthetic state oracle.",
+      "ask": "Typed invocation and independent scoped backend truth agree.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "state",
-          "path": "mem.final_schema_bound",
-          "op": "==",
-          "value": {
-            "kind": "boolean",
-            "value": true
-          }
+          "kind": "memory-discovery",
+          "id": "deep-mem-skills"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 14
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Final stored-skills read schemas and fixture contract pending; not wiki versions.",
+      "text": "mem-discovery/2, suite 0e71e8ef330ec34e595b86d2d47d0147454390b9d8810faeaa9744669627d3fb. Active finite case contract, not runtime approval.",
       "line": 19
     },
     {
       "id": null,
-      "text": "direct/search are separate execution conditions, paired within each final baseline/candidate arm, three trials each; no real search measurement exists yet.",
+      "text": "Source schemas are PROVISIONAL 548, not a final release or registered catalog observation.",
       "line": 20
+    },
+    {
+      "id": null,
+      "text": "Direct/search are separate execution conditions with the same intent. Non-pinned schemas require full-schema discovery after a 117-character preview.",
+      "line": 21
     }
   ],
   "hashes": {
-    "source_sha256": "ec9d735f8efd08f31b0856d18806d0e71e10374140388690b4970faa06b202a3"
+    "source_sha256": "dad1242dfaecef1f1102c93e01b1e1dd9441ebaa42c20883bba55de47f5acde1"
   }
 }

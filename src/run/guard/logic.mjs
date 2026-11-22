@@ -170,6 +170,7 @@ export function decideBefore(policy, tool, input, plans = new Map(), context = {
   if (policy.tools && !toolAllowed(policy.tools, tool)) return { pass: false, why: "a core tool outside the locked allow-list", tool: true, write: null, committer: false }
   const memory = validMemoryBinding(policy.memoryBinding) ? memoryCall(tool, input, policy.memoryBinding) : null
   if (memory?.error) return { pass: false, why: memory.error, write: { memory: true }, committer: false }
+  if (["read","code"].includes(memory?.family) && !policy.memoryReadTools?.includes(memory.family)) return {pass:false,why:"Memory read tool lacks trusted registered policy metadata",write:null,committer:false}
   if (memory && policy.memoryIntent && !intentContext(policy, context.sessionID)) return { pass: false, why: "Memory intent trial/turn/session is inactive or expired", write: null, committer: false }
   if (memory?.write && !memoryIntentAllows(policy, memory, input, context.sessionID)) return { pass: false, why: "no sealed Memory intent for this operation, target and payload", write: { memory: true }, committer: false }
   const write = matchWrite(policy, tool, input)

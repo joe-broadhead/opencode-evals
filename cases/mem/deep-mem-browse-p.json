@@ -10,85 +10,42 @@
   "prompt": "Give me just one of my records, and clearly say if the list is incomplete.",
   "controls": [],
   "budgets": {
-    "outer_calls": 8,
-    "inner_calls": 8,
+    "outer_calls": 14,
+    "inner_calls": 14,
     "tokens": 64000,
     "wall_ms": 180000
   },
   "seed": null,
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "action",
-    "query",
-    "kind",
-    "content",
-    "path",
-    "wiki_id",
-    "filename",
-    "what"
-  ],
   "sets": [
     "deep",
     "mem-discovery"
   ],
-  "status": "deferred",
+  "status": "active",
   "data": "synthetic",
   "items": [
     {
-      "id": "MEM-OC01",
+      "id": "MEM-CT02",
       "severity": "blocker",
-      "ask": "The request reaches the correct family and the independent synthetic state oracle.",
+      "ask": "Typed invocation and independent scoped backend truth agree.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
-          "tool": "mem.recall",
-          "n": 1,
-          "arg": null
-        },
-        {
-          "kind": "call",
-          "tool": "mem.recall",
-          "n": 1,
-          "arg": "args.query",
-          "op": "==",
-          "value": {
-            "kind": "string",
-            "value": "*"
-          }
-        },
-        {
-          "kind": "call",
-          "tool": "mem.recall",
-          "n": 1,
-          "arg": "args.limit",
-          "op": "==",
-          "value": {
-            "kind": "number",
-            "value": 1
-          }
-        },
-        {
-          "kind": "state",
-          "path": "mem.list.more",
-          "op": "==",
-          "value": {
-            "kind": "boolean",
-            "value": true
-          }
+          "kind": "memory-discovery",
+          "id": "deep-mem-browse-p"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 14
     },
     {
       "id": "MEM-RT01",
       "severity": "blocker",
-      "ask": "The final answer states only the verified fixture outcome.",
+      "ask": "The final answer retains the original discovery response contract.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -106,23 +63,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 21
+      "line": 17
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Offline compiler/oracle fixture exists. Actual plugin, tool arguments, catalog/search and receipt compatibility still require container proof.",
-      "line": 25
+      "text": "mem-discovery/2, suite 0e71e8ef330ec34e595b86d2d47d0147454390b9d8810faeaa9744669627d3fb. Active finite case contract, not runtime approval.",
+      "line": 22
     },
     {
       "id": null,
-      "text": "direct/search are separate execution conditions, paired within each final baseline/candidate arm, three trials each; no real search measurement exists yet.",
-      "line": 26
+      "text": "Source schemas are PROVISIONAL 548, not a final release or registered catalog observation.",
+      "line": 23
+    },
+    {
+      "id": null,
+      "text": "Direct/search are separate execution conditions with the same intent. Non-pinned schemas require full-schema discovery after a 117-character preview.",
+      "line": 24
     }
   ],
   "hashes": {
-    "source_sha256": "6bd3253b79e3ccb546212ad597dd6f1432fcbd7cab50a01dba1187d004e4442c"
+    "source_sha256": "8d6b01d420d6ddb8e1b25b33884368d972e0d2c9db553363bf8e625e9b7a3cec"
   }
 }

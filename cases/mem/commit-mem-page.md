@@ -3,29 +3,22 @@
 - Skill under test: mem.usage
 - Tier: T3
 - Set: commit, mem-discovery
-- Status: deferred
+- Status: active
 - Data: synthetic
-- Checkable: action, query, kind, content, path, wiki_id, filename, what
-- Budget: outer_calls <= 8, inner_calls <= 8, tokens <= 64000, wall_ms <= 180000
+- Budget: outer_calls <= 14, inner_calls <= 14, tokens <= 64000, wall_ms <= 180000
 
 ## Prompt
 Create a project page for Quartz saying it is a synthetic project.
 
 ## Items
-- [MEM-OC01] blocker · The request reaches the correct family and the independent synthetic state oracle.
-  evidence: call:mem.page#1
-  evidence: call:mem.page#1 args.action == "write"
-  evidence: call:mem.page#1 args.path == "projects/quartz"
-  evidence: call:mem.page#1 args.content == "Quartz is a synthetic project."
-  evidence: state:mem.personal.pages == 1
-  evidence: state:mem.personal.memories == 0
-  evidence: state:mem.personal.changed == true
-  evidence: state:mem.receipts.stored == 1
-  evidence: state:mem.personal.bodies.page == "Quartz is a synthetic project."
+- [MEM-CT02] blocker · Typed invocation and independent scoped backend truth agree.
+  evidence: memory-discovery:commit-mem-page
 
-- [MEM-RT01] blocker · The final answer states only the verified fixture outcome.
+- [MEM-RT01] blocker · The final answer retains the original discovery response contract.
   evidence: text:any matches /^Stored the Quartz page\.$/
 
+
 ## Notes
-- Offline compiler/oracle fixture exists. Actual plugin, tool arguments, catalog/search and receipt compatibility still require container proof.
-- direct/search are separate execution conditions, paired within each final baseline/candidate arm, three trials each; no real search measurement exists yet.
+- mem-discovery/2, suite 0e71e8ef330ec34e595b86d2d47d0147454390b9d8810faeaa9744669627d3fb. Active finite case contract, not runtime approval.
+- Source schemas are PROVISIONAL 548, not a final release or registered catalog observation.
+- Direct/search are separate execution conditions with the same intent. Non-pinned schemas require full-schema discovery after a 117-character preview.

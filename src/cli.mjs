@@ -219,7 +219,7 @@ function gradeAll(iteration, cases, traceDir = tracesDir(iteration, "x"), rawDir
         if (caseObject.checkable?.length || needsRawArgs(caseObject)) rawArgs = rawCallArgs(rawLines)
       }
       // The guard's own records, in order, for `target: ... in created` (private, like the recording).
-      if (needsCreated(caseObject) && existsSync(`${rawBase}.guard.jsonl`)) guardLog = read(`${rawBase}.guard.jsonl`).split("\n").filter(Boolean).map((line) => JSON.parse(line))
+      if ((needsCreated(caseObject) || caseObject.items.some(i=>(i.evidence??[]).some(e=>e.kind==="memory-discovery"))) && existsSync(`${rawBase}.guard.jsonl`)) guardLog = read(`${rawBase}.guard.jsonl`).split("\n").filter(Boolean).map((line) => JSON.parse(line))
       // The guard's record of the trial, from the run's own summary.
       const summaryFile = `${rawBase}.summary.json`
       const guard = existsSync(summaryFile) ? JSON.parse(read(summaryFile)).guard ?? null : null

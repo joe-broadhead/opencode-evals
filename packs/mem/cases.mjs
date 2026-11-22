@@ -54,8 +54,5 @@ ${spec.answer ? `
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === import.meta.filename) {
-  const dir = resolve(import.meta.dirname, "../../cases/mem")
-  mkdirSync(dir, { recursive: true })
-  for (const spec of memCases) writeFileSync(join(dir, `${spec.id}.md`), renderCase(spec))
-  console.log(`${memCases.length} deferred discovery cases written`)
+  throw new Error("Legacy v1 fixture renderer is test support only. Generate current cases with: node packs/mem/discovery-plan.mjs")
 }

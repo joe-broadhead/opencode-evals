@@ -3,18 +3,19 @@
 - Skill under test: mem.usage
 - Tier: T3
 - Set: deep, mem-discovery
-- Status: deferred
+- Status: active
 - Data: synthetic
-- Checkable: action, query, kind, content, path, wiki_id, filename, what
-- Budget: outer_calls <= 8, inner_calls <= 8, tokens <= 64000, wall_ms <= 180000
+- Budget: outer_calls <= 14, inner_calls <= 14, tokens <= 64000, wall_ms <= 180000
 
 ## Prompt
-Read the full current body of record rec_eval_1.
+Read the full current body of my Quartz fact.
 
 ## Items
-- [MEM-OC01] blocker · The request reaches the correct family and the independent synthetic state oracle.
-  evidence: state:mem.final_schema_bound == true
+- [MEM-CT02] blocker · Typed invocation and independent scoped backend truth agree.
+  evidence: memory-discovery:deep-mem-exact-read
+
 
 ## Notes
-- Final exact-memory-read schema and fixture transport pending.
-- direct/search are separate execution conditions, paired within each final baseline/candidate arm, three trials each; no real search measurement exists yet.
+- mem-discovery/2, suite 0e71e8ef330ec34e595b86d2d47d0147454390b9d8810faeaa9744669627d3fb. Active finite case contract, not runtime approval.
+- Source schemas are PROVISIONAL 548, not a final release or registered catalog observation.
+- Direct/search are separate execution conditions with the same intent. Non-pinned schemas require full-schema discovery after a 117-character preview.

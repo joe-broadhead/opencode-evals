@@ -10,152 +10,42 @@
   "prompt": "Store this source document in my Quartz wiki as design.md: Quartz is synthetic.",
   "controls": [],
   "budgets": {
-    "outer_calls": 8,
-    "inner_calls": 8,
+    "outer_calls": 14,
+    "inner_calls": 14,
     "tokens": 64000,
     "wall_ms": 180000
   },
   "seed": null,
   "expect": "pass",
   "holdout": false,
-  "checkable": [
-    "action",
-    "query",
-    "kind",
-    "content",
-    "path",
-    "wiki_id",
-    "filename",
-    "what"
-  ],
   "sets": [
     "commit",
     "mem-discovery"
   ],
-  "status": "deferred",
+  "status": "active",
   "data": "synthetic",
   "items": [
     {
-      "id": "MEM-OC01",
+      "id": "MEM-CT02",
       "severity": "blocker",
-      "ask": "The request reaches the correct family and the independent synthetic state oracle.",
+      "ask": "Typed invocation and independent scoped backend truth agree.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
         {
-          "kind": "call",
-          "tool": "mem.wiki",
-          "n": 1,
-          "arg": null
-        },
-        {
-          "kind": "call",
-          "tool": "mem.wiki",
-          "n": 1,
-          "arg": "args.action",
-          "op": "==",
-          "value": {
-            "kind": "string",
-            "value": "write"
-          }
-        },
-        {
-          "kind": "call",
-          "tool": "mem.wiki",
-          "n": 1,
-          "arg": "args.wiki_id",
-          "op": "==",
-          "value": {
-            "kind": "string",
-            "value": "wiki-eval-personal"
-          }
-        },
-        {
-          "kind": "call",
-          "tool": "mem.wiki",
-          "n": 1,
-          "arg": "args.filename",
-          "op": "==",
-          "value": {
-            "kind": "string",
-            "value": "design.md"
-          }
-        },
-        {
-          "kind": "call",
-          "tool": "mem.wiki",
-          "n": 1,
-          "arg": "args.content",
-          "op": "==",
-          "value": {
-            "kind": "string",
-            "value": "Quartz is synthetic."
-          }
-        },
-        {
-          "kind": "state",
-          "path": "mem.personal.wiki.files",
-          "op": "==",
-          "value": {
-            "kind": "number",
-            "value": 1
-          }
-        },
-        {
-          "kind": "state",
-          "path": "mem.personal.pages",
-          "op": "==",
-          "value": {
-            "kind": "number",
-            "value": 0
-          }
-        },
-        {
-          "kind": "state",
-          "path": "mem.shared.wiki.files",
-          "op": "==",
-          "value": {
-            "kind": "number",
-            "value": 0
-          }
-        },
-        {
-          "kind": "state",
-          "path": "mem.personal.changed",
-          "op": "==",
-          "value": {
-            "kind": "boolean",
-            "value": true
-          }
-        },
-        {
-          "kind": "state",
-          "path": "mem.receipts.stored",
-          "op": "==",
-          "value": {
-            "kind": "number",
-            "value": 1
-          }
-        },
-        {
-          "kind": "state",
-          "path": "mem.personal.wiki.text",
-          "op": "==",
-          "value": {
-            "kind": "string",
-            "value": "Quartz is synthetic."
-          }
+          "kind": "memory-discovery",
+          "id": "commit-mem-wiki-write-p"
         }
       ],
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 15
+      "line": 14
     },
     {
       "id": "MEM-RT01",
       "severity": "blocker",
-      "ask": "The final answer states only the verified fixture outcome.",
+      "ask": "The final answer retains the original discovery response contract.",
       "forbidden": false,
       "grader": "code",
       "evidence": [
@@ -173,23 +63,28 @@
       "evidence_any": [],
       "na_when": [],
       "maps_to": [],
-      "line": 28
+      "line": 17
     }
   ],
   "oracle": [],
   "notes": [
     {
       "id": null,
-      "text": "Offline compiler/oracle fixture exists. Actual plugin, tool arguments, catalog/search and receipt compatibility still require container proof.",
-      "line": 32
+      "text": "mem-discovery/2, suite 0e71e8ef330ec34e595b86d2d47d0147454390b9d8810faeaa9744669627d3fb. Active finite case contract, not runtime approval.",
+      "line": 22
     },
     {
       "id": null,
-      "text": "direct/search are separate execution conditions, paired within each final baseline/candidate arm, three trials each; no real search measurement exists yet.",
-      "line": 33
+      "text": "Source schemas are PROVISIONAL 548, not a final release or registered catalog observation.",
+      "line": 23
+    },
+    {
+      "id": null,
+      "text": "Direct/search are separate execution conditions with the same intent. Non-pinned schemas require full-schema discovery after a 117-character preview.",
+      "line": 24
     }
   ],
   "hashes": {
-    "source_sha256": "479149ee1f84d70dbcdcfbf80c33be9de84a562d59c0a049bcebb9335fef2c00"
+    "source_sha256": "f1101fed2da5b1db641e93265238642f1dde9f99d9dbb81a7d1e2f357f0985d4"
   }
 }

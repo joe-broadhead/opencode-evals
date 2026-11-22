@@ -4,8 +4,9 @@ import { join, resolve, relative, isAbsolute } from "node:path"
 import { PORT, SYNTHETIC_TOKEN } from "../../worlds/mem/http.mjs"
 import { sha256 } from "../util/canonical.mjs"
 import { stageBaselineFixture } from "./mem-baseline.mjs"
+import { stageDiscoveryFixture } from "./mem-discovery-stage.mjs"
 
-export function stageMemFixture(sandbox, { core = null, intent = null } = {}) {
+export function stageMemFixture(sandbox, { core = null, discovery = null, intent = null } = {}) {
   const root = join(sandbox.tmp, "mem-fixture")
   const base = resolve(sandbox.root), rel = relative(base, root)
   if (!rel || isAbsolute(rel) || rel.split("/").includes("..") || existsSync(root)) throw new Error("unsafe or pre-existing Memory fixture stage")
@@ -17,8 +18,9 @@ export function stageMemFixture(sandbox, { core = null, intent = null } = {}) {
   mkdirSync(root, { recursive: true, mode: 0o700 })
   const source = resolve(import.meta.dirname, "../../worlds/mem")
   for (const name of ["container-entry.mjs", "http.mjs", "fixture.mjs"]) copyFileSync(join(source, name), join(root, name))
-  const plan = core ? stageBaselineFixture(root, core, intent) : null
-  writeFileSync(join(root, "descriptor.json"), JSON.stringify({ schema: "oc-mem-fixture/1", fixture: "mem-synthetic-v1", port: PORT, ...(plan ? { transport: "baseline-586" } : {}) }), { flag: "wx", mode: 0o600 })
+  if(core&&discovery)throw new Error("ambiguous Memory fixture plan")
+  const plan = core ? stageBaselineFixture(root, core, intent) : discovery ? stageDiscoveryFixture(root,discovery,intent) : null
+  writeFileSync(join(root, "descriptor.json"), JSON.stringify({ schema: "oc-mem-fixture/1", fixture: "mem-synthetic-v1", port: PORT, ...(plan ? { transport: discovery?"discovery-v2":"baseline-586" } : {}) }), { flag: "wx", mode: 0o600 })
   return { root, sandboxRoot: sandbox.root, entry: join(root, "container-entry.mjs"), url: `http://127.0.0.1:${PORT}`, port: PORT, ...(plan ? { plan, scopeMap: join(root, "scope-map.json") } : {}) }
 }
 
@@ -58,8 +60,9 @@ export async function memCaptureRecord(spec, trial, turns = null) {
   const data = JSON.parse(text)
   if (data.schema !== "oc-mem-capture/1" || data.fixture !== "mem-synthetic-v1") throw new Error("wrong Memory capture schema")
   if (spec.plan) {
-    if (data.core?.case_id !== spec.plan.case_id || !Array.isArray(turns)) throw new Error("Memory native turn capture is missing")
-    data.core.turns = turns
+    const proof=spec.plan.kind==="discovery"?data.discovery:data.core
+    if (proof?.case_id !== spec.plan.case_id || !Array.isArray(turns)) throw new Error("Memory native turn capture is missing")
+    proof.turns = turns
     text = JSON.stringify(data)
   }
   return { path: "mem-fixture/capture.json", change: "added", text, bytes: Buffer.byteLength(text), sha256: sha256(text) }

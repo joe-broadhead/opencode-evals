@@ -1,4 +1,9 @@
-# Memory setup: offline only
+# Memory setup: offline contracts
+
+The current discovery delta is [Discovery v2](DISCOVERY-V2.md).
+It supplies finite contracts for all 24 discovery cases and a separate native oracle.
+It does not establish runtime compatibility or change the frozen core proof semantics.
+The setup commands and deferred-case counts that follow are historical.
 
 The current increment is [Offline phase 3](OFFLINE-PHASE3.md). It resolves the
 missing core source and ports all 38 contracts. Runtime verification remains pending.

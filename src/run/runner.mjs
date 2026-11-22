@@ -50,7 +50,7 @@ import { dirname } from "node:path"
 import { stageMemFixture, memFixtureOptions, memFixtureBinding, startMemFixture, memCaptureRecord } from "./mem-fixture.mjs"
 import { coreCases } from "../../packs/mem/core.mjs"
 import { runMemoryTurns } from "./mem-turns.mjs"
-import { coreMemoryIntent } from "./mem-intent-plan.mjs"
+import { selectMemoryPlan } from "./mem-case-plan.mjs"
 
 
 export const RUNNER = "evals run"
@@ -495,9 +495,9 @@ async function runJobBody(job, ctx, track) {
   track.phase = "preparing the world"
   const prepared = await ctx.world.prepare({ sandbox, case: job.case, seed: job.case.seed ?? null, trial: job.trial, caller: ctx.caller })
   if (ctx.plugin === "mem" && (ctx.isolation.name !== "container" || !ctx.isolation.confines || prepared.memFixture !== true)) throw new Error("Memory trials require the contained synthetic fixture world")
-  const coreSpec = ctx.plugin === "mem" ? coreCases.find((s) => s.id === job.case.id) : null
-  const memoryIntent = coreSpec ? coreMemoryIntent(coreSpec, `${name}-${digestOf(root).slice(0,16)}`, Date.now()+ctx.timeoutMs+120000) : null
-  const memFixture = ctx.plugin === "mem" ? stageMemFixture(sandbox, { core: coreSpec ?? null, intent: memoryIntent }) : null
+  const memoryPlan = ctx.plugin === "mem" ? selectMemoryPlan(job.case.id,{trial_id:`${name}-${digestOf(root).slice(0,16)}`,expires_at:Date.now()+ctx.timeoutMs+120000}) : null
+  const memoryIntent = memoryPlan?.intent ?? null
+  const memFixture = memoryPlan ? stageMemFixture(sandbox, { [memoryPlan.kind]: memoryPlan.spec, intent: memoryIntent }) : null
   const cwd = within(root, prepared.cwd, "the working directory")
   // The case's own files (`Seed: files=`), copied into its project before the world's home is cut of its links.
   track.phase = "seeding the project's files"
@@ -511,6 +511,11 @@ async function runJobBody(job, ctx, track) {
   const trialSealed = {...ctx.sealed}
   if (memoryIntent && ctx.sealed.guardDir) {
     const policy=JSON.parse(readFileSync(join(ctx.sealed.guardDir,"guard.json"),"utf8"))
+    if(memoryPlan.kind==="discovery"){
+      // Only the named synthetic case gains its literal intent. Unrelated families retain no extractor.
+      policy.mode=memoryPlan.spec.write?"commit":"refuse"
+      if(memoryPlan.spec.write){const family=memoryPlan.spec.binding.tool,action=`mem_${family}`,write=policy.writes.find(w=>w.action===action);if(!write)throw new Error("discovery write is absent from trusted tool metadata");write.memory=family;write.allow=["spc-eval-personal"];const replies={[action]:"once",...(["page","wiki"].includes(family)?{[`${family}.write`]:"once"}:{})};policy.memoryReplies={...replies,...policy.memoryReplies}}
+    }
     trialSealed.guardDir=installGuard(sandbox.tmp,{...policy,memoryIntent})
   }
   const config = sealedConfig({ armDir: ctx.armDir, options: memFixture ? memFixtureOptions(memFixture, ctx.options) : ctx.options, model: ctx.model, scripted: Boolean(ctx.scripted), scriptedProvider: ctx.scriptedProvider, ...trialSealed })
@@ -583,7 +588,7 @@ async function runJobBody(job, ctx, track) {
             return false
           }
         }
-        const core = ctx.plugin === "mem" ? coreCases.find((s) => s.id === job.case.id) : null
+        const memorySpec = memoryPlan?.spec ?? null
         const memoryClient = async ({prompt,session:continued,timeoutMs,index}) => {
           let session=continued
           if (!session) {
@@ -599,7 +604,7 @@ async function runJobBody(job, ctx, track) {
           try{return await exec(["run","--server",server.url,"--format","json","-m",ctx.model,"--session",session,prompt],{timeoutMs,...stallOf(ctx,sawRequest)})}
           finally{write(false)}
         }
-        const runClient = () => core ? runMemoryTurns({ spec: core, timeoutMs: ctx.timeoutMs, client: memoryClient }) : exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...stallOf(ctx, sawRequest) })
+        const runClient = () => memorySpec ? runMemoryTurns({ spec: memorySpec, timeoutMs: ctx.timeoutMs, client: memoryClient }) : exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...stallOf(ctx, sawRequest) })
         // An idle client: `opencode run` alive, the server up, the mock never asked (found in 2 of ~100 `p0 a1` runs; the processes were all asleep at 0 % CPU). It is replaced ONCE, and the
         // restart is written into the summary with what the container showed at that moment and reported by the probe: a hang that happens again is infra `no_model_request`, as before.
         const restarts = []

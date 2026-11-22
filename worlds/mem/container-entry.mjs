@@ -11,6 +11,10 @@ export async function serveFixture(root) {
   if (!existsSync(root) || lstatSync(root).isSymbolicLink()) throw new Error("fixture root is not a staged directory")
   const descriptor = JSON.parse(readFileSync(join(root, "descriptor.json"), "utf8"))
   if (descriptor.schema !== "oc-mem-fixture/1" || descriptor.fixture !== "mem-synthetic-v1" || descriptor.port !== PORT) throw new Error("invalid fixture descriptor")
+  if(descriptor.transport==="discovery-v2"){
+    const {serveDiscovery}=await import("./discovery-entry.mjs")
+    return serveDiscovery(root)
+  }
   if (descriptor.transport === "baseline-586") {
     const { serveBaseline } = await import("./baseline-entry.mjs")
     return serveBaseline(root)

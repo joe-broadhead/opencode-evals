@@ -1,7 +1,8 @@
 // A space binding proves containment, never user intent. Intent is sealed by the native runner per case/trial.
+import {spacesDiscoveryIntent} from "./mem-discovery-intents.mjs"
 const key = (v) => JSON.stringify(v && typeof v === "object" ? Array.isArray(v) ? v.map((x) => JSON.parse(key(x))) : Object.fromEntries(Object.keys(v).sort().map((k) => [k, JSON.parse(key(v[k]))])) : v)
 export function validIntent(intent) {
-  return intent?.schema === "oc-mem-intent/1" && typeof intent.case_id === "string" && typeof intent.trial_id === "string" && Number.isFinite(intent.expires_at) && Array.isArray(intent.turns) && intent.turns.every((t, i) => t.index === i + 1 && Array.isArray(t.calls) && t.calls.every((c) => ["remember", "revise", "page", "wiki", "commitments"].includes(c.family) && c.args && typeof c.args === "object" && !Array.isArray(c.args)))
+  return intent?.schema === "oc-mem-intent/1" && typeof intent.case_id === "string" && typeof intent.trial_id === "string" && Number.isFinite(intent.expires_at) && Array.isArray(intent.turns) && intent.turns.every((t, i) => t.index === i + 1 && Array.isArray(t.calls) && t.calls.every((c) => ["remember", "revise", "page", "wiki", "commitments", "spaces"].includes(c.family) && c.args && typeof c.args === "object" && !Array.isArray(c.args)))
 }
 export function intentContext(policy, session, now = Date.now()) {
   const i = policy.memoryIntent, c = policy.memoryContext
@@ -26,6 +27,7 @@ function resolveArgs(args, policy) {
 }
 export function memoryIntentAllows(policy, call, input, session) {
   if (!intentContext(policy, session)) return false
+  if(call.family==="spaces"&&call.write&&key(spacesDiscoveryIntent(policy.memoryIntent.case_id))!==key(input))return false
   const turn = policy.memoryIntent.turns.find((t) => t.index === policy.memoryContext.turn)
   return turn.calls.some((c) => c.family === call.family && key(resolveArgs(c.args, policy)) === key(input))
 }

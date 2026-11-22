@@ -1,0 +1,353 @@
+{
+  "schema": "oc-mem-discovery-offline-lock/1",
+  "status": "unrun",
+  "final_comparison": false,
+  "runtime_verified": false,
+  "base": "acdcf7c0a8e11c85b03c8479099379b689a54de2",
+  "suite": "mem-discovery/2",
+  "suite_sha256": "0e71e8ef330ec34e595b86d2d47d0147454390b9d8810faeaa9744669627d3fb",
+  "compiled_cases_sha256": "d9e665c06402e5b46c0a7077266578171f4ce60d814948bf152cdd98a23a73b8",
+  "source_schemas": {
+    "status": "PROVISIONAL-source-fixture-not-registered-observation",
+    "commit": "5488730012f893f2e456d5bc6540ab3b4708d9c5",
+    "sha256": "90c84c8349ae64caebb839dfc2dc7bda0d16ad1c7b7d506a697cf0c2f799d47f"
+  },
+  "previous": {
+    "base": "acdcf7c0a8e11c85b03c8479099379b689a54de2",
+    "cases_sha256": "d7434c0404137a57e973011fce3b52dd5d068dd40059b3840b19174f6116e012",
+    "files": [
+      {
+        "id": "commit-mem-memory",
+        "source_sha256": "388bd5dc5d53811d00212dbc07e865ef14a017d30beebce6fea9e89ef3839160",
+        "compiled_sha256": "35070bca89d6f8d51fbbd66fb419e9a755f610ff51445f2af201cfc80e2cd89c",
+        "prompt": "Remember that Quartz uses green labels."
+      },
+      {
+        "id": "commit-mem-memory-p",
+        "source_sha256": "6cb22689b67d3fbe10b1fef2164407630e40ae6fc232ce2b4a6f97acdbb10fb0",
+        "compiled_sha256": "c224642e8a0918ea6867a69adaebe39e13abbce7a0db870d03d841adbaa22389",
+        "prompt": "Keep this fact for later: Quartz uses green labels."
+      },
+      {
+        "id": "commit-mem-page",
+        "source_sha256": "b3f0f88043274613929e79b6851edcc1f9e697bf55b857a987ab7f07a79b70f3",
+        "compiled_sha256": "0b4f5001f33343ef0a4fd88b8515895e0701764f812b45ba17b92575c5148805",
+        "prompt": "Create a project page for Quartz saying it is a synthetic project."
+      },
+      {
+        "id": "commit-mem-page-p",
+        "source_sha256": "4db574e23c6662f89a1e891c6a95fb486de7a5218cd92db813025deabd949965",
+        "compiled_sha256": "a62fee4262fb198dc1d2a48407319485e63d3fd9d932f441b8d24e1db73ed14d",
+        "prompt": "Put a page about Quartz in my projects, with the text: Quartz is a synthetic project."
+      },
+      {
+        "id": "commit-mem-commitment",
+        "source_sha256": "b2cb1e37888e899cdda6eca792c9198e9ae896fdf173e2a583df881c278cb2a4",
+        "compiled_sha256": "710450e117f0d7b69559c93dae0b35d956e975eafbd58a874d52ef4f91e1bbf9",
+        "prompt": "I will send the Quartz draft. Track that promise without a date."
+      },
+      {
+        "id": "commit-mem-commitment-p",
+        "source_sha256": "0f149fe84e6a8004c769f0ebfb300d03bdc95141190344c5c28cc2e99584487b",
+        "compiled_sha256": "062c09d83c184a704fa3e9c01bbaeb8eae8e314c858afe76eeb0888fb1b6a795",
+        "prompt": "Add sending the Quartz draft to what I owe. I have not chosen a deadline."
+      },
+      {
+        "id": "commit-mem-wiki-write",
+        "source_sha256": "46f91f426b1222439af84ad84021eb4abdda192ad3bb0fc8347d03125f555e6b",
+        "compiled_sha256": "e896ed272034ee8871678721db3f2feafabb8f85cf62c00da31907ece6be674f",
+        "prompt": "In my Quartz wiki, save the supplied document design.md: Quartz is synthetic."
+      },
+      {
+        "id": "commit-mem-wiki-write-p",
+        "source_sha256": "479149ee1f84d70dbcdcfbf80c33be9de84a562d59c0a049bcebb9335fef2c00",
+        "compiled_sha256": "bb153b0198b796a180d11ca1af6ba1612b2a9f28f21bbd3aeef55d2d20d40bab",
+        "prompt": "Store this source document in my Quartz wiki as design.md: Quartz is synthetic."
+      },
+      {
+        "id": "deep-mem-wiki-read",
+        "source_sha256": "952d24f4e16c5da5b255f3bf435dbe1b26b0e7ea06aa85a8c1b4d102684a5eee",
+        "compiled_sha256": "be1a7fcc6db26ea94908d3d543d38556e1633d72c2e31e7c9955d9a1c34791df",
+        "prompt": "What marker is in the design.md source in my Quartz wiki? Give only the marker."
+      },
+      {
+        "id": "deep-mem-wiki-read-p",
+        "source_sha256": "024dd30b3575b45474fa835c49f0a5185c0e46b25e2aaff45cc3d6ee3139d969",
+        "compiled_sha256": "0924e86ff8d3a17a5614d73f4a59c0101534379cb4449dd410a548e0cb493ae0",
+        "prompt": "Read my Quartz wiki's design.md document and tell me its marker, with no extra text."
+      },
+      {
+        "id": "deep-mem-browse",
+        "source_sha256": "de7c9a89dd296d2de91ad9fdc17a220871413f07279a3d7472a620816a80bb3c",
+        "compiled_sha256": "ca73e6fca2a17d00e95d8634b8683535dce1013484c3ca9f2f0abe701de19111",
+        "prompt": "Show a one-item sample of my records. If there are more, say the sample is partial."
+      },
+      {
+        "id": "deep-mem-browse-p",
+        "source_sha256": "6bd3253b79e3ccb546212ad597dd6f1432fcbd7cab50a01dba1187d004e4442c",
+        "compiled_sha256": "dee550911d1de0380380527649fd5ba319d4d52ebade62aa9117b18870c53e9b",
+        "prompt": "Give me just one of my records, and clearly say if the list is incomplete."
+      },
+      {
+        "id": "deep-mem-exact-read",
+        "source_sha256": "83a4698f29f82c32d5cffbf4e668f73c32f1f314850262ab67d804d946f25496",
+        "compiled_sha256": "222141571ac99654988e9d0b3df8483fb35fc7225f8eed872b544f67345ce738",
+        "prompt": "Read the full current body of record rec_eval_1."
+      },
+      {
+        "id": "deep-mem-exact-read-p",
+        "source_sha256": "d3866f4d7d0d319455bf5a69f9704f440945d615beeca436f71675f673ac311c",
+        "compiled_sha256": "c2065cc51b5b181cb0f3561ef27fa18e494a9ea78ee1ad87ed3513f13186d6ca",
+        "prompt": "Show record rec_eval_1 in full, not a ranked snippet."
+      },
+      {
+        "id": "deep-mem-code",
+        "source_sha256": "737cd3bac37521623e7534a05ed7b303a4bbe07fd96fed707d8b15a9670bb741",
+        "compiled_sha256": "ac2d60d30a4d412a27e61a80e9023d12f3912da2a6f331f5da4ac36bf60a98ba",
+        "prompt": "Which functions call Quartz's parseInvoice symbol in the indexed repository?"
+      },
+      {
+        "id": "deep-mem-code-p",
+        "source_sha256": "2a6d05856778812909cf20ea9412ec6e6affa195b4b0ed60ce0387c39f352865",
+        "compiled_sha256": "e1221062bfd1caa2d3e96cb8bf11bcbae7aa3c6e5531a115ffa295f0d6dbe6b3",
+        "prompt": "Find callers of parseInvoice in the Quartz code graph, not page backlinks."
+      },
+      {
+        "id": "deep-mem-wiki-graph",
+        "source_sha256": "21435bc3d8e380bdd2b8c0fa340b9138f5bf974032f3a99a0c0ab7707dd43dc6",
+        "compiled_sha256": "1c2a7c9ad31a62a2a0ea8c19cb14db0863a156970d96be1d8d39bb29f6e6dc57",
+        "prompt": "Show the connections between pages in my Quartz wiki."
+      },
+      {
+        "id": "deep-mem-wiki-graph-p",
+        "source_sha256": "87f83be85b24d19248364081d63697b337c226f873fc53148edfacf0d46498fe",
+        "compiled_sha256": "130d0a5139e2f2f6cccfcb6899f82b746a96f262b6ee454c9227eb130fd9ad1c",
+        "prompt": "What communities appear in the Quartz document graph?"
+      },
+      {
+        "id": "deep-mem-skills",
+        "source_sha256": "ec9d735f8efd08f31b0856d18806d0e71e10374140388690b4970faa06b202a3",
+        "compiled_sha256": "320afdab82fb5a1b07ab772420c946ea523c9294a26c4ae4317d9e6e064614db",
+        "prompt": "List versions of the stored Quartz skill."
+      },
+      {
+        "id": "deep-mem-skills-p",
+        "source_sha256": "5bf2cffc28b255e1a971945ee807bf96c3daa8e84a551683ff6438102d5fa4f7",
+        "compiled_sha256": "9c24ec15a5f72c35222d236a430ba314e6a43fccf34ae3e8548c17bc140561de",
+        "prompt": "Show the saved Quartz skill's version history."
+      },
+      {
+        "id": "deep-mem-sources",
+        "source_sha256": "a45585d40cc1db081dd423e7aea62ed0f3cb70ce09c74101ab781a72058d09a5",
+        "compiled_sha256": "40f91bd378183664f08dc62dff4bd455de28074942fe119600970d5492f8c435",
+        "prompt": "Request linking my synthetic mail account to Memory; tell me what I must confirm."
+      },
+      {
+        "id": "deep-mem-sources-p",
+        "source_sha256": "3847748b941bca0bfd4da3ea2496bc5975ee68b32e9abf16936b987661b9b24c",
+        "compiled_sha256": "8a25e63c8d74d5059fe3fd7a1821fdd22b4c3615442ef5119adda881486ed1f6",
+        "prompt": "Ask Memory to connect the synthetic mail account, but do not claim it is linked yet."
+      },
+      {
+        "id": "deep-mem-jobs",
+        "source_sha256": "2eb44a73d75d55d72c064baef13c5db233da8c973bb80d800a0a71180ed4e670",
+        "compiled_sha256": "7006246a65b3cdaabee9e07d9818fa5e7233b5d6ac84afa5ab5ce8ae52e4544e",
+        "prompt": "Draft a Memory job for the Quartz project, without activating it."
+      },
+      {
+        "id": "deep-mem-jobs-p",
+        "source_sha256": "8a624c8681583b34e97025cf26484cf22c9da945a8d9724cdc4461b3caea8535",
+        "compiled_sha256": "3ed24e373f88724d0702a4014a4dde49431eab05f4c041b1f14625eb1d128b81",
+        "prompt": "Prepare a proposed Quartz Memory pipeline; leave running it for me to approve."
+      }
+    ]
+  },
+  "prompt_repairs": [
+    {
+      "id": "deep-mem-exact-read",
+      "old": "Read the full current body of record rec_eval_1.",
+      "new": "Read the full current body of my Quartz fact.",
+      "reason": "canonical record ID validation repair only; no action hint"
+    },
+    {
+      "id": "deep-mem-exact-read-p",
+      "old": "Show record rec_eval_1 in full, not a ranked snippet.",
+      "new": "Show my Quartz fact in full, not a ranked snippet.",
+      "reason": "canonical record ID validation repair only; no action hint"
+    }
+  ],
+  "cases": [
+    {
+      "id": "commit-mem-memory",
+      "source_sha256": "cff6f94afc9ee4a58692e96eb8baea519687ad7502752d3155b1901264352ad0",
+      "compiled_sha256": "c41795b92e504e00328f06cc39fc16e4bb010630f080b2eb5a42244a5f84a748"
+    },
+    {
+      "id": "commit-mem-memory-p",
+      "source_sha256": "f2b8fb0b85ad28392dd49814d9a5aba537f027bf0a2a56d17753402752147303",
+      "compiled_sha256": "d2ab2c0a49a5e3c256e515e8d406b429d4dde13a8fc94e0822bd269495ddc544"
+    },
+    {
+      "id": "commit-mem-page",
+      "source_sha256": "061182822770ccda3593093c48d6c0d5d5cfce95c2c77a4bbec5c701db0fcea6",
+      "compiled_sha256": "537fbfe04b2b0f7cdfc9a790727cacc38e165c05dd7310159db5f881659b6e9b"
+    },
+    {
+      "id": "commit-mem-page-p",
+      "source_sha256": "ec4196e5c2b6f9ef727b7fbf8b5a789d6012eb8cee08492423e2dcf707e1505b",
+      "compiled_sha256": "c92889b1e814b449a42eacea47f3648ad1c995d00b6cee22331382f632938399"
+    },
+    {
+      "id": "commit-mem-commitment",
+      "source_sha256": "dab61e7096f051de511cd1d58f742bb20dfc6aebf7c478f0631ae1690247de0e",
+      "compiled_sha256": "ec917c03149b0d2b6e7f72ab4ef51fbf3821d598a332bd853e61b0ebbfd0634b"
+    },
+    {
+      "id": "commit-mem-commitment-p",
+      "source_sha256": "048b412768a47c96b710cf87196c6503bab9b37da0742cc840b42d6bb3edfb08",
+      "compiled_sha256": "dec8bf85c8af3e8c521780fc2f5bd3c37eda92998dc1e7f1bfb403f8dfcc04d4"
+    },
+    {
+      "id": "commit-mem-wiki-write",
+      "source_sha256": "dfc808218ea6528d736f6b198d5e36c619162599978b9d23c719fecdd65afddf",
+      "compiled_sha256": "45d5ffd728d7ed8a65773d377ab589013db13bbb29695fd6622de7d336a61ae1"
+    },
+    {
+      "id": "commit-mem-wiki-write-p",
+      "source_sha256": "f1101fed2da5b1db641e93265238642f1dde9f99d9dbb81a7d1e2f357f0985d4",
+      "compiled_sha256": "f3a2e07feadc40751647a41b9ecdaac649bd0fb40259d8bcc33a5a86b646c5d4"
+    },
+    {
+      "id": "deep-mem-wiki-read",
+      "source_sha256": "dba4b113557a547528c947dc8fee526d52b45c532b55a1de646599278f11affe",
+      "compiled_sha256": "7beed8c01087abab2a2e9b2a3b38756477cb53b57222f62269a6f29818f1be9a"
+    },
+    {
+      "id": "deep-mem-wiki-read-p",
+      "source_sha256": "8d0bf56d9e6e9dc4c1aa4e3d9b076d17026e8f7be33207fbe00a1c8eac349291",
+      "compiled_sha256": "49a0d1badbac98ead08d0474179cb8dc2db165d6b1d4b88b2ffe03fa4e99f070"
+    },
+    {
+      "id": "deep-mem-browse",
+      "source_sha256": "07e616158cbd185035f1758e0b208f2ba17a41c4e6729f8ab4f8b3f76db0267c",
+      "compiled_sha256": "27ef095d8c2d10958c8ba565abe52e0258d2593ee6f8e131fbe0ef61bdb2b49f"
+    },
+    {
+      "id": "deep-mem-browse-p",
+      "source_sha256": "8d6b01d420d6ddb8e1b25b33884368d972e0d2c9db553363bf8e625e9b7a3cec",
+      "compiled_sha256": "162a8e371737b06f6365585d0412ccc243e554a301ecce153c750e657392d4db"
+    },
+    {
+      "id": "deep-mem-exact-read",
+      "source_sha256": "311ee2c3e4b9d89c378a76695811da427ba879ce9d7436ac687ddc0bd5d95fcb",
+      "compiled_sha256": "38e257da5eca68538bb8e1c5c1e245c20dc3144bbda3a852794092df7ed9b26b"
+    },
+    {
+      "id": "deep-mem-exact-read-p",
+      "source_sha256": "c2c19b8b6f82ff9c64196d398ca57f09fd0fe848c7f4355717d208f3c027ca63",
+      "compiled_sha256": "d9051d4aa7cdb858560b33b9c792c8dce8d15943a90ac2b291b194d955d28143"
+    },
+    {
+      "id": "deep-mem-code",
+      "source_sha256": "9c5ea4e837cb79906936c0ddcc89c298914faf97b537f4ecd4a3379a56067c80",
+      "compiled_sha256": "7553fbfd830b12e5531349d074b893e95e398ca4e0561c1795e3afd0352a3cc3"
+    },
+    {
+      "id": "deep-mem-code-p",
+      "source_sha256": "f5ccc1e37a6c8bd422fea5d0dec205113125e06c1c2a633f84f161d22618f5df",
+      "compiled_sha256": "24cc5ed3a59b3b3ea47797ed8a51ca4f8e2bcf88772a29e14cc783ea2dfe95ec"
+    },
+    {
+      "id": "deep-mem-wiki-graph",
+      "source_sha256": "776af4012fd8b6893170282125b58508bb214ea86dee64f3bb607ceb4aad48c1",
+      "compiled_sha256": "d7b4c66720223b32a13439bad33b7b8a58f3b74bbc35bec38be54e3a389bc8b6"
+    },
+    {
+      "id": "deep-mem-wiki-graph-p",
+      "source_sha256": "75ab2c036863febb3fb58486bfae3fa7c4abcdcad0287eeabd9cd9b247d03fa5",
+      "compiled_sha256": "dfbb2a10be97ca88e0e64ba9cdada642ee4ad1219df0d79a7382ff87636b76f3"
+    },
+    {
+      "id": "deep-mem-skills",
+      "source_sha256": "dad1242dfaecef1f1102c93e01b1e1dd9441ebaa42c20883bba55de47f5acde1",
+      "compiled_sha256": "97dc096c6ec9b0a0cebc819b16183de66e36b2936fe41a36e03834a53d011d09"
+    },
+    {
+      "id": "deep-mem-skills-p",
+      "source_sha256": "78a3763fa52ce742376966d873444fe607efabc7c3823f7d8b740729a2b83b78",
+      "compiled_sha256": "e7e114dbb4c1ec448b396fa61db3205282ce0d61d7532b8c79e498d730b446e0"
+    },
+    {
+      "id": "deep-mem-sources",
+      "source_sha256": "7d2a45d7d9f7e4579e18ac669464903f6bdbd1bd112a38a1de1d9346a9330355",
+      "compiled_sha256": "54e665cd5376947df9c2d0c7d502b363f968efd2681d4333ac42b2be1ce6ba57"
+    },
+    {
+      "id": "deep-mem-sources-p",
+      "source_sha256": "1028d2012b857baae8b62c390aba2f72304c95af0c10885470ceca837b528fcd",
+      "compiled_sha256": "283a32040b8f6de2bf54619258ba314a9d8c2475235d75d541ed7f138aa0cb4f"
+    },
+    {
+      "id": "deep-mem-jobs",
+      "source_sha256": "2b1747748d9c2b715b2d1d26a9f82eb38a13efebf561148d0a3b4b6098789787",
+      "compiled_sha256": "eedac924d98ec117f1e97dfff75fe2aa3dfe3111ed410dfa9289288cf9dcac7f"
+    },
+    {
+      "id": "deep-mem-jobs-p",
+      "source_sha256": "6ce50a44e39959f0a64daea17438453c74942ab4391b928888d6e75c3a14aac8",
+      "compiled_sha256": "c1c01dbbe372cc4c6ce18389bce8bb61332f061e496ff52ffe35498e4f5ef64c"
+    }
+  ],
+  "module_sha256": {
+    "packs/mem/cases.mjs": "3b6068dcf2ee8b0bc5e3889e054d062bf6ccad42e510edf8a64d0bc06c937404",
+    "packs/mem/discovery-plan.mjs": "82a5483bf48ea5d4be1542251716937190370abeb3f8a943a1b6c73e8c95104c",
+    "packs/mem/discovery-schema.mjs": "e16acb6ed289f509c0e1a1087b9c5792016c27f64a3f897b5fd63f90960e89b0",
+    "packs/mem/discovery.mjs": "3dcaba2f3fe7a127322f14d06dd2c97034c2d10b95c9fef3c4ccaff1c0677fec",
+    "packs/mem/snapshot-discovery-schema.mjs": "8cf7f9dae2c93e7159e363aa9eb9c3a0fce56c10b4147d2521c95a2205ab0f14",
+    "src/cli.mjs": "e760ccd2c551f1ba54bedee93a35ae25574a521c2beba3c2b12a12dbebe56658",
+    "src/grade/adapters/index.mjs": "daecb4babfc5a1d4ee9926973203765d31e49c58e1d9237fdb6564cc4a205b9e",
+    "src/grade/adapters/mem-discovery.mjs": "0c2d3ea7c496ab18634c2f0290b854054aec9b03bd01861deb51dc292716c7d3",
+    "src/grade/evidence.mjs": "4ab484567f4aff842d2d31bacfc4d2f7ccb3ec9cae4f29f0fae099bbad2abe79",
+    "src/run/commit-plan.mjs": "8f59a01c94bc6d00be687a8987a2b952f5e066539864f16a311133bfe56cd7b3",
+    "src/run/guard/index.ts": "d3b52d2c0aa9ed4d9f1085f70d227ac80b4fbc02c8e9949dba798748815495cf",
+    "src/run/guard/logic.mjs": "c3cfb64cc62638bf6d647d852035554b00f1109df602d292243a3f9fd47beb50",
+    "src/run/guard/mem-call-context.mjs": "7c7d9ac9301efcf25f2282bc63978227df53b2635f64b3fa593f30a13e4e34fc",
+    "src/run/guard/mem-discovery-intents.mjs": "caaab3fd29dc988a98192b2c005618e1775817b8e31a1068ee94d68a5b5600ac",
+    "src/run/guard/mem-discovery-shapes.mjs": "17ede30f20d99d8567a2b4a1e5933de01d325d54d1e066e9ac0887efe7905b1e",
+    "src/run/guard/mem-intents.mjs": "84a7c7334cce84f5ab29a50e3b4316dde1459e8f88142d0fc8cb17bb3e0c5155",
+    "src/run/guard/mem-targets.mjs": "db390aa82beddcf86889871ca971c45361974babedf928741fc2fd4fbdbc4f7a",
+    "src/run/guard/policy.mjs": "ac1f5364bde174384ccb588561e4526756add635dc7374b4074cfa6d875f8569",
+    "src/run/mem-case-plan.mjs": "bdeeb564aa7e72c54078b270a1e0e930b3bcfb7055044578daa2dd81ef8549e2",
+    "src/run/mem-discovery-stage.mjs": "66df67428888004108ad593873751711460599ca67bdca5100fc710259eda8e6",
+    "src/run/mem-fixture.mjs": "d62c3ac402203d31f652982b9a4a8012a4c7072b8eac4d09dfb05cc5d1947c76",
+    "src/run/runner.mjs": "528dbad781c8f0139931c971daaa1e1466cb52484f7e66e548ba01fbf71d4f59",
+    "test/mem-discovery-contract.test.mjs": "9f9431e910d0a36e9daf1f06e588c037b5965ec8c768f12f59682a040dd8285a",
+    "test/mem-discovery-execution.test.mjs": "db7b50f6e1d98048ff968e13cb9d20abd4914c57238fcfb73faa20569e87c30d",
+    "test/mem-discovery-guard.test.mjs": "ec929c4cbebafdbff978f7b0108e85d3fa66f81b9550fae710eb9a6143b98c2d",
+    "test/mem-discovery-lifecycle.test.mjs": "464ef2fe746eac9629dd3cc5b771848ec4009fa1ba20f4559e880b8ce5889df3",
+    "test/mem-discovery-schema.test.mjs": "b9a8d05c898b433faee94d82a55eb824b62f138fe1d66a3893d1aafa4a449427",
+    "worlds/mem/container-entry.mjs": "91ab0e8a751f4282ef77ac8aff0de65572feaefaa3af7ba19ae6beebfe6a6551",
+    "worlds/mem/discovery-entry.mjs": "84b55b75f74ec7d04fc26748d62b89773a95697a8724d9c47500d3cb673ca544",
+    "worlds/mem/discovery-http.mjs": "86cb5bb0877082fc73a74c5ea8461587235cf4089a3c13ff6129a1cbc636f2d2",
+    "worlds/mem/discovery-input.mjs": "d0848171c16f3965a58000a1198ab0c624af670b9fc7c62513dd98bb1b9df50b",
+    "worlds/mem/discovery-store.mjs": "c5213ffcb838a8c611d115b8a932d784e21f748c7274a3d1bcd625b5efbb4751",
+    "worlds/mem/index.mjs": "27cbefef58966415fc450fba055bdde530b9836501bf81d9bc7856f261a72d2b"
+  },
+  "harness_runtime": {
+    "executed": false,
+    "opencode": false,
+    "container": false,
+    "vm": false,
+    "model": false,
+    "provider": false
+  },
+  "gates": [
+    "independent discovery review",
+    "independent acdc core verdict",
+    "final immutable arm artifacts",
+    "actual registered/search catalog evidence",
+    "permission-host compatibility",
+    "contained runtime approval",
+    "credentials and enforceable budget caps"
+  ]
+}

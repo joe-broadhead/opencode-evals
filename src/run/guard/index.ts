@@ -44,7 +44,7 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
     id: "evals.guard",
     async setup(ctx: any) {
       const policy = loadPolicy(policyFile)
-      record("guard_start", { mode: policy.mode, writes: policy.writes.length, pid: process.pid })
+      record("guard_start", { mode: policy.mode, writes: policy.writes.length, pid: process.pid, ...(policy.memoryIntent?{case_id:policy.memoryIntent.case_id,trial_id:policy.memoryIntent.trial_id}:{}) })
       const actions = new Set<string>(policy.actions)
       const plans = new Map<string, { ok: boolean }>()
       // The sessions that have made a tool call: a run's own, whose asks `opencode run` answers.
@@ -91,7 +91,7 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
           const call = memoryCall(event.tool, event.input, policy.memoryBinding)
           if (call?.write && [...memoryCalls.values()].some((c) => c.classification?.write)) throw new Error("Memory intent forbids concurrent write invocations")
           if (call) memoryCalls.set(`${event.sessionID}:${event.id}`, { tool: event.tool, input: structuredClone(event.input), sessionID: event.sessionID, classification: call, pass: decision.pass, target: call.target, context: structuredClone(policy.memoryContext??null) })
-          if (call?.write && decision.pass) activeReceipt({...policy.memoryContext,family:call.family,args:event.input,call_id:event.id,pass:true})
+          if (call?.write && decision.pass) activeReceipt({...policy.memoryContext,tool:event.tool,family:call.family,args:event.input,call_id:event.id,pass:true})
         }
         // A write's input leaves, for `target: ... in created`: the value the tool really got, a variable resolved (private, like the rest of this log).
         const args = matchWrite(policy, event.tool, event.input) ? { args: scalarLeaves(event.input) } : {}
