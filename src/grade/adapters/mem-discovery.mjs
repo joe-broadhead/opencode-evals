@@ -25,6 +25,10 @@ function bindingMatches(s,c){
   if(!s.write){if(args.space!==undefined&&!["personal","eval-space-personal","spc-eval-personal"].includes(args.space))return false;delete args.space;if(s.family==="skills"&&args.skill?.offset===0)delete args.skill.offset;if(["wiki-read","wiki-graph"].includes(s.family)&&args.wiki_id===undefined)args.wiki_id=s.backend.input.wiki_id}
   return equal(args,s.binding.args)
 }
+// Missing fields cannot rule a candidate out. They still block credit via invocations().
+function possibleBinding(s,c){
+  return (s.write?name(c):family(c))===s.binding.tool&&(c.args==null||bindingMatches(s,c))&&(c.status==null||c.status==="completed")
+}
 function truthfulAnswer(s,text){
   const answer=text.trim()
   return s.legacy_answer_contract?answer===s.answer:s.family==="exact-read"?answer.includes("Quartz full current body. Record nonce QREC-71.")&&!/\b(?:not|missing|unsupported|partial)\b/i.test(answer):s.family==="code"?answer.includes("submitInvoice")&&answer.includes("parseInvoice")&&!/\b(?:not|unknown|unsupported|partial)\b/i.test(answer):s.family==="wiki-graph"?["README.md","design.md","quartz-docs"].every(v=>answer.includes(v))&&!/unknown|unsupported|partial/i.test(answer):s.family==="skills"?/\b1\b[\s\S]*expired[\s\S]*\b2\b[\s\S]*current/i.test(answer):["sources","jobs"].includes(s.family)?answer===s.answer:false
@@ -33,6 +37,8 @@ function truthfulAnswer(s,text){
 // records.put admits only these observed producer metadata fields, for every write row.
 // The same closed payload is used to check the resulting stored object.
 function recordPayload(s,wire,session,q){
+  // Envelope contradictions do not depend on an available record body.
+  if(plain(wire)&&(!Object.keys(wire).every(k=>["record","upsert_path"].includes(k))||wire.upsert_path!==undefined&&!(s.family==="page"&&wire.upsert_path===true)))q.fail("record wire envelope differs from authorized operation")
   const record=q.typed(wire?.record,"backend wire record",plain)
   if(!record)return
   const expected=s.backend.input.record,metadata={}
@@ -49,7 +55,7 @@ function recordPayload(s,wire,session,q){
   }
   if(Object.hasOwn(record,"fields")&&s.family==="commitment")metadata.fields={what:expected.body,owner:"user",state:"open"}
   const payload={...expected,...metadata}
-  if(!Object.keys(wire).every(k=>["record","upsert_path"].includes(k))||wire.upsert_path!==undefined&&!(s.family==="page"&&wire.upsert_path===true)||!equal(record,payload))q.fail("record wire payload differs from authorized content")
+  if(!equal(record,payload))q.fail("record wire payload differs from authorized content")
   return payload
 }
 
@@ -89,7 +95,7 @@ export function memoryDiscoveryEvidence(id,view){
       if(status==="unattributable")q.missing("attributable native invocation outcome")
       else if(status!==undefined&&status!=="completed")q.fail("failed native invocation")
       const output=field(c.output,actual?"actual call output":"native call output","string")
-      if(output!==undefined){try{if(failedEnvelope(JSON.parse(output)))q.fail("error-bearing native output")}catch{/* Prose supplies no backend truth. */}}
+      if(output!==undefined&&failedEnvelope(parseFirstJson(output)))q.fail("error-bearing native output")
       const tool=field(c.tool,"native invocation tool","string")
       if(args&&tool!==undefined){
         if(name(c)==="recall"&&Object.keys(args).some(k=>!recallKeys.has(k)))q.fail("unknown recall argument")
@@ -191,7 +197,7 @@ export function memoryDiscoveryEvidence(id,view){
   const requests=p&&list(p.requests,"backend recording"),outerRequests=capture&&list(capture.requests,"capture backend recording")
   for(const observations of [requests,outerRequests]){
   const rows=observations?.filter(plain)
-  const actualWrites=actualCalls?.filter(c=>bindingMatches(s,c)&&c.status==="completed"&&c.attributable===true),usedWrites=new Set()
+  const possibleWrites=actualCalls?.filter(c=>possibleBinding(s,c)&&c.attributable===true),usedWrites=new Set()
   if(observations&&rows.length!==observations.length)q.fail("backend observation malformed")
   for(const r of rows??[]){
     for(const key of ["method","space","input","wire_input","output","status","http_status","context"])q.need(r[key],`backend ${key} artifact`)
@@ -213,15 +219,16 @@ export function memoryDiscoveryEvidence(id,view){
         q.check("backend mutation payload is not authorized",[[input,"backend input artifact"]],()=>equal(input,s.backend.input))
         if(r.method==="records.put")recordPayload(s,wire,t?.session,q)
         else q.check("backend mutation wire payload is not authorized",[[wire,"backend wire_input artifact"]],()=>equal(wire,s.backend.input))
-        if(view.memoryRecording?.execution_complete===true)q.check("backend write is not a distinct actual invocation",[[actualWrites,"actual invocation recording"],[out,"backend output artifact"],[context?.session,"backend context session"]],()=>{
-          const i=actualWrites.findIndex((c,i)=>!usedWrites.has(i)&&c.session===context.session&&equal(parseFirstJson(c.output),out))
+        if(view.memoryRecording?.execution_complete===true)q.check("backend write is not a distinct actual invocation",[[possibleWrites,"actual invocation recording"],[out,"backend output artifact"],[context?.session,"backend context session"]],()=>{
+          const i=possibleWrites.findIndex((c,i)=>!usedWrites.has(i)&&(c.session==null||c.session===context.session)&&(c.output==null||equal(parseFirstJson(c.output),out)))
           if(i<0)return false
           usedWrites.add(i);return true
         })
       }
     }
   }
-  if(s.write&&view.memoryRecording?.execution_complete===true&&actualWrites&&rows?.filter(r=>writes.has(r.method)).length>actualWrites.length)q.fail("backend write count exceeds actual invocation inventory")
+  if(s.write&&view.memoryRecording?.execution_complete===true&&possibleWrites&&rows?.filter(r=>writes.has(r.method)).length>possibleWrites.length)q.fail("backend write count exceeds actual invocation inventory")
+  if(s.write&&view.memoryRecording?.execution_complete===true&&rows?.every(r=>typeof r.method==="string")&&actualCalls?.filter(c=>c.attributable===true&&bindingMatches(s,c)&&c.status==="completed").length>rows.filter(r=>writes.has(r.method)).length)q.fail("actual write count exceeds backend observation inventory")
   const matching=rows?.filter(r=>r.method===s.backend.method&&r.input!=null&&equal(r.input,s.backend.input))
   if(matching?.length>1||rows?.every(r=>r.method!=null&&r.input!=null)&&matching.length===0)q.fail("recorded execution omitted or replayed required backend operation")
   }
@@ -242,7 +249,7 @@ export function memoryDiscoveryEvidence(id,view){
     q.check("creator session contradicts actual recording",[[c.session,"creator session artifact"],[view.memoryRecording?.text_session,"actual final session"]],()=>c.session===view.memoryRecording.text_session)
     if(view.memoryRecording?.execution_complete===true)q.check("creator is not an actual completed creation",[[actualCalls,"actual invocation recording"]],()=>actualCalls.some(a=>{
       const output=parseFirstJson(a.output)
-      return a.attributable===true&&name(a)===name(c)&&equal(a.args,c.args)&&a.session===c.session&&a.status==="completed"&&(output?.record?.id===c.id||output?.request?.id===c.id||output?.job?.id===c.id)
+      return a.attributable===true&&name(a)===name(c)&&(a.args==null||equal(a.args,c.args))&&(a.session==null||a.session===c.session)&&(a.status==null||a.status==="completed")&&(a.output==null||output?.record?.id===c.id||output?.request?.id===c.id||output?.job?.id===c.id)
     }))
   }
   }
@@ -250,7 +257,7 @@ export function memoryDiscoveryEvidence(id,view){
   for(const [seed,post,observations] of [[before,state,requests],[outerBefore,outerState,outerRequests]]){
   const b=seed&&shape(seed)?seed.personal:undefined,a=post&&shape(post)?post.personal:undefined
   const matching=observations?.filter(r=>plain(r)&&r.method===s.backend.method&&equal(r.input,s.backend.input)),r=matching?.length===1?matching[0]:undefined,out=r&&plain(r.output)?r.output:undefined
-  if(view.memoryRecording?.execution_complete===true)q.check("backend output contradicts actual invocation",[[actualCalls,"actual invocation recording"],[out,"backend output artifact"]],()=>actualCalls.some(c=>bindingMatches(s,c)&&c.status==="completed"&&equal(parseFirstJson(c.output),out)))
+  if(view.memoryRecording?.execution_complete===true)q.check("backend output contradicts actual invocation",[[actualCalls,"actual invocation recording"],[out,"backend output artifact"]],()=>actualCalls.some(c=>possibleBinding(s,c)&&(c.output==null||equal(parseFirstJson(c.output),out))))
   for(const c of creatorCollections.flatMap(c=>c??[])){
     if(!plain(c))continue
     q.check("creator identity already existed",[[b,"seed artifact"]],()=>!(b[allowed]??[]).some?.(v=>v?.id===c.id))

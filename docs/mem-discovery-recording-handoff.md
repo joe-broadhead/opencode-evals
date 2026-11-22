@@ -1,5 +1,42 @@
 # Discovery evidence: R2 and native execution observations
 
+## Record-envelope correction
+
+The incremental base is signed `091158ef029415f6befd7d1dcdf89a8a307f438e`.
+The record validator checks supplied envelope keys and `upsert_path` before the record-availability return.
+An absent record cannot suppress a forbidden sibling key or value.
+Record-content comparisons still require an actual record object.
+The correction does not manufacture missing content or normalize unknown types.
+
+The source-metadata checks remain independent of sibling record fields.
+Missing native-session evidence blocks the source-session comparison, but cannot hide malformed source keys, source types, or other supplied record fields.
+The same-path matrix covers all six record-write cases in direct and Code Mode forms.
+Native producer alignment and runtime evidence remain separate gates.
+
+## Invocation-join corrections
+
+The same increment also addresses N1–N4 from the independent SPEC review of `091158e`.
+`execution_complete` describes the invocation inventory and its identity joins, not the availability of every invocation field.
+Missing arguments, status, or output still block credit, but do not erase complete order or an independent contradiction.
+Without complete order, a proof join requires a supplied call identity on both sides.
+Two absent identities never identify the same invocation.
+
+Direct journal comparisons use only overlapping supplied arguments, status, and output.
+Neither copy fills missing fields in the other copy.
+Backend comparisons retain candidates that missing fields cannot exclude.
+Those candidates never grant credit because the field-availability checks still report BLOCKED.
+Known differing fields can exclude a candidate without unrelated fields.
+
+Complete backend and invocation inventories require a write bijection in both directions.
+Extra successful actual writes fail, as do extra backend writes.
+Optional reads do not increase the write count.
+Absent inventories remain unavailable rather than empty.
+
+Local output failure checks use the same `parseFirstJson` decoder as the private projector.
+Supported JSON errors retain FAIL precedence with surrounding prose.
+The decoder does not parse quoted body content recursively or infer errors from prose words.
+Future journal schemas remain uninterpreted.
+
 ## Consolidated consumer corrections
 
 The correction base is signed `46972538cb0d3a7afaebf24f10b43f2a5f089eb2`.

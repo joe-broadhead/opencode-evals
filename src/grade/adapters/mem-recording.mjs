@@ -16,16 +16,17 @@ export function projectMemoryRecording(rawLines,source=null,nativeJournal=null){
   const final=records.filter(e=>e.type==="text").at(-1)
   let ordinal=0
   const ids=new Set(),parts=new Set(),carriers=new Map()
+  // Inventory/identity completeness is independent of argument, status and output availability.
   let executionComplete=true
   const inspect=c=>{
     const {args,output}=c
-    if(args==null){executionComplete=false;issue("unverifiable","recorded typed arguments")}
+    if(args==null)issue("unverifiable","recorded typed arguments")
     else if(!plain(args))issue("fail","malformed native invocation arguments")
     if(c.args_resolved===false)issue("fail","explicitly unresolved native invocation")
-    if(c.status==null){executionComplete=false;issue("unverifiable","recorded invocation status")}
+    if(c.status==null)issue("unverifiable","recorded invocation status")
     else if(c.status!=="completed")issue("fail","recorded invocation failed")
     const payload=parseFirstJson(output)
-    if(output===undefined){executionComplete=false;issue("unverifiable","recorded invocation output absent")}
+    if(output===undefined)issue("unverifiable","recorded invocation output absent")
     else if(typeof output!=="string"||!payload||typeof payload!=="object"||Object.keys(payload).length===0)issue("fail","recorded invocation returned no attributable data")
   }
   const append=(c,carrier,nativeIndex)=>{
@@ -41,7 +42,7 @@ export function projectMemoryRecording(rawLines,source=null,nativeJournal=null){
     if(e.type!=="tool_use")continue
     const part=e.part??{},state=part.state??{},line=JSON.stringify(e),summary=summarize([line]),outer=summary.calls[0],outerIndex=trace.length
     const callId=part.callID
-    if(callId==null)issue("unverifiable","recorded call identity")
+    if(callId==null){executionComplete=false;issue("unverifiable","recorded call identity")}
     else if(typeof callId!=="string"||!callId||ids.has(callId))issue("fail","malformed or replayed call identity")
     else ids.add(callId)
     if(part.id!=null){if(typeof part.id!=="string"||!part.id||parts.has(part.id))issue("fail","malformed or replayed part identity");else parts.add(part.id)}
@@ -100,7 +101,7 @@ export function projectMemoryRecording(rawLines,source=null,nativeJournal=null){
           if(carrier.tool!=="execute"){
             if(observedDirect.has(carrier.call_id))issue("fail","replayed direct observation");observedDirect.add(carrier.call_id)
             const d=direct.find(d=>d.call_id===carrier.call_id)
-            if(!d||c.call_id!==d.call_id||name(c)!==name(d)||c.args!=null&&d.args!=null&&!equal(c.args,d.args)||c.status!==d.status||c.output!==d.output)issue("fail","native journal contradicts direct recording")
+            if(!d||c.call_id!==d.call_id||name(c)!==name(d)||c.args!=null&&d.args!=null&&!equal(c.args,d.args)||c.status!=null&&d.status!=null&&c.status!==d.status||c.output!==undefined&&d.output!==undefined&&c.output!==d.output)issue("fail","native journal contradicts direct recording")
           }
           append(c,carrier,calls.filter(c=>c.carrier_call_id===carrier.call_id).length)
         }
@@ -159,7 +160,7 @@ export function reconcileMemoryRecording(id,recording,view,turn,native,q){
       q.check("actual argument digest malformed",[[c.args,"actual typed arguments"],[c.args_sha256,"actual argument digest"]],()=>plain(c.args)&&c.args_sha256===sha256(JSON.stringify(c.args)))
       q.check("actual output digest malformed",[[c.output,"actual call output"],[c.output_sha256,"actual output digest"]],()=>typeof c.output==="string"&&c.output_sha256===sha256(c.output))
       // Even incomplete journals can establish a contradiction for a supplied observation.
-      const proof=joinable?native?.[i]:native?.find(p=>p.call_id===c.call_id)
+      const proof=joinable?native?.[i]:c.call_id!=null?native?.find(p=>p.call_id!=null&&p.call_id===c.call_id):undefined
       if(!proof)continue
       if(name(proof)!==name(c))q.fail("private proof tool/order contradicts actual recording")
       q.check("private proof arguments contradict actual recording",[[proof.args,"private argument artifact"],[c.args,"actual typed arguments"]],()=>equal(proof.args,c.args)&&sha256(JSON.stringify(proof.args))===c.args_sha256)
