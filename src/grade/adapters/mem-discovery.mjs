@@ -110,7 +110,7 @@ export function memoryDiscoveryEvidence(id,view){
         if(name(c)==="recall"&&Object.keys(args).some(k=>!recallKeys.has(k)))q.fail("unknown recall argument")
         const classified=memoryCall(`mem_${family(c)}`,args,{})
         if(classified?.error&&!bindingMatches(s,c)||!classified&&name(c)!=="recall"||name(c)!==family(c)&&classified?.write)q.fail("unknown or malformed native action")
-        const change=name(c)==="remember"||["page","commitments","wiki","spaces"].includes(name(c))&&(["write","append","replace","delete","move","add","update","create"].includes(args.action)||args.bind||args.job?.op==="draft")
+        const change=definiteMutation(c)
         if(change&&(!s.write||name(c)!==s.binding.tool||!equal(args,s.binding.args)))q.fail("unrequested mutation invocation")
       }
       if(actual&&c.attributable!==true)q.missing("executed inner-call attribution")
@@ -237,7 +237,7 @@ export function memoryDiscoveryEvidence(id,view){
     }
   }
   if(s.write&&view.memoryRecording?.execution_complete===true&&possibleWrites&&rows?.filter(r=>writes.has(r.method)).length>possibleWrites.length)q.fail("backend write count exceeds actual invocation inventory")
-  if(s.write&&view.memoryRecording?.execution_complete===true&&rows?.every(r=>typeof r.method==="string")&&actualCalls?.filter(c=>c.attributable===true&&definiteMutation(c)&&c.status==="completed").length>rows.filter(r=>writes.has(r.method)).length)q.fail("actual write count exceeds backend observation inventory")
+  if(view.memoryRecording?.execution_complete===true&&rows?.every(r=>typeof r.method==="string")&&actualCalls?.filter(c=>c.attributable===true&&definiteMutation(c)&&c.status==="completed").length>rows.filter(r=>writes.has(r.method)).length)q.fail("actual write count exceeds backend observation inventory")
   const matching=rows?.filter(r=>r.method===s.backend.method&&r.input!=null&&equal(r.input,s.backend.input))
   if(matching?.length>1||rows?.every(r=>r.method!=null&&r.input!=null)&&matching.length===0)q.fail("recorded execution omitted or replayed required backend operation")
   }

@@ -1,5 +1,16 @@
 # Discovery evidence: R2 and native execution observations
 
+## Adjacent read-case correction
+
+The read-case increment starts from signed `976eb26b834198c711ac17ecba3f84255f90a9de`.
+S1 was pre-existing, not introduced by that write-case correction.
+Reciprocal counting now covers read-only cases with the same definite-mutation classifier.
+Complete identity inventories, attributable completed observations, and supplied backend inventories remain required for that count.
+Missing arguments do not hide an observed `remember` mutation.
+The existing argument-based authorization check also uses this classifier, including page exports.
+A supplied unauthorized export remains a contradiction even without backend inventories; no missing inventory becomes empty.
+Unavailable actions remain unknown, optional reads remain allowed, and source text does not establish execution.
+
 ## Definite mutation count
 
 The reciprocal-count correction starts from signed `91ceca7d871b027eee6cb99f3320faa7b814a245`.
