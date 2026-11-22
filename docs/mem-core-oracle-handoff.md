@@ -4,6 +4,33 @@ Base: `acdcf7c0a8e11c85b03c8479099379b689a54de2`.
 This change contains offline oracle corrections, not runtime approval.
 Independent review remains pending.
 
+## Incremental M6 presentation correction
+
+The independent review of `39427e926fb575a101b561cec50a4e491c433c25` found six presentation discrepancies among 830 comparisons.
+CRLF titles, second-level ATX titles, and Setext titles each failed the durable oracle and pure payload matcher.
+
+The helper normalizes CRLF and lone CR line endings in a validation-only copy.
+It permits one exact `Core Notes` title as an ATX heading at levels 1 through 6.
+It also permits an exact-title Setext heading with an equals or hyphen underline.
+The existing 512-character input bound remains unchanged.
+Duplicate titles, title-only content, altered paragraphs, unrelated prose, links, HTML comments, and extra instructions still fail.
+
+The correction changes no stored or observed bytes.
+The focused controls retain actual CRLF digests and the initial append prefix.
+Normalized-byte digest, prefix-replacement, and normalized-readback controls still fail.
+The durable oracle, seed checks, session binding, resource links, revisions, and private scope remain unchanged.
+
+The copied reviewer probe changes from 824/830 matching comparisons to 830/830.
+The focused tests change from 5/12 passing to 12/12.
+The original 24-file allowlist plus the focused file passes 92 tests without skips.
+This count includes nine new tests and three repeated gold-module tests from the focused import.
+The 273 independent controls and all 143 frozen hashes remain unchanged.
+The M3/M4 diagnostic still exits 1 for exactly those two excluded findings.
+
+The M6 permission/creator integration and H2 read-receipt/transport gates remain open.
+The pure payload matcher benefits from the helper correction, but no production caller invokes that matcher.
+Independent delta review remains pending.
+
 ## Implemented seams
 
 H1 validates the complete initial snapshot against the bound frozen seed on every core path.
