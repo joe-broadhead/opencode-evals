@@ -10,7 +10,8 @@ const descriptor = t => ({id:t.id,input:t.input,options:t.options ?? {}})
 export function createNativeObserver({version,inventory,journal,verifyAuthority,qualifyInventory,readReservation}={}) {
   const observerID=randomUUID(),issues=new Set(),records=[],occurrences=[],audit=[],registrations=[]
   let state='new',toolDomain,expected,scope=null,generation=null,revision=0,pending=0,log='',persistedVerified=false,busy=false
-  const invalidate = reason => {issues.add(reason);state='invalid';persistedVerified=false}
+  let closing=false,closePromise
+  const invalidate = reason => {issues.add(reason);state=closing?'closed':'invalid';persistedVerified=false}
   const capture = value => {
     try {return {available:true,value:snapshot(value)}}
     catch {invalidate('snapshot-unavailable');return {available:false}}
@@ -43,6 +44,7 @@ export function createNativeObserver({version,inventory,journal,verifyAuthority,
     return scope
   }
   const observeAudit = (phase,event) => {
+    if(closing)return
     if (!ids.has(event.tool) && event.tool!=='execute') return
     try {
       observedScope(event)
@@ -66,7 +68,12 @@ export function createNativeObserver({version,inventory,journal,verifyAuthority,
         occurrence.native=capture(nativeIdentity(context)).value ?? null
         occurrence.input=capture(input)
         if(readReservation) {
-          occurrence.reservation=capture(readReservation({scope:occurrence.scope,native:occurrence.native,tool:id}))
+          const evidence=readReservation({scope:occurrence.scope,native:occurrence.native,tool:id})
+          if(evidence && typeof evidence.then==='function') {
+            // Unsupported asynchronous evidence is discarded, but its rejection is owned.
+            Promise.resolve(evidence).catch(()=>{})
+            occurrence.reservation={available:false}
+          } else occurrence.reservation=capture(evidence)
           const supplied=occurrence.reservation.value
           if(!supplied || !nonempty(supplied.grant_id) || !nonempty(supplied.reservation_id) || Object.keys(supplied).some(k=>!['grant_id','reservation_id'].includes(k)))invalidate('reservation-evidence-unavailable')
         }
@@ -132,40 +139,55 @@ export function createNativeObserver({version,inventory,journal,verifyAuthority,
     return true
   }
   const control = action => async (...args) => {
+    if(closing)return status()
     if(busy){invalidate('overlapping-control');return status()}
     busy=true
     try {await action(...args)} catch(error){invalidate(typeof error?.message==='string'?error.message:'control-unavailable')}
     finally {busy=false}
     return status()
   }
+  const dispose = async registration => {
+    try {await registration?.dispose?.()}catch{invalidate('registration-disposal-failed')}
+  }
+  const register = async acquire => {
+    if(closing)return false
+    const registration=await acquire()
+    if(closing){await dispose(registration);return false}
+    registrations.push(registration)
+    return true
+  }
   return {
     status,
     install:control(async api=>{
       if(state!=='new' || version!=='2.2.6')throw new Error('unsupported-installation')
       toolDomain=api
-      registrations.push(await api.hook('execute.before',event=>observeAudit('before',event)))
-      registrations.push(await api.hook('execute.after',event=>observeAudit('after',event)))
-      registrations.push(await api.transform(editor=>{
+      if(!await register(()=>api.hook('execute.before',event=>observeAudit('before',event))))return
+      if(!await register(()=>api.hook('execute.after',event=>observeAudit('after',event))))return
+      if(!await register(()=>api.transform(editor=>{
+        if(closing)return
         revision++
         if(revision!==1)invalidate('registry-replayed')
         for(const id of ids)editor.update(id,tool=>{const original=tool.execute;tool.execute=wrap(id,original)})
-      }))
-      if(!issues.size)state='installed'
+      })))return
+      if(!closing && !issues.size)state='installed'
     }),
     ready:control(async()=>{
       if(state!=='installed')throw new Error('not-installed')
       if(typeof verifyAuthority!=='function' || typeof qualifyInventory!=='function')throw new Error('integration-capability-unavailable')
       const observed=await inspect()
+      if(closing)return
       const qualified=await qualifyInventory(structuredClone(observed))
       if(!qualified || qualified.inventoryHash!==observed.inventoryHash || !nonempty(qualified.generation) || qualified.auditFirst!==true || qualified.transformsFinal!==true || qualified.textOnly!==true || !Array.isArray(qualified.promiseTools) || !same([...qualified.promiseTools].sort(),[...ids].sort()))throw new Error('inventory-qualification-unavailable')
       if(revision!==observed.revision || issues.size)throw new Error('inventory-generation-changed')
       const final=await inspect()
-      if(final.inventoryHash!==observed.inventoryHash || final.revision!==observed.revision)throw new Error('inventory-generation-changed')
+      if(closing || issues.size || final.inventoryHash!==observed.inventoryHash || final.revision!==observed.revision)throw new Error('inventory-generation-changed')
       generation=qualified.generation;state='ready';record('ready',{generation,...observed})
     }),
     open:control(async proof=>{
       if(state!=='ready')throw new Error('not-ready')
-      const observed=await inspect(),verified=await verifyAuthority({action:'open',proof,generation})
+      const observed=await inspect()
+      if(closing)return
+      const verified=await verifyAuthority({action:'open',proof,generation})
       if(!verified || verified.generation!==generation || !scopeValid(verified.scope))throw new Error('authority-unavailable')
       if(state!=='ready' || revision!==observed.revision || issues.size)throw new Error('open-raced-with-activity')
       scope=snapshot(verified.scope);state='open';record('open',{scope,generation})
@@ -174,6 +196,7 @@ export function createNativeObserver({version,inventory,journal,verifyAuthority,
       if(state!=='open')throw new Error('scope-not-open')
       state='sealing'
       const verified=await verifyAuthority({action:'seal',proof,scope:structuredClone(scope),generation})
+      if(closing)return
       if(!verified || !same(verified.scope,scope) || verified.generation!==generation || verified.quiescent!==true)throw new Error('quiescence-authority-unavailable')
       await inspect()
       if(pending || state!=='sealing' || issues.size)throw new Error('scope-not-quiescent')
@@ -188,12 +211,17 @@ export function createNativeObserver({version,inventory,journal,verifyAuthority,
       persistedVerified=true
     }),
     invalidate(reason='caller-revoked'){invalidate(reason);record('revoked',{reason});return status()},
-    close:control(async()=>{
+    close(){
+      if(closePromise)return closePromise
+      closing=true
       invalidate('lifecycle-closed')
-      for(const registration of registrations.splice(0).reverse()) {
-        try {await registration?.dispose?.()}catch{invalidate('registration-disposal-failed')}
-      }
-      state='closed';record('closed',{pending})
-    }),
+      // Do not wait for an uncooperative control capability. register() owns late arrivals.
+      closePromise=(async()=>{
+        for(const registration of registrations.splice(0).reverse())await dispose(registration)
+        record('closed',{pending})
+        return status()
+      })()
+      return closePromise
+    },
   }
 }

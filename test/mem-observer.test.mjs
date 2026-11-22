@@ -250,6 +250,110 @@ test('pending work and unverified quiescence cannot produce a zero/settled certi
   await denied.observer.close()
 })
 
+const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve}}
+
+test('one close disposes held ready/open/seal registrations without waiting for capability completion',async()=>{
+  for(const operation of ['ready','open','seal']) {
+    const gate=deferred(),started=deferred(),ctl=controls(),host=domain(async()=>({content:'unused'}))
+    const original=operation==='ready'?ctl.options.qualifyInventory:ctl.options.verifyAuthority
+    const held=async request=>{
+      if(operation==='ready' || request.action===operation){started.resolve();await gate.promise}
+      return original(request)
+    }
+    if(operation==='ready')ctl.options.qualifyInventory=held
+    else ctl.options.verifyAuthority=held
+    const observer=createNativeObserver(ctl.options)
+    await observer.install(host.api)
+    if(operation!=='ready')await observer.ready()
+    if(operation==='seal')await observer.open(ctl.openProof)
+    const pending=observer[operation](operation==='open'?ctl.openProof:ctl.sealProof)
+    await started.promise
+    const closed=await observer.close() // gate remains unresolved: close must not wait for it
+    assert.equal(closed.state,'closed',operation)
+    assert.equal(host.hooks.before.length+host.hooks.after.length,0,operation)
+    gate.resolve();await pending
+    assert.equal(observer.status().state,'closed',operation)
+    assert.equal(observer.status().enteredScopeSealed,false)
+    assert.equal((await observer.open(ctl.openProof)).state,'closed')
+    assert.equal(host.hooks.before.length+host.hooks.after.length,0)
+  }
+})
+
+test('one close reclaims registrations arriving from each interrupted install stage and ignores late transforms',async()=>{
+  for(const stage of [1,2,3])for(const heldAfterAcquisition of [false,true]) {
+    const gate=deferred(),started=deferred(),ctl=controls(),host=domain(async()=>({content:'unchanged'}))
+    let acquired=0,disposed=0,lateTransform
+    const api={...host.api}
+    for(const name of ['hook','transform'])api[name]=async(...args)=>{
+      const ordinal=++acquired
+      if(name==='transform')lateTransform=args[0]
+      // The native registration itself can arrive after close has returned.
+      if(ordinal===stage && !heldAfterAcquisition){started.resolve();await gate.promise}
+      const registration=await host.api[name](...args)
+      if(ordinal===stage && heldAfterAcquisition){started.resolve();await gate.promise}
+      return {async dispose(){disposed++;await registration.dispose()}}
+    }
+    const observer=createNativeObserver(ctl.options),installing=observer.install(api)
+    await started.promise
+    assert.equal((await observer.close()).state,'closed')
+    assert.equal(disposed,stage-1)
+    // A withheld native handle cannot be disposed until acquisition returns it.
+    assert.equal(host.hooks.before.length+host.hooks.after.length,heldAfterAcquisition && stage<3?1:0)
+    await host.before({query:'late'});await host.after({query:'late'},{content:'late'})
+    assert.equal(observer.status().audit.length,0)
+    gate.resolve();await installing
+    assert.equal(disposed,stage)
+    assert.equal(acquired,stage)
+    assert.equal(host.hooks.before.length+host.hooks.after.length,0)
+    if(lateTransform)lateTransform({update(){assert.fail('closed transform must not replace executors')}})
+    assert.equal(observer.status().state,'closed')
+    assert.equal((await observer.ready()).state,'closed')
+    assert.equal(observer.status().occurrences.length,0)
+  }
+})
+
+test('close preserves pending executor ownership and original outcomes without cancelling it',async()=>{
+  for(const reject of [false,true]) {
+    const gate=deferred(),result={content:'original'},reason={message:'original rejection'},controller=new AbortController()
+    let calls=0
+    const {host,observer}=await opened(async()=>{calls++;await gate.promise;if(reject)throw reason;return result})
+    const call=host.execute({query:'held'},{...native,signal:controller.signal})
+    assert.equal(observer.status().pending,1)
+    await observer.close()
+    assert.equal(observer.status().pending,1)
+    assert.equal(controller.signal.aborted,false)
+    gate.resolve()
+    if(reject)await assert.rejects(call,error=>error===reason)
+    else assert.equal(await call,result)
+    assert.equal(calls,1)
+    assert.equal(observer.status().pending,0)
+    assert.equal(observer.status().state,'closed')
+    assert.equal(observer.status().enteredScopeSealed,false)
+  }
+})
+
+test('unsupported asynchronous reservation readers cannot cause unhandled rejection or alter executor outcomes',async()=>{
+  for(const readerRejects of [false,true])for(const executorRejects of [false,true]) {
+    const readerError=new Error('private reader failure'),reason={message:'original executor failure'},result={content:'unchanged'}
+    let calls=0,reads=0
+    const {ctl,host,observer}=await opened(async()=>{calls++;if(executorRejects)throw reason;return result},{
+      readReservation:async()=>{reads++;if(readerRejects)throw readerError;return {grant_id:'ignored',reservation_id:'ignored'}},
+    })
+    // No unhandledRejection listener: Node's test runner must fail if any rejection escapes.
+    if(executorRejects)await assert.rejects(host.execute({query:'x'}),error=>error===reason)
+    else assert.equal(await host.execute({query:'x'}),result)
+    await new Promise(resolve=>setImmediate(resolve))
+    assert.equal(calls,1);assert.equal(reads,1)
+    const observed=observer.status()
+    assert.equal(observed.health.ok,false)
+    assert.equal(JSON.stringify(observed).includes('private reader failure'),false)
+    assert.ok(observed.health.issues.includes('reservation-evidence-unavailable'))
+    assert.deepEqual(observed.occurrences[0].reservation,{available:false})
+    assert.equal((await observer.seal(ctl.sealProof)).enteredScopeSealed,false)
+    await observer.close()
+  }
+})
+
 async function opened(execute,overrides={}) {
   const ctl=controls(overrides),host=domain(execute),observer=createNativeObserver(ctl.options)
   await observer.install(host.api);await observer.ready();await observer.open(ctl.openProof)

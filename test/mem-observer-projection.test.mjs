@@ -105,3 +105,54 @@ test('different outer carriers retain reverse terminal order independently of oc
   assert.deepEqual(projected.carrierTerminalOrder.map(c=>c.native.id),['second-carrier','owned_direct_carrier'])
   await observer.close()
 })
+
+test('zero-entry audited outer carriers each require a terminal, independent of audit or transport order',async()=>{
+  const bytes=readFileSync(new URL('./fixtures/mem-observer-2.2.6/schema.raw.txt',import.meta.url))
+  const rows=bytes.toString().trim().split('\n').map(JSON.parse)
+  const terminal=rows.find(row=>row.type==='tool_use'),second=structuredClone(terminal)
+  second.part.id='second-outer';second.part.partID='second-part'
+  const bound={...scope,sessionID:terminal.sessionID}
+  const ctl=controls({verifyAuthority:async()=>({scope:bound,generation:'generation-one',quiescent:true})})
+  const host=domain(async()=>{throw new Error('must not enter')}),observer=createNativeObserver(ctl.options)
+  await observer.install(host.api);await observer.ready();await observer.open(ctl.openProof)
+  for(const row of [terminal,second])for(const hook of host.hooks.before)await hook({...row.part,tool:'execute',input:{code:'opaque'}})
+  for(const row of [second,terminal])for(const hook of host.hooks.after)await hook({...row.part,tool:'execute',input:{code:'opaque'},status:'completed',result:{content:'ok'}})
+  const observation=await observer.seal(ctl.sealProof)
+  assert.equal(observation.enteredScopeSealed,true)
+  assert.equal(observation.occurrences.length,0)
+  const project=events=>projectEnteredScope({observation,raw:decodeNativeRaw(Buffer.from(events.map(JSON.stringify).join('\n')+'\n'),{version:'2.2.6'})})
+  assert.equal(project([second,...rows]).status,'sealed')
+  for(const events of [rows,rows.filter(row=>row.type!=='tool_use')]) {
+    const partial=project(events)
+    assert.equal(partial.status,'partial')
+    assert.ok(partial.issues.includes('missing-audited-native-terminal'))
+    assert.equal(partial.occurrenceOrder.length,0)
+    assert.equal(partial.audit.length,4)
+  }
+  const failed=structuredClone(second);failed.part.state={input:{},status:'error',error:'cancelled'}
+  assert.equal(project([failed,...rows]).status,'partial')
+  await observer.close()
+})
+
+test('zero handshake rejects mixed non-tool sessions, malformed stops, and truncated or unknown events',async()=>{
+  const bytes=readFileSync(new URL('./fixtures/mem-observer-2.2.6/zero.raw.txt',import.meta.url))
+  const cancel=readFileSync(new URL('./fixtures/mem-observer-2.2.6/cancel.raw.txt',import.meta.url))
+  const rows=bytes.toString().trim().split('\n').map(JSON.parse),bound={...scope,sessionID:rows[0].sessionID}
+  const ctl=controls({verifyAuthority:async()=>({scope:bound,generation:'generation-one',quiescent:true})})
+  const observer=createNativeObserver(ctl.options),host=domain(async()=>({content:'unused'}))
+  await observer.install(host.api);await observer.ready();await observer.open(ctl.openProof)
+  const observation=await observer.seal(ctl.sealProof)
+  const project=buffer=>projectEnteredScope({observation,raw:decodeNativeRaw(buffer,{version:'2.2.6'})})
+  assert.equal(project(bytes).status,'sealed')
+  assert.equal(project(Buffer.concat([bytes,cancel])).status,'partial')
+  for(const row of rows) {
+    const foreign=structuredClone(row);foreign.sessionID='foreign';foreign.part.sessionID='foreign'
+    assert.equal(project(Buffer.concat([bytes,Buffer.from(JSON.stringify(foreign)+'\n')])).status,'partial',row.type)
+    const disagreement=structuredClone(row);disagreement.part.sessionID='foreign'
+    assert.equal(project(Buffer.concat([bytes,Buffer.from(JSON.stringify(disagreement)+'\n')])).status,'partial',row.type)
+  }
+  for(const tail of ['{"type":"text"','{"type":"unknown"}\n'])assert.equal(project(Buffer.concat([bytes,Buffer.from(tail)])).status,'partial')
+  const malformed={type:'step_finish',sessionID:bound.sessionID,part:{reason:'stop',sessionID:bound.sessionID}}
+  assert.equal(project(Buffer.from(JSON.stringify(malformed)+'\n')).status,'partial')
+  await observer.close()
+})

@@ -10,13 +10,25 @@ export function projectEnteredScope({observation,raw}) {
   // Check that the supplied decoded view still describes the untouched bytes.
   const original=decodeNativeRaw(raw.rawBytes,{version:raw.version})
   if(!original.finishedSessions.includes(observation.scope?.sessionID))issues.push('missing-native-session-finish')
-  if(raw.sha256!==original.sha256 || !isDeepStrictEqual(raw.carriers,original.carriers) || !isDeepStrictEqual(raw.issues,original.issues))issues.push('raw-view-mismatch')
+  if(original.sessionIDs.some(sessionID=>sessionID!==observation.scope?.sessionID))issues.push('foreign-raw-session')
+  if(raw.sha256!==original.sha256 || ['carriers','events','sessionIDs','finishedSessions','issues'].some(key=>!isDeepStrictEqual(raw[key],original[key])))issues.push('raw-view-mismatch')
   const index=new Map(),directCounts=new Map(),seen=new Set()
   for(const carrier of raw.carriers) {
     const key=identityKey(carrier.native)
     if(index.has(key))issues.push('ambiguous-native-carrier')
     index.set(key,carrier)
     if(carrier.native.sessionID!==observation.scope?.sessionID)issues.push('foreign-raw-session')
+  }
+  // Audit identities veto transport coverage, including outer calls with no entries.
+  // Multiple inner audit facts may share a carrier; this never pairs occurrences.
+  for(const fact of observation.audit) {
+    if(!fact.native?.available) {issues.push('unavailable-audit-identity');continue}
+    const carrier=index.get(identityKey(fact.native.value))
+    if(!carrier)issues.push('missing-audited-native-terminal')
+    else {
+      if(carrier.tool!==fact.tool && !(carrier.tool==='execute' && fact.tool!=='execute'))issues.push('audited-carrier-tool-mismatch')
+      if(carrier.status!=='completed')issues.push('native-terminal-error')
+    }
   }
   const occurrenceOrder=observation.occurrences.map(occurrence=>{
     let carrier,route='unavailable',text=null

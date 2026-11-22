@@ -1,11 +1,13 @@
 import { createHash } from 'node:crypto'
 import { contentText, identityKey, nativeIdentity, nonempty } from './value.mjs'
 
+const partTypes={tool_use:'tool',text:'text',step_start:'step-start',step_finish:'step-finish',reasoning:'reasoning'}
+
 // Private, version-specific projection. The original bytes are never rewritten.
 export function decodeNativeRaw(bytes, { version } = {}) {
   if (!Buffer.isBuffer(bytes)) throw new TypeError('Raw evidence must be a Buffer')
   const rawBytes = Buffer.from(bytes)
-  const carriers = [], issues = [], seen = new Set(), parts = new Set(), finishedSessions = new Set()
+  const carriers = [], events = [], sessionIDs = new Set(), issues = [], seen = new Set(), parts = new Set(), finishedSessions = new Set()
   const text = rawBytes.toString('utf8')
   if (!Buffer.from(text).equals(rawBytes)) issues.push('invalid-utf8')
   if (rawBytes.length && !text.endsWith('\n')) issues.push('truncated-jsonl')
@@ -15,14 +17,29 @@ export function decodeNativeRaw(bytes, { version } = {}) {
     let event
     try { event = JSON.parse(line) } catch { issues.push(`invalid-json:${index+1}`); continue }
     if (!event || !['tool_use','text','step_start','step_finish','error','reasoning'].includes(event.type)) { issues.push('unknown-event'); continue }
-    if (event.type === 'error') issues.push('native-run-error')
-    if (event.type === 'step_finish' && event.part?.reason === 'stop') {
-      if(nonempty(event.sessionID) && event.part.sessionID===event.sessionID)finishedSessions.add(event.sessionID)
-      else issues.push('invalid-finish-session')
+    events.push(event)
+    if(nonempty(event.sessionID))sessionIDs.add(event.sessionID)
+    if(nonempty(event.part?.sessionID))sessionIDs.add(event.part.sessionID)
+    if (event.type === 'error') {
+      // Run errors have no required part; retain the negative without inventing one.
+      issues.push('native-run-error')
+      if(!nonempty(event.sessionID) || !event.error || typeof event.error!=='object' || (event.part && event.part.sessionID!==event.sessionID))issues.push('invalid-native-fields')
+      continue
     }
-    if (event.type !== 'tool_use') continue
     const part = event.part
-    if (!part || Object.hasOwn(part,'callID') || part.type !== 'tool' || !['id','partID','messageID','sessionID','tool'].every(k => nonempty(part[k])) || part.sessionID !== event.sessionID || !part.state) {
+    // For non-tool parts id IS the part ID; only tool parts have carrier id + partID.
+    if(!nonempty(event.sessionID) || !part || part.type!==partTypes[event.type] || !['id','messageID','sessionID'].every(k=>nonempty(part[k])) || part.sessionID!==event.sessionID) {
+      issues.push('invalid-native-fields');continue
+    }
+    if (event.type !== 'tool_use') {
+      if((event.type==='text' || event.type==='reasoning') && typeof part.text!=='string')issues.push('invalid-native-content')
+      if(event.type==='step_finish') {
+        if(!nonempty(part.reason))issues.push('invalid-native-content')
+        else if(part.reason==='stop')finishedSessions.add(event.sessionID)
+      }
+      continue
+    }
+    if (Object.hasOwn(part,'callID') || !['partID','tool'].every(k => nonempty(part[k])) || !part.state) {
       issues.push('invalid-native-fields'); continue
     }
     const key = identityKey(part)
@@ -44,5 +61,5 @@ export function decodeNativeRaw(bytes, { version } = {}) {
       status: state.status, text: output, error, terminalOrder: carriers.length + 1, line: index + 1,
     })
   }
-  return { version, rawBytes, sha256: createHash('sha256').update(rawBytes).digest('hex'), carriers, finishedSessions:[...finishedSessions], issues }
+  return { version, rawBytes, sha256: createHash('sha256').update(rawBytes).digest('hex'), carriers, events, sessionIDs:[...sessionIDs], finishedSessions:[...finishedSessions], issues }
 }

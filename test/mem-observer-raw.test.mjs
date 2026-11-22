@@ -64,3 +64,28 @@ test('retained native cases decode errors as errors and never create inner IDs',
     }
   }
 })
+
+test('all part-bearing raw events require pinned identities and matching top-level sessions',()=>{
+  const rows=fixture('zero').toString().trim().split('\n').map(JSON.parse)
+  const tool=fixture('direct').toString().trim().split('\n').map(JSON.parse).find(row=>row.type==='tool_use')
+  const reasoning=structuredClone(rows[1]);reasoning.type='reasoning';reasoning.part.type='reasoning'
+  for(const event of [...rows,tool,reasoning]) {
+    for(const mutate of [
+      e=>delete e.sessionID,e=>delete e.part.sessionID,e=>e.part.sessionID='foreign',
+      e=>delete e.part.id,e=>delete e.part.messageID,e=>delete e.part.type,
+      e=>e.part.type='unknown',e=>delete e.part,
+    ]) {
+      const bad=structuredClone(event);mutate(bad)
+      const raw=decodeNativeRaw(Buffer.from(JSON.stringify(bad)+'\n'),{version:'2.2.6'})
+      assert.ok(raw.issues.length,`${event.type}: ${mutate}`)
+      assert.equal(raw.finishedSessions.length,0)
+    }
+  }
+  const stop={type:'step_finish',sessionID:rows[0].sessionID,part:{reason:'stop',sessionID:rows[0].sessionID}}
+  assert.ok(decodeNativeRaw(Buffer.from(JSON.stringify(stop)+'\n'),{version:'2.2.6'}).issues.length)
+  const negative={type:'error',sessionID:rows[0].sessionID,error:{name:'SyntheticError',data:{message:'cancelled'}}}
+  const raw=decodeNativeRaw(Buffer.from(JSON.stringify(negative)+'\n'),{version:'2.2.6'})
+  assert.ok(raw.issues.includes('native-run-error'))
+  assert.deepEqual(raw.events,[negative])
+  assert.deepEqual(raw.sessionIDs,[rows[0].sessionID])
+})

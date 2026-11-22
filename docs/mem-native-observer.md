@@ -35,6 +35,7 @@ Optional `readReservation({scope,native,tool})` returns synchronous evidence `{g
 Both IDs must be nonempty strings. They remain separate from observer IDs and native carrier IDs.
 This capability must read existing authority evidence without reserving, consuming, or granting authority.
 An unavailable or malformed reservation invalidates coverage but does not stop the executor.
+Promise-returning reservation readers remain unsupported. Their results are discarded and their rejections are contained, without logging the reader's private error.
 
 The journal must be private, initially empty, and exclusive to this observer instance.
 The owner supplies storage, access control, durability, capacity limits, and retention policy.
@@ -102,7 +103,12 @@ A storage read proves equality at seal, not permanent durability or cryptographi
 `status()` returns an owned snapshot, not a live revocable object.
 Late entry invalidates current status but cannot mutate an older returned snapshot.
 The owner must prevent late work and check live health when consuming a certificate; never treat a detached status object as authority.
-`close()` disposes registrations and revokes live status. It does not seal or cancel pending executor work.
+`close()` revokes immediately and disposes available registrations, even while another control method awaits a capability.
+It does not wait for authority or qualification to settle. Late control continuations cannot reopen the observer.
+An interrupted install disposes each late registration when its handle arrives; no second close is needed.
+A native registration that withholds its handle cannot be disposed until acquisition returns that handle.
+Late hook/transform callbacks are inert after close. Pending executors retain ownership of their outcomes and pending counts.
+Close does not seal or cancel pending executor work.
 
 ## Occurrences, failures, and outputs
 
@@ -133,6 +139,10 @@ Other prevalidation paths and the alternative VM branch remain untested. Exhaust
 
 `decodeNativeRaw(buffer,{version:'2.2.6'})` preserves a copy of the exact input bytes and their SHA-256.
 It interprets actual `part.id`, `part.partID`, `part.messageID`, and `part.sessionID` fields.
+All recognized events retain their event data and native session identities, including text, reasoning, and step events.
+Part-bearing events require their pinned part type, message ID, part identity, and matching top-level/part sessions.
+Non-tool `part.id` is the part identity; only tool parts have both a carrier `id` and a separate `partID`.
+Run errors retain their negative evidence without fabricated part identities. Malformed events never establish a successful session finish.
 Unknown versions, malformed/truncated data, duplicate carriers, unsupported shapes, and session mismatches yield issues.
 No carrier is fabricated for cancellation. A session finish alone does not prove entered-executor coverage.
 
@@ -141,6 +151,9 @@ It checks the decoded view against the retained bytes. It does not authenticate 
 It returns `private-native-entered-projection/1`, with `status:'sealed'` or `'partial'` and explicit issues.
 `occurrenceOrder` follows wrapper entry order; `carrierTerminalOrder` follows CLI tool-terminal order.
 An outer returned array never creates inner occurrences. Zero-entry projection still requires a matching native session finish.
+It also requires terminals for independently audited carriers, including outer `execute` calls with no selected entries.
+This audit-to-transport check only vetoes coverage; it never pairs inner occurrences by ordering, equal inputs, or source parsing.
+Any foreign session in recognized raw events makes the projection partial, even when the expected session has a successful finish.
 
 ## Minimal future owner patches — not included
 
@@ -153,6 +166,7 @@ An outer returned array never creates inner occurrences. Zero-entry projection s
    Current mutable active-call state is not sufficient proof for concurrent reservations. Its redesign remains a separate task.
 4. In the reviewed consumer owner beside `src/run/mem-turns.mjs`, opt into the explicit decoder/projection and retain original raw bytes plus sticky health.
    Do not translate a private sealed result to existing `/1 complete:true` until the authority and consumer contract is separately validated.
+   If future grading imports these helpers, update the owned executable dependency/digest inventory and packaging, including `ADAPTER_FILES` where applicable.
 
 No generic codec, runner, guard, permission/context code, adapter, lock, plan, or frozen artifact changes are included here.
 
