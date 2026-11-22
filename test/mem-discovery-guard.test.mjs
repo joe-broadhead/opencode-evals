@@ -26,6 +26,7 @@ async function host(calls,run,{mode="commit",tools=pack.tools,case_id=calls[0]?.
 }
 test("discovery graph/spaces/read/code reads share active classification; deny/ask and foreign identity do not leak",async()=>{
   await host([],async h=>{
+    let sequence=0
     for(const [tool,input]of [
       ["mem_wiki",{action:"graph",wiki_id:"wiki-eval-personal"}],
       ["mem_spaces",{action:"skills",skill:{op:"versions",id:"skill-quartz"}}],
@@ -34,8 +35,8 @@ test("discovery graph/spaces/read/code reads share active classification; deny/a
       ["mem_read",{id:"rec_01KABCDE1234567890ABCDEFGH"}],
       ["mem_code",{action:"callers",graph_id:"code-quartz",symbol:"parseInvoice"}],
     ]){
-      const call={tool,input,sessionID:"ses_own",id:"call_1"};await h["execute.before"](call)
-      for(const effect of ["allow","deny","ask"]){const e={action:tool,sessionID:"ses_own",source:{type:"tool",id:"call_1"},effect};await h.evaluate(e);assert.equal(e.effect,effect)}
+      const call={tool,input,sessionID:"ses_own",id:`call_${++sequence}`};await h["execute.before"](call)
+      for(const effect of ["allow","ask","deny"]){const e={action:tool,sessionID:"ses_own",source:{type:"tool",id:call.id},effect};await h.evaluate(e);assert.equal(e.effect,effect)}
       for(const change of [{sessionID:"foreign"},{source:{type:"tool",id:"foreign"}}]){const e={action:tool,sessionID:"ses_own",effect:"allow",...change};await h.evaluate(e);assert.equal(e.effect,"deny")}
       await h["execute.after"]({...call,status:"completed",result:"read"});const e={action:tool,sessionID:"ses_own",effect:"allow"};await h.evaluate(e);assert.equal(e.effect,"deny")
       await assert.rejects(async()=>h["execute.before"]({...call,input:{...input,readOnly:true}}))
@@ -73,14 +74,15 @@ test("all twelve discovery writes use actual public-hook receipts and bounded re
       const call={tool:`mem_${s.binding.tool}`,input:s.binding.args,sessionID:"ses_own",id:"integrated_1"}
       await h["execute.before"](call)
       const actual=receipt();assert.equal(actual.tool,call.tool);assert.deepEqual(actual.args,s.binding.args)
+      policy.memoryContext=actual // Synthetic host state follows the actual emitted incarnation.
       const active=new Map([["ses_own:integrated_1",{tool:call.tool,input:call.input,sessionID:call.sessionID,classification:memoryCall(call.tool,call.input,binding),pass:true,target:"spc-eval-personal",context:actual}]])
       // Synthetic permission resources; real host resource projection is a runtime gate, not asserted here.
       const ask={id:"ask_1",sessionID:"ses_own",action:call.tool,source:{type:"tool",id:call.id},resources:["spc-eval-personal"]}
       assert.equal(memoryReply(policy,ask,active),"once",s.id)
       for(const change of [{effect:"deny"},{sessionID:"foreign"},{source:{type:"tool",id:"foreign"}}])assert.notEqual(memoryReply(policy,{...ask,...change},active),"once")
-      const evaluation={...ask,effect:"ask"};await h.evaluate(evaluation);assert.equal(evaluation.effect,"ask")
       const store=createDiscoveryStore({spec:s,intent})
       assert.equal(store.request(s.backend.method,s.backend.input,{context:actual,invocation:actual}).status,200,s.id)
+      const evaluation={...ask,effect:"ask"};await h.evaluate(evaluation);assert.equal(evaluation.effect,"ask");assert.equal(receipt(),null)
       await h["execute.after"]({...call,status:"completed",result:"Stored in finite fake"});assert.equal(receipt(),null)
       const before=store.capture().after
       assert.notEqual(store.request(s.backend.method,s.backend.input,{context:actual,invocation:receipt()}).status,200)

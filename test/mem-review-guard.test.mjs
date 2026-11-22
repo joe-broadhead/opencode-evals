@@ -31,7 +31,7 @@ test("M4: a validated mixed-family read exemption is bound to active call/action
     for(const change of [{sessionID:"foreign"},{source:{type:"tool",id:"wrong"}},{action:"mem_page"}]) {
       const e={action:"mem_wiki",sessionID:"ses_own",effect:"allow",...change};await hooks.evaluate(e);assert.equal(e.effect,"deny")
     }
-    for(const effect of ["deny","ask"]) {const e={action:"mem_wiki",sessionID:"ses_own",effect};await hooks.evaluate(e);assert.equal(e.effect,effect)}
+    for(const effect of ["ask","deny"]) {const e={action:"mem_wiki",sessionID:"ses_own",effect};await hooks.evaluate(e);assert.equal(e.effect,effect)}
     await hooks["execute.after"]({...call,status:"completed",result:"body"})
     const ended={action:"mem_wiki",sessionID:"ses_own",effect:"allow"};await hooks.evaluate(ended);assert.equal(ended.effect,"deny")
     await hooks["execute.before"]({...call,id:"call_2"});await dispose()
@@ -42,7 +42,7 @@ test("M4: a validated mixed-family read exemption is bound to active call/action
 test("M5: backend-proven creation aliases, not output IDs or a space map, authorize the next turn",async()=>{
   const intent=coreMemoryIntent(coreCases.find(s=>s.original_id==="core-forget"),"trial_alias",Date.now()+60000)
   const context={case_id:"core-forget",trial_id:"trial_alias",turn:2,session:"ses_own",active:true}
-  const creator={alias:"@created.memory",id:"rec_backend_1",family:"remember",args:{content:"The staging port is 8420.",kind:"fact"},case_id:"core-forget",trial_id:"trial_alias",turn:1,session:"ses_own",status:"stored"}
+  const creator={alias:"@created.memory",id:"rec_backend_1",family:"remember",args:{content:"The staging port is 8420.",kind:"fact"},case_id:"core-forget",trial_id:"trial_alias",turn:1,session:"ses_own",call_id:"observed-create",status:"stored"}
   const policy=buildPolicy({mode:"commit",packs:[pack],memoryBinding:{...binding,record_spaces:{rec_backend_1:"spc-eval-personal"}},commit:{mem_revise:{memory:"revise",allow:["spc-eval-personal"]}},memoryIntent:intent,memoryContext:context})
   const scope={schema:"oc-mem-scopes/1",fixture:"mem-synthetic-v1",case_id:"core-forget",trial_id:"trial_alias",record_spaces:{rec_backend_1:"spc-eval-personal"},wiki_spaces:{}}
   const old=process.env.EVALS_MEM_SCOPE_MAP

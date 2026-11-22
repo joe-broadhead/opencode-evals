@@ -25,6 +25,7 @@ import { loadPolicy, matchWrite, isIn, isUnknownTool, planIdOf, decideBefore, ju
 import { memoryReply, refreshMemoryScopes, refreshMemoryTurn } from "./mem-permissions.mjs"
 import { memoryCall } from "./mem-targets.mjs"
 import { memoryPermissionContext } from "./mem-call-context.mjs"
+import {intentContext,activeIntentMatches} from "./mem-intents.mjs"
 
 const OUT = () => process.env.EVALS_GUARD_OUT ?? (process.env.TMPDIR ? `${process.env.TMPDIR}/guard.jsonl` : "")
 
@@ -54,15 +55,31 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
       const timers = new Set<ReturnType<typeof setTimeout>>()
       const subscription = new AbortController()
       let closed = false
+      let incarnation=0,highestTurn=0,activeTurn: string|null=null
+      const consumedCalls=new Set<string>()
+      const revoke=()=>{memoryCalls.clear();activeReceipt(null);activeTurn=null}
       const refreshTurn = () => {
-        try { refreshMemoryTurn(policy, process.env.EVALS_MEM_TURN_STATE) }
-        catch (error) { policy.memoryContext=null; record("memory_context_invalid", {error:String(error).slice(0,200)}) }
+        try {
+          refreshMemoryTurn(policy, process.env.EVALS_MEM_TURN_STATE)
+          if(!policy.memoryIntent)return
+          const c=policy.memoryContext,key=JSON.stringify([c?.case_id,c?.trial_id,c?.turn,c?.session,c?.activation_id])
+          if(!intentContext(policy,c?.session)){revoke();policy.memoryContext=null;return}
+          if(activeTurn===key){policy.memoryContext={...c,incarnation};return}
+          revoke()
+          if(c.turn<=highestTurn){policy.memoryContext=null;return}
+          highestTurn=c.turn;activeTurn=key;policy.memoryContext={...c,incarnation:++incarnation}
+        }
+        catch (error) { revoke();policy.memoryContext=null;record("memory_context_invalid", {error:String(error).slice(0,200)}) }
       }
       const activeReceipt = (value: any) => {
         const file = process.env.EVALS_MEM_ACTIVE_CALL
         if (!file || !policy.memoryIntent) return
         writeFileSync(`${file}.tmp`, JSON.stringify(value), {mode:0o600})
         renameSync(`${file}.tmp`, file)
+      }
+      const publishCall=(call:any,id:string)=>{
+        if(!policy.memoryIntent||!call?.pass||call.pending||!activeIntentMatches(policy,call,call.sessionID)){activeReceipt(null);return}
+        activeReceipt({...call.context,tool:call.tool,family:call.classification.family,args:call.input,call_id:id,expires_at:policy.memoryIntent.expires_at,pass:true})
       }
 
       registrations.push(await ctx.permission.hook("evaluate", (evaluation: any) => {
@@ -79,6 +96,12 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
           evaluation.message = `EVALS-ASSERT access: ${evaluation.action} is a write and was not asked`
           record("assert", { what: "access", action: evaluation.action, session: evaluation.sessionID })
         }
+        if(memory){
+          if(evaluation.effect==="deny"){if(memory.call)memory.call.pass=false;activeReceipt(null)}
+          else if(evaluation.effect==="ask"){if(memory.call)memory.call.pending=true;activeReceipt(null)}
+          else if(memory.pass&&memory.call){memory.call.pending=false;publishCall(memory.call,memory.call.id)}
+          else activeReceipt(null)
+        }
       }))
 
       registrations.push(await ctx.tool.hook("execute.before", (event: any) => {
@@ -89,9 +112,12 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
         const decision = decideBefore(policy, event.tool, event.input, plans, event)
         if (policy.memoryBinding) {
           const call = memoryCall(event.tool, event.input, policy.memoryBinding)
+          if(call&&decision.pass){const identity=`${event.sessionID}:${event.id}`;if(typeof event.id!=="string"||!event.id||consumedCalls.has(identity)){activeReceipt(null);throw new Error("Memory invocation identity is missing or already consumed")};consumedCalls.add(identity)}
           if (call?.write && [...memoryCalls.values()].some((c) => c.classification?.write)) throw new Error("Memory intent forbids concurrent write invocations")
-          if (call) memoryCalls.set(`${event.sessionID}:${event.id}`, { tool: event.tool, input: structuredClone(event.input), sessionID: event.sessionID, classification: call, pass: decision.pass, target: call.target, context: structuredClone(policy.memoryContext??null) })
-          if (call?.write && decision.pass) activeReceipt({...policy.memoryContext,tool:event.tool,family:call.family,args:event.input,call_id:event.id,pass:true})
+          if(call&&decision.pass&&memoryCalls.size){activeReceipt(null);throw new Error("Memory observation forbids overlapping invocations")}
+          if (call) memoryCalls.set(`${event.sessionID}:${event.id}`, { id:event.id,tool: event.tool, input: structuredClone(event.input), sessionID: event.sessionID, classification: call, pass: decision.pass, target: call.target, context: structuredClone(policy.memoryContext??null) })
+          if(call&&decision.pass){const actual=memoryCalls.get(`${event.sessionID}:${event.id}`);publishCall(actual,event.id);record("memory_native_start",{...actual.context,call_id:event.id,tool:event.tool,args:actual.input,expires_at:policy.memoryIntent?.expires_at,pass:true})}
+          if(!decision.pass)activeReceipt(null)
         }
         // A write's input leaves, for `target: ... in created`: the value the tool really got, a variable resolved (private, like the rest of this log).
         const args = matchWrite(policy, event.tool, event.input) ? { args: scalarLeaves(event.input) } : {}
@@ -104,7 +130,9 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
       }))
 
       registrations.push(await ctx.tool.hook("execute.after", (event: any) => {
-        if (memoryCalls.get(`${event.sessionID}:${event.id}`)?.classification?.write) activeReceipt(null)
+        refreshTurn()
+        const actual=memoryCalls.get(`${event.sessionID}:${event.id}`)
+        if(actual){activeReceipt(null);record("memory_native_end",{...actual.context,call_id:event.id,tool:actual.tool,args:actual.input,status:event.status,output:event.result,pass:Boolean(actual.pass&&!actual.pending&&activeIntentMatches(policy,actual,event.sessionID))})}
         memoryCalls.delete(`${event.sessionID}:${event.id}`)
         const write = matchWrite(policy, event.tool, event.input)
         const unknown = !write && isUnknownTool(policy, event.tool)
@@ -156,6 +184,8 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
             if (memoryDecision !== null) {
               try {
                 await ctx.permission.reply({ sessionID: ask.sessionID, requestID: ask.id, decision: memoryDecision })
+                const call=memoryCalls.get(`${ask.sessionID}:${ask.source?.id}`)
+                if(call){if(memoryDecision==="once"&&call.pass){call.pending=false;publishCall(call,call.id)}else{call.pass=false;activeReceipt(null)}}
                 record("memory_reply", { action: ask.action, session: ask.sessionID, request: ask.id, decision: memoryDecision })
               } catch (error) { record("memory_reply_failed", { action: ask.action, error: String((error as Error)?.message ?? error).slice(0,200) }) }
               continue
@@ -179,6 +209,7 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
         for (const timer of timers) clearTimeout(timer)
         timers.clear()
         memoryCalls.clear()
+        consumedCalls.clear()
         runSessions.clear()
         plans.clear()
         delete policy.memoryContext

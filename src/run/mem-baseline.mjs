@@ -2,6 +2,7 @@ import { readFileSync, mkdirSync, writeFileSync, copyFileSync, lstatSync } from 
 import { join, dirname, resolve } from "node:path"
 import { sha256 } from "../util/canonical.mjs"
 import { bindCoreSeed } from "../../packs/mem/core.mjs"
+import {stageCorePayload} from "./mem-payload-stage.mjs"
 export { baselineRoute } from "../../worlds/mem/baseline-routing.mjs"
 
 /** Filesystem-only staging. The unmodified archived server is NEVER imported on the host. */
@@ -23,5 +24,7 @@ export function stageBaselineFixture(root,spec,intent=null) {
   const plan={schema:"oc-mem-baseline-plan/1",case_id:spec.original_id,mode:spec.mode,defaultSpace:spec.defaultSpace??"personal",seed,...(intent?{intent}: {})}
   writeFileSync(join(root,"baseline-plan.json"),JSON.stringify(plan),{flag:"wx",mode:0o600})
   for(const file of ["baseline-entry.mjs","baseline-routing.mjs","baseline-effects.mjs","baseline-proof.mjs"])copyFileSync(resolve(import.meta.dirname,"../../worlds/mem",file),join(root,file))
+  stageCorePayload(root)
+  const proof=join(root,"baseline-proof.mjs");writeFileSync(proof,readFileSync(proof,"utf8").replace('"../../src/run/mem-intent-plan.mjs"','"./mem-intent-plan.mjs"'))
   return plan
 }

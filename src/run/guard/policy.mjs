@@ -1,7 +1,8 @@
 // The guard's policy file (guard.json): every write tool of every pack, by every name it can reach `execute.before` under.
 // Built by the runner, written read-only into the batch's own copy of the guard, never read from a case or a world.
 
-import { cpSync, mkdirSync, writeFileSync } from "node:fs"
+import { cpSync, mkdirSync, writeFileSync,readFileSync } from "node:fs"
+import {stageCorePayload} from "../mem-payload-stage.mjs"
 import { join, resolve } from "node:path"
 import { loadPacks, CAPPED_SPEND_READS } from "../lockdown.mjs"
 import { validMemoryBinding } from "./mem-targets.mjs"
@@ -74,6 +75,8 @@ export function installGuard(into, policy) {
   const dir = join(into, "guard")
   mkdirSync(dir, { recursive: true, mode: 0o700 })
   for (const file of ["index.ts", "plugin.ts", "logic.mjs", "mem-targets.mjs", "mem-permissions.mjs", "mem-call-context.mjs", "mem-intents.mjs", "mem-discovery-shapes.mjs", "mem-discovery-intents.mjs", "package.json"]) cpSync(join(GUARD_SOURCE, file), join(dir, file))
+  stageCorePayload(dir)
+  const intents=join(dir,"mem-intents.mjs");writeFileSync(intents,readFileSync(intents,"utf8").replace('"../mem-intent-plan.mjs"','"./mem-intent-plan.mjs"'))
   writeFileSync(join(dir, "guard.json"), `${JSON.stringify(policy, null, 1)}\n`, { mode: 0o444 })
   return dir
 }

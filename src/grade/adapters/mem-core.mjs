@@ -4,6 +4,7 @@ import { coreCases, bindCoreSeed } from "../../../packs/mem/core.mjs"
 import { answerValueFailures, privateMentionFailures, abstainGuessFailures } from "../../../worlds/mem/baseline-586/scripts/eval/harness-scoring.mjs"
 import { canonical } from "../../util/canonical.mjs"
 import { initialSeedFailure, readonlyProofFailure, wikiWriteProofFailure } from "./mem-durable.mjs"
+import {resolvedMemoryArgs} from "../../run/mem-arguments.mjs"
 
 const toolName = (name) => String(name).replace(/^mem[._]/,"mem_")
 const matches = (value, pattern) => {
@@ -40,7 +41,12 @@ export function coreAssertionFailures(assertion, core) {
     case "expectTools": return (assertion.tools??[]).every((n)=>named(n).length) && (!(assertion.any?.length)||assertion.any.some((n)=>named(n).length)) ? [] : bad("required tool absent")
     case "forbidTools": return (assertion.tools??[]).some((n)=>named(n).length) ? bad("forbidden tool called") : []
     case "expectToolOutput": return named(assertion.tool).some((c)=>c.status==="completed"&&matches(c.output,assertion.match)) ? [] : bad("no matching successful tool output")
-    case "expectToolArgs": return named(assertion.tool).some((c)=>c.args && typeof c.args === "object" && !Array.isArray(c.args) && c.args_resolved !== false && matches(canonical(c.args), assertion.match)) ? [] : bad("resolved typed arguments are absent or do not match")
+    case "expectToolArgs": {
+      const candidates=named(assertion.tool),resolved=candidates.filter(c=>c.args&&typeof c.args==="object"&&!Array.isArray(c.args)&&c.args_resolved!==false&&resolvedMemoryArgs(c.args))
+      // Every frozen argument predicate names the root action, not arbitrary nested data or comment prose.
+      if(resolved.some(c=>matches(canonical({action:c.args.action}),assertion.match)))return []
+      return candidates.some(c=>c.args_resolved===false||!resolvedMemoryArgs(c.args))?bad("UNVERIFIABLE_TYPED_ARGS"):bad("resolved typed arguments are absent or do not match")
+    }
     case "expectAnswerJson": return answerValueFailures(jsonObject(text),revive(assertion))
     case "expectDecisionJson": {
       const a=jsonObject(text)
@@ -50,7 +56,10 @@ export function coreAssertionFailures(assertion, core) {
     case "answerSentences": return [...(assertion.privateName?privateMentionFailures(text,assertion.privateName):[]),...(assertion.abstain?abstainGuessFailures(text,assertion.abstain):[])]
     case "maxToolCalls": return calls.length<=assertion.max ? [] : bad("tool budget exceeded")
     case "expectExitSuccess": return turns.length&&turns.every((t)=>t.exit===0&&!t.timedOut) ? [] : bad("prompt did not exit successfully")
-    case "anyOf": return assertion.groups.some((group)=>group.every((a)=>!coreAssertionFailures({...a,prompt:a.prompt??assertion.prompt},core).length)) ? [] : bad("no alternative satisfied")
+    case "anyOf": {
+      const groups=assertion.groups.map(group=>group.flatMap(a=>coreAssertionFailures({...a,prompt:a.prompt??assertion.prompt},core)))
+      return groups.some(g=>!g.length)?[]:bad(groups.flat().some(f=>f.includes("UNVERIFIABLE_TYPED_ARGS"))?"UNVERIFIABLE_TYPED_ARGS":"no alternative satisfied")
+    }
     case "expectState": case "forbidState": {
       // Frozen legacy atoms assertions also see actual memory records, without changing the authoritative snapshot.
       const selected=assertion.select === "atoms" && Array.isArray(core.state?.atoms) ? [...core.state.atoms, ...(core.state.records??[]).filter((r)=>r.kind==="memory").map((r)=>({...r,content:r.body}))] : core.state?.[assertion.select]
@@ -81,6 +90,7 @@ export function memoryCoreEvidence(id, view) {
   const native=core.turns.flatMap((t)=>t.calls).filter((c)=>toolName(c.tool).startsWith("mem_"))
   const trace=view.calls.map((c)=>({...c,tool:c.ns==="mem"?`mem_${c.tool}`:c.tool})).filter((c)=>toolName(c.tool).startsWith("mem_"))
   if(native.length!==trace.length||native.some((c,i)=>toolName(c.tool)!==toolName(trace[i].tool))) return fail("turn calls disagree with native trace")
+  if(spec.assertions.flatMap(a=>coreAssertionFailures(a,core)).some(f=>f.includes("UNVERIFIABLE_TYPED_ARGS")))return {state:"unverifiable",detail:`core ${id}: required typed arguments are unresolved`}
   for (const a of spec.assertions.filter((a)=>a.type==="expectToolOutput")) {
     const spaces=id==="core-privacy-shared"?["shared"]:id==="core-privacy-cross"?["personal","shared"]:["personal"]
     const read=core.requests?.some((r)=>r.status==="read"&&spaces.includes(r.space)&&/(?:\/|\.)(?:search|get|list|read)$/.test(r.method)&&matches(typeof r.output==="string"?r.output:JSON.stringify(r.output),a.match))
@@ -102,6 +112,7 @@ export function memoryCoreEvidence(id, view) {
     }
   }
   const failures=spec.assertions.flatMap((a)=>coreAssertionFailures(a,core))
+  if(failures.some(f=>f.includes("UNVERIFIABLE_TYPED_ARGS")))return {state:"unverifiable",detail:`core ${id}: required typed arguments are unresolved`}
   if(failures.length) return fail(failures.join("; "))
   return {state:"ok",detail:`core ${id}: ${spec.assertions.length} original typed assertions and durable oracle agree (offline port, not runtime proof)`}
 }

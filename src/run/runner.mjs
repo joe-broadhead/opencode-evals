@@ -49,7 +49,8 @@ import { digestOf } from "../util/canonical.mjs"
 import { dirname } from "node:path"
 import { stageMemFixture, memFixtureOptions, memFixtureBinding, startMemFixture, memCaptureRecord } from "./mem-fixture.mjs"
 import { coreCases } from "../../packs/mem/core.mjs"
-import { runMemoryTurns } from "./mem-turns.mjs"
+import { runMemoryTurns,nativeMemoryCalls,withMemoryActivation } from "./mem-turns.mjs"
+import {randomUUID} from "node:crypto"
 import { selectMemoryPlan } from "./mem-case-plan.mjs"
 
 
@@ -599,17 +600,16 @@ async function runJobBody(job, ctx, track) {
             if(created.code!==0||typeof session!=="string"||!session.startsWith("ses_"))throw new Error("Memory session provisioning failed")
           }
           const file=join(memFixture.root,"turn.json")
-          const write=(active)=>{writeFileSync(`${file}.tmp`,JSON.stringify({case_id:memoryIntent.case_id,trial_id:memoryIntent.trial_id,turn:index,session,active}),{mode:0o600});renameSync(`${file}.tmp`,file)}
-          write(true)
-          try{return await exec(["run","--server",server.url,"--format","json","-m",ctx.model,"--session",session,prompt],{timeoutMs,...stallOf(ctx,sawRequest)})}
-          finally{write(false)}
+          const context={case_id:memoryIntent.case_id,trial_id:memoryIntent.trial_id,turn:index,session,activation_id:randomUUID()}
+          const write=(active)=>{writeFileSync(`${file}.tmp`,JSON.stringify({...context,active}),{mode:0o600});renameSync(`${file}.tmp`,file)}
+          return withMemoryActivation({write,client:()=>exec(["run","--server",server.url,"--format","json","-m",ctx.model,"--session",session,prompt],{timeoutMs,...stallOf(ctx,sawRequest)}),observations:()=>nativeMemoryCalls(guardRecords(join(sandbox.tmp,"guard.jsonl")),context),clear:()=>{const receipt=join(memFixture.root,"active-call.json");writeFileSync(`${receipt}.tmp`,"null",{mode:0o600});renameSync(`${receipt}.tmp`,receipt)}})
         }
         const runClient = () => memorySpec ? runMemoryTurns({ spec: memorySpec, timeoutMs: ctx.timeoutMs, client: memoryClient }) : exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...stallOf(ctx, sawRequest) })
         // An idle client: `opencode run` alive, the server up, the mock never asked (found in 2 of ~100 `p0 a1` runs; the processes were all asleep at 0 % CPU). It is replaced ONCE, and the
         // restart is written into the summary with what the container showed at that moment and reported by the probe: a hang that happens again is infra `no_model_request`, as before.
         const restarts = []
         result = await runClient()
-        while (result.stalled && ctx.scripted && ctx.mockInTrial && !sawRequest() && restarts.length < (ctx.clientRestarts ?? 1)) {
+        while (!memoryPlan && result.stalled && ctx.scripted && ctx.mockInTrial && !sawRequest() && restarts.length < (ctx.clientRestarts ?? 1)) {
           restarts.push({ attempt: restarts.length + 1, after_ms: ctx.firstRequestMs, diagnosis: await trial.diagnose?.(), stderr: redact(String(result.stderr ?? "").slice(-1000)) })
           await trial.killClients?.()
           ctx.log(`  ${name}: the client made no model request within ${Math.round(ctx.firstRequestMs / 1000)} s (an idle \`opencode run\` against a live server): restarting it, once`)

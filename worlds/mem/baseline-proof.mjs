@@ -1,6 +1,7 @@
 // Pure observation recorder used by the contained emitter. Never fills an observed body from a case/answer.
 import {createHash} from "node:crypto"
 import {isDeepStrictEqual} from "node:util"
+import {coreWikiIntentPayloadMatches} from "../../src/run/mem-intent-plan.mjs"
 const digest=s=>createHash("sha256").update(s).digest("hex")
 const wiki=(s,id)=>(s.knowledge??[]).find(w=>w.knowledge_id===id)
 const ok=r=>r.status>=200&&r.status<300&&!r.json?.error&&!r.json?.code
@@ -32,7 +33,7 @@ export function createBaselineProof(initial,control,intent) {
   function creator(event,id,family) {
     const {context:c,invocation:v}=event
     if(!bound(event)||v.family!==family||typeof id!=="string")return
-    const requested=intent.turns.find(t=>t.index===c.turn)?.calls.find(x=>x.creates&&x.family===family&&isDeepStrictEqual(x.args,v.args))
+    const requested=intent.turns.find(t=>t.index===c.turn)?.calls.find(x=>x.creates&&x.family===family&&(isDeepStrictEqual(x.args,v.args)||(intent.case_id==="core-wiki-write"&&family==="wiki"&&coreWikiIntentPayloadMatches(x.args,v.args))))
     if(!requested||creators.some(x=>x.alias===requested.creates))return
     creators.push({alias:requested.creates,id,family,args:structuredClone(v.args),case_id:intent.case_id,trial_id:intent.trial_id,turn:c.turn,session:c.session,call_id:v.call_id,status:"stored"})
   }

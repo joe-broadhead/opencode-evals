@@ -1,6 +1,8 @@
 // A space binding proves containment, never user intent. Intent is sealed by the native runner per case/trial.
 import {spacesDiscoveryIntent} from "./mem-discovery-intents.mjs"
+import {coreWikiIntentPayloadMatches} from "../mem-intent-plan.mjs"
 const key = (v) => JSON.stringify(v && typeof v === "object" ? Array.isArray(v) ? v.map((x) => JSON.parse(key(x))) : Object.fromEntries(Object.keys(v).sort().map((k) => [k, JSON.parse(key(v[k]))])) : v)
+const payloadMatches=(policy,family,expected,actual)=>key(expected)===key(actual)||(policy.memoryIntent.case_id==="core-wiki-write"&&family==="wiki"&&coreWikiIntentPayloadMatches(expected,actual))
 export function validIntent(intent) {
   return intent?.schema === "oc-mem-intent/1" && typeof intent.case_id === "string" && typeof intent.trial_id === "string" && Number.isFinite(intent.expires_at) && Array.isArray(intent.turns) && intent.turns.every((t, i) => t.index === i + 1 && Array.isArray(t.calls) && t.calls.every((c) => ["remember", "revise", "page", "wiki", "commitments", "spaces"].includes(c.family) && c.args && typeof c.args === "object" && !Array.isArray(c.args)))
 }
@@ -11,7 +13,7 @@ export function intentContext(policy, session, now = Date.now()) {
 export function activeIntentMatches(policy, call, session) {
   if (!policy.memoryIntent) return true
   const current=policy.memoryContext, bound=call?.context
-  return intentContext(policy,session) && bound?.trial_id===current.trial_id && bound?.case_id===current.case_id && bound?.turn===current.turn && bound?.session===session
+  return intentContext(policy,session) && bound?.trial_id===current.trial_id && bound?.case_id===current.case_id && bound?.turn===current.turn && bound?.session===session && bound?.incarnation===current.incarnation && bound?.activation_id===current.activation_id
 }
 function resolveArgs(args, policy) {
   const out = structuredClone(args)
@@ -19,8 +21,9 @@ function resolveArgs(args, policy) {
     if (typeof value !== "string" || !value.startsWith("@created.")) continue
     const creator = policy.memoryCreators?.find((c) => c.alias === value && c.case_id === policy.memoryIntent.case_id && c.trial_id === policy.memoryIntent.trial_id && c.turn <= policy.memoryContext.turn && c.status === "stored")
     // Authority contains the independently observed backend operation and its exact authorized creation arguments.
-    const requested = policy.memoryIntent.turns.find((t) => t.index === creator?.turn)?.calls.find((c) => c.creates === value && key(c.args) === key(creator.args))
-    if (!creator || !requested || creator.family !== requested.family || key(creator.args) !== key(requested.args) || typeof creator.id !== "string") return null
+    const requested = policy.memoryIntent.turns.find((t) => t.index === creator?.turn)?.calls.find((c) => c.creates === value && c.family===creator.family && payloadMatches(policy,c.family,c.args,creator.args))
+    const scopes=creator?.family==="wiki"?policy.memoryBinding.wiki_spaces:policy.memoryBinding.record_spaces
+    if (!creator || !requested || creator.family !== requested.family || typeof creator.id !== "string" || scopes?.[creator.id]!=="spc-eval-personal" || typeof creator.session!=="string" || typeof creator.call_id!=="string" || !creator.call_id) return null
     out[k] = creator.id
   }
   return out
@@ -29,5 +32,5 @@ export function memoryIntentAllows(policy, call, input, session) {
   if (!intentContext(policy, session)) return false
   if(call.family==="spaces"&&call.write&&key(spacesDiscoveryIntent(policy.memoryIntent.case_id))!==key(input))return false
   const turn = policy.memoryIntent.turns.find((t) => t.index === policy.memoryContext.turn)
-  return turn.calls.some((c) => c.family === call.family && key(resolveArgs(c.args, policy)) === key(input))
+  return turn.calls.some((c) => c.family === call.family && payloadMatches(policy,c.family,resolveArgs(c.args, policy),input))
 }
