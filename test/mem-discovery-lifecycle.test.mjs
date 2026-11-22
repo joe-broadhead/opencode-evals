@@ -64,7 +64,7 @@ test("native capture handoff attaches only supplied turns to actual finite-store
       const file=await memCaptureRecord(stage,{gone:async()=>true},turns),capture=JSON.parse(file.text)
       assert.deepEqual(capture.discovery.state,store.capture().after)
       assert.deepEqual(capture.discovery.turns,turns)
-      const grade=gradeCase(compileCase(`${s.id}.md`,renderDiscoveryCase(s)),runView([{schema:"oc-trace/1"},...normalized.trace],{state:adapterState("mem",[file]),text:s.answer,guardLog:[{kind:"guard_start",case_id:s.id,trial_id:"trial_capture"}]}))
+      const grade=gradeCase(compileCase(`${s.id}.md`,renderDiscoveryCase(s)),runView([normalized.head,...normalized.trace],{memoryRecording:normalized.recording,state:adapterState("mem",[file]),text:s.answer,guardLog:[{kind:"guard_start",case_id:s.id,trial_id:"trial_capture"}]}))
       assert.equal(grade.verdict,"PASS",`${s.id}: ${JSON.stringify(grade)}`)
     }finally{rmSync(root,{recursive:true,force:true})}
   }

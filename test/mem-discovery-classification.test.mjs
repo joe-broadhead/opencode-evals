@@ -15,7 +15,7 @@ function grade(s,f,options={}){
   const files=Object.hasOwn(options,'files')?options.files:[{path:'mem-fixture/capture.json',change:'added',text:JSON.stringify(f.capture)}];
   const state=Object.hasOwn(options,'state')?options.state:adapterState('mem',files);
   const guardLog=Object.hasOwn(options,'guardLog')?options.guardLog:[{kind:'guard_start',case_id:s.id,trial_id:'spec_trial'}];
-  return gradeCase(compileCase(s.id+'.md',renderDiscoveryCase(s)),runView([{schema:'oc-trace/1'},...f.trace],{state,files,guardLog,text:Object.hasOwn(options,'text')?options.text:s.answer}));
+  return gradeCase(compileCase(s.id+'.md',renderDiscoveryCase(s)),runView([f.head,...f.trace],{memoryRecording:f.recording,state,files,guardLog,text:Object.hasOwn(options,'text')?options.text:s.answer}));
 }
 function verdict(result,expected,blocked=['MEM-CT02']){
   assert.equal(result.verdict,expected);
@@ -124,12 +124,12 @@ test('pure CLI grade preserves S3 classifications from actual synthetic artifact
       ['error retaining expected truth','FAIL',f=>f.capture.discovery.requests.at(-1).output.error={code:'denied'}],
     ];
     for(const [index,[,expected,mutate,missing]]of scenarios.entries()){
-      const trial=index+1,f=discoveryFlow(s),calls=structuredClone(f.capture.discovery.turns[0].calls);mutate?.(f);
+      const trial=index+1,f=discoveryFlow(s);mutate?.(f);
       const base=join(native,`${s.id}.t${trial}`);
-      writeFileSync(join(traces,`${s.id}.t${trial}.trace.jsonl`),[{schema:'oc-trace/1',trial,run_id:`s3-unit/${s.id}#t${trial}`},...f.trace].map(JSON.stringify).join('\n'));
+      writeFileSync(join(traces,`${s.id}.t${trial}.trace.jsonl`),[f.head,...f.trace].map(JSON.stringify).join('\n'));
       if(missing!=='no-capture')writeFileSync(base+'.files.json',JSON.stringify([{path:'mem-fixture/capture.json',change:'added',text:JSON.stringify(f.capture)}]));
       if(missing!=='no-guard')writeFileSync(base+'.guard.jsonl',JSON.stringify({kind:'guard_start',case_id:s.id,trial_id:'spec_trial'}));
-      if(missing!=='no-raw')writeFileSync(base+'.jsonl',[...calls.map(c=>({type:'tool_use',sessionID:'ses_spec',part:{tool:c.tool,state:{input:c.args,output:c.output,status:c.status}}})),{type:'text',sessionID:'ses_spec',part:{text:s.answer}}].map(JSON.stringify).join('\n'));
+      if(missing!=='no-raw')writeFileSync(base+'.jsonl',f.rawLines.join('\n'));
     }
     await main(['grade','--plugin','mem','--cases',cases,'--traces',traces,'--raw',raw,'--out',out,'--iteration',iteration]);
     const results=JSON.parse(readFileSync(join(out,'verdicts.json')));

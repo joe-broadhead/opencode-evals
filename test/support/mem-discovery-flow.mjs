@@ -7,10 +7,12 @@ import {gradeCase,runView} from '../../src/grade/grade.mjs';
 import {adapterState} from '../../src/grade/adapters/index.mjs';
 import {events} from '../../src/trace/normalise.mjs';
 import {memoryTurn} from '../../src/run/mem-turns.mjs';
+import {projectMemoryRecording} from '../../src/grade/adapters/mem-recording.mjs';
 
 export function normalizedDiscovery(calls,s,mode='direct',session='ses_spec'){
-  const rawLines=[...calls.map(c=>({type:'tool_use',sessionID:session,part:{tool:mode==='direct'?c.tool:'execute',state:{input:mode==='direct'?c.args:{code:`return await tools.mem.${c.tool.slice(4)}(${JSON.stringify(c.args)})`},output:c.output,status:c.status}}})),{type:'text',sessionID:session,part:{text:s.answer}}].map(v=>JSON.stringify(v));
-  return {trace:events({rawLines}),turn:memoryTurn({code:0,stdout:rawLines.join('\n')},{index:1,prompt:s.prompt})};
+  const rawLines=[...calls.map((c,i)=>({type:'tool_use',sessionID:session,part:{id:`part_${i}`,callID:`call_${i}`,tool:mode==='direct'?c.tool:'execute',state:{input:mode==='direct'?c.args:{code:`return await tools.mem.${c.tool.slice(4)}(${JSON.stringify(c.args)})`},output:c.output,status:c.status}}})),{type:'text',sessionID:session,part:{text:s.answer}}].map(v=>JSON.stringify(v));
+  const recording=projectMemoryRecording(rawLines,{case_id:s.id,trial:1}),head={schema:'oc-trace/1',privacy:{raw:{sha256:recording.raw_sha256}}};
+  return {rawLines,recording,head,trace:events({rawLines}),turn:memoryTurn({code:0,stdout:rawLines.join('\n')},{index:1,prompt:s.prompt})};
 }
 export function discoveryFlow(s,mode='direct',{recordMetadata=null}={}){
   const trial_id='spec_trial',session='ses_spec',context={case_id:s.id,trial_id,session,turn:1,active:true};
@@ -34,7 +36,7 @@ export function discoveryFlow(s,mode='direct',{recordMetadata=null}={}){
   const capture=store.capture();store.close();
   const normalized=normalizedDiscovery(calls,s,mode,session);
   capture.discovery.turns=[normalized.turn];
-  const trace=normalized.trace;
-  const grade=()=>gradeCase(compileCase(s.id+'.md',renderDiscoveryCase(s)),runView([{schema:'oc-trace/1'},...trace],{state:adapterState('mem',[{path:'mem-fixture/capture.json',change:'added',text:JSON.stringify(capture)}]),text:capture.discovery.turns[0].text,guardLog:[{kind:'guard_start',case_id:s.id,trial_id}]}));
-  return {capture,trace,grade};
+  const f={capture,trace:normalized.trace,rawLines:normalized.rawLines,recording:normalized.recording,head:normalized.head};
+  f.grade=()=>gradeCase(compileCase(s.id+'.md',renderDiscoveryCase(s)),runView([f.head,...f.trace],{memoryRecording:f.recording,state:adapterState('mem',[{path:'mem-fixture/capture.json',change:'added',text:JSON.stringify(capture)}]),text:f.recording?.text??null,guardLog:[{kind:'guard_start',case_id:s.id,trial_id}]}));
+  return f;
 }
