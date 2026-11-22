@@ -15,6 +15,10 @@ Node supplies numeric POSIX group IDs, not an incarnation-bound group handle.
 The production adapter sends no group signals and blocks live supervision.
 Injected identity-bound handles exercise the supervisor in offline tests only.
 These tests do not establish a native implementation or race-free POSIX signaling.
+An available adapter function does not authorize worker activation.
+Each worker must acquire a handle with callable `probe` and `signal` methods before the parent releases start IPC.
+Missing, throwing, or malformed handles leave the started child unresolved and retain the lock.
+The adapter also refuses direct activation without that handle. It never substitutes numeric signaling or leader exit for group absence.
 
 The native 2.2.6 capability probe does not qualify the recorder handshake.
 Cancellation can lack native-after and CLI-terminal evidence.
@@ -138,6 +142,9 @@ Every accepted journal binds a random invocation ID, the immutable manifest dige
 Journal existence, a copied capability object, or a caller-selected path grants no deletion authority.
 Cleanup verifies directory identity and canonical receipt paths before reading bound receipts.
 Invalid receipts remain untouched. Separately proved own receipts still receive cleanup.
+Null, array, and scalar journals cannot authorize commands.
+Malformed resource entries remain unresolved while valid entries in a bound journal still receive cleanup.
+Malformed siblings never turn final cleanup into success or release the singleton.
 The journal records pending creation before Docker starts.
 A missing creation reply blocks verified cleanup, even after removal of all known IDs.
 Cleanup preserves foreign resources, shared images, and the VM.
@@ -147,6 +154,17 @@ Each attempted trial records its start before CLI creation. A missing journal th
 The next trial requires bound cleanup evidence with `verified_gone: true`, no pending creates, and no uncertainty.
 `containers_left`, missing cleanup evidence, or an unverified journal stops admission despite successful CLI, summary, and billing records.
 Final cleanup alone cannot satisfy this per-trial requirement.
+
+Per-trial admission and final cleanup share one scope and receipt validator.
+Only the parent-created capability retains the original directory device/inode and permitted trial IDs.
+Copied owner fields, a copied capability, or a replacement directory cannot establish that authority.
+Same-process callers retain the scope through the original trial-array object. A deserialized worker has no such capability.
+
+The worker requests verification over its existing parent IPC channel after each trial and immediately before the next start.
+The parent verifies the trial artifacts and cleanup receipt against its original scope.
+The worker accepts only an affirmative response for the requested trial ID.
+Missing IPC, disconnection, mismatched responses, and verification errors stop admission.
+The parent watchdog still bounds a stalled worker or IPC request. This protocol adds no native supervision capability.
 
 If cleanup is uncertain, preserve the locks and evidence.
 Examine `resources/*.json`, `worker.json`, and `cleanup-clients.json` before recovery.

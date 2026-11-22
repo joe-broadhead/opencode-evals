@@ -127,3 +127,52 @@ test("an invalid foreign journal never prevents cleanup of separately proved own
   assert.equal(calls.every(args => args.at(-1) === "a".repeat(64)), true)
   assert.equal(readFileSync(foreign, "utf8"), bytes)
 })
+
+test("malformed JSON fragments stay unresolved while independent owned IDs are reclaimed", async t => {
+  const scalars = [null, [], false, 0, "receipt"]
+  const corruptions = [
+    ...scalars.map(value => () => value),
+    ...scalars.map(owner => journal => ({ ...journal, owner })),
+    ...[...scalars, {}, { kind: "container", id: ["f".repeat(64)] }].map(row => journal => ({ ...journal, resources: [row, { kind: "network", id: "c".repeat(64) }] })),
+    journal => ({ ...journal, owner: { ...journal.owner, invocation_id: "foreign" } }),
+  ]
+  for (const corrupt of corruptions) {
+    const f = fixture(t)
+    mkdirSync(f.wave.control)
+    const scope = createResourceScope(f.wave.control, { manifestSha: "a".repeat(64), trials: [{ id: "bad" }, { id: "good" }] })
+    const bound = id => ({ ...receipt, owner: { ...scope.owner, trial_id: id } })
+    const malformed = corrupt(bound("bad")), bytes = JSON.stringify(malformed)
+    writeFileSync(join(scope.directory, "bad.json"), bytes)
+    writeFileSync(join(scope.directory, "good.json"), JSON.stringify({ ...bound("good"), resources: [{ kind: "container", id: "a".repeat(64) }] }))
+    const calls = []
+    const clean = await cleanupOwned(scope, async args => { calls.push(args); return { code: args.includes("inspect") ? 1 : 0, stderr: "No such object" } }, () => 10000)
+    assert.equal(clean, false)
+    assert.equal(calls.filter(args => args.at(-1) === "a".repeat(64)).length, 2)
+    const validRow = malformed?.resources?.some?.(r => r?.id === "c".repeat(64)) === true
+    assert.equal(calls.length, validRow ? 4 : 2)
+    assert.equal(calls.every(args => ["a".repeat(64), "c".repeat(64)].includes(args.at(-1))), true)
+    assert.equal(readFileSync(join(scope.directory, "bad.json"), "utf8"), bytes)
+  }
+})
+
+test("malformed siblings retain the singleton after reclaiming valid post-allocation IDs", async t => {
+  for (const malformed of [null, [], 1, false, "receipt", { resources: [null] }]) {
+    const f = fixture(t), calls = []
+    f.wave.trials = [{ id: "bad" }, { id: "own" }]
+    const singleton = join(f.root, "singleton")
+    const report = await launchWave(f.wave, { manifestSha: "a".repeat(64), singleton, verify: () => {},
+      allocate: (_lease, scope) => {
+        const bad = malformed?.resources ? { ...receipt, owner: { ...scope.owner, trial_id: "bad" }, ...malformed } : malformed
+        writeFileSync(join(scope.directory, "bad.json"), JSON.stringify(bad))
+        writeFileSync(join(scope.directory, "own.json"), JSON.stringify({ ...receipt, owner: { ...scope.owner, trial_id: "own" } }))
+        throw new Error("interrupted setup")
+      },
+      spawnWorker: () => assert.fail("allocation failed"),
+      cleanup: (remaining, scope) => cleanupOwned(scope, async args => { calls.push(args); return { code: args.includes("inspect") ? 1 : 0, stderr: "No such object" } }, remaining),
+    })
+    assert.equal(calls.length, 2)
+    assert.equal(calls.every(args => args.at(-1) === receipt.resources[0].id), true)
+    assert.equal(report.supervision.cleanup_verified, false)
+    assert.equal(existsSync(singleton), true)
+  }
+})

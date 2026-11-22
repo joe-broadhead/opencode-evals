@@ -81,6 +81,9 @@ export async function superviseGroup(lease, { child, alive, signal, cleanup, sto
 }
 
 const resourceScopes = new WeakMap()
+// Same-process callers may select only a scope established for this exact trial array.
+// A deserialized worker has no entry and must ask its parent over the existing IPC channel.
+const trialScopes = new WeakMap()
 export function createResourceScope(control, { manifestSha, trials }) {
   canonicalPath(control)
   if (!/^[a-f0-9]{64}$/.test(manifestSha) || !Array.isArray(trials) || trials.some(t => !/^[a-z0-9][a-z0-9-]{0,199}$/.test(t.id ?? "")) || new Set(trials.map(t => t.id)).size !== trials.length) throw new Error("invalid resource scope identity")
@@ -89,52 +92,65 @@ export function createResourceScope(control, { manifestSha, trials }) {
   const stat = lstatSync(directory)
   const scope = Object.freeze({ directory, owner: Object.freeze({ invocation_id: randomUUID(), manifest_sha256: manifestSha }) })
   resourceScopes.set(scope, { stat, trials: trials.map(t => t.id) })
+  trialScopes.set(trials, scope)
   return scope
 }
-const sameOwner = (actual, scope, id) => actual?.invocation_id === scope.owner.invocation_id && actual.manifest_sha256 === scope.owner.manifest_sha256 && actual.trial_id === id
-export async function cleanupOwned(scope, execDocker, remaining) {
+const record = value => value !== null && typeof value === "object" && !Array.isArray(value)
+const sameOwner = (actual, scope, id) => record(actual) && actual.invocation_id === scope.owner.invocation_id && actual.manifest_sha256 === scope.owner.manifest_sha256 && actual.trial_id === id
+const validResource = r => record(r) && ["container", "network"].includes(r.kind) && typeof r.id === "string" && /^[a-f0-9]{64}$/.test(r.id)
+function scopeAuthority(scope) {
   const authority = resourceScopes.get(scope)
-  if (!authority) return false
+  if (!authority) return null
   try {
     canonicalPath(scope.directory)
     const stat = lstatSync(scope.directory)
-    if (stat.dev !== authority.stat.dev || stat.ino !== authority.stat.ino || !stat.isDirectory()) return false
-  } catch { return false }
+    if (stat.dev !== authority.stat.dev || stat.ino !== authority.stat.ino || !stat.isDirectory()) return null
+    return authority
+  } catch { return null }
+}
+function ownedReceipt(scope, id) {
+  try {
+    if (!scopeAuthority(scope)?.trials.includes(id)) return null
+    const file = join(scope.directory, `${id}.json`)
+    if (!present(file)) return { absent: true, started: present(join(scope.directory, `${id}.started.json`)) }
+    canonicalPath(file)
+    if (!lstatSync(file).isFile()) return null
+    const journal = JSON.parse(readFileSync(file, "utf8"))
+    if (!record(journal) || !sameOwner(journal.owner, scope, id)) return null
+    if (journal.schema !== "oc-evals-owned/1" || typeof journal.batch !== "string" || !/^b[a-f0-9]{10}$/.test(journal.batch) || !Array.isArray(journal.resources) || !Array.isArray(journal.pending) || journal.pending.some(p => typeof p !== "string" || !p) || typeof journal.uncertain !== "boolean" || journal.verified_gone !== undefined && typeof journal.verified_gone !== "boolean") return null
+    const resources = journal.resources.filter(validResource)
+    const unresolved = resources.length !== journal.resources.length || journal.uncertain || journal.pending.length > 0
+    return { resources, unresolved, verifiedGone: !unresolved && journal.verified_gone === true }
+  } catch { return null } // Missing/malformed ownership is unresolved, never empty success.
+}
+export async function cleanupOwned(scope, execDocker, remaining) {
+  const authority = scopeAuthority(scope)
+  if (!authority) return false
   let verified = true
   for (const id of authority.trials) {
-    const file = join(scope.directory, `${id}.json`), started = join(scope.directory, `${id}.started.json`)
-    if (!present(file)) { if (present(started)) verified = false; continue }
-    try { canonicalPath(file); if (!lstatSync(file).isFile()) throw new Error("not a receipt file") } catch { verified = false; continue }
-    let journal
-    try { journal = JSON.parse(readFileSync(file, "utf8")) } catch { verified = false; continue }
-    if (!sameOwner(journal.owner, scope, id)) { verified = false; continue }
-    if (journal.schema !== "oc-evals-owned/1" || !/^b[a-f0-9]{10}$/.test(journal.batch ?? "") || !Array.isArray(journal.resources) || !Array.isArray(journal.pending) || typeof journal.uncertain !== "boolean") { verified = false; continue }
-    if (journal.resources.some(r => !["container", "network"].includes(r.kind) || !/^[a-f0-9]{64}$/.test(r.id ?? ""))) { verified = false; continue }
-    if (journal.uncertain || journal.pending.length) verified = false
-    if (journal.verified_gone === true && !journal.uncertain && !journal.pending.length) continue
-    for (const kind of ["container", "network"]) for (const resource of journal.resources.filter(r => r.kind === kind)) {
-      if (remaining() <= 0) return false
+    const receipt = ownedReceipt(scope, id)
+    if (!receipt) { verified = false; continue }
+    if (receipt.absent) { if (receipt.started) verified = false; continue }
+    if (receipt.unresolved) verified = false
+    if (receipt.verifiedGone) continue
+    for (const kind of ["container", "network"]) for (const resource of receipt.resources.filter(r => r.kind === kind)) {
+      if (remaining() <= 0 || !scopeAuthority(scope)) return false
       const prefix = ["--context", CONTEXT]
       await execDocker([...prefix, ...(kind === "container" ? ["rm", "-f", "-v"] : ["network", "rm"]), resource.id], Math.min(20000, remaining()))
-      if (remaining() <= 0) return false
+      if (remaining() <= 0 || !scopeAuthority(scope)) return false
       const result = await execDocker([...prefix, ...(kind === "network" ? ["network"] : []), "inspect", "--format", "{{.Id}}", resource.id], Math.min(10000, remaining()))
       if (result.code !== 1 || !/no such/i.test(result.stderr ?? "")) verified = false
     }
   }
-  return verified
+  return verified && scopeAuthority(scope) !== null
 }
 
 export const iterationOf = (wave, trial) => `${wave.id}-${trial.id}`
-export function trialCleanupVerified(wave, trial, owner) {
-  try {
-    if (!/^[a-z0-9][a-z0-9-]{0,199}$/.test(trial.id) || !/^[a-f0-9-]{36}$/.test(owner?.invocation_id ?? "") || !/^[a-f0-9]{64}$/.test(owner?.manifest_sha256 ?? "")) return false
-    const file = canonicalPath(join(wave.control, "resources", `${trial.id}.json`))
-    if (!lstatSync(file).isFile()) return false
-    const journal = JSON.parse(readFileSync(file, "utf8"))
-    return sameOwner(journal.owner, { owner }, trial.id) && journal.schema === "oc-evals-owned/1" && /^b[a-f0-9]{10}$/.test(journal.batch ?? "") && journal.verified_gone === true && journal.uncertain === false && Array.isArray(journal.pending) && journal.pending.length === 0 && Array.isArray(journal.resources) && journal.resources.every(r => ["container", "network"].includes(r.kind) && /^[a-f0-9]{64}$/.test(r.id ?? ""))
-  } catch { return false }
+export function trialCleanupVerified(wave, trial, scope) {
+  if (!resourceScopes.has(scope) || scope.directory !== join(wave.control, "resources")) return false
+  return ownedReceipt(scope, trial.id)?.verifiedGone === true
 }
-export function trialComplete(wave, trial, owner) {
+export function trialComplete(wave, trial, scope) {
   try {
     const dir = join(wave.store, "raw", iterationOf(wave, trial), "mem")
     const summary = JSON.parse(readFileSync(join(dir, `${trial.case}.t1.summary.json`), "utf8"))
@@ -142,7 +158,7 @@ export function trialComplete(wave, trial, owner) {
     if (files.length !== 1) return false
     const batch = JSON.parse(readFileSync(join(dir, files[0]), "utf8"))
     const good = r => r?.case === trial.case && r.trial === 1 && r.exit === 0 && !r.incomplete && !r.infra && !r.error && !r.usage_missing
-    return !batch.containers_left && good(summary) && summary.model === WAVE_MODEL && batch.model === WAVE_MODEL && batch.planned === 1 && batch.launched === 1 && batch.cases?.length === 1 && batch.cases[0] === trial.case && batch.results?.length === 1 && good(batch.results[0]) && trialCleanupVerified(wave, trial, owner)
+    return !batch.containers_left && good(summary) && summary.model === WAVE_MODEL && batch.model === WAVE_MODEL && batch.planned === 1 && batch.launched === 1 && batch.cases?.length === 1 && batch.cases[0] === trial.case && batch.results?.length === 1 && good(batch.results[0]) && trialCleanupVerified(wave, trial, scope)
   } catch { return false }
 }
 export function trialCommand(wave, trial, casePlan, harness, remainingMs, caller) {
@@ -193,10 +209,13 @@ export function initialReport(wave) {
 }
 
 /** Sequential CLI boundary. Verification and admission finish before a single child is started. */
-export async function runTrials(wave, plan, { harness, caller, lease, verify, execute, save, stopRequested = () => false }) {
+export async function runTrials(wave, plan, { harness, caller, lease, verify, execute, save, verifyTrial, stopRequested = () => false }) {
   if (!caller.OPENCODE_API_KEY?.trim()) throw new Error("OPENCODE_API_KEY is required")
   if (JSON.stringify(wave).includes(caller.OPENCODE_API_KEY)) throw new Error("credential value must not occur in wave inputs")
   const report = initialReport(wave)
+  const scope = trialScopes.get(wave.trials)
+  const checkTrial = verifyTrial ?? (trial => trialComplete(wave, trial, scope))
+  let previous
   save(report)
   for (const trial of report.trials) {
     if (stopRequested()) { report.stop_reason = "signal"; break }
@@ -212,18 +231,28 @@ export async function runTrials(wave, plan, { harness, caller, lease, verify, ex
       report.stop_reason = error instanceof RoundCapError ? "budget-admission" : "qualification-failed"
       break
     }
+    if (previous) {
+      let verified = false
+      try { verified = await checkTrial(previous) === true } catch { /* A failed parent check never authorizes another start. */ }
+      if (!verified) {
+        previous.status = "incomplete"; previous.reason = "cleanup-unverified"
+        report.stop_reason = previous.reason
+        break
+      }
+    }
     if (stopRequested() || lease.elapsed() >= TOTAL_MS - CLEANUP_MS) { report.stop_reason = stopRequested() ? "signal" : "local-timeout"; break }
     trial.status = "running"; trial.reason = null; save(report)
     try {
       const result = await execute(spec, trial)
       report.cost = waveCost(wave, report.trials)
-      const complete = result.code === 0 && result.complete === true && trialComplete(wave, trial, caller.MEM_WAVE_OWNER ? JSON.parse(caller.MEM_WAVE_OWNER) : null) && !report.cost.unresolved_trials.includes(trial.id)
+      const complete = result.code === 0 && result.complete === true && await checkTrial(trial) === true && !report.cost.unresolved_trials.includes(trial.id)
       trial.status = complete ? "completed" : "incomplete"
       trial.reason = complete ? null : "trial-failed-or-unresolved"
       if (!complete) report.stop_reason = trial.reason
     } catch { trial.status = "incomplete"; trial.reason = "trial-failed-or-unresolved"; report.stop_reason = trial.reason }
     save(report)
     if (report.stop_reason) break
+    previous = trial
   }
   for (const trial of report.trials) if (trial.status === "unrun") trial.reason = report.stop_reason ?? "not-started"
   try { report.cost = waveCost(wave, report.trials) } catch { report.cost = { unresolved: true }; report.stop_reason ??= "invalid-cost-ledger" }
@@ -244,8 +273,15 @@ export async function launchWave(wave, { manifestSha, singleton, verify, allocat
     scope = createResourceScope(wave.control, { manifestSha, trials: wave.trials })
     await allocate(lease, scope)
     if (lease.elapsed() >= TOTAL_MS - CLEANUP_MS || stopRequested?.()) throw new Error("no work time")
-    child = spawnWorker(lease, scope)
+    child = spawnWorker(lease, scope, id => {
+      const trial = wave.trials.find(t => t.id === id)
+      return !!trial && !stopRequested?.() && lease.elapsed() < TOTAL_MS - CLEANUP_MS && trialComplete(wave, trial, scope)
+    })
     writeJSON(join(wave.control, "worker.json"), { pgid: child.pgid, started_wall: clock.wall(), manifest_sha256: manifestSha })
+    if (child.supervisionReady !== true) {
+      report.stop_reason = "supervision-unavailable"
+      throw new Error("worker incarnation handle unavailable")
+    }
     child.activate?.()
     supervision = await superviseGroup(lease, { child, alive, signal, cleanup: remaining => cleanup(remaining, scope), stopRequested }, clock)
   } catch {

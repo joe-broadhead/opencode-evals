@@ -17,10 +17,13 @@ test("executable freezes input and supervises only one fresh worker with minimal
   const file = join(root, "input.json"), text = JSON.stringify(wave)
   writeFileSync(file, text)
   let activated = false, spec
-  const adapter = { worker: value => { spec = value; return { pgid: 12345, exited: () => true, finished: () => false, activate: () => { activated = true } } }, alive: () => false, signal: () => assert.fail(), command: () => assert.fail("no resources"), unverified: () => [] }
+  const adapter = { worker: value => { spec = value; return { pgid: 12345, supervisionReady: true, exited: () => true, finished: () => false, activate: () => { activated = true } } }, alive: () => false, signal: () => assert.fail(), command: () => assert.fail("no resources"), unverified: () => [] }
   const result = await main(["--manifest", file], { env: { PATH: "/bin", OPENCODE_API_KEY: "synthetic-test-key", MALICIOUS_OVERRIDE: "x" }, adapter, identity: () => ({}), qualify: () => ({ wave, plan: { cases: [] }, execution_qualified: true }) })
   assert.equal(activated, true)
   assert.equal(spec.ipc, true)
+  assert.equal(typeof spec.verifyTrial, "function")
+  assert.equal(spec.verifyTrial(wave.trials[0].id), false, "missing parent-bound receipt denies admission")
+  assert.equal(spec.env.verifyTrial, undefined)
   assert.equal(spec.env.MALICIOUS_OVERRIDE, undefined)
   assert.equal(spec.env.OPENCODE_API_KEY, "synthetic-test-key")
   assert.equal(spec.args.includes("synthetic-test-key"), false)

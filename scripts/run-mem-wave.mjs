@@ -5,8 +5,8 @@ import { resolve, join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { spawnSync } from "node:child_process"
 import { qualifyWave, sha256 } from "../src/run/wave-manifest.mjs"
-import { launchWave, runTrials, trialComplete, cleanupOwned, writeJSON, systemClock } from "../src/run/wave-launcher.mjs"
-import { processAdapter } from "../src/run/wave-process.mjs"
+import { launchWave, runTrials, cleanupOwned, writeJSON, systemClock } from "../src/run/wave-launcher.mjs"
+import { processAdapter, requestTrialVerification } from "../src/run/wave-process.mjs"
 
 const HARNESS = resolve(import.meta.dirname, "..")
 function checkIdentity() {
@@ -53,10 +53,11 @@ export async function main(argv, { env = process.env, adapter = processAdapter()
       const lease = { elapsed: () => Math.max(clock.wall() - stamp.started_wall, elapsedAtStart + clock.monotonic() - mono) }
       const { plan } = verify()
       const report = await runTrials(wave, plan, { harness: HARNESS, caller: env, lease, verify, stopRequested: () => stop,
+        verifyTrial: trial => requestTrialVerification(process, trial.id),
         save: value => writeJSON(join(wave.control, "progress.json"), value),
         execute: async (spec, trial) => {
           writeFileSync(join(wave.control, "resources", `${trial.id}.started.json`), JSON.stringify({ owner: JSON.parse(spec.env.EVALS_CONTAINER_OWNER) }), { flag: "wx", mode: 0o600 })
-          return { ...await adapter.trial(spec), complete: trialComplete(wave, trial, JSON.parse(env.MEM_WAVE_OWNER)) }
+          return { ...await adapter.trial(spec), complete: true } // Parent checks artifacts and its original scope before admission.
         },
       })
       process.disconnect()
@@ -72,7 +73,7 @@ export async function main(argv, { env = process.env, adapter = processAdapter()
         mkdirSync(runtime, { mode: 0o700 }); runtimeOwned = lstatSync(runtime)
         for (const dir of ["home", "tmp", "sandboxes"]) mkdirSync(join(runtime, dir), { mode: 0o700 })
       },
-      spawnWorker: (_lease, scope) => adapter.worker({ command: wave.runtime.launcher_node.path, args: [import.meta.filename, "--worker", frozen], cwd: HARNESS, ipc: true,
+      spawnWorker: (_lease, scope, verifyTrial) => adapter.worker({ command: wave.runtime.launcher_node.path, args: [import.meta.filename, "--worker", frozen], cwd: HARNESS, ipc: true, verifyTrial,
         env: { PATH: env.PATH ?? "/usr/bin:/bin", HOME: join(runtime, "home"), TMPDIR: join(runtime, "tmp"), OPENCODE_API_KEY: env.OPENCODE_API_KEY, MEM_WAVE_MANIFEST_SHA: manifestSha, MEM_WAVE_OWNER: JSON.stringify(scope.owner) } }),
       alive: adapter.alive, signal: adapter.signal,
       cleanup: async (remaining, scope) => {

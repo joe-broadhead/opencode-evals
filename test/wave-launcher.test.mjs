@@ -44,7 +44,7 @@ test("parent owns a fresh worker group, persists full interruption report and re
     const root = fixture(t), wave = fakeWave(root), time = clock()
     wave.trials = [{ id: "baseline-direct-a-r1", case: "a", arm: "baseline", condition: "direct", repetition: 1 }]
     let alive = true, spawned = 0
-    const report = await launchWave(wave, { manifestSha: "a".repeat(64), clock: time, verify: async () => {}, spawnWorker: () => { spawned++; return { pgid: 12345, finished: () => false, exited: () => true } }, alive: () => alive, signal: () => { alive = false }, cleanup: async () => clean })
+    const report = await launchWave(wave, { manifestSha: "a".repeat(64), clock: time, verify: async () => {}, spawnWorker: () => { spawned++; return { pgid: 12345, supervisionReady: true, finished: () => false, exited: () => true } }, alive: () => alive, signal: () => { alive = false }, cleanup: async () => clean })
     assert.equal(spawned, 1)
     assert.equal(report.trials.length, 1)
     assert.equal(report.trials[0].status, "unrun")
@@ -86,7 +86,7 @@ test("CLI success is not trial completion without matching one-trial artifacts",
   writeFileSync(join(dir, "batch-test.json"), JSON.stringify({ planned: 2, launched: 1, cases: ["a"], results: [{}] }))
   assert.equal(trialComplete(wave, trial), false)
   writeFileSync(join(dir, "batch-test.json"), JSON.stringify({ model: wave.model, planned: 1, launched: 1, cases: ["a"], results: [{ case: "a", trial: 1, exit: 0 }] }))
-  assert.equal(trialComplete(wave, trial, scope.owner), true)
+  assert.equal(trialComplete(wave, trial, scope), true)
   writeFileSync(join(dir, "a.t1.summary.json"), JSON.stringify({ case: "a", trial: 1, model: "fallback/model", exit: 0 }))
   assert.equal(trialComplete(wave, trial), false)
 })

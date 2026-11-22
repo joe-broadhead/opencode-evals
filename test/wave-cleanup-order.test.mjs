@@ -27,7 +27,7 @@ test("next-trial admission requires bound verified cleanup, independently of suc
       if (state !== "missing") writeFileSync(join(scope.directory, `${trial.id}.json`), JSON.stringify({ schema: "oc-evals-owned/1", batch: "b1234567890", owner: { ...scope.owner, trial_id: state === "foreign" ? "other" : trial.id }, resources: [{ kind: "container", id: "a".repeat(64) }], pending: state === "pending" ? ["lost-create"] : [], uncertain: state === "uncertain", verified_gone: state !== "unverified" }))
       // Synthetic certified-cost row isolates cleanup admission from the separate unavailable terminal producer.
       recordRun(wave.store, { iteration: `order-${trial.id}`, model: WAVE_MODEL, case: "a", trial: 1, billed_usd: 0.1, list_usd: 0.1, attempt_complete: true })
-      observedCompletion.push(trialComplete(wave, trial, scope.owner))
+      observedCompletion.push(trialComplete(wave, trial, scope))
       return { code: 0, complete: true } // This assertion alone must never admit another trial.
     } })
     assert.equal(attempts, state === "verified" ? 6 : 1, state)
