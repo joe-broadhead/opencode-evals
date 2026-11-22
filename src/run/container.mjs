@@ -76,7 +76,11 @@ export function containerConfig({ store, env = process.env } = {}) {
   }
   if (env.EVALS_EGRESS_ALLOW !== undefined && env.EVALS_EGRESS_ALLOW !== "") allow = env.EVALS_EGRESS_ALLOW.split(",")
   const hosts = [...parseAllow(allow.join(","))].sort()
-  return { allow: hosts, limits, assets: parseAssets(fromFile.assets), image: env.EVALS_CONTAINER_IMAGE ?? fromFile.image ?? null, docker: env.EVALS_DOCKER ?? "docker", proxyNode: env.EVALS_PROXY_NODE ?? null, source: Object.keys(fromFile).length ? file : null }
+  const sweepScope = env.EVALS_CONTAINER_SWEEP_SCOPE ?? "legacy"
+  if (!["legacy", "own"].includes(sweepScope)) throw new Error("EVALS_CONTAINER_SWEEP_SCOPE must be legacy or own")
+  const ownershipFile = env.EVALS_CONTAINER_OWNERSHIP ?? null
+  if (ownershipFile !== null && (sweepScope !== "own" || !isAbsolute(ownershipFile))) throw new Error("EVALS_CONTAINER_OWNERSHIP requires own scope and an absolute fresh file")
+  return { allow: hosts, limits, assets: parseAssets(fromFile.assets), image: env.EVALS_CONTAINER_IMAGE ?? fromFile.image ?? null, docker: env.EVALS_DOCKER ?? "docker", proxyNode: env.EVALS_PROXY_NODE ?? null, sweepScope, ownershipFile, source: Object.keys(fromFile).length ? file : null }
 }
 
 /** Where a trial sees an asset the owner mounted (G8): the pinned binary a plugin downloads, a speech model, a managed Chromium. */
@@ -471,7 +475,9 @@ export async function measureSandbox(root, { deadlineMs = 10_000, maxBytes = Inf
 /**
  * The backend. `config` is containerConfig()'s result; `exec` replaces the docker client in a unit test.
  */
-export function containerBackend(config = containerConfig()) {
+export function containerBackend(config = containerConfig(), { exec = dockerRun } = {}) {
+  if (![undefined, "legacy", "own"].includes(config.sweepScope)) throw new Error("EVALS_CONTAINER_SWEEP_SCOPE must be legacy or own")
+  const ownOnly = config.sweepScope === "own"
   const id = `b${randomBytes(5).toString("hex")}`
   const labels = { "evals.batch": id, "evals.pid": String(process.pid), "evals.pidstart": processStart(process.pid) ?? "" }
   const labelArgs = (extra = {}) => Object.entries({ ...labels, ...extra }).flatMap(([key, value]) => ["--label", `${key}=${value}`])
@@ -481,7 +487,59 @@ export function containerBackend(config = containerConfig()) {
   const state = { prepared: false, tornDown: false, docker: null, dockerEnv: null, image: null, imageId: null, version: null, binaries: new Map(), shas: {}, batchRoot: null, egress: null, copies: [], log: () => {} }
   let counter = 0
 
-  const docker = (args, options = {}) => dockerRun(state.docker, args, { env: state.dockerEnv, ...options })
+  // Creation receipts, not labels or dead-PID heuristics, establish deletion authority.
+  const owned = new Map()
+  const pending = new Set()
+  let uncertainCreation = false
+  let journalReady = false
+  let verifiedGone = false
+  const journal = (initial = false) => {
+    if (!config.ownershipFile || !journalReady && !initial) return
+    const text = JSON.stringify({ schema: "oc-evals-owned/1", batch: id, resources: [...owned.values()], pending: [...pending], uncertain: uncertainCreation, verified_gone: verifiedGone })
+    const file = initial ? config.ownershipFile : `${config.ownershipFile}.${id}.tmp`
+    writeFileSync(file, text, { mode: 0o600, flag: "wx" })
+    if (!initial) renameSync(file, config.ownershipFile)
+    journalReady = true
+  }
+  const rawDocker = (args, options = {}) => exec(state.docker, args, { env: state.dockerEnv, ...options })
+  const docker = async (args, options = {}) => {
+    if (!ownOnly) return rawDocker(args, options)
+    const create = args[0] === "run" || args[0] === "network" && args[1] === "create"
+    const kind = args[0] === "run" || args[0] === "rm" ? "container" : "network"
+    const name = args[0] === "run" ? args[args.indexOf("--name") + 1] : args.at(-1)
+    const remove = args[0] === "rm" || args[0] === "network" && args[1] === "rm"
+    if (remove) {
+      const receipt = owned.get(`${kind}:${name}`)
+      if (!receipt) return { code: 0, stdout: "", stderr: "" }
+      return rawDocker([...args.slice(0, -1), receipt.id], options)
+    }
+    if (args[0] === "network" && args[1] === "disconnect") {
+      const network = owned.get(`network:${args.at(-2)}`), container = owned.get(`container:${args.at(-1)}`)
+      if (!network || !container) return { code: 0, stdout: "", stderr: "" }
+      return rawDocker([...args.slice(0, -2), network.id, container.id], options)
+    }
+    if (create && state.tornDown) throw new Error("container teardown has started; no new resource may start")
+    if (create) { verifiedGone = false; pending.add(`${kind}:${name}`); journal() }
+    let result
+    try { result = await rawDocker(args, options) } catch (error) {
+      if (create) { uncertainCreation = true; journal() }
+      throw error
+    }
+    if (create) {
+      const receipt = result.stdout.trim()
+      if (result.code === 0 && /^[a-f0-9]{64}$/.test(receipt)) {
+        owned.set(`${kind}:${name}`, { kind, id: receipt })
+        pending.delete(`${kind}:${name}`)
+        journal()
+        // A signal may begin teardown while Docker is returning the creation receipt.
+        if (state.tornDown) {
+          await rawDocker(kind === "container" ? ["rm", "-f", "-v", receipt] : ["network", "rm", receipt])
+          throw new Error("container creation completed during teardown")
+        }
+      } else { uncertainCreation = true; journal() } // A failed create can leave a resource without returning its ID.
+    }
+    return result
+  }
   const must = async (args, what, options) => {
     const result = await docker(args, options)
     if (result.code !== 0) throw new Error(`${what} failed: ${tail((result.stderr || result.stdout).trim(), 400)}`)
@@ -509,6 +567,7 @@ export function containerBackend(config = containerConfig()) {
    */
   async function sweep({ own = false, tmpRoot = null } = {}) {
     const removed = { containers: 0, networks: 0, dirs: 0 }
+    if (ownOnly) return removed
     for (const kind of ["container", "network"]) {
       const listed = kind === "container" ? ["ps", "-a"] : ["network", "ls"]
       const out = await docker([...listed, "--filter", "label=evals.batch", "--format", '{{.ID}}\t{{.Label "evals.batch"}}\t{{.Label "evals.pid"}}\t{{.Label "evals.pidstart"}}'])
@@ -589,6 +648,7 @@ export function containerBackend(config = containerConfig()) {
       if (typeof process.getuid === "function" && process.getuid() === 0) throw new Error("--isolation container: refusing to run trials as root; run the harness as an ordinary user in the docker group")
       if (/[,\n"]/.test(batchRoot ?? "")) throw new Error(`--isolation container: the batch directory ${JSON.stringify(batchRoot)} has a comma, quote or newline, which a bind mount cannot name: set EVALS_TMP to a plainer path`)
       backend.client(caller)
+      if (ownOnly && !journalReady) journal(true)
       const version = await docker(["version", "--format", "{{.Server.Version}}"], { timeoutMs: 20_000 })
       if (version.code !== 0) throw new Error(`--isolation container: Docker is not usable by this user (${tail((version.stderr || "no answer").trim(), 200)}); is the daemon running, and is this user in the docker group?`)
       state.version = version.stdout.trim()
@@ -785,7 +845,7 @@ export function containerBackend(config = containerConfig()) {
       /** Is the trial's container gone? Only when Docker says there is no such container: an error says nothing. */
       trial.gone = async () => {
         const result = await docker(["inspect", "--format", "{{.Id}}", trial.ref], { timeoutMs: 20_000 })
-        return result.code !== 0 && /no such/i.test(result.stderr)
+        return (ownOnly ? result.code === 1 : result.code !== 0) && /no such/i.test(result.stderr)
       }
 
       /** How many processes the memory limit killed (cgroup v2 memory.events), or null when it cannot be read. */
@@ -852,6 +912,16 @@ export function containerBackend(config = containerConfig()) {
     /** Is every container of this batch gone? Only when Docker lists none: an error says nothing. */
     async allGone() {
       if (!state.docker) return true
+      if (ownOnly) {
+        if (uncertainCreation || pending.size) return false
+        for (const { kind, id } of owned.values()) {
+          const result = await rawDocker([...(kind === "network" ? ["network"] : []), "inspect", "--format", "{{.Id}}", id], { timeoutMs: 20_000 })
+          if (result.code !== 1 || !/no such/i.test(result.stderr)) return false
+        }
+        verifiedGone = true
+        journal()
+        return true
+      }
       const result = await docker(["ps", "-aq", "--filter", `label=evals.batch=${id}`], { timeoutMs: 20_000 })
       return result.code === 0 && result.stdout.trim() === ""
     },

@@ -26,7 +26,8 @@ export const SCRIPTED_MODEL = "mock/m1"
  * and the model. Nothing else. The scripted provider comes last: the host applies plugins in order, so a plugin under
  * test that registers a provider called `mock` of its own is overridden by the harness's, never the reverse.
  */
-export function sealedConfig({ armDir, options, model, scripted = false, scriptedProvider = SCRIPTED_PROVIDER, companions = [], guardDir = null, lockdown = null, extraPlugins = [] }) {
+export function sealedConfig({ armDir, options, model, scripted = false, scriptedProvider = SCRIPTED_PROVIDER, companions = [], guardDir = null, lockdown = null, extraPlugins = [], condition }) {
+  if (condition !== undefined && !["direct", "search"].includes(condition)) throw new Error("condition must be direct or search")
   const config = {
     plugins: [
       ...(armDir ? [{ package: armDir, ...(options ? { options } : {}) }] : []),
@@ -43,6 +44,8 @@ export function sealedConfig({ armDir, options, model, scripted = false, scripte
   // write and spending action as an ask.
   if (lockdown?.policies?.length) config.policies = lockdown.policies
   if (lockdown?.permissions?.length) config.permissions = lockdown.permissions
+  // Documented in /docs/tools#execute. Execution additionally requires pinned runtime qualification.
+  if (condition) config.permissions = [...(config.permissions ?? []), { action: "execute", resource: "*", effect: condition === "direct" ? "deny" : "allow" }]
   return config
 }
 
@@ -144,6 +147,17 @@ export function writeConfig(sandbox, config) {
  * children behind (a provider's CLI under a server), so a group is dropped only once nothing in it is left.
  */
 const groups = new Set()
+const inheritedChildren = new Set()
+let processGroupMode = "isolated"
+
+/** Only an external supervisor may signal the inherited group: the runner belongs to it too. */
+export function setProcessGroupMode(mode) {
+  if (mode === undefined) return processGroupMode
+  if (!["isolated", "inherited"].includes(mode)) throw new Error("--process-group must be isolated or inherited")
+  const previous = processGroupMode
+  processGroupMode = mode
+  return previous
+}
 
 const signalGroup = (pgid, signal) => {
   try {
@@ -165,17 +179,22 @@ export const liveGroups = () => (reap(), [...groups])
 export async function killAll({ graceMs = 1500 } = {}) {
   reap()
   for (const pgid of groups) signalGroup(pgid, "SIGTERM")
+  for (const child of inheritedChildren) child.kill("SIGTERM")
   const deadline = Date.now() + graceMs
-  while (Date.now() < deadline && liveGroups().length) await new Promise((done) => setTimeout(done, 50))
+  while (Date.now() < deadline && (liveGroups().length || inheritedChildren.size)) await new Promise((done) => setTimeout(done, 50))
   for (const pgid of groups) signalGroup(pgid, "SIGKILL")
+  for (const child of inheritedChildren) child.kill("SIGKILL")
   await new Promise((done) => setTimeout(done, 50))
   reap()
 }
 
 /** A process in its own group, so a timeout or a stop reaches what it started (a provider's CLI included). */
-export function start(command, args, { cwd, env, input = null } = {}) {
-  const child = spawn(command, args, { cwd, env, stdio: [input === null ? "ignore" : "pipe", "pipe", "pipe"], detached: true })
-  if (child.pid) groups.add(child.pid)
+export function start(command, args, { cwd, env, input = null } = {}, { spawn: spawnProcess = spawn, kill = process.kill.bind(process) } = {}) {
+  const inherited = processGroupMode === "inherited"
+  const child = spawnProcess(command, args, { cwd, env, stdio: [input === null ? "ignore" : "pipe", "pipe", "pipe"], detached: !inherited })
+  if (child.pid && !inherited) groups.add(child.pid)
+  if (child.pid && inherited) inheritedChildren.add(child)
+  let ended = false
   let stdout = ""
   let stderr = ""
   child.stdout.on("data", (data) => (stdout += data))
@@ -185,16 +204,21 @@ export function start(command, args, { cwd, env, input = null } = {}) {
     child.stdin.end(input)
   }
   const exited = new Promise((resolve) => {
-    child.on("error", (error) => resolve({ code: null, error: String(error.message ?? error) }))
-    child.on("exit", (code, signal) => resolve({ code, signal }))
+    const finish = result => { ended = true; inheritedChildren.delete(child); resolve(result) }
+    child.on("error", (error) => finish({ code: null, error: String(error.message ?? error) }))
+    child.on("exit", (code, signal) => finish({ code, signal }))
   })
   return {
     child,
     exited,
     output: () => ({ stdout, stderr }),
     kill: (signal = "SIGTERM") => {
+      if (inherited) {
+        if (!ended) child.kill(signal)
+        return
+      }
       try {
-        process.kill(-child.pid, signal)
+        kill(-child.pid, signal)
       } catch {
         try {
           child.kill(signal)

@@ -52,6 +52,9 @@ import { coreCases } from "../../packs/mem/core.mjs"
 import { runMemoryTurns,nativeMemoryCalls,withMemoryActivation } from "./mem-turns.mjs"
 import {randomUUID} from "node:crypto"
 import { selectMemoryPlan } from "./mem-case-plan.mjs"
+import { setProcessGroupMode } from "./sandbox.mjs"
+import { qualifyConditions, sha256 } from "./wave-manifest.mjs"
+import { memoryArtifact } from "./mem-arm.mjs"
 
 
 export const RUNNER = "evals run"
@@ -198,8 +201,14 @@ export const PAUSE_S = 30 * 60
  * still there fails the trial as infra `container` instead of retrying beside it on the same host; an exhausted run is
  * `rate-limit`, as before.
  */
-export function rateLimitOutcome(attempt, gone) {
-  if (attempt < BACKOFF_S.length) {
+export function harnessRetryLimit(value) {
+  if (value === undefined) return undefined
+  if (!(typeof value === "number" || typeof value === "string" && /^[0-3]$/.test(value)) || !Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > BACKOFF_S.length) throw new Error("--harness-retries must be a retry limit from 0 through 3")
+  return Number(value)
+}
+
+export function rateLimitOutcome(attempt, gone, limit = BACKOFF_S.length) {
+  if (attempt < limit) {
     return gone ? { retry: true } : { retry: false, infra: "container", why: "the trial's container was still there after the rate-limited run, so the trial is not retried" }
   }
   return { retry: false, infra: "rate-limit" }
@@ -286,6 +295,28 @@ const billedOf = (stdout) => {
   }
   // The split counters let a later batch price its runs from the catalogue when nothing billed.
   return { billed_usd: total, cost_source: priced ? "billed" : "unpriced", tokens }
+}
+
+/** Opt-in single-attempt evidence: an absent receipt is unknown, never an estimated actual cost. */
+export function settleSingleAttempt(store, identity, result = {}, price = null) {
+  const parts = []
+  for (const line of String(result.stdout ?? "").split("\n")) {
+    try { const event = JSON.parse(line); if (event.type === "step_finish") parts.push(event.part ?? {}) } catch { /* incomplete stream */ }
+  }
+  const number = value => typeof value === "number" && Number.isFinite(value) && value >= 0
+  const billed = parts.filter(p => number(p.cost))
+  const complete = parts.length > 0 && parts.every(p => number(p.tokens?.input) && number(p.tokens?.output) && number(p.tokens?.cache?.read ?? 0) && number(p.tokens?.cache?.write ?? 0))
+  const tokens = billedOf(result.stdout ?? "").tokens
+  const cost = {
+    billed_usd: billed.length ? billed.reduce((sum, p) => sum + p.cost, 0) : null,
+    cost_source: billed.length ? "billed" : "missing",
+    billed_incomplete: !parts.length || billed.length !== parts.length,
+    tokens: complete ? tokens : null,
+    list_usd: complete ? listUsdOf(tokens, price) : null,
+    usage_missing: !complete,
+  }
+  recordRun(store, { ...identity, ...cost })
+  return cost
 }
 
 /**
@@ -745,11 +776,15 @@ async function runJobBody(job, ctx, track) {
     // caller backs off. A retry needs the previous container confirmed gone; otherwise the trial fails as infra and is
     // released. After the last retry it is an infrastructure failure like a refused credential, and is released.
     if (!summary.infra && rateLimited(result)) {
-      const next = rateLimitOutcome(job.attempt ?? 0, gone)
+      const next = rateLimitOutcome(job.attempt ?? 0, gone, ctx.retryLimit)
       if (next.retry) return { case: id, trial: job.trial, rateLimited: true, exit: summary.exit, durationMs, ...(halt ? { halt } : {}) }
       summary.infra = next.infra
       if (next.why) summary.infra_why = next.why
       writeAtomic(out(".summary.json"), redact(`${JSON.stringify({ ...summary, attempts: (job.attempt ?? 0) + 1 }, null, 1)}\n`))
+    }
+    if (ctx.retryLimit === 0) {
+      const observed = settleSingleAttempt(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: durationMs, tier: tierOf(job.case), ...(summary.infra ? { infra: summary.infra } : {}) }, result, ctx.listPrice)
+      return { case: id, trial: job.trial, exit: summary.exit, durationMs, ...(summary.infra ? { infra: summary.infra } : {}), ...(halt ? { halt } : {}), ...(summary.overage ? { overage: true } : {}), ...((observed.usage_missing || observed.billed_incomplete) ? { usage_missing: true, error: "single attempt ended with unresolved usage or cost" } : {}) }
     }
     // Priced at list as well as billed: a subscription run bills $0, and the round's ceiling counts list price (R9).
     cost.list_usd = listUsdOf(cost.tokens, ctx.listPrice)
@@ -838,7 +873,9 @@ async function runJob(job, ctx) {
     ctx.log(`  ${name}: FAILED while ${track.phase}: ${message}${track.diagnosis?.state ? ` (container ${JSON.stringify(track.diagnosis.state)})` : ""}`)
     if (!interrupted) {
       // A failure before the model did any work spent nothing: its reservation goes back. One after it did is recorded at what it billed.
-      if (modelRan) {
+      if (ctx.retryLimit === 0) {
+        settleSingleAttempt(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: null, infra: summary.infra, tier: tierOf(job.case) }, track.result ?? {}, ctx.listPrice)
+      } else if (modelRan) {
         try {
           recordRun(ctx.store, { batch: ctx.batch, month: ctx.month, iteration: ctx.iteration, plugin: ctx.plugin, model: ctx.model, case: id, trial: job.trial, exit: summary.exit, duration_ms: null, infra: summary.infra, ...billedOf(track.result.stdout) })
         } catch {
@@ -874,6 +911,11 @@ export const trialBinaries = ({ binary, needsClaude = false, needsBrowse = false
 export const browseInTrial = (plugin, cases = []) => plugin === "browse" || cases.some((c) => pluginsOf(c).includes("browse"))
 
 export async function runBatch(options, { caller = process.env, log = (line) => console.log(line) } = {}) {
+  const retryLimit = harnessRetryLimit(options.harnessRetries)
+  setProcessGroupMode(options.processGroup ?? "isolated")
+  if (options.condition !== undefined && !["direct", "search"].includes(options.condition)) throw new Error("--condition must be direct or search")
+  if (options.condition && (typeof options.conditionQualification !== "string" || !options.conditionQualification)) throw new Error("--condition requires --condition-qualification with observed pinned runtime evidence")
+  if (options.conditionQualification && !options.condition) throw new Error("--condition-qualification requires --condition")
   const plugin = options.plugin
   const iteration = options.iteration
   if (!plugin) throw new Error("--plugin <id> is required")
@@ -934,6 +976,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const armSource = armSpec === "none" ? null : armSpec ?? pluginRepo(plugin, caller)
   if (armSpec !== "none" && !armSource) throw new Error(`no build for ${plugin}: pass --arm <built plugin dir> (or none), or set EVALS_REPO_${plugin.toUpperCase()} or EVALS_PLUGIN_ROOT`)
   const binary = hostBinary({ host: options.host, env: caller })
+  const conditionProof = options.condition ? qualifyConditions(JSON.parse(readFileSync(options.conditionQualification, "utf8")), {
+    runtime_sha256: sha256(readFileSync(binary)), archive_sha256: memoryArtifact(armSource).archive_sha256, model: options.model,
+  }) : null
   const caps = loadCaps(store, caller)
   const month = monthOf()
 
@@ -1046,6 +1091,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   let interrupted = null
   const results = []
   let finished = false
+  const startedJobs = []
   let keepRoot = Boolean(options.keep)
   const facts = {}
   let mock = null
@@ -1053,6 +1099,15 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const finish = (facts = {}, { gone = true } = {}) => {
     if (finished) return
     finished = true
+    if (retryLimit === 0 && reservation) {
+      const recorded = readLedger(store).filter(e => e.kind === "run" && e.batch === reservation.batch)
+      for (const job of startedJobs) {
+        if (recorded.some(e => e.case === job.case.id && e.trial === job.trial)) continue
+        const file = join(rawDir, `${job.case.id}.t${job.trial}.jsonl`)
+        const stdout = existsSync(file) ? readFileSync(file, "utf8") : ""
+        settleSingleAttempt(store, { batch: reservation.batch, month: reservation.month, iteration, plugin, model: options.model, case: job.case.id, trial: job.trial, exit: null, infra: "trial_incomplete", tier: tierOf(job.case) }, { stdout })
+      }
+    }
     if (reservation) release(store, reservation.batch, jobs.length - launched)
     // No sign-in file outlives the batch, and a kept batch directory holds no secret, whatever path ended the batch;
     // but nothing in it is touched while a container of the batch may still be running.
@@ -1249,7 +1304,9 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       lockdown: toolsMode === "locked" ? { policies: lockdownPolicies(), permissions: lockdownPermissions({ commit: commitPlan?.actions ?? [], ...(options.noHarnessRules ? { bare: true } : {}), ...(options.noWriteAsks ? { packs: [] } : options.lockPacks ? { packs: options.lockPacks } : {}) }) } : null,
       // Eval-only plugins a probe asks for (src/run/probe): they ask the host about permissions and call no vendor.
       extraPlugins: probeDir ? [probeDir] : [],
+      ...(conditionProof ? { condition: options.condition } : {}),
     }
+    if (conditionProof) facts.condition = { mode: options.condition, mapping: conditionProof.mapping, qualification_sha256: sha256(readFileSync(options.conditionQualification)) }
     facts.tools = toolsMode
     if (deferred.length) {
       facts.deferred = deferred
@@ -1311,7 +1368,8 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
       mockUrl: mock?.url ?? null,
       routeTimeoutMs,
       firstRequestMs: Number(caller.EVALS_FIRST_REQUEST_S || 90) * 1000,
-      clientRestarts: Number(caller.EVALS_CLIENT_RESTARTS ?? 1),
+      clientRestarts: retryLimit === 0 ? 0 : Number(caller.EVALS_CLIENT_RESTARTS ?? 1),
+      retryLimit,
       scripted,
       mockInTrial: scripted && Boolean(harnessDir) && isolation.confines,
       harnessDir,
@@ -1401,6 +1459,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
           log(`  ${job.case.id}.t${job.trial}: the sign-in was rotated since the last trial; this trial runs on the new one`)
         }
         launched++
+        startedJobs.push(job)
         running++
         // A rate-limited run is tried again after 60, 120 and 240 s (R13), and counts as nothing until it ends otherwise; three
         // rate-limited runs in a row, across the batch, pause the model for 30 minutes. Delays scale by EVALS_BACKOFF_SCALE (tests).
