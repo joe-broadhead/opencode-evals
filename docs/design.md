@@ -230,6 +230,9 @@ another UTC day than its world's is dropped, and the report says how many.
 
 ## Running
 
+The opt-in [whole-trial containment path](owned-containment.md) moves the runner into its workload container.
+It separates provisional execution from parent-only data finalization. Native completion and launcher integration remain unqualified.
+
 `evals run` launches one sandboxed OpenCode run per (case, trial) and writes the recordings the trace step reads. Every
 run is confined in its own Docker container, on a network whose only way out is a proxy allowing HTTPS to the model
 provider's hosts, because a run's agent can execute tools and the sandbox alone isolates the environment, not the

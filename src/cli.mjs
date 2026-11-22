@@ -11,6 +11,7 @@
 //   evals run      --plugin x --iteration it --model p/m --auth none|env:VAR|claude-agent [--cases ids] [--set tune]
 //                  [--trials K] [--parallel N] [--arm DIR|none] [--world DIR|FILE] [--host 2.2.6] [--dry-run]
 //                  [--isolation container|none] [--unsafe-no-isolation]   (container by default; none needs the flag)
+// owned-container is bootstrap-only: scripts/run-contained-trial.mjs supplies a bound process-local capability.
 //                  [--accept-unknown-token-expiry]   (a claude-agent sign-in with no expiry: refused without it)
 //   evals truth    --plugin x --world DIR [--cases-dir DIR] [--set all]   each case's Truth: against the world's truth
 //   evals select   <iteration> [--plugin x] [--cases-dir DIR]   the wide cases' first-pass trials that selected them (once; a baseline is judged on the others)

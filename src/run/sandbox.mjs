@@ -149,6 +149,15 @@ export function writeConfig(sandbox, config) {
 const groups = new Set()
 const inheritedChildren = new Set()
 let processGroupMode = "isolated"
+let processRecorder = null
+let processOutputLimit = Infinity
+
+/** Inner bootstrap only. A recorder never gives authority over a process or resource. */
+export function setProcessRecorder(recorder, { maxBytes = 8 * 1024 * 1024 } = {}) {
+  if (recorder && (processGroupMode !== "inherited" || !Number.isSafeInteger(maxBytes) || maxBytes <= 0)) throw new Error("bounded inherited recorder required")
+  processRecorder = recorder
+  processOutputLimit = recorder ? maxBytes : Infinity
+}
 
 /** Only an external supervisor may signal the inherited group: the runner belongs to it too. */
 export function setProcessGroupMode(mode) {
@@ -177,6 +186,13 @@ export const liveGroups = () => (reap(), [...groups])
 
 /** TERM to every group this runner started, a grace period, then KILL. Used on an interrupt. */
 export async function killAll({ graceMs = 1500 } = {}) {
+  if (processGroupMode === "inherited") {
+    for (const child of inheritedChildren) child.kill("SIGTERM")
+    const deadline = Date.now() + graceMs
+    while (inheritedChildren.size && Date.now() < deadline) await new Promise(done => setTimeout(done, 50))
+    for (const child of inheritedChildren) child.kill("SIGKILL")
+    return // Outer container, not process groups, owns every descendant.
+  }
   reap()
   for (const pgid of groups) signalGroup(pgid, "SIGTERM")
   for (const child of inheritedChildren) child.kill("SIGTERM")
@@ -191,20 +207,39 @@ export async function killAll({ graceMs = 1500 } = {}) {
 /** A process in its own group, so a timeout or a stop reaches what it started (a provider's CLI included). */
 export function start(command, args, { cwd, env, input = null } = {}, { spawn: spawnProcess = spawn, kill = process.kill.bind(process) } = {}) {
   const inherited = processGroupMode === "inherited"
+  const recorder = processRecorder
+  const record = recorder?.start({ command, args })
+  const maxBytes = processOutputLimit
   const child = spawnProcess(command, args, { cwd, env, stdio: [input === null ? "ignore" : "pipe", "pipe", "pipe"], detached: !inherited })
+  if (record) child.once("close", () => record.close?.())
   if (child.pid && !inherited) groups.add(child.pid)
   if (child.pid && inherited) inheritedChildren.add(child)
   let ended = false
   let stdout = ""
   let stderr = ""
-  child.stdout.on("data", (data) => (stdout += data))
-  child.stderr.on("data", (data) => (stderr += data))
+  let outputBytes = 0, outputTruncated = false
+  const capture = (channel, data) => {
+    if (outputTruncated) return
+    outputBytes += Buffer.byteLength(data)
+    try {
+      if (outputBytes > maxBytes) throw new Error("output limit")
+      record?.(channel, Buffer.from(data))
+      if (channel === "stdout") stdout += data
+      else stderr += data
+    } catch {
+      outputTruncated = true
+      recorder?.incomplete?.()
+      if (!ended) child.kill("SIGKILL")
+    }
+  }
+  child.stdout.on("data", data => capture("stdout", data))
+  child.stderr.on("data", data => capture("stderr", data))
   if (input !== null) {
     child.stdin.on("error", () => {})
     child.stdin.end(input)
   }
   const exited = new Promise((resolve) => {
-    const finish = result => { ended = true; inheritedChildren.delete(child); resolve(result) }
+    const finish = result => { ended = true; inheritedChildren.delete(child); resolve({ ...result, ...(outputTruncated ? { outputTruncated: true } : {}) }) }
     child.on("error", (error) => finish({ code: null, error: String(error.message ?? error) }))
     child.on("exit", (code, signal) => finish({ code, signal }))
   })
@@ -249,7 +284,7 @@ export async function runToEnd(command, args, { cwd, env, input = null, timeoutM
   if (watch) clearTimeout(watch)
   // Nothing a finished command started is left running.
   proc.kill("SIGKILL")
-  reap()
+  if (processGroupMode !== "inherited") reap()
   return { ...exit, ...proc.output(), timedOut, ...(stalled ? { stalled: true } : {}) }
 }
 
@@ -261,7 +296,7 @@ export async function stop(proc, { graceMs = 2000 } = {}) {
   if (!done) proc.kill("SIGKILL")
   // A provider's CLI can outlive the server it was started by; the group signal reaches it, this makes sure.
   proc.kill("SIGKILL")
-  reap()
+  if (processGroupMode !== "inherited") reap()
 }
 
 /**

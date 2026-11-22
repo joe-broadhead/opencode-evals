@@ -22,6 +22,7 @@
 import { freePort } from "../t1/http.mjs"
 import { containerBackend, containerConfig } from "./container.mjs"
 import { SCRIPTED_PROVIDER, SCRIPTED_MODEL } from "./sandbox.mjs"
+import { ownedContainerBackend, isOwnedBackend } from "./owned-backend.mjs"
 
 /** Polls a loopback URL from the host until it answers 200. */
 async function hostReady({ url, password = null, directory = null, timeoutMs = 60_000, exited = () => false } = {}) {
@@ -79,7 +80,10 @@ const none = () => ({
 export const BACKENDS = {
   none,
   container: (config) => containerBackend(config ?? containerConfig()),
+  "owned-container": config => ownedContainerBackend(config?.ownedSession, { ready: hostReady }),
 }
+
+export const containerContained = isolation => isolation?.confines === true && (isolation.name === "container" || isOwnedBackend(isolation))
 
 /**
  * Is this a live run, one where a real model can drive real tools? Only one thing is not: no credential at all
