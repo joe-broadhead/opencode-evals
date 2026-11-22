@@ -1,0 +1,885 @@
+{
+  "source": {
+    "commit": "586dc46a133cada64c584b0506eb3aebbd906b24",
+    "package_sha256": "c8e7cbcd55c22b42d31f5946ec9a896071d09992f0dab109dbd06b52469153c4",
+    "catalog_sha256": "84457ff43cb6c603eb372edda1cca02c07eee268bb9cfb546cfdaea228537be7",
+    "kind": "source-snapshot-not-runtime"
+  },
+  "tools": [
+    {
+      "name": "recall",
+      "description": "Search memory: memories, commitments, pages, sources and past conversations. Call it when past context is needed. One recall answers most questions; a miss is an answer, not a reason to search pages, wiki, spaces or commitments again. To read a named document or wiki file, use mem_wiki read or search instead. The dashboard page and the Due list are already in context.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Required: what to look for, in plain words; task never replaces it"
+          },
+          "task": {
+            "type": "string",
+            "description": "Optional: one line naming the work, not the topic; kept for the session. \"*\": the whole space, this call only"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "private",
+              "team"
+            ],
+            "description": "auto (default): the session's space; team: the bound shared space, or the only one; private: the caller's personal space, never another person's"
+          },
+          "in": {
+            "type": "string",
+            "enum": [
+              "all",
+              "memories",
+              "pages",
+              "transcripts",
+              "documents"
+            ],
+            "description": "all (default), or one of: memories, pages, transcripts (past turns), documents (uploads and repositories)"
+          },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "fact",
+                "decision",
+                "constraint",
+                "preference",
+                "procedure",
+                "person",
+                "project",
+                "team",
+                "topic",
+                "runbook",
+                "glossary",
+                "journal",
+                "index",
+                "meeting",
+                "commitment"
+              ]
+            },
+            "description": "Only these record types; memory types also search legacy atoms without kind filtering"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "current",
+              "all"
+            ],
+            "description": "current (default); all adds superseded and retired records, for \"what was it before\""
+          },
+          "limit": {
+            "type": "number",
+            "description": "Hits per layer (default undefined, max 25)"
+          },
+          "space": {
+            "type": "string",
+            "description": "A space id, \"personal\" or \"shared\"; defaults to the session space"
+          },
+          "filter": {
+            "type": "object",
+            "description": "Records only, for cleanup, never to answer a question; 50 a page; with query \"*\", newest first, e.g. {\"since\": \"7d\"}",
+            "properties": {
+              "since": {
+                "type": "string",
+                "description": "On or after: a date, a date-time with offset, or an age (7d, 36h)"
+              },
+              "until": {
+                "type": "string",
+                "description": "Before; a bare date includes that day"
+              },
+              "agent": {
+                "type": "string",
+                "description": "Writing agent; a trailing * matches a prefix"
+              },
+              "session": {
+                "type": "string",
+                "description": "ses_… or \"current\""
+              },
+              "stated_by": {
+                "type": "string",
+                "enum": [
+                  "person",
+                  "agent"
+                ]
+              },
+              "contains": {
+                "type": "string",
+                "description": "Text in the title or body"
+              }
+            },
+            "additionalProperties": false
+          },
+          "cursor": {
+            "type": "string",
+            "description": "The last answer's cursor, with the same arguments"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "remember",
+      "description": "Save one durable memory: a preference, constraint, decision, fact or procedure. Call it in the same turn the thing is stated or settled. Store what this conversation worked out, with how it is known (why); capture already keeps the conversation. The answer gives the memory's id (rec_…) at once, and mem_recall finds it at once; change it later with mem_revise. Never store things to do (mem_commitments), project status or restatements of the code. A status-shaped write, an instruction, an email address or an absolute local path is refused, and nothing is written. It writes only the person's personal space and never asks; team memory is mem_share copy, only when the person asks.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Required: the thing to remember, stated plainly, as it should come back"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "fact",
+              "decision",
+              "constraint",
+              "preference",
+              "procedure"
+            ],
+            "description": "Required: preference (how the person likes things done), constraint (a standing rule or a lesson), decision (a choice and its reason; a decisions/ page only for a long record), fact (a verified non-obvious truth), procedure (steps that worked, five at most)"
+          },
+          "why": {
+            "type": "string",
+            "description": "How it is known, with the source and date (\"agreed in the launch review, 2026-11-05\"); for a lesson, the incident"
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Page paths or record ids it is about, at most 20; [[path]] in the text links too"
+          },
+          "supersedes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Ids it replaces, at most 10 (rec_… or m_…): each old value is kept as superseded history"
+          },
+          "stated_by": {
+            "type": "string",
+            "enum": [
+              "person",
+              "agent"
+            ],
+            "description": "A claim: person is kept only when the person accepts the write in Memory's console"
+          },
+          "task": {
+            "type": "string",
+            "description": "Optional: one line naming the work, not the topic; kept for the session. \"*\": the whole space, this call only"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "private"
+            ],
+            "description": "Always your personal space. For the team: mem_share copy, only when the person asks"
+          }
+        },
+        "required": [
+          "content",
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "revise",
+      "description": "Change memories by their ids (rec_… from mem_remember or mem_recall). Call it when the person says a memory changed or is wrong, or you find it so. correct writes a successor; confirm, retire, restore and history manage its lifecycle. To clean up many, list them with mem_recall's filter, retire them (restore undoes it), and forget only what the person asks to forget. forget deletes the record and its history and checks a bounded subset for copies; it cannot establish complete erasure. When the person asked you to forget it, the request is their consent. When you propose a deletion yourself (including a whole turn), report it, never tidy it up, and delete only on their request. Shared revisions follow the host permission policy, which may prompt or allow silently. Never put status, instructions, email addresses or local paths in content.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "correct",
+              "confirm",
+              "retire",
+              "restore",
+              "forget",
+              "history"
+            ],
+            "description": "Required. Correct or change a shared space's record only when the person asks. When the person explicitly asks to forget, use forget, even if they call it obsolete; do not substitute retire. Example: {\"action\": \"correct\", \"id\": \"rec_...\", \"content\": \"Staging listens on 8788\", \"reason\": \"moved in the infra review\"}"
+          },
+          "id": {
+            "type": "string",
+            "description": "A rec_… id; forget also takes m_… and msg-… ids. Pass id or ids"
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "description": "confirm, retire, restore or forget: up to 50 ids from one space, asked once"
+          },
+          "content": {
+            "type": "string",
+            "description": "correct: the whole corrected memory"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why; kept in its history"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "page",
+      "description": "Pages: one per person, project, team, topic, runbook or decision, linked with [[path]]; documents are mem_wiki. Call it when the page itself is needed, or to see what links to what. Paths are lower-case segments (people/ama, projects/harbour); \"index\" is the dashboard, already in context. read: metadata, then the body alone in <page_body>. write creates a page or replaces its whole body; a page someone changed since your read is a conflict, not lost. replace sets one ## section, keeping the rest (a project's Status). append adds one line under a ## section (a Log entry per change). move renames a page or folder and rewrites links. delete (path): previews; confirm deletes, only on the person's request. export writes Markdown as .tar.gz under .opencode-mem/exports/. Answers carry the page's id and version. Never put instructions in a page (they are refused); things to do go in mem_commitments. A write in a shared space, or to index, asks.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "list",
+              "read",
+              "write",
+              "append",
+              "replace",
+              "move",
+              "delete",
+              "links",
+              "history",
+              "export"
+            ],
+            "description": "Required. On a team page: append only. Example: {\"action\": \"replace\", \"path\": \"projects/harbour\", \"section\": \"Status\", \"content\": \"- Beta on 2026-12-01\"}"
+          },
+          "path": {
+            "type": "string",
+            "description": "Page path (people/ama, index; the day's notes: journal/YYYY-MM-DD) or rec_… id; all but list and export need it"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "list and export: pages under this prefix (projects/). move: the folder to move (ends in /)"
+          },
+          "type": {
+            "type": "string",
+            "description": "list: only this type. write: defaults from the folder, else topic. One of person, project, team, topic, runbook, decision, glossary, journal, index, meeting"
+          },
+          "title": {
+            "type": "string",
+            "description": "write: defaults to the first # heading"
+          },
+          "content": {
+            "type": "string",
+            "description": "write: the whole body (what read shows in <page_body>); replace: the section's text; append: one line"
+          },
+          "section": {
+            "type": "string",
+            "description": "replace, append: the ## heading (\"Status\", \"Log\"); created when missing"
+          },
+          "to": {
+            "type": "string",
+            "description": "move: the new path, or the new folder (ends in /)"
+          },
+          "depth": {
+            "type": "number",
+            "description": "links: 1 (default) or 2"
+          },
+          "confirm": {
+            "type": "boolean",
+            "description": "delete: true only on the person's request; else a preview"
+          },
+          "space": {
+            "type": "string",
+            "description": "Space id. Default: the page's space; a new page or journal/ is personal"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "commitments",
+      "description": "Commitments: things someone will do, with a due date or a trigger. Call it for the person's promises and reminders, what the agent promised, and what others owe the person (\"Kwame will send the results by Wednesday\"); cancel with state \"cancelled\"; list for \"what's on my plate\". The Due list is already in context: list only for more. Resolve relative dates against today and echo the weekday and date back. Every answer carries the commitment's id (rec_…). Commitments are private, and writing them never asks. Never store an instruction here; preferences, decisions and facts belong in mem_remember.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "list",
+              "add",
+              "update",
+              "delete"
+            ],
+            "description": "Required. add needs what; update and delete need id. Example: {\"action\": \"add\", \"what\": \"Send the Q4 numbers to Ama\", \"owner\": \"user\", \"due\": \"2026-11-06\"}"
+          },
+          "id": {
+            "type": "string",
+            "description": "From list or add (rec_…, or an older cmt_…); update and delete need it"
+          },
+          "what": {
+            "type": "string",
+            "description": "Required for add: what will be done, starting with a verb, at most 300 characters"
+          },
+          "owner": {
+            "type": "string",
+            "description": "\"user\" (default), \"agent\" (you promised), or a person's name (the person waits on them); list: only this owner"
+          },
+          "due": {
+            "type": "string",
+            "description": "Only a day the person named: YYYY-MM-DD (by the end of that day) or a date-time with offset; another is dropped; \"\" clears it on update"
+          },
+          "trigger": {
+            "type": "string",
+            "description": "An event the person named that makes it due instead of a date (\"after the deploy is green\"); at most 200 characters"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "done",
+              "cancelled",
+              "all"
+            ],
+            "description": "update: open, done or cancelled; list: open (default), done, cancelled or all"
+          },
+          "project": {
+            "type": "string",
+            "description": "Project page slug (\"checkout-v3\"); list: only this project"
+          },
+          "link": {
+            "type": "string",
+            "description": "Tracker item, PR or thread (an id or a URL)"
+          },
+          "due_before": {
+            "type": "string",
+            "description": "list: due before this date (YYYY-MM-DD)"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "wiki",
+      "description": "Documents: uploads, repositories and their pages. Person, project, decision and runbook pages are mem_page, not here. Call list, search and read for documentation, architecture, ownership and call-graph questions about what was uploaded or indexed; for a named document read it or search to find it, even if mem_recall might answer. Write only documents the person gave you, as flat source files (\"notes.md\"; a name with a folder is refused). A space has a knowledge wiki only once action create makes one (name it \"My knowledge\" in the personal space); list shows which wikis exist. A write starts one ingest by itself a moment after the last one; a write during an ingest is queued, not refused. Like mem_recall it uses the session's space by default: your personal space, or a shared space bound to the session. A write to a shared space asks the person and shows the file and an excerpt; a write to your personal space does not. delete removes one source file (filename), one generated page (ref), or a whole wiki (wiki_id alone): without confirm it only previews; with confirm: true it always asks the person, then deletes and reads it back. Never put things to do (mem_commitments) or where a project stands here.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "list",
+              "search",
+              "create",
+              "write",
+              "append",
+              "read",
+              "status",
+              "delete"
+            ],
+            "description": "Required. Read-only: list, search, read, status. Writes: create, write, append, delete. Example: {\"action\": \"search\", \"query\": \"onboarding guide\"}"
+          },
+          "query": {
+            "type": "string",
+            "description": "Search query (required for action=search)"
+          },
+          "knowledge_id": {
+            "type": "string",
+            "description": "Restrict a search to one id returned by action=list (the wiki/code-graph id, not an ACL asset id)"
+          },
+          "wiki_id": {
+            "type": "string",
+            "description": "Wiki id for read, status, write, append, and delete; optional when exactly one wiki is visible (the answer names it), except that deleting a whole wiki always names it"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable wiki name for action=create"
+          },
+          "filename": {
+            "type": "string",
+            "description": "Source file to create, write, or append, a flat name such as \"project-harbour.md\" (required for write and append; create defaults to README.md). No folders: \"projects/harbour.md\" is refused before anything is asked. Read takes it too, and delete takes it to delete one source file. Path traversal is rejected"
+          },
+          "content": {
+            "type": "string",
+            "description": "Markdown for create, write (replaces the file), or append: a document the person gave you. Person, project, decision and runbook pages go in mem_page; things to do go in mem_commitments"
+          },
+          "ingest": {
+            "type": "boolean",
+            "description": "Ignored: ingestion always starts on its own a short while after the last write, so a burst of writes makes one ingest"
+          },
+          "ref": {
+            "type": "string",
+            "description": "Page to read (action=read): the `path` a search hit shows (its source file is read first, so a page just written reads current), or a page id from status. Delete takes it to delete one generated page"
+          },
+          "confirm": {
+            "type": "boolean",
+            "description": "delete only: omitted or false previews what would go and changes nothing; true asks the person, deletes, and reads the deletion back. Pass true only when the person asked; one you propose is offered, never deleted"
+          },
+          "path": {
+            "type": "string",
+            "description": "Same as ref: the page path a search hit shows"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "auto",
+              "private",
+              "team"
+            ],
+            "description": "auto (default), as mem_recall: the session's space, a shared space bound to the session or else your personal space; a write there is team (it asks) or private (it does not). private: your personal space. team: a shared space, bound or passed with space"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "wiki",
+              "code-graph",
+              "all"
+            ],
+            "description": "Which knowledge list and search cover: wiki, code-graph, or all (the default)"
+          },
+          "space": {
+            "type": "string",
+            "description": "Space id to browse or write (control plane); defaults to the active space"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "share",
+      "description": "Grant or revoke a page or folder in a space, only when the person asks: revoke takes grant_id from list. Before deciding whether sharing is allowed, recall the relevant recorded rule; do not decide from a default. grant: give a user (email or id), group (group:<id>) or org role (org_role:<id>) viewer or editor access to a page or folder (a path ending in \"/\"), with an optional expiry; the page stays where it is, and a folder grant covers pages added later. copy: copy private memories (rec_ ids) into a shared space as new records that name their source; later edits to the originals do not reach the copies. revoke: a grant_id; copies' ids; or a path and to, which takes back only their grants (to: \"everyone\" unshares it, only if the person says everyone); then reads back, and cannot take back what someone already read. transfer: give a page or folder to another person (they must already be able to edit it). move: move memories or commitments (ids) or a page or folder (path) from space to the space in to, either way, shared to personal included; each copy names its source (moved_from) and is read back before the original is deleted, and nothing is fingerprinted as forgotten; keep: true copies instead. list: the space's shared pages and folders, and who each is shared with; with \"to\": \"me\", the pages and folders others shared with you, in every space, each with the space to read it in. Every change asks the person first; each answer gives the grant or copy ids and the call to revoke. Never share anything the person has not seen and approved. Sharing needs the records service on the Memory server: without it the answer says so and nothing changes.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "list",
+              "grant",
+              "revoke",
+              "transfer",
+              "copy",
+              "move"
+            ],
+            "description": "Required. Read-only: list. Writes (each asks): grant (path, to, role), revoke (grant_id; ids of copies; or path and to), transfer (path, to), copy (ids, rationale), move (ids or path, to, space?). Example: {\"action\": \"grant\", \"path\": \"projects/harbour\", \"to\": \"ama@example.com\", \"role\": \"viewer\"}"
+          },
+          "path": {
+            "type": "string",
+            "description": "A page path (\"projects/harbour\") or a folder ending in \"/\" (\"projects/\"): for grant and transfer; for revoke, with to; narrows list and a grant_id revoke"
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "copy: your private memory ids (rec_…, or m_…/msg-… from before 0.9), at most 20. revoke: the ids of copies a copy returned"
+          },
+          "to": {
+            "type": "string",
+            "description": "grant: an email (anyone in your organisation who has signed in), a user id, group:<id> or org_role:<id>. revoke: the same, or \"everyone\". transfer: the new owner's email or user id. list: \"me\" for what others shared with you. move: the space to move them to (a space id, or \"personal\")"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "viewer",
+              "editor"
+            ],
+            "description": "grant: viewer (default) or editor"
+          },
+          "expires": {
+            "type": "string",
+            "description": "grant: when access ends, YYYY-MM-DD (end of that day, UTC) or an ISO date-time; omit for no end"
+          },
+          "space": {
+            "type": "string",
+            "description": "The space the page or the copies are in (control plane). Defaults to the session's space; copy needs a shared space, passed here or bound to the session. Applies to this call only"
+          },
+          "rationale": {
+            "type": "string",
+            "description": "copy: why the shared space should see these; required, recorded on each copy"
+          },
+          "keep": {
+            "type": "boolean",
+            "description": "move: true copies instead; the originals stay"
+          },
+          "grant_id": {
+            "type": "string",
+            "description": "revoke: the grant id grant or list returned"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "spaces",
+      "description": "Spaces and what flows in. current, list, members, access: need a control plane; current is the active space, and bind {space} binds this session, only when the person asks, a team space first; passing space never binds. health only when memory may be down; sources, jobs and review work without one. profile: what Memory holds about the person, as data. Do not inspect spaces or health to verify a successful read or write. sources: the accounts Memory collects from; bind asks the person's collector and answers with the console link where the person confirms (no agent binds); unbind previews unless confirm. jobs: the scheduled pipelines: list, read, draft, run now, pause, resume, archive; a draft never runs, and turning one on or deleting it answers with the console link, where only the person acts. review: the routine's proposals; decide one only when the person says. A space itself, only when the person asks: create {name} (they own it); rename {space, name}; archive {space} (offline for every member; restore: true brings it back); leave {space}; handover {space, user}. archive, leave and handover preview unless confirm, then ask with the server's preview. Never confirm before the person agrees; never bind an account. Members are added, and spaces deleted, in Memory's console. \"Am I allowed\" is a mem_recall question.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "current",
+              "list",
+              "members",
+              "access",
+              "health",
+              "sources",
+              "jobs",
+              "review",
+              "profile",
+              "create",
+              "rename",
+              "archive",
+              "leave",
+              "handover"
+            ],
+            "description": "Required. Example: {\"action\": \"health\"}"
+          },
+          "space": {
+            "type": "string",
+            "description": "Space id; defaults to the session space (sources, jobs: personal). rename, archive, leave and handover need it. Never rebinds the session"
+          },
+          "name": {
+            "type": "string",
+            "description": "create, rename: the space's name"
+          },
+          "user": {
+            "type": "string",
+            "description": "handover: the new owner, an email or user id; they must already be a member"
+          },
+          "restore": {
+            "type": "boolean",
+            "description": "archive: true unarchives the space"
+          },
+          "bind": {
+            "type": "object",
+            "description": "current: bind this session to a space. sources: ask to collect from one source; the person confirms in the console",
+            "properties": {
+              "space": {
+                "type": "string",
+                "description": "current: \"personal\" or a space id from list"
+              },
+              "source": {
+                "type": "string",
+                "description": "sources: the source plugin's Code Mode namespace, such as gmail or slack"
+              },
+              "account": {
+                "type": "string",
+                "description": "sources: the account within it; default \"default\""
+              }
+            },
+            "additionalProperties": false
+          },
+          "unbind": {
+            "type": "object",
+            "description": "sources: stop collecting and delete that account's events; previews unless confirm",
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "The source"
+              },
+              "account": {
+                "type": "string",
+                "description": "The account; default \"default\""
+              }
+            },
+            "required": [
+              "source"
+            ],
+            "additionalProperties": false
+          },
+          "confirm": {
+            "type": "boolean",
+            "description": "unbind, archive, leave, handover: true acts, after the person agreed; omitted previews"
+          },
+          "job": {
+            "type": "object",
+            "description": "jobs: {\"op\": \"list\"}; draft creates (template, project, account, scope) or edits (id, max_lines), never runs; the rest take id; activate and delete answer with the link",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "list",
+                  "get",
+                  "runs",
+                  "logs",
+                  "versions",
+                  "draft",
+                  "run_now",
+                  "pause",
+                  "resume",
+                  "archive",
+                  "activate",
+                  "delete"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "template": {
+                "type": "string"
+              },
+              "project": {
+                "type": "string"
+              },
+              "account": {
+                "type": "string"
+              },
+              "scope": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "every": {
+                "type": "string"
+              },
+              "max_lines": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 500
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "op"
+            ],
+            "additionalProperties": false
+          },
+          "decide": {
+            "type": "object",
+            "description": "review: answer one proposal, when the person says",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "The proposal id"
+              },
+              "decision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "reject",
+                  "edit"
+                ],
+                "description": "accept applies it; edit applies payload instead; reject drops it"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why; kept on the proposal"
+              },
+              "payload": {
+                "type": "string",
+                "description": "edit: the text to apply instead"
+              }
+            },
+            "required": [
+              "id",
+              "decision"
+            ],
+            "additionalProperties": false
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "review: proposals to list (default 20)"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "additionalProperties": false
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "ingest",
+      "description": "Retired and internal; agents never call it, and it always refuses. Memory collects on its own, and mem_collect collects now when the person asks.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Ignored"
+          },
+          "account": {
+            "type": "string",
+            "description": "Ignored"
+          },
+          "owner": {
+            "type": "object",
+            "description": "Ignored",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Ignored"
+          },
+          "cursor": {
+            "type": "string",
+            "description": "Ignored"
+          }
+        },
+        "additionalProperties": true
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "cursor",
+      "description": "Retired and internal; agents never call it, and it always refuses. Memory collects on its own, and mem_collect collects now when the person asks.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Ignored"
+          },
+          "account": {
+            "type": "string",
+            "description": "Ignored"
+          }
+        },
+        "additionalProperties": true
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "collect",
+      "description": "Collect new events from the person's bound sources (mail, chat, meetings) into Memory now. Call it only for routines and for the person's explicit request (\"collect my mail now\"); never on your own initiative: Memory already collects on its own while OpenCode runs (every 30 minutes by default). It never asks. It starts the collection in the background and answers at once: started, running (one is already going), or skipped with the reason; the counts appear in mem_spaces health. wait: true waits up to 25 seconds and reports the counts, or the progress so far.",
+      "input": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Collect only this source (gmail, slack, …); default every bound source"
+          },
+          "wait": {
+            "type": "boolean",
+            "description": "true: wait up to 25 seconds and report the counts (the person's explicit request); omitted: answer at once (routines)"
+          }
+        },
+        "additionalProperties": false
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "forget",
+      "description": "Renamed: use mem_revise with \"action\": \"forget\".",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": true
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "promote",
+      "description": "Renamed: use mem_share with \"action\": \"copy\".",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": true
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "status",
+      "description": "Renamed: use mem_spaces with \"action\": \"health\".",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": true
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "grants",
+      "description": "Renamed: use mem_spaces with \"action\": \"access\".",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": true
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    },
+    {
+      "name": "members",
+      "description": "Renamed: use mem_spaces with \"action\": \"members\".",
+      "input": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": true
+      },
+      "options": {
+        "namespace": "mem"
+      }
+    }
+  ]
+}

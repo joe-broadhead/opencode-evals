@@ -65,7 +65,12 @@ export function derivePack(id, directory = pluginRepo(id)) {
     }
   }
   walk(join(directory, "src"))
-  const pluginId = (source.match(/PLUGIN_ID\s*=\s*"([^"]+)"/) ?? [])[1] ?? null
+  // Memory is a dependency-free JS directory plugin, not a TypeScript family build.
+  // Only its declared entrypoint supplies this exception; never infer an id from a checkout name.
+  const memoryEntry = id === "mem" && pkg.name === "@joe-broadhead/opencode-mem" && existsSync(join(directory, "src", "index.js"))
+    ? readFileSync(join(directory, "src", "index.js"), "utf8") : ""
+  const pluginId = (source.match(/PLUGIN_ID\s*=\s*"([^"]+)"/) ?? [])[1]
+    ?? (/export default\s*\{\s*id:\s*"mem"\s*,/.test(memoryEntry) ? "mem" : null)
   // Tools a plugin hides at runtime (`export const HIDDEN_TOOLS = ["sign_out"] as const`): declared, never reachable by a model,
   // so no case is expected for them and the coverage count leaves them out.
   const hiddenNames = new Set([...source.matchAll(/HIDDEN_TOOLS\s*=\s*(?:new Set\(\s*)?\[([^\]]*)\]/g)].flatMap((m) => [...m[1].matchAll(/["']([^"']+)["']/g)].map((n) => n[1])))

@@ -1,0 +1,139 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-mem-wiki-read-p",
+  "plugin": "mem",
+  "skill": "mem.usage",
+  "tier": "T3",
+  "source": null,
+  "decision": null,
+  "data_check": null,
+  "prompt": "Read my Quartz wiki's design.md document and tell me its marker, with no extra text.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 8,
+    "tokens": 64000,
+    "wall_ms": 180000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "action",
+    "query",
+    "kind",
+    "content",
+    "path",
+    "wiki_id",
+    "filename",
+    "what"
+  ],
+  "sets": [
+    "deep",
+    "mem-discovery"
+  ],
+  "status": "deferred",
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "MEM-OC01",
+      "severity": "blocker",
+      "ask": "The request reaches the correct family and the independent synthetic state oracle.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "mem.wiki",
+          "n": 1,
+          "arg": null
+        },
+        {
+          "kind": "call",
+          "tool": "mem.wiki",
+          "n": 1,
+          "arg": "args.action",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "read"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "mem.wiki",
+          "n": 1,
+          "arg": "args.wiki_id",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "wiki-eval-personal"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "mem.wiki",
+          "n": 1,
+          "arg": "args.filename",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "design.md"
+          }
+        },
+        {
+          "kind": "state",
+          "path": "mem.reads.last_text",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "QUARTZ-92"
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "MEM-RT01",
+      "severity": "blocker",
+      "ask": "The final answer states only the verified fixture outcome.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^QUARTZ-92$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 22
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Offline compiler/oracle fixture exists. Actual plugin, tool arguments, catalog/search and receipt compatibility still require container proof.",
+      "line": 26
+    },
+    {
+      "id": null,
+      "text": "direct/search are separate execution conditions, paired within each final baseline/candidate arm, three trials each; no real search measurement exists yet.",
+      "line": 27
+    }
+  ],
+  "hashes": {
+    "source_sha256": "024dd30b3575b45474fa835c49f0a5185c0e46b25e2aaff45cc3d6ee3139d969"
+  }
+}

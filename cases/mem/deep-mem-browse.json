@@ -1,0 +1,128 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-mem-browse",
+  "plugin": "mem",
+  "skill": "mem.usage",
+  "tier": "T3",
+  "source": null,
+  "decision": null,
+  "data_check": null,
+  "prompt": "Show a one-item sample of my records. If there are more, say the sample is partial.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 8,
+    "tokens": 64000,
+    "wall_ms": 180000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "action",
+    "query",
+    "kind",
+    "content",
+    "path",
+    "wiki_id",
+    "filename",
+    "what"
+  ],
+  "sets": [
+    "deep",
+    "mem-discovery"
+  ],
+  "status": "deferred",
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "MEM-OC01",
+      "severity": "blocker",
+      "ask": "The request reaches the correct family and the independent synthetic state oracle.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "mem.recall",
+          "n": 1,
+          "arg": null
+        },
+        {
+          "kind": "call",
+          "tool": "mem.recall",
+          "n": 1,
+          "arg": "args.query",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "*"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "mem.recall",
+          "n": 1,
+          "arg": "args.limit",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 1
+          }
+        },
+        {
+          "kind": "state",
+          "path": "mem.list.more",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "MEM-RT01",
+      "severity": "blocker",
+      "ask": "The final answer states only the verified fixture outcome.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^Partial sample\\.$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 21
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Offline compiler/oracle fixture exists. Actual plugin, tool arguments, catalog/search and receipt compatibility still require container proof.",
+      "line": 25
+    },
+    {
+      "id": null,
+      "text": "direct/search are separate execution conditions, paired within each final baseline/candidate arm, three trials each; no real search measurement exists yet.",
+      "line": 26
+    }
+  ],
+  "hashes": {
+    "source_sha256": "de7c9a89dd296d2de91ad9fdc17a220871413f07279a3d7472a620816a80bb3c"
+  }
+}

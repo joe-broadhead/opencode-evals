@@ -1,0 +1,175 @@
+{
+  "schema": "oc-case/1",
+  "id": "commit-mem-page",
+  "plugin": "mem",
+  "skill": "mem.usage",
+  "tier": "T3",
+  "source": null,
+  "decision": null,
+  "data_check": null,
+  "prompt": "Create a project page for Quartz saying it is a synthetic project.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 8,
+    "tokens": 64000,
+    "wall_ms": 180000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "action",
+    "query",
+    "kind",
+    "content",
+    "path",
+    "wiki_id",
+    "filename",
+    "what"
+  ],
+  "sets": [
+    "commit",
+    "mem-discovery"
+  ],
+  "status": "deferred",
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "MEM-OC01",
+      "severity": "blocker",
+      "ask": "The request reaches the correct family and the independent synthetic state oracle.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "call",
+          "tool": "mem.page",
+          "n": 1,
+          "arg": null
+        },
+        {
+          "kind": "call",
+          "tool": "mem.page",
+          "n": 1,
+          "arg": "args.action",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "write"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "mem.page",
+          "n": 1,
+          "arg": "args.path",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "projects/quartz"
+          }
+        },
+        {
+          "kind": "call",
+          "tool": "mem.page",
+          "n": 1,
+          "arg": "args.content",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "Quartz is a synthetic project."
+          }
+        },
+        {
+          "kind": "state",
+          "path": "mem.personal.pages",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 1
+          }
+        },
+        {
+          "kind": "state",
+          "path": "mem.personal.memories",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 0
+          }
+        },
+        {
+          "kind": "state",
+          "path": "mem.personal.changed",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        },
+        {
+          "kind": "state",
+          "path": "mem.receipts.stored",
+          "op": "==",
+          "value": {
+            "kind": "number",
+            "value": 1
+          }
+        },
+        {
+          "kind": "state",
+          "path": "mem.personal.bodies.page",
+          "op": "==",
+          "value": {
+            "kind": "string",
+            "value": "Quartz is a synthetic project."
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    },
+    {
+      "id": "MEM-RT01",
+      "severity": "blocker",
+      "ask": "The final answer states only the verified fixture outcome.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "text",
+          "span": "any",
+          "op": "matches",
+          "value": {
+            "kind": "regex",
+            "source": "^Stored the Quartz page\\.$",
+            "flags": ""
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 26
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Offline compiler/oracle fixture exists. Actual plugin, tool arguments, catalog/search and receipt compatibility still require container proof.",
+      "line": 30
+    },
+    {
+      "id": null,
+      "text": "direct/search are separate execution conditions, paired within each final baseline/candidate arm, three trials each; no real search measurement exists yet.",
+      "line": 31
+    }
+  ],
+  "hashes": {
+    "source_sha256": "b3f0f88043274613929e79b6851edcc1f9e697bf55b857a987ab7f07a79b70f3"
+  }
+}

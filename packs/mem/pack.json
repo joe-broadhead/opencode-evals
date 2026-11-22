@@ -1,0 +1,186 @@
+{
+  "schema": "oc-pack/1",
+  "id": "mem",
+  "name": "Memory",
+  "package": "@joe-broadhead/opencode-mem",
+  "version": "0.15.13",
+  "private": false,
+  "pluginId": "mem",
+  "rpc": "mem.tools",
+  "skills": [
+    "mem.usage",
+    "mem.pages",
+    "mem.sharing",
+    "mem.sources"
+  ],
+  "skill_meta": {
+    "mem.usage": {
+      "name": "memory",
+      "description_sha256": "706e764e93b504e8b2ff5ebe287a3596b5f61741e266080a8f7ae746a96c536d",
+      "description_chars": 702,
+      "body_lines": 200
+    },
+    "mem.pages": {
+      "name": "memory-pages",
+      "description_sha256": "74601d6251c67fd37473a3c82f320e5c353b22ea3ff41f8001c684ccf9dac30a",
+      "description_chars": 593,
+      "body_lines": 169
+    },
+    "mem.sharing": {
+      "name": "memory-sharing",
+      "description_sha256": "4b6a9929bd19e90da2c48d1532af335ea2527ea35f8e25ae65a96b7893788d50",
+      "description_chars": 526,
+      "body_lines": 121
+    },
+    "mem.sources": {
+      "name": "memory-sources",
+      "description_sha256": "51597c1e2dbd525fdfde3cbaf816b8039a6d53f6e6f1d479030d870b3d741a51",
+      "description_chars": 578,
+      "body_lines": 122
+    }
+  },
+  "tools": [
+    {
+      "name": "recall",
+      "permission": "mem_recall",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "remember",
+      "permission": "mem_remember",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "revise",
+      "permission": "mem_revise",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "page",
+      "permission": "mem_page",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "pages",
+      "permission": "mem_pages",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "commitments",
+      "permission": "mem_commitments",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "share",
+      "permission": "mem_share",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "spaces",
+      "permission": "mem_spaces",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "wiki",
+      "permission": "mem_wiki",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "wikis",
+      "permission": "mem_wikis",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "ingest",
+      "permission": "mem_ingest",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "cursor",
+      "permission": "mem_cursor",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "collect",
+      "permission": "mem_collect",
+      "effect": "allow",
+      "readOnly": false,
+      "class": "write"
+    },
+    {
+      "name": "forget",
+      "permission": "mem_forget",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "promote",
+      "permission": "mem_promote",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "status",
+      "permission": "mem_status",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "grants",
+      "permission": "mem_grants",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    },
+    {
+      "name": "members",
+      "permission": "mem_members",
+      "effect": "allow",
+      "readOnly": true,
+      "class": "read"
+    }
+  ],
+  "counts": {
+    "tools": 18,
+    "reads": 9,
+    "writes": 9,
+    "denied": 0,
+    "skills": 4
+  },
+  "digest": "fc94ca45eaf30b9f26c4cc650f6b4d27e3965f5b811b9a832135acc99e41b277",
+  "t1": [],
+  "profile": false,
+  "source": {
+    "commit": "586dc46a133cada64c584b0506eb3aebbd906b24",
+    "package_sha256": "c8e7cbcd55c22b42d31f5946ec9a896071d09992f0dab109dbd06b52469153c4",
+    "catalog_sha256": "84457ff43cb6c603eb372edda1cca02c07eee268bb9cfb546cfdaea228537be7",
+    "kind": "source-snapshot-not-runtime"
+  }
+}

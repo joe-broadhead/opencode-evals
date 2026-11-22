@@ -1,0 +1,77 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-mem-jobs",
+  "plugin": "mem",
+  "skill": "mem.usage",
+  "tier": "T3",
+  "source": null,
+  "decision": null,
+  "data_check": null,
+  "prompt": "Draft a Memory job for the Quartz project, without activating it.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 8,
+    "tokens": 64000,
+    "wall_ms": 180000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "action",
+    "query",
+    "kind",
+    "content",
+    "path",
+    "wiki_id",
+    "filename",
+    "what"
+  ],
+  "sets": [
+    "deep",
+    "mem-discovery"
+  ],
+  "status": "deferred",
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "MEM-OC01",
+      "severity": "blocker",
+      "ask": "The request reaches the correct family and the independent synthetic state oracle.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "mem.final_schema_bound",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Synthetic jobs.draft transport and durable inactive-state oracle pending.",
+      "line": 19
+    },
+    {
+      "id": null,
+      "text": "direct/search are separate execution conditions, paired within each final baseline/candidate arm, three trials each; no real search measurement exists yet.",
+      "line": 20
+    }
+  ],
+  "hashes": {
+    "source_sha256": "2eb44a73d75d55d72c064baef13c5db233da8c973bb80d800a0a71180ed4e670"
+  }
+}

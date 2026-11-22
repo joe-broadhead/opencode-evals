@@ -1,0 +1,77 @@
+{
+  "schema": "oc-case/1",
+  "id": "deep-mem-skills-p",
+  "plugin": "mem",
+  "skill": "mem.usage",
+  "tier": "T3",
+  "source": null,
+  "decision": null,
+  "data_check": null,
+  "prompt": "Show the saved Quartz skill's version history.",
+  "controls": [],
+  "budgets": {
+    "outer_calls": 8,
+    "inner_calls": 8,
+    "tokens": 64000,
+    "wall_ms": 180000
+  },
+  "seed": null,
+  "expect": "pass",
+  "holdout": false,
+  "checkable": [
+    "action",
+    "query",
+    "kind",
+    "content",
+    "path",
+    "wiki_id",
+    "filename",
+    "what"
+  ],
+  "sets": [
+    "deep",
+    "mem-discovery"
+  ],
+  "status": "deferred",
+  "data": "synthetic",
+  "items": [
+    {
+      "id": "MEM-OC01",
+      "severity": "blocker",
+      "ask": "The request reaches the correct family and the independent synthetic state oracle.",
+      "forbidden": false,
+      "grader": "code",
+      "evidence": [
+        {
+          "kind": "state",
+          "path": "mem.final_schema_bound",
+          "op": "==",
+          "value": {
+            "kind": "boolean",
+            "value": true
+          }
+        }
+      ],
+      "evidence_any": [],
+      "na_when": [],
+      "maps_to": [],
+      "line": 15
+    }
+  ],
+  "oracle": [],
+  "notes": [
+    {
+      "id": null,
+      "text": "Final stored-skills read schemas and fixture contract pending; not wiki versions.",
+      "line": 19
+    },
+    {
+      "id": null,
+      "text": "direct/search are separate execution conditions, paired within each final baseline/candidate arm, three trials each; no real search measurement exists yet.",
+      "line": 20
+    }
+  ],
+  "hashes": {
+    "source_sha256": "5bf2cffc28b255e1a971945ee807bf96c3daa8e84a551683ff6438102d5fa4f7"
+  }
+}

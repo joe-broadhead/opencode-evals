@@ -4,8 +4,9 @@
 // test.
 
 import { chartsState } from "./charts.mjs"
+import { memState } from "./mem.mjs"
 
-const ADAPTERS = { charts: chartsState }
+const ADAPTERS = { charts: chartsState, mem: memState }
 
 /** The derived state of one run, or null when the plugin has no adapter or the run has no files record. */
 export function adapterState(plugin, files) {
@@ -14,4 +15,4 @@ export function adapterState(plugin, files) {
 }
 
 /** The adapter files, for the grader hash: a change to one can change a verdict. */
-export const ADAPTER_FILES = ["src/grade/adapters/index.mjs", "src/grade/adapters/charts.mjs"]
+export const ADAPTER_FILES = ["src/grade/adapters/index.mjs", "src/grade/adapters/charts.mjs", "src/grade/adapters/mem.mjs"]

@@ -1,0 +1,9 @@
+{
+  "plugin": "mem",
+  "epoch": 1,
+  "cases": 24,
+  "items": 36,
+  "cases_sha256": "d7434c0404137a57e973011fce3b52dd5d068dd40059b3840b19174f6116e012",
+  "grader_sha256": "0890e1bb61321ef9225e60bbe1a746c8925aa31d80ba3ad6d657f5f2cef134ca",
+  "frozen_at": "2026-11-22T10:09:19.850Z"
+}
