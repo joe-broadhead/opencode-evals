@@ -11,6 +11,7 @@ import {gradeCase,runView} from "../src/grade/grade.mjs"
 import {adapterState} from "../src/grade/adapters/index.mjs"
 import {createDiscoveryStore} from "../worlds/mem/discovery-store.mjs"
 import {discoveryResponse,discoveryRoute} from "../worlds/mem/discovery-http.mjs"
+import {normalizedDiscovery} from "./support/mem-discovery-flow.mjs"
 
 test("one validated selector separates core/discovery IDs and stages actual finite discovery plans without execution",()=>{
   for(const s of discoveryCases){
@@ -37,14 +38,16 @@ test("all 24 real HTTP method projections reach the same finite backend; gateway
 test("finite read contracts reject unknown fields, foreign resources, changed cursor queries and malformed pagination",()=>{
   for(const s of discoveryCases.filter(s=>!s.write)){
     const store=createDiscoveryStore({spec:s,intent:selectMemoryPlan(s.id,{trial_id:"trial_input",expires_at:Date.now()+60000}).intent})
-    assert.notEqual(store.request(s.backend.method,{...s.backend.input,unknown:true}).status,200,s.id)
+    const context={case_id:s.id,trial_id:"trial_input",turn:1,session:"ses_input",active:true}
+    assert.notEqual(store.request(s.backend.method,{...s.backend.input,unknown:true},{context}).status,200,s.id)
     store.close()
   }
   const s=discoveryCases.find(s=>s.family==="browse"),store=createDiscoveryStore({spec:s,intent:selectMemoryPlan(s.id,{trial_id:"trial_cursor",expires_at:Date.now()+60000}).intent})
-  const first=store.request("records.list",{limit:1}).json;assert.equal(first.more,true)
-  const second=store.request("records.list",{limit:1,cursor:first.cursor});assert.equal(second.status,200);assert.equal(second.json.more,false);assert.equal(second.json.records[0].body,"Quartz other fact. QREC-OTHER-28.")
-  for(const input of [{limit:2,cursor:first.cursor},{limit:1,status:"all",cursor:first.cursor},{limit:1,cursor:first.cursor.replace("personal","shared")},{limit:1,cursor:"discovery:personal:NaN"}])assert.notEqual(store.request("records.list",input).status,200)
-  for(const [method,input]of [["skill.versions",{skill_id:"skill-quartz",pagination:{limit:49,offset:0}}],["skill.versions",{skill_id:"skill-quartz",pagination:{limit:50,offset:-1}}],["wiki.graph",{wiki_id:"wiki-eval-shared"}],["code-graph.callers",{code_graph_id:"unknown",symbol:"parseInvoice"}]])assert.notEqual(store.request(method,input).status,200)
+  const context={case_id:s.id,trial_id:"trial_cursor",turn:1,session:"ses_cursor",active:true}
+  const first=store.request("records.list",{limit:1},{context}).json;assert.equal(first.more,true)
+  const second=store.request("records.list",{limit:1,cursor:first.cursor},{context});assert.equal(second.status,200);assert.equal(second.json.more,false);assert.equal(second.json.records[0].body,"Quartz other fact. QREC-OTHER-28.")
+  for(const input of [{limit:2,cursor:first.cursor},{limit:1,status:"all",cursor:first.cursor},{limit:1,cursor:first.cursor.replace("personal","shared")},{limit:1,cursor:"discovery:personal:NaN"}])assert.notEqual(store.request("records.list",input,{context}).status,200)
+  for(const [method,input]of [["skill.versions",{skill_id:"skill-quartz",pagination:{limit:49,offset:0}}],["skill.versions",{skill_id:"skill-quartz",pagination:{limit:50,offset:-1}}],["wiki.graph",{wiki_id:"wiki-eval-shared"}],["code-graph.callers",{code_graph_id:"unknown",symbol:"parseInvoice"}]])assert.notEqual(store.request(method,input,{context}).status,200)
   store.close()
 })
 test("native capture handoff attaches only supplied turns to actual finite-store bytes and requires teardown confirmation",async()=>{
@@ -55,13 +58,13 @@ test("native capture handoff attaches only supplied turns to actual finite-store
       const context={case_id:s.id,trial_id:"trial_capture",turn:1,session:"ses_capture",active:true},invocation={...context,tool:`mem_${s.binding.tool}`,args:s.binding.args,pass:true}
       const reply=store.request(s.backend.method,s.backend.input,{context,invocation})
       writeFileSync(join(stage.root,"capture.json"),JSON.stringify(store.capture()));store.close()
-      const turns=[{index:1,prompt:s.prompt,session:"ses_capture",exit:0,timedOut:false,text:s.answer,calls:[{tool:invocation.tool,args:invocation.args,status:"completed",output:JSON.stringify(reply.json)}]}]
+      const normalized=normalizedDiscovery([{tool:invocation.tool,args:invocation.args,status:"completed",output:JSON.stringify(reply.json)}],s,"direct","ses_capture"),turns=[normalized.turn]
       // Synthetic trial.gone stand-in, never a claim that a real container ran.
       await assert.rejects(()=>memCaptureRecord(stage,{gone:async()=>false},turns),/removal unverified/)
       const file=await memCaptureRecord(stage,{gone:async()=>true},turns),capture=JSON.parse(file.text)
       assert.deepEqual(capture.discovery.state,store.capture().after)
       assert.deepEqual(capture.discovery.turns,turns)
-      const grade=gradeCase(compileCase(`${s.id}.md`,renderDiscoveryCase(s)),runView([{schema:"oc-trace/1"},{kind:"tool_call",seq:1,tool:invocation.tool,args:invocation.args,via:"direct"}],{state:adapterState("mem",[file]),text:s.answer,guardLog:[{kind:"guard_start",case_id:s.id,trial_id:"trial_capture"}]}))
+      const grade=gradeCase(compileCase(`${s.id}.md`,renderDiscoveryCase(s)),runView([{schema:"oc-trace/1"},...normalized.trace],{state:adapterState("mem",[file]),text:s.answer,guardLog:[{kind:"guard_start",case_id:s.id,trial_id:"trial_capture"}]}))
       assert.equal(grade.verdict,"PASS",`${s.id}: ${JSON.stringify(grade)}`)
     }finally{rmSync(root,{recursive:true,force:true})}
   }
@@ -80,11 +83,12 @@ test("source-owned record metadata survives the wire projection, while content, 
 })
 test("548 public client projections use code search limit, real wiki rows and bounded skill offsets, not guessed parameter aliases",()=>{
   const s=discoveryCases.find(s=>s.family==="code"),store=createDiscoveryStore({spec:s,intent:selectMemoryPlan(s.id,{trial_id:"trial_client",expires_at:Date.now()+60000}).intent})
-  assert.equal(store.request("code-graph.search",{code_graph_id:"code-quartz",query:"parseInvoice",limit:20}).status,200)
-  assert.notEqual(store.request("code-graph.search",{code_graph_id:"code-quartz",query:"parseInvoice",top_k:20}).status,200)
-  const rows=store.request("wiki.list",{}).json.items;assert.equal(rows.length,1);assert.equal(rows[0].wiki_id,"wiki-eval-personal")
-  const assets=store.request("meta.asset.list-accessible",{asset_type:"llm_wiki"}).json.items;assert.equal(assets.length,1);assert.equal(assets[0].content_ref,"wiki-eval-personal")
-  assert.equal(store.request("skill.list",{filters:{},pagination:{limit:100,offset:1}}).json.items.length,0)
-  assert.equal(store.request("skill.versions",{skill_id:"skill-quartz",pagination:{limit:50,offset:2}}).json.items.length,0)
+  const context={case_id:s.id,trial_id:"trial_client",turn:1,session:"ses_client",active:true}
+  assert.equal(store.request("code-graph.search",{code_graph_id:"code-quartz",query:"parseInvoice",limit:20},{context}).status,200)
+  assert.notEqual(store.request("code-graph.search",{code_graph_id:"code-quartz",query:"parseInvoice",top_k:20},{context}).status,200)
+  const rows=store.request("wiki.list",{},{context}).json.items;assert.equal(rows.length,1);assert.equal(rows[0].wiki_id,"wiki-eval-personal")
+  const assets=store.request("meta.asset.list-accessible",{asset_type:"llm_wiki"},{context}).json.items;assert.equal(assets.length,1);assert.equal(assets[0].content_ref,"wiki-eval-personal")
+  assert.equal(store.request("skill.list",{filters:{},pagination:{limit:100,offset:1}},{context}).json.items.length,0)
+  assert.equal(store.request("skill.versions",{skill_id:"skill-quartz",pagination:{limit:50,offset:2}},{context}).json.items.length,0)
   store.close()
 })
