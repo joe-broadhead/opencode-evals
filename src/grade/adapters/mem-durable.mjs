@@ -102,6 +102,7 @@ export function readonlyProofFailure(core) {
 
 const text = (s) => String(s).replace(/\s+/g, " ").trim().toLowerCase()
 const sha = (s) => createHash("sha256").update(s).digest("hex")
+// State/operation predicates do not depend on successful native-call coverage.
 // These are the two document instructions, not a selector over arbitrary state JSON or an answer fallback.
 export function wikiWriteProofFailure(core) {
   if (core.proof_schema !== "oc-mem-durable-proof/2" || !completeState(core.before) || !completeState(core.state) || !Array.isArray(core.operations) || core.operations.some((o)=>!plain(o))) return "typed RAW document proof is missing"
@@ -111,9 +112,6 @@ export function wikiWriteProofFailure(core) {
   if (core.before.knowledge.length || wikis.length !== 1) return "the requested new wiki is not the only created wiki"
   const wiki = wikis[0], id = wiki.knowledge_id, file = "README.md"
   if (typeof id !== "string" || !id || wiki.space !== "personal" || wiki.name !== "Core Notes") return "wiki resource/name/private scope differs"
-  const native = core.turns.map((t) => t.calls.filter((c) => /^(?:mem_|mem\.)wiki$/.test(c.tool)))
-  const called = (turn, actions) => native[turn - 1].find((c) => c.status === "completed" && plain(c.args) && actions.includes(c.args.action) && (turn === 1 ? c.args.name === "Core Notes" && (c.args.filename === undefined || c.args.filename === file) : c.args.wiki_id === id && c.args.filename === file))
-  if (!called(1, ["create"]) || !called(2, ["append"]) || !called(3, ["read", "search"])) return "successful typed create/append/read calls are missing"
   const ops = core.operations
   const scope = (o, turn) => o.binding === "bound" && o.case_id === core.case_id && typeof core.trial_id === "string" && core.trial_id && o.trial_id === core.trial_id && typeof o.call_id === "string" && o.call_id && o.request_session === o.session && o.turn === turn && o.session === core.turns[turn-1].session && o.space === "personal" && o.wiki_id === id
   const select = (turn, operation, status) => ops.filter((o) => scope(o,turn) && o.operation === operation && o.status === status && o.filename === file)
@@ -128,7 +126,6 @@ export function wikiWriteProofFailure(core) {
   const required = new Set([create[0],a,b,read[0]])
   if (ops.some((o)=>!required.has(o) && !([1,2].includes(o.turn) && scope(o,o.turn) && o.filename===file && o.status==="read" && ["wiki.raw.read","wiki.page.read"].includes(o.operation) && [a,b].some((v)=>o.body===v.body&&o.version===v.version&&o.revision===v.revision)))) return "unrelated, failed, or extra non-read operations occurred"
   if (raw !== b.body || version?.digest !== b.version || version?.revision !== b.revision || r.body !== raw || r.version !== b.version || r.revision !== b.revision) return "final RAW state and readback are not the appended document/version"
-  if (!text(called(3, ["read", "search"]).output).includes(text(raw))) return "native read output does not contain the final document body"
   // The user authorized one private document, not records or content in another family/space.
   const before = metadataOnly(core.before, core.before), after = metadataOnly(core.state, core.before)
   if (!before || !after) return "invalid durable snapshot"
@@ -140,4 +137,23 @@ export function wikiWriteProofFailure(core) {
   delete before.assets; delete after.assets
   if (canonical(before) !== canonical(after)) return "wiki-only request changed another durable family/space"
   return null
+}
+
+// Called only after the independent state/operation proof. Each obligation uses
+// its own turn's coverage. An unavailable turn cannot erase another turn's error.
+export function wikiWriteCallEvidence(core) {
+  const wiki=core.state.knowledge[0],file="README.md",successful=[]
+  let unavailable=false
+  for(const [index,actions]of [["create"],["append"],["read","search"]].entries()){
+    const turn=core.turns[index],calls=turn.calls.filter(c=>/^(?:mem_|mem\.)wiki$/.test(c.tool))
+    const called=calls.find(c=>c.status==="completed"&&plain(c.args)&&actions.includes(c.args.action)&&(index===0?c.args.name==="Core Notes"&&(c.args.filename===undefined||c.args.filename===file):c.args.wiki_id===wiki.knowledge_id&&c.args.filename===file))
+    successful[index]=called
+    if(called)continue
+    if(calls.some(c=>c.status==="error"||c.status==="completed"))return {state:"fail",detail:`wiki turn ${index+1} has no successful invocation with the required input`}
+    if(turn.calls_complete===false||calls.some(c=>c.status!=="completed"&&c.status!=="error"))unavailable=true
+    else return {state:"fail",detail:`wiki turn ${index+1} has no required invocation`}
+  }
+  // Output attribution needs the successful read, but not successful write captures.
+  if(successful[2]&&!text(successful[2].output).includes(text(wiki.raw[file])))return {state:"fail",detail:"native read output does not contain the final document body"}
+  return unavailable?{state:"unverifiable",detail:"successful wiki invocation coverage is unavailable"}:{state:"ok"}
 }

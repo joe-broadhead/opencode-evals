@@ -9,7 +9,7 @@ export function resolvedMemoryArgs(v){
 function skip(code,i){
   const q=code[i]
   if(['"',"'","`"].includes(q)){for(let j=i+1;j<code.length;j++){if(code[j]==="\\")j++;else if(code[j]===q)return j+1}return code.length}
-  if(code.slice(i,i+2)==="//"){const n=code.indexOf("\n",i+2);return n<0?code.length:n+1}
+  if(code.slice(i,i+2)==="//"){const n=code.slice(i+2).search(/[\n\r\u2028\u2029]/);return n<0?code.length:i+2+n+1}
   if(code.slice(i,i+2)==="/*"){const n=code.indexOf("*/",i+2);return n<0?code.length:n+2}
   return i
 }
@@ -25,7 +25,7 @@ export function closedMemorySites(code){
     const open=i+m[0].length-1;let depth=1,end=open+1
     for(;end<code.length;end++){const n=skip(code,end);if(n!==end){end=n-1;continue}if(code[end]==="(")depth++;if(code[end]===")"&&--depth===0)break}
     const raw=code.slice(open+1,end),site=extractInnerCalls(`${m[0]}${raw})`)[0]
-    if(site){const literal=raw.trim().startsWith("{")&&!raw.includes("${")?readLiteral(raw):{ok:false};out.push({...site,args:literal.ok?literal.value:undefined,parsed:Boolean(depth===0&&literal.ok&&resolvedMemoryArgs(literal.value))})}
+    if(site){const literal=!raw.includes("${")?readLiteral(raw,{complete:true}):{ok:false},object=literal.ok&&literal.value!==null&&typeof literal.value==="object"&&!Array.isArray(literal.value);out.push({...site,args:object?literal.value:undefined,parsed:Boolean(depth===0&&object&&resolvedMemoryArgs(literal.value))})}
     i=end+1
   }
   return unsettled?out.map(site=>({...site,parsed:false})):out

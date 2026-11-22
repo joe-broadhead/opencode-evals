@@ -5,6 +5,7 @@ import { coreCases, bindCoreSeed } from "../packs/mem/core.mjs"
 import { memoryCoreEvidence, coreAssertionFailures } from "../src/grade/adapters/mem-core.mjs"
 import { enrichSyntheticCoreProof } from "./support/mem-core-proof.mjs"
 import { memoryTurn } from "../src/run/mem-turns.mjs"
+import { captureNativeCall } from "./support/mem-native-observation.mjs"
 
 function gold(id) {
   const spec=coreCases.find((s)=>s.original_id===id)
@@ -64,15 +65,16 @@ test("H2: only the same private RAW README with successful version-linked create
   for(const [i,mutate]of mutations.entries()){const g=gold("core-wiki-write");mutate(g.core);assert.equal(verdict(g),"fail",`H2 variant ${i}`)}
 })
 
-test("M3: required action is proved by typed invocation arguments, never Code Mode comments or unparsed source",()=>{
+test("M3: required action is proved by actual typed invocations, never Code Mode source",async()=>{
   const g=gold("core-wiki-write")
   const assertion=g.spec.assertions.find((a)=>a.type==="expectToolArgs")
-  const event=(code)=>memoryTurn({code:0,stdout:JSON.stringify({type:"tool_use",sessionID:"ses_second",part:{tool:"execute",state:{input:{code},status:"completed",output:"body"}}})},{index:3,prompt:g.core.turns[2].prompt})
+  const event=(code,memoryCalls)=>memoryTurn({code:0,stdout:JSON.stringify({type:"tool_use",sessionID:"ses_second",part:{tool:"execute",state:{input:{code},status:"completed",output:"body"}}}),...(memoryCalls?{memoryCalls}:{})},{index:3,prompt:g.core.turns[2].prompt})
+  const observed=await captureNativeCall({tool:"mem_wiki",input:{action:"read",wiki_id:"wiki-gold",filename:"README.md"},output:"body",context:{case_id:"core-wiki-write",trial_id:"trial_review_read",turn:3,session:"ses_second",activation_id:"review_read_activation",active:true}})
   for(const turn of [
     {...g.core.turns[2],calls:[{tool:"mem_wiki",args:{action:"read",wiki_id:"wiki-gold"}}]},
-    event('return await tools.mem.wiki({action:"read",wiki_id:"wiki-gold"})'),
+    event('return await tools.mem.wiki({action:"read",wiki_id:"wiki-gold"})',observed.calls),
   ])assert.deepEqual(coreAssertionFailures(assertion,{...g.core,turns:[...g.core.turns.slice(0,2),turn]}),[])
-  for(const turn of [event('// action: "read"\nreturn await tools.mem.wiki({action:"status",wiki_id:"wiki-gold"})'),event('return await tools.mem.wiki(uninterpretableArgs)')]) {
+  for(const turn of [event('return await tools.mem.wiki({action:"read",wiki_id:"wiki-gold"})'),event('// action: "read"\nreturn await tools.mem.wiki({action:"status",wiki_id:"wiki-gold"})'),event('return await tools.mem.wiki(uninterpretableArgs)')]) {
     assert.ok(coreAssertionFailures(assertion,{...g.core,turns:[...g.core.turns.slice(0,2),turn]}).length)
   }
 })

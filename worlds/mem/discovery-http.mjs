@@ -11,15 +11,23 @@ export function discoveryResponse(store,{method,path,headers={},body={}},{contex
   if(typeof path!=="string"||path.includes("%")||path.includes("..")||!/^\/[A-Za-z0-9_./?=&-]+$/.test(path))return result(400,{error:{code:"invalid_path"}})
   const url=new URL(path,"http://synthetic.invalid");path=url.pathname
   if(!body||typeof body!=="object"||Array.isArray(body)||Object.keys(body).some(k=>["role","actor","authorization","token","readOnly","space","owner","user"].includes(k)))return result(400,{error:{code:"invalid_input"}})
-  let space=headers["x-mem-space-id"]?SPACES[headers["x-mem-space-id"]]:"personal"
-  if(!space)return result(403,{error:{code:"scope_denied"}})
+   let space=headers["x-mem-space-id"]?SPACES[headers["x-mem-space-id"]]:"personal"
+   if(!space)return result(403,{error:{code:"scope_denied"}})
+   if(headers["x-tdai-session-id"]!==undefined&&headers["x-tdai-session-id"]!==context?.session)return result(403,{error:{code:"foreign_session"}})
+   // Only these metadata routes bootstrap client context. They never dispatch a content read.
+   if(["/v1/context","/v1/spaces","/v1/grants","/v1/resources"].includes(path)){
+     const lifetime=store.checkLifetime(context)
+     if(lifetime.status!==200)return lifetime
+     if([...url.searchParams.keys()].some(k=>k!=="user_id")||url.searchParams.has("user_id")&&url.searchParams.get("user_id")!=="eval")return result(403,{error:{code:"identity_denied"}})
+     if(Object.keys(body).some(k=>!(path==="/v1/context"?["space_id","user_id"]:[]).includes(k)))return result(400,{error:{code:"invalid_bootstrap_input"}})
+   }
   if(path==="/v1/context"&&method==="POST"){
     if(body.space_id){const selected=SPACES[body.space_id];if(!selected)return result(403,{error:{code:"scope_denied"}});space=selected}
     if(body.user_id&&body.user_id!=="eval")return result(403,{error:{code:"identity_denied"}})
     return result(200,{user_id:"eval",space:{id:`eval-space-${space}`,name:space==="personal"?"Personal Workspace":"Shared Workspace",kind:space,role:space==="personal"?"owner":"viewer"},collection:{id:`eval-collection-${space}`,name:"Synthetic collection"},placement:{container_id:`eval-container-${space}`,cell_id:"eval-cell",service_id:"eval-service"},session:{space_id:`eval-space-${space}`},personal_space:{id:"eval-space-personal",name:"Personal Workspace",kind:"personal"}})
   }
   if(path==="/v1/spaces"&&method==="GET"){if(url.searchParams.has("user_id")&&url.searchParams.get("user_id")!=="eval")return result(403,{error:{code:"identity_denied"}});return result(200,{spaces:[{id:"eval-space-personal",name:"Personal Workspace",kind:"personal",role:"owner"},{id:"eval-space-shared",name:"Shared Workspace",kind:"shared",role:"viewer"}]})}
-  if((path.startsWith("/v1/grants")||path.startsWith("/v1/resources"))&&method==="GET")return result(200,path.startsWith("/v1/grants")?{grants:[]}:{resources:[]})
+   if(["/v1/grants","/v1/resources"].includes(path)&&method==="GET")return result(200,path==="/v1/grants"?{grants:[]}:{resources:[]})
   const rawInventory=method==="POST"&&["/v3/tools/call","/core/v3/tools/call","/knowledge/v3/tools/call"].includes(path)
   const op=rawInventory?"wiki.raw.list":discoveryRoute(method,path)
   if(!op)return result(404,{error:{code:"unsupported_operation"}})

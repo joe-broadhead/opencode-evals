@@ -74,3 +74,37 @@ test("M6 presentation cannot change a clause, substitute metadata, replace prefi
   replaced.core.operations[2].body="The gateway resolves context before routing.\n\nThe control plane uses PostgreSQL for PITR."
   assert.equal(grade(replaced).state,"fail")
 })
+
+test("M3 each missing wiki call blocks only its own coverage, never independent durable invariants",()=>{
+  const violations=[
+    ["unrequested shared record",c=>c.state.records.push({id:"rec_unrequested",kind:"memory",space_id:"shared",body:"Unauthorized"})],
+    ["append digest",c=>c.operations[2].version="wrong-version"],
+    ["initial digest",c=>c.operations[1].version="wrong-version"],
+    ["append prefix",c=>c.operations[2].before_body="wrong-prefix"],
+    ["foreign read session",c=>c.operations[3].request_session="ses_foreign"],
+    ["final RAW",c=>c.state.knowledge[0].raw["README.md"]="Wrong final body"],
+    ["readback version",c=>c.operations[3].version="wrong-version"],
+    ["extra operation",c=>c.operations.push({...c.operations[2],operation:"records.put"})],
+    ["extra RAW file",c=>c.state.knowledge[0].raw["other.md"]="Unrequested"],
+    ["foreign asset",c=>c.state.assets.push({asset_id:"foreign",visibility:"public"})],
+  ]
+  assert.equal(grade(write()).state,"ok")
+  for(const missing of [0,1,2]){
+    const absent=c=>{c.turns[missing].calls=[];c.turns[missing].calls_complete=false}
+    const control=write();absent(control.core)
+    assert.equal(grade(control).state,"unverifiable",`missing call ${missing+1} alone`)
+    for(const [name,violate]of violations){
+      const known=write();violate(known.core);assert.equal(grade(known).state,"fail",name)
+      const partial=write();violate(partial.core);absent(partial.core)
+      assert.equal(grade(partial).state,"fail",`${name}; missing call ${missing+1}`)
+    }
+    for(const failed of [0,1,2].filter(i=>i!==missing)){
+      const g=write();g.core.turns[failed].calls[0].status="error";absent(g.core)
+      assert.equal(grade(g).state,"fail",`observed error ${failed+1}; missing call ${missing+1}`)
+    }
+    if(missing!==2){
+      const g=write();g.core.turns[2].calls[0].output="Different document";absent(g.core)
+      assert.equal(grade(g).state,"fail",`known wrong readback; missing call ${missing+1}`)
+    }
+  }
+})
