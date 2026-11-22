@@ -28,6 +28,12 @@ export function createBaselineProof(initial,control,intent) {
   const bound=(event)=>{
     const {context:c,invocation:v,request_session:s}=event
     const family=event.path.startsWith("/v3/wiki/")?"wiki":event.path==="/records/v1/records.put"?"remember":null
+    if(c?.schema==="oc-mem-native-activation/1"||v?.schema==="oc-mem-native-receipt/1"){
+      const nonempty=x=>typeof x==="string"&&x.length>0
+      if(c?.schema!=="oc-mem-native-activation/1"||v?.schema!=="oc-mem-native-receipt/1"||!Number.isSafeInteger(c.trial)||c.trial<1||!Number.isSafeInteger(c.incarnation)||c.incarnation<1||!["activation_id","generation"].every(k=>nonempty(c[k]))||!["activation_id","incarnation","trial","generation"].every(k=>v[k]===c[k])||!nonempty(v.invocation_id)||v.native?.sessionID!==s||v.native?.id!==v.call_id||!nonempty(v.native?.messageID)||v.expires_at!==intent?.expires_at||!(v.expires_at>Date.now()))return false
+      const mutation=["/v3/wiki/create","/v3/wiki/raw/write","/records/v1/records.put"].includes(event.path)
+      if(mutation&&(!nonempty(v.operation_id)||!nonempty(v.reservation_id)||v.grant_id!==JSON.stringify([c.case_id,c.trial_id,c.turn,v.operation_id])))return false
+    }
     return Boolean(intent&&intent.expires_at>Date.now()&&c?.active===true&&c.case_id===intent.case_id&&c.trial_id===intent.trial_id&&intent.turns.some(t=>t.index===c.turn)&&typeof s==="string"&&s&&s===c.session&&v?.pass===true&&v.active===true&&v.case_id===c.case_id&&v.trial_id===c.trial_id&&v.turn===c.turn&&v.session===s&&v.family===family&&typeof v.call_id==="string"&&v.call_id)
   }
   function creator(event,id,family) {
@@ -35,7 +41,8 @@ export function createBaselineProof(initial,control,intent) {
     if(!bound(event)||v.family!==family||typeof id!=="string")return
     const requested=intent.turns.find(t=>t.index===c.turn)?.calls.find(x=>x.creates&&x.family===family&&(isDeepStrictEqual(x.args,v.args)||(intent.case_id==="core-wiki-write"&&family==="wiki"&&coreWikiIntentPayloadMatches(x.args,v.args))))
     if(!requested||creators.some(x=>x.alias===requested.creates))return
-    creators.push({alias:requested.creates,id,family,args:structuredClone(v.args),case_id:intent.case_id,trial_id:intent.trial_id,turn:c.turn,session:c.session,call_id:v.call_id,status:"stored"})
+    const reservation=v.schema==="oc-mem-native-receipt/1"?{schema:"oc-mem-native-creator/1",trial:v.trial,activation_id:v.activation_id,incarnation:v.incarnation,generation:v.generation,invocation_id:v.invocation_id,occurrence:v.occurrence,operation_id:v.operation_id,grant_id:v.grant_id,reservation_id:v.reservation_id}:{}
+    creators.push({alias:requested.creates,id,family,args:structuredClone(v.args),case_id:intent.case_id,trial_id:intent.trial_id,turn:c.turn,session:c.session,call_id:v.call_id,status:"stored",...reservation})
   }
   function observe(event) {
     const {path,input,response,before,after,space,context}=event,payload=response.json?.data??response.json

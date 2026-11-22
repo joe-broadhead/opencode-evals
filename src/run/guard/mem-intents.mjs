@@ -24,6 +24,10 @@ function resolveArgs(args, policy) {
     const requested = policy.memoryIntent.turns.find((t) => t.index === creator?.turn)?.calls.find((c) => c.creates === value && c.family===creator.family && payloadMatches(policy,c.family,c.args,creator.args))
     const scopes=creator?.family==="wiki"?policy.memoryBinding.wiki_spaces:policy.memoryBinding.record_spaces
     if (!creator || !requested || creator.family !== requested.family || typeof creator.id !== "string" || scopes?.[creator.id]!=="spc-eval-personal" || typeof creator.session!=="string" || typeof creator.call_id!=="string" || !creator.call_id) return null
+    if(policy.memoryOperationPlan){
+      const use=policy.memoryOperationPlan.turns.find(t=>t.index===creator.turn)?.uses.find(u=>u.id===creator.operation_id)
+      if(creator.schema!=="oc-mem-native-creator/1"||creator.trial!==policy.memoryContext.trial||!Number.isSafeInteger(creator.incarnation)||creator.incarnation<1||creator.incarnation>policy.memoryContext.incarnation||!["activation_id","generation","invocation_id","reservation_id"].every(k=>typeof creator[k]==="string"&&creator[k])||creator.grant_id!==JSON.stringify([creator.case_id,creator.trial_id,creator.turn,creator.operation_id])||!use?.alternatives.some(a=>a.creates===value&&a.family===creator.family&&payloadMatches(policy,a.family,a.args,creator.args)))return null
+    }
     out[k] = creator.id
   }
   return out
@@ -33,4 +37,9 @@ export function memoryIntentAllows(policy, call, input, session) {
   if(call.family==="spaces"&&call.write&&key(spacesDiscoveryIntent(policy.memoryIntent.case_id))!==key(input))return false
   const turn = policy.memoryIntent.turns.find((t) => t.index === policy.memoryContext.turn)
   return turn.calls.some((c) => c.family === call.family && payloadMatches(policy,c.family,resolveArgs(c.args, policy),input))
+}
+
+// An operation-use alternative is checked by the same sealed payload/creator rules.
+export function memoryIntentAlternativeMatches(policy, alternative, call, input, session) {
+  return memoryIntentAllows(policy,call,input,session) && alternative.family===call.family && payloadMatches(policy,call.family,resolveArgs(alternative.args,policy),input)
 }
