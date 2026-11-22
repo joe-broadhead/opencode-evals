@@ -23,50 +23,64 @@ export async function main(argv, { env = process.env, adapter = processAdapter()
   if (typeof env.OPENCODE_API_KEY !== "string" || !env.OPENCODE_API_KEY.trim()) throw new Error("OPENCODE_API_KEY is required")
   const worker = argv[0] === "--worker"
   if (argv.length !== 2 || !["--manifest", "--worker"].includes(argv[0])) throw new Error("usage: run-mem-wave.mjs --manifest /absolute/reviewed-wave.json")
-  if (worker && !process.connected) throw new Error("worker requires its supervising parent IPC channel")
-  // The parent releases this gate only after persisting the exact new PGID.
-  if (worker) await new Promise((resolve, reject) => {
-    process.once("message", value => value?.type === "start" ? resolve() : reject(new Error("invalid worker start")))
-    process.once("disconnect", () => reject(new Error("supervisor disconnected before start")))
-  })
-  const bytes = readFileSync(argv[1]), manifestSha = sha256(bytes), wave = JSON.parse(bytes)
-  if (bytes.includes(Buffer.from(env.OPENCODE_API_KEY))) throw new Error("credential must not occur in manifest")
-  if (worker && env.MEM_WAVE_MANIFEST_SHA !== manifestSha) throw new Error("frozen manifest changed")
-  let stop = false
+  let stop = false, channelLost = false
   const onSignal = () => { stop = true }
-  process.on("SIGINT", onSignal); process.on("SIGTERM", onSignal)
-  const verify = () => {
-    if (sha256(readFileSync(argv[1])) !== manifestSha) throw new Error("manifest changed")
-    // Pure qualification must finish before even the Git identity subprocess is considered.
-    const qualified = qualify(wave, { harnessSha: wave.harness_sha, launcherNodeSha: sha256(readFileSync(realpathSync(process.execPath))) })
-    if (qualified.execution_qualified !== true) throw new Error("native recorder handshake is not qualified")
-    if (adapter.supervisionAvailable === false) throw new Error("incarnation-bound process-group supervision is unavailable")
-    const checked = qualify(wave, identity())
-    if (checked.execution_qualified !== true) throw new Error("runtime qualification changed")
-    return checked
+  const onDisconnect = () => { channelLost = true }
+  const stopRequested = () => {
+    if (worker && !process.connected) channelLost = true
+    return stop || channelLost
   }
+  if (worker) process.on("disconnect", onDisconnect)
   try {
+    if (worker && stopRequested()) throw new Error("worker requires its supervising parent IPC channel")
+    // The start gate is temporary; channel loss remains sticky until the worker exits.
+    if (worker) await new Promise((resolve, reject) => {
+      const finish = error => {
+        process.removeListener("message", onStart)
+        process.removeListener("disconnect", beforeStartDisconnect)
+        if (error) reject(error)
+        else resolve()
+      }
+      const onStart = value => finish(value?.type === "start" ? null : new Error("invalid worker start"))
+      const beforeStartDisconnect = () => finish(new Error("supervisor disconnected before start"))
+      process.once("message", onStart)
+      process.once("disconnect", beforeStartDisconnect)
+    })
+    process.on("SIGINT", onSignal); process.on("SIGTERM", onSignal)
+    const bytes = readFileSync(argv[1]), manifestSha = sha256(bytes), wave = JSON.parse(bytes)
+    if (bytes.includes(Buffer.from(env.OPENCODE_API_KEY))) throw new Error("credential must not occur in manifest")
+    if (worker && env.MEM_WAVE_MANIFEST_SHA !== manifestSha) throw new Error("frozen manifest changed")
+    const verify = () => {
+      if (sha256(readFileSync(argv[1])) !== manifestSha) throw new Error("manifest changed")
+      // Pure qualification must finish before even the Git identity subprocess is considered.
+      const qualified = qualify(wave, { harnessSha: wave.harness_sha, launcherNodeSha: sha256(readFileSync(realpathSync(process.execPath))) })
+      if (qualified.execution_qualified !== true) throw new Error("native recorder handshake is not qualified")
+      if (adapter.supervisionAvailable === false) throw new Error("incarnation-bound process-group supervision is unavailable")
+      const checked = qualify(wave, identity())
+      if (checked.execution_qualified !== true) throw new Error("runtime qualification changed")
+      return checked
+    }
     if (worker) {
       const stamp = JSON.parse(readFileSync(join(wave.control, "wave.json"), "utf8"))
       if (stamp.manifest_sha256 !== manifestSha || stamp.store !== wave.store) throw new Error("wave lease mismatch")
       const elapsedAtStart = Math.max(0, clock.wall() - stamp.started_wall), mono = clock.monotonic()
       const lease = { elapsed: () => Math.max(clock.wall() - stamp.started_wall, elapsedAtStart + clock.monotonic() - mono) }
       const { plan } = verify()
-      const report = await runTrials(wave, plan, { harness: HARNESS, caller: env, lease, verify, stopRequested: () => stop,
+      const report = await runTrials(wave, plan, { harness: HARNESS, caller: env, lease, verify, stopRequested,
         verifyTrial: trial => requestTrialVerification(process, trial.id),
         save: value => writeJSON(join(wave.control, "progress.json"), value),
         execute: async (spec, trial) => {
+          if (stopRequested()) return { code: null, complete: false }
           writeFileSync(join(wave.control, "resources", `${trial.id}.started.json`), JSON.stringify({ owner: JSON.parse(spec.env.EVALS_CONTAINER_OWNER) }), { flag: "wx", mode: 0o600 })
           return { ...await adapter.trial(spec), complete: true } // Parent checks artifacts and its original scope before admission.
         },
       })
-      process.disconnect()
       return report
     }
     let runtimeOwned = null
     const runtime = join(wave.control, "runtime"), frozen = join(wave.control, "manifest.json")
     return await launchWave(wave, {
-      manifestSha, clock, singleton: join(wave.docker_config, ".oc-mem-wave.lock"), stopRequested: () => stop,
+      manifestSha, clock, singleton: join(wave.docker_config, ".oc-mem-wave.lock"), stopRequested,
       verify,
       allocate: async () => {
         writeFileSync(frozen, bytes, { flag: "wx", mode: 0o600 })
@@ -89,8 +103,9 @@ export async function main(argv, { env = process.env, adapter = processAdapter()
       },
     })
   } finally {
-    if (worker && process.connected) process.disconnect()
     process.removeListener("SIGINT", onSignal); process.removeListener("SIGTERM", onSignal)
+    if (worker) process.removeListener("disconnect", onDisconnect)
+    if (worker && process.connected) process.disconnect()
   }
 }
 

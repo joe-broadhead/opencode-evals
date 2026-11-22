@@ -160,11 +160,22 @@ Only the parent-created capability retains the original directory device/inode a
 Copied owner fields, a copied capability, or a replacement directory cannot establish that authority.
 Same-process callers retain the scope through the original trial-array object. A deserialized worker has no such capability.
 
-The worker requests verification over its existing parent IPC channel after each trial and immediately before the next start.
+The worker requests verification over its existing parent IPC channel after each trial and before the next start.
 The parent verifies the trial artifacts and cleanup receipt against its original scope.
 The worker accepts only an affirmative response for the requested trial ID.
 Missing IPC, disconnection, mismatched responses, and verification errors stop admission.
 The parent watchdog still bounds a stalled worker or IPC request. This protocol adds no native supervision capability.
+
+The serialized-worker entrypoint retains channel-loss state for its entire lifetime, including the initial start gate.
+Its final synchronous pre-trial check includes both current channel health and persistent loss, for the first trial and every successor.
+A later connected value cannot clear that stop condition. The worker does not reconnect or retry.
+Startup listeners end with the start gate. Lifetime listeners end on every return or error.
+Standalone same-process `runTrials()` does not require IPC. Its caller must supply applicable stop conditions.
+
+Directory continuity is verified at the parent verification step, not atomically through response transit and workload dispatch.
+A concurrent directory replacement after affirmative verification can precede the next dispatch.
+Subsequent verification and final cleanup reject the replacement and retain unresolved evidence.
+The protocol does not provide race-free filesystem authority against concurrent same-UID writers.
 
 If cleanup is uncertain, preserve the locks and evidence.
 Examine `resources/*.json`, `worker.json`, and `cleanup-clients.json` before recovery.
