@@ -33,7 +33,8 @@ export function createBaselineProof(initial,control,intent) {
   }
   function observe(event) {
     const {path,input,response,before,after,space,context}=event,payload=response.json?.data??response.json
-    const base={turn:context?.active?context.turn:null,session:context?.session??null,space}
+    const bound=context?.active&&intent&&intent.expires_at>Date.now()&&context.case_id===intent.case_id&&context.trial_id===intent.trial_id&&intent.turns.some(t=>t.index===context.turn)
+    const base={turn:bound?context.turn:null,session:bound?context.session:null,space}
     if(path==="/v3/wiki/create") {
       const id=payload?.wiki_id??payload?.knowledge_id,w=wiki(after,id)
       const stored=ok(response)&&!wiki(before,id)&&w?.name===input.name&&scope(w)===space

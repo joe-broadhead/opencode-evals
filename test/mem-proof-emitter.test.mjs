@@ -46,6 +46,9 @@ test("RAW operation receipts capture observed per-turn versions; denied/no-op wr
   const denied=createBaselineProof(empty(),control,intent)
   denied.observe({path:"/v3/wiki/create",input:{name:"Unrelated"},response:{status:200,json:{data:{knowledge_id:wiki.knowledge_id}}},before:prior,after:created,space:"personal",context,invocation})
   assert.equal(denied.creators.length,0,"a returned ID alone is not creator authority")
+  const foreign=createBaselineProof(empty(),control,intent)
+  foreign.observe({...event,context:{...context,trial_id:"other_trial"}})
+  assert.equal(foreign.operations[0].turn,null,"a foreign turn cannot label backend observations for this trial")
 })
 
 test("store-created memory alias is justified by actual pure records-store readback and native creator payload",async()=>{
