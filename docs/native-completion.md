@@ -61,6 +61,8 @@ const provisional = await verifyNativeCompletion({
 The runner must retain its independent process-exit/stream-close proof. This verifier does not attest CLI exit.
 The callback must enforce raw byte bounds while capturing, not allocate unlimited output before returning.
 The verifier checks size again and hashes the original bytes without parsing or changing them.
+It reads the receipt's `raw` property once. The size check, reported byte count, and digest use that same byte value.
+A subarray retains its original offset and length. Its backing buffer is not the capture.
 It returns a provisional object, not a file. The caller must persist it only in its private, bounded staging store
 with owner-only permissions (for example, directory mode `0700`, file mode `0600`). Do not append it to native JSONL.
 The object can contain full prompt/message/error data and must not be published as a public trace.
@@ -84,6 +86,8 @@ An unknown quiet descendant inbox cannot be discovered by this implementation.
 
 The client exposes only these operations. Their names, principal inputs, and read results follow the pinned CLI source.
 The added transport options are this module's adapter contract, **not a claim about generated SDK option types**.
+Subscription must return an async iterable synchronously. A Promise-returning subscription is unsupported.
+The verifier observes its rejection but does not await or adopt its eventual value as a subscription.
 
 | Operation | Logical result |
 | --- | --- |
@@ -102,35 +106,60 @@ The stream adapter must not hide disconnects, reconnect/replay, parser loss, que
 Its byte/queue bounds must apply for the full subscription, not only each frame.
 An adapter is trusted code: this module cannot preempt synchronous blocking code or reclaim a transport that ignores abort.
 
+Abort and iterator return must seal event ingress without discarding buffered or already-yielded frames.
+The adapter must expose those frames through ordered `next()` results, followed by `done:true`.
+An iterator return result alone does not establish this local fence.
+After `next()` returns `done:true`, the adapter must not produce more frames.
+If the adapter cannot preserve its buffer, it must report failure rather than successful end-of-stream.
+These are logical adapter obligations, not claims about the absent pinned native client implementation.
+
 Message pages require distinct nonempty IDs, a known message type (`user`, `assistant`, or `idle`), and valid cursors.
 If a message has a session ID, it must agree with the requested session.
 Only the first following idle can supply an outcome, and only `succeeded`, `failed`, or `interrupted` is accepted.
 The native terminal event ID is retained unchanged. No guessed ID conversion or event-only outcome fallback is used.
+Repeated explicit terminal event IDs invalidate the logical proof. Distinct IDs with the same outcome do not, by themselves, establish replay.
 
 ## State transitions and evidence
 
 1. Subscribe and consume an actual `server.connected` event. An iterable is not readiness.
 2. On that live stream, page the entire baseline and verify jobs → all owned inboxes → active are empty.
    A delivery, stream loss, or foreign-session event during preflight closes the launch gate.
+   An observed execution start outside the dispatch window is also a sticky conflict, for root and inventoried descendants.
+   A later empty status snapshot cannot erase that conflict. Execution starts never establish prompt identity.
 3. Open the bound window and call `launch` once. Capture exactly one new root-session delivery.
 4. After caller settlement, invoke native wait and page the stored projection.
    The baseline must remain its unchanged ID/type suffix. The captured inbox ID must be the sole new user ID,
    outside the baseline, and the oldest new message. Equal text, timestamps, and newest-message matching are never used.
 5. Read the first idle in chronological order after that exact user. Retain its ID, outcome, and error.
 6. Independently read jobs → all inboxes → active. Unexpected work fails immediately. The verifier does not supervise that work.
-7. Close the window, abort the transport, and bound iterator return. Recheck all collected admissions and terminal conflicts.
+7. Close the dispatch window and request transport abort and iterator return.
+   Continue the ordered event pump through local end-of-stream, within the shared close grace and existing event/byte limits.
+   Join the pump before the verdict. Then recheck all collected admissions and terminal conflicts.
 
 There is no polling loop that submits or retries a prompt. Missing delivery, prompt, or idle remains unknown.
 A failed wait does not suppress a separately readable stored failure, but it still blocks logical proof.
 Native negatives remain recorded if final quiescence, transport, raw capture, or iterator close fails.
+Each complete validated projection page extends a contiguous observed segment.
+That segment can establish a separate failed/interrupted native fact for the exact delivered user and its first following idle.
+No intervening user or baseline message can belong to that following segment.
+If a later older-history read fails, the verifier retains this negative with its explicit prompt and idle IDs.
+Full baseline corroboration, admission, and logical proof remain unavailable. Partial history never promotes success or joins an idle across an unseen gap.
 Multiple deliveries can invalidate admission after the verifier reads a native outcome.
 The native fact stays associated with its explicit observed prompt ID, not a certified caller admission.
+Buffered terminal events remain evidence during shutdown. A matching terminal does not become a conflict merely because the pump records it during close.
+Contradictory negatives and duplicate deliveries still invalidate the proof. New execution starts during close remain outside-window conflicts.
 
 The return has `phase:"PROVISIONAL"`, `accepted:false`, and `wire.status:"unqualified"` **unconditionally**.
 `logicalProof` requires a single corroborated admission, stored success, empty final quiescence, and a known raw digest.
-It also requires a connected stream through the read window, successful iterator return, and no health issue.
+It also requires a connected stream through the read window, successful iterator return, a complete local fence, and no health issue.
 It is an offline logical-client result, **not authorization to run or accept a trial**.
 `health.close:"closed"` means the iterator returned. It does not prove process/container cleanup or remote billing cancellation.
+`health.fence:"complete"` means the pump consumed ordered results through `next()` end-of-stream during close.
+It does not prove an empty remote queue, atomic endpoint snapshots, or native transport qualification.
+An unresolved `next()` leaves the fence unknown, even if iterator return succeeds.
+The close deadline terminates the local pump and records unavailability. A later unresolved result cannot mutate the returned sidecar.
+Diagnostic normalization is bounded and tolerates a throwing `error.message` getter without leaking the thrown object.
+Pump rejection has an owner from creation. Iterator-return cleanup remains independent of pump settlement.
 No observer certificate, cleanup certificate, or usage/cost completeness field is minted.
 The observer owner supplies ready/open/seal and the parent supplies cleanup, accounting, and final acceptance elsewhere.
 
@@ -144,12 +173,14 @@ The observer owner supplies ready/open/seal and the parent supplies cleanup, acc
 | Events | 10,000 | 10,000 |
 | Retained response/event JSON payload bytes | 4 MiB | 4 MiB |
 | Raw bytes accepted for digest | 8 MiB | 8 MiB |
-| Iterator close grace, after deadline | 1 second | 1 second |
+| Shared pump-fence and iterator-close grace | 1 second | 1 second |
 
 All configurable limits are positive integers. The caller can lower them but cannot raise the hard maxima.
 Repeated cursors and duplicate IDs fail instead of looping. Health holds at most 32 issues of 160 characters each.
 Evidence wrapper overhead and copied IDs add a bounded amount above the payload byte budget.
-The deadline races every asynchronous operation; iterator shutdown has its separate close grace.
+The main deadline races each read and caller operation. The event pump and iterator shutdown share a separate close grace.
+The pump retains already-yielded results instead of discarding them when main cancellation starts.
+If the event/byte limit prevents a complete fence, the proof is unavailable.
 After abort, late operation results cannot change the returned evidence.
 The caller still owns cancellation and reclamation of its CLI and any noncompliant adapter resources.
 
@@ -160,6 +191,7 @@ A separately authorized, private **pinned 2.2.6** capture must provide:
 - OpenAPI/generated-client artifacts with hashes, plus the binary/source identity and location/auth binding contract.
 - Event subscription envelopes, actual `server.connected`, disconnect/error/reconnect behavior, byte/queue limits,
   and ordered delivery guarantees. Validate that events cannot be silently lost or delayed past the final read/close fence.
+- Lossless buffered-event delivery through abort/return, followed by ordered local end-of-stream. A queue-discarding adapter cannot satisfy the fence contract.
 - One CLI-owned prompt's exact delivered inbox ID and stored user ID, including paginated baseline and projection captures.
 - Stored succeeded, failed, interrupted, missing-idle, and competing-admission controls, with first-idle ordering across pages.
 - Native wait request/response and errors, job descendant filtering, and empty/nonempty/error responses.
@@ -175,12 +207,14 @@ No current-document URL assumption, guessed codec, synthetic receipt, pending co
 ## Offline checks
 
 The [tests](../test/native-completion.test.mjs) use a finite injected event queue and source-shaped responses.
+The [boundary tests](../test/native-completion-boundaries.test.mjs) exercise preflight starts and already-yielded or buffered close conflicts.
+They also cover explicit terminal replay, single-read raw capture, diagnostic failures, unsupported asynchronous subscription, and contiguous partial-history negatives.
 They require no runtime, listener, network, model, provider, auth, install, VM, or container.
 Run them with an empty environment and private HOME/TMPDIR/EVALS_STORE:
 
 ```sh
 env -i HOME="$OWN_HOME" TMPDIR="$OWN_TMP" EVALS_STORE="$OWN_STORE" PATH=/usr/bin:/bin \
-  "$PINNED_NODE" --test test/native-completion.test.mjs test/docs.test.mjs
+  "$PINNED_NODE" --test test/native-completion.test.mjs test/native-completion-boundaries.test.mjs test/docs.test.mjs
 ```
 
 Do not run the repository-wide suite under a no-listener authorization: other suites exercise local HTTP servers.

@@ -39,18 +39,28 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
     accepted: false, logicalProof: false,
     admission: { status: 'unknown' }, native: { status: 'unknown' },
     quiescence: { status: 'unknown' }, raw: { status: 'unknown' },
-    health: { transport: 'available', stream: 'not_connected', close: 'unknown', issues: [] },
+    health: { transport: 'available', stream: 'not_connected', close: 'unknown', fence: 'unknown', issues: [] },
     evidence: [],
   };
   const controller = new AbortController();
-  let rejectStop, stopping = false, stream, pump, window = false, bytes = 0, eventCount = 0;
-  let connected = false, resolveReady;
+  let rejectStop, rejectPump, closing = false, stream, pump, window = false, bytes = 0, eventCount = 0;
+  let connected = false, dispatched = false, resolveReady;
   const deliveries = [], terminals = [];
+  const terminalIDs = new Set();
   const stop = new Promise((_, reject) => { rejectStop = reject; });
   stop.catch(() => {});
+  // Main cancellation must not discard an already yielded next() result. The
+  // pump has its own bounded close fence and is always joined before return.
+  const pumpStop = new Promise((_, reject) => { rejectPump = reject; });
+  pumpStop.catch(() => {});
   const issue = (code) => {
     const text = typeof code === 'string' ? code.slice(0, 160) : 'unknown_error';
     if (!result.health.issues.includes(text) && result.health.issues.length < 32) result.health.issues.push(text);
+  };
+  const reportError = (error) => {
+    let message;
+    try { message = error?.message; } catch { /* Diagnostics must not become a second failure. */ }
+    issue(typeof message === 'string' ? message : 'unknown_error');
   };
   const abort = (code) => { issue(code); rejectStop(new Error(code)); controller.abort(); };
   const onAbort = () => abort('cancelled');
@@ -75,7 +85,7 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
     try { return retain(kind, await bounded(fn)); }
     catch (error) { result.health.transport = 'unavailable'; issue(`read_${kind}_unavailable`); throw error; }
   };
-  const messages = async (kind) => {
+  const messages = async (kind, observe) => {
     const all = [], seen = new Set(), cursors = new Set();
     let cursor;
     for (let n = 0; n < cap.maxPages; n++) {
@@ -89,6 +99,9 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
           fail('invalid_message_identity');
         seen.add(message.id); all.push(message);
       }
+      // Only complete, validated pages extend the contiguous observed segment.
+      // A later read failure must not erase a negative already bound here.
+      observe?.(all);
       cursor = value.cursor.next;
       if (cursor == null) return all;
       if (cursors.has(cursor)) fail('repeated_cursor');
@@ -114,13 +127,22 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
   const ready = new Promise((resolve) => { resolveReady = resolve; });
   try {
     if (controller.signal.aborted) fail('aborted');
-    stream = client.event.subscribe({ ...options() })[Symbol.asyncIterator]();
+    const subscription = client.event.subscribe({ ...options() });
+    if (!subscription || typeof subscription[Symbol.asyncIterator] !== 'function') {
+      // Refuse Promise-returning subscriptions, but own their rejection. Do not
+      // await or adopt their eventual value as an asynchronous subscription.
+      Promise.resolve(subscription).catch(() => {});
+      fail('unsupported_subscription_shape');
+    }
+    stream = subscription[Symbol.asyncIterator]();
     pump = (async () => {
-      try {
-        while (!stopping) {
-          const next = await bounded(() => stream.next());
-          if (stopping) return;
-          if (next.done) fail('event_loss');
+        while (true) {
+          const next = await Promise.race([stream.next(), pumpStop]);
+          if (next.done) {
+            if (!closing) fail('event_loss');
+            result.health.fence = 'complete';
+            return;
+          }
           if (++eventCount > cap.maxEvents) fail('event_limit');
           const event = retain('event', next.value);
           if (!object(event) || !id(event.type) || !object(event.data)) fail('invalid_event');
@@ -138,15 +160,22 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
             issue('foreign_session_event');
           if (event.type.startsWith('session.execution.') && !id(event.data.sessionID))
             issue('unknown_session_event');
+          if (event.type === 'session.execution.started' && !window)
+            issue('execution_start_outside_window');
           if (/^session\.execution\.(succeeded|failed|interrupted)$/.test(event.type)) {
-            if (!window || deliveries.length !== 1) issue('unbound_terminal_event');
+            if (id(event.id)) {
+              if (terminalIDs.has(event.id)) issue('replayed_terminal_event');
+              terminalIDs.add(event.id);
+            }
+            // A buffered terminal can finish delivery during close. Compare it
+            // with the stored outcome after the fence, not with pump timing.
+            if (!dispatched || deliveries.length !== 1) issue('unbound_terminal_event');
             terminals.push(event);
           }
         }
-      } catch (error) {
-        if (!stopping) { result.health.stream = 'unavailable'; issue(error?.message); resolveReady(); }
-      }
-    })();
+    })().catch((error) => {
+      result.health.stream = 'unavailable'; reportError(error); resolveReady();
+    });
     await bounded(() => ready);
     if (!connected || result.health.issues.length) fail('stream_not_ready');
     // Observe the entire baseline/preflight window on the live subscription.
@@ -157,17 +186,18 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
     result.preflight = await quiet('preflight');
     if (result.preflight.status !== 'empty') fail('preflight_not_empty');
     if (result.health.stream !== 'connected' || result.health.issues.length) fail('preflight_event_conflict');
-    window = true;
+    window = true; dispatched = true;
     const receipt = await bounded(() => launch({ binding: structuredClone(bound), signal: controller.signal }));
     if (!object(receipt) || keys.some((key) => receipt.binding?.[key] !== bound[key]) ||
         receipt.binding?.scope?.complete !== true || receipt.binding?.scope?.serial !== true ||
         JSON.stringify(receipt.binding?.scope?.sessionIDs) !== JSON.stringify(bound.scope.sessionIDs))
       fail('launch_binding_disagreement');
-    if (!(receipt.raw instanceof Uint8Array) || receipt.raw.byteLength > cap.maxRawBytes) issue('raw_byte_limit_or_missing');
+    const raw = receipt.raw;
+    if (!(raw instanceof Uint8Array) || raw.byteLength > cap.maxRawBytes) issue('raw_byte_limit_or_missing');
     else {
       // Do not parse, normalize, append to, or rewrite the native CLI bytes.
-      result.raw = { status: 'known', bytes: receipt.raw.byteLength,
-        sha256: createHash('sha256').update(receipt.raw).digest('hex') };
+      result.raw = { status: 'known', bytes: raw.byteLength,
+        sha256: createHash('sha256').update(raw).digest('hex') };
     }
     try {
       await read('wait', async () => {
@@ -179,7 +209,20 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
       // readable native negatives, with the transport failure still recorded.
       if (controller.signal.aborted) fail('aborted');
     }
-    const projection = await messages('projection');
+    const projection = await messages('projection', (segment) => {
+      const delivery = deliveries.length === 1 ? deliveries[0] : undefined;
+      const promptID = delivery?.data.inboxID;
+      if (!id(promptID) || delivery.data.sessionID !== sessionID || baselineIDs.has(promptID)) return;
+      const index = segment.findIndex((message) => message.id === promptID && message.type === 'user');
+      if (index < 0) return;
+      const following = segment.slice(0, index).reverse();
+      if (following.some((message) => message.type === 'user' || baselineIDs.has(message.id))) return;
+      const firstIdle = following.find((message) => message.type === 'idle');
+      if (firstIdle && ['failed', 'interrupted'].includes(firstIdle.outcome)) {
+        result.native = { status: 'known', promptID, idleID: firstIdle.id, outcome: firstIdle.outcome,
+          ...(firstIdle.error !== undefined ? { error: firstIdle.error } : {}) };
+      }
+    });
     const delivery = deliveries.length === 1 ? deliveries[0] : undefined;
     const promptID = delivery?.data.inboxID;
     const promptIndex = projection.findIndex((message) => message.id === promptID);
@@ -201,23 +244,36 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
       } else issue('native_idle_missing_or_invalid');
     }
     result.quiescence = await quiet('final');
-  } catch (error) { issue(error?.message); }
+  } catch (error) { reportError(error); }
   finally {
-    stopping = true; window = false; clearTimeout(timer);
+    closing = true; window = false; clearTimeout(timer);
     signal?.removeEventListener('abort', onAbort);
-    controller.abort(); rejectStop(new Error('closed'));
-    await pump;
     let closeTimer;
     try {
+      const closeDeadline = new Promise((_, reject) => {
+        closeTimer = setTimeout(() => {
+          rejectPump(new Error('stream_fence_deadline'));
+          reject(new Error('stream_close_deadline'));
+        }, cap.closeMs);
+      });
+      // Abort/return must seal ingress without silently dropping buffered
+      // frames. Continue ordered next() calls until EOF or explicit failure.
+      controller.abort(); rejectStop(new Error('closed'));
       if (stream) {
-        if (typeof stream.return !== 'function') fail('stream_return_missing');
-        await Promise.race([
-          Promise.resolve().then(() => stream.return()),
-          new Promise((_, reject) => { closeTimer = setTimeout(() => reject(new Error('stream_close_deadline')), cap.closeMs); }),
-        ]);
-      }
-      result.health.close = 'closed';
-    } catch (error) { issue(error?.message); }
+        const close = Promise.race([
+          Promise.resolve().then(() => {
+            if (typeof stream.return !== 'function') fail('stream_return_missing');
+            return stream.return();
+          }),
+          closeDeadline,
+        ]).then(() => { result.health.close = 'closed'; }, reportError);
+        // Iterator cleanup is independent of pump settlement, even if a future
+        // pump change rejects. Both operations share the same bounded grace.
+        try { await pump; }
+        catch (error) { result.health.stream = 'unavailable'; reportError(error); }
+        finally { await close; }
+      } else result.health.close = 'closed';
+    }
     finally { clearTimeout(closeTimer); }
   }
   if (deliveries.length !== 1 || result.health.issues.some((code) =>
@@ -228,6 +284,7 @@ export async function verifyNativeCompletion({ client, binding, launch, signal, 
     issue('contradictory_terminal_event');
   result.logicalProof = result.admission.status === 'known' && result.native.outcome === 'succeeded' &&
     result.quiescence.status === 'empty' && result.raw.status === 'known' &&
-    result.health.stream === 'connected' && result.health.close === 'closed' && result.health.issues.length === 0;
+    result.health.stream === 'connected' && result.health.close === 'closed' &&
+    result.health.fence === 'complete' && result.health.issues.length === 0;
   return result;
 }
