@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Opt-in only. Importing this module never starts a process.
-import { readFileSync, writeFileSync, mkdirSync, realpathSync, rmSync, existsSync } from "node:fs"
+import { readFileSync, writeFileSync, mkdirSync, realpathSync, rmSync, existsSync, lstatSync } from "node:fs"
 import { resolve, join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { spawnSync } from "node:child_process"
@@ -37,9 +37,13 @@ export async function main(argv, { env = process.env, adapter = processAdapter()
   process.on("SIGINT", onSignal); process.on("SIGTERM", onSignal)
   const verify = () => {
     if (sha256(readFileSync(argv[1])) !== manifestSha) throw new Error("manifest changed")
-    const qualified = qualify(wave, identity())
+    // Pure qualification must finish before even the Git identity subprocess is considered.
+    const qualified = qualify(wave, { harnessSha: wave.harness_sha, launcherNodeSha: sha256(readFileSync(realpathSync(process.execPath))) })
     if (qualified.execution_qualified !== true) throw new Error("native recorder handshake is not qualified")
-    return qualified
+    if (adapter.supervisionAvailable === false) throw new Error("incarnation-bound process-group supervision is unavailable")
+    const checked = qualify(wave, identity())
+    if (checked.execution_qualified !== true) throw new Error("runtime qualification changed")
+    return checked
   }
   try {
     if (worker) {
@@ -50,30 +54,36 @@ export async function main(argv, { env = process.env, adapter = processAdapter()
       const { plan } = verify()
       const report = await runTrials(wave, plan, { harness: HARNESS, caller: env, lease, verify, stopRequested: () => stop,
         save: value => writeJSON(join(wave.control, "progress.json"), value),
-        execute: async (spec, trial) => ({ ...await adapter.trial(spec), complete: trialComplete(wave, trial) }),
+        execute: async (spec, trial) => {
+          writeFileSync(join(wave.control, "resources", `${trial.id}.started.json`), JSON.stringify({ owner: JSON.parse(spec.env.EVALS_CONTAINER_OWNER) }), { flag: "wx", mode: 0o600 })
+          return { ...await adapter.trial(spec), complete: trialComplete(wave, trial, JSON.parse(env.MEM_WAVE_OWNER)) }
+        },
       })
       process.disconnect()
       return report
     }
-    let runtimeOwned = false
+    let runtimeOwned = null
     const runtime = join(wave.control, "runtime"), frozen = join(wave.control, "manifest.json")
     return await launchWave(wave, {
       manifestSha, clock, singleton: join(wave.docker_config, ".oc-mem-wave.lock"), stopRequested: () => stop,
-      verify: async () => {
-        verify()
+      verify,
+      allocate: async () => {
         writeFileSync(frozen, bytes, { flag: "wx", mode: 0o600 })
-        mkdirSync(runtime, { mode: 0o700 }); runtimeOwned = true
+        mkdirSync(runtime, { mode: 0o700 }); runtimeOwned = lstatSync(runtime)
         for (const dir of ["home", "tmp", "sandboxes"]) mkdirSync(join(runtime, dir), { mode: 0o700 })
-        mkdirSync(join(wave.control, "resources"), { mode: 0o700 })
       },
-      spawnWorker: () => adapter.worker({ command: wave.runtime.launcher_node.path, args: [import.meta.filename, "--worker", frozen], cwd: HARNESS, ipc: true,
-        env: { PATH: env.PATH ?? "/usr/bin:/bin", HOME: join(runtime, "home"), TMPDIR: join(runtime, "tmp"), OPENCODE_API_KEY: env.OPENCODE_API_KEY, MEM_WAVE_MANIFEST_SHA: manifestSha } }),
+      spawnWorker: (_lease, scope) => adapter.worker({ command: wave.runtime.launcher_node.path, args: [import.meta.filename, "--worker", frozen], cwd: HARNESS, ipc: true,
+        env: { PATH: env.PATH ?? "/usr/bin:/bin", HOME: join(runtime, "home"), TMPDIR: join(runtime, "tmp"), OPENCODE_API_KEY: env.OPENCODE_API_KEY, MEM_WAVE_MANIFEST_SHA: manifestSha, MEM_WAVE_OWNER: JSON.stringify(scope.owner) } }),
       alive: adapter.alive, signal: adapter.signal,
-      cleanup: async remaining => {
-        const clean = await cleanupOwned(wave, wave.control, (args, timeout) => adapter.command({ command: wave.runtime.docker.path, args, env: { PATH: env.PATH ?? "/usr/bin:/bin", DOCKER_CONFIG: wave.docker_config } }, timeout), remaining)
+      cleanup: async (remaining, scope) => {
+        const clean = await cleanupOwned(scope, (args, timeout) => adapter.command({ command: wave.runtime.docker.path, args, env: { PATH: env.PATH ?? "/usr/bin:/bin", DOCKER_CONFIG: wave.docker_config } }, timeout), remaining)
         writeJSON(join(wave.control, "cleanup-clients.json"), { unverified_pids: adapter.unverified() })
         if (!clean || adapter.unverified().length) return false
-        if (runtimeOwned && realpathSync(runtime) === resolve(runtime)) rmSync(runtime, { recursive: true })
+        if (runtimeOwned) {
+          const current = lstatSync(runtime)
+          if (!current.isDirectory() || current.dev !== runtimeOwned.dev || current.ino !== runtimeOwned.ino || realpathSync(runtime) !== resolve(runtime)) return false
+          rmSync(runtime, { recursive: true })
+        }
         return !existsSync(runtime)
       },
     })
@@ -86,7 +96,7 @@ export async function main(argv, { env = process.env, adapter = processAdapter()
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   main(process.argv.slice(2)).then(report => { process.exitCode = report.complete === true || process.argv[2] === "--worker" && !report.stop_reason ? 0 : 1 }).catch(() => {
     // Exception text and child output may contain credentials. Neither is a reporting channel.
-    console.error("Memory wave refused or incomplete; inspect the owned control report. No automatic retry.")
+    console.error("Memory wave refused or incomplete. Reports exist only after qualified allocation. No automatic retry.")
     process.exitCode = 1
   })
 }

@@ -17,9 +17,10 @@ test("own creation receipts are persisted for an external watchdog, including an
   const root = mkdtempSync(join(tmpdir(), "own-journal-"))
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const file = join(root, "resources.json"), fake = fakeDocker()
+  const owner = { invocation_id: "11111111-1111-4111-8111-111111111111", manifest_sha256: "a".repeat(64), trial_id: "baseline-direct-a-r1" }
   let release, started
   const waiting = new Promise(resolve => { started = resolve })
-  const backend = containerBackend(containerConfig({ env: { EVALS_CONTAINER_SWEEP_SCOPE: "own", EVALS_CONTAINER_OWNERSHIP: file, EVALS_DOCKER: process.execPath } }), {
+  const backend = containerBackend(containerConfig({ env: { EVALS_CONTAINER_SWEEP_SCOPE: "own", EVALS_CONTAINER_OWNERSHIP: file, EVALS_CONTAINER_OWNER: JSON.stringify(owner), EVALS_DOCKER: process.execPath } }), {
     exec: async (bin, args, opts) => {
       if (args[0] === "run") {
         started()
@@ -31,6 +32,7 @@ test("own creation receipts are persisted for an external watchdog, including an
   const preparing = backend.prepare({ batchRoot: root, caller: {} })
   await waiting
   const pending = JSON.parse(readFileSync(file, "utf8"))
+  assert.deepEqual(pending.owner, owner)
   assert.equal(pending.resources.length, 1)
   assert.equal(pending.pending.length, 1)
   await backend.teardown()

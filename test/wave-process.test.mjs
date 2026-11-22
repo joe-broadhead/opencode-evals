@@ -6,13 +6,13 @@ import { processAdapter } from "../src/run/wave-process.mjs"
 test("process adapter owns only its newly detached worker group and never logs the key", async () => {
   const calls = [], signals = [], child = new EventEmitter()
   child.pid = 45678
-  const adapter = processAdapter({ spawn: (...args) => { calls.push(args); return child }, kill: (...args) => signals.push(args) })
+  const adapter = processAdapter({ spawn: (...args) => { calls.push(args); return child }, groupIdentity: () => ({ probe: () => "alive", signal: signal => { signals.push([-45678, signal]); return true } }) })
   const spec = { command: "/node", args: ["worker"], env: { OPENCODE_API_KEY: "fake-key" } }
   const owned = adapter.worker(spec)
   assert.equal(calls[0][2].detached, true)
   assert.deepEqual(calls[0][2].stdio, ["ignore", "ignore", "ignore"])
   assert.equal(JSON.stringify(calls[0][1]).includes("fake-key"), false)
-  assert.throws(() => adapter.signal(11111, "SIGTERM"), /owned/)
+  assert.equal(adapter.signal(11111, "SIGTERM"), false)
   adapter.signal(owned.pgid, "SIGTERM")
   assert.deepEqual(signals, [[-45678, "SIGTERM"]])
   child.emit("exit", 0, null)

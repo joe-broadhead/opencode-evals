@@ -1,6 +1,6 @@
 // Reviewed inputs, not discovery: this module performs no runtime or network operations.
 import { createHash } from "node:crypto"
-import { readFileSync, realpathSync, lstatSync } from "node:fs"
+import { readFileSync, realpathSync, lstatSync, accessSync, constants } from "node:fs"
 import { isAbsolute, resolve, dirname, basename } from "node:path"
 import { memoryArtifact } from "./mem-arm.mjs"
 import { tierOf } from "../cost/budget.mjs"
@@ -10,7 +10,7 @@ export const sha256 = bytes => createHash("sha256").update(bytes).digest("hex")
 const digest = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value)
 export function pinnedBytes(pin) {
   if (!pin || !isAbsolute(pin.path ?? "") || !digest(pin.sha256)) throw new Error("absolute file pin and SHA-256 required")
-  if (realpathSync(pin.path) !== resolve(pin.path) || !lstatSync(pin.path).isFile()) throw new Error("file pin must be a regular file without symlinks")
+  if (pin.path !== resolve(pin.path) || realpathSync(pin.path) !== pin.path || !lstatSync(pin.path).isFile()) throw new Error("file pin must be a canonical regular file without symlinks")
   const bytes = readFileSync(pin.path)
   if (sha256(bytes) !== pin.sha256) throw new Error("file pin digest mismatch")
   return bytes
@@ -46,7 +46,10 @@ export function qualifyWave(wave, identity) {
   for (const key of ["control", "store", "cases_dir", "docker_config"]) if (!isAbsolute(wave[key] ?? "")) throw new Error(`absolute ${key} required`)
   if (!Number.isInteger(wave.trial_timeout_s) || wave.trial_timeout_s < 1 || wave.trial_timeout_s > 3480) throw new Error("trial timeout must be 1 through 3480 seconds")
   if (wave.runtime?.version !== "2.2.6" || !/^sha256:[a-f0-9]{64}$/.test(wave.runtime.image ?? "")) throw new Error("qualified runtime version/image required")
-  for (const key of ["opencode", "node", "launcher_node", "docker"]) pinnedBytes(wave.runtime[key])
+  for (const key of ["opencode", "node", "launcher_node", "docker"]) {
+    pinnedBytes(wave.runtime[key])
+    try { accessSync(wave.runtime[key].path, constants.X_OK) } catch { throw new Error(`qualified ${key} must be executable`) }
+  }
   if (identity.launcherNodeSha !== wave.runtime.launcher_node.sha256) throw new Error("launcher Node pin mismatch")
   for (const key of ["fixture", "schema", "discovery"]) pinnedBytes(wave.inputs?.[key])
   for (const c of result.plan.cases) {

@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync } from "node:fs"
+import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync, renameSync, existsSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { main } from "../scripts/run-mem-wave.mjs"
@@ -31,4 +31,15 @@ test("executable freezes input and supervises only one fresh worker with minimal
   const blocked = await main(["--manifest", file], { env: { OPENCODE_API_KEY: "synthetic-test-key" }, adapter: { ...adapter, worker: () => assert.fail("unqualified recorder must not start a worker") }, identity: () => ({}), qualify: () => ({ execution_qualified: false }) })
   assert.equal(blocked.stop_reason, "qualification-failed")
   assert.equal(blocked.complete, false)
+  wave.control = join(root, "replaced-control")
+  writeFileSync(file, JSON.stringify(wave))
+  const sentinel = join(wave.control, "runtime", "foreign.txt")
+  const replaced = await main(["--manifest", file], { env: { OPENCODE_API_KEY: "synthetic-test-key" }, identity: () => ({}), qualify: () => ({ execution_qualified: true }), adapter: { ...adapter, worker: value => {
+    const runtime = join(wave.control, "runtime")
+    renameSync(runtime, `${runtime}-original`)
+    mkdirSync(runtime); writeFileSync(sentinel, "foreign data")
+    return adapter.worker(value)
+  } } })
+  assert.equal(replaced.supervision.cleanup_verified, false)
+  assert.equal(existsSync(sentinel), true, "a replaced runtime directory is not this invocation's disposable output")
 })

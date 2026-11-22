@@ -1,6 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, chmodSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { createHash } from "node:crypto"
@@ -36,6 +36,7 @@ test("conditions require matching observed config, catalog and request artifacts
 
 test("full qualification binds staged arms, runtime, exact catalog, variant evidence and case files", t => {
   const f = evidence(t), node = f.pin("node", "fake Linux Node"), host = f.pin("opencode", "fake 2.2.6")
+  chmodSync(node.path, 0o700); chmodSync(host.path, 0o700)
   const catalog = f.pin("catalog.json", { opencode: { models: { "deepseek-v4.1-flash": { cost: { input: 1, output: 2, cache_read: 1, cache_write: 1 } } } } })
   const modelProof = f.pin("model-proof.json", { schema: "oc-mem-model-qualification/1", status: "qualified", model: f.identity.model, runtime_sha256: host.sha256, catalog_sha256: catalog.sha256, source: "offline test only", as_of: "2026-11-22", selection: f.pin("selection.json", { providerID: "opencode", id: "deepseek-v4.1-flash", variant: "low" }), request: f.pin("model-request.json", { reasoning_effort: "low" }), variant_path: ["reasoning_effort"], variant_value: "low" })
   const arms = {}
@@ -53,6 +54,12 @@ test("full qualification binds staged arms, runtime, exact catalog, variant evid
   const verify = () => qualifyWave(wave, { harnessSha: wave.harness_sha, launcherNodeSha: node.sha256 })
   assert.equal(verify().plan.cases.length, 1)
   assert.equal(verify().execution_qualified, false, "runtime capability evidence cannot supply the missing recorder handshake")
+  wave.runtime.docker = f.pin("not-executable", "not a qualified executable")
+  assert.throws(verify, /executable/)
+  wave.runtime.docker = node
+  wave.runtime.docker = { ...node, path: `${f.root}/../${f.root.split("/").at(-1)}/node` }
+  assert.throws(verify, /file pin/)
+  wave.runtime.docker = node
   assert.equal(verify().plan.cases[0].tier, "wide")
   wave.trial_timeout_s = 0
   assert.throws(verify, /timeout/)

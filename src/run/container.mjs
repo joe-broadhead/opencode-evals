@@ -80,7 +80,9 @@ export function containerConfig({ store, env = process.env } = {}) {
   if (!["legacy", "own"].includes(sweepScope)) throw new Error("EVALS_CONTAINER_SWEEP_SCOPE must be legacy or own")
   const ownershipFile = env.EVALS_CONTAINER_OWNERSHIP ?? null
   if (ownershipFile !== null && (sweepScope !== "own" || !isAbsolute(ownershipFile))) throw new Error("EVALS_CONTAINER_OWNERSHIP requires own scope and an absolute fresh file")
-  return { allow: hosts, limits, assets: parseAssets(fromFile.assets), image: env.EVALS_CONTAINER_IMAGE ?? fromFile.image ?? null, docker: env.EVALS_DOCKER ?? "docker", proxyNode: env.EVALS_PROXY_NODE ?? null, sweepScope, ownershipFile, source: Object.keys(fromFile).length ? file : null }
+  const owner = env.EVALS_CONTAINER_OWNER === undefined ? null : JSON.parse(env.EVALS_CONTAINER_OWNER)
+  if (owner !== null && (!ownershipFile || !/^[a-f0-9-]{36}$/.test(owner?.invocation_id ?? "") || !/^[a-f0-9]{64}$/.test(owner?.manifest_sha256 ?? "") || !/^[a-z0-9][a-z0-9-]{0,199}$/.test(owner?.trial_id ?? ""))) throw new Error("EVALS_CONTAINER_OWNER requires a bound invocation, manifest and trial")
+  return { allow: hosts, limits, assets: parseAssets(fromFile.assets), image: env.EVALS_CONTAINER_IMAGE ?? fromFile.image ?? null, docker: env.EVALS_DOCKER ?? "docker", proxyNode: env.EVALS_PROXY_NODE ?? null, sweepScope, ownershipFile, owner, source: Object.keys(fromFile).length ? file : null }
 }
 
 /** Where a trial sees an asset the owner mounted (G8): the pinned binary a plugin downloads, a speech model, a managed Chromium. */
@@ -495,7 +497,7 @@ export function containerBackend(config = containerConfig(), { exec = dockerRun 
   let verifiedGone = false
   const journal = (initial = false) => {
     if (!config.ownershipFile || !journalReady && !initial) return
-    const text = JSON.stringify({ schema: "oc-evals-owned/1", batch: id, resources: [...owned.values()], pending: [...pending], uncertain: uncertainCreation, verified_gone: verifiedGone })
+    const text = JSON.stringify({ schema: "oc-evals-owned/1", batch: id, resources: [...owned.values()], pending: [...pending], uncertain: uncertainCreation, verified_gone: verifiedGone, ...(config.owner ? { owner: config.owner } : {}) })
     const file = initial ? config.ownershipFile : `${config.ownershipFile}.${id}.tmp`
     writeFileSync(file, text, { mode: 0o600, flag: "wx" })
     if (!initial) renameSync(file, config.ownershipFile)

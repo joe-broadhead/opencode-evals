@@ -3,7 +3,7 @@ import assert from "node:assert/strict"
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
-import { claimWave, superviseGroup, cleanupOwned, trialCommand, runTrials, trialComplete, launchWave } from "../src/run/wave-launcher.mjs"
+import { claimWave, superviseGroup, cleanupOwned, trialCommand, runTrials, trialComplete, launchWave, createResourceScope } from "../src/run/wave-launcher.mjs"
 import { completeTrials } from "../src/run/wave-manifest.mjs"
 import { recordRun } from "../src/cost/ledger.mjs"
 
@@ -59,14 +59,26 @@ test("setup failure before worker start still invokes owned cleanup and retains 
   const root = fixture(t), wave = fakeWave(root)
   wave.trials = [{ id: "baseline-direct-a-r1", case: "a" }]
   let cleaned = false
-  const report = await launchWave(wave, { manifestSha: "a".repeat(64), clock: clock(), verify: async () => { throw new Error("setup interrupted") }, spawnWorker: () => assert.fail(), cleanup: async () => { cleaned = true; return false } })
+  const report = await launchWave(wave, { manifestSha: "a".repeat(64), clock: clock(), verify: async () => {}, allocate: async () => { throw new Error("setup interrupted after scope allocation") }, spawnWorker: () => assert.fail(), cleanup: async () => { cleaned = true; return false } })
   assert.equal(cleaned, true)
   assert.equal(report.supervision.cleanup_verified, false)
   assert.equal(existsSync(join(root, "wave.lock")), true)
 })
 
+test("preallocation qualification still consumes the original total watchdog budget", async t => {
+  const root = fixture(t), wave = fakeWave(root), time = clock()
+  wave.trials = [{ id: "baseline-direct-a-r1", case: "a" }]
+  let spawned = false
+  const result = await launchWave(wave, { manifestSha: "a".repeat(64), clock: time, verify: async () => time.advance(3500000), spawnWorker: () => { spawned = true; return { pgid: 12345, exited: () => true, finished: () => false } }, alive: () => false, cleanup: async () => true })
+  assert.equal(spawned, false)
+  assert.equal(result.stop_reason, "local-timeout")
+  assert.equal(existsSync(join(root, "resources")), false)
+})
+
 test("CLI success is not trial completion without matching one-trial artifacts", t => {
   const root = fixture(t), wave = fakeWave(root), trial = { id: "baseline-direct-a-r1", case: "a" }
+  const scope = createResourceScope(root, { manifestSha: "a".repeat(64), trials: [trial] })
+  writeFileSync(join(scope.directory, `${trial.id}.json`), JSON.stringify({ schema: "oc-evals-owned/1", batch: "b1234567890", resources: [], pending: [], uncertain: false, verified_gone: true, owner: { ...scope.owner, trial_id: trial.id } }))
   assert.equal(trialComplete(wave, trial), false)
   const dir = join(wave.store, "raw", `unit-${trial.id}`, "mem")
   mkdirSync(dir, { recursive: true })
@@ -74,7 +86,7 @@ test("CLI success is not trial completion without matching one-trial artifacts",
   writeFileSync(join(dir, "batch-test.json"), JSON.stringify({ planned: 2, launched: 1, cases: ["a"], results: [{}] }))
   assert.equal(trialComplete(wave, trial), false)
   writeFileSync(join(dir, "batch-test.json"), JSON.stringify({ model: wave.model, planned: 1, launched: 1, cases: ["a"], results: [{ case: "a", trial: 1, exit: 0 }] }))
-  assert.equal(trialComplete(wave, trial), true)
+  assert.equal(trialComplete(wave, trial, scope.owner), true)
   writeFileSync(join(dir, "a.t1.summary.json"), JSON.stringify({ case: "a", trial: 1, model: "fallback/model", exit: 0 }))
   assert.equal(trialComplete(wave, trial), false)
 })
@@ -83,14 +95,20 @@ test("one trial at a time shares estimated admission across arms and preserves a
   const root = fixture(t), time = clock(), wave = fakeWave(root)
   const plan = { schema: "oc-mem-wave-plan/1", cases: [{ id: "a", set: "tune", conditions: ["direct", "search"], tier: "wide" }] }
   wave.trials = completeTrials(plan)
+  const scope = createResourceScope(root, { manifestSha: "a".repeat(64), trials: wave.trials })
   writeFileSync(wave.caps.path, JSON.stringify({ estimate_run_usd: { [wave.model]: { wide: 1 } } }))
   const lease = claimWave(root, { manifestSha: "a".repeat(64), store: wave.store }, time)
   const saved = [], calls = []
   let active = 0, peak = 0
-  const report = await runTrials(wave, plan, { harness: "/harness", caller: { OPENCODE_API_KEY: "fake-test-key" }, lease, verify: async () => {}, save: r => saved.push(JSON.stringify(r)), execute: async (spec, trial) => {
+  const report = await runTrials(wave, plan, { harness: "/harness", caller: { OPENCODE_API_KEY: "fake-test-key", MEM_WAVE_OWNER: JSON.stringify(scope.owner) }, lease, verify: async () => {}, save: r => saved.push(JSON.stringify(r)), execute: async (spec, trial) => {
     active++; peak = Math.max(peak, active); calls.push(spec)
     await Promise.resolve()
-    recordRun(wave.store, { model: wave.model, iteration: `unit-${trial.id}`, case: trial.case, trial: 1, list_usd: 11, billed_usd: 11 })
+    recordRun(wave.store, { model: wave.model, iteration: `unit-${trial.id}`, case: trial.case, trial: 1, list_usd: 11, billed_usd: 11, attempt_complete: true })
+    const raw = join(wave.store, "raw", `unit-${trial.id}`, "mem"), result = { case: trial.case, trial: 1, exit: 0 }
+    mkdirSync(raw, { recursive: true })
+    writeFileSync(join(raw, "a.t1.summary.json"), JSON.stringify({ ...result, model: wave.model }))
+    writeFileSync(join(raw, "batch-test.json"), JSON.stringify({ model: wave.model, planned: 1, launched: 1, cases: [trial.case], results: [result] }))
+    writeFileSync(join(scope.directory, `${trial.id}.json`), JSON.stringify({ schema: "oc-evals-owned/1", batch: "b1234567890", owner: { ...scope.owner, trial_id: trial.id }, resources: [], pending: [], uncertain: false, verified_gone: true }))
     active--
     return { code: 0, complete: true }
   } })
@@ -126,26 +144,25 @@ test("trial CLI forces one trial, zero retries, inherited group, one store/targe
 
 test("emergency Docker cleanup uses only creation IDs and explicit context; unresolved creation blocks clean status", async t => {
   const root = fixture(t), ids = ["1".repeat(64), "2".repeat(64)], calls = []
-  mkdirSync(join(root, "resources"))
+  const scope = createResourceScope(root, { manifestSha: "a".repeat(64), trials: [{ id: "trial-a" }] })
   const file = join(root, "resources", "trial-a.json")
-  const receipt = { schema: "oc-evals-owned/1", batch: "b1234567890", resources: [{ kind: "network", id: ids[1] }, { kind: "container", id: ids[0] }], pending: [], uncertain: false }
+  const receipt = { schema: "oc-evals-owned/1", batch: "b1234567890", owner: { ...scope.owner, trial_id: "trial-a" }, resources: [{ kind: "network", id: ids[1] }, { kind: "container", id: ids[0] }], pending: [], uncertain: false }
   writeFileSync(file, JSON.stringify(receipt))
   const exec = async (args, timeout) => {
     calls.push(args)
     assert.ok(timeout <= 20000)
     return args.includes("inspect") ? { code: 1, stderr: "No such object", stdout: "" } : { code: 0, stdout: "", stderr: "" }
   }
-  const wave = { trials: [{ id: "trial-a" }] }
-  assert.equal(await cleanupOwned(wave, root, exec, () => 20000), true)
+  assert.equal(await cleanupOwned(scope, exec, () => 20000), true)
   assert.deepEqual(calls[0], ["--context", "colima-mem-evals-20261122", "rm", "-f", "-v", ids[0]])
   assert.equal(calls.every(args => ids.includes(args.at(-1)) && !args.includes("ps")), true)
   receipt.pending = ["unknown-response"]
   writeFileSync(file, JSON.stringify(receipt))
-  assert.equal(await cleanupOwned(wave, root, exec, () => 20000), false)
-  assert.equal(await cleanupOwned(wave, root, async () => ({ code: 1, stderr: "daemon unavailable" }), () => 20000), false)
+  assert.equal(await cleanupOwned(scope, exec, () => 20000), false)
+  assert.equal(await cleanupOwned(scope, async () => ({ code: 1, stderr: "daemon unavailable" }), () => 20000), false)
   receipt.pending = []
   writeFileSync(file, JSON.stringify(receipt))
-  assert.equal(await cleanupOwned(wave, root, async () => ({ code: null, stderr: "No such object before interrupted client" }), () => 20000), false)
+  assert.equal(await cleanupOwned(scope, async () => ({ code: null, stderr: "No such object before interrupted client" }), () => 20000), false)
 })
 
 test("independent watchdog includes setup time, escalates the exact hung group, and reserves cleanup time", async t => {

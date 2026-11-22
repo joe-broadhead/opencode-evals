@@ -6,6 +6,15 @@ This change supplies local controls, not permission to run an eval.
 `qualifyWave()` always returns `execution_qualified: false` until reviewed recorder integration replaces that gate.
 No manifest field overrides the gate.
 The executable refuses before it starts Docker, OpenCode, or a provider.
+Input refusal returns a report value without creating or reading a control report.
+It grants no cleanup authority and starts no identity-check subprocess.
+
+Native process-group signaling is also unavailable.
+Node supplies numeric POSIX group IDs, not an incarnation-bound group handle.
+`kill(0)` and a separate process inspection cannot prove continuity through ID reuse.
+The production adapter sends no group signals and blocks live supervision.
+Injected identity-bound handles exercise the supervisor in offline tests only.
+These tests do not establish a native implementation or race-free POSIX signaling.
 
 The native 2.2.6 capability probe does not qualify the recorder handshake.
 Cancellation can lack native-after and CLI-terminal evidence.
@@ -21,7 +30,7 @@ The final accepted plan, release artifact, exact low-variant evidence, and both 
 - The context is `colima-mem-evals-20261122`. The launcher does not change the default context or start a VM.
 - The total local budget is 3,600 seconds. Work stops at 3,480 seconds, with 120 seconds for teardown.
 - Wall time and monotonic time constrain the deadline. Clock reversal never restores elapsed parent time.
-- The parent sends TERM, then KILL after ten seconds, to its exact owned group.
+- With an identity-bound adapter, the parent requests TERM, then KILL after ten seconds, for the same group incarnation.
 - The parent records late cleanup after suspension. It cannot guarantee a deadline while the machine sleeps.
 - Local termination does not guarantee provider cancellation or a maximum bill.
 - Unresolved costs stop the wave. Known costs remain visible, with unknown totals represented as null.
@@ -32,6 +41,8 @@ All invocations for this qualified context must use the same canonical Docker co
 Each control directory also has `wave.lock` and a permanent `wave.json` record.
 The launcher never breaks a lock or restarts a used control directory.
 Different Docker configuration directories are not one singleton domain.
+Qualification consumes the original deadline but precedes scope allocation.
+Pre-existing reserved control files, resource directories, symlinks, and traversal paths are refused without cleanup calls.
 
 ## Reviewed manifest inputs
 
@@ -55,7 +66,8 @@ It contains the following fields:
 | `arms` | `baseline` and `candidate`, each with staged `directory`, `archive` pin, and `conditions` pin |
 
 A file pin is `{ "path": "/absolute/regular/file", "sha256": "64 lowercase hex characters" }`.
-Pinned files cannot contain symlinks in their paths.
+Pinned files require canonical paths without symlinks or traversal components.
+Runtime binary pins also require executable permission.
 The Linux runtime binaries and host launcher Node are separate pins.
 The staged arms must pass the existing `memoryArtifact()` verification.
 
@@ -104,14 +116,37 @@ The CLI suppresses child output and exception text. The runner retains its exist
 
 The control directory retains `manifest.json`, `wave.json`, `worker.json`, `progress.json`, `report.json`, and per-trial resource journals.
 `report.json` distinguishes completed, incomplete, and unrun tuples.
-Known costs, unresolved trial IDs, and overshoot remain separate.
+Known receipt sums, unresolved trial IDs, and overshoot remain separate.
 A missing ledger receipt is unknown cost, not zero cost.
+`settleSingleAttempt()` records each observed cost/token receipt and its known lower bounds.
+Missing token fields remain null, not zero. Other complete receipts still contribute to the lower bound.
+Direct `--harness-retries 0` runs use the same conservative accounting.
+
+The pinned 2.2.6 CLI checks native prompt outcomes internally but emits no prompt-terminal JSON record.
+A final `step_finish`, a `stop` reason, or exit zero does not establish the missing recorder seal.
+The current producer therefore always records `attempt_complete: false` and null billed/list totals.
+It never accepts a caller-supplied success marker as terminal proof.
+Timeouts, errors, interrupted requests, and otherwise complete CLI streams retain unresolved attempt totals.
+
+A future completion decision requires a trusted native terminal outcome bound to the admitted prompt and a qualified recorder seal.
+That seal must account for outstanding requests and late receipts, not merely observed tool returns.
+This integration is absent. Synthetic complete-ledger fixtures isolate other controls in tests and do not qualify live accounting.
 
 Own-only container cleanup uses successful creation IDs, never labels or dead-PID guesses.
+The parent exclusively creates a fresh resource directory and retains an in-memory ownership capability.
+Every accepted journal binds a random invocation ID, the immutable manifest digest, and the exact trial ID.
+Journal existence, a copied capability object, or a caller-selected path grants no deletion authority.
+Cleanup verifies directory identity and canonical receipt paths before reading bound receipts.
+Invalid receipts remain untouched. Separately proved own receipts still receive cleanup.
 The journal records pending creation before Docker starts.
 A missing creation reply blocks verified cleanup, even after removal of all known IDs.
 Cleanup preserves foreign resources, shared images, and the VM.
 The runtime directory is disposable only after verified resource cleanup and worker-group exit.
+The parent also verifies the runtime directory identity before removal.
+Each attempted trial records its start before CLI creation. A missing journal then blocks verified cleanup.
+The next trial requires bound cleanup evidence with `verified_gone: true`, no pending creates, and no uncertainty.
+`containers_left`, missing cleanup evidence, or an unverified journal stops admission despite successful CLI, summary, and billing records.
+Final cleanup alone cannot satisfy this per-trial requirement.
 
 If cleanup is uncertain, preserve the locks and evidence.
 Examine `resources/*.json`, `worker.json`, and `cleanup-clients.json` before recovery.
@@ -139,3 +174,7 @@ They use isolated HOME, TMPDIR, and EVALS_STORE directories.
 They do not run a VM, native OpenCode, a listener, or a paid model.
 The fixtures in `wave-manifest.test.mjs` are invented test evidence, never accepted qualification artifacts.
 The full `run.test.mjs` suite is not part of this offline check because it starts loopback listeners.
+
+The terminal distinction follows pinned source `dc2ffcf8bf26f9e669b6aa22b95f50e12be15e06`,
+`packages/cli/src/run/noninteractive.ts`: native outcome checks at lines 309–337 and CLI JSON rendering at lines 356–505.
+The supplied native probe retained these source excerpts. It did not supply a durable recorder completeness certificate.

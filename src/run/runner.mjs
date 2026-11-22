@@ -304,16 +304,22 @@ export function settleSingleAttempt(store, identity, result = {}, price = null) 
     try { const event = JSON.parse(line); if (event.type === "step_finish") parts.push(event.part ?? {}) } catch { /* incomplete stream */ }
   }
   const number = value => typeof value === "number" && Number.isFinite(value) && value >= 0
-  const billed = parts.filter(p => number(p.cost))
-  const complete = parts.length > 0 && parts.every(p => number(p.tokens?.input) && number(p.tokens?.output) && number(p.tokens?.cache?.read ?? 0) && number(p.tokens?.cache?.write ?? 0))
-  const tokens = billedOf(result.stdout ?? "").tokens
+  const receipts = parts.map(p => {
+    const valid = number(p.tokens?.input) && number(p.tokens?.output) && number(p.tokens?.cache?.read) && number(p.tokens?.cache?.write)
+    const tokens = valid ? { input: p.tokens.input, output: p.tokens.output, cacheRead: p.tokens.cache.read, cacheWrite: p.tokens.cache.write } : null
+    return { billed_usd: number(p.cost) ? p.cost : null, tokens, list_usd: tokens ? listUsdOf(tokens, price) : null }
+  })
+  const known = key => receipts.some(r => r[key] !== null) ? receipts.reduce((n, r) => n + (r[key] ?? 0), 0) : null
+  // Pinned 2.2.6 noninteractive.ts checks native prompt outcomes internally, but does not
+  // emit a prompt-terminal JSON record. Step receipts/exit zero cannot replace the absent
+  // qualified recorder seal. Keep totals unresolved even when every observed step is priced.
   const cost = {
-    billed_usd: billed.length ? billed.reduce((sum, p) => sum + p.cost, 0) : null,
-    cost_source: billed.length ? "billed" : "missing",
-    billed_incomplete: !parts.length || billed.length !== parts.length,
-    tokens: complete ? tokens : null,
-    list_usd: complete ? listUsdOf(tokens, price) : null,
-    usage_missing: !complete,
+    receipts, known_billed_usd: known("billed_usd"), known_list_usd: known("list_usd"),
+    receipt_usage_complete: receipts.length > 0 && receipts.every(r => r.tokens !== null),
+    attempt_complete: false, completion_basis: "qualified-native-terminal-unavailable",
+    billed_usd: null, list_usd: null, tokens: null,
+    cost_source: known("billed_usd") === null ? "missing" : "billed-partial",
+    billed_incomplete: true, usage_missing: true,
   }
   recordRun(store, { ...identity, ...cost })
   return cost

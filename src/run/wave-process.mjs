@@ -1,11 +1,15 @@
 import { spawn as spawnProcess } from "node:child_process"
 
-/** No process-name/PID discovery. Only a fresh worker's exclusive PGID grants signal authority. */
-export function processAdapter({ spawn = spawnProcess, kill = process.kill.bind(process), setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
-  const owned = new Set()
+/** Native Node offers no incarnation-bound POSIX group handle. Never fall back to kill(-pgid).
+ * groupIdentity is an injected test seam, not an implemented native capability. Its handle must
+ * bind both probe and signal atomically to one incarnation, including reparented descendants.
+ */
+export function processAdapter({ spawn = spawnProcess, groupIdentity = null, setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
+  const owned = new Map()
   const clients = new Set()
   const start = (spec, detached) => spawn(spec.command, spec.args, { cwd: spec.cwd, env: spec.env, detached, stdio: ["ignore", "ignore", "ignore", ...(spec.ipc ? ["ipc"] : [])] })
   return {
+    supervisionAvailable: typeof groupIdentity === "function",
     unverified: () => [...clients],
     command(spec, timeoutMs) {
       return new Promise(resolve => {
@@ -36,20 +40,21 @@ export function processAdapter({ spawn = spawnProcess, kill = process.kill.bind(
       child.on("error", () => { exited = true })
       child.on("exit", value => { code = value; exited = true })
       if (!Number.isInteger(child.pid) || child.pid <= 1) throw new Error("worker did not start")
-      owned.add(child.pid)
+      owned.set(child.pid, null)
+      try { owned.set(child.pid, groupIdentity?.(child) ?? null) } catch { /* Preserve the child handle, but grant no signal authority. */ }
       return { pgid: child.pid, exited: () => exited, finished: () => exited && code === 0, activate: () => { if (spec.ipc) child.send({ type: "start" }) } }
     },
     signal(pgid, signal) {
-      if (!owned.has(pgid)) throw new Error("process group is not owned")
-      try { kill(-pgid, signal) } catch (error) { if (error.code !== "ESRCH") throw error; owned.delete(pgid) }
+      const handle = owned.get(pgid)
+      if (!handle) return false
+      return handle.signal(signal) === true
     },
     alive(pgid) {
       if (!owned.has(pgid)) return false
-      try { kill(-pgid, 0); return true } catch (error) {
-        if (error.code !== "ESRCH") throw error
-        owned.delete(pgid)
-        return false
-      }
+      const handle = owned.get(pgid)
+      if (!handle || handle.probe() !== "gone") return true // Unknown continuity is not verified exit.
+      owned.delete(pgid)
+      return false
     },
     trial(spec) {
       return new Promise(resolve => {
