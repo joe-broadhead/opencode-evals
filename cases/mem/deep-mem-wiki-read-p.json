@@ -70,12 +70,12 @@
   "notes": [
     {
       "id": null,
-      "text": "mem-discovery/2, suite 0e71e8ef330ec34e595b86d2d47d0147454390b9d8810faeaa9744669627d3fb. Active finite case contract, not runtime approval.",
+      "text": "mem-discovery/2.1-candidate772, suite 554d9680206ceb0de74626eac67c3948008500c3fe40c3cf542383ef8cb3148b. Active finite case contract, not runtime approval.",
       "line": 22
     },
     {
       "id": null,
-      "text": "Source schemas are PROVISIONAL 548, not a final release or registered catalog observation.",
+      "text": "Candidate 772 schemas are STATIC PROVISIONAL binding inputs, not registered catalog observations.",
       "line": 23
     },
     {
@@ -85,6 +85,6 @@
     }
   ],
   "hashes": {
-    "source_sha256": "8d0bf56d9e6e9dc4c1aa4e3d9b076d17026e8f7be33207fbe00a1c8eac349291"
+    "source_sha256": "172c550e17da62d5f2d2786ac4ba68d6f8bed30126d1eaa06c1c874d5160d5f9"
   }
 }

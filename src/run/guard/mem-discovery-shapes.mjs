@@ -1,4 +1,4 @@
-// Closed public read shapes from 5488730012f893f2e456d5bc6540ab3b4708d9c5.
+// Closed public read subset, checked against the static 772bf914 release schemas. Historical 548 input remains archived.
 // This classifies a real invocation; input cannot supply authority or a readOnly flag.
 const plain=v=>Boolean(v&&typeof v==="object"&&!Array.isArray(v))
 const keys=(v,allowed)=>plain(v)&&Object.keys(v).every(k=>allowed.includes(k))

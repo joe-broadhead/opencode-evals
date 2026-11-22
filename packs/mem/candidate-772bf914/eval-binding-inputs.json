@@ -1,0 +1,24 @@
+{
+  "candidate": "772bf914c71e6d0fcb4d7016d2f9b614e2af467d",
+  "tree": "bb5dcae70b4dedb6633969563976b184c9a415d1",
+  "tarballSha256": "50b88966af9bf5e358f85b8a33600b9b44d07503a708ba24d934555fd4e6368d",
+  "toolSchemaSha256": "90ee69211c2f0c664caa7e3f27e9cf7c85dc4d1ccd3c9cd96e2f142a78197d67",
+  "descriptions117Sha256": "3140108a65351d289edb30cc724487b36c49afa56a6f0b487e922c1fc4df05d5",
+  "permissionDefaultsSha256": "f59b03ff95d899503ef79ff23f4d48464d8cdb63e79d836596c4f7e3ac77cbc1",
+  "promptMapSha256": "5d68bf78f6c0df865592d8f9ca4cf491ab951144636e6104da54977b41cda5b9",
+  "coverageMatrixSha256": "4c5965a9a81774e5927dc93b98f9ab52b6c22a7a221eab05fcd251b37651443f",
+  "counts": {
+    "plain": {
+      "all": 18,
+      "taught": 11,
+      "pinned": 5
+    },
+    "memoryResource": {
+      "all": 20,
+      "taught": 11,
+      "pinned": 5
+    }
+  },
+  "status": "static frozen input material only; actual-host and opencode-evals gates pending",
+  "target": "opencode/deepseek-v4.1-flash"
+}

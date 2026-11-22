@@ -16,7 +16,7 @@ const backends={
   jobs:{method:"jobs.draft",input:{template:"slack-threads-project",project:"quartz",account:"quartz-synthetic"},oracle:"draft job, null next_due; never activate or claim a run"},
   skills:{path:"/v3/skill/versions",input:{skill_id:"$seed.skill",pagination:{limit:50,offset:0}},oracle:"actual scoped stored-skill version summaries, not wiki versions or an invented tag"},
 }
-export const discoveryContracts=discoveryCases.map((s)=>{const old=memCases.find(c=>c.id===s.id);return {id:s.id,family:s.family,prompt:s.prompt,backend:backends[s.family],source_status:"PROVISIONAL-548-not-final-runtime",...(old.tool?{baseline_binding:{tool:old.tool,args:old.args}}:["sources","jobs"].includes(s.family)?{baseline_binding:s.binding}:{}),provisional_binding:s.binding}})
+export const discoveryContracts=discoveryCases.map((s)=>{const old=memCases.find(c=>c.id===s.id);return {id:s.id,family:s.family,prompt:s.prompt,backend:backends[s.family],source_status:"STATIC-PROVISIONAL-772-not-runtime",...(old.tool?{baseline_binding:{tool:old.tool,args:old.args}}:["sources","jobs"].includes(s.family)?{baseline_binding:s.binding}:{}),provisional_binding:s.binding}})
 export function bindDiscoveryContracts({arm,catalog,bindings}) {
   if(typeof arm!=="string"||!arm||!catalog?.source||!Array.isArray(catalog.tools)||!bindings||typeof bindings!=="object")throw new Error("immutable arm, catalog and explicit bindings required")
   return discoveryContracts.map((c)=>{

@@ -1,0 +1,315 @@
+{
+  "candidate": "772bf914c71e6d0fcb4d7016d2f9b614e2af467d",
+  "tree": "bb5dcae70b4dedb6633969563976b184c9a415d1",
+  "tarballSha256": "50b88966af9bf5e358f85b8a33600b9b44d07503a708ba24d934555fd4e6368d",
+  "modes": {
+    "plain": [
+      {
+        "name": "recall",
+        "codeModeName": "mem_recall",
+        "declarationName": "mem.recall",
+        "first117": "Search memory: memories, commitments, pages, sources and past conversations. Call it when past context is needed. One",
+        "taught": true,
+        "pinned": true
+      },
+      {
+        "name": "remember",
+        "codeModeName": "mem_remember",
+        "declarationName": "mem.remember",
+        "first117": "Save one durable memory: a preference, constraint, decision, fact or procedure. Call it for a finding from this conve",
+        "taught": true,
+        "pinned": true
+      },
+      {
+        "name": "revise",
+        "codeModeName": "mem_revise",
+        "declarationName": "mem.revise",
+        "first117": "Change memories by their ids (rec_… from mem_remember or mem_recall). Call it for a changed fact. correct writes a su",
+        "taught": true,
+        "pinned": true
+      },
+      {
+        "name": "page",
+        "codeModeName": "mem_page",
+        "declarationName": "mem.page",
+        "first117": "Pages: topic/runbook bodies, links, history, copies and readers. Call it for a page; documents use mem_wiki. Pages li",
+        "taught": true,
+        "pinned": true
+      },
+      {
+        "name": "commitments",
+        "codeModeName": "mem_commitments",
+        "declarationName": "mem.commitments",
+        "first117": "Commitments: things someone will do, with a due date or a trigger. Call it for promises, reminders and what others ow",
+        "taught": true,
+        "pinned": true
+      },
+      {
+        "name": "read",
+        "codeModeName": "mem_read",
+        "declarationName": "mem.read",
+        "first117": "Read one full memory by rec_ id, with server version and status. Pages use page; documents use wiki. Call it for a me",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "code",
+        "codeModeName": "mem_code",
+        "declarationName": "mem.code",
+        "first117": "Code graphs: search symbols, read status/files, node, callers, callees, impact and explore. Call it for topology; lis",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "wiki",
+        "codeModeName": "mem_wiki",
+        "declarationName": "mem.wiki",
+        "first117": "Documents: uploads, repositories and their pages. Person, project, decision and runbook pages are mem_page, not here.",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "share",
+        "codeModeName": "mem_share",
+        "declarationName": "mem.share",
+        "first117": "Grant or revoke a page or folder in a space, only when the person asks: revoke takes grant_id from list. Before decid",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "spaces",
+        "codeModeName": "mem_spaces",
+        "declarationName": "mem.spaces",
+        "first117": "Spaces: inventories, sources/jobs/review and console links. Call it for the space or its inventories. current bind ch",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "ingest",
+        "codeModeName": "mem_ingest",
+        "declarationName": "mem.ingest",
+        "first117": "Retired and internal; agents never call it, and it always refuses. Memory collects on its own, and mem_collect collec",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "cursor",
+        "codeModeName": "mem_cursor",
+        "declarationName": "mem.cursor",
+        "first117": "Retired and internal; agents never call it, and it always refuses. Memory collects on its own, and mem_collect collec",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "collect",
+        "codeModeName": "mem_collect",
+        "declarationName": "mem.collect",
+        "first117": "Collect new events from the person's bound sources (mail, chat, meetings) into Memory now. Call it only for routines ",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "forget",
+        "codeModeName": "mem_forget",
+        "declarationName": "mem.forget",
+        "first117": "Renamed: use mem_revise with \"action\": \"forget\".",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "promote",
+        "codeModeName": "mem_promote",
+        "declarationName": "mem.promote",
+        "first117": "Renamed: use mem_share with \"action\": \"copy\".",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "status",
+        "codeModeName": "mem_status",
+        "declarationName": "mem.status",
+        "first117": "Renamed: use mem_spaces with \"action\": \"health\".",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "grants",
+        "codeModeName": "mem_grants",
+        "declarationName": "mem.grants",
+        "first117": "Renamed: use mem_spaces with \"action\": \"access\".",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "members",
+        "codeModeName": "mem_members",
+        "declarationName": "mem.members",
+        "first117": "Renamed: use mem_spaces with \"action\": \"members\".",
+        "taught": false,
+        "pinned": false
+      }
+    ],
+    "memoryResource": [
+      {
+        "name": "recall",
+        "codeModeName": "mem_recall",
+        "declarationName": "mem.recall",
+        "first117": "Search memory: memories, commitments, pages, sources and past conversations. Call it when past context is needed. One",
+        "taught": true,
+        "pinned": true
+      },
+      {
+        "name": "remember",
+        "codeModeName": "mem_remember",
+        "declarationName": "mem.remember",
+        "first117": "Save one durable memory: a preference, constraint, decision, fact or procedure. Call it for a finding from this conve",
+        "taught": true,
+        "pinned": true
+      },
+      {
+        "name": "revise",
+        "codeModeName": "mem_revise",
+        "declarationName": "mem.revise",
+        "first117": "Change memories by their ids (rec_… from mem_remember or mem_recall). Call it for a changed fact. correct writes a su",
+        "taught": true,
+        "pinned": true
+      },
+      {
+        "name": "page",
+        "codeModeName": "mem_page",
+        "declarationName": "mem.page",
+        "first117": "Pages: topic/runbook bodies, links, history, copies and readers. Call it for a page; documents use mem_wiki. Pages li",
+        "taught": true,
+        "pinned": true
+      },
+      {
+        "name": "pages",
+        "codeModeName": "mem_pages",
+        "declarationName": "mem.pages",
+        "first117": "Read a page. Call list/read/links/history; writes use mem_page.",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "commitments",
+        "codeModeName": "mem_commitments",
+        "declarationName": "mem.commitments",
+        "first117": "Commitments: things someone will do, with a due date or a trigger. Call it for promises, reminders and what others ow",
+        "taught": true,
+        "pinned": true
+      },
+      {
+        "name": "read",
+        "codeModeName": "mem_read",
+        "declarationName": "mem.read",
+        "first117": "Read one full memory by rec_ id, with server version and status. Pages use page; documents use wiki. Call it for a me",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "code",
+        "codeModeName": "mem_code",
+        "declarationName": "mem.code",
+        "first117": "Code graphs: search symbols, read status/files, node, callers, callees, impact and explore. Call it for topology; lis",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "wiki",
+        "codeModeName": "mem_wiki",
+        "declarationName": "mem.wiki",
+        "first117": "Documents: uploads, repositories and their pages. Person, project, decision and runbook pages are mem_page, not here.",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "wikis",
+        "codeModeName": "mem_wikis",
+        "declarationName": "mem.wikis",
+        "first117": "Read documents and wiki graphs. Writes use mem_wiki.",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "share",
+        "codeModeName": "mem_share",
+        "declarationName": "mem.share",
+        "first117": "Grant or revoke a page or folder in a space, only when the person asks: revoke takes grant_id from list. Before decid",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "spaces",
+        "codeModeName": "mem_spaces",
+        "declarationName": "mem.spaces",
+        "first117": "Spaces: inventories, sources/jobs/review and console links. Call it for the space or its inventories. current bind ch",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "ingest",
+        "codeModeName": "mem_ingest",
+        "declarationName": "mem.ingest",
+        "first117": "Retired and internal; agents never call it, and it always refuses. Memory collects on its own, and mem_collect collec",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "cursor",
+        "codeModeName": "mem_cursor",
+        "declarationName": "mem.cursor",
+        "first117": "Retired and internal; agents never call it, and it always refuses. Memory collects on its own, and mem_collect collec",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "collect",
+        "codeModeName": "mem_collect",
+        "declarationName": "mem.collect",
+        "first117": "Collect new events from the person's bound sources (mail, chat, meetings) into Memory now. Call it only for routines ",
+        "taught": true,
+        "pinned": false
+      },
+      {
+        "name": "forget",
+        "codeModeName": "mem_forget",
+        "declarationName": "mem.forget",
+        "first117": "Renamed: use mem_revise with \"action\": \"forget\".",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "promote",
+        "codeModeName": "mem_promote",
+        "declarationName": "mem.promote",
+        "first117": "Renamed: use mem_share with \"action\": \"copy\".",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "status",
+        "codeModeName": "mem_status",
+        "declarationName": "mem.status",
+        "first117": "Renamed: use mem_spaces with \"action\": \"health\".",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "grants",
+        "codeModeName": "mem_grants",
+        "declarationName": "mem.grants",
+        "first117": "Renamed: use mem_spaces with \"action\": \"access\".",
+        "taught": false,
+        "pinned": false
+      },
+      {
+        "name": "members",
+        "codeModeName": "mem_members",
+        "declarationName": "mem.members",
+        "first117": "Renamed: use mem_spaces with \"action\": \"members\".",
+        "taught": false,
+        "pinned": false
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@ import {mkdirSync,writeFileSync} from "node:fs"
 import {join,resolve} from "node:path"
 import {memCases} from "./cases.mjs"
 import {spacesDiscoveryIntent} from "../../src/run/guard/mem-discovery-intents.mjs"
-export const DISCOVERY_VERSION="mem-discovery/2"
+export const DISCOVERY_VERSION="mem-discovery/2.1-candidate772"
 export const RECORD_ID="rec_01KABCDE1234567890ABCDEFGH"
 export const SKILL_ID="skill-quartz"
 const clone=v=>structuredClone(v)
@@ -34,7 +34,7 @@ function contract(old){
   else if(old.family==="sources"){binding={tool:"spaces",args:spacesDiscoveryIntent(old.id)};backend={method:"sources.request",input:{source:"gmail",account:"quartz-synthetic"}};answer="Requested; confirmation is pending. Not linked."}
   else if(old.family==="jobs"){binding={tool:"spaces",args:spacesDiscoveryIntent(old.id)};backend={method:"jobs.draft",input:{template:"slack-threads-project",project:"quartz",account:"quartz-synthetic"}};answer="Draft stored; not active and not running."}
   const prompt=old.family==="exact-read"?(old.id.endsWith("-p")?"Show my Quartz fact in full, not a ranked snippet.":"Read the full current body of my Quartz fact."):old.prompt
-  return {id:old.id,original_id:old.id,family:old.family,prompt,prompts:[prompt],suite:DISCOVERY_VERSION,binding,backend,answer,legacy_answer_contract:Boolean(old.answer),seed,write:["memory","page","commitment","wiki-write","sources","jobs"].includes(old.family),source_profile:"5488730012f893f2e456d5bc6540ab3b4708d9c5-PROVISIONAL"}
+  return {id:old.id,original_id:old.id,family:old.family,prompt,prompts:[prompt],suite:DISCOVERY_VERSION,binding,backend,answer,legacy_answer_contract:Boolean(old.answer),seed,write:["memory","page","commitment","wiki-write","sources","jobs"].includes(old.family),source_profile:"772bf914c71e6d0fcb4d7016d2f9b614e2af467d-STATIC-PROVISIONAL"}
 }
 export const discoveryCases=memCases.map(contract)
 export const discoverySuiteHash=createHash("sha256").update(JSON.stringify(discoveryCases)).digest("hex")
@@ -61,7 +61,7 @@ ${s.legacy_answer_contract?`\n- [MEM-RT01] blocker · The final answer retains t
 
 ## Notes
 - ${DISCOVERY_VERSION}, suite ${discoverySuiteHash}. Active finite case contract, not runtime approval.
-- Source schemas are PROVISIONAL 548, not a final release or registered catalog observation.
+- Candidate 772 schemas are STATIC PROVISIONAL binding inputs, not registered catalog observations.
 - Direct/search are separate execution conditions with the same intent. Non-pinned schemas require full-schema discovery after a 117-character preview.
 `}
 if(process.argv[1]&&resolve(process.argv[1])===import.meta.filename){const dir=resolve(import.meta.dirname,"../../cases/mem");mkdirSync(dir,{recursive:true});for(const s of discoveryCases)writeFileSync(join(dir,`${s.id}.md`),renderDiscoveryCase(s));console.log(`${DISCOVERY_VERSION}: ${discoveryCases.length} executable case contracts; runtime/catalog approval absent; suite ${discoverySuiteHash}`)}

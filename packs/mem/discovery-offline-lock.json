@@ -3,14 +3,23 @@
   "status": "unrun",
   "final_comparison": false,
   "runtime_verified": false,
-  "base": "acdcf7c0a8e11c85b03c8479099379b689a54de2",
-  "suite": "mem-discovery/2",
-  "suite_sha256": "0e71e8ef330ec34e595b86d2d47d0147454390b9d8810faeaa9744669627d3fb",
-  "compiled_cases_sha256": "d9e665c06402e5b46c0a7077266578171f4ce60d814948bf152cdd98a23a73b8",
+  "base": "63e89a0cb2625f01f4288f9f5eadc3e7b8d640bf",
+  "suite": "mem-discovery/2.1-candidate772",
+  "suite_sha256": "554d9680206ceb0de74626eac67c3948008500c3fe40c3cf542383ef8cb3148b",
+  "compiled_cases_sha256": "fe6d62b45b76f113c0f310e8d998cbac7bcacb1443b58861f943e49919dbee4f",
+  "actual_grader_sha256": "8ebcc1ab62474f90ac6e61b1f83c1aa6e05d8798c8a1734250272ddf7c24cfa0",
   "source_schemas": {
-    "status": "PROVISIONAL-source-fixture-not-registered-observation",
-    "commit": "5488730012f893f2e456d5bc6540ab3b4708d9c5",
-    "sha256": "90c84c8349ae64caebb839dfc2dc7bda0d16ad1c7b7d506a697cf0c2f799d47f"
+    "status": "STATIC-PROVISIONAL-772-source-input-not-runtime",
+    "commit": "772bf914c71e6d0fcb4d7016d2f9b614e2af467d",
+    "tarball_sha256": "50b88966af9bf5e358f85b8a33600b9b44d07503a708ba24d934555fd4e6368d",
+    "sha256": "90ee69211c2f0c664caa7e3f27e9cf7c85dc4d1ccd3c9cd96e2f142a78197d67",
+    "descriptions117_sha256": "3140108a65351d289edb30cc724487b36c49afa56a6f0b487e922c1fc4df05d5"
+  },
+  "parent_compile_lock": {
+    "commit": "63e89a0cb2625f01f4288f9f5eadc3e7b8d640bf",
+    "sha256": "5e4d14e9994f2563810b44f0344caca62b744727198376040dfbcd0e59c617c3",
+    "suite_sha256": "0e71e8ef330ec34e595b86d2d47d0147454390b9d8810faeaa9744669627d3fb",
+    "compiled_cases_sha256": "d9e665c06402e5b46c0a7077266578171f4ce60d814948bf152cdd98a23a73b8"
   },
   "previous": {
     "base": "acdcf7c0a8e11c85b03c8479099379b689a54de2",
@@ -179,153 +188,178 @@
   "cases": [
     {
       "id": "commit-mem-memory",
-      "source_sha256": "cff6f94afc9ee4a58692e96eb8baea519687ad7502752d3155b1901264352ad0",
-      "compiled_sha256": "c41795b92e504e00328f06cc39fc16e4bb010630f080b2eb5a42244a5f84a748"
+      "source_sha256": "4c95d745922ea1ec06d58bf7c96607f2605753cb75f78c1c7f18d9f8df6de76e",
+      "compiled_sha256": "e350996efb0f1c9a29a00a9038cd84c9b1a2a7ebccddd6eb8a11d539a455227a"
     },
     {
       "id": "commit-mem-memory-p",
-      "source_sha256": "f2b8fb0b85ad28392dd49814d9a5aba537f027bf0a2a56d17753402752147303",
-      "compiled_sha256": "d2ab2c0a49a5e3c256e515e8d406b429d4dde13a8fc94e0822bd269495ddc544"
+      "source_sha256": "c863766934bfcd6f1802b8f0f72059f61632a2ac8d9e4d0d51b36c68ca6915b9",
+      "compiled_sha256": "723a675681c6ae6f03eb8ce7f8b83b7afd8870417fac0e2be9530b4a1d676689"
     },
     {
       "id": "commit-mem-page",
-      "source_sha256": "061182822770ccda3593093c48d6c0d5d5cfce95c2c77a4bbec5c701db0fcea6",
-      "compiled_sha256": "537fbfe04b2b0f7cdfc9a790727cacc38e165c05dd7310159db5f881659b6e9b"
+      "source_sha256": "c4e4d07029e2c5da0d704b875a11fcc50ac7e3ff9094d0e9221161a6a304a898",
+      "compiled_sha256": "b0ee9fd16c8de1de8dc50cfe107104345932a236dae4624c49d43e43d3ac8e89"
     },
     {
       "id": "commit-mem-page-p",
-      "source_sha256": "ec4196e5c2b6f9ef727b7fbf8b5a789d6012eb8cee08492423e2dcf707e1505b",
-      "compiled_sha256": "c92889b1e814b449a42eacea47f3648ad1c995d00b6cee22331382f632938399"
+      "source_sha256": "74fff3a4826e42a2d6be2b20eb68a90c25ceb02fbe26586fa6b4b15a3ff179e3",
+      "compiled_sha256": "f5dcea0cd44c25c1f6c32895179010adc11ba23ab51cd4ba677e7836bce009a4"
     },
     {
       "id": "commit-mem-commitment",
-      "source_sha256": "dab61e7096f051de511cd1d58f742bb20dfc6aebf7c478f0631ae1690247de0e",
-      "compiled_sha256": "ec917c03149b0d2b6e7f72ab4ef51fbf3821d598a332bd853e61b0ebbfd0634b"
+      "source_sha256": "f248805bc438df958b640094966c0220e3280320d8d5d4c72d62ac932dca0a37",
+      "compiled_sha256": "e63196029e21807bc2f34aa2f41030d589f0ba74b6e669fed7b7d22bd2253ea9"
     },
     {
       "id": "commit-mem-commitment-p",
-      "source_sha256": "048b412768a47c96b710cf87196c6503bab9b37da0742cc840b42d6bb3edfb08",
-      "compiled_sha256": "dec8bf85c8af3e8c521780fc2f5bd3c37eda92998dc1e7f1bfb403f8dfcc04d4"
+      "source_sha256": "d8ea64e64a83e8a9e973ef6f5d7e60fa5d7218d7b35befb0f6d2a5b9e33ab878",
+      "compiled_sha256": "9d4bbf977434db883ecb5de194c6cc91db3dd24a111e5ac048d1f3bf369fcfd6"
     },
     {
       "id": "commit-mem-wiki-write",
-      "source_sha256": "dfc808218ea6528d736f6b198d5e36c619162599978b9d23c719fecdd65afddf",
-      "compiled_sha256": "45d5ffd728d7ed8a65773d377ab589013db13bbb29695fd6622de7d336a61ae1"
+      "source_sha256": "91b7959ede8c136126812091574cb6ef1838f9429ff5aebaa0a545ef991d5838",
+      "compiled_sha256": "07a26b4e7673814144bebcc0fccbd116c7733747c1260c20159fa86583023ea5"
     },
     {
       "id": "commit-mem-wiki-write-p",
-      "source_sha256": "f1101fed2da5b1db641e93265238642f1dde9f99d9dbb81a7d1e2f357f0985d4",
-      "compiled_sha256": "f3a2e07feadc40751647a41b9ecdaac649bd0fb40259d8bcc33a5a86b646c5d4"
+      "source_sha256": "b6e761b5471f05380934297df3cdc77af6cee7eb5983eef7b284450e8a2dd71d",
+      "compiled_sha256": "41f11459d7b9aeefc5b17270da88f0e611d50068d54cd4467f947f5bf80608b1"
     },
     {
       "id": "deep-mem-wiki-read",
-      "source_sha256": "dba4b113557a547528c947dc8fee526d52b45c532b55a1de646599278f11affe",
-      "compiled_sha256": "7beed8c01087abab2a2e9b2a3b38756477cb53b57222f62269a6f29818f1be9a"
+      "source_sha256": "e004af2d55d450972946b43da85a02afe7a544ead549bc0dbc2b3898ccd2df25",
+      "compiled_sha256": "8eae5df1c54986897a388eaa7a1eff1dc3be90f7d8f9ddc2d146f16ed18444f2"
     },
     {
       "id": "deep-mem-wiki-read-p",
-      "source_sha256": "8d0bf56d9e6e9dc4c1aa4e3d9b076d17026e8f7be33207fbe00a1c8eac349291",
-      "compiled_sha256": "49a0d1badbac98ead08d0474179cb8dc2db165d6b1d4b88b2ffe03fa4e99f070"
+      "source_sha256": "172c550e17da62d5f2d2786ac4ba68d6f8bed30126d1eaa06c1c874d5160d5f9",
+      "compiled_sha256": "4e65f655663f3caaca6e2572865ddd9b2ef22fd947e194dc99850f416c1cf531"
     },
     {
       "id": "deep-mem-browse",
-      "source_sha256": "07e616158cbd185035f1758e0b208f2ba17a41c4e6729f8ab4f8b3f76db0267c",
-      "compiled_sha256": "27ef095d8c2d10958c8ba565abe52e0258d2593ee6f8e131fbe0ef61bdb2b49f"
+      "source_sha256": "6e106a2d6ac4342c8fab967c037dc4ef7c33b55b7b31aa7aef04db54b6f566d0",
+      "compiled_sha256": "fc6e2a93be932c6a5c4afaab860cc0ccd3a184b9293a1ea1e8314c98e8d25fcf"
     },
     {
       "id": "deep-mem-browse-p",
-      "source_sha256": "8d6b01d420d6ddb8e1b25b33884368d972e0d2c9db553363bf8e625e9b7a3cec",
-      "compiled_sha256": "162a8e371737b06f6365585d0412ccc243e554a301ecce153c750e657392d4db"
+      "source_sha256": "c28fa7b5ffda20cfaa15e94def899e5394cf990af4338da826d1d05946d69145",
+      "compiled_sha256": "276f598acabd0f0fc07ccb04c11f0e147cd08fcb674d0a804106c86152920a1b"
     },
     {
       "id": "deep-mem-exact-read",
-      "source_sha256": "311ee2c3e4b9d89c378a76695811da427ba879ce9d7436ac687ddc0bd5d95fcb",
-      "compiled_sha256": "38e257da5eca68538bb8e1c5c1e245c20dc3144bbda3a852794092df7ed9b26b"
+      "source_sha256": "d0b4b3d168e0d2421700bb5ce00cb8a17bf1684f8d42af2b49aef098afe62682",
+      "compiled_sha256": "37815441bcf242cacd850eef41df5d3ae6d1e41dc0f89e2e5039aa2bdbd4f659"
     },
     {
       "id": "deep-mem-exact-read-p",
-      "source_sha256": "c2c19b8b6f82ff9c64196d398ca57f09fd0fe848c7f4355717d208f3c027ca63",
-      "compiled_sha256": "d9051d4aa7cdb858560b33b9c792c8dce8d15943a90ac2b291b194d955d28143"
+      "source_sha256": "3985bc218e532017b7dc47ffc2af0ce7f26acc8b6372ba9cebf41667d1156e83",
+      "compiled_sha256": "d2f78f14f44e2b0d99baa4dd6c5b864972b359762be952bf52541f36b206bfdd"
     },
     {
       "id": "deep-mem-code",
-      "source_sha256": "9c5ea4e837cb79906936c0ddcc89c298914faf97b537f4ecd4a3379a56067c80",
-      "compiled_sha256": "7553fbfd830b12e5531349d074b893e95e398ca4e0561c1795e3afd0352a3cc3"
+      "source_sha256": "4ad728ce1a9bb56e148dd0778a6fafc96c1a3b85c3a22d0229098039ffe30bf5",
+      "compiled_sha256": "fdc257718e29430b2c6581035fa9d6c05a7489caec10ca5e641af5c1b112721d"
     },
     {
       "id": "deep-mem-code-p",
-      "source_sha256": "f5ccc1e37a6c8bd422fea5d0dec205113125e06c1c2a633f84f161d22618f5df",
-      "compiled_sha256": "24cc5ed3a59b3b3ea47797ed8a51ca4f8e2bcf88772a29e14cc783ea2dfe95ec"
+      "source_sha256": "7bcb6c7019aa096928f27f0c1b8b86c7d60fd7d38dc4c2452425382be35a938d",
+      "compiled_sha256": "00c2c18eef74037e6f74808ada3f0f0e02147f94cd98c4a6cba191e62a49c7a6"
     },
     {
       "id": "deep-mem-wiki-graph",
-      "source_sha256": "776af4012fd8b6893170282125b58508bb214ea86dee64f3bb607ceb4aad48c1",
-      "compiled_sha256": "d7b4c66720223b32a13439bad33b7b8a58f3b74bbc35bec38be54e3a389bc8b6"
+      "source_sha256": "6b72dac0b1e36b86e93b6999273b9c3ee826c37a9a87a8a170b926b4b947bf7f",
+      "compiled_sha256": "fe4ad411b82031fde2b117d28c02fbc79079668ebf4a3b6160405580b9f40267"
     },
     {
       "id": "deep-mem-wiki-graph-p",
-      "source_sha256": "75ab2c036863febb3fb58486bfae3fa7c4abcdcad0287eeabd9cd9b247d03fa5",
-      "compiled_sha256": "dfbb2a10be97ca88e0e64ba9cdada642ee4ad1219df0d79a7382ff87636b76f3"
+      "source_sha256": "3e5b05f71d0df6a4d035dbf388971309339effe72727f0e450149e4eb5e44711",
+      "compiled_sha256": "5c3a22949afef891f5b964678f50907bc35e7795bb4edce4fa0ff02cbba2da8f"
     },
     {
       "id": "deep-mem-skills",
-      "source_sha256": "dad1242dfaecef1f1102c93e01b1e1dd9441ebaa42c20883bba55de47f5acde1",
-      "compiled_sha256": "97dc096c6ec9b0a0cebc819b16183de66e36b2936fe41a36e03834a53d011d09"
+      "source_sha256": "1686dfefc956ed90446402cb4f7cfce5a025b4e23d2bc10a1837b26a8915b4c4",
+      "compiled_sha256": "e5a4b98715c9e82ce3fb7f9573615254827fdc906b5280cfefe90ef9d8966914"
     },
     {
       "id": "deep-mem-skills-p",
-      "source_sha256": "78a3763fa52ce742376966d873444fe607efabc7c3823f7d8b740729a2b83b78",
-      "compiled_sha256": "e7e114dbb4c1ec448b396fa61db3205282ce0d61d7532b8c79e498d730b446e0"
+      "source_sha256": "8059f287777900922940ca3f431053708d3be985527a714a96331d38929fb3af",
+      "compiled_sha256": "d977e1c82b40f6d02205710e98e93e4a7c5b0847157ff2d53dcf30874b7a5917"
     },
     {
       "id": "deep-mem-sources",
-      "source_sha256": "7d2a45d7d9f7e4579e18ac669464903f6bdbd1bd112a38a1de1d9346a9330355",
-      "compiled_sha256": "54e665cd5376947df9c2d0c7d502b363f968efd2681d4333ac42b2be1ce6ba57"
+      "source_sha256": "69ba1875a31908cf9a94984c664978620cb5dde04cc6b058633d55cd6263ce32",
+      "compiled_sha256": "9204ee596660146aca20a5da9d99812df0e93e539d8e8f2e2d34bef7643d5204"
     },
     {
       "id": "deep-mem-sources-p",
-      "source_sha256": "1028d2012b857baae8b62c390aba2f72304c95af0c10885470ceca837b528fcd",
-      "compiled_sha256": "283a32040b8f6de2bf54619258ba314a9d8c2475235d75d541ed7f138aa0cb4f"
+      "source_sha256": "1ff978bb083ba3e7f926dea98520ebc73a66e04f0784621e82055674a4e5c52b",
+      "compiled_sha256": "15d8724957ca922bee5313402d9a75964378521cb42e00bfe1ec626abb78bbf0"
     },
     {
       "id": "deep-mem-jobs",
-      "source_sha256": "2b1747748d9c2b715b2d1d26a9f82eb38a13efebf561148d0a3b4b6098789787",
-      "compiled_sha256": "eedac924d98ec117f1e97dfff75fe2aa3dfe3111ed410dfa9289288cf9dcac7f"
+      "source_sha256": "a40dc9ed9f205e3ee58c0a92bc5fbd3f4660bbc4f487b9ac12fbf4824f540a31",
+      "compiled_sha256": "1897fd08852af23c7897fe619d62268445d3ee08013a89b2c5825d45d28a5c91"
     },
     {
       "id": "deep-mem-jobs-p",
-      "source_sha256": "6ce50a44e39959f0a64daea17438453c74942ab4391b928888d6e75c3a14aac8",
-      "compiled_sha256": "c1c01dbbe372cc4c6ce18389bce8bb61332f061e496ff52ffe35498e4f5ef64c"
+      "source_sha256": "b15d4f8a99393aa7c07108236de50755cfae820bd966225a0e2eb25e454a1946",
+      "compiled_sha256": "2ec0df944f94d85d4d37df9aee81436a94c22d6467dca2b145bd92db29dbfc95"
     }
   ],
   "module_sha256": {
     "packs/mem/cases.mjs": "3b6068dcf2ee8b0bc5e3889e054d062bf6ccad42e510edf8a64d0bc06c937404",
-    "packs/mem/discovery-plan.mjs": "82a5483bf48ea5d4be1542251716937190370abeb3f8a943a1b6c73e8c95104c",
-    "packs/mem/discovery-schema.mjs": "e16acb6ed289f509c0e1a1087b9c5792016c27f64a3f897b5fd63f90960e89b0",
-    "packs/mem/discovery.mjs": "3dcaba2f3fe7a127322f14d06dd2c97034c2d10b95c9fef3c4ccaff1c0677fec",
+    "packs/mem/core.mjs": "5289b231cc45c7378e127c5532d0be7dc7747076d6512758ce67b075cbe7806d",
+    "packs/mem/discovery-plan.mjs": "0a15a0919e3a5a44cfc464aafabf9af3f55b42f5e4dab6d56c966c43c9e6d44c",
+    "packs/mem/discovery-schema.mjs": "0a9a8866546122477e2d357f29199561a51695a3188167e4b934a65a7464021c",
+    "packs/mem/discovery.mjs": "0c3050b741a86f2dbe3cf56986cfa5a08d641101fa6422b85c3ef035d70a1556",
     "packs/mem/snapshot-discovery-schema.mjs": "8cf7f9dae2c93e7159e363aa9eb9c3a0fce56c10b4147d2521c95a2205ab0f14",
     "src/cli.mjs": "e760ccd2c551f1ba54bedee93a35ae25574a521c2beba3c2b12a12dbebe56658",
-    "src/grade/adapters/index.mjs": "daecb4babfc5a1d4ee9926973203765d31e49c58e1d9237fdb6564cc4a205b9e",
+    "src/grade/adapters/charts.mjs": "df534e43b55b293c35db5a1f1d53a504badfbc2a91a5893d413451ba0dc9b1f0",
+    "src/grade/adapters/index.mjs": "1d98090da347440d4e7d1b27c3d06031f62752bbacdf97fef53ed1a9dcd4f9a3",
+    "src/grade/adapters/mem-core-markdown.mjs": "04179905ae8b730eaeb217f9372cdb1693e3468d21f950ae51eaf87b3e145107",
+    "src/grade/adapters/mem-core.mjs": "0e05ffa7399a3fcb38013c94772390380cf3d14fedad92e159ad05c87775dbe2",
     "src/grade/adapters/mem-discovery.mjs": "0c2d3ea7c496ab18634c2f0290b854054aec9b03bd01861deb51dc292716c7d3",
+    "src/grade/adapters/mem-durable.mjs": "bfd45e8b3aa021ffce6f0aeaf50e4e5637268620945ea6bc8681e99b081abd17",
+    "src/grade/adapters/mem.mjs": "cef19543ecc7dd2fa9fc3ff4b4db8eebdb50d8d22336a25d878d3d6432b1d2d3",
     "src/grade/evidence.mjs": "4ab484567f4aff842d2d31bacfc4d2f7ccb3ec9cae4f29f0fae099bbad2abe79",
     "src/run/commit-plan.mjs": "8f59a01c94bc6d00be687a8987a2b952f5e066539864f16a311133bfe56cd7b3",
-    "src/run/guard/index.ts": "d3b52d2c0aa9ed4d9f1085f70d227ac80b4fbc02c8e9949dba798748815495cf",
+    "src/run/guard/index.ts": "0a347cfaf1f336f44938fb7a8a9fcf329f4fb4a4bb6b2ccd3611f42d7b204e95",
     "src/run/guard/logic.mjs": "c3cfb64cc62638bf6d647d852035554b00f1109df602d292243a3f9fd47beb50",
     "src/run/guard/mem-call-context.mjs": "7c7d9ac9301efcf25f2282bc63978227df53b2635f64b3fa593f30a13e4e34fc",
     "src/run/guard/mem-discovery-intents.mjs": "caaab3fd29dc988a98192b2c005618e1775817b8e31a1068ee94d68a5b5600ac",
-    "src/run/guard/mem-discovery-shapes.mjs": "17ede30f20d99d8567a2b4a1e5933de01d325d54d1e066e9ac0887efe7905b1e",
-    "src/run/guard/mem-intents.mjs": "84a7c7334cce84f5ab29a50e3b4316dde1459e8f88142d0fc8cb17bb3e0c5155",
+    "src/run/guard/mem-discovery-shapes.mjs": "9c0db86ccdbafff4ac38f72b731a779227167b7bf6e010692f37170714fe9ea5",
+    "src/run/guard/mem-intents.mjs": "0ff341c3e889cc61193300fa1bb2a3de1e0a197a99112b4111a635533a656c5c",
     "src/run/guard/mem-targets.mjs": "db390aa82beddcf86889871ca971c45361974babedf928741fc2fd4fbdbc4f7a",
-    "src/run/guard/policy.mjs": "ac1f5364bde174384ccb588561e4526756add635dc7374b4074cfa6d875f8569",
+    "src/run/guard/policy.mjs": "8589c477fff49436a58a43ca947973a43a6259c534f451431d51315d81072b41",
+    "src/run/mem-arguments.mjs": "b99aff058f6456320b9b7860e8c3170072acc54b4f3eacc4fa4234c09fba0611",
+    "src/run/mem-baseline.mjs": "482a17764e687fba46c3058253a066e4dedc439a874b6ce51b7751bc4a2c7110",
     "src/run/mem-case-plan.mjs": "bdeeb564aa7e72c54078b270a1e0e930b3bcfb7055044578daa2dd81ef8549e2",
     "src/run/mem-discovery-stage.mjs": "66df67428888004108ad593873751711460599ca67bdca5100fc710259eda8e6",
     "src/run/mem-fixture.mjs": "d62c3ac402203d31f652982b9a4a8012a4c7072b8eac4d09dfb05cc5d1947c76",
-    "src/run/runner.mjs": "528dbad781c8f0139931c971daaa1e1466cb52484f7e66e548ba01fbf71d4f59",
+    "src/run/mem-intent-plan.mjs": "bc46da7cc7191c6fcd6d4501701c0746a6fcf9c1e5587b9fafd89f78295c4bee",
+    "src/run/mem-payload-stage.mjs": "cc9435d30bd2c99297537d8151fab7adab3775a1169c469bdaf2533df4cb4c92",
+    "src/run/mem-turns.mjs": "8b735bd554bbcc573ecdf9cd69b0276ab2c56528a925d6c1d817cec975041d74",
+    "src/run/runner.mjs": "df1856074ec49ce59bc242ebce29b7293ef2e2a1059cf996f257c96a2732ccc0",
+    "src/trace/innerArgs.mjs": "f4dbd7a795fded7f4f92672baf440fb31329e95ab6f1f53debd45d442ed27f1d",
+    "src/util/canonical.mjs": "c04ea77ca9facceeadcff69773a2857ea4f5dbfdf37d8690fba1c68dde62ae92",
+    "test/mem-core-markdown-presentation.test.mjs": "205687ee4004eb9cf448d41f14ecc2daad15e3ea1206ba8a37ea44ef77fac3db",
+    "test/mem-core-payload.test.mjs": "8cac4d34536b86d028551e1b8d5cc0c54b7bf7aef2d925afb5b573422691f8a8",
+    "test/mem-core-proof-regression.test.mjs": "1f2c23cae012833ca775fba17760b5354fc757569d65375ce69af0df8e2cd244",
     "test/mem-discovery-contract.test.mjs": "9f9431e910d0a36e9daf1f06e588c037b5965ec8c768f12f59682a040dd8285a",
     "test/mem-discovery-execution.test.mjs": "db7b50f6e1d98048ff968e13cb9d20abd4914c57238fcfb73faa20569e87c30d",
-    "test/mem-discovery-guard.test.mjs": "ec929c4cbebafdbff978f7b0108e85d3fa66f81b9550fae710eb9a6143b98c2d",
+    "test/mem-discovery-guard.test.mjs": "a4baaa2d8e4b685a6cb3a8571d2790d63d843888ce05decc0aab3c5c060766e2",
     "test/mem-discovery-lifecycle.test.mjs": "464ef2fe746eac9629dd3cc5b771848ec4009fa1ba20f4559e880b8ce5889df3",
-    "test/mem-discovery-schema.test.mjs": "b9a8d05c898b433faee94d82a55eb824b62f138fe1d66a3893d1aafa4a449427",
+    "test/mem-discovery-schema.test.mjs": "e7dfbaf3e52df3ee3658d01c7d555b076f98da799deaa041ffcb1edb0ebf66a4",
+    "test/mem-grader-digest.test.mjs": "8c5aa0e56c8c4df181cff5c9ff0fcb608fc3b5e53d0fb8770901f23b7d87c64d",
+    "test/mem-http-proof.test.mjs": "7904bc6cc3e860fe782dc0a85314b0c89b6456482b4de1aeb7a780f187e465b8",
+    "test/mem-native-integration.test.mjs": "2c901ee4a33c16a8662bdbb9d88887d9812d1cf84cf15faa4284a4286735096f",
+    "test/mem-proof-emitter.test.mjs": "4d96d2fef6e0c4983deac1a731f71338c947e6934e2c9371a4b9fa634e0a82f3",
+    "test/mem-review-guard.test.mjs": "811d927b8f15575fbce7bd18eb1dc037fffb86673f682387fa57a705ba564579",
+    "test/support/mem-core-proof.mjs": "70e8da917a34e9d986d6c5d76f3cdf42d4e3113064c3c5f3b103e672c0a1564c",
+    "worlds/mem/baseline-586/scripts/eval/harness-scoring.mjs": "eb110f0ff3d07010431bd00742629cdc2034e89a74f042d53803046721cb059f",
+    "worlds/mem/baseline-entry.mjs": "4f5e5bc5f62863f1fcff7d26bb8731ce48a624038716103eaa8b658c2d40756b",
+    "worlds/mem/baseline-proof.mjs": "c3d8e05af755011736f5e4b1aa18311fb3d88403dbd2f378c41af3b00a2fdfbb",
     "worlds/mem/container-entry.mjs": "91ab0e8a751f4282ef77ac8aff0de65572feaefaa3af7ba19ae6beebfe6a6551",
     "worlds/mem/discovery-entry.mjs": "84b55b75f74ec7d04fc26748d62b89773a95697a8724d9c47500d3cb673ca544",
     "worlds/mem/discovery-http.mjs": "86cb5bb0877082fc73a74c5ea8461587235cf4089a3c13ff6129a1cbc636f2d2",
@@ -348,6 +382,10 @@
     "actual registered/search catalog evidence",
     "permission-host compatibility",
     "contained runtime approval",
-    "credentials and enforceable budget caps"
+    "credentials and enforceable budget caps",
+    "combined native integration review",
+    "actual reload/lifecycle and session forwarding",
+    "containment and source authorization",
+    "auth/price-cap/provenance/CI gates"
   ]
 }

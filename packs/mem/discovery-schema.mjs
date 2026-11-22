@@ -2,8 +2,8 @@
 import {readFileSync} from "node:fs"
 import {createHash} from "node:crypto"
 import {discoveryShape} from "../../src/run/guard/mem-discovery-shapes.mjs"
-const base=JSON.parse(readFileSync(new URL("./catalog.json",import.meta.url))),source=JSON.parse(readFileSync(new URL("./discovery-schemas.json",import.meta.url)))
-export const sourceDiscoveryCatalog={source:source.source,tools:[...base.tools.filter(t=>!source.tools.some(x=>x.name===t.name)),...source.tools]}
+const source=JSON.parse(readFileSync(new URL("./candidate-772bf914/candidate-tool-schemas.json",import.meta.url)))
+export const sourceDiscoveryCatalog={source:{commit:source.candidate,tarball_sha256:source.tarballSha256,kind:"PROVISIONAL-static-release-binding-not-runtime",registered_observation:false},tools:source.modes.plain.tools.map(t=>({...t.definition,options:{...t.definition.options,pinned:t.pinned}}))}
 export function sourceInputFailures(schema,value,path="input"){
   const out=[],bad=why=>out.push(`${path}: ${why}`)
   if(schema.type==="object"){

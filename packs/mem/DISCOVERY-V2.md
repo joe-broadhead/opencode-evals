@@ -1,6 +1,6 @@
 # Discovery v2: finite offline contracts
 
-`mem-discovery/2` covers the 24 discovery cases. It does not replace the 38 frozen core cases.
+The current version is `mem-discovery/2.1-candidate772`. It covers the 24 discovery cases without replacing the 38 frozen core cases.
 The separate discovery oracle uses `oc-mem-discovery-proof/1`.
 The core grader, durable oracle, prompts, assertions, and archived source files remain unchanged.
 
@@ -14,9 +14,11 @@ The active case status means that the finite contract exists. It is not runtime 
 It is not a final comparison manifest. It contains no release, runtime catalog, or paid-result assertion.
 The lock preserves the previous discovery digest and both hashes for each previous case file.
 
-The source schemas come from public declarations at provisional commit `5488730012f893f2e456d5bc6540ab3b4708d9c5`.
-The snapshot generator reads pinned Git objects with the existing literal reader. It does not execute source tool implementations.
-The four schemas describe `spaces`, `wiki`, `read`, and `code`.
+The current static inputs identify release `772bf914c71e6d0fcb4d7016d2f9b614e2af467d` and its approved source archive.
+The archive SHA-256 is `50b88966af9bf5e358f85b8a33600b9b44d07503a708ba24d934555fd4e6368d`.
+The files in `candidate-772bf914` retain the supplied schemas, descriptions, and binding metadata without execution.
+Both static registration modes validate all 24 case arguments.
+The historical four-schema 548 snapshot and the baseline 586 catalog remain unchanged.
 The direct and search conditions retain the full schema and the first 117 description characters.
 These conditions are parameters, not observed registration, search ranking, or catalog results.
 

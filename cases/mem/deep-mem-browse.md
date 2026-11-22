@@ -19,6 +19,6 @@ Show a one-item sample of my records. If there are more, say the sample is parti
 
 
 ## Notes
-- mem-discovery/2, suite 0e71e8ef330ec34e595b86d2d47d0147454390b9d8810faeaa9744669627d3fb. Active finite case contract, not runtime approval.
-- Source schemas are PROVISIONAL 548, not a final release or registered catalog observation.
+- mem-discovery/2.1-candidate772, suite 554d9680206ceb0de74626eac67c3948008500c3fe40c3cf542383ef8cb3148b. Active finite case contract, not runtime approval.
+- Candidate 772 schemas are STATIC PROVISIONAL binding inputs, not registered catalog observations.
 - Direct/search are separate execution conditions with the same intent. Non-pinned schemas require full-schema discovery after a 117-character preview.
