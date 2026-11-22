@@ -36,12 +36,34 @@ Neither fixture form represents a real native run.
 
 ## Inventory and remaining gates
 
-The combined grader inventory remains unchanged at 38 unique inputs.
-No new production import requires another input. Dormant observer modules remain outside the consumed grader closure.
-Separate preservation evidence covers their bytes.
+At the semantic correction, the combined grader inventory contained 38 unique inputs.
+The original M7 assertion failed because it checked adapter membership alone.
+`src/trace/analyse.mjs` was already a common input.
 
-The original M7 adapter-only assertion fails on `src/trace/analyse.mjs`.
-The CLI already includes this file in its common grader inventory.
-The assertion, inventory, and frozen locks remain unchanged. Lead disposition is required for this combined validation gate.
+M7 now obtains membership by executing the extracted pure `graderHash` function with a recording file reader.
+It does not import the CLI or maintain a second expected inventory.
+The test derives loader roots from imported functions that `gradeAll` calls, including its default paths.
+It follows all local module imports from those roots and the existing continuation/intent proof seams.
+Thus it includes actual grading imports but does not traverse unrelated CLI run/auth/container imports.
+The CLI itself remains a hashed entrypoint artifact, including its local loader helpers.
+This is a module-level closure, not a claim that every export in each module runs during grading.
+
+That broader loader/verdict closure found 11 genuinely missing inputs:
+
+| Inputs | Grading dependency |
+| --- | --- |
+| `src/run/accounts.mjs`, `src/case/schema.mjs` | Account exceptions and seed-plugin classification |
+| `src/run/lockdown.mjs` | Pack loading and write classification |
+| `src/store.mjs` | Recording, target, and canary locations |
+| `src/run/guard/logic.mjs` | Created-identifier shape used by target evidence |
+| `src/fake/facts.mjs`, `src/fake/fixtures/github.mjs`, `src/fake/fixtures/jira.mjs`, `src/fake/fixtures/when.mjs` | Fixture evidence and its transitive fact definitions |
+| `src/pack/from-plugin.mjs`, `src/pack/snapshot.mjs` | The loader's snapshot reader and its transitive module import |
+
+Only these inputs were added. The inventory now contains 49 unique inputs, so the grader digest changes.
+No input was duplicated or reordered. No runtime grading behavior or frozen lock was changed.
+M7 changes each hashed input independently in a disposable copy and verifies hash sensitivity and exact restoration.
+Negative controls omit each consumed module from the extracted hash function and verify that closure validation rejects the omission.
+
+Dormant observer modules remain outside the consumed grader closure. Separate preservation evidence covers their bytes.
 
 Fresh independent review remains required. Native trusted wiring, authority, launcher, and real-host qualification remain separate gates.

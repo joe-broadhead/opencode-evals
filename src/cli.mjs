@@ -146,6 +146,18 @@ function graderHash() {
     "src/trace/rawArgs.mjs",
     "src/grade/trials.mjs",
     "src/grade/gold.mjs",
+    // Transitive gradeAll/gradeCase loader and verdict dependencies (not the run command graph).
+    "src/run/accounts.mjs",
+    "src/case/schema.mjs",
+    "src/run/lockdown.mjs",
+    "src/store.mjs",
+    "src/run/guard/logic.mjs",
+    "src/fake/facts.mjs",
+    "src/fake/fixtures/github.mjs",
+    "src/fake/fixtures/jira.mjs",
+    "src/fake/fixtures/when.mjs",
+    "src/pack/from-plugin.mjs",
+    "src/pack/snapshot.mjs",
     ...ADAPTER_FILES,
   ]
   const digests = {}
