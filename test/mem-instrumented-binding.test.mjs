@@ -2,7 +2,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { gzipSync, gunzipSync } from 'node:zlib'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync, chmodSync, symlinkSync, linkSync, readdirSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, chmodSync, symlinkSync, linkSync, readdirSync, mkdirSync, renameSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { sha256, canonical } from '../src/util/canonical.mjs'
@@ -361,3 +361,35 @@ test('composition paths are strings, not coerced property names', () => {
   f.spec.composition.roles.addon = 1
   assert.throws(() => buildInstrumentedBinding(f.spec, f.inputs), /missing_composition_role/)
 })
+
+for (const [label, terminator] of [['LF', '\n'], ['CRLF', '\r\n'], ['CR', '\r'], ['LS', '\u2028'], ['PS', '\u2029']]) {
+  test(`${label} line-comment termination cannot hide an external import at any public interface`, () => {
+    const code = `// harmless comment${terminator}import "unapproved-package";\n`
+    const files = payload({ 'src/after-comment.js': code }), bytes = archive(files)
+    assert.throws(() => inspectInstrumentedArchive(bytes, pin(files, bytes)), { code: 'unapproved_external_dependency', archive: 'verified', closure: 'incomplete', runtime: 'not-qualified' })
+
+    const f = fixture(), clean = buildInstrumentedBinding(f.spec, f.inputs)
+    const owner = mkdtempSync(join(tmpdir(), 'instrumented-line-comment-'))
+    try {
+      const staged = stageInstrumentedBinding(clean.binding, f.inputs, { binding_sha256: clean.sha256, owner_directory: owner })
+      assert.equal(staged.runtime, 'not-qualified')
+      f.inputs.outside.set('addon.js', Buffer.from(code))
+      f.spec.composition.files['addon.js'] = sha256(code); f.spec.composition.roles.addon = 'addon.js'
+      // Model a self-consistent owner binding and staged bytes, not a stale digest.
+      // These source strings remain data: no import, evaluation or module load.
+      const binding = { ...clean.binding, composition: structuredClone(f.spec.composition) }
+      const expected = sha256(canonical(binding)), directory = join(owner, expected)
+      renameSync(staged.directory, directory)
+      chmodSync(join(directory, 'binding.json'), 0o600)
+      writeFileSync(join(directory, 'binding.json'), canonical(binding) + '\n')
+      chmodSync(join(directory, 'binding.json'), 0o400)
+      writeFileSync(join(directory, 'outside/addon.js'), code, { flag: 'wx', mode: 0o400 })
+      assert.throws(() => buildInstrumentedBinding(f.spec, f.inputs), { code: 'unapproved_external_dependency' })
+      assert.throws(() => validateInstrumentedBinding(binding, f.inputs, expected), { code: 'unapproved_external_dependency' })
+      assert.throws(() => validateStagedInstrumentedBinding(binding, f.inputs, { binding_sha256: expected, owner_directory: owner }), { code: 'unapproved_external_dependency' })
+      const emptyOwner = join(owner, 'empty'); mkdirSync(emptyOwner, { mode: 0o700 })
+      assert.throws(() => stageInstrumentedBinding(binding, f.inputs, { binding_sha256: expected, owner_directory: emptyOwner }), { code: 'unapproved_external_dependency' })
+      assert.deepEqual(readdirSync(emptyOwner), [])
+    } finally { rmSync(owner, { recursive: true, force: true }) }
+  })
+}

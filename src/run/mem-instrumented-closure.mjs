@@ -11,7 +11,11 @@ function tokens(source) {
   for (let i = 0; i < source.length;) {
     const start = i, c = source[i]
     if (/\s/.test(c)) { i++; continue }
-    if (source.startsWith('//', i)) { i = source.indexOf('\n', i); if (i < 0) break; continue }
+    if (source.startsWith('//', i)) {
+      i += 2
+      while (i < source.length && !/[\n\r\u2028\u2029]/.test(source[i])) i++
+      continue
+    }
     if (source.startsWith('/*', i)) { i = source.indexOf('*/', i + 2); if (i < 0) refuse('unsupported_module_syntax'); i += 2; continue }
     if (c === '"' || c === "'") {
       let escaped = false; i++
