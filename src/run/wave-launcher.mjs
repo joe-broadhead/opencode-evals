@@ -1,14 +1,15 @@
 // Opt-in local supervision. Estimated admission is a target, never a billing guarantee.
-import { mkdirSync, writeFileSync, renameSync, rmdirSync, existsSync, readFileSync, realpathSync, readdirSync, lstatSync } from "node:fs"
+import { mkdirSync, writeFileSync, renameSync, rmdirSync, existsSync, readFileSync, realpathSync, readdirSync, lstatSync, openSync, closeSync, fsyncSync, fstatSync, unlinkSync, constants } from "node:fs"
 import { join, resolve, isAbsolute, dirname } from "node:path"
 import { randomUUID } from "node:crypto"
 import { WAVE_MODEL } from "./wave-manifest.mjs"
 import { assertLaunchWithinRound, RoundCapError } from "../cost/budget.mjs"
+import { runOwnedWave } from "./wave-contained.mjs"
 
 export const TOTAL_MS = 3600000
 export const CLEANUP_MS = 120000
 export const CONTEXT = "colima-mem-evals-20261122"
-export const systemClock = { monotonic: () => performance.now(), wall: () => Date.now(), sleep: ms => new Promise(done => setTimeout(done, ms)) }
+export const systemClock = { monotonic: () => performance.now(), wall: () => Date.now(), sleep: ms => new Promise(done => setTimeout(done, ms)), set: setTimeout, clear: clearTimeout }
 const present = path => { try { lstatSync(path); return true } catch (error) { if (error.code === "ENOENT") return false; throw error } }
 export function canonicalPath(path) {
   if (typeof path !== "string" || !isAbsolute(path) || path !== resolve(path)) throw new Error("canonical absolute path required")
@@ -122,6 +123,55 @@ function ownedReceipt(scope, id) {
     const unresolved = resources.length !== journal.resources.length || journal.uncertain || journal.pending.length > 0
     return { resources, unresolved, verifiedGone: !unresolved && journal.verified_gone === true }
   } catch { return null } // Missing/malformed ownership is unresolved, never empty success.
+}
+
+// Only an original private scope can issue this writer. No serialized path/owner grants authority.
+function trialJournal(scope, trial, lease) {
+  if (!scopeAuthority(scope)?.trials.includes(trial.id)) throw new Error("original admitted scope required")
+  const owner = Object.freeze({ ...scope.owner, trial_id: trial.id }), files = new Map()
+  let active = true, failed = false, deadline = TOTAL_MS
+  const same = (a,b) => a.dev === b.dev && a.ino === b.ino
+  const guard = () => {
+    if (!active || lease.elapsed() >= deadline || !scopeAuthority(scope)?.trials.includes(trial.id)) throw new Error("journal authority expired")
+  }
+  const persist = (name, value) => {
+    let fd, directory, temporary
+    try {
+      guard()
+      const bytes = Buffer.from(JSON.stringify(value) + "\n")
+      if (bytes.length > 1048576) throw new Error("bounded journal required")
+      const target = join(scope.directory, name)
+      const targetCurrent = () => {
+        const exists = present(target)
+        if (files.has(name) ? !exists || !same(lstatSync(target), files.get(name)) : exists) throw new Error("journal replaced")
+      }
+      targetCurrent()
+      directory = openSync(scope.directory, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW)
+      if (!same(fstatSync(directory), resourceScopes.get(scope).stat)) throw new Error("journal directory replaced")
+      temporary = join(scope.directory, `.${name}.${randomUUID()}.tmp`)
+      fd = openSync(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600)
+      writeFileSync(fd, bytes); fsyncSync(fd); closeSync(fd); fd = undefined
+      guard()
+      targetCurrent() // No await or dependency callback between this final continuity check and rename.
+      renameSync(temporary, target); temporary = undefined
+      fsyncSync(directory); guard()
+      files.set(name, lstatSync(target))
+    } catch (error) { failed = true; throw error }
+    finally {
+      if (fd !== undefined) closeSync(fd)
+      if (directory !== undefined) closeSync(directory)
+      if (temporary && scopeAuthority(scope)) { try { unlinkSync(temporary) } catch { /* retain unknown output */ } }
+    }
+  }
+  return { owner, started: until => {
+      if (!Number.isFinite(until)) throw new Error("finite journal deadline required")
+      deadline = Math.min(deadline, until)
+      persist(`${trial.id}.started.json`, { owner })
+    },
+    write: snapshot => {
+      if (!sameOwner(snapshot.owner, scope, trial.id)) { failed = true; throw new Error("journal owner mismatch") }
+      persist(`${trial.id}.json`, snapshot)
+    }, close: () => { active = false }, failed: () => failed }
 }
 export async function cleanupOwned(scope, execDocker, remaining) {
   const authority = scopeAuthority(scope)
@@ -261,18 +311,28 @@ export async function runTrials(wave, plan, { harness, caller, lease, verify, ex
 }
 
 /** Parent adapter is the only owner allowed to signal the worker's exclusive process group. */
-export async function launchWave(wave, { manifestSha, singleton, verify, allocate = () => {}, spawnWorker, alive, signal, cleanup, stopRequested, clock = systemClock }) {
+export async function launchWave(wave, { manifestSha, singleton, verify, allocate = () => {}, spawnWorker, alive, signal, cleanup, stopRequested, clock = systemClock, owned, caller, abortSignal }) {
   const start = { monotonic: clock.monotonic(), wall: clock.wall() }
-  try { freshWavePaths(wave); await verify() } catch { return refusedWave(wave) }
-  if (stopRequested?.() || Math.max(clock.monotonic() - start.monotonic, clock.wall() - start.wall) >= TOTAL_MS - CLEANUP_MS) return refusedWave(wave, stopRequested?.() ? "signal" : "local-timeout")
+  const refuse = reason => ({ ...refusedWave(wave, reason), ...(owned ? { execution_qualified: false, successor_allowed: false } : {}) })
+  try { freshWavePaths(wave); await verify() } catch { return refuse() }
+  if (stopRequested?.() || Math.max(clock.monotonic() - start.monotonic, clock.wall() - start.wall) >= TOTAL_MS - CLEANUP_MS) return refuse(stopRequested?.() ? "signal" : "local-timeout")
   const lease = claimWave(wave.control, { manifestSha, store: wave.store, singleton, start }, clock)
   let child, scope, supervision, report = initialReport(wave)
+  if (owned) Object.assign(report, { execution_qualified: false, complete: false, successor_allowed: false })
   const finalFile = join(wave.control, "report.json")
   writeJSON(finalFile, report)
   try {
     scope = createResourceScope(wave.control, { manifestSha, trials: wave.trials })
     await allocate(lease, scope)
     if (lease.elapsed() >= TOTAL_MS - CLEANUP_MS || stopRequested?.()) throw new Error("no work time")
+    if (owned) {
+      report = await runOwnedWave(wave, report, { owned, caller, lease, clock: { now: lease.elapsed, set: clock.set, clear: clock.clear }, verify,
+        scopeCurrent: () => scopeAuthority(scope) !== null, journalFor: trial => trialJournal(scope, trial, lease), stopRequested: stopRequested ?? (() => false), signal: abortSignal,
+        save: value => writeJSON(join(wave.control, "progress.json"), value), readCost: () => waveCost(wave, report.trials) })
+      writeJSON(finalFile, report)
+      lease.release(!report.reservation_retained && report.supervision.cleanup_verified)
+      return report
+    }
     child = spawnWorker(lease, scope, id => {
       const trial = wave.trials.find(t => t.id === id)
       return !!trial && !stopRequested?.() && lease.elapsed() < TOTAL_MS - CLEANUP_MS && trialComplete(wave, trial, scope)
@@ -285,18 +345,20 @@ export async function launchWave(wave, { manifestSha, singleton, verify, allocat
     child.activate?.()
     supervision = await superviseGroup(lease, { child, alive, signal, cleanup: remaining => cleanup(remaining, scope), stopRequested }, clock)
   } catch {
-    if (child) supervision = await superviseGroup(lease, { child, alive, signal, cleanup: remaining => cleanup(remaining, scope), stopRequested: () => true }, clock)
+    if (owned) supervision = { kind: "owned-container", reason: "contained-parent-unavailable", cleanup_verified: false, remote_cancellation_guaranteed: false }
+    else if (child) supervision = await superviseGroup(lease, { child, alive, signal, cleanup: remaining => cleanup(remaining, scope), stopRequested: () => true }, clock)
     else {
       let clean = !scope
       try { if (scope) clean = lease.elapsed() < TOTAL_MS && await cleanup(() => Math.max(0, TOTAL_MS - lease.elapsed()), scope) } catch { /* retain locks on uncertainty */ }
       supervision = { reason: "qualification-failed", cleanup_verified: clean && lease.elapsed() < TOTAL_MS, group_gone: true }
     }
   }
-  try {
+  if (!owned) try {
     const saved = JSON.parse(readFileSync(join(wave.control, "progress.json"), "utf8"))
     if (saved.wave !== wave.id || saved.trials?.length !== wave.trials.length || saved.trials.some((t, i) => t.id !== wave.trials[i].id)) throw new Error("invalid progress")
     report = saved
   } catch { /* Keep the complete initial manifest when the worker never wrote progress. */ }
+  // The owned parent already holds current trial facts, even when a progress write failed.
   report.stop_reason ??= supervision.reason === "finished" ? null : supervision.reason
   for (const trial of report.trials) {
     if (trial.status === "running") { trial.status = "incomplete"; trial.reason = report.stop_reason ?? "interrupted" }
@@ -304,8 +366,9 @@ export async function launchWave(wave, { manifestSha, singleton, verify, allocat
   }
   try { report.cost = waveCost(wave, report.trials) } catch { report.cost = { unresolved: true } }
   report.supervision = supervision
-  report.complete = supervision.cleanup_verified && report.trials.every(t => t.status === "completed") && report.cost?.unresolved_trials?.length === 0
+  report.complete = !owned && supervision.cleanup_verified && report.trials.every(t => t.status === "completed") && report.cost?.unresolved_trials?.length === 0
+  if (owned) { report.successor_allowed = false; report.execution_qualified = false; report.reservation_retained = true }
   writeJSON(finalFile, report)
-  lease.release(supervision.cleanup_verified)
+  lease.release(!owned && supervision.cleanup_verified)
   return report
 }

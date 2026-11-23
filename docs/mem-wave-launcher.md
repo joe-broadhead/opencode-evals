@@ -9,6 +9,14 @@ The executable refuses before it starts Docker, OpenCode, or a provider.
 Input refusal returns a report value without creating or reading a control report.
 It grants no cleanup authority and starts no identity-check subprocess.
 
+The production parent selects the [owned containment composition](owned-containment.md#launcher-composition-l-c), but approved native snapshot and spawn capabilities remain unavailable.
+Injected offline tests exercise that actual parent path without a host trial worker.
+Every owned result remains incomplete and denies a successor. Native completion, observer reconciliation, final acceptance, and runtime qualification remain separate gates.
+
+## Legacy worker controls
+
+The worker and group controls in the remaining sections describe the preserved legacy adapter path, not the owned containment path.
+
 Native process-group signaling is also unavailable.
 Node supplies numeric POSIX group IDs, not an incarnation-bound group handle.
 `kill(0)` and a separate process inspection cannot prove continuity through ID reuse.
