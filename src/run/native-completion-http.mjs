@@ -58,6 +58,7 @@ function prompt(v) {
 function content(v) {
   require(Array.isArray(v) && v.length>0);
   for(const c of v) {
+    require(object(c));
     if(c.type==='text') {shape(c,['type','text']);require(string(c.text));}
     else {shape(c,['type','uri','mime','name']);require(c.type==='file' && string(c.uri) && string(c.mime) &&
       (c.name===null || optional(c.name,string)));}
