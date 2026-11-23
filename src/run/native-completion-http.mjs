@@ -83,9 +83,48 @@ function assistantPart(p) {
 }
 function message(m) {
   require(object(m));
-  require(['user','assistant','idle'].includes(m.type),'unsupported_message_type');
+  require(['agent-switched','model-switched','location-switched','user','synthetic','system','skill','shell',
+    'assistant','compaction','idle'].includes(m.type),'unsupported_message_type');
   require(msgID(m.id) && optional(m.metadata,object));
   const base=['id','type','metadata','time'];
+  if(!['assistant','shell'].includes(m.type)) time(m.time,'created');
+  if(m.type==='agent-switched') {
+    shape(m,[...base,'agent','previous']);require(id(m.agent) && optional(m.previous,id));return;
+  }
+  if(m.type==='model-switched') {
+    shape(m,[...base,'model','previous']);model(m.model);if(m.previous!==undefined) model(m.previous);return;
+  }
+  if(m.type==='location-switched') {
+    shape(m,[...base,'location','projectID','subpath','previous']);
+    const place=v=>{location(v.location);require(optional(v.projectID,id) && optional(v.subpath,string));};
+    place(m);
+    if(m.previous!==undefined && m.previous!==null) {shape(m.previous,['location','projectID','subpath']);place(m.previous);}
+    return;
+  }
+  if(m.type==='synthetic' || m.type==='system') {
+    shape(m,[...base,'text','description']);require(string(m.text) && optional(m.description,string));return;
+  }
+  if(m.type==='skill') {
+    shape(m,[...base,'skill','name','text']);require(id(m.skill) && string(m.name) && string(m.text));return;
+  }
+  if(m.type==='shell') {
+    shape(m,[...base,'shellID','command','status','exit','output']);time(m.time,'created',['completed']);
+    require(id(m.shellID) && string(m.command) && ['running','exited','timeout','killed'].includes(m.status));
+    require(optional(m.exit,Number.isFinite)); // Nonfinite encoded exits are explicitly unsupported.
+    if(m.output!==undefined) {
+      shape(m.output,['output','cursor','size','truncated']);require(string(m.output.output) &&
+        Number.isFinite(m.output.cursor) && Number.isFinite(m.output.size) && typeof m.output.truncated==='boolean');
+    }
+    return;
+  }
+  if(m.type==='compaction') {
+    require(['running','completed','failed'].includes(m.status) && ['auto','manual'].includes(m.reason));
+    const extra=m.status==='running'?['summary']:m.status==='failed'?['error','cost','tokens']:['summary','model','native','cost','tokens'];
+    shape(m,[...base,'status','reason',...extra]);
+    if(m.status==='failed') structuredError(m.error);else require(string(m.summary));
+    if(m.model!==undefined) model(m.model);require(optional(m.native,object));
+    require(optional(m.cost,v=>Number.isFinite(v) && v>=0));if(m.tokens!==undefined) tokens(m.tokens);return;
+  }
   if(m.type==='user') {shape(m,[...base,'text','files','agents','skills']);time(m.time,'created');prompt(m);return;}
   if(m.type==='idle') {
     shape(m,[...base,'outcome','error']);time(m.time,'created');
@@ -137,27 +176,61 @@ function wire(value,kind) {
   }
   return kind==='message'?value:value.data;
 }
+// Public V2Event at dc2ffcf8, generated/types.ts:2845-2943 and
+// schema/event-manifest.ts:72-82. Payloads outside the completion fields below
+// remain opaque bounded JSON, not a claim of full native semantic validation.
+const ephemeralEvents=new Set(`location.shutdown models-dev.refreshed credential.updated credential.switched
+  integration.updated provider.updated model.updated agent.updated session.usage.updated
+  session.text.delta session.reasoning.delta session.tool.input.delta session.tool.progress session.compaction.delta
+  filesystem.changed reference.updated permission.asked permission.replied plugin.updated project.updated worktree.updated
+  command.updated config.updated skill.updated pty.created pty.updated pty.exited pty.deleted
+  persistent-pty.added persistent-pty.removed persistent-pty.updated shell.created shell.exited shell.deleted
+  form.created form.replied form.cancelled websearch.updated artifact.updated session.status session.idle
+  tui.prompt.append tui.command.execute tui.toast.show tui.session.select installation.updated installation.update-available
+  vcs.branch.updated mcp.status.changed mcp.resources.changed`.split(/\s+/));
+const durableV1=new Set(`session.created session.agent.selected session.model.selected session.moved session.renamed
+  session.metadata.updated session.permissions session.viewed session.archived session.unarchived
+  session.inbox.delivered session.inbox.enqueued session.inbox.cancelled session.inbox.delivery.changed
+  session.execution.started session.execution.succeeded session.execution.failed session.execution.interrupted
+  session.synthetic session.skill.activated session.shell.started session.shell.ended
+  session.step.started session.step.streamed session.step.ended session.step.failed
+  session.text.started session.text.ended session.reasoning.started session.reasoning.ended
+  session.tool.input.started session.tool.input.ended session.tool.called session.retry.scheduled
+  session.compaction.started session.compaction.ended session.compaction.failed
+  session.revert.staged session.revert.cleared session.revert.committed worktree.resolved`.split(/\s+/));
+const durableV2=new Set(`session.deleted session.forked session.instructions.updated session.tool.success session.tool.failed`.split(/\s+/));
 function nativeEvent(e) {
   require(object(e) && id(e.id) && e.id.startsWith('evt_') && id(e.type) && object(e.data));
   if(e.type==='server.connected') {
     shape(e,['id','type','data','location','metadata']);shape(e.data,[]);
     if(e.location!==undefined) location(e.location);require(optional(e.metadata,object));return;
   }
-  shape(e,['id','type','created','data','location','metadata','durable']);
-  require(Number.isFinite(e.created) && optional(e.metadata,object));if(e.location!==undefined) location(e.location,true);
+  const rpc=e.type.startsWith('rpc.'); // The source declares this wildcard, not individual plugin names.
+  const version=durableV2.has(e.type)?2:durableV1.has(e.type)?1:0;
+  require(rpc || version || ephemeralEvents.has(e.type),'unsupported_event_type');
+  shape(e,['id','type','created','data','location','metadata',...(version?['durable']:[])]);
+  require(Number.isFinite(e.created) && optional(e.metadata,object));
+  if(rpc) {location(e.location);return;}
+  if(e.location!==undefined) location(e.location,true);
   const d=e.data;
+  require(optional(d.sessionID,id));
+  if(e.type.startsWith('session.') || e.type.startsWith('permission.') || e.type.startsWith('persistent-pty.') ||
+    ['form.replied','form.cancelled','tui.session.select'].includes(e.type)) require(id(d.sessionID));
+  if(/^session\.(step|text|reasoning|tool)\./.test(e.type) || e.type==='session.retry.scheduled') require(msgID(d.assistantMessageID));
+  if(e.type.startsWith('session.inbox.')) require(msgID(d.inboxID));
+  if(version) {
+    shape(e.durable,['aggregateID','seq','version']);
+    require(id(e.durable.aggregateID) && e.durable.aggregateID===(e.type==='worktree.resolved'?d.projectID:d.sessionID) &&
+      Number.isSafeInteger(e.durable.seq) && e.durable.seq>=0 && e.durable.version===version);
+  }
   const simple=['session.execution.started','session.execution.succeeded','session.inbox.delivered','session.inbox.cancelled',
     'session.execution.failed','session.execution.interrupted'];
-  require(simple.includes(e.type),'unsupported_event_type');
-  require(id(d.sessionID));
+  if(!simple.includes(e.type)) return;
   const extra=e.type.includes('.inbox.')?['inboxID']:e.type.endsWith('.failed')?['error']:e.type.endsWith('.interrupted')?['reason']:[];
   shape(d,['sessionID',...extra]);
   if(extra.includes('inboxID')) require(msgID(d.inboxID));
   if(extra.includes('error')) structuredError(d.error);
   if(extra.includes('reason')) require(['user','shutdown','superseded','inactivity'].includes(d.reason));
-  shape(e.durable,['aggregateID','seq','version']);
-  require(id(e.durable.aggregateID) && e.durable.aggregateID===d.sessionID && Number.isSafeInteger(e.durable.seq) &&
-    e.durable.seq>=0 && e.durable.version===1);
 }
 
 function parseJSON(text, cap) {

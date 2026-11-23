@@ -226,8 +226,10 @@ test('native message discriminants and nested schema are validated, not filtered
   const f=fixture(()=>response({data:valid,cursor:{next:'opaque',previous:'opaque2'}}));
   assert.deepEqual((await f.client.message.list({sessionID:'ses_root',limit:200,order:'desc'},opts())).data,valid);
   for(const type of ['agent-switched','model-switched','location-switched','synthetic','system','skill','shell','compaction','other']) {
-    const f=fixture(()=>response({data:[{...user('msg_extra'),type}],cursor:{}}));
-    await assert.rejects(f.client.message.list({sessionID:'ses_root',limit:200,order:'desc'},opts()),/unsupported_message_type/);
+    const page={data:[{...user('msg_extra'),type}],cursor:{}},f=fixture(()=>response(page));
+    const read=f.client.message.list({sessionID:'ses_root',limit:200,order:'desc'},opts());
+    if(type==='synthetic' || type==='system') assert.deepEqual(await read,page);
+    else await assert.rejects(read,type==='other'?/unsupported_message_type/:/invalid_wire_shape/);
   }
   for(const row of [{...user('bad'),id:'bad'},{...user('msg_x'),time:{}},{...user('msg_x'),text:5},
     {...idle('msg_x'),outcome:'done'},{...valid[1],content:[{type:'text',text:5}]}]) {
