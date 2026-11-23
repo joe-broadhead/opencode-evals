@@ -12,7 +12,12 @@ The executable refuses before it starts Docker, OpenCode, or a provider.
 Input refusal returns a report value without creating or reading a control report.
 It grants no cleanup authority and starts no identity-check subprocess.
 
-The production parent selects the [owned containment composition](owned-containment.md#launcher-composition-l-c), but approved native snapshot and spawn capabilities remain unavailable.
+The production parent selects the [owned containment composition](owned-containment.md#launcher-composition-l-c).
+The default adapter still supplies no owned capability — `processAdapter().owned` remains
+the frozen `{snapshot:null, spawn:null}` — and every run without a matched binding refuses
+at that gate exactly as before. On a matched binding alone the run script now composes the
+owner-side capability below; the two facts together (live-matched record and verifiable
+staging) are what admit an owned trial.
 Injected offline tests exercise that actual parent path without a host trial worker.
 Every owned result remains incomplete and denies a successor. Native completion, observer reconciliation, final acceptance, and runtime qualification remain separate gates.
 
@@ -58,6 +63,38 @@ the owned composition; an admission refusal before that point returns the unchan
 report without journaling.
 Qualification is bound per run: each dispatch revalidates the live profile and constructs a
 fresh reader; nothing is cached across runs.
+
+## Owner-side owned capability
+
+When — and only when — the binding reports a match, the run script composes
+`src/run/wave-owned-capability.mjs` into the owned seam, replacing the frozen adapter
+default for that run. Composed only from reviewed modules, it supplies exactly two
+capabilities:
+
+- `spawn` — the real Docker-CLI spawn primitive. The existing wave-contained composition
+  feeds it verbatim: `createOwnedDockerProcess` enforces the closed command grammar, the
+  fixed `colima-mem-evals-20261122` context, and the OPENCODE_API_KEY-only credential
+  shape, then binds every spawned client to the matched reader (`identityOwner`). The
+  primitive itself asserts the fixed context prefix and creates, switches or mutates no
+  Docker context or configuration: the wave's own `docker_config` directory, prepared by
+  the dispatch task, is the only configuration the transport ever passes.
+- `snapshot` — an owner attestation for the staged tuple. The owner hands the staged
+  facts through the manifest's `staging` pin (`{ work, inputs, binaries, image,
+  architecture, imageEnv, user, allow }`, canonical absolute paths). The attestation
+  re-hashes the selected arm's staged tarball against its manifest pin, re-hashes the
+  staged work/inputs/binaries trees through the reviewed staging validator, and requires
+  the handed image identity to equal the manifest's pinned runtime image. It returns the
+  attestation tuple in the staging validator's exact shape — `manifest_sha256`,
+  `harness_sha`, `trial_id`, `image`, `work`, `inputs`, `binaries`, `architecture`,
+  `inputs_sha256`, `binaries_sha256`, `imageEnv`, `user`, `allow` — and nothing else: no
+  success authority and no trial-outcome claim. A missing, tampered or unverifiable fact
+  refuses admission with a closed `snapshot-unverified:<fact>` reason; there is never a
+  partial or invented attestation.
+
+A matched binding with a missing or broken staging pin still refuses: the capability
+exists, its attestation fails closed per fact, and no trial dispatches. Without a matched
+binding no capability is composed at all, no environment or manifest boolean substitutes
+for the binding, and the frozen `{snapshot:null, spawn:null}` default is unchanged.
 
 ## Legacy worker controls
 

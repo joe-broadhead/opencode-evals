@@ -30,7 +30,7 @@ function setup(t) {
 
 test("actual parent entry uses the approved snapshot seam, never the host trial fallback", async t => {
   const f=setup(t);let snapshots=0
-  f.options.adapter.owned={snapshot:()=>{snapshots++;throw new Error("approved artifacts unavailable")},spawn:()=>assert.fail("no artifacts, no Docker client")}
+  f.options.adapter.owned={snapshot:()=>{snapshots++;throw new Error("approved artifacts unavailable")},spawn:()=>assert.fail("no artifacts, no Docker client")};f.options.ownedCapability=()=>f.options.adapter.owned
   const report=await main(["--manifest",f.file],f.options)
   assert.equal(snapshots,1)
   assert.equal(report.complete,false)
@@ -41,7 +41,7 @@ test("actual parent entry uses the approved snapshot seam, never the host trial 
 
 test("actual parent contains one physical trial, journals before launch, and retains provisional cost without a successor", async t => {
   const f=setup(t),x=containedFixture(f)
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   const report=await drive(main(["--manifest",f.file],f.options),x.c)
   assert.equal(x.descriptors.length,1)
   const d=x.descriptors[0]
@@ -68,7 +68,7 @@ test("actual parent contains one physical trial, journals before launch, and ret
 test("snapshot approval cannot outlive a changed manifest at actual dispatch", async t => {
   const f=setup(t),x=containedFixture(f),snapshot=x.owned.snapshot
   x.owned.snapshot=request=>{const result=snapshot(request);writeFileSync(f.file,"{}");return result}
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   const report=await drive(main(["--manifest",f.file],f.options),x.c)
   assert.equal(x.calls.length,0,"requalify frozen bytes after snapshot acquisition")
   assert.equal(report.trials[0].status,"unrun")
@@ -78,7 +78,7 @@ test("snapshot approval cannot outlive a changed manifest at actual dispatch", a
 test("the $10 admission is rechecked after an asynchronous approved snapshot", async t => {
   const f=setup(t),x=containedFixture(f),snapshot=x.owned.snapshot
   x.owned.snapshot=request=>{writeFileSync(f.wave.caps.path,JSON.stringify({estimate_run_usd:{[WAVE_MODEL]:{wide:11}}}));return snapshot(request)}
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   const report=await drive(main(["--manifest",f.file],f.options),x.c)
   assert.equal(x.calls.length,0)
   assert.equal(report.stop_reason,"budget-admission")
@@ -106,7 +106,7 @@ test("parent channel loss is sticky at initial admission and after snapshot appr
     const listeners=process.rawListeners("disconnect")
     process.connected=mode!=="initial";process.send=()=>assert.fail("parent does not dispatch host trial IPC")
     x.owned.snapshot=request=>{const s=snapshot(request);process.connected=false;process.emit("disconnect");if(mode==="rebound")process.connected=true;return s}
-    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
     try {
       const report=await drive(main(["--manifest",f.file],f.options),x.c)
       assert.equal(x.calls.length,0,mode)
@@ -124,7 +124,7 @@ test("replacement of the original parent scope never grants a journal or success
     const x=containedFixture(f,{journalDirectory:()=>replaced?retained:directory,reply:({a,r,settle})=>{if(mode==="creation"&&!replaced&&a[0]==="network"&&a[1]==="create")replace();settle(r)}})
     const snapshot=x.owned.snapshot
     if(mode==="snapshot")x.owned.snapshot=request=>{const s=snapshot(request);replace();return s}
-    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
     const report=await drive(main(["--manifest",f.file],f.options),x.c)
     assert.equal(report.supervision.cleanup_verified,false)
     assert.equal(existsSync(join(f.wave.control,"wave.lock")),true)
@@ -149,7 +149,7 @@ test("unknown creation, daemon absence and client closure retain the lease and p
       if(mode==="daemon"&&r.code===1)return settle({...r,stderr:"daemon unavailable"})
       settle(r)
     }})
-    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
     x.owned.nativeSnapshot=binding=>({binding,outcome:"interrupted"})
     const report=await drive(main(["--manifest",f.file],f.options),x.c)
     const result=report.trials[0].containment
@@ -173,7 +173,7 @@ test("independent parent deadlines and disk failure bound the actual contained e
     }})
     if(mode==="snapshot-timeout")x.owned.snapshot=()=>new Promise(()=>{})
     if(mode==="disk")x.owned.measure=()=>false
-    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
     const report=await drive(main(["--manifest",f.file],f.options),x.c)
     assert.equal(report.complete,false)
     assert.equal(report.trials[1].status,"unrun")
@@ -187,7 +187,7 @@ test("independent parent deadlines and disk failure bound the actual contained e
 test("late creation output cannot update the closed parent journal or start another trial", async t => {
   const f=setup(t);let late
   const x=containedFixture(f,{reply:({a,r,settle})=>{if(a[0]==="create"&&!late){late=()=>settle(r);return}settle(r)}})
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   const report=await drive(main(["--manifest",f.file],f.options),x.c)
   const before=readFileSync(join(f.wave.control,"resources","first.json"),"utf8")
   assert.equal(report.trials[0].containment.creation_unknown,true)
@@ -207,7 +207,7 @@ test("journal replacement after creation preserves the foreign file and retains 
     if(!replaced&&a[0]==="network"&&a[1]==="create") {renameSync(file,file+"-original");writeFileSync(file,"foreign-data");replaced=true}
     settle(r)
   }})
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   const report=await drive(main(["--manifest",f.file],f.options),x.c)
   assert.equal(readFileSync(file,"utf8"),"foreign-data")
   assert.equal(report.supervision.cleanup_verified,false)
@@ -222,7 +222,7 @@ test("partial postmortem evidence retains raw billing and a bound native negativ
     settle(r)
   }})
   x.owned.nativeSnapshot=binding=>({binding,outcome:"failed"})
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   const report=await drive(main(["--manifest",f.file],f.options),x.c),result=report.trials[0].containment
   assert.equal(result.native,"failed")
   assert.equal(result.evidence,"unknown")
@@ -237,7 +237,7 @@ test("a lost parent channel after the first dispatch cannot admit a successor ev
   const f=setup(t),descriptors=Object.fromEntries(["connected","send"].map(k=>[k,Object.getOwnPropertyDescriptor(process,k)]))
   process.connected=true;process.send=()=>assert.fail("no host executor IPC")
   const x=containedFixture(f,{reply:({a,r,settle})=>{settle(r);if(a[0]==="exec"){process.connected=false;process.emit("disconnect");process.connected=true}}})
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   try {
     const report=await drive(main(["--manifest",f.file],f.options),x.c)
     assert.equal(x.descriptors.length,1)
@@ -258,7 +258,7 @@ test("snapshot bindings and staged hashes are checked before any resource creati
       if(mode==="occupied-work")writeFileSync(join(result.work,"foreign"),"untouched")
       return result
     }
-    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
     const report=await drive(main(["--manifest",f.file],f.options),x.c)
     assert.equal(x.calls.length,0,mode)
     assert.equal(report.complete,false)
@@ -277,7 +277,7 @@ test("the retained work root identity refuses replacement data at parent finaliz
     if(a[0]==="exec"){renameSync(work,work+"-original");mkdirSync(work);writeFileSync(join(work,"provisional.json"),"foreign")}
     settle(r)
   }})
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   const report=await drive(main(["--manifest",f.file],f.options),x.c)
   assert.equal(x.resources.size,0)
   assert.equal(x.finalReads.length,0)
@@ -296,7 +296,7 @@ test("deadline expiration denies journal updates and late snapshot admission", a
     }})
     const snapshot=x.owned.snapshot
     if(mode==="snapshot")x.owned.snapshot=request=>new Promise(resolve=>{late=()=>resolve(snapshot(request))})
-    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
     const report=await drive(main(["--manifest",f.file],f.options),x.c)
     if(late){late();for(let i=0;i<300;i++)await Promise.resolve()}
     assert.equal(report.complete,false)
@@ -321,7 +321,7 @@ test("deleting a parent journal cannot create a fresh authority for the same tri
     if(!removed&&a[0]==="network"&&a[1]==="create"){rmSync(file);removed=true}
     settle(r)
   }})
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   const report=await drive(main(["--manifest",f.file],f.options),x.c)
   assert.equal(x.descriptors.length,0)
   assert.equal(existsSync(file),false)
@@ -338,7 +338,7 @@ test("suspension during journal synchronization cannot commit past the trial cle
     if(!suspended&&existsSync(directory)&&readdirSync(directory).some(name=>name.startsWith(".first.json."))){suspended=true;x.c.advance(125001)}
     return monotonic()
   }
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   const report=await drive(main(["--manifest",f.file],f.options),x.c)
   assert.equal(suspended,true)
   assert.equal(x.calls.length,0)
@@ -351,7 +351,7 @@ test("suspension during journal synchronization cannot commit past the trial cle
 test("inner exit zero and an injected positive native claim never qualify parent acceptance", async t => {
   const f=setup(t),x=containedFixture(f,{reply:({a,r,settle})=>settle(a[0]==="exec"?{...r,code:0}:r)})
   x.owned.nativeSnapshot=binding=>({binding,outcome:"success",logicalProof:true,accepted:false})
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   const report=await drive(main(["--manifest",f.file],f.options),x.c)
   assert.equal(report.trials[0].containment.worker_exit,0)
   assert.equal(report.trials[0].containment.native,"unknown")
@@ -372,7 +372,7 @@ test("parent exports local reason codes, never callback diagnostics, in memory o
       if(args[2]==="network"&&args[3]==="create"&&++creates===2)throw Error(diagnostic)
       return spawn(binary,args,options)
     }
-    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
     const report=await drive(main(["--manifest",f.file],f.options),x.c)
     for(const value of [JSON.stringify(report),...['progress.json','report.json'].map(name=>readFileSync(join(f.wave.control,name),'utf8'))])assert.equal(value.includes(diagnostic),false)
     assert.equal(report.trials[0].containment.reason,"contained-operation-unavailable")
@@ -394,7 +394,7 @@ test("unavailable or asynchronous native snapshots cannot suppress fixed billing
       if(mode==="negative-then-throw"&&calls===1)return {binding,outcome:"interrupted"}
       throw Error("synthetic-test-key")
     }
-    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
     const report=await drive(main(["--manifest",f.file],f.options),x.c),result=report.trials[0].containment
     await new Promise(setImmediate) // Strict rejection handling must survive the next event-loop turn.
     assert.equal(result.accounting.known_billed_usd,0.25,mode)
@@ -415,7 +415,7 @@ test("late aggregate or progress errors retain recovered in-memory trial facts",
       settle(r)
     }})
     x.owned.nativeSnapshot=binding=>({binding,outcome:"interrupted"})
-    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
     const original=fs.writeFileSync;let faulted=false
     fs.writeFileSync=(path,data,...args)=>{
       if(mode==="report-write"&&String(path).includes("report.json.")&&String(data).includes('"containment"'))throw Error("private-write-diagnostic")
@@ -462,7 +462,7 @@ test("journal commit rechecks the previous target after fsync and still cleans a
       }
     }
     syncBuiltinESMExports()
-    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
     let report
     try {report=await drive(main(["--manifest",f.file],f.options),x.c)}
     finally {fs.fsyncSync=original;syncBuiltinESMExports()}
@@ -486,7 +486,7 @@ test("overflowed creation through actual parent retains the lock without removin
     child.stdout.emit("data",Buffer.from("NOT-AN-ID\n"))
     settle({code:0})
   }})
-  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  f.options.adapter.owned=x.owned;f.options.ownedCapability=()=>x.owned;f.options.clock=x.c
   const report=await drive(main(["--manifest",f.file],f.options),x.c)
   assert.equal(x.calls.length,1)
   assert.deepEqual(x.journal().resources,[]);assert.equal(x.journal().pending.length,1)

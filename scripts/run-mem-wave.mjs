@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url"
 import { spawnSync } from "node:child_process"
 import { qualifyWave, sha256 } from "../src/run/wave-manifest.mjs"
 import { bindNativeQualification } from "../src/run/native-qualification.mjs"
+import { createOwnedCapability } from "../src/run/wave-owned-capability.mjs"
 import { launchWave, runTrials, cleanupOwned, writeJSON, systemClock } from "../src/run/wave-launcher.mjs"
 import { processAdapter, requestTrialVerification } from "../src/run/wave-process.mjs"
 
@@ -20,10 +21,10 @@ function checkIdentity() {
   return { harnessSha: git(["rev-parse", "HEAD"]), launcherNodeSha: sha256(readFileSync(realpathSync(process.execPath))) }
 }
 
-export async function main(argv, { env = process.env, adapter = processAdapter(), identity = checkIdentity, qualify = qualifyWave, clock = systemClock, nativeQualification = bindNativeQualification } = {}) {
+export async function main(argv, { env = process.env, adapter = processAdapter(), identity = checkIdentity, qualify = qualifyWave, clock = systemClock, nativeQualification = bindNativeQualification, ownedCapability = createOwnedCapability } = {}) {
   if (typeof env.OPENCODE_API_KEY !== "string" || !env.OPENCODE_API_KEY.trim()) throw new Error("OPENCODE_API_KEY is required")
   const worker = argv[0] === "--worker"
-  const owned = !worker && adapter.owned
+  let owned = !worker && adapter.owned
   if (argv.length !== 2 || !["--manifest", "--worker"].includes(argv[0])) throw new Error("usage: run-mem-wave.mjs --manifest /absolute/reviewed-wave.json")
   let stop = false, channelLost = false
   const cancellation = new AbortController()
@@ -62,6 +63,9 @@ export async function main(argv, { env = process.env, adapter = processAdapter()
       try { qualify(wave, { harnessSha: wave.harness_sha, launcherNodeSha: sha256(readFileSync(realpathSync(process.execPath))) }) }
       catch { native = { matched: false, reason: "manifest-unqualified" } }
       if (!native) native = await nativeQualification(wave, { runId: `wave-${wave.id}`, sourcePath: join(HARNESS, "native", "darwin-process-identity.c") })
+      // Only a matched binding supplies the owner-side owned composition; every other run
+      // keeps the frozen adapter default and refuses at the capability gate exactly as today.
+      if (native?.matched === true) owned = ownedCapability(wave, native, manifestSha)
     }
     const verify = () => {
       if (sha256(readFileSync(argv[1])) !== manifestSha) throw new Error("manifest changed")

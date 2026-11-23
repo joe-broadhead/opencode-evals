@@ -467,6 +467,7 @@ test("owned dispatch reports execution_qualified only from the binding and journ
     env: { OPENCODE_API_KEY: "synthetic-test-key" }, identity: () => ({}),
     qualify: () => ({ execution_qualified: true, plan: { cases: [{ id: "core-a", set: "core", tier: "wide" }] } }),
     adapter: { supervisionAvailable: true, worker: () => assert.fail("host worker forbidden"), trial: () => assert.fail("host CLI forbidden"), signal: () => assert.fail("host signal forbidden"), owned: x.owned },
+    ownedCapability: () => x.owned,
     clock: x.c,
     nativeQualification: bindFor(f),
   }
@@ -487,7 +488,7 @@ test("owned dispatch reports execution_qualified only from the binding and journ
   // A second run binds again and reports independently; nothing carries over.
   const second = ownedWave(t, { record: pin })
   const y = containedFixture(second)
-  const secondReport = await drive(main(["--manifest", second.file], { ...options, adapter: { ...options.adapter, owned: y.owned }, clock: y.c, nativeQualification: bindFor(f) }), y.c)
+  const secondReport = await drive(main(["--manifest", second.file], { ...options, adapter: { ...options.adapter, owned: y.owned }, ownedCapability: () => y.owned, clock: y.c, nativeQualification: bindFor(f) }), y.c)
   assert.equal(bound, 2)
   assert.equal(secondReport.execution_qualified, true)
   assert.notEqual(report.native_qualification, secondReport.native_qualification)
