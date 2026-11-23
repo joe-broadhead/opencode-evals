@@ -325,6 +325,41 @@ test("failed construction warm-up refuses dispatch and reports no match", async 
   assert.equal(warmupExecs, 1, "the refused warm-up used exactly one construction")
 })
 
+test("a ready()-throwing owner seam fails closed: no match, zero dispatch, admission closed", async t => {
+  const f = recordFixture()
+  t.after(() => rmSync(f.root, { recursive: true, force: true }))
+  const pin = writePinnedBytes(f, f.record)
+  let constructions = 0
+  // The adapter's identityOwner contract has no ready() method; a seam owner that throws
+  // from it must fail closed through the binding's own refusal, not crash the dispatch.
+  const throwingOwner = () => {
+    constructions++
+    return Object.freeze({ register: () => true, readIdentity: () => null, reconcile: () => Promise.resolve(true), stop: () => Promise.resolve(true), closed: () => true, available: () => false, ready() { throw Error("synthetic owner seam failure") } })
+  }
+  const binding = async (wave, context) => bindNativeQualification(wave, {
+    runId: context?.runId ?? "wave-test", sourcePath: f.sourcePath,
+    platform: "darwin", arch: "arm64", nodeVersion: "v22.23.2", execPath: f.nodePath,
+    systemProfile: () => ({ version: "26.7.1", build: "25G241", sdk: "26.5" }),
+    createReader: throwingOwner,
+  })
+  assert.deepEqual(await binding(waveFor(pin)), { matched: false, reason: "warmup-failed" })
+  assert.equal(constructions, 1, "the seam owner was constructed once, then refused")
+  // Zero dispatch and admission closed at the run level: the refused binding never journals.
+  const scenario = ownedWave(t, { record: pin })
+  const options = {
+    env: { OPENCODE_API_KEY: "synthetic-test-key" }, identity: () => ({}),
+    qualify: () => ({ execution_qualified: true, plan: { cases: [{ id: "core-a", set: "core", tier: "wide" }] } }),
+    adapter: { supervisionAvailable: true, owned: { snapshot: () => assert.fail("no dispatch after a refused seam"), spawn: () => assert.fail("no spawn after a refused seam") } },
+    clock: { monotonic: () => 0, wall: () => 0, set: () => assert.fail(), clear: () => assert.fail() },
+    nativeQualification: binding,
+  }
+  const report = await main(["--manifest", scenario.file], options)
+  assert.equal(report.execution_qualified, false)
+  assert.equal(report.stop_reason, "qualification-failed")
+  assert.equal(existsSync(join(scenario.wave.control, "wave.lock")), false, "admission closed")
+  assert.equal(existsSync(join(scenario.wave.control, "progress.json")), false, "zero dispatch")
+})
+
 test("each call binds a fresh run: no cross-run caching of qualification", async t => {
   const f = recordFixture()
   t.after(() => rmSync(f.root, { recursive: true, force: true }))

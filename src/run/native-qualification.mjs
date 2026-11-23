@@ -107,7 +107,10 @@ export async function bindNativeQualification(wave, {
   try {
     identityOwner = createReader(pins, { platform: os.platform, arch: os.arch, readFile, lstat, realpath, ...(spawn !== undefined ? { spawn } : {}), ...(clock !== undefined ? { clock } : {}) })
   } catch { return refuse("helper-mismatch") } // Construction re-validates the live asset; refusal is a mismatch.
-  const ready = await identityOwner.ready()
+  // The adapter's identityOwner contract does not include ready(); a seam owner that
+  // throws here fails closed through the same warm-up refusal. The real reader never throws.
+  let ready
+  try { ready = await identityOwner.ready() } catch { return refuse("warmup-failed") }
   if (ready !== true || identityOwner.available() !== true) return refuse("warmup-failed")
   return {
     matched: true, identityOwner,

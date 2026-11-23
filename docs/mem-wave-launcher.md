@@ -45,14 +45,17 @@ Every value must match exactly.
 A match constructs the reviewed `createDarwinIdentityReader` with the record's pins and
 awaits its construction warm-up. That reader becomes the owned Docker process transport's
 `identityOwner` for the run, and the run journal records the validation outcome with the
-matched profile. A mismatch, a missing record, or a failed warm-up refuses native dispatch:
-`execution_qualified` stays false, nothing native is constructed, and the existing refusal
-path is unchanged. There is no fallback, no partial match, no environment override, and no
-credential beyond `OPENCODE_API_KEY`.
+matched profile. A mismatch or a missing record refuses native dispatch with nothing
+native constructed. A failed warm-up refuses after its single refused-operand warm-up
+exec: nothing native is dispatched or remains admitted. Either way `execution_qualified`
+stays false and the existing refusal path is unchanged. There is no fallback, no partial
+match, no environment override, and no credential beyond `OPENCODE_API_KEY`.
 
 The report's `execution_qualified` is true only when a matched binding actually admitted the
 run's native dispatch; a refused admission reports false with its stop reason, and the
-`native_qualification` journal field records the binding outcome either way.
+`native_qualification` journal field records the binding outcome for every run that reaches
+the owned composition; an admission refusal before that point returns the unchanged refusal
+report without journaling.
 Qualification is bound per run: each dispatch revalidates the live profile and constructs a
 fresh reader; nothing is cached across runs.
 
