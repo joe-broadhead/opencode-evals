@@ -54,11 +54,15 @@ function clauseStatement(code, lineStart, end) {
  * A match is an import only when its whole statement — from the line's first token
  * through the specifier — matches the exact ESM import/export grammar, with
  * multi-line clauses reconstructed backward over identifier-only member lines.
- * A match on a '*'-headed line is block-comment prose: no valid JavaScript
- * statement begins with '*'. A match whose keyword directly follows a quote
- * character is string data: an import-position keyword never does. Every other
- * form is unclassifiable and refuses the arm — nothing ambiguous is silently
- * accepted, so no real import can evade the closure check by looking like data. */
+ * On a '*'-headed line only two shapes skip: a JSDoc type reference written as
+ * '<import(' inside the comment, and pure prose. A match preceded on its line by
+ * the block-comment close sequence — including any line head that begins with
+ * it, a comment close with executable code after it — refuses, and so does every
+ * other import-shaped match in '*' position, because a '*' can also head a valid
+ * expression-continuation (multiplication) line. A match whose keyword directly
+ * follows a quote character is string data: an import-position keyword never
+ * does. Every form the classifier cannot confidently classify refuses the arm;
+ * nothing ambiguous is silently admitted. */
 function classifyImports(code, path) {
   const imports = []
   for (const match of code.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s*)["']([^"']+)["']/g)) {
@@ -77,7 +81,16 @@ function classifyImports(code, path) {
       if (statement && STATEMENT_FORM(statement)) { imports.push(match[1]); continue }
       throw new Error(`Memory import form is unclassifiable: ${path}`)
     }
-    if (head.startsWith("*")) continue
+    if (head.startsWith("*")) {
+      // A match preceded by '*/' on its line sits after a block-comment close: executable position.
+      if (code.slice(lineStart, at).includes("*/")) throw new Error(`Memory import form is unclassifiable: ${path}`)
+      // JSDoc type reference: '<import(' inside the comment.
+      if (code.startsWith("import(", at) && code[at - 1] === "<") continue
+      // A '*' can head a valid expression-continuation (multiplication) line: no other
+      // import-shaped match in '*' position is silently treated as comment prose.
+      if (code.startsWith("import", at)) throw new Error(`Memory import form is unclassifiable: ${path}`)
+      continue
+    }
     if (at > 0 && /["'`]/.test(code[at - 1])) continue
     throw new Error(`Memory import form is unclassifiable: ${path}`)
   }
@@ -110,7 +123,10 @@ export function memoryArtifact(source) {
   for (const [p, data] of bytes) {
     if (!p.endsWith(".js") && !p.endsWith(".mjs")) continue
     const code = data.toString()
-    // All literal import/export forms, plus side-effect imports. Nonliteral dynamic imports are rejected, not guessed.
+    // Static import/export statement forms classify above or refuse; JSDoc '<import(' type
+    // references skip as comment data. Nonliteral dynamic imports are rejected here, and
+    // every other import-shaped form — including literal dynamic imports — refuses rather
+    // than being guessed, so the closure check sees only verified static statements.
     if (/\bimport\s*\(\s*[^"'\s]/.test(code)) throw new Error(`Memory closure has a nonliteral import: ${p}`)
     for (const specifier of classifyImports(code, p)) {
       if (specifier.startsWith("node:")) continue

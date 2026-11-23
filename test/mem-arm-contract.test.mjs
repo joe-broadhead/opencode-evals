@@ -156,6 +156,36 @@ test("an unclassifiable import form refuses rather than being silently accepted"
   }
 })
 
+test("comment-close and expression-continuation import shapes on '*'-headed lines refuse", () => {
+  // A line head beginning '*/' closes a block comment: the rest of the line is
+  // executable code. A '*' can also head a valid multiplication continuation line.
+  // Both are live import positions the prose skip must never silently admit.
+  for (const code of [
+    '/* prose\n*/ import { x } from "external-pkg"\nexport const y = x\n',
+    '/* prose\n*/ import "./evil.js"\nexport const y = 1\n',
+    '/* prose\n*/ import("./evil.js")\nexport const y = 1\n',
+    'const x = a\n  * import("./missing.js")\nexport const y = x\n',
+    'const x = a\n  * import("external-pkg")\nexport const y = x\n',
+  ]) {
+    const f = rewrite(corpusFixture(), "src/skills.js", code)
+    try { assert.throws(() => memoryArtifact(f.source), /import form is unclassifiable/, code) }
+    finally { rmSync(f.root, { recursive: true, force: true }) }
+  }
+})
+
+test("JSDoc '<import(' type references on '*'-headed comment lines keep skipping", () => {
+  const f = rewrite(corpusFixture(), "src/skills.js", [
+    "/**",
+    ' * @param {ReturnType<import("./side-effect.js").started>} tick',
+    " */",
+    "export const ns = 1",
+  ].join("\n"))
+  try {
+    const manifest = memoryArtifact(f.source)
+    assert.equal(manifest.files["src/skills.js"], sha256(f.entries["src/skills.js"]))
+  } finally { rmSync(f.root, { recursive: true, force: true }) }
+})
+
 test("an import-shaped line that is not exact statement grammar refuses", () => {
   const f = rewrite(corpusFixture(), "src/skills.js", 'import { a } extra from "tail.js"\nexport const x = 1\n')
   try { assert.throws(() => memoryArtifact(f.source), /import form is unclassifiable/) }
