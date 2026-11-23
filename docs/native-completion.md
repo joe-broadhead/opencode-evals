@@ -274,7 +274,7 @@ Run them with an empty environment and private HOME/TMPDIR/EVALS_STORE:
 
 ```sh
 env -i HOME="$OWN_HOME" TMPDIR="$OWN_TMP" EVALS_STORE="$OWN_STORE" PATH=/usr/bin:/bin \
-  "$PINNED_NODE" --test test/native-completion.test.mjs test/native-completion-boundaries.test.mjs test/docs.test.mjs
+  "$PINNED_NODE" --test test/native-completion.test.mjs test/native-completion-boundaries.test.mjs test/native-runner-completion.test.mjs test/docs.test.mjs
 ```
 
 Do not run the repository-wide suite under a no-listener authorization: other suites exercise local HTTP servers.
