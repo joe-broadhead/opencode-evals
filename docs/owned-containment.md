@@ -5,13 +5,14 @@ The parent owns the proxy, networks, watchdog, resource receipts, and aggregate 
 The ordinary `container` and `none` modes retain their existing behavior.
 
 **This implementation does not qualify native execution.** It always returns `complete: false` and `successor_allowed: false`.
-The launcher, native completion verifier, and observer interfaces still need reviewed integration.
+The launcher composes containment through a private injected interface. Native completion, observer reconciliation, and final acceptance still need reviewed integration.
 No VM, Docker, listener, provider, or OpenCode runtime test forms part of the offline evidence.
 
 ## Modules
 
 | Module | Responsibility |
 | --- | --- |
+| `src/run/wave-contained.mjs` | Parent admission, fixed descriptor, containment composition, and provisional report |
 | `src/run/owned-containment.mjs` | Parent lifecycle, independent deadlines, configuration proof, exact-ID cleanup |
 | `src/run/owned-docker-client.mjs` | Bounded Docker transport through original child handles |
 | `src/run/container-receipt.mjs` | Full creation receipts for `create`, `run`, and `network create` |
@@ -165,23 +166,46 @@ Native and observer success remain unknown. Complete billed cost and complete to
 CLI exit zero and step markers do not change those results.
 The bootstrap itself returns a non-zero status after a provisional receipt, not a success certificate.
 
+## Launcher composition (L-C)
+
+The actual `main()` entry selects the parent containment path through `adapter.owned`.
+The production adapter exposes no approved `snapshot` or `spawn` capability. Production qualification remains false.
+Manifest fields and environment variables cannot supply these capabilities or override qualification.
+Explicit legacy adapters retain their existing worker controls. The owned path never calls the host worker, host trial CLI, or `trialComplete`.
+
+The private snapshot interface receives `{manifestSha, harnessSha, trial}`.
+It returns already-approved `inputs`, `binaries`, and an exclusively created empty `work` directory.
+Its result binds `manifest_sha256`, `harness_sha`, and `trial_id` to that request.
+It also supplies tree digests, architecture, image digest, image environment, numeric user, approved egress list, and optional fixed pricing data.
+This interface attests the selected harness, arm, case, condition, caps, catalog, and binaries. It does not collect or install them.
+The snapshot owner must preserve these trees through execution. A snapshot timeout cannot authorize a late trial.
+
+The parent requalifies the frozen manifest and repeats the $10 admission check after snapshot acquisition.
+It constructs the descriptor from fixed paths and the admitted trial, not snapshot-supplied runner configuration.
+`validateOwnedInputs` independently rehashes the trees before resource creation.
+The model remains `opencode/deepseek-v4.1-flash#low`, with one physical trial at a time and zero retries.
+The original 60-minute wave lease includes setup, execution, and the two-minute cleanup reserve.
+Parent channel loss remains sticky, including after an apparent channel rebound.
+
+The original private resource scope supplies the journal owner and admitted trial ID.
+The parent writes the started marker before resource creation.
+The journal uses exclusive no-follow temporary files, file synchronization, atomic rename, and directory synchronization.
+Each write verifies the original directory and the previous file identity. Replacement, deletion, expiration, or closure denies further authority.
+The parent retains uncertainty after a journal error and never releases the lease on unknown cleanup or settlement.
+
+The fixed finalizer uses the retained work-directory identity only after resource absence and client closure.
+Per-trial `containment.accounting` retains verified partial cost. Per-trial native negatives remain available even when cleanup fails.
+The aggregate `report.cost` describes only the aggregate ledger. It does not include provisional per-trial cost before P-F import.
+The parent does not import artifacts, complete accounting, or remove the private work root in this slice.
+Every attempted trial retains its reservation. Every owned report keeps `execution_qualified`, `complete`, and `successor_allowed` false.
+The loop stops after its first provisional trial because no current result authorizes a successor.
+
 ## Integration changes for other owners
 
-The launcher and completion-owner files are intentionally unchanged in this branch.
-Required launcher changes are:
-
-1. Keep the existing wave lease, single-flight admission, physical trial order, budget checks, and cleanup reserve in the parent.
-2. Bind each plan to the existing `createResourceScope` owner and the admitted physical trial.
-3. Allocate the empty work directory outside control, aggregate store, and Docker configuration paths.
-4. Persist the started marker and atomic ownership journal in that parent scope.
-5. Bind journal writes to the scope directory's original device/inode and the admitted trial ID.
-6. Call `containTrial` instead of the host wave worker or `superviseGroup`.
-7. Supply `validateOwnedInputs`, `measureOwnedWork`, and the bounded Docker transport.
-8. Construct `createBoundedReader(work, proof.inputs.work)` only from the parent's retained proof.
-9. Call `finalizeOwnedTrial` with that reader and all known redaction secrets.
-10. Import returned data and unresolved accounting through fixed parent ledger code.
-11. Preserve reservations and locks on unknown creation, cleanup, client closure, evidence, or settlement.
-12. Do not use the legacy `trialComplete` predicate to qualify this path.
+R-V still owns runner-to-verifier integration. O-C still owns observer-to-consumer reconciliation.
+P-F still owns aggregate artifact import, accounting settlement, and the acceptance predicate.
+Q still owns native staging, image, transport, and runtime qualification under separate authorization.
+The separate authority contract remains excluded until independent clearance.
 
 Required completion integration uses the existing runner-owned session and activation in `memoryClient`.
 The separate verifier must observe native admission, the first stored idle outcome, and quiescence without submitting another prompt.

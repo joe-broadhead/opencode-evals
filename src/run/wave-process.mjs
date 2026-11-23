@@ -26,6 +26,9 @@ export function processAdapter({ spawn = spawnProcess, groupIdentity = null, set
   const clients = new Set()
   const start = (spec, detached) => spawn(spec.command, spec.args, { cwd: spec.cwd, env: spec.env, detached, stdio: ["ignore", "ignore", "ignore", ...(spec.ipc ? ["ipc"] : [])] })
   return {
+    // Production selects the contained parent path, but no approved native staging/spawn capability exists.
+    // Tests inject concrete dependencies at the same parent interface, never a manifest/env switch.
+    owned: Object.freeze({ snapshot: null, spawn: null }),
     supervisionAvailable: typeof groupIdentity === "function",
     unverified: () => [...clients],
     command(spec, timeoutMs) {

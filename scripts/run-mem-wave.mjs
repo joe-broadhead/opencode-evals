@@ -22,15 +22,18 @@ function checkIdentity() {
 export async function main(argv, { env = process.env, adapter = processAdapter(), identity = checkIdentity, qualify = qualifyWave, clock = systemClock } = {}) {
   if (typeof env.OPENCODE_API_KEY !== "string" || !env.OPENCODE_API_KEY.trim()) throw new Error("OPENCODE_API_KEY is required")
   const worker = argv[0] === "--worker"
+  const owned = !worker && adapter.owned
   if (argv.length !== 2 || !["--manifest", "--worker"].includes(argv[0])) throw new Error("usage: run-mem-wave.mjs --manifest /absolute/reviewed-wave.json")
   let stop = false, channelLost = false
-  const onSignal = () => { stop = true }
-  const onDisconnect = () => { channelLost = true }
+  const cancellation = new AbortController()
+  const channelBound = worker || owned && typeof process.send === "function"
+  const onSignal = () => { stop = true; cancellation.abort() }
+  const onDisconnect = () => { channelLost = true; cancellation.abort() }
   const stopRequested = () => {
-    if (worker && !process.connected) channelLost = true
+    if (channelBound && !process.connected) onDisconnect()
     return stop || channelLost
   }
-  if (worker) process.on("disconnect", onDisconnect)
+  if (channelBound) process.on("disconnect", onDisconnect)
   try {
     if (worker && stopRequested()) throw new Error("worker requires its supervising parent IPC channel")
     // The start gate is temporary; channel loss remains sticky until the worker exits.
@@ -55,11 +58,15 @@ export async function main(argv, { env = process.env, adapter = processAdapter()
       // Pure qualification must finish before even the Git identity subprocess is considered.
       const qualified = qualify(wave, { harnessSha: wave.harness_sha, launcherNodeSha: sha256(readFileSync(realpathSync(process.execPath))) })
       if (qualified.execution_qualified !== true) throw new Error("native recorder handshake is not qualified")
-      if (adapter.supervisionAvailable === false) throw new Error("incarnation-bound process-group supervision is unavailable")
+      if (owned ? typeof owned.snapshot !== "function" || typeof owned.spawn !== "function" : adapter.supervisionAvailable === false) throw new Error("native supervision or approved staging is unavailable")
       const checked = qualify(wave, identity())
       if (checked.execution_qualified !== true) throw new Error("runtime qualification changed")
       return checked
     }
+    if (owned) return await launchWave(wave, {
+      manifestSha, singleton: join(wave.docker_config, ".oc-mem-wave.lock"), verify, stopRequested, clock, owned, caller: env, abortSignal: cancellation.signal,
+      allocate: () => writeFileSync(join(wave.control, "manifest.json"), bytes, { flag: "wx", mode: 0o600 }),
+    })
     if (worker) {
       const stamp = JSON.parse(readFileSync(join(wave.control, "wave.json"), "utf8"))
       if (stamp.manifest_sha256 !== manifestSha || stamp.store !== wave.store) throw new Error("wave lease mismatch")
@@ -104,7 +111,7 @@ export async function main(argv, { env = process.env, adapter = processAdapter()
     })
   } finally {
     process.removeListener("SIGINT", onSignal); process.removeListener("SIGTERM", onSignal)
-    if (worker) process.removeListener("disconnect", onDisconnect)
+    if (channelBound) process.removeListener("disconnect", onDisconnect)
     if (worker && process.connected) process.disconnect()
   }
 }
