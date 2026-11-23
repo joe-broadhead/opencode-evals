@@ -78,10 +78,13 @@ export async function runOwnedWave(wave, report, { owned, caller, lease, clock, 
       await verify() // Snapshot acquisition can yield. Recheck the frozen manifest before dispatch.
       admit(c)
       // Selection/configuration never comes from writable output or snapshot-supplied runner options.
-      const timeoutMs = Math.min(wave.trial_timeout_s * 1000, WORK_MS - lease.elapsed())
+      // The lease reads fractional milliseconds (performance.now()); the owned plan's
+      // validator requires safe-integer bounds, so both are floored like the legacy
+      // trialCommand. Flooring cannot lengthen a bound past its integer ceiling.
+      const timeoutMs = Math.floor(Math.min(wave.trial_timeout_s * 1000, WORK_MS - lease.elapsed()))
       const plan = { binding: journal.owner, context: "colima-mem-evals-20261122", control: wave.control, store: wave.store, dockerConfig: wave.docker_config,
         ...Object.fromEntries(["work", "inputs", "binaries", "architecture", "inputs_sha256", "binaries_sha256", "image", "imageEnv", "user", "allow"].map(k => [k, snapshot[k]])),
-        credentialNames: ["OPENCODE_API_KEY"], timeoutMs, cleanupMs: Math.min(120000, TOTAL_MS - lease.elapsed() - timeoutMs), operationMs: OP_MS, outputBytes: 1048576,
+        credentialNames: ["OPENCODE_API_KEY"], timeoutMs, cleanupMs: Math.floor(Math.min(120000, TOTAL_MS - lease.elapsed() - timeoutMs)), operationMs: OP_MS, outputBytes: 1048576,
         descriptor: { options: { plugin: "mem", iteration: `${wave.id}-${trial.id}`, model: WAVE_MODEL, auth: "env:OPENCODE_API_KEY", cases: trial.case, casesDir: "/inputs/cases", set: c.set, trials: 1, parallel: 1, arm: "/inputs/arm", world: "/inputs/harness/worlds/mem/index.mjs", host: "2.2.6", timeout: Math.floor(timeoutMs / 1000), stale: "refuse", tools: "locked", isolation: "owned-container", harnessRetries: 0, processGroup: "inherited", condition: trial.condition, conditionQualification: "/inputs/conditions.json" } } }
       if (!alive(lease, scopeCurrent, stopRequested)) throw new Error("admission closed")
       const docker = createOwnedDockerClient({ binary: wave.runtime.docker.path, context: plan.context, config: wave.docker_config, credentialValues: { OPENCODE_API_KEY: caller.OPENCODE_API_KEY } }, { spawn: dispatchSpawn(plan), clock })
