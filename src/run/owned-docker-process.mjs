@@ -50,13 +50,17 @@ function command(p, a) {
   return same(a, [...fixed, ...tail])
 }
 
-function ownedHandle(child, readIdentity, descriptor) {
+function ownedHandle(child, readIdentity, descriptor, identityOwner) {
   const handle = new EventEmitter()
   handle.stdout = child.stdout; handle.stderr = child.stderr
   handle.on("error", () => {}) // A late private error is observed even after a consumer removes listeners.
   let identity = null, spawned = false, exited = false, closed = false, identityLost = false, pending = null
   let input = null, ended = false, inputLost = false, inputFinished = false
   const requested = new Set()
+  let generation = 0, controller = null
+  const invalidate = () => { generation++; controller?.abort(); controller = null }
+  const live = () => !exited && !closed && !identityLost && child.exitCode == null && child.signalCode == null
+  const valid = value => Number.isSafeInteger(child.pid) && child.pid > 0 && value?.pid === child.pid && typeof value.start === "string" && value.start.length > 0 && value.start.length <= 256 ? { pid: value.pid, start: value.start } : null
   const observe = fn => { try { Promise.resolve(fn()).catch(error => handle.emit("error", error)) } catch (error) { handle.emit("error", error) } }
   const loseInput = () => {
     if (descriptor === null || inputLost) return
@@ -106,6 +110,33 @@ function ownedHandle(child, readIdentity, descriptor) {
       return { pid: value.pid, start: value.start }
     } catch { return null }
   }
+  const initialAsync = async () => {
+    const token = ++generation, original = child.pid
+    controller = new AbortController()
+    let value
+    try { value = await readIdentity(child, { signal: controller.signal }) } catch { value = null }
+    if (token !== generation || !live() || requested.size) return
+    identity = child.pid === original && identityOwner.closed() && identityOwner.available() ? valid(value) : null
+    if (!identity) lost()
+    flushInput()
+  }
+  const signalAsync = async name => {
+    invalidate()
+    const token = generation, captured = identity
+    const current = () => token === generation && live() && captured && identity === captured && child.pid === captured.pid && (name === "SIGKILL" || !requested.has("SIGKILL"))
+    if (!current()) return false
+    const reaped = await identityOwner.reconcile()
+    if (!current()) return false
+    if (!reaped || !identityOwner.available()) { lost(); return false }
+    controller = new AbortController()
+    let value
+    try { value = await readIdentity(child, { signal: controller.signal }) } catch { value = null }
+    if (!current()) return false
+    const observed = valid(value)
+    if (!observed || observed.pid !== captured.pid || observed.start !== captured.start || !identityOwner.closed() || !identityOwner.available()) { lost(); return false }
+    // No await after the final original-child/state/stage/tuple checks.
+    return child.kill(name)
+  }
   const signal = name => {
     if (exited || closed || identityLost || child.exitCode != null || child.signalCode != null) return false
     const current = read()
@@ -117,11 +148,17 @@ function ownedHandle(child, readIdentity, descriptor) {
     if (!["SIGTERM", "SIGKILL"].includes(name) || requested.has(name) || exited || closed) return false
     requested.add(name)
     input = null
+    if (identityOwner) return signalAsync(name)
     if (!spawned) { pending = name; return false }
     return signal(name)
   }
   child.once("spawn", () => {
     spawned = true
+    if (identityOwner) {
+      handle.emit("spawn")
+      if (!requested.size) observe(initialAsync)
+      return
+    }
     identity = read()
     if (!identity) lost()
     handle.emit("spawn")
@@ -131,18 +168,22 @@ function ownedHandle(child, readIdentity, descriptor) {
     }
     flushInput()
   })
-  child.on("error", error => { input = null; handle.emit("error", error) })
-  child.on("exit", (...values) => { if (exited) return; exited = true; pending = null; checkInput(); input = null; handle.emit("exit", ...values) })
-  child.on("close", (...values) => { if (closed) return; closed = true; pending = null; checkInput(); input = null; handle.emit("close", ...values) })
+  child.on("error", error => { invalidate(); input = null; handle.emit("error", error) })
+  child.on("exit", (...values) => { if (exited) return; exited = true; invalidate(); pending = null; checkInput(); input = null; handle.emit("exit", ...values) })
+  child.on("close", (...values) => { if (closed) return; closed = true; invalidate(); pending = null; checkInput(); input = null; handle.emit("close", ...values) })
   return handle
 }
 
 /** Construct only from parent-owned pins, never a manifest approval flag. */
-export function createOwnedDockerProcess({ binary, config, context, plan, credentialValues }, { spawn = spawnProcess, readIdentity, readFile = readFileSync, platform = process.platform } = {}) {
+export function createOwnedDockerProcess({ binary, config, context, plan, credentialValues }, { spawn = spawnProcess, readIdentity, identityOwner, readFile = readFileSync, platform = process.platform } = {}) {
   const p = structuredClone(plan)
   const secrets = { ...credentialValues }
   if (!same(p?.credentialNames, ["OPENCODE_API_KEY"]) || p?.descriptor?.options?.auth !== "env:OPENCODE_API_KEY" || !keys(secrets, ["OPENCODE_API_KEY"]) || typeof secrets.OPENCODE_API_KEY !== "string" || !secrets.OPENCODE_API_KEY || secrets.OPENCODE_API_KEY.includes("\0")) throw new Error("owned-docker-credential-refused")
   validateOwnedPlan(p)
+  if (identityOwner !== undefined) {
+    if (readIdentity !== undefined || !["register", "readIdentity", "reconcile", "stop", "closed", "available"].every(k => typeof identityOwner?.[k] === "function")) throw refused()
+    readIdentity = identityOwner.readIdentity
+  }
   if (readIdentity === undefined) {
     if (platform !== "linux") throw new Error("owned-docker-identity-unsupported")
     readIdentity = child => linuxIdentity(child, readFile)
@@ -151,15 +192,18 @@ export function createOwnedDockerProcess({ binary, config, context, plan, creden
   return Object.freeze({
     qualified: false,
     reason: "native-transport-unqualified",
+    identityOwner, // Separate lifetime; Docker client.closed() does not include helpers.
     spawn(file, args, options) {
       if (file !== binary || !Array.isArray(args) || args.length > 256 || !Array.from(args).every(a => typeof a === "string" && a.length <= 8192 && !a.includes("\0")) || !same(args.slice(0, 2), ["--context", context]) || !command(p, args.slice(2))) throw refused()
       const exec = args[2] === "exec", env = exec ? { ...innerEnv(options?.env?.OPENCODE_PASSWORD), ...secrets, DOCKER_CONFIG: config } : { PATH: "/usr/bin:/bin", DOCKER_CONFIG: config }
       if (!keys(options, ["env", "shell", "detached", "stdio"]) || options.shell !== false || options.detached !== false || !same(options.stdio, [exec ? "pipe" : "ignore", "pipe", "pipe"]) || !equalEnv(options.env, env) || exec && !/^[a-f0-9]{48}$/.test(env.OPENCODE_PASSWORD ?? "")) throw refused()
+      if (identityOwner && !identityOwner.available()) throw new Error("owned-docker-identity-unavailable")
       let child
       try { child = spawn(binary, [...args], { ...options, env: { ...options.env }, stdio: [...options.stdio] }) }
       catch (cause) { throw new Error("owned-docker-spawn-unavailable", { cause }) }
       const descriptor = exec ? { ...p.descriptor, schema: "oc-owned-launch/1", binding: p.binding, container_id: args.at(-3), context, inputs_sha256: p.inputs_sha256, binaries_sha256: p.binaries_sha256 } : null
-      return ownedHandle(child, readIdentity, descriptor)
+      identityOwner?.register(child)
+      return ownedHandle(child, readIdentity, descriptor, identityOwner)
     },
   })
 }

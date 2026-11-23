@@ -79,14 +79,16 @@ Writable completion proves only local delivery, not remote bootstrap acknowledge
 
 The existing client requests `SIGTERM`, then `SIGKILL` after its bounded grace.
 The adapter accepts each stage at most once, only through the original child handle.
-Before the spawn event, it retains only the latest requested stage.
+With a synchronous reader, it retains only the latest requested stage before the spawn event.
+With an identity owner, cancellation before initial identity prevents later input and signals.
 Each signal requires a fresh matching PID/start identity and a still-live original handle.
 Identity loss refuses signals and marks output uncertain through the existing client error path.
 No caller-supplied PID, process-name search, group signal, or descendant discovery supplies authority.
 
 A pre-aborted containment call never invokes spawn.
 Later containment cancellation uses the existing client stop interface.
-The adapter adds no AbortSignal protocol, timer, global process registry, or admission controller.
+The adapter adds no caller AbortSignal protocol, timer, or global process registry.
+The private async seam creates its own AbortController for each lookup.
 The parent owns admission and cleanup order.
 
 ## Native limits
@@ -98,6 +100,9 @@ The closing comm parenthesis must have the exact space delimiter before the stat
 This follows the existing `container.processStart` field convention, but does not use its permissive liveness fallback.
 Other hosts, including macOS, refuse the default identity path before native spawn.
 A trusted injected identity reader is a test or future integration dependency, not native qualification.
+The optional `identityOwner` dependency supports asynchronous identity with separate helper ownership.
+Plain `readIdentity` thenables still refuse identity. The original negative controls remain unchanged.
+See [Darwin identity ownership](darwin-process-identity.md) for the offline interface and unexecuted native gates.
 
 The PID/start read is not an atomic incarnation capability.
 Identity acquisition occurs after native spawn and does not prevent the CLI from starting.
