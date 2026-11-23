@@ -9,6 +9,11 @@ import { validateContainedOptions } from "./owned-launch.mjs"
 
 export const OWNED_CONTEXT = "colima-mem-evals-20261122"
 export const ownedClock = { now: () => performance.now(), set: (fn, ms) => setTimeout(fn, ms), clear: timer => clearTimeout(timer) }
+/** One bounded drain interval for the container-rm → endpoint-eviction race (round 6, invocation 7):
+ *  the daemon finishes evicting a removed container's network endpoints shortly after the
+ *  container's removal is confirmed, so a network rm refused in that window usually succeeds
+ *  moments later. A single fixed wait in the lead's 250ms–1s band; never a loop. */
+const NETWORK_DRAIN_MS = 500
 const beneath = (a, b) => a === b || b.startsWith(`${a}/`)
 const cleanPath = p => typeof p === "string" && isAbsolute(p) && resolve(p) === p && !/[,\n\r"\x00]/.test(p)
 const unknown = () => ({ complete: false, native: "unknown", observer: "unknown", accounting: { complete: false }, evidence: "unknown" })
@@ -188,13 +193,27 @@ export async function containTrial(plan, deps) {
   for (const r of [...state.resources.filter(r => r.kind === "container").reverse(), ...state.resources.filter(r => r.kind === "network").reverse()]) {
     try {
       if (r.kind === "container") { try { await run(["stop", "--time", "1", r.id], {}, true) } catch { /* still attempt exact removal */ } }
-      await run(r.kind === "container" ? ["rm", "-f", "-v", r.id] : ["network", "rm", r.id], {}, true)
-      const found = await run([...(r.kind === "network" ? ["network"] : []), "inspect", r.id], {}, true)
+      const rm = await run(r.kind === "container" ? ["rm", "-f", "-v", r.id] : ["network", "rm", r.id], {}, true)
       // A daemon error or timeout is never absence. Require the exact missing ID.
       // Docker's absence vocabulary has two families: the CLI's `No such …: <id>` and the
       // daemon's `… <id> not found` (docker 29.5.2 answers missing networks exactly so).
       // Both verify for every object class; anything else is still NOT verified-gone.
-      if (found.closed !== true || found.code !== 1 || !new RegExp(`^(?:Error(?: response from daemon)?: )?(?:No such (?:object|container|network): ${r.id}|(?:object|container|network) ${r.id} not found)\\s*$`, "i").test(found.stderr)) removed = false
+      const absent = found => found.closed === true && found.code === 1 && new RegExp(`^(?:Error(?: response from daemon)?: )?(?:No such (?:object|container|network): ${r.id}|(?:object|container|network) ${r.id} not found)\\s*$`, "i").test(found.stderr)
+      let found = await run([...(r.kind === "network" ? ["network"] : []), "inspect", r.id], {}, true)
+      // Round 6, invocation 7: with the containers' removal confirmed, the network rm can
+      // race the daemon's endpoint eviction — the rm refuses with the in-use/endpoint
+      // vocabulary (or the presence check still sees the network) although the network is
+      // empty and instantly removable moments later. One bounded drain interval, then ONE
+      // retry of the removal; the retry's own verification decides. Any other failure, or a
+      // retry that still does not verify, records NOT verified-gone exactly as before —
+      // the three-check gate, the receipts and the accounting flow are untouched, and a
+      // first-try success issues no extra command at all.
+      if (r.kind === "network" && !absent(found) && (found.closed === true && found.code === 0 || rm.closed === true && rm.code !== 0 && /(?:is in use|has active endpoints)/i.test(rm.stderr ?? ""))) {
+        await bounded(() => new Promise(resolve => { const timer = clock.set(() => { timers.delete(timer); resolve() }, NETWORK_DRAIN_MS); timers.add(timer) }), Math.min(p.cleanupMs, end - clock.now()), "network-drain")
+        await run(["network", "rm", r.id], {}, true)
+        found = await run(["network", "inspect", r.id], {}, true)
+      }
+      if (!absent(found)) removed = false
     } catch { removed = false }
   }
   try { clients = await bounded(() => docker.stopClients(), Math.min(p.operationMs, end - clock.now()), "clients") === true && docker.closed() === true } catch { clients = false }
