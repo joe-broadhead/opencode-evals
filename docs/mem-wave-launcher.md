@@ -99,7 +99,13 @@ The staged inputs tree may additionally carry an optional top-level `attachments
 directory — basename copies of the condition dossier's pinned observation
 attachments, hash-bound to the dossier pins — which the owned in-container condition
 proof reads as `/inputs/attachments`; a mis-staged regular file at that name refuses
-at staging validation.
+at staging validation. A wave whose cases write may additionally pin a commit-plan
+dossier (`commit_plan`, canonical file pin, own SHA-256, outside the compared arms)
+with its targets seed (`targets`): the plan is required with the seed, both are
+verified at admission, the descriptor's closed options carry the plan as a pinned
+container file (`/inputs/commit-plan.json`), and the bootstrap seeds the fresh store's
+`targets.json` from the staged seed before the in-container runner executes — a
+commit-set case without a pinned plan refuses exactly as before.
 
 ## Legacy worker controls
 

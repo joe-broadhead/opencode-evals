@@ -1023,6 +1023,14 @@ export const trialBinaries = ({ binary, needsClaude = false, needsBrowse = false
  */
 export const browseInTrial = (plugin, cases = []) => plugin === "browse" || cases.some((c) => pluginsOf(c).includes("browse"))
 
+/** The commit-plan location: the legacy CLI passes a path string; the owned descriptor
+ * carries a reviewed pin ({path, sha256}) whose bytes the staged inputs tree already
+ * hash-binds. Anything else refuses. */
+const commitPlanPath = (plan) => {
+  if (typeof plan === "string") return plan
+  if (plan && plan.path === "/inputs/commit-plan.json" && /^[a-f0-9]{64}$/.test(plan.sha256 ?? "")) return plan.path
+  throw new Error("commit plan pin required: a path, or the reviewed /inputs/commit-plan.json pin")
+}
 export async function runBatch(options, { caller = process.env, log = (line) => console.log(line) } = {}) {
   // Before store/auth/world access: an ordinary CLI or an environment hint grants no capability.
   const contained = (options.isolation ?? caller.EVALS_ISOLATION) === "owned-container" ? ownedSession(options.ownedSession) : null
@@ -1130,7 +1138,7 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   if (commitCases.length && !options.commitPlan) throw new Error(`${commitCases.length} selected case(s) are in set commit (${commitCases.slice(0, 3).map((c) => c.id).join(", ")}): they really write, and run only with --commit-plan <file> naming what they may write`)
   if (options.commitPlan && commitCases.length !== selected.length) throw new Error("--commit-plan runs only cases in set commit: every other case stays at the ask")
   // The plan names @aliases of targets.json only; they are resolved here, and a literal or an unknown alias is refused.
-  const commitPlan = options.commitPlan ? resolveCommitPlan(JSON.parse(readFileSync(options.commitPlan, "utf8")), loadTargets(caller)) : null
+  const commitPlan = options.commitPlan ? resolveCommitPlan(JSON.parse(readFileSync(commitPlanPath(options.commitPlan), "utf8")), loadTargets(caller)) : null
   if (scripted && options.model !== SCRIPTED_MODEL) throw new Error(`--scripted runs the harness's scripted model, ${SCRIPTED_MODEL}: --model ${options.model} is not it`)
   const live = isLive({ auth: profile.kind, model: options.model, config: sealedConfig({ armDir: null, model: options.model, scripted }) })
   // Every run is confined in a container unless the caller names another backend: the scripted model can call tools too.

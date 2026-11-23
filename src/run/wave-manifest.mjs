@@ -110,6 +110,26 @@ export function qualifyWave(wave, identity) {
     }
     validateNativeQualificationRecord(pinnedJSON(pin))
   }
+  // The commit-set write permission: an optional dossier pin plus its targets seed,
+  // both outside the compared packages. A pinned plan REQUIRES the seed — the plan's
+  // @aliases resolve at run time against the store's seeded targets.json — and a
+  // missing or hash-mismatched seed refuses admission with the existing vocabulary.
+  if (wave.commit_plan !== undefined && wave.commit_plan !== null) {
+    const plan = wave.commit_plan
+    if (!isAbsolute(plan?.path ?? "") || plan.path !== resolve(plan.path) || !digest(plan.sha256)) throw new Error("commit plan dossier pin required")
+    for (const arm of ["baseline", "candidate"]) {
+      const directory = wave.arms?.[arm]?.directory
+      if (typeof directory === "string" && (plan.path === directory || plan.path.startsWith(`${directory}/`))) throw new Error("commit plan dossier must live outside compared packages")
+    }
+    pinnedJSON(plan)
+    const targets = wave.targets
+    if (!isAbsolute(targets?.path ?? "") || targets.path !== resolve(targets.path) || !digest(targets.sha256)) throw new Error("targets seed pin required with a commit plan")
+    for (const arm of ["baseline", "candidate"]) {
+      const directory = wave.arms?.[arm]?.directory
+      if (typeof directory === "string" && (targets.path === directory || targets.path.startsWith(`${directory}/`))) throw new Error("targets seed must live outside compared packages")
+    }
+    pinnedJSON(targets)
+  }
   for (const key of ["fixture", "schema", "discovery"]) pinnedBytes(wave.inputs?.[key])
   for (const c of result.plan.cases) {
     const compiled = pinnedJSON(c.file)
