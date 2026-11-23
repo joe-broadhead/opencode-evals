@@ -6,7 +6,83 @@ import { sha256, canonical } from "../util/canonical.mjs"
 import { gunzipSync } from "node:zlib"
 
 export const isMemoryPackage = (pkg) => pkg?.name === "@joe-broadhead/opencode-mem"
-const safe = (p) => typeof p === "string" && /^(?:index\.js|package\.json|LICENSE|README\.md|(?:src|skills|docs|assets|service-interface)\/[A-Za-z0-9._/-]+)$/.test(p) && !p.split("/").some((s) => !s || s === "." || s === ".." || s.startsWith("."))
+/** The documented real member classes of a cleared npm-pack Memory corpus: the package
+ * entrypoints and top-level docs (README, CHANGELOG, SECURITY), and the packaged
+ * subtrees — source, skills, docs, assets, the service interface, the shared page
+ * helpers, the HTML views and the records backend. Arbitrary or unknown member
+ * classes still refuse; this is an enumerated allowlist, not a wildcard. */
+const safe = (p) => typeof p === "string" && /^(?:index\.js|package\.json|LICENSE|README\.md|CHANGELOG\.md|SECURITY\.md|(?:src|skills|docs|assets|service-interface|shared|views|records)\/[A-Za-z0-9._/-]+)$/.test(p) && !p.split("/").some((s) => !s || s === "." || s === ".." || s.startsWith("."))
+
+/** Import-form grammar: the exact ESM statement shapes the classifier accepts.
+ * The clause admits named members with `as` renames and an optional trailing comma;
+ * anything else that reaches here is an unclassifiable form and refuses the arm. */
+const IDENT = "[A-Za-z_$][A-Za-z0-9_$]*"
+const CLAUSE = `${IDENT}(?:\\s+as\\s+${IDENT})?(?:\\s*,\\s*${IDENT}(?:\\s+as\\s+${IDENT})?)*\\s*,?`
+const NAMED = `\\{(?:\\s*${CLAUSE}\\s*)\\}`
+const IMPORT_CLAUSE = `(?:${IDENT}(?:\\s*,\\s*(?:\\*\\s*as\\s+${IDENT}|${NAMED}))?|\\*\\s+as\\s+${IDENT}|${NAMED})`
+const IMPORT_FORM = new RegExp(`^import(?![A-Za-z0-9_$])(?:\\s+${IMPORT_CLAUSE}\\s+from|\\s*)$`)
+const EXPORT_FORM = new RegExp(`^export(?![A-Za-z0-9_$])\\s+(?:${NAMED}|\\*(?:\\s+as\\s+${IDENT})?)\\s+from$`)
+const HEAD = /^(?:import|export)(?![A-Za-z0-9_$])/
+const STATEMENT_FORM = (statement) => {
+  const specifier = /["'][^"']+["']\s*;?\s*$/.exec(statement)
+  if (!specifier) return false
+  const body = statement.slice(0, specifier.index).trimEnd()
+  return IMPORT_FORM.test(body) || EXPORT_FORM.test(body)
+}
+
+/** Reconstruct a multi-line import/export clause: walk backward over blank and
+ * identifier-only member lines to the statement head. Any other line shape, or a
+ * missing head within the bound, refuses the arm rather than being guessed. */
+const CLAUSE_MEMBER = /^[A-Za-z0-9_$,\s]*$/
+function clauseStatement(code, lineStart, end) {
+  const pieces = [code.slice(lineStart, end)]
+  let lineEnd = lineStart - 1
+  for (let i = 0; i < 256; i++) {
+    if (lineEnd < 0) return null
+    const newline = code.lastIndexOf("\n", lineEnd - 1)
+    const start = newline + 1
+    const line = code.slice(start, lineEnd)
+    if (!line.trim()) { pieces.unshift(line); lineEnd = start - 1; continue }
+    if (HEAD.test(line.trimStart())) { pieces.unshift(line); return pieces.join("\n") }
+    if (CLAUSE_MEMBER.test(line)) { pieces.unshift(line); lineEnd = start - 1; continue }
+    return null
+  }
+  return null
+}
+
+/** The import match surface is unchanged; each match is then classified.
+ * A match is an import only when its whole statement — from the line's first token
+ * through the specifier — matches the exact ESM import/export grammar, with
+ * multi-line clauses reconstructed backward over identifier-only member lines.
+ * A match on a '*'-headed line is block-comment prose: no valid JavaScript
+ * statement begins with '*'. A match whose keyword directly follows a quote
+ * character is string data: an import-position keyword never does. Every other
+ * form is unclassifiable and refuses the arm — nothing ambiguous is silently
+ * accepted, so no real import can evade the closure check by looking like data. */
+function classifyImports(code, path) {
+  const imports = []
+  for (const match of code.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s*)["']([^"']+)["']/g)) {
+    const at = match.index, end = at + match[0].length
+    const lineStart = code.lastIndexOf("\n", at - 1) + 1
+    const lineEnd = code.indexOf("\n", at)
+    const line = code.slice(lineStart, lineEnd === -1 ? code.length : lineEnd)
+    const head = line.trimStart()
+    const headStart = lineStart + (line.length - head.length)
+    if (HEAD.test(head)) {
+      if (STATEMENT_FORM(code.slice(headStart, end))) { imports.push(match[1]); continue }
+      throw new Error(`Memory import form is unclassifiable: ${path}`)
+    }
+    if (head.startsWith("}")) {
+      const statement = clauseStatement(code, lineStart, end)
+      if (statement && STATEMENT_FORM(statement)) { imports.push(match[1]); continue }
+      throw new Error(`Memory import form is unclassifiable: ${path}`)
+    }
+    if (head.startsWith("*")) continue
+    if (at > 0 && /["'`]/.test(code[at - 1])) continue
+    throw new Error(`Memory import form is unclassifiable: ${path}`)
+  }
+  return imports
+}
 
 /** Verify every manifest entry and relative import before writing anything. Claims about the archive remain explicit. */
 export function memoryArtifact(source) {
@@ -36,8 +112,7 @@ export function memoryArtifact(source) {
     const code = data.toString()
     // All literal import/export forms, plus side-effect imports. Nonliteral dynamic imports are rejected, not guessed.
     if (/\bimport\s*\(\s*[^"'\s]/.test(code)) throw new Error(`Memory closure has a nonliteral import: ${p}`)
-    const imports = [...code.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s*)["']([^"']+)["']/g)].map((v) => v[1])
-    for (const specifier of imports) {
+    for (const specifier of classifyImports(code, p)) {
       if (specifier.startsWith("node:")) continue
       if (!specifier.startsWith(".")) throw new Error(`Memory closure has an external runtime import: ${p}`)
       const target = posix.normalize(posix.join(posix.dirname(p), specifier))
