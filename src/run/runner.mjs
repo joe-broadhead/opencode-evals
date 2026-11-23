@@ -51,6 +51,8 @@ import { dirname } from "node:path"
 import { stageMemFixture, memFixtureOptions, memFixtureBinding, startMemFixture, memCaptureRecord } from "./mem-fixture.mjs"
 import { coreCases } from "../../packs/mem/core.mjs"
 import { runMemoryTurns,nativeMemoryCalls,withMemoryActivation } from "./mem-turns.mjs"
+import { makeCompletionReadClient } from "./native-completion-http.mjs"
+import { verifyNativeCompletion } from "./native-completion.mjs"
 import {randomUUID} from "node:crypto"
 import { selectMemoryPlan } from "./mem-case-plan.mjs"
 import { setProcessGroupMode } from "./sandbox.mjs"
@@ -507,6 +509,79 @@ export function truthCheck(cases, world) {
  */
 export const stallOf = (ctx, sawRequest) => (ctx.scripted && ctx.mockInTrial && ctx.firstRequestMs ? { stall: { afterMs: ctx.firstRequestMs, alive: sawRequest } } : {})
 
+/** The native completion observation's own bound: the verifier's pinned ceiling. A
+ * longer turn is still bounded by its own timeout; the observation gives up at this
+ * ceiling and says so in its record instead of waiting unbounded. */
+const COMPLETION_CEILING_MS = 120_000
+
+/** The complete serial per-trial identity for one observed prompt turn. Every field
+ * is a runner-owned fact — the case, the physical trial, the turn's 1-based index,
+ * the turn's activation, the trial's incarnation (the parent's bound invocation
+ * inside a contained execution, the runner's own otherwise) and the session the
+ * existing /api/session contract holds. Nothing here reads native events,
+ * transcripts or workload output, and the scope inventory is exactly the trial's
+ * own session: complete and serial by construction, never discovered. */
+export function completionTurnBinding({ caseID, trialID, turn, activationID, incarnationID, sessionID }) {
+  for (const [key, value] of Object.entries({ caseID, trialID, activationID, incarnationID, sessionID })) {
+    if (typeof value !== "string" || value.length === 0) throw new Error(`the completion ${key} identity is required`)
+  }
+  if (!Number.isInteger(turn) || turn < 1) throw new Error("the completion turn index is required")
+  return { caseID, trialID, turnID: String(turn), activationID, incarnationID, sessionID,
+    scope: { complete: true, serial: true, sessionIDs: [sessionID] } }
+}
+
+/** The runner retains every completion read's transport handle for the turn's
+ * bounded window. `track` registers one exact request handle before dispatch and
+ * its synchronous release unregisters it after transport cleanup; an unresolved
+ * handle stays retained for the trial's own postmortem, never swept here. */
+export function createCompletionTransportOwner() {
+  const live = new Set()
+  return { track: handle => { live.add(handle); return () => live.delete(handle) }, outstanding: () => [...live] }
+}
+
+/** One runner-owned serial prompt turn with its native completion observation.
+ *
+ * `makeCompletionReadClient` builds the six reads on the runner's own endpoint
+ * lease — the trial's server, its password, this incarnation, this session — and
+ * `verifyNativeCompletion` observes the turn through them. `launch` is the caller's
+ * existing sole prompt launch: it is dispatched at most once, only after the
+ * verifier's baseline and quiescence gate opens, and its raw bytes are hashed exactly
+ * as captured, never parsed or rewritten. There is no second prompt path and no
+ * event/text-ID guessing here, and no authority: the record stays PROVISIONAL,
+ * `accepted:false`, wire `unqualified`, and `execution_qualified`, `complete` and
+ * `successor_allowed` remain false absent separate native qualification. The record
+ * is persisted privately through `persist` before the turn's own receipt is handed
+ * back unchanged. */
+export async function runObservedPromptTurn({ binding, origin, authorization, fetchImpl, transportOwner, launch, signal, limits, persist }) {
+  if (typeof persist !== "function") throw new Error("a private journal writer is required for the completion observation")
+  const leaseAbort = new AbortController()
+  let dispatched = null
+  const client = makeCompletionReadClient({
+    endpointLease: { origin, authorization, incarnationID: binding.incarnationID, sessionIDs: binding.scope.sessionIDs, signal: leaseAbort.signal },
+    binding,
+    fetchImpl,
+    transportOwner,
+  })
+  try {
+    const completion = await verifyNativeCompletion({
+      client, binding, signal,
+      limits: { deadlineMs: COMPLETION_CEILING_MS, ...limits },
+      // The existing sole prompt launch, dispatched once, inside the observation window.
+      launch: gate => { dispatched = Promise.resolve().then(() => launch(gate)); return dispatched },
+    })
+    await persist(completion)
+    if (!dispatched) throw new Error("the native completion gate never dispatched the trial's prompt launch")
+    return { completion, receipt: await dispatched }
+  } catch (error) {
+    // A dispatch that outlived the observation must not become an unhandled rejection;
+    // the trial's own failure path owns the turn's outcome from here.
+    dispatched?.catch(() => {})
+    throw error
+  } finally {
+    leaseAbort.abort()
+  }
+}
+
 async function runJobBody(job, ctx, track) {
   const id = segment("case id", job.case.id)
   const name = `${id}.t${job.trial}`
@@ -611,6 +686,11 @@ async function runJobBody(job, ctx, track) {
           }
         }
         const memorySpec = memoryPlan?.spec ?? null
+        // The trial's completion identity: the runner's incarnation (the parent's bound
+        // invocation inside a contained execution, the runner's own otherwise) and the
+        // transport owner that retains this trial's completion read handles.
+        const incarnation = ctx.contained?.descriptor?.binding?.invocation_id ?? randomUUID()
+        const completionOwner = createCompletionTransportOwner()
         const memoryClient = async ({prompt,session:continued,timeoutMs,index}) => {
           let session=continued
           if (!session) {
@@ -621,9 +701,36 @@ async function runJobBody(job, ctx, track) {
             if(created.code!==0||typeof session!=="string"||!session.startsWith("ses_"))throw new Error("Memory session provisioning failed")
           }
           const file=join(memFixture.root,"turn.json")
-          const context={case_id:memoryIntent.case_id,trial_id:memoryIntent.trial_id,turn:index,session,activation_id:randomUUID()}
+          const activation_id=randomUUID()
+          const context={case_id:memoryIntent.case_id,trial_id:memoryIntent.trial_id,turn:index,session,activation_id}
           const write=(active)=>{writeFileSync(`${file}.tmp`,JSON.stringify({...context,active}),{mode:0o600});renameSync(`${file}.tmp`,file)}
-          return withMemoryActivation({write,client:()=>exec(["run","--server",server.url,"--format","json","-m",ctx.model,"--session",session,prompt],{timeoutMs,...stallOf(ctx,sawRequest)}),observations:()=>nativeMemoryCalls(guardRecords(join(sandbox.tmp,"guard.jsonl")),context),clear:()=>{const receipt=join(memFixture.root,"active-call.json");writeFileSync(`${receipt}.tmp`,"null",{mode:0o600});renameSync(`${receipt}.tmp`,receipt)}})
+          // The existing sole prompt launch, unchanged: one `opencode run` against this
+          // trial's server, this session, this prompt. The native completion observation
+          // wraps it — it never submits a second prompt and never guesses an event or text
+          // ID — and its PROVISIONAL record joins the trial's own private recordings.
+          const binding=completionTurnBinding({caseID:memoryIntent.case_id,trialID:memoryIntent.trial_id,turn:index,activationID:activation_id,incarnationID:incarnation,sessionID:session})
+          const cancel=new AbortController()
+          const cancelAt=setTimeout(()=>cancel.abort(),timeoutMs)
+          let turn=null
+          try{
+            const observed=await runObservedPromptTurn({
+              binding,
+              origin:server.url,
+              authorization:`Basic ${Buffer.from(`opencode:${password}`).toString("base64")}`,
+              fetchImpl:fetch,
+              transportOwner:completionOwner,
+              signal:cancel.signal,
+              persist:record=>writeAtomic(within(ctx.rawDir,join(ctx.rawDir,`${name}.native.t${index}.json`),"a recording"),redact(`${JSON.stringify(record)}\n`)),
+              launch:gate=>{
+                turn=withMemoryActivation({write,client:()=>exec(["run","--server",server.url,"--format","json","-m",ctx.model,"--session",session,prompt],{timeoutMs,...stallOf(ctx,sawRequest)}),observations:()=>nativeMemoryCalls(guardRecords(join(sandbox.tmp,"guard.jsonl")),context),clear:()=>{const receipt=join(memFixture.root,"active-call.json");writeFileSync(`${receipt}.tmp`,"null",{mode:0o600});renameSync(`${receipt}.tmp`,receipt)}})
+                return turn.then(result=>({binding:gate.binding,raw:result.outputTruncated?undefined:Buffer.from(result.stdout??""),result}))
+              },
+            })
+            return observed.receipt.result
+          }catch(error){
+            turn?.catch(()=>{}) // a dispatch that outlived the observation is the trial's failure to report, never an unhandled rejection
+            throw error
+          }finally{clearTimeout(cancelAt)}
         }
         const runClient = () => memorySpec ? runMemoryTurns({ spec: memorySpec, timeoutMs: ctx.timeoutMs, client: memoryClient }) : exec(["run", "--server", server.url, "--format", "json", "-m", ctx.model, ...session, ctx.prompts.get(job.case.id) ?? job.case.prompt], { timeoutMs: ctx.timeoutMs, ...stallOf(ctx, sawRequest) })
         // An idle client: `opencode run` alive, the server up, the mock never asked (found in 2 of ~100 `p0 a1` runs; the processes were all asleep at 0 % CPU). It is replaced ONCE, and the

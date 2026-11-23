@@ -1,11 +1,11 @@
 # Standalone native completion verifier
 
-**Implementation status: offline logical-client tests only. Wire and native qualification are pending.**
+**Implementation status: the runner dispatch is wired offline at the Memory-turn seam. Native qualification remains pending, and every result stays PROVISIONAL and unqualified.**
 
 The [module](../src/run/native-completion.mjs) observes one runner-controlled serial turn.
 It does not submit a prompt, answer permissions, interrupt execution, discover a server, or obtain credentials.
 It does not launch a process itself. The caller supplies its existing native CLI launch operation.
-No runner, observer, guard, fixture, consumer, CLI, or containment integration is included.
+The runner composition in `src/run/runner.mjs` (`runObservedPromptTurn`) is the wired trusted owner; see [Runner wiring](#runner-wiring).
 
 ## Source pin and limits of the evidence
 
@@ -187,6 +187,59 @@ If the event/byte limit prevents a complete fence, the proof is unavailable.
 After abort, late operation results cannot change the returned evidence.
 The caller still owns cancellation and reclamation of its CLI and any noncompliant adapter resources.
 
+## Runner wiring
+
+`src/run/runner.mjs` is the wired trusted owner for the Memory trial world's prompt
+launches. For every Memory turn, `runObservedPromptTurn` builds the six reads with
+`makeCompletionReadClient` on the trial's own endpoint lease — the runner-started
+server's `http://127.0.0.1:<port>` origin, its password as the canonical Basic
+header, the trial's incarnation (the parent descriptor's bound invocation inside a
+contained execution), and the session the existing `/api/session` contract holds —
+and observes the turn with `verifyNativeCompletion`.
+
+The identity is the trial's own fact list, built by `completionTurnBinding` from the
+case, the physical trial, the turn's 1-based index, a fresh activation, the
+incarnation and the session, with a complete serial scope whose inventory is exactly
+that session. No event, transcript, text or workload output is read to build it.
+
+The launch is the existing sole prompt launch — the same single `opencode run`
+against the trial's server, session and prompt — dispatched at most once, only after
+the verifier's baseline and quiescence gate opens, inside the observation window.
+There is no second prompt path. A gate that never opens dispatches nothing and
+fails the turn as the runner's own error. The turn's raw bytes are hashed exactly
+as the runner's journal holds them; a truncated capture leaves raw unknown instead
+of presenting partial bytes.
+
+Each observation's record is persisted privately through the runner's existing
+recordings journal (atomic `0600` writes inside the `0700` recordings directory) as
+`<case>.t<trial>.native.t<turn>.json`, beside the run's own recording. The turn's
+result, exit code and billing are unchanged: the record never grades, settles or
+releases anything.
+
+The observation window is bounded by the verifier's pinned 120-second ceiling. A
+turn that outlasts it keeps its own timeout and result; the record honestly marks
+the deadline and leaves raw unknown.
+
+### Still unwired
+
+- Native execution stays disabled. `processAdapter().owned` remains exactly
+  `{snapshot:null,spawn:null}`, `qualifyWave` still returns
+  `execution_qualified:false`, and no wave report field changes: `complete` and
+  `successor_allowed` stay false. Budget admission, the singleton lock, the
+  58-minute work lease, the deadline, zero retries and the worker IPC dispositions
+  are unchanged.
+- The O-C observer reconciliation remains unwired. No observer inventory, generation
+  or scope authority is projected from these records, and no record is published as
+  `oc-mem-invocations/1`.
+- The P-F aggregate settlement remains unwired. No provisional record is imported
+  into the aggregate ledger, no accounting is settled by it, no acceptance predicate
+  reads it, and no successor is admitted by it. Container cleanup keeps its existing
+  receipt authority, including the reviewed cleanup-only semantics for unknown
+  closure.
+- The ordinary non-Memory single-prompt launch remains unobserved: it has no
+  runner-owned turn/activation identity, and this wiring does not add one.
+- Native qualification remains a separate authorization (see the section below).
+
 ## Required qualification before integration can certify a native turn
 
 A separately authorized, private **pinned 2.2.6** capture must provide:
@@ -212,6 +265,10 @@ No current-document URL assumption, guessed codec, synthetic receipt, pending co
 The [tests](../test/native-completion.test.mjs) use a finite injected event queue and source-shaped responses.
 The [boundary tests](../test/native-completion-boundaries.test.mjs) exercise preflight starts and already-yielded or buffered close conflicts.
 They also cover explicit terminal replay, single-read raw capture, diagnostic failures, unsupported asynchronous subscription, and contiguous partial-history negatives.
+The [runner wiring tests](../test/native-runner-completion.test.mjs) drive the real runner composition at its seam with a
+finite fake wire: per-trial identity binding, serial scope refusal, cancellation and deadline windows with no late
+dispatch, partial-billing retention with unchanged turn results, PROVISIONAL records with no completion authority, and
+settled transport ownership.
 They require no runtime, listener, network, model, provider, auth, install, VM, or container.
 Run them with an empty environment and private HOME/TMPDIR/EVALS_STORE:
 
