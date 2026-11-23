@@ -21,7 +21,10 @@ createOwnedDockerProcess(
 `config` is the dedicated absolute Docker configuration directory.
 `context` is exactly `colima-mem-evals-20261122`.
 `plan` is the parent-owned plan that `containTrial` receives.
-`credentialValues` contains exactly the designated credential name and its in-memory value.
+`plan.credentialNames` must be exactly `["OPENCODE_API_KEY"]`, and `plan.descriptor.options.auth` must be `env:OPENCODE_API_KEY`.
+`credentialValues` contains only `OPENCODE_API_KEY` and its in-memory value.
+Other names, extra mappings, or mismatched auth fail at construction with `owned-docker-credential-refused`, before native effects.
+Future credential names require a separately approved contract; this factory is not a general credential manager.
 The factory copies the plan and credentials before it accepts calls.
 
 These arguments are not an approval interface for untrusted callers.
@@ -70,6 +73,9 @@ Then it calls the original writable's `end` once.
 Node owns writable backpressure, and drain events never resend the descriptor.
 Cancellation or identity loss before delivery releases the buffered input without delivery.
 Cancellation cannot retract input that the native stream already accepted.
+Premature stdin close, failed end completion, or known unfinished input at child exit/close emits `owned-docker-input-lost` before forwarding that child event.
+The adapter releases queued input on loss. Normal Writable finish/close is not loss.
+Writable completion proves only local delivery, not remote bootstrap acknowledgement.
 
 The existing client requests `SIGTERM`, then `SIGKILL` after its bounded grace.
 The adapter accepts each stage at most once, only through the original child handle.
@@ -88,6 +94,7 @@ The parent owns admission and cleanup order.
 The default native launcher is `node:child_process.spawn`, used only inside an explicit factory call's spawn method.
 The default identity reader supports Linux `/proc/<original-pid>/stat` field 22.
 It rejects missing, malformed, changed, or dead-process identity.
+The closing comm parenthesis must have the exact space delimiter before the state fields.
 This follows the existing `container.processStart` field convention, but does not use its permissive liveness fallback.
 Other hosts, including macOS, refuse the default identity path before native spawn.
 A trusted injected identity reader is a test or future integration dependency, not native qualification.

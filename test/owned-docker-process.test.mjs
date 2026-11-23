@@ -1,6 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
+import { Writable } from "node:stream"
 import { createOwnedDockerClient } from "../src/run/owned-docker-client.mjs"
 import { createOwnedDockerProcess } from "../src/run/owned-docker-process.mjs"
 import { containTrial } from "../src/run/owned-containment.mjs"
@@ -18,7 +19,8 @@ function fixture(options={}, onSpawn=()=>{}) {
   const clock={now:()=>now,set(fn,ms){const key=++next;timers.set(key,{fn,at:now+ms});return key},clear:key=>timers.delete(key),tick(){const [key,t]=[...timers].sort((a,b)=>a[1].at-b[1].at)[0];timers.delete(key);now=t.at;t.fn()}}
   const spawn=(bin,args,opts)=>{
     const c=new EventEmitter();c.pid=200+children.length;c.stdout=new EventEmitter();c.stderr=new EventEmitter();c.stdin=new EventEmitter();c.writes=[];c.signals=[]
-    c.stdin.end=value=>{c.writes.push(value);return c.stdin}
+    c.stdin.writableFinished=false
+    c.stdin.end=(value,done)=>{c.writes.push(value);c.stdin.writableFinished=true;c.stdin.emit("finish");done?.();return c.stdin}
     c.kill=signal=>{c.signals.push(signal);return true}
     calls.push({bin,args,opts});children.push(c);onSpawn(c,args);return c
   }
@@ -122,7 +124,7 @@ test("bounded bootstrap stdin waits for spawn identity, delegates backpressure o
   for(const cancel of [false,true]) {
     const f=fixture(),r=execRequest(),pending=f.client.run(r.args,r.options),c=f.children[0]
     assert.deepEqual(c.writes,[],"no descriptor before native spawn and identity")
-    c.stdin.end=value=>{c.writes.push(value);return false}
+    c.stdin.end=(value,done)=>{c.writes.push(value);c.stdin.writableFinished=true;c.stdin.emit("finish");done?.();return false}
     const stopped=cancel?f.client.stopClients():null
     c.emit("spawn");c.stdin.emit("drain");c.stdin.emit("drain")
     assert.equal(c.writes.length,cancel?0:1)
@@ -263,4 +265,70 @@ test("owner pins and spawn arguments are captured by value; no option grants nat
   assert.equal(f.calls[0].opts.env.OPENCODE_API_KEY,"synthetic-secret")
   assert.equal(f.transport.qualified,false);assert.equal(f.transport.reason,"native-transport-unqualified")
   assert.equal(Object.isFrozen(f.transport),true)
+})
+
+test("real Writable loss before spawn or during a partial write reaches the client before aggregate settlement",async()=>{
+  for(const mode of ["before-spawn","pending-write","exit-before-flush","callback-error","pending-at-close","close-before-exit","destroy-before-events"]) {
+    let completeWrite
+    const f=fixture({},c=>{
+      c.stdin=new Writable({write(bytes,_encoding,done){c.writes.push(Buffer.from(bytes.subarray(0,3)));completeWrite=done}})
+    }),r=execRequest(),pending=f.client.run(r.args,r.options),c=f.children[0]
+    if(mode==="before-spawn") {c.stdin.destroy();await new Promise(setImmediate)}
+    if(mode!=="exit-before-flush")c.emit("spawn")
+    if(mode==="pending-write") {c.stdin.destroy();await new Promise(setImmediate)}
+    if(mode==="callback-error") {completeWrite(Error("private-write-failure"));await new Promise(setImmediate)}
+    if(mode==="destroy-before-events")c.stdin.destroy()
+    if(mode==="close-before-exit")c.emit("close",0,null)
+    c.emit("exit",0,null);c.emit("close",0,null)
+    const result=await pending
+    assert.equal(result.closed,true,mode);assert.equal(result.truncated,true,mode)
+    assert.equal(c.writes.length,["before-spawn","exit-before-flush"].includes(mode)?0:1)
+    assert.equal(f.client.closed(),true);assert.equal(f.timers.size,0)
+    const snapshot=JSON.stringify(result);c.stdin.destroy();await new Promise(setImmediate)
+    c.stdin.emit("error",Error("late-private"));assert.equal(JSON.stringify(result),snapshot)
+  }
+})
+
+test("failed end callback emits one fixed input-loss error before reentrant child settlement",async()=>{
+  let endCallback
+  const f=fixture({},c=>{c.stdin.end=(bytes,done)=>{c.writes.push(Buffer.from(bytes.subarray(0,3)));endCallback=done;return c.stdin}})
+  const events=[]
+  const client=createOwnedDockerClient({binary,config,context,credentialValues:{OPENCODE_API_KEY:"synthetic-secret"}}, {clock:f.clock,graceMs:10,spawn(...args){
+    const handle=f.transport.spawn(...args);handle.on("error",error=>events.push(error.message));handle.on("close",()=>events.push("close"));return handle
+  }})
+  const r=execRequest(),pending=client.run(r.args,r.options),c=f.children[0];c.emit("spawn")
+  c.kill=signal=>{c.signals.push(signal);c.emit("exit",0,null);c.emit("close",0,null);return true}
+  endCallback(Error("private-end-failure"))
+  const result=await pending
+  assert.equal(result.truncated,true);assert.equal(result.closed,true)
+  assert.deepEqual(events,["owned-docker-input-lost","close"])
+  assert.equal(c.writes.length,1);assert.deepEqual(c.signals,["SIGTERM"])
+  const snapshot=JSON.stringify(result);endCallback(Error("late-private"));c.stdin.emit("close")
+  assert.equal(JSON.stringify(result),snapshot);assert.deepEqual(events,["owned-docker-input-lost","close"]);assert.equal(f.timers.size,0)
+})
+
+test("Linux comm delimiter and truncated stat refuse identity without changing the valid state/start policy",async()=>{
+  const fields=["S",...Array(18).fill("0"),"123","0"].join(" "),prefix="200 (docker (child) name)"
+  for(const text of [prefix+" "+fields,prefix+"X"+fields,prefix+fields,prefix+"\t"+fields,prefix,prefix+" ",prefix+" S 0",prefix.slice(0,-1)+" "+fields]) {
+    const f=fixture({readIdentity:undefined,platform:"linux",readFile:()=>text}),pending=f.client.run(inspect,{timeoutMs:100,maxBytes:128}),c=f.children[0]
+    c.emit("spawn");const stopped=f.client.stopClients();f.clock.tick()
+    const valid=text===prefix+" "+fields
+    assert.deepEqual(c.signals,valid?["SIGTERM","SIGKILL"]:[],text)
+    assert.equal((await pending).truncated,!valid);assert.equal(await stopped,false)
+    c.emit("exit",0,null);c.emit("close");assert.equal(f.client.closed(),true);assert.equal(f.timers.size,0)
+  }
+})
+
+test("real Writable normal finish and close send one descriptor without loss or remote acknowledgement",async()=>{
+  let completeWrite
+  const f=fixture({},c=>{c.stdin=new Writable({highWaterMark:1,write(bytes,_encoding,done){c.writes.push(Buffer.from(bytes));completeWrite=done}})})
+  const r=execRequest(),pending=f.client.run(r.args,r.options),c=f.children[0];c.emit("spawn")
+  assert.equal(c.stdin.writableFinished,false);assert.equal(c.writes.length,1)
+  completeWrite();await new Promise(setImmediate)
+  assert.equal(c.stdin.writableFinished,true);assert.equal(c.stdin.closed,true)
+  c.emit("exit",0,null);c.emit("close",0,null)
+  const result=await pending;assert.equal(result.truncated,false);assert.equal(result.closed,true)
+  assert.equal(c.writes[0].toString(),r.options.input);assert.deepEqual(c.signals,[])
+  const snapshot=JSON.stringify(result);c.stdin.emit("error",Error("late-private"));assert.equal(JSON.stringify(result),snapshot)
+  assert.equal(f.transport.qualified,false);assert.equal(f.timers.size,0)
 })

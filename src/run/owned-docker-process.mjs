@@ -19,7 +19,9 @@ function linuxIdentity(child, readFile) {
   if (!Number.isSafeInteger(pid) || pid <= 0) return null
   const text = readFile(`/proc/${pid}/stat`, "utf8")
   if (typeof text !== "string" || text.length > 8192 || !text.startsWith(`${pid} (`)) return null
-  const fields = text.slice(text.lastIndexOf(")") + 2).trim().split(/\s+/)
+  const end = text.lastIndexOf(")")
+  if (end < `${pid} (`.length || text[end + 1] !== " ") return null
+  const fields = text.slice(end + 2).trim().split(/\s+/)
   if (!/^[RSDTtWI]$/.test(fields[0]) || !/^[1-9][0-9]*$/.test(fields[19] ?? "")) return null
   return { pid, start: fields[19] }
 }
@@ -53,15 +55,29 @@ function ownedHandle(child, readIdentity, descriptor) {
   handle.stdout = child.stdout; handle.stderr = child.stderr
   handle.on("error", () => {}) // A late private error is observed even after a consumer removes listeners.
   let identity = null, spawned = false, exited = false, closed = false, identityLost = false, pending = null
-  let input = null, ended = false
+  let input = null, ended = false, inputLost = false, inputFinished = false
   const requested = new Set()
   const observe = fn => { try { Promise.resolve(fn()).catch(error => handle.emit("error", error)) } catch (error) { handle.emit("error", error) } }
-  const flushInput = () => {
-    if (!spawned || !identity || identityLost || exited || closed || requested.size || input === null) return
-    const bytes = input; input = null
-    observe(() => child.stdin.end(bytes)) // One bounded end; Node's Writable owns backpressure, never resend on drain.
+  const loseInput = () => {
+    if (descriptor === null || inputLost) return
+    inputLost = true; input = null
+    handle.emit("error", new Error("owned-docker-input-lost"))
   }
-  child.stdin?.on("error", () => {})
+  const finishedInput = () => inputFinished || child.stdin?.writableFinished === true
+  const checkInput = () => {
+    if (input !== null || ended && !finishedInput() && child.stdin?.writableFinished === false) loseInput()
+  }
+  const flushInput = () => {
+    if (!spawned || !identity || identityLost || inputLost || exited || closed || requested.size || input === null) return
+    if (child.stdin.destroyed || child.stdin.closed || child.stdin.errored) { loseInput(); return }
+    const bytes = input; input = null
+    // One bounded end; Node's Writable owns backpressure, never resend on drain.
+    try { Promise.resolve(child.stdin.end(bytes, error => { if (error) loseInput(); else inputFinished = true })).catch(loseInput) }
+    catch { loseInput() }
+  }
+  child.stdin?.on("error", loseInput)
+  child.stdin?.on("finish", () => { inputFinished = true })
+  child.stdin?.on("close", () => { if (!finishedInput()) loseInput() })
   handle.stdin = descriptor === null ? null : Object.freeze({
     on(event, listener) { child.stdin.on(event, listener); return handle.stdin },
     end(value) {
@@ -70,7 +86,7 @@ function ownedHandle(child, readIdentity, descriptor) {
       let parsed
       try { parsed = JSON.parse(value.toString()) } catch { throw refused() }
       if (!same(parsed, descriptor)) throw refused()
-      if (requested.size || exited || closed || identityLost) return handle.stdin
+      if (requested.size || exited || closed || identityLost || inputLost) return handle.stdin
       input = Buffer.from(value)
       flushInput()
       return handle.stdin
@@ -116,22 +132,22 @@ function ownedHandle(child, readIdentity, descriptor) {
     flushInput()
   })
   child.on("error", error => { input = null; handle.emit("error", error) })
-  child.on("exit", (...values) => { if (exited) return; exited = true; pending = null; input = null; handle.emit("exit", ...values) })
-  child.on("close", (...values) => { if (closed) return; closed = true; pending = null; input = null; handle.emit("close", ...values) })
+  child.on("exit", (...values) => { if (exited) return; exited = true; pending = null; checkInput(); input = null; handle.emit("exit", ...values) })
+  child.on("close", (...values) => { if (closed) return; closed = true; pending = null; checkInput(); input = null; handle.emit("close", ...values) })
   return handle
 }
 
 /** Construct only from parent-owned pins, never a manifest approval flag. */
 export function createOwnedDockerProcess({ binary, config, context, plan, credentialValues }, { spawn = spawnProcess, readIdentity, readFile = readFileSync, platform = process.platform } = {}) {
   const p = structuredClone(plan)
+  const secrets = { ...credentialValues }
+  if (!same(p?.credentialNames, ["OPENCODE_API_KEY"]) || p?.descriptor?.options?.auth !== "env:OPENCODE_API_KEY" || !keys(secrets, ["OPENCODE_API_KEY"]) || typeof secrets.OPENCODE_API_KEY !== "string" || !secrets.OPENCODE_API_KEY || secrets.OPENCODE_API_KEY.includes("\0")) throw new Error("owned-docker-credential-refused")
   validateOwnedPlan(p)
   if (readIdentity === undefined) {
     if (platform !== "linux") throw new Error("owned-docker-identity-unsupported")
     readIdentity = child => linuxIdentity(child, readFile)
   }
   if (!path(binary) || !path(config) || context !== OWNED_CONTEXT || p.context !== context || p.dockerConfig !== config || typeof spawn !== "function" || typeof readIdentity !== "function") throw refused()
-  const secrets = { ...credentialValues }
-  if (!keys(secrets, p.credentialNames) || p.credentialNames.some(n => n in innerEnv("") || typeof secrets[n] !== "string" || !secrets[n] || secrets[n].includes("\0"))) throw refused()
   return Object.freeze({
     qualified: false,
     reason: "native-transport-unqualified",
