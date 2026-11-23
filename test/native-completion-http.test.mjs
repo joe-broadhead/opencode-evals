@@ -265,7 +265,9 @@ async function verifyWire(config={}) {
     if(u.pathname==='/api/event') return {status:200,headers:new Headers({'content-type':'text/event-stream'}),body:stream};
     if(u.pathname.endsWith('/message')) {
       const cursor=u.searchParams.get('cursor');
-      if(config.repeatCursor && cursor) return response({data:[],cursor:{next:'page_0'}});
+      // Keep this page valid and older, so cursor replay (not empty-page or ID validation) is exercised.
+      if(config.repeatCursor && cursor) return response({data:[{...user('msg_older'),time:{created:0}}],cursor:{next:'page_0'}});
+      if(config.emptyNext && cursor) return response({data:[],cursor:{next:'page_0'}});
       if(launched && cursor && config.olderFailure) return response({message:'private'},500);
       const all=launched?projection:baseline,offset=cursor?Number(cursor.slice(5)):0;
       const data=all.slice(offset,offset+200);
@@ -305,6 +307,17 @@ test('unchanged verifier consumes descending >200 histories through the empty se
   const assistant=i=>({id:`msg_a_${i}`,type:'assistant',time:{created:2},agent:'agent',model:{id:'model',providerID:'provider'},content:[]});
   const projection=[...Array.from({length:199},(_,i)=>assistant(i)),idle('msg_first'),user('msg_prompt'),...baseline];
   assert.equal((await verifyWire({baseline,projection})).result.native.idleID,'msg_first');
+});
+test('empty page with next is malformed; terminal empty page without next still permits logical proof',async()=>{
+  const bad=await verifyWire({emptyNext:true});
+  assert.equal(bad.result.logicalProof,false);assert.equal(bad.launches,0);
+  assert.deepEqual(bad.result.health.issues,['invalid_message_page']);
+  const good=await verifyWire();
+  assert.equal(good.result.logicalProof,true);assert.equal(good.launches,1);
+  for(const kind of ['baseline','projection']) {
+    const pages=good.result.evidence.filter(e=>e.kind===kind);
+    assert.deepEqual(pages.at(-1).value,{data:[],cursor:{}});
+  }
 });
 test('unchanged verifier fails on conflicts, unseen history and nonempty native state',async(t)=>{
   for(const [name,config,issue] of [
