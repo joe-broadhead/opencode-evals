@@ -36,7 +36,7 @@ function supportedMessage(message) {
       return typeof message.text === 'string' &&
         (message.description === undefined || typeof message.description === 'string');
     case 'location-switched':
-      return movedLocation(message) && (message.previous === undefined || movedLocation(message.previous));
+      return movedLocation(message) && (message.previous == null || movedLocation(message.previous));
     case 'skill':
       return id(message.skill) && id(message.name) && typeof message.text === 'string';
     case 'shell':

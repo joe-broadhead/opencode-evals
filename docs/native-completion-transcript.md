@@ -64,6 +64,13 @@ It is not a complete native wire-schema validator.
 Optional compaction model/native fields require a model reference/object when present.
 Shell status is exactly `running`, `exited`, `timeout`, or `killed`.
 Shell output contains string `output`, finite `cursor`/`size`, and boolean `truncated`.
+The public location-switch type permits an omitted, null, or valid object `previous` value.
+The consumer preserves null as null, including during full baseline equality.
+The [public protocol override](https://github.com/anomalyco/opencode/blob/dc2ffcf8bf26f9e669b6aa22b95f50e12be15e06/packages/protocol/src/groups/message.ts#L44-L66)
+differs from the internal location schema.
+The [generated public type](https://github.com/anomalyco/opencode/blob/dc2ffcf8bf26f9e669b6aa22b95f50e12be15e06/packages/client/src/promise/generated/types.ts#L992-L1001)
+explicitly declares this nullable alternative. No native emission of null was observed here.
+Malformed current/previous objects still fail validation. New location moves remain conflicts for all three previous-value representations.
 Unknown types and malformed required fields fail closed.
 The original logical seam does not validate all user attachments, assistant content, usage, error details, or opaque metadata.
 Native wire validation remains a separate adapter obligation.

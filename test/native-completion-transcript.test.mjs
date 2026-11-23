@@ -305,3 +305,60 @@ test('annotation payloads consume the unchanged evidence budget rather than bein
   assert.equal(result.logicalProof, false); assert.equal(result.native.status, 'unknown');
   assert.ok(result.health.issues.includes('evidence_byte_limit'));
 });
+
+test('T1: public historical previous:null survives paginated baseline/projection without record changes', async () => {
+  // Generated public types.ts:992–1000 permits null. This is not a native emission capture.
+  const historical = record('msg_old_location', 'location-switched', {
+    location: { directory: '/synthetic' }, previous: null,
+  });
+  const notice = system('msg_old_notice');
+  const beforePages = [page([notice], 'page_1'), page([historical], 'page_2'), page([])];
+  const afterPages = [page([idle(), user(), notice], 'page_1'), page([historical], 'page_2'), page([])];
+  const snapshot = JSON.stringify({ beforePages, afterPages });
+  const f = fixture({ beforePages, afterPages });
+  const result = await run(f);
+  assert.equal(result.logicalProof, true);
+  assert.equal(f.calls.filter(([operation]) => operation === 'launch').length, 1);
+  assert.deepEqual(result.baseline.messageIDs, ['msg_old_notice', 'msg_old_location']);
+  assert.deepEqual(result.evidence.filter(({ kind }) => kind === 'baseline').map(({ value }) => value), beforePages);
+  assert.deepEqual(result.evidence.filter(({ kind }) => kind === 'projection').map(({ value }) => value), afterPages);
+  assert.equal(result.evidence.find(({ kind, value }) => kind === 'projection' && value.data[0]?.id === historical.id).value.data[0].previous, null);
+  assert.equal(JSON.stringify({ beforePages, afterPages }), snapshot);
+});
+
+test('T1: null previous does not relax current/previous object validation or full baseline equality', async () => {
+  for (const previous of [[], {}, false, 0, 'null', { location: null }, { location: {} },
+    { location: { directory: 1 } }, { location: { directory: '/previous' }, projectID: 1 },
+    { location: { directory: '/previous' }, subpath: 1 }]) {
+    const f = fixture({ before: [{ ...location(), previous }] });
+    const result = await run(f);
+    assert.equal(f.calls.some(([operation]) => operation === 'launch'), false);
+    assert.ok(result.health.issues.includes('invalid_message_identity'));
+  }
+  const f = fixture({ before: [{ ...location(), location: { directory: 1 }, previous: null }] });
+  const invalidCurrent = await run(f);
+  assert.equal(f.calls.some(([operation]) => operation === 'launch'), false);
+  assert.ok(invalidCurrent.health.issues.includes('invalid_message_identity'));
+  const omitted = record('msg_old_location', 'location-switched', { location: { directory: '/synthetic' } });
+  const nullable = { ...omitted, previous: null };
+  for (const [before, suffix] of [[nullable, omitted], [omitted, nullable]]) {
+    const result = await run(fixture({ before: [before], after: [idle(), user(), suffix] }));
+    assert.equal(result.admission.status, 'unknown'); assert.equal(result.logicalProof, false);
+    assert.ok(result.health.issues.includes('baseline_changed'), 'absent and null remain distinct retained field values');
+  }
+});
+
+test('T1: new location moves remain conflicts for null, omitted, and object previous values in every position', async () => {
+  const omitted = record('msg_move', 'location-switched', { location: { directory: '/synthetic' } });
+  for (const move of [omitted, { ...omitted, previous: null },
+    { ...omitted, previous: { location: { directory: '/previous' }, subpath: '' } }]) {
+    for (const after of [[idle(), user(), move], [idle(), move, user()], [move, idle(), user()]]) {
+      const result = await run(fixture({ after }));
+      assert.equal(result.admission.status, 'unknown'); assert.equal(result.native.status, 'unknown');
+      assert.equal(result.logicalProof, false);
+      assert.ok(result.health.issues.includes('conflicting_transcript_work'));
+      assert.ok(!result.health.issues.includes('invalid_message_identity'));
+      assert.deepEqual(result.evidence.find(({ kind }) => kind === 'projection').value.data, after);
+    }
+  }
+});
