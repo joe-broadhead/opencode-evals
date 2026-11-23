@@ -74,7 +74,9 @@ export function validateOwnedInputs(plan, io = fs) {
       }
     }
     const top = io.readdirSync(root)
-    if (binaries ? top.length !== 2 || !["node", "opencode"].every(n => top.includes(n)) : top.some(n => !["harness", "arm", "cases", "caps.json", "conditions.json", "models.json", "model-map.json"].includes(n))) throw new Error("minimal staged roots required")
+    // The owned composition's in-container condition proof reads its dossier
+    // attachments as basename copies beneath an optional top-level attachments root.
+    if (binaries ? top.length !== 2 || !["node", "opencode"].every(n => top.includes(n)) : top.some(n => !["harness", "arm", "cases", "caps.json", "conditions.json", "models.json", "model-map.json", "attachments"].includes(n))) throw new Error("minimal staged roots required")
     if (!binaries) {
       if (!["harness", "arm", "cases", "caps.json", "models.json", "model-map.json", ...(plan.descriptor?.options?.condition ? ["conditions.json"] : [])].every(n => top.includes(n))) throw new Error("complete minimal staged roots required")
       if (["harness", "arm", "cases"].some(n => !io.lstatSync(join(root,n)).isDirectory())) throw new Error("minimal staged directories required")

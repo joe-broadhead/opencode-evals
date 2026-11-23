@@ -1,21 +1,48 @@
 // Reviewed inputs, not discovery: this module performs no runtime or network operations.
 import { createHash } from "node:crypto"
 import { readFileSync, realpathSync, lstatSync, accessSync, constants } from "node:fs"
-import { isAbsolute, resolve, dirname, basename } from "node:path"
+import { isAbsolute, resolve, dirname, basename, join } from "node:path"
 import { memoryArtifact } from "./mem-arm.mjs"
 import { tierOf } from "../cost/budget.mjs"
 
 export const WAVE_MODEL = "opencode/deepseek-v4.1-flash#low"
 export const sha256 = bytes => createHash("sha256").update(bytes).digest("hex")
+/** The owned composition's in-container attachment root: the dispatch stages basename
+ * copies of the condition dossier's pinned observation attachments beneath this
+ * directory, which the container sees as /inputs/attachments. */
+export const OWNED_CONDITION_ATTACHMENTS = "/inputs/attachments"
 const digest = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value)
-export function pinnedBytes(pin) {
+/** Resolve one pinned dossier attachment. Two-sided resolution, one hash identity:
+ * without a root — the host-side wave validation and the legacy host-side proof — the
+ * pin's own canonical path is read exactly as before. With a root — the owned
+ * composition's in-container condition proof — the pin's recorded host path is used for
+ * BASENAME and sha matching only, and the attachment is resolved as that basename
+ * beneath the root; the resolved path must be canonical inside its root. Identity is
+ * hash-bound either way: a missing file, a wrong-name file or any digest mismatch
+ * refuses fail-closed with the existing vocabulary — never a silent skip, never a
+ * re-pin to a different hash. */
+export function pinnedBytes(pin, root) {
+  if (root !== undefined) {
+    if (!pin || !isAbsolute(pin.path ?? "") || !digest(pin.sha256)) throw new Error("absolute file pin and SHA-256 required")
+    if (typeof root !== "string" || !isAbsolute(root) || root !== resolve(root)) throw new Error("attachment resolution root must be canonical")
+    const name = basename(pin.path)
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name)) throw new Error("file pin must be a canonical regular file without symlinks")
+    const path = join(root, name)
+    try {
+      if (realpathSync(path) !== path) throw new Error("file pin must be a canonical regular file without symlinks")
+      if (!lstatSync(path).isFile()) throw new Error("file pin must be a canonical regular file without symlinks")
+    } catch { throw new Error("file pin must be a canonical regular file without symlinks") }
+    const bytes = readFileSync(path)
+    if (sha256(bytes) !== pin.sha256) throw new Error("file pin digest mismatch")
+    return bytes
+  }
   if (!pin || !isAbsolute(pin.path ?? "") || !digest(pin.sha256)) throw new Error("absolute file pin and SHA-256 required")
   if (pin.path !== resolve(pin.path) || realpathSync(pin.path) !== pin.path || !lstatSync(pin.path).isFile()) throw new Error("file pin must be a canonical regular file without symlinks")
   const bytes = readFileSync(pin.path)
   if (sha256(bytes) !== pin.sha256) throw new Error("file pin digest mismatch")
   return bytes
 }
-export const pinnedJSON = pin => JSON.parse(pinnedBytes(pin))
+export const pinnedJSON = (pin, root) => JSON.parse(pinnedBytes(pin, root))
 
 export function completeTrials(plan) {
   if (plan?.schema !== "oc-mem-wave-plan/1" || !Array.isArray(plan.cases) || !plan.cases.length) throw new Error("complete accepted plan required")
@@ -118,8 +145,12 @@ export function qualifyWave(wave, identity) {
 /** The schema is a harness qualification dossier, NOT a claimed OpenCode response schema.
  * Its attachments are observed effective config, tool.list() output, and an OpenAI-shaped request.
  * Other wire formats require a reviewed decoder; they are not guessed here.
+ * The optional third parameter is the owned composition's in-container attachment
+ * resolution root: absent, the dossier's own canonical pins are read (the host-side
+ * wave validation and the legacy host proof, unchanged); present, each attachment
+ * resolves by basename beneath the root, hash-bound to the pin's own sha.
  */
-export function qualifyConditions(q, identity) {
+export function qualifyConditions(q, identity, root) {
   if (q?.schema !== "oc-mem-conditions/1" || q.status !== "qualified" || q.mapping !== "execute-permission-v1") throw new Error("condition mapping is not qualified")
   for (const key of ["runtime_sha256", "archive_sha256", "model"]) if (!identity[key] || q[key] !== identity[key]) throw new Error(`condition qualification ${key} mismatch`)
   if (q.model !== WAVE_MODEL || !digest(q.runtime_sha256) || !digest(q.archive_sha256)) throw new Error("exact qualified model/runtime/arm required")
@@ -127,7 +158,7 @@ export function qualifyConditions(q, identity) {
   for (const condition of ["direct", "search"]) {
     const observation = q.observations?.[condition]
     if (!observation) throw new Error("both condition observations required")
-    const config = pinnedJSON(observation.config), catalog = pinnedJSON(observation.catalog), request = pinnedJSON(observation.request)
+    const config = pinnedJSON(observation.config, root), catalog = pinnedJSON(observation.catalog, root), request = pinnedJSON(observation.request, root)
     const rule = config.permissions?.filter(p => p.action === "execute" && p.resource === "*").at(-1)
     if (rule?.effect !== (condition === "direct" ? "deny" : "allow")) throw new Error("effective execute permission does not match condition")
     if (!Array.isArray(catalog) || q.memory_tool_ids.some(id => !catalog.some(t => t.id === id))) throw new Error("observed registered catalog lacks qualified Memory tools")

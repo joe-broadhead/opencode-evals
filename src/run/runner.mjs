@@ -56,7 +56,7 @@ import { verifyNativeCompletion } from "./native-completion.mjs"
 import {randomUUID} from "node:crypto"
 import { selectMemoryPlan } from "./mem-case-plan.mjs"
 import { setProcessGroupMode } from "./sandbox.mjs"
-import { qualifyConditions, sha256 } from "./wave-manifest.mjs"
+import { qualifyConditions, sha256, OWNED_CONDITION_ATTACHMENTS } from "./wave-manifest.mjs"
 import { memoryArtifact } from "./mem-arm.mjs"
 import { singleAttemptCost } from "../cost/attempt.mjs"
 
@@ -1093,9 +1093,13 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const armSource = armSpec === "none" ? null : armSpec ?? pluginRepo(plugin, caller)
   if (armSpec !== "none" && !armSource) throw new Error(`no build for ${plugin}: pass --arm <built plugin dir> (or none), or set EVALS_REPO_${plugin.toUpperCase()} or EVALS_PLUGIN_ROOT`)
   const binary = hostBinary({ host: options.host, env: caller })
+  // Owned-container mode re-reads the dossier inside the container, which cannot see
+  // the host-canonical pin paths: its proof resolves each attachment by basename
+  // beneath /inputs/attachments, hash-bound to the pin's own sha (fail-closed on any
+  // missing or mismatched copy). The legacy host-side proof keeps the pin's own path.
   const conditionProof = options.condition ? qualifyConditions(JSON.parse(readFileSync(options.conditionQualification, "utf8")), {
     runtime_sha256: sha256(readFileSync(binary)), archive_sha256: memoryArtifact(armSource).archive_sha256, model: options.model,
-  }) : null
+  }, contained ? OWNED_CONDITION_ATTACHMENTS : undefined) : null
   const caps = loadCaps(store, caller)
   const month = monthOf()
 
