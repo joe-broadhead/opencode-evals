@@ -95,14 +95,28 @@ export function createDiscoveryStore({spec,intent,permission={effect:"allow"},fa
       if(id)creators.push({id,case_id:spec.id,trial_id:intent.trial_id,turn:1,session:context.session,tool:invocation.tool,args:copy(invocation.args),status:"stored"})
       return finish(out)
     }
-    if(method==="records.get")out={records:state.records.filter(r=>input.ids?.includes(r.id)),missing:(input.ids??[]).filter(id=>!state.records.some(r=>r.id===id))}
+    // records.get answers like the real service (records/src/store.js:4118-4128):
+    // ids resolve by id, paths by path, and an unresolved ref comes back in
+    // `missing` rather than being refused. The real path lookup normalizes the
+    // ref and applies read grants (store.js:4123-4127); this closed store keeps
+    // paths as stored and has no grants, so plain equality is its mirror.
+    if(method==="records.get")out={records:state.records.filter(r=>(input.ids??[]).includes(r.id)||(input.paths??[]).includes(r.path)),missing:[...(input.ids??[]).filter(id=>!state.records.some(r=>r.id===id)),...(input.paths??[]).filter(p=>!state.records.some(r=>r.path===p))]}
     if(method==="records.list"){
-      const limit=input.limit??20;if(!Number.isInteger(limit)||limit<1||limit>100)return finish({error:{code:"invalid_limit"}},400)
+      // The real list defaults limit to 50 and caps it at 200 (intInRange,
+      // records/src/store.js:4140); bodies are cut to 500 characters unless
+      // full === true (listed, store.js:1436-1443; LIST_BODY store.js:455; the
+      // cut is the real text cut, records/src/text.js:97-103); a status list
+      // filters like the real status in (...) clause (store.js:1516-1523); and
+      // the path prefix matches whole segments, trailing slash or not
+      // (prefixClause, store.js:1506-1509).
+      const limit=input.limit??50;if(!Number.isInteger(limit)||limit<1||limit>200)return finish({error:{code:"invalid_limit"}},400)
       const query=Object.fromEntries(Object.entries(input).filter(([k])=>k!=="cursor").sort(([a],[b])=>a.localeCompare(b))),key=createHash("sha256").update(JSON.stringify(query)).digest("hex").slice(0,16)
       const offset=input.cursor?Number(String(input.cursor).split(":").at(-1)):0
-      const records=state.records.filter(r=>(!input.kind||[input.kind].flat().includes(r.kind))&&(!input.type||[input.type].flat().includes(r.type))&&(!input.status||input.status==="all"||r.status===input.status)&&(!input.prefix||r.path?.startsWith(input.prefix)))
+      const under=(path,prefix)=>prefix===undefined||prefix===""?true:prefix.endsWith("/")?path?.startsWith(prefix)===true:path===prefix||path?.startsWith(`${prefix}/`)===true
+      const records=state.records.filter(r=>(!input.kind||[input.kind].flat().includes(r.kind))&&(!input.type||[input.type].flat().includes(r.type))&&(!input.status||input.status==="all"||[input.status].flat().includes(r.status))&&under(r.path,input.path_prefix??input.prefix))
       if(!Number.isInteger(offset)||offset<0||offset>records.length||input.cursor&&input.cursor!==`discovery:${space}:${key}:${offset}`)return finish({error:{code:"invalid_cursor"}},400)
-      out={records:records.slice(offset,offset+limit),cursor:offset+limit<records.length?`discovery:${space}:${key}:${offset+limit}`:null,more:offset+limit<records.length}
+      const listed=r=>input.full===true||typeof r.body!=="string"||r.body.length<=500?r:{...r,body:cutText(r.body,500),body_clipped:true}
+      out={records:records.slice(offset,offset+limit).map(listed),cursor:offset+limit<records.length?`discovery:${space}:${key}:${offset+limit}`:null,more:offset+limit<records.length}
     }
     if(method==="records.search")out={hits:state.records.filter(r=>(!input.kinds||input.kinds.includes(r.kind))&&(!input.types||input.types.includes(r.type))&&(!input.status||input.status==="all"||input.status===r.status)&&`${r.title} ${r.body}`.toLowerCase().includes(String(input.query).toLowerCase())).slice(0,input.limit??20).map(({body,...r})=>({...r,snippet:body.slice(0,28)}))}
     if(method==="wiki.raw.read")out={items:(input.filenames??[]).filter(f=>Object.hasOwn(state.raw,f)).map(filename=>({filename,content:state.raw[filename]}))}

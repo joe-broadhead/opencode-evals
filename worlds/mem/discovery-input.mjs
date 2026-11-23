@@ -7,10 +7,42 @@ const strings=v=>Array.isArray(v)&&v.length>0&&v.length<=50&&v.every(x=>text(x,3
 const optional=(v,test)=>v===undefined||test(v)
 const pagination=(v,limit)=>closed(v,["limit","offset"])&&integer(v.limit,1,limit)&&integer(v.offset,0,100000)
 // This is the finite fake's supported wire subset, not a new public Memory schema.
+// The records read subset mirrors the real records service's read contract, so
+// a wire the real service answers is never the thing a trial fails on: the
+// round-6 diagnosis found five live trials refused at records.list
+// {kind:"commitment",status:"all",limit:200,full:true} (the real plugin's
+// listRecords wire, arm src/records-store.js:78) and records.get
+// {paths:["index"]} (the real plugin's readIndex, arm src/records-store.js
+// readIndex, and mem_page path refs, arm src/tools/page.js getPage:192) —
+// both answered by the real service.
+// The record statuses the real service filters by (records/src/model.js:19).
+const STATUSES=["current","superseded","retired","contested","proposed","accepted","rejected","accepting","applied","applied_private","declined"]
+// The real stringList: a bare string or a list of at most `max` (records/src/store.js:1483-1494).
+const stringList=(v,max=20)=>text(v)||Array.isArray(v)&&v.length>0&&v.length<=max&&v.every(x=>text(x,300))
 export function validDiscoveryReadInput(method,v){
   if(!plain(v))return false
-  if(method==="records.get")return closed(v,["ids"])&&strings(v.ids)&&v.ids.every(id=>/^rec_[0-9A-HJKMNP-TV-Z]{26}$/.test(id))
-  if(method==="records.list")return closed(v,["kind","type","status","limit","cursor","prefix"])&&optional(v.kind,x=>text(x)||strings(x))&&optional(v.type,x=>text(x)||strings(x))&&optional(v.status,x=>["current","all"].includes(x))&&optional(v.limit,x=>integer(x,1,100))&&optional(v.cursor,text)&&optional(v.prefix,text)
+  // records.get `{ids?, paths?}` (records/src/store.js:4104-4113): two lists of
+  // strings, at least one id or path together, at most 50 together. Any string
+  // is taken — an unknown id or path comes back in `missing` (store.js:4118-4128)
+  // — so the rec_ form is a resolution outcome, not a validation rule.
+  if(method==="records.get"){const count=(v.ids?.length??0)+(v.paths?.length??0);return closed(v,["ids","paths"])&&optional(v.ids,strings)&&optional(v.paths,strings)&&count>=1&&count<=50}
+  // records.list (records/src/store.js:4132-4185): kind and type a string or a
+  // list of at most 20 (stringList, store.js:1483-1494 with KINDS/type
+  // membership checked by the store's own query, not refused here); status
+  // "all" (every status, store.js:1521), "current" (the default view,
+  // store.js:1522) or a list of the record statuses (stringList against
+  // STATUSES, store.js:1523); limit a whole number from 1 to 200
+  // (intInRange, store.js:4140); the cursor the service's own (store.js:4141);
+  // the path prefix's wire key path_prefix (checkPrefix, store.js:4139,
+  // 1496-1503); and full === true keeps whole bodies while its absence cuts
+  // them (listed, store.js:1436-1443) — the real service tests `full === true`
+  // only, so anything but a boolean is out of contract here. `prefix` stays
+  // accepted as the fixture's own subset key it already was. The selection
+  // filters (SELECTION_FILTERS, store.js:1532) are deliberately not opened: no
+  // plugin wire and no graded case carries them, and the finite store keeps
+  // none of their data (no created/updated stamps, no agents or tasks), so
+  // accepting them would answer a filter the store cannot honor.
+  if(method==="records.list")return closed(v,["kind","type","status","limit","cursor","prefix","path_prefix","full"])&&optional(v.kind,x=>stringList(x))&&optional(v.type,x=>stringList(x))&&optional(v.status,x=>x==="all"||x==="current"||Array.isArray(x)&&x.length>0&&x.every(s=>STATUSES.includes(s)))&&optional(v.limit,x=>integer(x,1,200))&&optional(v.cursor,text)&&optional(v.prefix,text)&&optional(v.path_prefix,text)&&optional(v.full,x=>x===true||x===false)
   if(method==="records.search")return closed(v,["query","kinds","types","status","limit"])&&text(v.query)&&optional(v.kinds,strings)&&optional(v.types,strings)&&optional(v.status,x=>["current","all"].includes(x))&&optional(v.limit,x=>integer(x,1,50))
   if(method==="wiki.raw.read")return closed(v,["wiki_id","filenames"])&&text(v.wiki_id,200)&&strings(v.filenames)&&v.filenames.every(f=>/^[A-Za-z0-9][A-Za-z0-9._-]{0,100}$/.test(f))
   if(["wiki.raw.list","wiki.graph","wiki.get","wiki.ingest","wiki.page.ls"].includes(method))return closed(v,["wiki_id"])&&text(v.wiki_id,200)
