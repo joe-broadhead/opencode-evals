@@ -146,6 +146,7 @@ test("the descriptor schema admits exactly one commitPlan pin shape, or nothing"
     // Exact keys: the pin is {path, sha256} and nothing else.
     { path: "/inputs/commit-plan.json", sha256: "d".repeat(64), note: "extra key refuses" },
     { path: "/inputs/commit-plan.json", sha256: "d".repeat(64), bytes: 123 },
+    null,
   ]) {
     const malformed = { ...base, options: { ...base.options, commitPlan: bad } }
     assert.throws(() => authorizeOwnedLaunch(malformed, observation), /single contained trial options required/, JSON.stringify(bad))
