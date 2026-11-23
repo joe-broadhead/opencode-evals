@@ -131,7 +131,7 @@ test("replacement of the original parent scope never grants a journal or success
 })
 
 test("unknown creation, daemon absence and client closure retain the lease and prohibit final reads", async t => {
-  for(const mode of ["partial","lost","daemon","close"]) {
+  for(const mode of ["partial","lost","daemon","overflow-close"]) {
     const f=setup(t);let held
     const x=containedFixture(f,{reply:({a,r,settle,child})=>{
       if(a[0]==="create"&&!held&&mode!=="daemon") {
@@ -153,7 +153,7 @@ test("unknown creation, daemon absence and client closure retain the lease and p
     assert.equal(x.finalReads.length,0,mode)
     assert.equal(existsSync(join(f.wave.control,"wave.lock")),true)
     assert.equal(x.calls.filter(a=>a[0]==="exec").length,mode==="daemon"?1:0)
-    if(mode==="close") {assert.equal(x.resources.size,0,"full successful ID still grants exact removal");held.settle({code:0})}
+    if(mode==="overflow-close") {assert.equal(x.resources.size,1,"overflowed stdout never grants removal, even with a full-looking ID");held.settle({code:0})}
     if(["partial","lost"].includes(mode))assert.equal(x.resources.size,1,"unknown ID is not adopted by name")
   }
 })
@@ -463,4 +463,24 @@ test("journal commit rechecks the previous target after fsync and still cleans a
     assert.equal(existsSync(join(f.wave.control,"wave.lock")),true)
     assert.equal(readdirSync(join(f.wave.control,"resources")).some(name=>name.endsWith(".tmp")),false)
   }
+})
+
+test("overflowed creation through actual parent retains the lock without removing the prefix ID", async t => {
+  const f=setup(t),x=containedFixture(f,{reply:({a,r,child,settle})=>{
+    assert.deepEqual(a.slice(0,2),["network","create"],"no inspect, launch or prefix-ID removal")
+    child.stderr.emit("data",Buffer.alloc(1048576-64,120))
+    child.stdout.emit("data",Buffer.from(r.stdout))
+    child.emit("exit",0,null) // Exit is independent of the still-draining pipes.
+    child.stdout.emit("data",Buffer.from("NOT-AN-ID\n"))
+    settle({code:0})
+  }})
+  f.options.adapter.owned=x.owned;f.options.clock=x.c
+  const report=await drive(main(["--manifest",f.file],f.options),x.c)
+  assert.equal(x.calls.length,1)
+  assert.deepEqual(x.journal().resources,[]);assert.equal(x.journal().pending.length,1)
+  assert.equal(x.resources.size,1,"unidentified resource is not swept by name or prefix")
+  assert.equal(report.trials[0].containment.creation_unknown,true)
+  assert.equal(report.supervision.cleanup_verified,false)
+  assert.equal(report.successor_allowed,false);assert.equal(report.reservation_retained,true)
+  assert.equal(existsSync(join(f.wave.control,"wave.lock")),true)
 })
