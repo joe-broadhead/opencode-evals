@@ -5,8 +5,14 @@
 // verified_gone=false and the successor gate's check (c) structurally failed. The
 // offline fakes emit the old vocabulary, which is why this never failed offline
 // (the same live-only class as the log-driver blocker). Both removal-verification
-// sites now accept BOTH vocabularies for each object class; any other response
-// still refuses — absence of the expected vocabulary is still NOT verified-gone.
+// sites accept BOTH vocabularies for each object class. The strict-refusal claim
+// is scoped: the containment site's anchored check refuses anything outside the
+// two vocabularies — absence of the expected vocabulary is NOT verified-gone
+// there — and since the 068f490 review fold the launcher's daemon branch is
+// anchored exactly the same way, so wrapped noise (a Warning prefix, an inserted
+// token, trailing output) refuses at both sites. The launcher's CLI branch keeps
+// the reviewed loose `no such` acceptance, pinned by the launcher suite; only the
+// daemon family is noise-refusing at the launcher.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs"
@@ -57,6 +63,16 @@ test("cleanupOwned verifies BOTH vocabularies for each object class and refuses 
   ]) {
     assert.equal(await driveCleanup(containerStderr, networkStderr), false, `unexpected stderr still refuses: ${JSON.stringify([containerStderr, networkStderr])}`)
   }
+  // Wrapped noise around the daemon phrasing refuses at the launcher (the 068f490
+  // review fold anchors this branch like the containment site): a Warning prefix,
+  // an inserted token and trailing output never verify.
+  for (const [containerStderr, networkStderr] of [
+    [`Warning: container ${CONTAINER_ID} not found`, `Warning: network ${ID} not found`],
+    [`Error response from daemon: the container ${CONTAINER_ID} not found`, `Error response from daemon: the network ${ID} not found`],
+    [`Error response from daemon: container ${CONTAINER_ID} not found\nHint: trailing output`, `Error response from daemon: network ${ID} not found\nHint: trailing output`],
+  ]) {
+    assert.equal(await driveCleanup(containerStderr, networkStderr), false, `wrapped-noise daemon phrasing refuses at the launcher: ${JSON.stringify([containerStderr.slice(0, 60), networkStderr.slice(0, 60)])}`)
+  }
 })
 
 test("containTrial's removal verification accepts the daemon's network vocabulary end to end", async t => {
@@ -90,4 +106,38 @@ test("containTrial's removal verification accepts the daemon's network vocabular
   await drive(main(["--manifest", file], options), x.c)
   assert.equal(x.journal().verified_gone, true, "the daemon's network vocabulary verifies removal")
   assert.equal(x.resources.size, 0)
+})
+
+// The containment site was anchored from the start (its CLI forms are pinned by
+// the owned-containment suite's default drives, its daemon network form by the
+// test above), so this pins that the anchoring refuses the same wrapped noise.
+test("containTrial's anchored removal verification refuses wrapped-noise daemon phrasing end to end", async t => {
+  const root = mkdtempSync(join(tmpdir(), "removal-contained-noise-"))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const wave = { id: "owned", harness_sha: "a".repeat(40), control: join(root, "control"), store: join(root, "store"), docker_config: join(root, "docker"),
+    model: WAVE_MODEL, trial_timeout_s: 3480, caps: { path: join(root, "caps.json") }, runtime: { docker: { path: "/pinned/docker" }, image: `sha256:${"b".repeat(64)}` },
+    trials: ["first", "second"].map(id => ({ id, case: "core-a", arm: "baseline", condition: "direct" })) }
+  mkdirSync(wave.docker_config)
+  writeFileSync(wave.caps.path, JSON.stringify({ estimate_run_usd: { [WAVE_MODEL]: { wide: 0.1 } } }))
+  const file = join(root, "manifest.json")
+  writeFileSync(file, JSON.stringify(wave))
+  // Wrapped noise standing in for the daemon's vocabulary: a Warning prefix and
+  // trailing output never verify at the anchored containment site.
+  const x = containedFixture({ root, wave, file }, { reply: ({ a, r, settle }) => {
+    if (a[0] === "network" && a[1] === "inspect" && r.code === 1 && /No such/i.test(r.stderr ?? "")) {
+      settle({ ...r, stderr: `Warning: network ${a.at(-1)} not found\nHint: trailing output` })
+      return
+    }
+    settle(r)
+  } })
+  const options = {
+    env: { OPENCODE_API_KEY: "synthetic-test-key" }, identity: () => ({}),
+    qualify: () => ({ execution_qualified: true, plan: { cases: [{ id: "core-a", set: "core", tier: "wide" }] } }),
+    adapter: { supervisionAvailable: true, owned: x.owned, worker: () => assert.fail("host worker forbidden"), trial: () => assert.fail("host CLI forbidden"), signal: () => assert.fail("host signal forbidden") },
+    clock: x.c,
+    nativeQualification: () => Promise.resolve({ matched: true, identityOwner: fakeIdentityOwner(), profile: { os_profile: { platform: "darwin", arch: "arm64", version: "26.7.1", build: "25G241", sdk: "26.5" } } }),
+    ownedCapability: () => x.owned,
+  }
+  await drive(main(["--manifest", file], options), x.c)
+  assert.equal(x.journal().verified_gone, false, "wrapped-noise daemon phrasing never verifies at the containment site")
 })

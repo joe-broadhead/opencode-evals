@@ -190,9 +190,11 @@ export async function cleanupOwned(scope, execDocker, remaining) {
       if (remaining() <= 0 || !scopeAuthority(scope)) return false
       const result = await execDocker([...prefix, ...(kind === "network" ? ["network"] : []), "inspect", "--format", "{{.Id}}", resource.id], Math.min(10000, remaining()))
       // Both absence vocabularies verify for each object class — the CLI's `No such …`
-      // and the daemon's `(kind|object) <id> not found` family; any other response is
-      // still NOT verified-gone.
-      if (result.code !== 1 || !/no such/i.test(result.stderr ?? "") && !new RegExp(`(?:${kind}|object) ${resource.id} not found`, "i").test(result.stderr ?? "")) verified = false
+      // and the daemon's `(kind|object) <id> not found` family, anchored exactly like
+      // the containment site (`^(?:Error(?: response from daemon)?: )?…$`) so wrapped
+      // noise — a Warning prefix, an inserted token, trailing output — never verifies.
+      // Any other response is still NOT verified-gone.
+      if (result.code !== 1 || !/no such/i.test(result.stderr ?? "") && !new RegExp(`^(?:Error(?: response from daemon)?: )?(?:${kind}|object) ${resource.id} not found\\s*$`, "i").test(result.stderr ?? "")) verified = false
     }
   }
   return verified && scopeAuthority(scope) !== null
