@@ -126,14 +126,32 @@ test("the real records.list contract's own boundaries still refuse out-of-contra
   try {
     for (const input of [
       { kind: "commitment", status: "all", limit: 201, full: true }, // the real limit is 1..200 (store.js:4140)
-      { kind: "commitment", status: "all", limit: 200, full: "yes" }, // the real service honors only full === true
-      { kind: "commitment", status: "all", limit: 200, full: true, unknown: true }, // closed vocabulary
+      { kind: "commitment", status: "all", limit: 200, full: "yes" }, // the fixture's closed-subset boundary: boolean full only
+      { kind: "commitment", status: "all", limit: 200, full: true, unknown: true }, // the fixture's closed key set
       { kind: "commitment", status: "invented", limit: 200, full: true }, // status must be "all", "current" or real statuses
       { kind: "commitment", status: ["open", "invented"], limit: 200 }, // a status list must be real statuses
+      { kind: "bogus", status: "all", limit: 200 }, // an invented kind is refused like the real stringList allowed check (store.js:4136, KINDS model.js:13-18)
+      { kind: "commitment", type: "invented", status: "all", limit: 200 }, // an invented type is refused against the flattened type set (store.js:4137)
+      { kind: ["commitment", "bogus"], status: "all", limit: 200 }, // a kind list refuses on any invented member (stringList, store.js:1483-1494)
+      { kind: "commitment", status: Array.from({ length: 21 }, (_, i) => ["current", "superseded", "retired", "contested", "proposed", "accepted", "rejected", "accepting", "applied", "applied_private", "declined"][i % 11]), limit: 200 }, // a status list is capped at the real stringList's 20 (store.js:1486 via statusFilter :1523)
+      { kind: "commitment", status: "all", limit: 200, path_prefix: "!!!" }, // a non-path prefix is refused (checkPrefix store.js:1496-1503 with PATH links.js:8)
+      { kind: "commitment", status: "all", limit: 200, path_prefix: "Projects/" }, // a capital segment is refused by the real PATH rules (links.js:8)
       { paths: [] }, // records.get needs at least one id or path (store.js:4113)
       { ids: [], paths: [] },
       { ids: Array.from({ length: 51 }, (_, i) => `rec_${i}`) }, // at most 50 together (store.js:4114)
     ]) assert.notEqual(store.request(input.paths || (input.ids && !input.kind) ? "records.get" : "records.list", input, { context }).status, 200, JSON.stringify(input))
+    // The changed-cursor boundary, pinned with its exact vocabulary: a foreign
+    // cursor — another query's key — refuses with the store's invalid_cursor.
+    // (The reviewer drove five variants — a foreign key, a foreign space
+    // segment, the real service's opaque form, an offset past the end,
+    // appended junk — all correctly refusing; this pins one.)
+    const foreign = store.request("records.list", { kind: "commitment", status: "all", limit: 200, cursor: "discovery:personal:deadbeefdeadbeef:1" }, { context })
+    assert.equal(foreign.status, 400)
+    assert.deepEqual(foreign.json, { error: { code: "invalid_cursor" } })
+    // The real checkPrefix treats an empty prefix as absent (store.js:1497), so
+    // the mirror accepts it and answers the unfiltered list.
+    const empty = store.request("records.list", { kind: "commitment", status: "all", limit: 200, path_prefix: "" }, { context })
+    assert.equal(empty.status, 200, JSON.stringify(empty))
   } finally {
     store.close()
   }

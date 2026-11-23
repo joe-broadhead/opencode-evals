@@ -17,8 +17,19 @@ const pagination=(v,limit)=>closed(v,["limit","offset"])&&integer(v.limit,1,limi
 // both answered by the real service.
 // The record statuses the real service filters by (records/src/model.js:19).
 const STATUSES=["current","superseded","retired","contested","proposed","accepted","rejected","accepting","applied","applied_private","declined"]
+// The record model's kind→type sets, mirrored from records/src/model.js:13-18.
+const KINDS={memory:["fact","preference","constraint","decision","procedure"],page:["person","project","team","topic","runbook","decision","glossary","journal","index","meeting"],commitment:["commitment"],proposal:["create","append","supersede","merge","link","close_commitment","open_commitment","share","team_write"]}
 // The real stringList: a bare string or a list of at most `max` (records/src/store.js:1483-1494).
 const stringList=(v,max=20)=>text(v)||Array.isArray(v)&&v.length>0&&v.length<=max&&v.every(x=>text(x,300))
+// stringList's allowed check (store.js:1490-1493): every item inside the set the
+// real parse allows — kind against Object.keys(KINDS), type against the flattened
+// type set, exactly as the real records.list parse refuses them (store.js:4136-4137).
+const allowedList=(v,allowed)=>stringList(v)&&(typeof v==="string"?allowed.includes(v):v.every(x=>allowed.includes(x)))
+const KIND_SET=Object.keys(KINDS)
+const TYPE_SET=[...new Set(Object.values(KINDS).flat())]
+// The record model's PATH (records/src/links.js:8): lowercase alnum-hyphen
+// segments of at most 64 characters, at most four, no slash at either end.
+const PATH=/^[a-z0-9][a-z0-9-]{0,63}(?:\/[a-z0-9][a-z0-9-]{0,63}){0,3}$/
 export function validDiscoveryReadInput(method,v){
   if(!plain(v))return false
   // records.get `{ids?, paths?}` (records/src/store.js:4104-4113): two lists of
@@ -26,23 +37,36 @@ export function validDiscoveryReadInput(method,v){
   // is taken — an unknown id or path comes back in `missing` (store.js:4118-4128)
   // — so the rec_ form is a resolution outcome, not a validation rule.
   if(method==="records.get"){const count=(v.ids?.length??0)+(v.paths?.length??0);return closed(v,["ids","paths"])&&optional(v.ids,strings)&&optional(v.paths,strings)&&count>=1&&count<=50}
-  // records.list (records/src/store.js:4132-4185): kind and type a string or a
-  // list of at most 20 (stringList, store.js:1483-1494 with KINDS/type
-  // membership checked by the store's own query, not refused here); status
-  // "all" (every status, store.js:1521), "current" (the default view,
-  // store.js:1522) or a list of the record statuses (stringList against
-  // STATUSES, store.js:1523); limit a whole number from 1 to 200
-  // (intInRange, store.js:4140); the cursor the service's own (store.js:4141);
-  // the path prefix's wire key path_prefix (checkPrefix, store.js:4139,
-  // 1496-1503); and full === true keeps whole bodies while its absence cuts
-  // them (listed, store.js:1436-1443) — the real service tests `full === true`
-  // only, so anything but a boolean is out of contract here. `prefix` stays
-  // accepted as the fixture's own subset key it already was. The selection
-  // filters (SELECTION_FILTERS, store.js:1532) are deliberately not opened: no
-  // plugin wire and no graded case carries them, and the finite store keeps
-  // none of their data (no created/updated stamps, no agents or tasks), so
-  // accepting them would answer a filter the store cannot honor.
-  if(method==="records.list")return closed(v,["kind","type","status","limit","cursor","prefix","path_prefix","full"])&&optional(v.kind,x=>stringList(x))&&optional(v.type,x=>stringList(x))&&optional(v.status,x=>x==="all"||x==="current"||Array.isArray(x)&&x.length>0&&x.every(s=>STATUSES.includes(s)))&&optional(v.limit,x=>integer(x,1,200))&&optional(v.cursor,text)&&optional(v.prefix,text)&&optional(v.path_prefix,text)&&optional(v.full,x=>x===true||x===false)
+  // records.list (records/src/store.js:4132-4185): kind and type a bare string or
+  // a list of at most 20, every item inside the record model's own sets — kind
+  // against Object.keys(KINDS), type against the flattened type set — refused by
+  // the real parse itself through stringList's allowed check (store.js:4136-4137,
+  // 1483-1494; KINDS, records/src/model.js:13-18); status "all" (every status,
+  // store.js:1521), "current" (the default view, store.js:1522) or a list of at
+  // most 20 of the record statuses (stringList's own cap, store.js:1486, via
+  // statusFilter store.js:1523); limit a whole number from 1 to 200 (intInRange,
+  // store.js:4140); the cursor the service's own (store.js:4141 — the store below
+  // decodes it and refuses a foreign one as invalid_cursor); and the path prefix
+  // the real form (checkPrefix, store.js:1496-1503, with the record model's PATH,
+  // records/src/links.js:8): an empty prefix is absent, one trailing slash is
+  // stripped, and any bare form the PATH rules refuse is refused here too.
+  // Two boundaries here are the FIXTURE's closed-subset design, not the real
+  // validator's: the real parse tests `full === true` and never refuses a
+  // non-boolean `full` (store.js:4181 — full:"yes" merely cuts the bodies), and
+  // requireObject passes unknown fields straight through (store.js:1712-1715);
+  // this fixture keeps its boolean-only `full` and its closed key set. `prefix`
+  // stays accepted as the fixture's own subset key it already was. The selection
+  // filters (SELECTION_FILTERS, store.js:1532) are closed BY DESIGN: the finite
+  // store cannot honor them — it keeps none of their data (no created/updated
+  // stamps, no agents or tasks) — so accepting them would answer a filter the
+  // store cannot apply, and they refuse here. That closure is deliberate, with a
+  // known residual live-trial risk stated plainly: the guard admits mem_recall
+  // with filter args (a read, no sealed payload check), and a recall path CAN
+  // spread those args into a records.list wire the real service accepts
+  // (selectionClauses, store.js:1532+) — such a wire refuses at this fixture.
+  // No plugin wire in the recorded trials and no graded case carries them; the
+  // closure is unchanged.
+  if(method==="records.list")return closed(v,["kind","type","status","limit","cursor","prefix","path_prefix","full"])&&optional(v.kind,x=>allowedList(x,KIND_SET))&&optional(v.type,x=>allowedList(x,TYPE_SET))&&optional(v.status,x=>x==="all"||x==="current"||Array.isArray(x)&&x.length>0&&x.length<=20&&x.every(s=>STATUSES.includes(s)))&&optional(v.limit,x=>integer(x,1,200))&&optional(v.cursor,text)&&optional(v.prefix,text)&&optional(v.path_prefix,x=>x===""||PATH.test(String(x).replace(/\/$/,"")))&&optional(v.full,x=>x===true||x===false)
   if(method==="records.search")return closed(v,["query","kinds","types","status","limit"])&&text(v.query)&&optional(v.kinds,strings)&&optional(v.types,strings)&&optional(v.status,x=>["current","all"].includes(x))&&optional(v.limit,x=>integer(x,1,50))
   if(method==="wiki.raw.read")return closed(v,["wiki_id","filenames"])&&text(v.wiki_id,200)&&strings(v.filenames)&&v.filenames.every(f=>/^[A-Za-z0-9][A-Za-z0-9._-]{0,100}$/.test(f))
   if(["wiki.raw.list","wiki.graph","wiki.get","wiki.ingest","wiki.page.ls"].includes(method))return closed(v,["wiki_id"])&&text(v.wiki_id,200)
