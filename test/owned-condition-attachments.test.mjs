@@ -20,7 +20,7 @@ const sha256 = bytes => createHash("sha256").update(bytes).digest("hex")
 // A complete oc-mem-conditions/1 dossier whose observation pins are recorded at
 // host-canonical paths under `hostBase` — a directory that never exists in this
 // environment — while basename copies carrying the same shas live under `root`.
-function dossierFixture(t, { hostBase, root, materialise = true }) {
+function dossierFixture(t, { hostBase, root }) {
   const q = { schema: "oc-mem-conditions/1", mapping: "execute-permission-v1", status: "qualified", model: "opencode/deepseek-v4.1-flash#low",
     runtime_sha256: "1".repeat(64), archive_sha256: "2".repeat(64), memory_tool_ids: ["mem_recall", "mem_wiki"], observations: {} }
   const bodies = {}
@@ -29,11 +29,7 @@ function dossierFixture(t, { hostBase, root, materialise = true }) {
     bodies[`${condition}-catalog.json`] = JSON.stringify([{ id: "mem_recall" }, { id: "mem_wiki" }])
     bodies[`${condition}-request.json`] = JSON.stringify({ tools: (condition === "direct" ? ["mem_recall", "mem_wiki"] : ["execute", "search"]).map(name => ({ type: "function", function: { name } })) })
   }
-  for (const [name, text] of Object.entries(bodies)) {
-    const bytes = Buffer.from(text)
-    if (materialise) { writeFileSync(join(root, name), bytes) }
-    q.observations[/config/.test(name) ? "direct" : "search"] ??= {}
-  }
+  for (const [name, text] of Object.entries(bodies)) writeFileSync(join(root, name), Buffer.from(text))
   for (const condition of ["direct", "search"]) {
     q.observations[condition] = {}
     for (const kind of ["config", "catalog", "request"]) {
@@ -61,6 +57,8 @@ test("the owned proof resolves host-pinned attachments by basename and sha benea
 })
 
 test("a missing, tampered, renamed or non-plain-name attachment refuses fail-closed", t => {
+  const canonical = "file pin must be a canonical regular file without symlinks"
+  const mismatch = "file pin digest mismatch"
   const build = () => {
     const root = mkdtempSync(join(tmpdir(), "owned-attachments-neg-"))
     const attachments = join(root, "attachments")
@@ -69,18 +67,31 @@ test("a missing, tampered, renamed or non-plain-name attachment refuses fail-clo
     return { root, attachments, hostBase, ...dossierFixture(t, { hostBase, root: attachments }) }
   }
   const cases = [
-    ["missing", ({ attachments, q }) => { rmSync(join(attachments, "direct-config.json")); return { attachments, q } }],
-    ["tampered", ({ attachments }) => { writeFileSync(join(attachments, "search-catalog.json"), Buffer.from("tampered")); return {} }],
-    ["renamed", ({ attachments }) => { writeFileSync(join(attachments, "direct-request-copy.json"), readFileSync(join(attachments, "direct-request.json"))); rmSync(join(attachments, "direct-request.json")); return {} }],
-    ["pin name escapes the root", ({ q }) => { q.observations.direct.config = { path: "/host/../../escape.json", sha256: q.observations.direct.config.sha256 }; return {} }],
+    // The pinned copy is absent from the resolution root.
+    ["missing attachment", ({ attachments }) => { rmSync(join(attachments, "direct-config.json")); return { message: canonical } }],
+    // The copy exists under the pinned basename but its bytes are not the pinned bytes.
+    ["sha-tampered attachment", ({ attachments }) => { writeFileSync(join(attachments, "search-catalog.json"), Buffer.from("tampered")); return { message: mismatch } }],
+    // The copy was substituted under another name: the pinned basename is missing.
+    ["renamed attachment", ({ attachments }) => { writeFileSync(join(attachments, "direct-request-copy.json"), readFileSync(join(attachments, "direct-request.json"))); rmSync(join(attachments, "direct-request.json")); return { message: canonical } }],
+    // Directory components in the recorded pin are neutralized by the basename
+    // resolution: the refusal is the MISSING COPY at the neutralized name.
+    ["path-laden pin neutralizes to its basename; the missing copy refuses", ({ q }) => { q.observations.direct.config = { path: "/host/../../escape.json", sha256: q.observations.direct.config.sha256 }; return { message: canonical } }],
+    // A literally non-plain basename refuses at the name grammar before resolution.
+    ["non-plain basename refuses at the name grammar", ({ q }) => { q.observations.direct.config = { path: "/host/.hidden.json", sha256: q.observations.direct.config.sha256 }; return { message: canonical } }],
+    ["dot-segment basename refuses at the name grammar", ({ q }) => { q.observations.direct.config = { path: "/host/..", sha256: q.observations.direct.config.sha256 }; return { message: canonical } }],
   ]
   for (const [label, mutate] of cases) {
     const f = build()
     try {
-      mutate(f)
-      assert.throws(() => qualifyConditions(f.q, f.identity, f.attachments), /file pin|canonical regular file|digest mismatch/, label)
+      const { message } = mutate(f)
+      assert.throws(() => qualifyConditions(f.q, f.identity, f.attachments), { message }, label)
     } finally { rmSync(f.root, { recursive: true, force: true }) }
   }
+  // A non-canonical resolution root refuses with the root-canonical message.
+  const f = build()
+  try {
+    assert.throws(() => qualifyConditions(f.q, f.identity, "relative-attachments"), { message: "attachment resolution root must be canonical" }, "bad root")
+  } finally { rmSync(f.root, { recursive: true, force: true }) }
 })
 
 test("the legacy host-side proof keeps resolving the pin's own canonical path", t => {
@@ -102,8 +113,8 @@ test("the legacy host-side proof keeps resolving the pin's own canonical path", 
 })
 
 test("the staged inputs tree admits the optional attachments root the owned proof reads", t => {
-  // validateOwnedInputs is re-exported through wave-manifest's staging contract; the
-  // owned staging may carry /inputs/attachments (basename copies of the dossier pins).
+  // The owned staging validator (owned-io.mjs) admits the optional attachments root;
+  // a mis-staged regular file at that name must surface at staging validation.
   const root = mkdtempSync(join(tmpdir(), "owned-staging-"))
   t.after(() => rmSync(root, { recursive: true, force: true }))
   const inputs = join(root, "inputs"), binaries = join(root, "binaries"), work = join(root, "work")
@@ -119,6 +130,10 @@ test("the staged inputs tree admits the optional attachments root the owned proo
   mkdirSync(join(inputs, "attachments"))
   writeFileSync(join(inputs, "attachments", "baseline-direct-config.json"), "{}")
   assert.doesNotThrow(() => stagingInputs(base), "an attachments directory is admissible staging")
+  rmSync(join(inputs, "attachments"), { recursive: true })
+  writeFileSync(join(inputs, "attachments"), "mis-staged regular file")
+  assert.throws(() => stagingInputs(base), /minimal staged directories/, "a regular file at the attachments name refuses at staging validation")
+  rmSync(join(inputs, "attachments"))
   writeFileSync(join(inputs, "foreign.json"), "unapproved")
   assert.throws(() => stagingInputs(base), /minimal staged roots/)
 })
@@ -127,7 +142,7 @@ test("the runner threads the owned root only in contained mode", () => {
   const runner = readFileSync(new URL("../src/run/runner.mjs", import.meta.url), "utf8")
   const site = runner.indexOf("qualifyConditions(JSON.parse(readFileSync(options.conditionQualification")
   assert.ok(site > 0, "the condition-proof call site exists")
-  // The offline suites cannot execute runner.mjs:1096 inside a container; the
+  // The offline suites cannot execute runner.mjs:1100–1102 inside a container; the
   // threading contract is pinned here and the in-container proof is the next
   // dispatch round's live evidence.
   const call = runner.slice(site, runner.indexOf(": null", site))

@@ -95,6 +95,11 @@ A matched binding with a missing or broken staging pin still refuses: the capabi
 exists, its attestation fails closed per fact, and no trial dispatches. Without a matched
 binding no capability is composed at all, no environment or manifest boolean substitutes
 for the binding, and the frozen `{snapshot:null, spawn:null}` default is unchanged.
+The staged inputs tree may additionally carry an optional top-level `attachments`
+directory — basename copies of the condition dossier's pinned observation
+attachments, hash-bound to the dossier pins — which the owned in-container condition
+proof reads as `/inputs/attachments`; a mis-staged regular file at that name refuses
+at staging validation.
 
 ## Legacy worker controls
 

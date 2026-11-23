@@ -22,8 +22,8 @@ const digest = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value
  * refuses fail-closed with the existing vocabulary — never a silent skip, never a
  * re-pin to a different hash. */
 export function pinnedBytes(pin, root) {
+  if (!pin || !isAbsolute(pin.path ?? "") || !digest(pin.sha256)) throw new Error("absolute file pin and SHA-256 required")
   if (root !== undefined) {
-    if (!pin || !isAbsolute(pin.path ?? "") || !digest(pin.sha256)) throw new Error("absolute file pin and SHA-256 required")
     if (typeof root !== "string" || !isAbsolute(root) || root !== resolve(root)) throw new Error("attachment resolution root must be canonical")
     const name = basename(pin.path)
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name)) throw new Error("file pin must be a canonical regular file without symlinks")
@@ -36,7 +36,6 @@ export function pinnedBytes(pin, root) {
     if (sha256(bytes) !== pin.sha256) throw new Error("file pin digest mismatch")
     return bytes
   }
-  if (!pin || !isAbsolute(pin.path ?? "") || !digest(pin.sha256)) throw new Error("absolute file pin and SHA-256 required")
   if (pin.path !== resolve(pin.path) || realpathSync(pin.path) !== pin.path || !lstatSync(pin.path).isFile()) throw new Error("file pin must be a canonical regular file without symlinks")
   const bytes = readFileSync(pin.path)
   if (sha256(bytes) !== pin.sha256) throw new Error("file pin digest mismatch")

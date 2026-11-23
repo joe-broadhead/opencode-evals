@@ -79,7 +79,9 @@ export function validateOwnedInputs(plan, io = fs) {
     if (binaries ? top.length !== 2 || !["node", "opencode"].every(n => top.includes(n)) : top.some(n => !["harness", "arm", "cases", "caps.json", "conditions.json", "models.json", "model-map.json", "attachments"].includes(n))) throw new Error("minimal staged roots required")
     if (!binaries) {
       if (!["harness", "arm", "cases", "caps.json", "models.json", "model-map.json", ...(plan.descriptor?.options?.condition ? ["conditions.json"] : [])].every(n => top.includes(n))) throw new Error("complete minimal staged roots required")
-      if (["harness", "arm", "cases"].some(n => !io.lstatSync(join(root,n)).isDirectory())) throw new Error("minimal staged directories required")
+      // A mis-staged attachments entry (a regular file at that name) surfaces here, at
+      // staging validation, instead of failing later at the in-container proof time.
+      if (["harness", "arm", "cases"].some(n => !io.lstatSync(join(root,n)).isDirectory()) || top.includes("attachments") && !io.lstatSync(join(root, "attachments")).isDirectory()) throw new Error("minimal staged directories required")
     }
     if (binaries && top.some(n => { const s = io.lstatSync(join(root,n)); return !s.isFile() || !(s.mode & 0o111) })) throw new Error("executable regular Linux binaries required")
     visit("")
