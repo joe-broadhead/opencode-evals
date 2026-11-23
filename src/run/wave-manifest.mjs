@@ -113,7 +113,7 @@ export function qualifyWave(wave, identity) {
   // The commit-set write permission: an optional dossier pin plus its targets seed,
   // both outside the compared packages. A pinned plan REQUIRES the seed — the plan's
   // @aliases resolve at run time against the store's seeded targets.json — and a
-  // missing or hash-mismatched seed refuses admission with the existing vocabulary.
+  // missing seed refuses admission with the existing vocabulary.
   if (wave.commit_plan !== undefined && wave.commit_plan !== null) {
     const plan = wave.commit_plan
     if (!isAbsolute(plan?.path ?? "") || plan.path !== resolve(plan.path) || !digest(plan.sha256)) throw new Error("commit plan dossier pin required")
@@ -122,13 +122,23 @@ export function qualifyWave(wave, identity) {
       if (typeof directory === "string" && (plan.path === directory || plan.path.startsWith(`${directory}/`))) throw new Error("commit plan dossier must live outside compared packages")
     }
     pinnedJSON(plan)
+    if (wave.targets === undefined || wave.targets === null) throw new Error("targets seed pin required with a commit plan")
+  }
+  // The targets seed is pin-validated whenever present, never silently ignored: a
+  // seed alone permits no write and arms nothing, but a bogus orphan still refuses
+  // on the standard pin grammar, and the seed must resolve INSIDE the staged inputs
+  // tree the container actually sees — a seed elsewhere would pass admission while
+  // the container never receives it.
+  if (wave.targets !== undefined && wave.targets !== null) {
     const targets = wave.targets
-    if (!isAbsolute(targets?.path ?? "") || targets.path !== resolve(targets.path) || !digest(targets.sha256)) throw new Error("targets seed pin required with a commit plan")
+    if (!isAbsolute(targets?.path ?? "") || targets.path !== resolve(targets.path) || !digest(targets.sha256)) throw new Error("absolute file pin and SHA-256 required")
     for (const arm of ["baseline", "candidate"]) {
       const directory = wave.arms?.[arm]?.directory
       if (typeof directory === "string" && (targets.path === directory || targets.path.startsWith(`${directory}/`))) throw new Error("targets seed must live outside compared packages")
     }
     pinnedJSON(targets)
+    const staged = wave.staging?.inputs
+    if (typeof staged === "string" && staged === resolve(staged) && targets.path !== staged && !targets.path.startsWith(`${staged}/`)) throw new Error("targets seed must live inside the staged inputs tree")
   }
   for (const key of ["fixture", "schema", "discovery"]) pinnedBytes(wave.inputs?.[key])
   for (const c of result.plan.cases) {

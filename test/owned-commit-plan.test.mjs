@@ -143,6 +143,9 @@ test("the descriptor schema admits exactly one commitPlan pin shape, or nothing"
     { path: "/inputs/commit-plan.json", sha256: "not-a-sha" },
     { path: "/inputs/commit-plan.json" },
     "commit-plan.json",
+    // Exact keys: the pin is {path, sha256} and nothing else.
+    { path: "/inputs/commit-plan.json", sha256: "d".repeat(64), note: "extra key refuses" },
+    { path: "/inputs/commit-plan.json", sha256: "d".repeat(64), bytes: 123 },
   ]) {
     const malformed = { ...base, options: { ...base.options, commitPlan: bad } }
     assert.throws(() => authorizeOwnedLaunch(malformed, observation), /single contained trial options required/, JSON.stringify(bad))
@@ -201,6 +204,21 @@ test("qualifyWave admits the commit-plan and targets pins and requires the seed 
   const verify = () => qualifyWave(manifestBase, identity)
   // Without any commit-plan pin, admission is unchanged.
   assert.throws(verify, /file pin and SHA-256 required/, "the next missing pin is the usual one — no commit coupling armed")
+  // An orphan targets pin (no plan) is pin-validated, never silently ignored: a valid
+  // orphan passes to the next refusal; a bogus one refuses with the pin vocabulary.
+  const orphan = { ...manifestBase, targets: planPin("targets.json", targetsBytes) }
+  assert.throws(() => qualifyWave(orphan, identity), /file pin and SHA-256 required/, "a valid orphan seed is validated and admits no write")
+  const bogusOrphan = { ...manifestBase, targets: { path: "relative-targets.json", sha256: sha256(targetsBytes) } }
+  assert.throws(() => qualifyWave(bogusOrphan, identity), /absolute file pin and SHA-256 required/, "a bogus orphan seed refuses on shape")
+  const tamperedOrphan = { ...manifestBase, targets: { ...planPin("targets.json", targetsBytes), sha256: "0".repeat(64) } }
+  assert.throws(() => qualifyWave(tamperedOrphan, identity), /file pin digest mismatch/, "an orphan seed still hash-verifies")
+  // The seed must resolve inside the staged inputs tree the container actually sees.
+  const staged = join(root, "staging-inputs"); mkdirSync(staged)
+  const outsideStaging = { ...manifestBase, commit_plan: planPin("commit-plan.json", planBytes), targets: planPin("targets.json", targetsBytes), staging: { inputs: staged } }
+  assert.throws(() => qualifyWave(outsideStaging, identity), /targets seed must live inside the staged inputs tree/)
+  const insideStaging = { ...manifestBase, commit_plan: planPin("commit-plan.json", planBytes), targets: { ...planPin("targets.json", targetsBytes), path: join(staged, "targets.json") }, staging: { inputs: staged } }
+  writeFileSync(join(staged, "targets.json"), targetsBytes)
+  assert.throws(() => qualifyWave(insideStaging, identity), /file pin and SHA-256 required/, "a seed inside the staged tree passes the placement check")
   // A pinned plan with its pinned seed passes this block and proceeds to the next.
   const withBoth = { ...manifestBase, commit_plan: planPin("commit-plan.json", planBytes), targets: planPin("targets.json", targetsBytes) }
   assert.throws(() => qualifyWave(withBoth, identity), /file pin and SHA-256 required/, "the block passed; the next pin is still missing")
@@ -232,6 +250,28 @@ test("the staged inputs tree admits the pinned plan and targets seed files", t =
   writeFileSync(join(inputs, "commit-plan.json"), JSON.stringify(PLAN_DOSSIER))
   writeFileSync(join(inputs, "targets.json"), JSON.stringify(TARGETS_SEED))
   assert.doesNotThrow(() => stagingInputs(base), "the pinned plan and seed are admissible staging")
+})
+
+test("the runner's plan reader re-hashes the pinned bytes before use, and strings are unchanged", async t => {
+  const root = mkdtempSync(join(tmpdir(), "commit-rehash-"))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const { commitPlanBytes } = await import("../src/run/runner.mjs")
+  const planBytes = Buffer.from(JSON.stringify(PLAN_DOSSIER))
+  const planPath = join(root, "commit-plan.json")
+  writeFileSync(planPath, planBytes)
+  // The legacy string path is unchanged: bytes read as-is.
+  assert.equal(commitPlanBytes(planPath).toString("utf8"), JSON.stringify(PLAN_DOSSIER))
+  // A pinned read re-hashes: matching bytes parse; tampered bytes refuse with the
+  // existing digest-mismatch vocabulary.
+  const matching = commitPlanBytes({ path: planPath, sha256: sha256(planBytes) })
+  assert.equal(JSON.parse(matching.toString("utf8")).actions[0], "mem_commitments")
+  const tampered = Buffer.from(JSON.stringify({ ...PLAN_DOSSIER, actions: ["mem_page"] }))
+  writeFileSync(planPath, tampered)
+  assert.throws(() => commitPlanBytes({ path: planPath, sha256: sha256(planBytes) }), { message: "file pin digest mismatch" }, "a tampered staged copy refuses at the re-hash")
+  // Anything that is neither a path string nor a reviewed pin refuses.
+  for (const bad of [42, null, { path: "relative.json", sha256: sha256(planBytes) }, { path: planPath, sha256: "no-hex" }, { path: planPath }]) {
+    assert.throws(() => commitPlanBytes(bad), { message: "commit plan pin required: a path, or a reviewed pinned file" }, JSON.stringify(bad))
+  }
 })
 
 test("the bootstrap seeds the fresh store from the staged inputs before the runner executes", () => {
