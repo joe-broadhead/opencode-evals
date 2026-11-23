@@ -68,6 +68,28 @@ function recordPayload(s,wire,session,q){
   return payload
 }
 
+// The service-derived commitment bookkeeping for the authorized assembly below —
+// a value-pure mirror of the real records service's derivation, independent of the
+// fixture's own copy: newRecord defaults type to "commitment" (records/src/
+// model.js:293) and the title to fields.what, else the body's first plain line cut
+// to 300 (model.js:305-307; records/src/text.js:71-88, cut at :97-103);
+// commitmentFields back-fills fields.what from that title with the owner:"user"/
+// state:"open" bookkeeping (model.js:276-285); the stated_by default is the
+// writer's own "agent" (model.js:270-275).
+const plainLine=line=>String(line).replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?\|([^\]]+)\]\]/g,"$2").replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?\]\]/g,"$1").replace(/\[([^\]]+)\]\([^)]*\)/g,"$1").replace(/^\s*(?:#{1,6}\s+|[-*+]\s+|>\s+|\d+\.\s+)/,"").replace(/[*_`]+/g,"").trim()
+const cutText=(text,max)=>{const value=String(text??"");if(value.length<=max)return value;const head=value.slice(0,max-1);const space=head.lastIndexOf(" ");return `${(space>max*0.6?head.slice(0,space):head).trimEnd()}…`}
+const titleFromBody=(body,max)=>{for(const line of String(body??"").split("\n")){const text=plainLine(line);if(text)return cutText(text,max)}return ""}
+function commitmentServiceRow(row){
+  if(row.kind!=="commitment")return row
+  const out={...row,type:row.type??"commitment",fields:{...(row.fields??{})}}
+  if(!out.title)out.title=typeof out.fields.what==="string"?out.fields.what:titleFromBody(row.body,300)
+  if(!out.fields.what&&out.title)out.fields.what=out.title
+  if(out.fields.owner===undefined)out.fields.owner="user"
+  if(out.fields.state===undefined)out.fields.state="open"
+  if(out.stated_by===undefined)out.stated_by="agent"
+  return out
+}
+
 // Compare only supplied overlapping facts. An absent copy/field stays unavailable, never filled.
 function copies(left,right,q){
   if(left===null&&right===null)return
@@ -293,7 +315,13 @@ export function memoryDiscoveryEvidence(id,view){
           // Unknown stored fields fail even when the wire artifact is unavailable.
           if(Object.keys(created).some(k=>![...Object.keys(expected),"id","status","version","type","title","stated_by","source","fields"].includes(k)))q.fail("written record contains hidden payload")
           const payload=recordPayload(s,wire,t?.session,q)
-          if(payload)authorized={...payload,id:created.id,status:"current",version:1}
+          // The real records service derives a commitment's public row from the
+          // stored body rather than echoing the wire (the citations above), and the
+          // finite fixture serves exactly that row (worlds/mem/discovery-store.mjs
+          // records.put), so the closed authorized payload for a commitment carries
+          // the same service-derived fields when the wire omits them. The wire check
+          // above is untouched and the row's key vocabulary is still the whitelist's.
+          if(payload)authorized=commitmentServiceRow({...payload,id:created.id,status:"current",version:1})
         }else authorized={id:created.id,...s.backend.input,...(s.family==="sources"?{state:"requested"}:{status:"draft",active:false,next_due:null,version:1})}
         if(authorized){if(!equal(created,authorized))q.fail("written object is not the closed authorized payload");q.check("stored output contradicts actual object",[[out,"backend output artifact"]],()=>equal(out[s.family==="sources"?"request":s.family==="jobs"?"job":"record"],authorized)&&(s.family!=="jobs"||equal(out.draft,{version:1,state:"draft"})))}
         if(typeof created.id!=="string")q.fail("stored identity malformed")

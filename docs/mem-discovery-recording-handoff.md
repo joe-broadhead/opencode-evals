@@ -72,6 +72,7 @@ The adapter checks each outer and nested row, not only the expected matching row
 Each supplied write must match a distinct invocation in a complete native inventory.
 An extra matching-method write cannot borrow the successful expected row.
 Valid optional reads do not grant write permission.
+The closed authorized payload for a commitment carries the real records service's own derived bookkeeping — type, title, fields (what/owner/state) and the stated_by default — when the wire omits them, mirroring the service's newRecord and commitmentFields derivation (records/src/model.js:293, 305-313, 276-285, 270-275). The finite fixture serves the same derived row (worlds/mem/discovery-store.mjs records.put), so a reduced wire still stores and answers the full public row the real service would; the wire check itself still demands the producer's exact closed payload.
 
 Known-schema observations retain their local status, output, and argument evidence despite missing completeness or identity metadata.
 The private projection adds `unjoined_calls` for observations without a valid tool, call identity, or carrier join.

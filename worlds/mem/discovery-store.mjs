@@ -4,6 +4,31 @@ import {canonicalDiscoveryInput,validDiscoveryReadInput} from "./discovery-input
 import {createHash} from "node:crypto"
 const copy=v=>structuredClone(v)
 const plain=v=>Boolean(v&&typeof v==="object"&&!Array.isArray(v))
+// The first plain line of a body, cut at a word — the real records service's
+// titleFromBody (records/src/text.js:71-88: wiki-link and markdown noise stripped,
+// then cut at a word, text.js:97-103).
+const plainLine=line=>String(line).replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?\|([^\]]+)\]\]/g,"$2").replace(/\[\[([^\]|#]+)(?:#[^\]|]*)?\]\]/g,"$1").replace(/\[([^\]]+)\]\([^)]*\)/g,"$1").replace(/^\s*(?:#{1,6}\s+|[-*+]\s+|>\s+|\d+\.\s+)/,"").replace(/[*_`]+/g,"").trim()
+const cutText=(text,max)=>{const value=String(text??"");if(value.length<=max)return value;const head=value.slice(0,max-1);const space=head.lastIndexOf(" ");return `${(space>max*0.6?head.slice(0,space):head).trimEnd()}…`}
+const titleFromBody=(body,max)=>{for(const line of String(body??"").split("\n")){const text=plainLine(line);if(text)return cutText(text,max)}return ""}
+// The public commitment row the real records service derives from the stored body,
+// never echoing the wire: newRecord defaults type to "commitment" (records/src/
+// model.js:293) and the title to fields.what, else the body's first plain line cut
+// to 300 (model.js:305-307); commitmentFields back-fills fields.what from that
+// title with the owner:"user"/state:"open" bookkeeping (model.js:276-285); the
+// stated_by default is the writer's own "agent" (model.js:270-275); #create stamps
+// id/status:"current"/version:1 (records/src/store.js:3816-3832) and pub() exposes
+// the row (store.js:1411-1433). Mutates the row in place.
+const commitmentPubRow=record=>{
+  if(record.type===undefined)record.type="commitment"
+  if(!record.title)record.title=typeof record.fields?.what==="string"?record.fields.what:titleFromBody(record.body,300)
+  const fields={...(record.fields??{})}
+  if(!fields.what&&record.title)fields.what=record.title
+  if(fields.owner===undefined)fields.owner="user"
+  if(fields.state===undefined)fields.state="open"
+  record.fields=fields
+  if(record.stated_by===undefined)record.stated_by="agent"
+  return record
+}
 export function createDiscoveryStore({spec,intent,permission={effect:"allow"},fault:configuredFault=null}){
   if(!spec?.backend||intent?.schema!=="oc-mem-intent/1"||intent.case_id!==spec.id||typeof intent.trial_id!=="string"||!intent.trial_id||!Number.isFinite(intent.expires_at)||!Array.isArray(intent.turns)||intent.turns.length!==1||intent.turns[0]?.index!==1||!Array.isArray(intent.turns[0].calls))throw new Error("bound discovery plan required")
   if(!["allow","deny","ask-approved","ask-declined"].includes(permission.effect))throw new Error("invalid fake permission condition")
@@ -45,6 +70,17 @@ export function createDiscoveryStore({spec,intent,permission={effect:"allow"},fa
       if(["queued","partial","noop"].includes(fault))return finish({status:fault})
       if(method==="records.put"){
         const record={...copy(wire_input.record),...copy(input.record),id:"rec_01KABCDE1234567890ABCDEFGK",status:"current",version:1}
+        // LEG D (the round-5 diagnosis): the real records service derives a
+        // commitment's public row from the stored body rather than echoing the wire,
+        // so a reduced wire still gets the full row the real arm client's
+        // validWriteAnswer accepts (arm src/backend/records.js record()). A wire that
+        // already carries the fields — the real plugin's commitmentRecord (arm
+        // src/records-store.js) — is answered byte-identically. The capture's closed
+        // vocabulary (src/grade/adapters/mem-discovery.mjs:294) admits exactly these
+        // public fields and excludes the service-internal bookkeeping (path/
+        // supersedes/superseded_by/task/author/owner/created/updated/links), so the
+        // graded row mirrors pub()'s derivation up to that contract edge.
+        if(record.kind==="commitment")commitmentPubRow(record)
         if(fault==="metadata-only"){record.title=record.body;record.body="No authorized body was stored."}
         state.records.push(record);out={status:"stored",created:true,record}
       }else if(method==="wiki.raw.write"){
