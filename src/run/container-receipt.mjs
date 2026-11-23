@@ -6,6 +6,8 @@ export function creationOperation(args) {
   return null
 }
 export function creationID(result) {
+  // Legacy complete responses omit these flags. Explicit loss (or malformed flags) grants no authority.
+  if ([result?.overflow, result?.truncated].some(flag => flag !== undefined && flag !== false)) return null
   const value = typeof result?.stdout === "string" ? result.stdout.trim() : ""
   return result?.code === 0 && fullContainerID(value) ? value : null
 }

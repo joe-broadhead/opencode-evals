@@ -72,12 +72,29 @@ The transport uses an explicit Docker binary and `--context colima-mem-evals-202
 The qualified native integration must supply the pinned executable, dedicated Docker configuration, and designated credential values in memory.
 It must not discover credentials or inherit the host environment.
 
+The client captures observed stdout and stderr bytes during stop and drain, under one shared `maxBytes` cap.
+An oversized chunk retains only the remaining bounded prefix and sets `overflow: true`.
+Stream errors, premature stream closure, or data after EOF set `truncated: true`; diagnostics are not exported.
+Exec output remains private and is omitted from the returned text.
+The client does not distinguish kernel pre-cancellation bytes from bytes produced after cancellation.
+
+Process exit and stream settlement are separate. Stream EOF alone does not establish process exit.
+The original child's `close` event supplies aggregate stdio-closure evidence; `exit` is also required.
+A stop request or successful signal does not establish either fact.
+The bounded stop grace can return `closed: false` while the original handle remains tracked.
+After that result settles, late events cannot change its code, output, or flags; late exit plus close can retire the handle.
+Capture buffers are released at result settlement. Hung handles remain unknown, without retaining growing output buffers.
+These checks do not prove OS descendant absence or atomic remote drain.
+
 ## Creation and cleanup
 
 Each creation first records a pending receipt. A successful full 64-character ID replaces that pending receipt.
 The parent persists that ID before inspection or start. A name, label, short ID, or cidfile grants no cleanup authority.
-If the full successful ID arrives without client closure, the parent journals it for exact-ID removal but retains the pending uncertainty.
-Output overflow also blocks continuation. Neither condition permits inspection for launch, start, exec, or finalization.
+If the complete successful ID arrives without client closure, the parent journals it for exact-ID removal but retains the pending uncertainty.
+Any overflowed or explicitly truncated creation response grants no cleanup ID, including stderr-only overflow.
+A full-looking retained prefix cannot supply authority. Both owned transport callers apply this rule before recording an ID.
+Legacy complete responses still use their existing code/stdout shape; malformed or missing required fields grant no ID.
+Unknown closure or output loss blocks continuation. Neither condition permits inspection for launch, start, exec, or finalization.
 Creation identity and client closure are separate facts; removing the known ID does not resolve missing closure or lost output.
 
 The parent verifies the image, mounts, environment, namespaces, resource limits, entry point, and network configuration before start.

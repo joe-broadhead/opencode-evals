@@ -111,3 +111,21 @@ test("failed prepare removes only established IDs and reports uncertain creation
     assert.equal(await backend.allGone(), false, "a missing receipt must not become proof of absence")
   }
 })
+
+test("legacy own cleanup also rejects overflowed creation receipts before recording authority", async t => {
+  const root=mkdtempSync(join(tmpdir(),"own-overflow-"));t.after(()=>rmSync(root,{recursive:true,force:true}))
+  const fake=fakeDocker(),file=join(root,"resources.json")
+  let unknownID
+  const backend=containerBackend(containerConfig({env:{EVALS_CONTAINER_SWEEP_SCOPE:"own",EVALS_CONTAINER_OWNERSHIP:file,EVALS_DOCKER:process.execPath}}),{exec:async(bin,args,opts)=>{
+    const result=await fake.exec(bin,args,opts)
+    if(args[0]==="run"){unknownID=result.stdout;return {...result,overflow:true}}
+    return result
+  }})
+  await backend.prepare({batchRoot:root,caller:{}})
+  await backend.teardown()
+  assert.equal(fake.calls.some(a=>a[0]==="rm"&&a.at(-1)===unknownID),false)
+  const journal=JSON.parse(readFileSync(file,"utf8"))
+  assert.equal(journal.resources.some(r=>r.id===unknownID),false)
+  assert.ok(journal.pending.length);assert.equal(journal.uncertain,true)
+  assert.equal(await backend.allGone(),false)
+})

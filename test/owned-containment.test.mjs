@@ -202,9 +202,9 @@ test("successful own ID is journaled and removed despite early original-client e
       const created = await original(args)
       const pending = client.run(args, options)
       child.stdout.emit("data", Buffer.from(`${created.stdout}\n`)); child.emit("exit", 0, null)
-      child.stderr.emit("data", Buffer.alloc(options.maxBytes + 1))
+      void client.stopClients() // Complete successful output, but no aggregate close: retain only cleanup authority.
       const result = await pending
-      assert.equal(result.closed, false); assert.equal(result.overflow, true)
+      assert.equal(result.closed, false); assert.equal(result.overflow, false)
       assert.ok(f.deps.clock.now() < plan().operationMs)
       return result
     }
@@ -226,4 +226,22 @@ test("successful own ID is journaled and removed despite early original-client e
   assert.deepEqual(signals, [])
   child.emit("close", 0, null)
   assert.equal(await client.stopClients(), true)
+})
+
+test("real client capped invalid creation never records or removes its apparent ID", async () => {
+  for (const outputBytes of [64,4096]) {
+    const f=fake(),calls=[]
+    f.deps.docker=createOwnedDockerClient({binary:"/pinned/docker",context:plan().context,config:"/parent/docker"},{clock:f.deps.clock,spawn:(_binary,args)=>{
+      calls.push(args)
+      const child=new EventEmitter();child.stdout=new EventEmitter();child.stderr=new EventEmitter();child.kill=()=>true
+      queueMicrotask(()=>{child.stdout.emit("data",Buffer.from(id(1)));child.stdout.emit("data",Buffer.from("NOT-AN-ID\n"));child.emit("exit",0,null);child.emit("close")})
+      return child
+    }})
+    const result=await drive(containTrial({...plan(),outputBytes},f.deps),f.deps.clock)
+    assert.equal(calls.length,1,"only the first creation; no cleanup against its prefix")
+    assert.deepEqual(f.journals.at(-1).resources,[])
+    assert.equal(f.journals.at(-1).pending.length,1)
+    assert.equal(result.creation_unknown,true);assert.equal(result.cleanup_verified,false)
+    assert.equal(result.successor_allowed,false)
+  }
 })
