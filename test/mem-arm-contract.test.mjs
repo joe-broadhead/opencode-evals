@@ -1,5 +1,16 @@
 // Offline only: the real Memory corpus packaging contract against synthetic fixtures
 // that reproduce the cleared arms' exact member classes and import forms.
+//
+// Tracked limits (documented here, deliberately NOT asserted): the classifier currently
+// admits two live-executed residual shapes — a comparison operator before a real dynamic
+// import on a '*'-headed continuation line (`const x = a\n  * b<import("./missing.js")`),
+// whose '<import(' prefix is indistinguishable from a JSDoc type reference to the
+// two-character exception test, and a multi-line export-star whose specifier lands on
+// a prose-skipped line (`export\n* from "./missing.js"`). Neither shape occurs in the
+// censused staged arms; both pre-exist the parent classifier. The committed fix is a
+// bounded comment-aware scanner; regressions for both shapes belong here after that
+// scanner lands, not before. No assertion below covers these shapes, so this suite
+// makes no coverage claim about them.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs"

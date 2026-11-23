@@ -1,5 +1,16 @@
 // Memory's directory plugin is a different packaging contract from a dist-based plugin.
 // Read only a pre-staged immutable artifact, never the developer checkout or project configuration.
+//
+// Known limits of the import classifier (verified live-executed; see the classifier
+// doc below): two character-level residual shapes are silently admitted today —
+// a comparison operator before a real dynamic import on a '*'-headed continuation
+// line (`const x = a\n  * b<import("./missing.js")`), which the JSDoc exception's
+// two-character test cannot tell apart from a type reference, and a multi-line
+// export-star whose specifier lands on a prose-skipped line
+// (`export\n* from "./missing.js"`). Both pre-exist the parent classifier and
+// neither occurs in the censused staged arms. Any arm admission beyond that
+// censused pair requires the committed future fix: a bounded comment-aware
+// scanner that separates comment contexts from executable continuations.
 import { lstatSync, readFileSync, existsSync, mkdirSync, copyFileSync, writeFileSync, rmSync } from "node:fs"
 import { dirname, join, posix } from "node:path"
 import { sha256, canonical } from "../util/canonical.mjs"
@@ -61,8 +72,15 @@ function clauseStatement(code, lineStart, end) {
  * other import-shaped match in '*' position, because a '*' can also head a valid
  * expression-continuation (multiplication) line. A match whose keyword directly
  * follows a quote character is string data: an import-position keyword never
- * does. Every form the classifier cannot confidently classify refuses the arm;
- * nothing ambiguous is silently admitted. */
+ * does. Known limits, verified live-executed: the two character-level tests
+ * cannot fully separate comment contexts from executable continuations, so two
+ * residual shapes are silently admitted — a comparison operator before a real
+ * dynamic import on a continuation line (`const x = a\n  * b<import("./m.js")`)
+ * matches the JSDoc exception, and a multi-line export-star whose specifier
+ * lands on a prose-skipped line (`export\n* from "./m.js"`) skips. Neither
+ * shape occurs in the censused staged arms; both pre-exist the parent. A
+ * bounded comment-aware scanner is the committed fix for admitting any corpus
+ * beyond that censused pair. */
 function classifyImports(code, path) {
   const imports = []
   for (const match of code.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s*)["']([^"']+)["']/g)) {
@@ -123,10 +141,13 @@ export function memoryArtifact(source) {
   for (const [p, data] of bytes) {
     if (!p.endsWith(".js") && !p.endsWith(".mjs")) continue
     const code = data.toString()
-    // Static import/export statement forms classify above or refuse; JSDoc '<import(' type
-    // references skip as comment data. Nonliteral dynamic imports are rejected here, and
-    // every other import-shaped form — including literal dynamic imports — refuses rather
-    // than being guessed, so the closure check sees only verified static statements.
+    // Static import/export statement forms classify above or refuse; JSDoc '<import('-
+    // shaped matches and prose on '*'-headed lines skip; nonliteral dynamic imports are
+    // rejected here, and literal dynamic imports and from-matches in ambiguous positions
+    // refuse rather than being guessed — except the two known-limit residual shapes
+    // documented on the classifier and in the module header, which currently skip.
+    // The closure check below therefore sees verified static statements plus exactly
+    // those two documented residuals, and nothing else.
     if (/\bimport\s*\(\s*[^"'\s]/.test(code)) throw new Error(`Memory closure has a nonliteral import: ${p}`)
     for (const specifier of classifyImports(code, p)) {
       if (specifier.startsWith("node:")) continue
