@@ -5,6 +5,7 @@ import { resolve, join } from "node:path"
 import { pathToFileURL } from "node:url"
 import { spawnSync } from "node:child_process"
 import { qualifyWave, sha256 } from "../src/run/wave-manifest.mjs"
+import { bindNativeQualification } from "../src/run/native-qualification.mjs"
 import { launchWave, runTrials, cleanupOwned, writeJSON, systemClock } from "../src/run/wave-launcher.mjs"
 import { processAdapter, requestTrialVerification } from "../src/run/wave-process.mjs"
 
@@ -19,7 +20,7 @@ function checkIdentity() {
   return { harnessSha: git(["rev-parse", "HEAD"]), launcherNodeSha: sha256(readFileSync(realpathSync(process.execPath))) }
 }
 
-export async function main(argv, { env = process.env, adapter = processAdapter(), identity = checkIdentity, qualify = qualifyWave, clock = systemClock } = {}) {
+export async function main(argv, { env = process.env, adapter = processAdapter(), identity = checkIdentity, qualify = qualifyWave, clock = systemClock, nativeQualification = bindNativeQualification } = {}) {
   if (typeof env.OPENCODE_API_KEY !== "string" || !env.OPENCODE_API_KEY.trim()) throw new Error("OPENCODE_API_KEY is required")
   const worker = argv[0] === "--worker"
   const owned = !worker && adapter.owned
@@ -53,18 +54,27 @@ export async function main(argv, { env = process.env, adapter = processAdapter()
     const bytes = readFileSync(argv[1]), manifestSha = sha256(bytes), wave = JSON.parse(bytes)
     if (bytes.includes(Buffer.from(env.OPENCODE_API_KEY))) throw new Error("credential must not occur in manifest")
     if (worker && env.MEM_WAVE_MANIFEST_SHA !== manifestSha) throw new Error("frozen manifest changed")
+    // The owned path's execution_qualified comes only from the dispatch-time live
+    // qualification binding of the owner-supplied record — never from a manifest or
+    // environment boolean. Pure manifest validation precedes any native consideration.
+    let native = null
+    if (owned) {
+      try { qualify(wave, { harnessSha: wave.harness_sha, launcherNodeSha: sha256(readFileSync(realpathSync(process.execPath))) }) }
+      catch { native = { matched: false, reason: "manifest-unqualified" } }
+      if (!native) native = await nativeQualification(wave, { runId: `wave-${wave.id}`, sourcePath: join(HARNESS, "native", "darwin-process-identity.c") })
+    }
     const verify = () => {
       if (sha256(readFileSync(argv[1])) !== manifestSha) throw new Error("manifest changed")
       // Pure qualification must finish before even the Git identity subprocess is considered.
       const qualified = qualify(wave, { harnessSha: wave.harness_sha, launcherNodeSha: sha256(readFileSync(realpathSync(process.execPath))) })
-      if (qualified.execution_qualified !== true) throw new Error("native recorder handshake is not qualified")
+      if (owned ? native?.matched !== true : qualified.execution_qualified !== true) throw new Error("native recorder handshake is not qualified")
       if (owned ? typeof owned.snapshot !== "function" || typeof owned.spawn !== "function" : adapter.supervisionAvailable === false) throw new Error("native supervision or approved staging is unavailable")
       const checked = qualify(wave, identity())
-      if (checked.execution_qualified !== true) throw new Error("runtime qualification changed")
+      if (!owned && checked.execution_qualified !== true) throw new Error("runtime qualification changed")
       return checked
     }
     if (owned) return await launchWave(wave, {
-      manifestSha, singleton: join(wave.docker_config, ".oc-mem-wave.lock"), verify, stopRequested, clock, owned, caller: env, abortSignal: cancellation.signal,
+      manifestSha, singleton: join(wave.docker_config, ".oc-mem-wave.lock"), verify, native, stopRequested, clock, owned, caller: env, abortSignal: cancellation.signal,
       allocate: () => writeFileSync(join(wave.control, "manifest.json"), bytes, { flag: "wx", mode: 0o600 }),
     })
     if (worker) {

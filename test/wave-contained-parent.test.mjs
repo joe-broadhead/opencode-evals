@@ -5,8 +5,9 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { main } from "../scripts/run-mem-wave.mjs"
 import { WAVE_MODEL } from "../src/run/wave-manifest.mjs"
-import { containedFixture, drive } from "./support/wave-contained-parent.mjs"
+import { containedFixture, drive, fakeIdentityOwner } from "./support/wave-contained-parent.mjs"
 import { processAdapter } from "../src/run/wave-process.mjs"
+import { bindNativeQualification } from "../src/run/native-qualification.mjs"
 import fs from "node:fs"
 import { syncBuiltinESMExports } from "node:module"
 
@@ -20,6 +21,9 @@ function setup(t) {
   writeFileSync(wave.caps.path,JSON.stringify({estimate_run_usd:{[WAVE_MODEL]:{wide:0.1}}}))
   const file=join(root,"manifest.json");writeFileSync(file,JSON.stringify(wave))
   const options={env:{OPENCODE_API_KEY:"synthetic-test-key"},identity:()=>({}),qualify:()=>({execution_qualified:true,plan:{cases:[{id:"core-a",set:"core",tier:"wide"}]}}),
+    // The owned gate consumes the dispatch-time native qualification binding; these
+    // composition tests inject a matched fake owner, never a native helper.
+    nativeQualification:()=>Promise.resolve({matched:true,identityOwner:fakeIdentityOwner(),profile:{os_profile:{platform:"darwin",arch:"arm64",version:"26.7.1",build:"25G241",sdk:"26.5"}}}),
     adapter:{supervisionAvailable:true,worker:()=>assert.fail("host worker forbidden"),trial:()=>assert.fail("host CLI forbidden"),signal:()=>assert.fail("host signal forbidden")}}
   return {root,wave,file,options}
 }
@@ -85,6 +89,8 @@ test("production adapter has no native staging capability and ignores manifest o
   f.wave.execution_qualified=true;f.wave.owned={snapshot:"pretend",spawn:"pretend"};writeFileSync(f.file,JSON.stringify(f.wave))
   f.options.env.EVALS_OWNED_QUALIFIED="true"
   f.options.adapter=processAdapter({spawn:()=>assert.fail("unqualified native spawn forbidden")})
+  // The real binding: no owner-supplied record exists, so no boolean can open the gate.
+  f.options.nativeQualification=bindNativeQualification
   const report=await main(["--manifest",f.file],f.options)
   assert.equal(report.complete,false)
   assert.equal(report.stop_reason,"qualification-failed")
@@ -256,7 +262,11 @@ test("snapshot bindings and staged hashes are checked before any resource creati
     const report=await drive(main(["--manifest",f.file],f.options),x.c)
     assert.equal(x.calls.length,0,mode)
     assert.equal(report.complete,false)
-    assert.equal(report.execution_qualified,false)
+    // A tampered snapshot identity refuses admission itself: the binding's dispatch never
+    // started, so the run honestly reports unqualified. Tampered staged inputs or foreign
+    // work still refuse inside the qualified dispatch before any resource: the binding
+    // matched and the dispatch was admitted, but the trial never created anything.
+    assert.equal(report.execution_qualified,["manifest_sha256","harness_sha","trial_id"].includes(mode)?false:true,mode)
     assert.equal(report.successor_allowed,false)
     assert.equal(x.finalReads.length,0)
   }
@@ -346,7 +356,9 @@ test("inner exit zero and an injected positive native claim never qualify parent
   assert.equal(report.trials[0].containment.worker_exit,0)
   assert.equal(report.trials[0].containment.native,"unknown")
   assert.equal(report.complete,false)
-  assert.equal(report.execution_qualified,false)
+  // The dispatch ran under the injected matched binding; the fabricated positive native
+  // claim itself qualified nothing: acceptance and successors stay closed.
+  assert.equal(report.execution_qualified,true)
   assert.equal(report.successor_allowed,false)
   assert.equal(report.trials[1].status,"unrun")
   assert.equal(existsSync(join(f.wave.control,"wave.lock")),true)

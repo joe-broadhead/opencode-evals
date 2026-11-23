@@ -1,6 +1,7 @@
 // Parent-only composition. No runtime capability is discovered from a manifest or environment.
 import { containTrial } from "./owned-containment.mjs"
 import { createOwnedDockerClient } from "./owned-docker-client.mjs"
+import { createOwnedDockerProcess } from "./owned-docker-process.mjs"
 import { validateOwnedInputs, measureOwnedWork, createBoundedReader } from "./owned-io.mjs"
 import { finalizeOwnedTrial } from "./owned-postmortem.mjs"
 import { WAVE_MODEL } from "./wave-manifest.mjs"
@@ -38,16 +39,30 @@ async function boundedSnapshot(read, request, lease, clock) {
 
 /** Snapshot is a private injected approval interface, not a JSON manifest option.
  * It attests the selected tuple's fixed staged trees against the exact manifest/harness.
- * The fixed validator rehashes those trees. Native staging/transport qualification is absent.
+ * The fixed validator rehashes those trees. The native transport is composed only through
+ * the dispatch-time qualification binding; without a matched owner record nothing native
+ * is constructed and this composition refuses before any Docker spawn.
  */
-export async function runOwnedWave(wave, report, { owned, caller, lease, clock, verify, scopeCurrent, journalFor, stopRequested, signal, save, readCost }) {
+export async function runOwnedWave(wave, report, { owned, caller, lease, clock, verify, scopeCurrent, journalFor, stopRequested, signal, save, readCost, native = null }) {
   let cleanup = true, attempted = false
+  // The dispatch-time qualification binding is the only source of execution_qualified:
+  // it reports true only when a matched binding actually admitted this run's native
+  // dispatch. The run journal records the validation outcome and, on a match, the profile.
   report.execution_qualified = false
+  report.native_qualification = native?.matched === true
+    ? { matched: true, profile: native.profile }
+    : { matched: false, reason: native?.reason ?? "native-qualification-not-bound" }
   report.complete = false
   report.successor_allowed = false
   const admit = c => {
     readCost() // A corrupt aggregate ledger never disappears from budget admission.
     assertLaunchWithinRound(wave.store, { model: WAVE_MODEL, tier: c.tier ?? "wide", running: 0 }, { EVALS_CAPS: wave.caps.path, EVALS_ROUND_CAP_USD: "10", EVALS_ROUND_CEILING_USD: "10" })
+  }
+  // A matched binding composes the reviewed owned process transport: the qualified reader
+  // is that transport's identityOwner. An unmatched binding never dispatches natively.
+  const dispatchSpawn = plan => {
+    if (native?.matched !== true || !native.identityOwner) throw new Error("native dispatch refused: qualification binding absent")
+    return createOwnedDockerProcess({ binary: wave.runtime.docker.path, config: wave.docker_config, context: plan.context, plan, credentialValues: { OPENCODE_API_KEY: caller.OPENCODE_API_KEY } }, { spawn: owned.spawn, identityOwner: native.identityOwner }).spawn
   }
   for (const trial of report.trials) {
     let journal, result
@@ -69,9 +84,11 @@ export async function runOwnedWave(wave, report, { owned, caller, lease, clock, 
         credentialNames: ["OPENCODE_API_KEY"], timeoutMs, cleanupMs: Math.min(120000, TOTAL_MS - lease.elapsed() - timeoutMs), operationMs: OP_MS, outputBytes: 1048576,
         descriptor: { options: { plugin: "mem", iteration: `${wave.id}-${trial.id}`, model: WAVE_MODEL, auth: "env:OPENCODE_API_KEY", cases: trial.case, casesDir: "/inputs/cases", set: c.set, trials: 1, parallel: 1, arm: "/inputs/arm", world: "/inputs/harness/worlds/mem/index.mjs", host: "2.2.6", timeout: Math.floor(timeoutMs / 1000), stale: "refuse", tools: "locked", isolation: "owned-container", harnessRetries: 0, processGroup: "inherited", condition: trial.condition, conditionQualification: "/inputs/conditions.json" } } }
       if (!alive(lease, scopeCurrent, stopRequested)) throw new Error("admission closed")
-      const docker = createOwnedDockerClient({ binary: wave.runtime.docker.path, context: plan.context, config: wave.docker_config, credentialValues: { OPENCODE_API_KEY: caller.OPENCODE_API_KEY } }, { spawn: owned.spawn, clock })
+      const docker = createOwnedDockerClient({ binary: wave.runtime.docker.path, context: plan.context, config: wave.docker_config, credentialValues: { OPENCODE_API_KEY: caller.OPENCODE_API_KEY } }, { spawn: dispatchSpawn(plan), clock })
       journal.started(lease.elapsed() + plan.timeoutMs + plan.cleanupMs)
-      attempted = true; trial.status = "running"; trial.reason = null; save(report)
+      attempted = true; trial.status = "running"; trial.reason = null
+      report.execution_qualified = native?.matched === true
+      save(report)
       const abort = new AbortController()
       const cancel = () => abort.abort()
       signal?.addEventListener("abort", cancel, { once: true })

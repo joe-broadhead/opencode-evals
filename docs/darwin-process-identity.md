@@ -30,7 +30,12 @@ The constructor starts warm-up after pin and asset validation. It returns the ow
 The caller awaits `ready()` and verifies `available()` before admission. No call queues a lookup during warm-up.
 Parent shutdown requires both Docker-client closure and identity-owner closure.
 A false cleanup result blocks a successor. A late close can reconcile ownership but cannot restore a canceled result.
-This change does not connect that private composition to a parent launcher.
+The wave's owned run configuration connects this composition when an owner-supplied
+native qualification record matches the live profile at dispatch; see
+[Opt-in Memory wave controls](mem-wave-launcher.md#native-qualification-binding).
+That binding constructs the reader, never a manifest boolean, and supplies it to the owned
+Docker process transport as its `identityOwner`. Without a matched record no reader is
+constructed and the composition stays unwired.
 
 ## Owner pins
 

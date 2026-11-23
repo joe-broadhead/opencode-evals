@@ -226,7 +226,7 @@ The aggregate `report.cost` describes only the aggregate ledger. It does not inc
 An aggregate read error marks only aggregate cost unresolved. It does not discard recovered trial facts or replace them with older progress.
 The in-memory report remains current after a progress-write error. Failed writes do not guarantee persistence, and a persistent final report-write error still propagates.
 The parent does not import artifacts, complete accounting, or remove the private work root in this slice.
-Every attempted trial retains its reservation. Every owned report keeps `execution_qualified`, `complete`, and `successor_allowed` false.
+Every attempted trial retains its reservation. Every owned report keeps `complete` and `successor_allowed` false, and its `execution_qualified` reports only the dispatch-time native qualification binding: false unless a matched owner record actually admitted the run's native dispatch. The `native_qualification` journal field records the binding outcome and, on a match, the exact matched profile.
 The loop stops after its first provisional trial because no current result authorizes a successor.
 
 ## Integration changes for other owners

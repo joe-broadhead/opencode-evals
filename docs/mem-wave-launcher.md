@@ -3,8 +3,11 @@
 ## Status: execution blocked
 
 This change supplies local controls, not permission to run an eval.
-`qualifyWave()` always returns `execution_qualified: false` until reviewed recorder integration replaces that gate.
-No manifest field overrides the gate.
+`qualifyWave()` always returns `execution_qualified: false`: the pure manifest validator
+never sets that field. The owned run configuration alone can report it, by binding an
+owner-supplied native qualification record to the live profile at dispatch
+([native qualification binding](#native-qualification-binding)).
+No manifest field or environment value overrides either gate.
 The executable refuses before it starts Docker, OpenCode, or a provider.
 Input refusal returns a report value without creating or reading a control report.
 It grants no cleanup authority and starts no identity-check subprocess.
@@ -12,6 +15,46 @@ It grants no cleanup authority and starts no identity-check subprocess.
 The production parent selects the [owned containment composition](owned-containment.md#launcher-composition-l-c), but approved native snapshot and spawn capabilities remain unavailable.
 Injected offline tests exercise that actual parent path without a host trial worker.
 Every owned result remains incomplete and denies a successor. Native completion, observer reconciliation, final acceptance, and runtime qualification remain separate gates.
+
+## Native qualification binding
+
+The owned path accepts one owner-supplied native qualification record, referenced by the
+optional manifest pin `native_qualification` as `{path, sha256}`: a pinned JSON file outside
+the compared arm packages, never a boolean. The pin's record schema is exactly
+`oc-mem-native-qualification/1` with these fields:
+
+| Field | Requirement |
+| --- | --- |
+| `os_profile` | Exactly `platform` (darwin), `arch` (arm64 or x64), `version`, `build` and `sdk` |
+| `node` | Canonical absolute parent Node `path`, `version`, `sha256`, mode `0755` |
+| `helper.source_blob` | The qualified C source's git blob id |
+| `helper.build_manifest_sha256` | SHA-256 of the retained build evidence |
+| `helper.binary` | Canonical deployed `path`, exact `sha256`, `size`, mode `0555` |
+| `budgets` | Exactly warm-up 1000ms, lookup 100ms, cleanup 100ms |
+| `evidence` | Canonical absolute qualification report `path` plus its `sha256` |
+| `qualified_scope` | The qualification's explicit scope statement |
+
+`qualifyWave()` validates the pin and the record's structure at admission. It still never
+reports `execution_qualified`. At dispatch the run configuration
+(`src/run/native-qualification.mjs`) validates the record against the LIVE profile:
+deployed helper bytes, hash, size and mode with its canonical 0700 directory, the parent
+Node's realpath, version, mode and bytes, the live OS profile (`sw_vers`, `xcrun`), the
+harness tree's helper source blob, the pinned budgets, and the referenced evidence file.
+Every value must match exactly.
+
+A match constructs the reviewed `createDarwinIdentityReader` with the record's pins and
+awaits its construction warm-up. That reader becomes the owned Docker process transport's
+`identityOwner` for the run, and the run journal records the validation outcome with the
+matched profile. A mismatch, a missing record, or a failed warm-up refuses native dispatch:
+`execution_qualified` stays false, nothing native is constructed, and the existing refusal
+path is unchanged. There is no fallback, no partial match, no environment override, and no
+credential beyond `OPENCODE_API_KEY`.
+
+The report's `execution_qualified` is true only when a matched binding actually admitted the
+run's native dispatch; a refused admission reports false with its stop reason, and the
+`native_qualification` journal field records the binding outcome either way.
+Qualification is bound per run: each dispatch revalidates the live profile and constructs a
+fresh reader; nothing is cached across runs.
 
 ## Legacy worker controls
 

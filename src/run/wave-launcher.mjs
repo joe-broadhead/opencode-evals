@@ -311,7 +311,7 @@ export async function runTrials(wave, plan, { harness, caller, lease, verify, ex
 }
 
 /** Parent adapter is the only owner allowed to signal the worker's exclusive process group. */
-export async function launchWave(wave, { manifestSha, singleton, verify, allocate = () => {}, spawnWorker, alive, signal, cleanup, stopRequested, clock = systemClock, owned, caller, abortSignal }) {
+export async function launchWave(wave, { manifestSha, singleton, verify, allocate = () => {}, spawnWorker, alive, signal, cleanup, stopRequested, clock = systemClock, owned, caller, abortSignal, native = null }) {
   const start = { monotonic: clock.monotonic(), wall: clock.wall() }
   const refuse = reason => ({ ...refusedWave(wave, reason), ...(owned ? { execution_qualified: false, successor_allowed: false } : {}) })
   try { freshWavePaths(wave); await verify() } catch { return refuse() }
@@ -326,7 +326,7 @@ export async function launchWave(wave, { manifestSha, singleton, verify, allocat
     await allocate(lease, scope)
     if (lease.elapsed() >= TOTAL_MS - CLEANUP_MS || stopRequested?.()) throw new Error("no work time")
     if (owned) {
-      report = await runOwnedWave(wave, report, { owned, caller, lease, clock: { now: lease.elapsed, set: clock.set, clear: clock.clear }, verify,
+      report = await runOwnedWave(wave, report, { owned, caller, lease, clock: { now: lease.elapsed, set: clock.set, clear: clock.clear }, verify, native,
         scopeCurrent: () => scopeAuthority(scope) !== null, journalFor: trial => trialJournal(scope, trial, lease), stopRequested: stopRequested ?? (() => false), signal: abortSignal,
         save: value => writeJSON(join(wave.control, "progress.json"), value), readCost: () => waveCost(wave, report.trials) })
       writeJSON(finalFile, report)
@@ -367,7 +367,7 @@ export async function launchWave(wave, { manifestSha, singleton, verify, allocat
   try { report.cost = waveCost(wave, report.trials) } catch { report.cost = { unresolved: true } }
   report.supervision = supervision
   report.complete = !owned && supervision.cleanup_verified && report.trials.every(t => t.status === "completed") && report.cost?.unresolved_trials?.length === 0
-  if (owned) { report.successor_allowed = false; report.execution_qualified = false; report.reservation_retained = true }
+  if (owned) { report.successor_allowed = false; report.reservation_retained = true }
   writeJSON(finalFile, report)
   lease.release(!owned && supervision.cleanup_verified)
   return report

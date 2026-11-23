@@ -29,6 +29,27 @@ export function completeTrials(plan) {
   return trials
 }
 
+/** Pure structure validation of the owner-supplied native qualification record.
+ * The live profile match happens only at dispatch; this never sets execution_qualified. */
+export function validateNativeQualificationRecord(record) {
+  const exact = (value, keys) => value && JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...keys].sort())
+  if (record?.schema !== "oc-mem-native-qualification/1" || !exact(record, ["schema", "os_profile", "node", "helper", "budgets", "evidence", "qualified_scope"])) throw new Error("exact native qualification record fields required")
+  const os = record.os_profile
+  if (!exact(os, ["platform", "arch", "version", "build", "sdk"]) || os.platform !== "darwin" || !["arm64", "x64"].includes(os.arch) || !/^\d+(\.\d+)*$/.test(os.version ?? "") || !/^[A-Z0-9]{2,12}$/.test(os.build ?? "") || !/^\d+(\.\d+)*$/.test(os.sdk ?? "")) throw new Error("exact qualified OS profile required")
+  const node = record.node
+  if (!exact(node, ["path", "version", "sha256", "mode"]) || !isAbsolute(node.path ?? "") || node.path !== resolve(node.path) || !/^v\d+\.\d+\.\d+$/.test(node.version ?? "") || !digest(node.sha256) || node.mode !== "0755") throw new Error("exact parent Node pin required")
+  const helper = record.helper
+  if (!exact(helper, ["source_blob", "build_manifest_sha256", "binary"]) || !/^[a-f0-9]{40}$/.test(helper.source_blob ?? "") || !digest(helper.build_manifest_sha256)) throw new Error("exact helper source and build-evidence pins required")
+  const binary = helper.binary
+  if (!exact(binary, ["path", "sha256", "size", "mode"]) || !isAbsolute(binary.path ?? "") || binary.path !== resolve(binary.path) || !digest(binary.sha256) || !Number.isSafeInteger(binary.size) || binary.size < 1 || binary.size > 1048576 || binary.mode !== "0555") throw new Error("exact deployed helper binary pin required")
+  const budgets = record.budgets
+  if (!exact(budgets, ["warmup_ms", "lookup_ms", "cleanup_ms"]) || budgets.warmup_ms !== 1000 || budgets.lookup_ms !== 100 || budgets.cleanup_ms !== 100) throw new Error("exact native budget pins required")
+  const evidence = record.evidence
+  if (!exact(evidence, ["path", "sha256"]) || !isAbsolute(evidence.path ?? "") || evidence.path !== resolve(evidence.path) || !digest(evidence.sha256)) throw new Error("exact qualification evidence reference required")
+  if (typeof record.qualified_scope !== "string" || !record.qualified_scope.trim() || record.qualified_scope.length > 2048) throw new Error("qualified scope statement required")
+  return record
+}
+
 export function validateWave(wave, { harnessSha } = {}) {
   if (wave?.schema !== "oc-mem-wave/1" || !/^[a-z0-9-]{1,40}$/.test(wave.id ?? "")) throw new Error("wave schema/id required")
   if (wave.model !== WAVE_MODEL) throw new Error("exact model and low variant required; no aliases")
@@ -51,6 +72,18 @@ export function qualifyWave(wave, identity) {
     try { accessSync(wave.runtime[key].path, constants.X_OK) } catch { throw new Error(`qualified ${key} must be executable`) }
   }
   if (identity.launcherNodeSha !== wave.runtime.launcher_node.sha256) throw new Error("launcher Node pin mismatch")
+  // An optional owner-supplied native qualification record: a pinned JSON file outside the
+  // compared packages, referenced by its own SHA-256. This gate is pure structure validation
+  // only; the live profile match at dispatch alone can report execution_qualified.
+  if (wave.native_qualification !== undefined && wave.native_qualification !== null) {
+    const pin = wave.native_qualification
+    if (!isAbsolute(pin?.path ?? "") || pin.path !== resolve(pin.path) || !digest(pin.sha256)) throw new Error("native qualification record pin required")
+    for (const arm of ["baseline", "candidate"]) {
+      const directory = wave.arms?.[arm]?.directory
+      if (typeof directory === "string" && (pin.path === directory || pin.path.startsWith(`${directory}/`))) throw new Error("native qualification record must live outside compared packages")
+    }
+    validateNativeQualificationRecord(pinnedJSON(pin))
+  }
   for (const key of ["fixture", "schema", "discovery"]) pinnedBytes(wave.inputs?.[key])
   for (const c of result.plan.cases) {
     const compiled = pinnedJSON(c.file)
@@ -76,8 +109,9 @@ export function qualifyWave(wave, identity) {
     if (artifact.archive_sha256 !== spec.archive.sha256) throw new Error("staged arm/archive pin mismatch")
     qualifyConditions(pinnedJSON(spec.conditions), { runtime_sha256: wave.runtime.opencode.sha256, archive_sha256: artifact.archive_sha256, model: WAVE_MODEL })
   }
-  // Capability probes do not attest a durable ready/open/seal recorder protocol.
-  // No manifest field can override this gate. Reviewed integration must replace it.
+  // Capability probes and manifest fields never set execution_qualified. The owned run
+  // configuration binds it at dispatch to a live-validated owner-supplied record; this
+  // pure manifest validator keeps reporting the honest unqualified default.
   return { ...result, execution_qualified: false, blocker: "native recorder ready/open/seal integration is not qualified" }
 }
 

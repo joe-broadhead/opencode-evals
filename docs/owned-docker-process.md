@@ -4,6 +4,12 @@
 It does not install that seam in the production parent.
 Default `processAdapter().owned.snapshot` and `.spawn` remain null.
 Native qualification, completion, and successor admission remain false.
+The wave's owned run configuration composes this transport itself when the dispatch-time
+native qualification binding matches: the constructed Darwin reader becomes this
+transport's `identityOwner`, and the owned Docker client spawns through this adapter for
+that run alone. See [Opt-in Memory wave controls](mem-wave-launcher.md#native-qualification-binding).
+That composition is still not a default: without a matched owner record the run refuses
+before any Docker spawn, and the default path is unchanged.
 
 ## Interface and trust
 

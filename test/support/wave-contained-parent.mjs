@@ -72,13 +72,34 @@ export function containedFixture(f,hooks={}) {
     spawn(binary,args,options){
       assert.equal(binary,"/pinned/docker");assert.deepEqual(args.slice(0,2),["--context","colima-mem-evals-20261122"])
       const a=args.slice(2);calls.push(a)
+      // Native child shape: the owned process transport registers and observes these handles.
       const child=new EventEmitter();child.stdout=new EventEmitter();child.stderr=new EventEmitter();child.stdin=new EventEmitter();children.add(child)
+      child.pid=700+calls.length;child.exitCode=null;child.signalCode=null
       const settle=(r,close=true)=>{child.stdout.emit("data",Buffer.from(r.stdout??""));child.stderr.emit("data",Buffer.from(r.stderr??""));child.emit("exit",r.code,null);if(close){children.delete(child);child.emit("close",r.code,null)}}
       // ChildProcess.kill returns before Node delivers exit/stdio-close events.
       child.kill=()=>{queueMicrotask(()=>settle({code:null}));return true}
       const run=input=>queueMicrotask(()=>{const r=response(a,options,input);if(hooks.reply)hooks.reply({a,r,settle,child,resources,c,work,journal});else settle(r)})
-      if(options.stdio[0]==="pipe")child.stdin.end=run;else run(null)
+      queueMicrotask(()=>child.emit("spawn"))
+      if(options.stdio[0]==="pipe")child.stdin.end=(input,done)=>{child.stdin.writableFinished=true;child.stdin.emit("finish");run(input);done?.()}
+      else run(null)
       return child
     }}
   return {owned,c,resources,calls,descriptors,journal,snapshot,work,finalReads,children}
+}
+
+/** A minimal pre-warmed owner for the contained fixture: synchronous identity for live
+ * registered children. It satisfies the adapter's identityOwner method contract without
+ * exercising any helper. The binding tests use the real reader instead. */
+export function fakeIdentityOwner() {
+  const registered = new Set()
+  return Object.freeze({
+    register: child => { registered.add(child); return true },
+    readIdentity: child => Number.isSafeInteger(child?.pid) && child.pid > 0 && child.exitCode == null && child.signalCode == null
+      ? Promise.resolve({ pid: child.pid, start: `owned-fixture:${child.pid}` })
+      : Promise.resolve(null),
+    reconcile: () => Promise.resolve(true),
+    stop: () => Promise.resolve(true),
+    closed: () => true,
+    available: () => true,
+  })
 }
