@@ -7,6 +7,24 @@ import { WAVE_MODEL } from "./wave-manifest.mjs"
 import { assertLaunchWithinRound, RoundCapError } from "../cost/budget.mjs"
 
 const WORK_MS = 3480000, TOTAL_MS = 3600000, OP_MS = 20000
+// Containment diagnostics can originate in callbacks. Public reports are a closed local schema.
+const LOCAL_REASONS = new Set(["cancelled", "trial-timeout", "disk-limit", "disk-unknown", "creation_unknown", "config_rejected", "inputs_rejected", "proxy-network", "proxy-start", "proxy-readiness", "start_unknown", "final-config-rejected", "worker_exit_unknown", "finalization_unknown"])
+const publicReason = reason => reason === null ? null : LOCAL_REASONS.has(reason) ? reason : "contained-operation-unavailable"
+function nativeFacts(read) {
+  let known = null
+  return binding => {
+    try {
+      const value = read?.({ ...binding })
+      if (typeof value?.then === "function") {
+        // Unsupported async results supply no facts, but their rejection must be observed.
+        Promise.resolve(value).catch(() => {})
+      } else if (["failed", "interrupted"].includes(value?.outcome) && Object.keys(binding).every(key => value.binding?.[key] === binding[key])) {
+        known = { binding: { ...binding }, outcome: value.outcome }
+      }
+    } catch { /* Native lookup failure cannot suppress independent fixed-reader recovery. */ }
+    return known
+  }
+}
 const alive = (lease, current, stop) => current() && !stop() && lease.elapsed() < WORK_MS
 async function boundedSnapshot(read, request, lease, clock) {
   const end = Math.min(WORK_MS, lease.elapsed() + OP_MS)
@@ -63,13 +81,14 @@ export async function runOwnedWave(wave, report, { owned, caller, lease, clock, 
         else monitor = clock.set(watch, Math.min(100, WORK_MS - lease.elapsed()))
       }
       watch()
+      const nativeSnapshot = nativeFacts(owned.nativeSnapshot)
       try {
         result = await containTrial(plan, { docker, clock, signal: abort.signal, journal: journal.write,
           validateInputs: p => validateOwnedInputs(p, owned.io), measure: owned.measure ?? measureOwnedWork,
-          nativeSnapshot: owned.nativeSnapshot,
+          nativeSnapshot,
           finalize: (proof, { secrets }) => finalizeOwnedTrial(proof, {
             read: createBoundedReader(plan.work, proof.inputs.work, owned.io), secrets: [caller.OPENCODE_API_KEY, ...secrets], price: snapshot.price ?? null,
-            nativeSnapshot: owned.nativeSnapshot?.(proof.binding),
+            nativeSnapshot: nativeSnapshot(proof.binding),
           }),
         })
       } finally { clock.clear(monitor); signal?.removeEventListener("abort", cancel); journal.close() }
@@ -77,7 +96,7 @@ export async function runOwnedWave(wave, report, { owned, caller, lease, clock, 
       // Preserve partial cost and native negatives, never import child data into the aggregate ledger.
       trial.containment = { cleanup_verified: cleanup, host_clients_closed: result.host_clients_closed, creation_unknown: result.creation_unknown,
         native: result.native, observer: result.observer, evidence: result.evidence, accounting: result.accounting, worker_exit: result.worker_exit,
-        complete: false, successor_allowed: false, reason: result.reason }
+        complete: false, successor_allowed: false, reason: publicReason(result.reason) }
       trial.status = "incomplete"; trial.reason = "native-acceptance-unqualified"
       report.stop_reason = trial.reason
     } catch (error) {
@@ -90,7 +109,7 @@ export async function runOwnedWave(wave, report, { owned, caller, lease, clock, 
     break
   }
   for (const trial of report.trials) if (trial.status === "unrun") trial.reason = report.stop_reason ?? "not-started"
-  report.cost = readCost()
+  try { report.cost = readCost() } catch { report.cost = { unresolved: true } }
   report.supervision = { kind: "owned-container", cleanup_verified: cleanup && scopeCurrent(), elapsed_ms: lease.elapsed(), remote_cancellation_guaranteed: false }
   report.reservation_retained = attempted || !report.supervision.cleanup_verified
   save(report)

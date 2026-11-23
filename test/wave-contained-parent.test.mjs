@@ -7,6 +7,8 @@ import { main } from "../scripts/run-mem-wave.mjs"
 import { WAVE_MODEL } from "../src/run/wave-manifest.mjs"
 import { containedFixture, drive } from "./support/wave-contained-parent.mjs"
 import { processAdapter } from "../src/run/wave-process.mjs"
+import fs from "node:fs"
+import { syncBuiltinESMExports } from "node:module"
 
 function setup(t) {
   const root = mkdtempSync(join(tmpdir(), "wave-contained-parent-"))
@@ -348,4 +350,117 @@ test("inner exit zero and an injected positive native claim never qualify parent
   assert.equal(report.successor_allowed,false)
   assert.equal(report.trials[1].status,"unrun")
   assert.equal(existsSync(join(f.wave.control,"wave.lock")),true)
+})
+
+test("parent exports local reason codes, never callback diagnostics, in memory or on disk", async t => {
+  for (const diagnostic of ["synthetic-test-key", "unlisted-private-diagnostic"]) {
+    const f=setup(t),x=containedFixture(f),spawn=x.owned.spawn
+    let creates=0
+    x.owned.spawn=(binary,args,options)=>{
+      if(args[2]==="network"&&args[3]==="create"&&++creates===2)throw Error(diagnostic)
+      return spawn(binary,args,options)
+    }
+    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    const report=await drive(main(["--manifest",f.file],f.options),x.c)
+    for(const value of [JSON.stringify(report),...['progress.json','report.json'].map(name=>readFileSync(join(f.wave.control,name),'utf8'))])assert.equal(value.includes(diagnostic),false)
+    assert.equal(report.trials[0].containment.reason,"contained-operation-unavailable")
+    assert.equal(report.trials[0].containment.native,"unknown")
+    assert.equal(x.resources.size,0)
+    assert.equal(report.supervision.cleanup_verified,false)
+    assert.equal(existsSync(join(f.wave.control,"wave.lock")),true)
+  }
+})
+
+test("unavailable or asynchronous native snapshots cannot suppress fixed billing recovery", async t => {
+  for(const mode of ["throw","reject","thenable","async-negative","negative-then-throw"]) {
+    const f=setup(t),x=containedFixture(f);let calls=0
+    x.owned.nativeSnapshot=binding=>{
+      calls++
+      if(mode==="reject")return Promise.reject(Error("synthetic-test-key"))
+      if(mode==="thenable")return {then(_resolve,reject){reject(Error("unlisted-native-diagnostic"))}}
+      if(mode==="async-negative")return Promise.resolve({binding,outcome:"failed"})
+      if(mode==="negative-then-throw"&&calls===1)return {binding,outcome:"interrupted"}
+      throw Error("synthetic-test-key")
+    }
+    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    const report=await drive(main(["--manifest",f.file],f.options),x.c),result=report.trials[0].containment
+    await new Promise(setImmediate) // Strict rejection handling must survive the next event-loop turn.
+    assert.equal(result.accounting.known_billed_usd,0.25,mode)
+    assert.equal(result.accounting.complete,false)
+    assert.equal(result.native,mode==="negative-then-throw"?"interrupted":"unknown")
+    assert.equal(result.cleanup_verified,true)
+    assert.ok(x.finalReads.length>=2)
+    assert.equal(JSON.stringify(report).includes("synthetic-test-key"),false)
+    assert.equal(report.successor_allowed,false)
+    assert.equal(existsSync(join(f.wave.control,"wave.lock")),true)
+  }
+})
+
+test("late aggregate or progress errors retain recovered in-memory trial facts", async t => {
+  for(const mode of ["ledger","progress-write","report-write"]) {
+    const f=setup(t),x=containedFixture(f,{reply:({a,r,settle})=>{
+      if(a[0]==="exec"){mkdirSync(join(f.wave.store,"ledger"),{recursive:true});writeFileSync(join(f.wave.store,"ledger","runs.jsonl"),"malformed-aggregate\n")}
+      settle(r)
+    }})
+    x.owned.nativeSnapshot=binding=>({binding,outcome:"interrupted"})
+    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    const original=fs.writeFileSync;let faulted=false
+    fs.writeFileSync=(path,data,...args)=>{
+      if(mode==="report-write"&&String(path).includes("report.json.")&&String(data).includes('"containment"'))throw Error("private-write-diagnostic")
+      if(mode==="progress-write"&&!faulted&&String(path).includes("progress.json.")&&String(data).includes('"containment"')){faulted=true;throw Error("private-write-diagnostic")}
+      return original(path,data,...args)
+    }
+    syncBuiltinESMExports()
+    let report
+    try {
+      const pending=drive(main(["--manifest",f.file],f.options),x.c)
+      if(mode==="report-write")await assert.rejects(pending,/private-write-diagnostic/)
+      else report=await pending
+    }
+    finally {fs.writeFileSync=original;syncBuiltinESMExports()}
+    if(mode==="report-write") {
+      assert.equal(x.resources.size,0)
+      assert.equal(existsSync(join(f.wave.control,"wave.lock")),true)
+      assert.equal(JSON.parse(readFileSync(join(f.wave.control,"report.json"))).trials[0].containment,undefined)
+      continue // Failed final persistence is an error, not a successful report claim.
+    }
+    for(const value of [report,JSON.parse(readFileSync(join(f.wave.control,"report.json")))]) {
+      assert.equal(value.trials[0].containment?.accounting.known_billed_usd,0.25,mode)
+      assert.equal(value.trials[0].containment.native,"interrupted")
+      assert.equal(value.trials[0].containment.cleanup_verified,true)
+      assert.deepEqual(value.cost,{unresolved:true})
+      assert.equal(value.successor_allowed,false)
+      assert.equal(JSON.stringify(value).includes("private-write-diagnostic"),false)
+    }
+    if(mode==="ledger")assert.equal(report.supervision.cleanup_verified,true)
+    else {assert.equal(faulted,true);assert.equal(JSON.parse(readFileSync(join(f.wave.control,"progress.json"))).trials[0].status,"running")}
+    assert.equal(readFileSync(join(f.wave.store,"ledger","runs.jsonl"),"utf8"),"malformed-aggregate\n")
+    assert.equal(existsSync(join(f.wave.control,"wave.lock")),true)
+  }
+})
+
+test("journal commit rechecks the previous target after fsync and still cleans accepted IDs", async t => {
+  for(const phase of ["pending","accepted"]) {
+    const f=setup(t),x=containedFixture(f),file=join(f.wave.control,"resources","first.json"),original=fs.fsyncSync
+    let replaced=false
+    fs.fsyncSync=fd=>{
+      original(fd)
+      if(!replaced&&fs.fstatSync(fd).isFile()&&existsSync(file)&&JSON.parse(readFileSync(file)).pending.length===(phase==="pending"?0:1)) {
+        replaced=true;renameSync(file,file+"-original");writeFileSync(file,"foreign-journal")
+      }
+    }
+    syncBuiltinESMExports()
+    f.options.adapter.owned=x.owned;f.options.clock=x.c
+    let report
+    try {report=await drive(main(["--manifest",f.file],f.options),x.c)}
+    finally {fs.fsyncSync=original;syncBuiltinESMExports()}
+    assert.equal(replaced,true)
+    assert.equal(readFileSync(file,"utf8"),"foreign-journal")
+    assert.equal(x.descriptors.length,0)
+    assert.equal(x.resources.size,0)
+    assert.equal(x.calls.filter(a=>a[0]==="network"&&a[1]==="rm").length,phase==="accepted"?1:0)
+    assert.equal(report.supervision.cleanup_verified,false)
+    assert.equal(existsSync(join(f.wave.control,"wave.lock")),true)
+    assert.equal(readdirSync(join(f.wave.control,"resources")).some(name=>name.endsWith(".tmp")),false)
+  }
 })

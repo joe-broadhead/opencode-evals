@@ -141,14 +141,18 @@ function trialJournal(scope, trial, lease) {
       const bytes = Buffer.from(JSON.stringify(value) + "\n")
       if (bytes.length > 1048576) throw new Error("bounded journal required")
       const target = join(scope.directory, name)
-      const exists = present(target)
-      if (files.has(name) ? !exists || !same(lstatSync(target), files.get(name)) : exists) throw new Error("journal replaced")
+      const targetCurrent = () => {
+        const exists = present(target)
+        if (files.has(name) ? !exists || !same(lstatSync(target), files.get(name)) : exists) throw new Error("journal replaced")
+      }
+      targetCurrent()
       directory = openSync(scope.directory, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW)
       if (!same(fstatSync(directory), resourceScopes.get(scope).stat)) throw new Error("journal directory replaced")
       temporary = join(scope.directory, `.${name}.${randomUUID()}.tmp`)
       fd = openSync(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600)
       writeFileSync(fd, bytes); fsyncSync(fd); closeSync(fd); fd = undefined
       guard()
+      targetCurrent() // No await or dependency callback between this final continuity check and rename.
       renameSync(temporary, target); temporary = undefined
       fsyncSync(directory); guard()
       files.set(name, lstatSync(target))
@@ -349,11 +353,12 @@ export async function launchWave(wave, { manifestSha, singleton, verify, allocat
       supervision = { reason: "qualification-failed", cleanup_verified: clean && lease.elapsed() < TOTAL_MS, group_gone: true }
     }
   }
-  try {
+  if (!owned) try {
     const saved = JSON.parse(readFileSync(join(wave.control, "progress.json"), "utf8"))
     if (saved.wave !== wave.id || saved.trials?.length !== wave.trials.length || saved.trials.some((t, i) => t.id !== wave.trials[i].id)) throw new Error("invalid progress")
     report = saved
   } catch { /* Keep the complete initial manifest when the worker never wrote progress. */ }
+  // The owned parent already holds current trial facts, even when a progress write failed.
   report.stop_reason ??= supervision.reason === "finished" ? null : supervision.reason
   for (const trial of report.trials) {
     if (trial.status === "running") { trial.status = "incomplete"; trial.reason = report.stop_reason ?? "interrupted" }

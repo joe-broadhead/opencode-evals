@@ -191,11 +191,23 @@ The original private resource scope supplies the journal owner and admitted tria
 The parent writes the started marker before resource creation.
 The journal uses exclusive no-follow temporary files, file synchronization, atomic rename, and directory synchronization.
 Each write verifies the original directory and the previous file identity. Replacement, deletion, expiration, or closure denies further authority.
+The parent repeats the previous-target check after temporary-file synchronization, immediately before rename.
+No await or injected callback separates that final continuity check from rename.
+The journal directory is parent-private, with one parent writer and no concurrent external writer under this contract.
+These verification-time checks are not an atomic compare-and-swap against hostile same-UID processes.
+File or directory synchronization errors retain uncertainty. The offline controls do not prove power-loss durability or parent-death recovery.
 The parent retains uncertainty after a journal error and never releases the lease on unknown cleanup or settlement.
 
 The fixed finalizer uses the retained work-directory identity only after resource absence and client closure.
 Per-trial `containment.accounting` retains verified partial cost. Per-trial native negatives remain available even when cleanup fails.
+Optional native lookup errors supply no new fact and cannot suppress the fixed postmortem reader.
+Unsupported promises and thenables supply no native authority. The parent observes their rejection without adopting their result.
+A previously bound native negative remains available after a later lookup error.
+Public reason fields export only approved local codes, never callback diagnostics or remote exception text.
+An unavailable operation is not evidence of provider failure.
 The aggregate `report.cost` describes only the aggregate ledger. It does not include provisional per-trial cost before P-F import.
+An aggregate read error marks only aggregate cost unresolved. It does not discard recovered trial facts or replace them with older progress.
+The in-memory report remains current after a progress-write error. Failed writes do not guarantee persistence, and a persistent final report-write error still propagates.
 The parent does not import artifacts, complete accounting, or remove the private work root in this slice.
 Every attempted trial retains its reservation. Every owned report keeps `execution_qualified`, `complete`, and `successor_allowed` false.
 The loop stops after its first provisional trial because no current result authorizes a successor.
