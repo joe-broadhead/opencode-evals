@@ -101,6 +101,12 @@ This follows the existing `container.processStart` field convention, but does no
 Other hosts, including macOS, refuse the default identity path before native spawn.
 A trusted injected identity reader is a test or future integration dependency, not native qualification.
 The optional `identityOwner` dependency supports asynchronous identity with separate helper ownership.
+Its construction starts one refused-operand warm-up of the deployed helper, with admission closed until exit 64 and aggregate close.
+The parent awaits `identityOwner.ready()` and verifies `available()` before it starts a Docker client.
+Warm-up has a separate 1000ms deadline. Lookup and cleanup observation remain 100ms each.
+Warm-up failure leaves admission closed and retains unclosed helper ownership.
+The measured cold copy took about 299.5ms, versus about 10ms warm, and the prior first lookup failed closed.
+Those measurements did not establish native QMAC1 success.
 Plain `readIdentity` thenables still refuse identity. The original negative controls remain unchanged.
 See [Darwin identity ownership](darwin-process-identity.md) for the offline interface and unexecuted native gates.
 

@@ -2,7 +2,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { createHash } from "node:crypto"
-import { createDarwinIdentityReader } from "../src/run/darwin-process-identity.mjs"
+import { createWarmedDarwinIdentityReader as createDarwinIdentityReader } from "./fixtures/warmed-darwin-identity.mjs"
 
 const bytes=Buffer.from("synthetic-not-an-executable")
 const digest=createHash("sha256").update(bytes).digest("hex")

@@ -4,7 +4,7 @@ import { EventEmitter } from "node:events"
 import { createHash } from "node:crypto"
 import { createOwnedDockerClient } from "../src/run/owned-docker-client.mjs"
 import { createOwnedDockerProcess } from "../src/run/owned-docker-process.mjs"
-import { createDarwinIdentityReader } from "../src/run/darwin-process-identity.mjs"
+import { createWarmedDarwinIdentityReader as createDarwinIdentityReader } from "./fixtures/warmed-darwin-identity.mjs"
 
 const context="colima-mem-evals-20261122",binary="/pinned/docker",config="/parent/docker",id="a".repeat(64)
 const plan=()=>({context,dockerConfig:config,binding:{invocation_id:"11111111-1111-4111-8111-111111111111",manifest_sha256:"b".repeat(64),trial_id:"case-a"},image:`sha256:${"c".repeat(64)}`,imageEnv:["PATH=/usr/bin:/bin"],user:"1000:1000",control:"/parent/control",store:"/parent/store",work:"/staged/work",inputs:"/staged/inputs",binaries:"/staged/bin",inputs_sha256:"d".repeat(64),binaries_sha256:"e".repeat(64),allow:["opencode.ai"],credentialNames:["OPENCODE_API_KEY"],timeoutMs:1000,cleanupMs:1000,operationMs:100,outputBytes:4096,descriptor:{options:{plugin:"mem",iteration:"trial-a",model:"opencode/deepseek-v4.1-flash#low",auth:"env:OPENCODE_API_KEY",cases:"case-a",casesDir:"/inputs/cases",set:"set-a",trials:1,parallel:1,arm:"/inputs/arm",world:"/inputs/harness/worlds/mem/index.mjs",host:"2.2.6",timeout:1,stale:"refuse",tools:"locked",isolation:"owned-container",harnessRetries:0,processGroup:"inherited",condition:"direct"}}})

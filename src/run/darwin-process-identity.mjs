@@ -25,9 +25,9 @@ export function createDarwinIdentityReader(ownerPins, { spawn = spawnProcess, cl
   }
   if (!asset()) refuse()
   const targets = new WeakMap()
-  let active = null, stopped = false
+  let active = null, stopped = false, warmed = false
   const live = (child, original) => pid(child?.pid) && child.pid === original && child.exitCode == null && child.signalCode == null && targets.get(child)?.live
-  const available = () => !stopped && active === null
+  const available = () => warmed && !stopped && active === null
   const register = child => {
     if (stopped || !child || typeof child.once !== "function" || targets.has(child)) return false
     const state = { live: true }; targets.set(child, state)
@@ -35,30 +35,36 @@ export function createDarwinIdentityReader(ownerPins, { spawn = spawnProcess, cl
     child.once("exit", end); child.once("close", end); child.once("error", end)
     return true
   }
-  const readIdentity = (target, { signal } = {}) => {
+  const execute = (target, signal, warmup = false) => {
     const original = target?.pid
-    if (!available() || !live(target, original) || signal?.aborted || !asset()) return Promise.resolve(null)
     let complete
     const result = new Promise(resolve => { complete = resolve })
-    const a = { target, cancel: () => complete(null) }
+    const unavailable = warmup ? false : null
+    const a = { target, cancel: () => complete(unavailable) }
     active = a
+    const started = clock.now()
     let helper
-    try { helper = spawn(p.helper.path, [String(original)], { cwd: p.cwd, env: {}, shell: false, detached: false, stdio: ["ignore", "pipe", "ignore"] }) }
-    catch { active = null; complete(null); return result }
+    // Operand 0 returns 64 at the C program's first check, before all process calls.
+    try { helper = spawn(p.helper.path, [warmup ? "0" : String(original)], { cwd: p.cwd, env: {}, shell: false, detached: false, stdio: ["ignore", "pipe", "ignore"] }) }
+    catch { active = null; if (warmup) stopped = true; complete(unavailable); return result }
     let output = Buffer.alloc(64), length = 0, exit = false, close = false, failed = false, invalid = false, reconciled = false, code = null, exitSignal = null
     const established = pid(helper.pid)
     const waiters = new Set()
-    const cancel = () => { invalid = true; output = null; complete(null) }
+    const cancel = () => { if (reconciled) return; invalid = true; output = null; if (warmup) stopped = true; complete(unavailable) }
     a.cancel = cancel
-    const deadline = clock.now() + p.lookupMs
-    const timer = clock.set(cancel, p.lookupMs)
+    const deadline = warmup ? started + 1000 : clock.now() + p.lookupMs
+    const timer = clock.set(cancel, Math.max(0, deadline - clock.now()))
     const reconcile = () => {
       if (reconciled || !close || !(established ? exit : failed)) return
       reconciled = true
       clock.clear(timer); signal?.removeEventListener("abort", cancel)
       active = null
-      let identity = null
-      if (!invalid && !stopped && !failed && established && code === 0 && exitSignal == null && clock.now() < deadline && live(target, original)) {
+      let identity = unavailable
+      if (warmup) {
+        warmed = !invalid && !stopped && !failed && established && code === 64 && exitSignal == null && clock.now() < deadline && length === 0
+        if (!warmed) stopped = true
+        identity = warmed
+      } else if (!invalid && !stopped && !failed && established && code === 0 && exitSignal == null && clock.now() < deadline && live(target, original)) {
         const text = output.subarray(0, length).toString("ascii")
         const m = /^QMAC1 ([1-9][0-9]{0,9}) ([1-9][0-9]{0,19}) ([0-9]{6})\n$/.exec(text)
         if (m && Number(m[1]) === original && BigInt(m[2]) <= 18446744073709551615n) identity = { pid: original, start: `darwin-bsd-v1:${m[2]}:${m[3]}` }
@@ -85,6 +91,11 @@ export function createDarwinIdentityReader(ownerPins, { spawn = spawnProcess, cl
     if (signal?.aborted) cancel()
     return result
   }
+  const readIdentity = (target, { signal } = {}) => {
+    if (!available() || !live(target, target?.pid) || signal?.aborted || !asset()) return Promise.resolve(null)
+    return execute(target, signal)
+  }
   const reconcile = () => active ? active.observe() : Promise.resolve(true)
-  return Object.freeze({ register, readIdentity, available, closed: () => active === null, reconcile, stop() { stopped = true; active?.cancel(); return reconcile() } })
+  const ready = execute(null, undefined, true)
+  return Object.freeze({ register, readIdentity, ready: () => ready, available, closed: () => active === null, reconcile, stop() { stopped = true; active?.cancel(); return reconcile() } })
 }

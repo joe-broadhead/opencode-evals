@@ -2,8 +2,9 @@
 
 This module is not active in the default process adapter.
 The owned snapshot and spawn defaults remain null. The transport still returns `qualified:false`.
-The C source is uncompiled. No native helper asset or qualified platform profile accompanies this change.
-Build approval and native qualification are separate gates.
+This source change does not build or deploy a helper asset.
+The separate native run observed refused-operand exits, but never observed a successful QMAC1 lookup.
+Native qualification of successful identity reads remains a separate gate.
 
 ## Private composition
 
@@ -18,12 +19,15 @@ There is no public PID lookup or signal interface.
 | --- | --- |
 | `register(child)` | Records the original child and observes exit, close, and error. Registration alone does not supply identity. |
 | `readIdentity(child, {signal})` | Returns a promise for identity or null. Only a registered, live original child can start a lookup. |
+| `ready()` | Returns the construction warm-up result as a promise of true or false. It grants no identity or current admission authority. |
 | `available()` | Reports whether the owner permits another attempt. Busy and stopped owners refuse without a queue. |
 | `reconcile()` | Observes actual helper closure for at most 100ms. It does not cancel or signal a helper. |
 | `stop()` | Permanently stops admission, invalidates the active result, and observes closure for at most 100ms. |
 | `closed()` | Reports actual helper closure, not lookup completion or Docker-client closure. |
 
 The caller retains the owner, also exposed as `transport.identityOwner`.
+The constructor starts warm-up after pin and asset validation. It returns the owner immediately, with admission closed.
+The caller awaits `ready()` and verifies `available()` before admission. No call queues a lookup during warm-up.
 Parent shutdown requires both Docker-client closure and identity-owner closure.
 A false cleanup result blocks a successor. A late close can reconcile ownership but cannot restore a canceled result.
 This change does not connect that private composition to a parent launcher.
@@ -64,6 +68,35 @@ The invoker does not install protection, discover platform evidence, or qualify 
 Filesystem checks use synchronous reads of an owner-protected local asset. They do not provide a hard bound against a stalled filesystem.
 
 ## Lookup and closure
+
+### Construction warm-up
+
+The owner deploys the final protected helper copy before construction.
+Construction executes that deployed path exactly once with operand `"0"`, under a separate fixed 1000ms deadline.
+The existing C source rejects `"0"` at its first argument check, before `getppid`, `getpid`, credential calls, or `proc_pidinfo`.
+This execution queries no target, registers no identity, and supplies no signal authority.
+
+Warm-up uses the same pinned executable, private cwd, empty environment, and stdio contract as lookup.
+Success requires exit 64, no signal or stdout, and aggregate close before its deadline.
+Wrong exit, error, output, timeout, or missing close keeps admission closed permanently for that owner. There is no retry.
+Pin or asset validation failure still throws before any execution.
+
+The owner accounts for warm-up in `stop()`, `closed()`, and `reconcile()` exactly as it accounts for a lookup helper.
+`ready()` returns false on warm-up failure or cancellation, but that result does not prove helper closure.
+An unclosed warm-up remains registered after the unchanged 100ms cleanup observation. Late exit cannot restore admission.
+`ready()` retains the warm-up outcome after success. A later `stop()` still disables admission permanently.
+
+The retained native qualification report measured a 299.485ms first execution of a fresh deployed file copy, with refused-operand exit 64.
+Warm executions of the same deployed copy took about 10ms on that host.
+The first identity lookup missed its 100ms deadline and failed closed. No native QMAC1 success was observed.
+These measurements describe that host and asset, not a universal latency guarantee.
+The source is the 2026-11-23 `mem-q-mac-native-qual.74gDW75Cn7/evidence/REPORT.md`, sections 3–5.
+
+Warm-up addresses that deployment cost without changing the 100ms lookup or 100ms cleanup-observation budgets.
+A fresh deployment, rebuild, or replacement requires a new owner and its own warm-up.
+This correction's tests use finite fake helpers only. Fresh bounded native qualification remains required.
+
+### Identity lookup
 
 The fixed invocation uses the helper path, `[String(originalChild.pid)]`, private cwd, `env:{}`, and `stdio:["ignore","pipe","ignore"]`.
 Both `shell` and `detached` are false. The invoker never signals a helper.
@@ -122,7 +155,8 @@ Those sources do not attest to the installed kernel or system-library bytes.
 Offline tests inspect C source text and exercise finite fake helpers through the real invoker, adapter, and client.
 Static checks are not C syntax, ABI, linkage, return-size, field-validation, or native execution proof.
 No JavaScript ABI model substitutes for that missing evidence.
-Compilation, complete header/layout evidence, Mach-O inspection, signing, and approved natural-exit native tests remain unexecuted gates.
+This correction neither repeats nor replaces the separate build evidence.
+Successful native QMAC1 grammar, PID equality, tuple stability, and natural-exit closure still require the next approved qualification run.
 
 This contract supplies verification-time PID/start equality only.
 It does not supply atomic check-and-signal, collision-free incarnation identity, descendant absence, immediate CLI prevention, or native Docker qualification.
