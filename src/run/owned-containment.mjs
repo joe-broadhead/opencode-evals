@@ -191,7 +191,10 @@ export async function containTrial(plan, deps) {
       await run(r.kind === "container" ? ["rm", "-f", "-v", r.id] : ["network", "rm", r.id], {}, true)
       const found = await run([...(r.kind === "network" ? ["network"] : []), "inspect", r.id], {}, true)
       // A daemon error or timeout is never absence. Require the exact missing ID.
-      if (found.closed !== true || found.code !== 1 || !new RegExp(`^(?:Error(?: response from daemon)?: )?No such (?:object|container|network): ${r.id}\\s*$`, "i").test(found.stderr)) removed = false
+      // Docker's absence vocabulary has two families: the CLI's `No such …: <id>` and the
+      // daemon's `… <id> not found` (docker 29.5.2 answers missing networks exactly so).
+      // Both verify for every object class; anything else is still NOT verified-gone.
+      if (found.closed !== true || found.code !== 1 || !new RegExp(`^(?:Error(?: response from daemon)?: )?(?:No such (?:object|container|network): ${r.id}|(?:object|container|network) ${r.id} not found)\\s*$`, "i").test(found.stderr)) removed = false
     } catch { removed = false }
   }
   try { clients = await bounded(() => docker.stopClients(), Math.min(p.operationMs, end - clock.now()), "clients") === true && docker.closed() === true } catch { clients = false }
