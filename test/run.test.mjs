@@ -688,29 +688,10 @@ test("a sign-in with no expiry is refused unless --accept-unknown-token-expiry, 
   f.cleanup()
 })
 
-test("a trial refused authentication is infra: auth, released, not graded, and stops the batch launching", async () => {
-  const f = fixture({ cases: [["a-auth", ""], ["b-after", ""]] })
-  const c = JSON.parse(readFileSync(join(f.casesDir, "a-auth.json"), "utf8"))
-  writeFileSync(join(f.casesDir, "a-auth.json"), JSON.stringify({ ...c, prompt: "auth-fail now" }))
-  const caller = { ...f.caller, CLAUDE_AGENT_SDK_VERSION: "0.0.1-test" }
-  const result = await runBatch({ ...UNCONFINED, plugin: "demo", iteration: "authf", model: "claude-agent/haiku", auth: "claude-agent", set: "all", parallel: 1, arm: f.arm, casesDir: f.casesDir }, { caller, ...quiet })
-  assert.equal(result.launched, 1, "nothing launched after the first refusal")
-  assert.equal(result.results[0].infra, "auth")
-  assert.match(result.stopped, /a-auth\.t1 was refused authentication \(infra: auth\)/)
-  const summary = JSON.parse(readFileSync(join(f.store, "raw", "authf", "demo", "a-auth.t1.summary.json"), "utf8"))
-  assert.equal(summary.infra, "auth")
-  // Both runs go back to the reserve: the refused one and the one never launched; no run is recorded as spent.
-  const ledger = readLedger(f.store)
-  assert.equal(ledger.filter((e) => e.kind === "release").reduce((n, e) => n + e.runs, 0), 2)
-  assert.equal(ledger.filter((e) => e.kind === "run").length, 0)
-  assert.equal(usage(ledger, { month: new Date().toISOString().slice(0, 7), plugin: "demo", iteration: "authf" }).per_plugin_month, 0)
-  const env = { PATH: process.env.PATH, EVALS_STORE: f.store, EVALS_MODELS_CATALOG: join(f.root, "absent.json") }
-  spawnSync(process.execPath, [BIN, "trace", "--iteration", "authf", "--plugin", "demo"], { env })
-  spawnSync(process.execPath, [BIN, "grade", "--iteration", "authf", "--plugin", "demo", "--cases", f.casesDir], { env })
-  const verdicts = JSON.parse(readFileSync(join(f.store, "results", "authf", "verdicts.json"), "utf8"))
-  const graded = verdicts.find((v) => v.case === "a-auth")
-  assert.equal(graded.verdict, "NOT_RUN", JSON.stringify(graded))
-  assert.equal(graded.infra, "auth")
+test("credentialed trials are held before launch; authentication errors remain classified", async () => {
+  const options = { plugin: "demo", iteration: "authf", model: "claude-agent/haiku", auth: "claude-agent" }
+  Object.defineProperty(options, "store", { get() { throw new Error("store accessed") } })
+  await assert.rejects(runBatch(options, { caller: {}, ...quiet }), /launch safety gate/)
   // What counts as refused authentication: the provider's word, with no model work; not a tool's output, not a proxy.
   const { authFailed } = await import("../src/run/runner.mjs")
   assert.equal(authFailed({ stderr: "Error: 401 Unauthorized" }), true)
@@ -724,7 +705,6 @@ test("a trial refused authentication is infra: auth, released, not graded, and s
   assert.equal(authFailed({ stdout: revoked }), true, "a revoked token before any work")
   assert.equal(authFailed({ stdout: `${worked}\n${revoked}` }), true, "a run that ended on a revoked token was cut short, not the model's")
   assert.equal(authFailed({ stdout: `${revoked}\n${worked}` }), false, "a run that went on after the error is the model's")
-  f.cleanup()
 })
 
 test("a model that does not route inside a trial is refused before anything is reserved; a no-route run is infra: provider", async () => {

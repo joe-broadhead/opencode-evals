@@ -1,5 +1,9 @@
 # Running live evals
 
+> **Safety hold:** live and credentialed `evals run` launches are disabled.
+> See [Launch safety hold](#launch-safety-hold). The live examples below describe
+> the historical workflow, not permission or an available way to resume it.
+
 `evals run` runs a plugin's cases against a real model: one isolated OpenCode run per (case, trial), recorded in the
 private store where `evals trace` reads it. It is the only command that spends model time, so everything that can
 refuse a batch does so before the first run starts.
@@ -617,3 +621,40 @@ Not verified end to end by this repository's tests: a live model, the Claude Age
 Those are exercised by a pilot, never by `npm test`. The container backend is: with Docker and the image present, the
 tests run a scripted-model trial end to end inside a container and grade it, and check what a trial can read, write
 and reach (they skip, with the reason, where Docker or the image is missing, as in CI).
+
+# Launch safety hold
+
+`evals run` refuses credentialed or non-scripted trials before reading the
+store or launching anything. The only path through this temporary gate is
+explicit `--auth none --scripted --model mock/m1` (the harness's scripted
+model); `+profile`, other models, and real or environment credentials selected
+through `--auth` are refused, including in dry runs. Only container isolation
+is accepted, and authenticated, malformed, or ambiguous proxy URLs are
+refused without displaying their values. Caller `NO_PROXY` is not propagated.
+There is no CLI or environment override.
+The existing HALT remains in force; this change does not clear it or authorize
+resumption.
+
+This is a containment partial, not a readiness attestation. A guard log,
+successful host startup, or passing synthetic trial does not prove that the
+actual host installed all required hooks before any tool dispatch, or that
+plugin imports and setup cannot perform side effects. Code Mode's nested
+dispatch has only been demonstrated in a pinned offline synthetic host
+fixture, not for all host versions and paths.
+
+Scripted and fake workflows remain available for controlled synthetic testing.
+Passing `--auth none` does not prove the execution has no credentials, private
+data, paid side effects or network: world modules can run on the host before
+the trial, plugins and companions can act during import or setup, mounts and
+egress may expose resources, and a scripted model can invoke tools. The
+container backend has not been proven to prevent these paths. Do not run a
+trial with real or untrusted assets on the strength of this gate; use an
+independently verified isolation environment with no external network,
+credentials, personal data, host mounts or sockets. `--unsafe-no-isolation`
+is rejected by this gate.
+
+P7 remains disabled by its existing containment; a successful synthetic P7
+check is not authorization for a live probe. Standalone P0/probe and other
+host-launching helpers are not all routed through `evals run`: this gate does
+not contain those paths, and they must not be used with real credentials,
+vendors, models or data under this hold.

@@ -21,7 +21,7 @@ import { isMetered, assertBatchWithinBudget, projectedRunUsd, monthToDate, budge
 import { loadCatalog, loadMapping, resolve as resolvePrice, listPrice } from "../cost/catalog.mjs"
 import { pluginRepo } from "../pack/from-plugin.mjs"
 import { rawRoot, storeRoot } from "../store.mjs"
-import { makeSandbox, sealedConfig, sandboxEnv, worldEnv, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, removeInside, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
+import { makeSandbox, sealedConfig, sandboxEnv, worldEnv, assertSafeProxies, newPassword, writeConfig, start, runToEnd, stop, removeSandbox, removeInside, killAll, stripForeignLinks, SCRIPTED_MODEL } from "./sandbox.mjs"
 import { parseAuth, prepareAuth, readCredential, unknownExpiry } from "./auth.mjs"
 import { loadWorld, parseSeed, parseSeedList } from "./world.mjs"
 import { checkTruth, renderTruthProblem } from "../case/truth.mjs"
@@ -848,6 +848,19 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   const parallel = Number(options.parallel ?? 4)
   if (!Number.isInteger(trials) || trials < 1) throw new Error("--trials must be a whole number of at least 1")
   if (!Number.isInteger(parallel) || parallel < 1) throw new Error("--parallel must be a whole number of at least 1")
+  // Do this before reading the store, cases, arm, world, credentials, or starting any process.
+  // A guard log is not a same-host hook attestation, nor does it contain plugin startup.
+  // Until both are proven, only the scripted path with no selected auth is available.
+  // This does not establish that world code, plugins, mounts or egress are safe.
+  const parsedAuth = parseAuth(options.auth ?? caller.EVALS_AUTH)
+  if (parsedAuth.kind !== "none" || parsedAuth.vendor || options.scripted !== true || options.model !== SCRIPTED_MODEL) {
+    throw new Error("launch safety gate: credentialed or non-scripted trials are disabled; same-host guard readiness and plugin startup containment are not proven. Only --auth none with --scripted and the harness scripted model is permitted. This does not clear HALT.")
+  }
+  assertSafeProxies(caller)
+  const requestedIsolation = options.isolation ?? (caller.EVALS_ISOLATION || null) ?? defaultIsolation()
+  if (requestedIsolation !== "container" || options.unsafeNoIsolation) {
+    throw new Error("launch safety gate: only container isolation is permitted; unconfined or unsafe isolation is disabled")
+  }
   const store = options.store ?? storeRoot(caller)
   const halted = readHalt(store)
   if (halted) throw new Error(haltMessage(halted))
@@ -903,7 +916,6 @@ export async function runBatch(options, { caller = process.env, log = (line) => 
   // Live or not is decided by what the run would be given: a credential, and the config the harness seals. Only the
   // harness's own scripted model with no credential is not live. Decided, and refused, before a world module is
   // imported: importing one runs its code.
-  const parsedAuth = parseAuth(options.auth ?? caller.EVALS_AUTH)
   // `+profile` gives a trial the evals profile's vendor credentials; a batch whose every plugin runs with no account has none to give.
   const profile = parsedAuth.vendor && selected.length && selected.every((c) => pluginsOf(c).every((id) => noCredential.has(id))) ? { ...parsedAuth, vendor: false } : parsedAuth
   // A key passed through is a secret from the start: a world build's error output is scrubbed of it too.

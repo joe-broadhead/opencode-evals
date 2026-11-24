@@ -47,6 +47,27 @@ export function sealedConfig({ armDir, options, model, scripted = false, scripte
 }
 
 const PASS_THROUGH = ["LANG", "TZ", "TERM", "HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy", "SSL_CERT_FILE", "NODE_EXTRA_CA_CERTS"]
+const PROXY_VARIABLES = ["HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy", "ALL_PROXY", "all_proxy"]
+
+/** Refuse malformed or credential-bearing proxy settings without ever printing their values. */
+export function assertSafeProxies(caller = {}) {
+  for (const key of PROXY_VARIABLES) {
+    const value = caller[key]
+    if (value === undefined || value === null || value === "") continue
+    if (typeof value !== "string") throw new Error(`launch safety gate: invalid proxy setting ${key}`)
+    let url
+    try {
+      url = new URL(value)
+    } catch {
+      throw new Error(`launch safety gate: invalid proxy setting ${key}`)
+    }
+    // Reject even empty userinfo and ambiguous URL syntax; do not log any part of it.
+    if (value.includes("@") || url.username || url.password || url.search || url.hash ||
+        !["http:", "https:"].includes(url.protocol) || url.pathname !== "/") {
+      throw new Error(`launch safety gate: unsafe proxy setting ${key}`)
+    }
+  }
+}
 
 /**
  * The variables only the harness sets: where the run lives (HOME, XDG_*, TMPDIR, PATH), its sealed config and switches
@@ -81,11 +102,12 @@ export function worldEnv(env = {}) {
  * model's endpoint), so nothing a world sets can replace the sealed config after the checks that read it.
  */
 export function sandboxEnv({ sandbox, config, password, caller = process.env, world = {}, extra = {} }) {
+  assertSafeProxies(caller)
   const env = { ...worldEnv(world).env }
   env.PATH = caller.PATH ?? "/usr/bin:/bin"
   for (const key of PASS_THROUGH) if (caller[key]) env[key] = caller[key]
   // The client reaches its own server on loopback, never through a proxy.
-  const noProxy = [caller.NO_PROXY ?? caller.no_proxy, "127.0.0.1,localhost"].filter(Boolean).join(",")
+  const noProxy = "127.0.0.1,localhost"
   Object.assign(env, {
     HOME: sandbox.home,
     OPENCODE_TEST_HOME: sandbox.home,
