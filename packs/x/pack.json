@@ -42,7 +42,7 @@
   "id": "x",
   "name": "X",
   "package": "@joe-broadhead/opencode-x",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "private": true,
   "pluginId": "x.posts",
   "skills": [
@@ -787,7 +787,7 @@
       "body_lines": 81
     }
   },
-  "digest": "6c7b93eef0782f7a448c85b9b0cbf6a02f9e81aa94f81d67368f64b953f718b5",
+  "digest": "6a3b71d00b5969dc052f8399be1fd4a2326e29fadf03da78c606c052f1561e06",
   "access": {
     "key": "access",
     "default": "all"
@@ -796,8 +796,8 @@
     "api.x.com"
   ],
   "release": {
-    "version": "0.0.7",
-    "tag": "v0.0.7",
-    "commit": "c9ffb80bb57cada5f34047f03475f28d7bd298f7"
+    "version": "0.0.8",
+    "tag": "v0.0.8",
+    "commit": "ba0a997d4340ef0d578df6390d24c3824ddce825"
   }
 }
