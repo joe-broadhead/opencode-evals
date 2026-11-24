@@ -2,19 +2,56 @@
 // so the harness's tests import it as it is and the plugin (index.ts) imports it unchanged inside the host.
 
 import { existsSync, readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-const DEFAULT = { mode: "refuse", writes: [], actions: [] }
+const INVALID = { mode: "refuse", writes: [], actions: [], invalid: true }
 
-/** The policy file, or the safe default (refuse everything) when it cannot be read. */
+const strings = (value) => Array.isArray(value) && value.every((v) => typeof v === "string" && v.length > 0)
+const object = (value) => value !== null && typeof value === "object" && !Array.isArray(value)
+
+/** Validate before installing hooks: an empty fallback must never classify every call as a read. */
+export function validPolicy(p, inventory = p?.inventory) {
+  if (!object(p) || !["refuse", "log", "commit"].includes(p.mode) || !Array.isArray(p.writes) || !strings(p.actions) || !strings(p.known)) return false
+  if (!object(inventory) || !Array.isArray(inventory.reads) || !Array.isArray(inventory.writes)) return false
+  const entries = [...inventory.reads, ...inventory.writes]
+  if (!entries.every((entry) => object(entry) && typeof entry.action === "string" && entry.action.length > 0 && strings(entry.names) && entry.names.length > 0 && entry.names.includes(entry.action))) return false
+  const unique = (values) => new Set(values).size === values.length
+  if (!unique(entries.map((entry) => entry.action))) return false
+  const reads = new Set(inventory.reads.flatMap((entry) => entry.names))
+  const writeNames = new Set(inventory.writes.flatMap((entry) => entry.names))
+  if ([...reads].some((name) => writeNames.has(name))) return false
+  const sameSet = (a, b) => {
+    const left = new Set(a), right = new Set(b)
+    return left.size === a.length && right.size === b.length && left.size === right.size && a.every((item) => right.has(item))
+  }
+  if (!sameSet(p.known, [...new Set([...reads, ...writeNames])])) return false
+  if (!sameSet(p.actions, inventory.writes.map((entry) => entry.action))) return false
+  if (!p.writes.every((w) => object(w) && strings(w.names) && w.names.length > 0 && typeof w.action === "string" && w.action.length > 0 &&
+    (w.extract === undefined || (typeof w.extract === "string" && w.extract.length > 0)) &&
+    (w.allow === undefined || strings(w.allow)) && (w.local === undefined || typeof w.local === "boolean"))) return false
+  if (!sameSet(p.writes.map((w) => w.action), inventory.writes.map((entry) => entry.action))) return false
+  const byAction = new Map(inventory.writes.map((entry) => [entry.action, entry]))
+  if (p.writes.some((w) => {
+    const entry = byAction.get(w.action)
+    return !entry || !sameSet(w.names, entry.names)
+  })) return false
+  if (p.tools !== undefined && (!object(p.tools) || !strings(p.tools.exact) || !strings(p.tools.prefixes))) return false
+  if (p.plans !== undefined && (!object(p.plans) || !strings(p.plans.makers) || !strings(p.plans.committers) || !strings(p.plans.targetPaths) || !strings(p.plans.allow) ||
+    (p.plans.idPath !== undefined && typeof p.plans.idPath !== "string") || (p.plans.commitKey !== undefined && typeof p.plans.commitKey !== "string"))) return false
+  return true
+}
+
+/** Invalid or unreadable policy blocks every call, including the outer execute. */
 export function loadPolicy(file) {
   try {
     const path = typeof file === "string" ? file : fileURLToPath(file)
-    if (!existsSync(path)) return { ...DEFAULT }
-    return { ...DEFAULT, ...JSON.parse(readFileSync(path, "utf8")) }
+    if (!existsSync(path)) return { ...INVALID }
+    const policy = JSON.parse(readFileSync(path, "utf8"))
+    const inventory = JSON.parse(readFileSync(join(dirname(path), "inventory.json"), "utf8"))
+    return validPolicy(policy, inventory) ? { ...policy, inventory } : { ...INVALID }
   } catch {
-    // An unreadable policy refuses everything: the safe direction.
-    return { ...DEFAULT }
+    return { ...INVALID }
   }
 }
 
@@ -140,8 +177,7 @@ export function planIdOf(result, idPath = "planId") {
 }
 
 /**
- * Decides one call that reached execute.before. Outside the commit set nothing is refused here (the ask is what stops a
- * write: execute.before fires before the tool asks, so a refusal here would stop the ask from ever happening).
+ * Decides one call that reached execute.before. Outside the commit set writes are blocked before the tool can ask.
  * In the commit set a write passes only for a declared extractor and an allowed target, a plan commit only for a recorded plan.
  */
 /** Is `tool` one a locked trial may call: Code Mode's `execute`, `skill`, `question`, or a tool of a pack's plugin (`<plugin>_...`)? */
@@ -151,30 +187,29 @@ export const toolAllowed = (tools, tool) => {
 }
 
 /**
- * Is `name` (a tool or a permission action) a tool of an installed plugin that NO pack lists? Only in a locked trial (the policy has `known`). The eval-only probe's tools are the harness's own.
- * Such a tool is a write by default: it is asked, it may not complete outside the commit set, and one that completes halts the wave.
+ * Is `name` unclassified by the packs? The eval-only probe's tools are the harness's own.
+ * Such a tool is a write by default.
  */
 export function isUnknownTool(policy, name) {
-  if (!policy.known || !policy.tools) return false
+  if (!policy.known) return false
   const bare = String(name).replace(/^mcp[._-]/, "")
-  if (policy.tools.exact.includes(bare) || policy.known.includes(bare) || matchWrite(policy, bare)) return false
-  return policy.tools.prefixes.some((prefix) => prefix !== "evalsprobe" && (bare.startsWith(`${prefix}_`) || bare.startsWith(`${prefix}.`)))
+  if (["execute", "skill", "question", "todowrite"].includes(bare) || bare.startsWith("evalsprobe_") || bare.startsWith("evalsprobe.") || policy.known.includes(bare) || matchWrite(policy, bare)) return false
+  return true
 }
 
 export function decideBefore(policy, tool, input, plans = new Map()) {
+  if (policy.invalid || !validPolicy(policy)) return { pass: false, why: "the guard policy is invalid or unreadable", tool: true, write: null, committer: false }
   // The allow-list tripwire (G0 review 3.1): the lockdown removes the core tools it knows by name, and a core tool a later version adds
   // stays available. In a locked trial a tool outside this list is refused and logged, whatever it is.
   if (policy.tools && !toolAllowed(policy.tools, tool)) return { pass: false, why: "a core tool outside the locked allow-list", tool: true, write: null, committer: false }
   const write = matchWrite(policy, tool)
   const committer = isIn(policy.plans?.committers, tool)
-  // A tool no pack lists: a write by default. In the commit set the plan did not name it, so it is refused; elsewhere it is left to the ask (execute.before fires before the ask, so a refusal here
-  // would stop the ask), and the permission hook and execute.after catch the rest.
+  // A tool no pack lists is a write by default.
   if (!write && !committer && isUnknownTool(policy, tool)) {
-    if (policy.mode === "commit") return { pass: false, why: "a tool no pack lists, and the commit set does not name it", tool: true, write: { unknown: true }, committer }
-    return { pass: true, why: "a tool no pack lists: a write, left to the ask", write: { unknown: true }, committer }
+    return { pass: false, why: policy.mode === "commit" ? "a tool no pack lists, and the commit set does not name it" : "an unclassified tool is blocked before execution", tool: true, write: { unknown: true }, committer }
   }
   if (!write && !committer) return { pass: true, why: "not a write", write, committer }
-  if (policy.mode !== "commit") return { pass: true, why: policy.mode === "log" ? "log mode" : "left to the ask", write, committer }
+  if (policy.mode !== "commit") return { pass: false, why: "a write is blocked before execution outside commit mode", write, committer }
   if (committer && policy.plans) {
     const id = pick(input, policy.plans.commitKey ?? "planId")
     const plan = typeof id === "string" ? plans.get(id) : undefined
@@ -186,6 +221,8 @@ export function decideBefore(policy, tool, input, plans = new Map()) {
   if (!write || !write.extract || !write.allow?.length) return { pass: false, why: "no target extractor declared for this write", write, committer }
   const target = pick(input, write.extract)
   if (target === undefined || target === null || target === "") return { pass: false, why: "no target in the call", write, committer }
+  if (Array.isArray(target) && target.length === 0) return { pass: false, why: "no target in the call", write, committer }
+  if (!(Array.isArray(target) ? target : [target]).every((value) => typeof value === "string" && value.length > 0)) return { pass: false, why: "invalid target in the call", write, committer }
   const list = Array.isArray(target) ? target.map(String) : [String(target)]
   const outside = list.filter((value) => !write.allow.includes(value))
   return outside.length ? { pass: false, why: "a target outside the sandbox", write, committer } : { pass: true, why: "an in-scope target", write, committer }

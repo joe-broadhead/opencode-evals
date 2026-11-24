@@ -1,3 +1,4 @@
+// Synthetic after events exercise logging only; they do not imply a blocked write ran.
 // The guard logs what `target: ... in created` reads: a write's input leaves at execute.before, and the new ids of a completed write's result at execute.after. Run against a stand-in
 // plugin API with bun (the guard is TypeScript); skipped where there is no bun.
 import { test } from "node:test"
@@ -15,7 +16,9 @@ test("the guard records a write's input leaves and the ids its completed result 
   const dir = mkdtempSync(join(tmpdir(), "evals-guard-created-"))
   try {
     const policy = join(dir, "guard.json")
-    writeFileSync(policy, JSON.stringify(buildPolicy({ mode: "refuse", commit: {}, plans: null, locked: true })))
+    const built = buildPolicy({ mode: "refuse", commit: {}, plans: null, locked: true })
+    writeFileSync(policy, JSON.stringify(built))
+    writeFileSync(join(dir, "inventory.json"), JSON.stringify(built.inventory))
     const out = join(dir, "guard.jsonl")
     const script = `
       import { guardPlugin } from ${JSON.stringify(join(ROOT, "src/run/guard/index.ts"))}

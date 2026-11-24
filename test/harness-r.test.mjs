@@ -719,9 +719,10 @@ test("a materialised plugin carries what its package.json lists (guest/, manifes
 // ------------------------------------------------------------------------------------------------ the guard's log and the host's
 
 test("what the guard saw and what the host logged about plugins are summarised, and a plugin that failed to load is named", () => {
-  const records = [{ kind: "guard_start" }, { kind: "ask", own: true }, { kind: "ask", own: false }, { kind: "reject" }, { kind: "assert", what: "write" }, { kind: "assert", what: "access" }, { kind: "assert", what: "committed" }, { kind: "committed" }, { kind: "execute_before", write: true }]
-  assert.deepEqual(guardSummary(records), { ran: true, asks: 2, rejected: 1, reject_failed: 0, asks_left_to_run: 1, refused_writes: 1, refused_tools: 0, assert_access: 1, assert_committed: 1, committed: 1, write_calls: 1 })
+  const records = [{ kind: "guard_start" }, { kind: "guard_ready" }, { kind: "ask", own: true }, { kind: "ask", own: false }, { kind: "reject" }, { kind: "assert", what: "write" }, { kind: "assert", what: "access" }, { kind: "assert", what: "committed" }, { kind: "committed" }, { kind: "execute_before", write: true }]
+  assert.deepEqual(guardSummary(records), { started: true, ran: true, asks: 2, rejected: 1, reject_failed: 0, asks_left_to_run: 1, refused_writes: 1, refused_tools: 0, assert_access: 1, assert_committed: 1, committed: 1, write_calls: 1 })
   assert.equal(guardSummary([]).ran, false)
+  assert.equal(guardSummary([{ kind: "guard_start" }]).ran, false)
   const home = scratch()
   try {
     mkdirSync(join(home, ".local", "share", "opencode", "log"), { recursive: true })
@@ -1111,5 +1112,5 @@ test("a commit plan opens a write that touches only the trial's sandbox with `lo
   assert.equal(decideBefore(policy, "charts_quick", {}).pass, false, "charts_quick was not opened by the plan: deny by default")
   assert.equal(decideBefore(policy, "slack_send_message", { channel_id: "C0ELSE" }).pass, false)
   assert.equal(decideBefore(policy, "slack_send_message", { channel_id: "C0SANDBOX" }).pass, true)
-  assert.equal(decideBefore({ ...policy, mode: "refuse" }, "charts_render", {}).why, "left to the ask", "outside the commit set the ask stops it")
+  assert.match(decideBefore({ ...policy, mode: "refuse" }, "charts_render", {}).why, /blocked before execution/, "outside commit mode the guard stops it")
 })

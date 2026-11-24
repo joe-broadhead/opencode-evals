@@ -68,14 +68,14 @@ test("a commit set may name an action no pack lists: it becomes an allow after t
   assert.equal(decideBefore(policy, "elevenlabs_agents_brand_new_read", {}).pass, false, "another unlisted tool: refused")
 })
 
-test("the guard: a plugin's tool no pack lists is a write by default in a locked trial: left to the ask in refuse and log mode, refused in commit mode, never in an unlocked trial; known tools and the harness's own are not it", () => {
+test("the guard blocks unlisted tools in every mode, locked or unlocked", () => {
   const unlocked = buildPolicy({ mode: "refuse", packs })
   const locked = (mode, commit = {}) => buildPolicy({ mode, packs, locked: true, commit })
   const outbound = "elevenlabs_agents_brand_new_dial"
-  assert.equal(isUnknownTool(unlocked, outbound), false, "no `known` list outside a locked trial")
+  assert.equal(isUnknownTool(unlocked, outbound), true)
   for (const mode of ["refuse", "log"]) {
     const decision = decideBefore(locked(mode), outbound, {})
-    assert.equal(decision.pass, true, `${mode}: left to the ask (execute.before fires before it, so a refusal here would stop the ask)`)
+    assert.equal(decision.pass, false, `${mode}: blocked before the tool body`)
     assert.deepEqual(decision.write, { unknown: true })
   }
   const refused = decideBefore(locked("commit", { jobs_delete: { extract: "args.id", allow: ["x"] } }), outbound, {})
@@ -87,7 +87,8 @@ test("the guard: a plugin's tool no pack lists is a write by default in a locked
   // not it: every tool of every pack, the allow-list's own tools, the probe's tools, core tools (refused elsewhere), and other prefixes
   const policy = locked("refuse")
   for (const pack of packs) for (const tool of pack.tools) assert.equal(isUnknownTool(policy, tool.permission), false, `${pack.id}.${tool.name}`)
-  for (const name of ["execute", "skill", "question", "todowrite", "evalsprobe_assert_all", "bash", "write", "xylophone_play", "history"]) assert.equal(isUnknownTool(policy, name), false, name)
+  for (const name of ["execute", "skill", "question", "todowrite", "evalsprobe_assert_all"]) assert.equal(isUnknownTool(policy, name), false, name)
+  for (const name of ["bash", "write", "xylophone_play", "history"]) assert.equal(isUnknownTool(policy, name), true, name)
   assert.equal(decideBefore(policy, "bash", {}).pass, false, "a core tool is still refused by the allow-list")
   assert.equal(decideBefore(policy, "slack_slack_read_channel", {}).why, "not a write", "a known read")
 })
@@ -191,7 +192,7 @@ test("releaseInfo: the tag and the commit it points at in a checkout, null when 
   assert.deepEqual(info, { version: "9.9.9", tag: "v9.9.9", commit: null })
 })
 
-test("Tavily when all five tools are spend-class: search, extract and map stay allowed (metered by the credit cap), research and crawl stay confirm-only, a tool added later asks; the guard does not treat the three as writes", () => {
+test("Tavily lockdown exceptions do not override a pack's write classification in the guard", () => {
   const spend = packs.map((pack) => (pack.id === "tavily" ? { ...pack, tools: pack.tools.map((tool) => ({ ...tool, class: "write", readOnly: false, effect: "ask" })) } : pack))
   for (const [list, label] of [[packs, "released"], [spend, "spend-class"]]) {
     const rules = lockdownPermissions({ packs: list })
@@ -200,8 +201,9 @@ test("Tavily when all five tools are spend-class: search, extract and map stay a
     assert.deepEqual(lockdownProblems({ policies: lockdownPolicies(), permissions: rules }, { packs: list }), [], label)
     const policy = buildPolicy({ mode: "refuse", packs: list, locked: true })
     for (const name of ["search", "extract", "map"]) {
-      assert.equal(policy.actions.includes(`tavily_tavily_${name}`), false, `${label}: ${name} is not a guard write`)
-      assert.equal(decideBefore(policy, `tavily_tavily_${name}`, {}).why, "not a write")
+      const classifiedWrite = list.find((p) => p.id === "tavily").tools.find((t) => t.permission === `tavily_tavily_${name}`).class === "write"
+      assert.equal(policy.actions.includes(`tavily_tavily_${name}`), classifiedWrite, `${label}: ${name}`)
+      assert.equal(decideBefore(policy, `tavily_tavily_${name}`, {}).pass, !classifiedWrite)
     }
     assert.equal(isUnknownTool(policy, "tavily_tavily_search"), false, "known")
     assert.equal(isUnknownTool(policy, "tavily_tavily_added_later"), true)

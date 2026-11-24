@@ -300,7 +300,7 @@ test("every companion is at ask-changes with its caps; ElevenLabs takes the lowe
 test("the guard's policy lists every write tool of the packs under names that cannot match a host tool or another plugin's read", () => {
   const policy = buildPolicy()
   // every write-class tool of the packs bar the metered spending reads (the one exception, allowed in a trial whatever class a pack gives them)
-  const expected = new Set(loadPacks().flatMap((p) => p.tools).filter((t) => t.class === "write" && !CAPPED_SPEND_READS.includes(t.permission)).map((t) => t.permission))
+  const expected = new Set(loadPacks().flatMap((p) => p.tools).filter((t) => t.class === "write").map((t) => t.permission))
   assert.equal(policy.writes.length, expected.size)
   assert.equal(policy.actions.length, policy.writes.length)
   for (const bare of ["write", "execute", "send", "delete", "read", "shell"]) assert.equal(matchWrite(policy, bare), null, `bare ${bare}`)
@@ -310,12 +310,15 @@ test("the guard's policy lists every write tool of the packs under names that ca
   assert.equal(matchWrite(policy, "jobs_list"), null)
 })
 
-test("the guard's decisions: outside the commit set nothing is refused at execute.before (the ask is), inside it only in-scope writes pass", () => {
-  const writes = [{ names: ["slack_send_message"], action: "slack_slack_send_message", extract: "args.channel_id", allow: ["C0SANDBOX"] }, { names: ["linear_save_issue"], action: "linear_save_issue" }]
-  const base = { writes, actions: ["slack_slack_send_message", "linear_save_issue"] }
-  // refuse mode: leave it to the ask, so a write is graded as asked and declined
-  assert.equal(decideBefore({ ...base, mode: "refuse" }, "slack_send_message", { channel_id: "C0ELSEWHERE" }).pass, true)
-  assert.equal(decideBefore({ ...base, mode: "refuse" }, "slack_send_message", {}).why, "left to the ask")
+test("the guard's decisions: outside the commit set writes are blocked, inside it only in-scope writes pass", () => {
+  const writes = [{ names: ["slack_send_message", "slack_slack_send_message"], action: "slack_slack_send_message", extract: "args.channel_id", allow: ["C0SANDBOX"] }, { names: ["linear_save_issue"], action: "linear_save_issue" }]
+  const base = { writes, actions: ["slack_slack_send_message", "linear_save_issue"], known: ["slack_send_message", "slack_slack_send_message", "linear_save_issue", "linear_list_issues"], inventory: {
+    reads: [{ action: "linear_list_issues", names: ["linear_list_issues"] }],
+    writes: [{ action: "slack_slack_send_message", names: ["slack_send_message", "slack_slack_send_message"] }, { action: "linear_save_issue", names: ["linear_save_issue"] }],
+  } }
+  // This block says nothing about whether the host would have asked.
+  assert.equal(decideBefore({ ...base, mode: "refuse" }, "slack_send_message", { channel_id: "C0ELSEWHERE" }).pass, false)
+  assert.match(decideBefore({ ...base, mode: "refuse" }, "slack_send_message", {}).why, /blocked before execution/)
   // commit mode: the declared extractor and an allowed target
   const commit = { ...base, mode: "commit" }
   assert.equal(decideBefore(commit, "slack_send_message", { channel_id: "C0SANDBOX" }).pass, true)

@@ -1,12 +1,9 @@
 // evals-guard (R4, R11): an eval-only plugin that is deny-by-default for every write tool and answers every permission ask.
 //
 // Where each decision is made (found by probes P0-4 and P0-A2 on OpenCode 2.3.2):
-//   * `execute.before` fires for every call, inner Code Mode calls included (as `<plugin>_<tool>`), and BEFORE the tool asks
-//     for its permission. A guard that refused every write there would stop the ask from ever happening, and a write graded
-//     as "asked and declined" would never be asked. So outside the commit set the guard does not refuse at `execute.before`.
-//   * `permission.evaluate` is where a write is stopped: a write action that resolves to `allow` was not asked, so the access
-//     mode did not hold: the guard turns it into a deny and logs `EVALS-ASSERT access`. An ask is left alone (the host rejects
-//     it and the recording says "declined").
+//   * `execute.before` blocks classified and unknown writes outside commit mode, before the body can ask or send.
+//     A guard block is NOT evidence that the host asked or declined. Permission testing requires inert fixtures.
+//   * `permission.evaluate` is a secondary observer: an unexpected write action resolving to `allow` is denied and logged.
 //   * `execute.after` is the tripwire: a write tool whose call completed outside the commit set means a write got past both,
 //     logged `EVALS-ASSERT committed`. The runner halts every batch on one.
 //   * In the commit set (mode "commit") `execute.before` does refuse: a write passes only for a tool with a declared target
@@ -47,17 +44,6 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
       // The sessions that have made a tool call: a run's own, whose asks `opencode run` answers.
       const runSessions = new Set<string>()
 
-      await ctx.permission.hook("evaluate", (evaluation: any) => {
-        const unknown = !actions.has(evaluation.action) && isUnknownTool(policy, evaluation.action)
-        const write = actions.has(evaluation.action) || unknown
-        record("permission", { action: evaluation.action, session: evaluation.sessionID, effect: evaluation.effect, write, ...(unknown ? { unknown: true } : {}) })
-        if (write && evaluation.effect === "allow" && policy.mode === "refuse") {
-          evaluation.effect = "deny"
-          evaluation.message = `EVALS-ASSERT access: ${evaluation.action} is a write and was not asked`
-          record("assert", { what: "access", action: evaluation.action, session: evaluation.sessionID })
-        }
-      })
-
       await ctx.tool.hook("execute.before", (event: any) => {
         runSessions.add(event.sessionID)
         const decision = decideBefore(policy, event.tool, event.input, plans)
@@ -69,6 +55,23 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
           throw new Error(`EVALS-ASSERT ${(decision as any).tool ? "tool" : "write"}: ${event.tool} refused (${decision.why})`)
         }
       })
+      // The barrier is registered first and does not depend on this optional observer.
+      if (typeof ctx.permission?.hook === "function") {
+        try {
+          await ctx.permission.hook("evaluate", (evaluation: any) => {
+            const unknown = !actions.has(evaluation.action) && isUnknownTool(policy, evaluation.action)
+            const write = actions.has(evaluation.action) || unknown
+            record("permission", { action: evaluation.action, session: evaluation.sessionID, effect: evaluation.effect, write, ...(unknown ? { unknown: true } : {}) })
+            if (write && evaluation.effect === "allow" && policy.mode === "refuse") {
+              evaluation.effect = "deny"
+              evaluation.message = `EVALS-ASSERT access: ${evaluation.action} is a write and was not asked`
+              record("assert", { what: "access", action: evaluation.action, session: evaluation.sessionID })
+            }
+          })
+        } catch {
+          record("observer_unavailable", { observer: "permission.evaluate" })
+        }
+      }
 
       await ctx.tool.hook("execute.after", (event: any) => {
         const write = matchWrite(policy, event.tool)
@@ -122,6 +125,8 @@ export function guardPlugin(Plugin: { define: (definition: unknown) => unknown }
           record("responder_stopped", { error: String((error as Error)?.message ?? error).slice(0, 200) })
         }
       })()
+      if (!policy.invalid) record("guard_ready", { mode: policy.mode, pid: process.pid })
+      else record("guard_policy_invalid", { pid: process.pid })
     },
   })
 }

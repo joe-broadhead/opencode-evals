@@ -253,7 +253,8 @@ test("in a locked trial a tool outside execute, skill, question and the plugins'
   const policy = buildPolicy({ mode: "refuse", locked: true })
   assert.deepEqual(policy.tools.exact, ["execute", "skill", "question", "todowrite"])
   for (const prefix of ["slack", "gws", "history", "notion", "evalsprobe", "tavily", "x"]) assert.ok(policy.tools.prefixes.includes(prefix), prefix)
-  for (const ok of ["execute", "skill", "question", "history_pin", "gws_plan", "slack_send_message", "notion_notion-search", "evalsprobe_assert_all", "x_get_post", "jobs.create"]) assert.equal(decideBefore(policy, ok, {}).pass, true, ok)
+  for (const ok of ["execute", "skill", "question", "gws_plan", "notion_notion-search", "evalsprobe_assert_all"]) assert.equal(decideBefore(policy, ok, {}).pass, true, ok)
+  for (const write of ["history_pin", "slack_send_message", "jobs.create", "x_get_post"]) assert.equal(decideBefore(policy, write, {}).pass, false, write)
   for (const refused of ["shell", "read", "experimental_image_generate", "experimental_video_generate", "a_future_core_tool", "models", "automation_create", "websearch"]) {
     const verdict = decideBefore(policy, refused, {})
     assert.equal(verdict.pass, false, refused)
@@ -263,7 +264,7 @@ test("in a locked trial a tool outside execute, skill, question and the plugins'
   assert.equal(toolAllowed(policy.tools, "slackish_thing"), false, "a prefix is a whole word before the underscore")
   // not locked: no allow-list, as before
   assert.equal(buildPolicy({ mode: "refuse" }).tools, undefined)
-  assert.equal(decideBefore(buildPolicy({ mode: "refuse" }), "shell", {}).pass, true)
+  assert.equal(decideBefore(buildPolicy({ mode: "refuse" }), "shell", {}).pass, false)
 })
 
 // ------------------------------------------------------------------------------------------------ 13: the grammar

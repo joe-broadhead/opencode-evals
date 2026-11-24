@@ -335,7 +335,8 @@ export function guardSummary(records) {
   const count = (kind) => records.filter((r) => r.kind === kind).length
   const asserts = records.filter((r) => r.kind === "assert")
   return {
-    ran: records.some((r) => r.kind === "guard_start"),
+    started: records.some((r) => r.kind === "guard_start"),
+    ran: records.some((r) => r.kind === "guard_ready"),
     asks: count("ask"),
     rejected: count("reject"),
     reject_failed: count("reject_failed"),

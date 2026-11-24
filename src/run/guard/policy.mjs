@@ -3,7 +3,7 @@
 
 import { cpSync, mkdirSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
-import { loadPacks, CAPPED_SPEND_READS } from "../lockdown.mjs"
+import { loadPacks } from "../lockdown.mjs"
 
 export const GUARD_SOURCE = resolve(import.meta.dirname)
 
@@ -28,15 +28,17 @@ export function namesOf(pack, tool) {
 
 /**
  * The policy: `mode` "refuse" (no write passes), "commit" (only `commit[<permission>] = { extract, allow }` passes, and a plan
- * commit only for a plan made in scope: `plans`) or "log" (probes: observe only). `packs` defaults to every pack here.
+ * commit only for a plan made in scope: `plans`) or "log" (also blocks writes). `packs` defaults to every pack here.
  */
 export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {}, plans = null, locked = false } = {}) {
   const writes = []
   const actions = new Set()
+  const inventory = { reads: [], writes: [] }
   for (const pack of packs) {
     for (const tool of pack.tools ?? []) {
-      // a metered spending tool (lockdown.mjs CAPPED_SPEND_READS) is allowed in a trial whatever class its pack gives it: not a write for the guard
-      if (tool.class !== "write" || CAPPED_SPEND_READS.includes(tool.permission)) continue
+      if (!["read", "write"].includes(tool.class)) throw new Error(`unclassified pack tool: ${pack.id}.${tool.name}`)
+      inventory[tool.class === "read" ? "reads" : "writes"].push({ action: tool.permission, names: namesOf(pack, tool) })
+      if (tool.class !== "write") continue
       actions.add(tool.permission)
       const declared = commit[tool.permission]
       writes.push({ names: namesOf(pack, tool), action: tool.permission, ...(declared ? { ...(declared.extract ? { extract: declared.extract } : {}), ...(declared.allow ? { allow: declared.allow } : {}), ...(declared.local === true ? { local: true } : {}) } : {}) })
@@ -48,6 +50,7 @@ export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {},
     actions.add(action)
     const dotted = action.replace("_", ".")
     writes.push({ names: [...new Set([action, dotted])].sort(), action, ...(declared.extract ? { extract: declared.extract } : {}), ...(declared.allow ? { allow: declared.allow } : {}), ...(declared.local === true ? { local: true } : {}) })
+    inventory.writes.push({ action, names: [...new Set([action, dotted])].sort() })
   }
   // A locked trial calls only `execute`, `skill`, `question`, `todowrite` and the tools of the plugins installed (their ids, namespaces and
   // RPC names, and the eval-only probe's): anything else is refused at execute.before and logged (G0 review 3.1).
@@ -58,7 +61,7 @@ export function buildPolicy({ mode = "refuse", packs = loadPacks(), commit = {},
   const known = new Set()
   for (const pack of packs) for (const tool of pack.tools ?? []) for (const name of namesOf(pack, tool)) known.add(name)
   for (const write of writes) for (const name of write.names) known.add(name)
-  return { mode, writes, actions: [...actions].sort(), ...(plans ? { plans } : {}), ...(locked ? { tools: { exact: ["execute", "skill", "question", "todowrite"], prefixes: [...prefixes].sort() }, known: [...known].sort() } : {}) }
+  return { mode, writes, actions: [...actions].sort(), known: [...known].sort(), inventory, ...(plans ? { plans } : {}), ...(locked ? { tools: { exact: ["execute", "skill", "question", "todowrite"], prefixes: [...prefixes].sort() } } : {}) }
 }
 
 /** Copies the guard into `into/guard` and writes its policy read-only beside it. Returns the guard's directory. */
@@ -66,6 +69,8 @@ export function installGuard(into, policy) {
   const dir = join(into, "guard")
   mkdirSync(dir, { recursive: true, mode: 0o700 })
   for (const file of ["index.ts", "plugin.ts", "logic.mjs", "package.json"]) cpSync(join(GUARD_SOURCE, file), join(dir, file))
-  writeFileSync(join(dir, "guard.json"), `${JSON.stringify(policy, null, 1)}\n`, { mode: 0o444 })
+  const { inventory, ...rules } = policy
+  writeFileSync(join(dir, "inventory.json"), `${JSON.stringify(inventory, null, 1)}\n`, { mode: 0o444 })
+  writeFileSync(join(dir, "guard.json"), `${JSON.stringify(rules, null, 1)}\n`, { mode: 0o444 })
   return dir
 }
